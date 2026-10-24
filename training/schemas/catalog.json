@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "status": "ACTIVE",
+  "schemas": {
+    "training_sample": "smartops-training-sample.schema.json",
+    "dataset_manifest": "dataset-manifest.schema.json"
+  },
+  "dataset_types": [
+    "SFT",
+    "PREFERENCE",
+    "EVIDENCE",
+    "INSPECTOR",
+    "TOOL_SELECTION",
+    "RISK",
+    "APPROVAL",
+    "SAFETY",
+    "VERIFICATION",
+    "SYNTHETIC_INCIDENT"
+  ],
+  "source_types": [
+    "OFFICIAL_DOCUMENTATION",
+    "EXISTING_KNOWLEDGE",
+    "REAL_LOG",
+    "REAL_AGENT_TRACE",
+    "SYNTHETIC_INCIDENT",
+    "HUMAN_REVIEWED"
+  ]
+}

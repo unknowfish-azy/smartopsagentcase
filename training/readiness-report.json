@@ -1,0 +1,135 @@
+{
+  "status": "BLOCKED",
+  "created_at": "2026-09-18T08:16:01.371407+00:00",
+  "checks": {
+    "requirements": {
+      "status": "PARTIAL",
+      "packages": {
+        "torch": true,
+        "transformers": false,
+        "datasets": false,
+        "peft": false,
+        "trl": false
+      },
+      "installed": [
+        "torch"
+      ],
+      "missing": [
+        "transformers",
+        "datasets",
+        "peft",
+        "trl"
+      ],
+      "reason": "optional training packages are missing"
+    },
+    "model": {
+      "status": "PARTIAL",
+      "provider": "mock",
+      "model_configured": true,
+      "base_url_configured": true,
+      "local_model_path_configured": false,
+      "local_model_path_exists": false,
+      "api_key_configured": false,
+      "reason": "Mock provider is configured; it is not a REAL model baseline"
+    },
+    "dataset": {
+      "status": "BLOCKED",
+      "ready_count": 0,
+      "datasets": {
+        "sft": {
+          "status": "DRAFT",
+          "manifest": true,
+          "dataset_id": "smartops-sft",
+          "version": "v0.1",
+          "sample_count": 0,
+          "approved_count": 0,
+          "leakage_status": "NOT_RUN",
+          "reason": "approved samples and leakage pass required"
+        },
+        "preference": {
+          "status": "DRAFT",
+          "manifest": true,
+          "dataset_id": "smartops-preference",
+          "version": "v0.1",
+          "sample_count": 0,
+          "approved_count": 0,
+          "leakage_status": "NOT_RUN",
+          "reason": "approved samples and leakage pass required"
+        },
+        "inspector": {
+          "status": "DRAFT",
+          "manifest": true,
+          "dataset_id": "smartops-inspector",
+          "version": "v0.1",
+          "sample_count": 0,
+          "approved_count": 0,
+          "leakage_status": "NOT_RUN",
+          "reason": "approved samples and leakage pass required"
+        },
+        "evidence": {
+          "status": "DRAFT",
+          "manifest": true,
+          "dataset_id": "smartops-evidence",
+          "version": "v0.1",
+          "sample_count": 0,
+          "approved_count": 0,
+          "leakage_status": "NOT_RUN",
+          "reason": "approved samples and leakage pass required"
+        },
+        "tool_call": {
+          "status": "DRAFT",
+          "manifest": true,
+          "dataset_id": "smartops-tool-call",
+          "version": "v0.1",
+          "sample_count": 0,
+          "approved_count": 0,
+          "leakage_status": "NOT_RUN",
+          "reason": "approved samples and leakage pass required"
+        },
+        "safety": {
+          "status": "DRAFT",
+          "manifest": true,
+          "dataset_id": "smartops-safety",
+          "version": "v0.1",
+          "sample_count": 0,
+          "approved_count": 0,
+          "leakage_status": "NOT_RUN",
+          "reason": "approved samples and leakage pass required"
+        },
+        "verification": {
+          "status": "DRAFT",
+          "manifest": true,
+          "dataset_id": "smartops-verification",
+          "version": "v0.1",
+          "sample_count": 0,
+          "approved_count": 0,
+          "leakage_status": "NOT_RUN",
+          "reason": "approved samples and leakage pass required"
+        }
+      },
+      "reason": "no dataset has approved samples and a passing leakage check"
+    },
+    "hardware": {
+      "status": "READY",
+      "python": true,
+      "torch_available": true,
+      "cuda_available": false,
+      "gpu_count": 0,
+      "gpu_names": [],
+      "gpu_memory": "NOT_AVAILABLE",
+      "disk_free_bytes": 58157002752,
+      "output_directory": "training\\artifacts",
+      "output_directory_writable": true,
+      "reason": "storage is available; GPU availability is reported separately"
+    }
+  },
+  "gates": {
+    "dataset": "BLOCKED",
+    "model": "PARTIAL",
+    "evaluation": "READY",
+    "sft": "BLOCKED",
+    "preference_optimization": "NOT_READY"
+  },
+  "training_started": false,
+  "secrets_included": false
+}

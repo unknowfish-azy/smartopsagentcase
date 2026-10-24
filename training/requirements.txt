@@ -1,0 +1,2 @@
+# Dataset validation and dry-run evaluation use Python's standard library only.
+# Add Transformers/PEFT/TRL/PyTorch only when an approved real training run requires them.

@@ -1,0 +1,3 @@
+"""
+Server GET API Tests.
+"""

@@ -1,0 +1,3 @@
+"""
+MySQL Integration Tests.
+"""

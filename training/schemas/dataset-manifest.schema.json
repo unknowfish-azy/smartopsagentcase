@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smartops.local/schemas/training/dataset-manifest-v1.json",
+  "title": "SmartOpsAgent dataset manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dataset_id", "version", "dataset_version", "dataset_role", "schema_version", "dataset_type", "source_types", "source_description", "created_at", "created_by", "sample_count", "hash", "content_hash", "manifest_hash", "evaluation_only", "frozen", "splits", "status"],
+  "properties": {
+    "dataset_id": {"type": "string", "pattern": "^smartops-[a-z0-9-]+$"},
+    "version": {"type": "string", "pattern": "^v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"},
+    "dataset_version": {"type": "string", "pattern": "^v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"},
+    "dataset_role": {"enum": ["TRAINING", "VALIDATION", "TEST", "GOLDEN", "REGRESSION", "CANDIDATE_POOL"]},
+    "schema_version": {"const": "1.0.0"},
+    "dataset_type": {"enum": ["SFT", "PREFERENCE", "EVIDENCE", "INSPECTOR", "TOOL_SELECTION", "RISK", "APPROVAL", "SAFETY", "VERIFICATION", "SYNTHETIC_INCIDENT"]},
+    "source_types": {"type": "array", "items": {"enum": ["OFFICIAL_DOCUMENTATION", "EXISTING_KNOWLEDGE", "REAL_LOG", "REAL_AGENT_TRACE", "SYNTHETIC_INCIDENT", "HUMAN_REVIEWED"]}},
+    "source_description": {"type": "string"},
+    "created_by": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "sample_count": {"type": "integer", "minimum": 0},
+    "hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "content_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "manifest_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "evaluation_only": {"type": "boolean"},
+    "frozen": {"type": "boolean"},
+    "splits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["train", "validation", "test", "strategy"],
+      "properties": {
+        "train": {"type": "integer", "minimum": 0},
+        "validation": {"type": "integer", "minimum": 0},
+        "test": {"type": "integer", "minimum": 0},
+        "strategy": {"enum": ["NOT_SPLIT", "GROUPED_BY_INCIDENT", "GROUPED_BY_ROOT_CAUSE", "GROUPED_BY_ENVIRONMENT", "GROUPED_BY_VERSION", "GROUPED_BY_SCENARIO"]}
+      }
+    },
+    "status": {"enum": ["DRAFT", "VALIDATING", "REJECTED", "READY", "ARCHIVED"]},
+    "quality_report": {"type": ["string", "null"]},
+    "leakage_report": {"type": ["string", "null"]},
+    "metadata": {"type": "object"}
+  }
+}

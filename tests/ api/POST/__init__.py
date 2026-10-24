@@ -1,0 +1,3 @@
+"""
+SmartOps POST API Tests.
+"""

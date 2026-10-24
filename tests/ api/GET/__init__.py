@@ -1,0 +1,3 @@
+"""
+SmartOps GET API Tests.
+"""
