@@ -28,6 +28,9 @@
       <textarea ref="textareaRef" v-model="draft" rows="1" maxlength="2000" aria-label="输入消息" :placeholder="activeConversation?.remote ? '补充附件说明（可留空）…' : compact ? '输入一个运维问题…' : '描述你要完成的运维目标…'" :disabled="sending || attachmentBusy" @paste="attachmentComposer?.paste($event)" @input="adjustHeight()" @keydown="handleKeyDown"></textarea>
       <div class="ai-chat-composer__footer">
         <div class="ai-chat-composer__tools">
+          <button v-if="speechSupported" type="button" class="ai-chat-icon-button" :class="{ 'is-recording': speechListening }" :disabled="sending || attachmentBusy" :aria-pressed="speechListening" :aria-label="speechListening ? '停止语音输入' : '语音输入'" :title="speechListening ? '停止语音输入' : '语音输入（需浏览器支持）'" @click="toggleVoice">
+            <Microphone :size="16" aria-hidden="true" />
+          </button>
           <button type="button" class="ai-chat-icon-button" :disabled="sending || attachmentBusy" aria-label="添加附件" title="添加图片或文本附件（私有保存，暂不分析）" @click="attachmentComposer?.pick()">
             <Paperclip :size="16" aria-hidden="true" />
           </button>
@@ -41,6 +44,7 @@
         </button>
       </div>
       <p v-if="attachmentNotice" class="ai-chat-hint" role="status">{{ attachmentNotice }}</p>
+      <p v-if="speechHint" class="ai-chat-hint" role="status">{{ speechHint }}</p>
       <p v-if="errorMessage" class="ai-chat-error" role="alert">{{ errorMessage }}</p>
     </form>
 
@@ -51,10 +55,11 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ArrowUp, Loading, Paperclip, Plus } from '@element-plus/icons-vue'
+import { ArrowUp, Loading, Microphone, Paperclip, Plus } from '@element-plus/icons-vue'
 import { useAiChatStore } from '../../stores/aiChat.js'
+import { createSpeechInput } from '../../domain/chat/speechInput.ts'
 import AssistantSelector from './AssistantSelector.vue'
 import AssistantEvidence from './AssistantEvidence.vue'
 import ChatAttachmentComposer from './ChatAttachmentComposer.vue'
@@ -66,6 +71,10 @@ const drafts = ref({})
 const attachmentNotice = ref('')
 const textareaRef = ref(null)
 let disposed = false
+const speechSupported = ref(false)
+const speechListening = ref(false)
+const speechHint = ref('')
+let speech = null
 const chatStore = useAiChatStore()
 const { messages, sending, errorMessage, activeId, activeConversation, remoteLoading, canSend, accountEpoch } = storeToRefs(chatStore)
 const attachmentComposer = ref(null)
@@ -84,6 +93,25 @@ watch([activeId, () => messages.value.length, sending], async () => {
 }, { immediate: true })
 
 watch(accountEpoch, () => { drafts.value = {}; attachmentNotice.value = '' }, { flush: 'sync' })
+
+onMounted(() => {
+  speech = createSpeechInput({
+    onTranscript: text => { draft.value = text; adjustHeight() },
+    onStateChange: listening => {
+      speechListening.value = listening
+      if (listening) speechHint.value = ''
+    },
+    onError: message => { speechHint.value = message },
+  })
+  speechSupported.value = speech.supported
+})
+
+function toggleVoice() {
+  if (!speech?.supported || sending.value || attachmentBusy.value || disposed) return
+  speechHint.value = ''
+  if (speechListening.value) speech.stop()
+  else speech.start(draft.value)
+}
 
 const quickActions = [
   { label: '诊断 CPU 过载', prompt: '帮我诊断一台服务器 CPU 持续过载的问题，列出需要核对的指标、日志和处置步骤。' },
@@ -117,6 +145,7 @@ function useQuickAction(prompt) {
 
 async function sendMessage() {
   const prompt = draft.value.trim()
+  if (speechListening.value) speech?.stop()
   if (activeConversation.value?.remote) {
     const conversationId = activeId.value
     if (await attachmentComposer.value?.submit(prompt) && activeId.value === conversationId) { draft.value = ''; adjustHeight(true) }
@@ -134,7 +163,7 @@ async function sendMessage() {
   if (!disposed && activeId.value === conversationId) textareaRef.value?.focus()
 }
 
-onBeforeUnmount(() => { disposed = true })
+onBeforeUnmount(() => { disposed = true; speech?.dispose(); speech = null })
 </script>
 
 <style scoped>
@@ -160,6 +189,8 @@ onBeforeUnmount(() => { disposed = true })
 .ai-chat-composer textarea::placeholder { color: var(--smart-muted); }.ai-chat-composer__footer { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 7px 10px; border-top: 1px solid var(--smart-border); }
 .ai-chat-composer__tools { display: flex; align-items: center; gap: 5px; }.ai-chat-icon-button, .ai-chat-project, .ai-chat-send, .ai-chat-quick-actions button { border: 1px solid transparent; background: transparent; color: var(--smart-muted); cursor: pointer; transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast); }
 .ai-chat-icon-button { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 7px; }.ai-chat-icon-button:hover, .ai-chat-icon-button:focus-visible { color: var(--smart-text); background: var(--smart-primary-soft); }
+.ai-chat-icon-button.is-recording { color: var(--smart-danger, #f08d9c); background: color-mix(in srgb, var(--smart-danger, #f08d9c) 14%, transparent); }
+.ai-chat-icon-button.is-recording svg { animation: chat-pulse 1s infinite ease-in-out; }
 .ai-chat-project { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 9px; border-style: dashed; border-color: var(--smart-border); border-radius: 7px; font-size: 11px; }.ai-chat-project:hover, .ai-chat-project:focus-visible { color: var(--smart-text); border-color: var(--smart-border-strong); }
 .ai-chat-send { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; border-color: var(--smart-border); }.ai-chat-send:not(:disabled) { color: var(--smart-primary-foreground, #041018); background: var(--smart-primary); border-color: transparent; }.ai-chat-send:disabled { opacity: .42; cursor: not-allowed; }.ai-chat-send:focus-visible, .ai-chat-project:focus-visible, .ai-chat-quick-actions button:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
 .ai-chat-hint, .ai-chat-error { margin: 0; padding: 0 13px 9px; font-size: 11px; }.ai-chat-hint { color: var(--smart-muted); }
@@ -177,5 +208,5 @@ onBeforeUnmount(() => { disposed = true })
 .ai-cursor { display: inline-block; width: 6px; height: 1em; margin-left: 2px; vertical-align: text-bottom; background: var(--smart-primary-strong); animation: chat-blink 1s steps(2, start) infinite; }
 @keyframes chat-blink { to { visibility: hidden; } }
 @media (max-width: 600px) { .ai-chat-message { max-width: 94%; }.ai-chat-empty { align-items: flex-start; }.ai-chat-quick-actions { gap: 6px; }.ai-chat-quick-actions button { flex: 1 1 140px; } }
-@media (prefers-reduced-motion: reduce) { .ai-chat-pending span, .is-loading { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ai-chat-pending span, .is-loading, .ai-chat-icon-button.is-recording svg { animation: none; } }
 </style>

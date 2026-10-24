@@ -21,13 +21,13 @@
 
 | 层 | 技术 |
 |---|---|
-| 前端 | Vue 3 + Vite + Element Plus + Pinia + Vue Router + ECharts + Three.js |
+| 前端 | Vue 3 + Vite + TypeScript（共享逻辑层）+ Element Plus + Pinia + Vue Router + ECharts + Three.js |
 | 后端 | Spring Boot（运维数据 / 账户 / 审计） |
 | AI 服务 | FastAPI（LLM 网关、对话、RAG 编排） |
 | Agent 框架 | Python（planner / executor / inspector / memory / policies） |
 | 检索 | 混合检索（Hybrid Retrieval：关键词 + 向量）知识库 |
 | 工具集成 | MCP 适配器、Function Calling、Docker 工具 |
-| 多模态 | 3D 可视化（Three.js）+ 图表（ECharts）+ 语音输入（Web Speech API）+ 图像导出 |
+| 多模态 | 3D 可视化（Three.js）+ 图表（ECharts）+ 语音输入（Web Speech API）+ 截屏/拍照证据附件 |
 | 模型接入 | OpenAI 兼容网关（mock / Ollama / OpenAI 兼容均可，默认 mock 零密钥跑通） |
 
 > 命名约定：仓库名 `SmartOpsAgent` = 目录名 = 文档标题，保持唯一一致。
@@ -104,7 +104,7 @@ SmartOpsAgent/
 ## 6. 安装与运行
 
 ### 前置依赖
-- Node.js ≥ 18、pnpm/npm
+- Node.js ≥ 18（构建/运行）；执行 `npm test` 需 Node ≥ 22.18（测试直接加载共享层 `.ts`）
 - Python ≥ 3.11
 - JDK 17（后端）
 - MySQL 8、Redis 7
@@ -127,6 +127,9 @@ cd backend && ./mvnw spring-boot:run   # 或 mvn spring-boot:run
 # 5) 启动前端（用户层 5173 / 管理员层 5174）
 cd frontend && npm install && npm run dev
 # 管理员层：npm run dev:admin
+
+# 质量检查：单元测试 + 类型检查 + 构建
+cd frontend && npm test && npm run typecheck && npm run build
 ```
 
 - 用户层入口：`http://127.0.0.1:5173/login`
@@ -152,7 +155,7 @@ cd frontend && npm install && npm run dev
 ## 8. 快速开始（使用）
 
 1. 浏览器打开用户层入口并登录（或自助注册普通账号）。
-2. 进入 Agent 对话，提交一个故障现象（如"MySQL 连接数打满"）。
+2. 进入 Agent 对话，提交一个故障现象（如"MySQL 连接数打满"）；也可点击麦克风用语音描述（需浏览器支持）。
 3. 观察 AI 思考过程可视化 → 规划 → 检索证据 → 风险判断 → 人工审批 → 安全执行 → 结果验证 → 审计留痕的完整闭环。
 4. 在监控/知识/模型网关等页面查看可视化分析与多模态呈现。
 
@@ -163,7 +166,7 @@ cd frontend && npm install && npm run dev
 - **LLM 集成（8%）**：OpenAI 兼容网关，可切换 Provider；Prompt 模板集中于 `agent/prompts/`，输出稳定可控。
 - **Agent / 工作流（8%）**：planner→executor→inspector 闭环，具备规划、工具调用、自主决策能力。
 - **RAG（6%）**：混合检索 + 证据验证，检索策略可解释，显著降低错误版本知识干扰。
-- **多模态（5%）**：Three.js 3D + ECharts 图表可视化，语音输入（Web Speech API），图像导出。
+- **多模态（5%）**：Three.js 3D + ECharts 图表可视化；对话支持语音输入（Web Speech API，Chrome/Edge 可用）与截屏/拍照证据附件（本地保存，暂不参与模型分析）。
 - **AI 安全与可控（4%）**：policies 权限/风险引擎 + 人工审批 + 审计留痕，体现"可信 AI"。
 - **MCP / 工具集成（4%）**：`agent/tools/adapters/mcp.py` 已实现 MCP 适配，支持外部工具/数据源接入。
 

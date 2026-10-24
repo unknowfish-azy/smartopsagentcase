@@ -2,6 +2,18 @@
 
 本文件遵循 [SemVer](https://semver.org/lang/zh-CN/)（MAJOR.MINOR.PATCH）。
 
+## [Unreleased]
+
+### Added
+- 前端 AI 对话支持语音输入（Web Speech API，渐进增强；不支持的浏览器自动隐藏入口）。
+- 语音识别结果仅追加到输入框，不自动发送、不上传音频。
+
+### Changed
+- 仓库卫生：停止跟踪 `backend/.m2` 本地 Maven 仓库、`frontend/.vite-once-cache` 预构建缓存与用户运行时知识库数据，并补齐 `.gitignore`。
+- README 多模态能力说明与实现对齐。
+- 共享逻辑层（`api/`、`domain/`、`utils/`、`types/` 共 48 个模块）迁移到 TypeScript；Vue 组件与 Pinia store 保持 JavaScript，Vite 构建兼容；新增 `tsconfig.json` 与 `npm run typecheck`。
+- 分包策略收敛到 `vite.shared.mjs`，用户层与管理员层共用；zrender 从 echarts 拆分，`vendor-echarts` 由 510 kB 降至 346 kB，新增独立 `vendor-zrender`（166 kB），Three.js 仍为懒加载 chunk。
+
 ## [0.1.0] - 2026-10-24
 
 ### Added

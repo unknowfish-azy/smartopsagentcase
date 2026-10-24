@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { createPinia, setActivePinia } from 'pinia'
 import { shallowRef } from 'vue'
-import * as history from '../src/domain/chat/history.js'
+import * as history from '../src/domain/chat/history.ts'
 
 const mini = { key: 'mini', name: '智维 Mini', kind: 'builtin', model: 'qwen3:1.7b', enabled: true, available: true, status: 'ready' }
 const external = { key: 'connection:7', name: '我的模型', kind: 'connection', model: 'test', enabled: true, available: true, status: 'configured' }
@@ -20,19 +20,20 @@ async function setup({ selectedKey = 'mini', options = [mini, external] } = {}) 
     getAssistantOptions: async () => { calls.options++; return { data: { selectedKey, options } } },
     saveAssistantPreference: async providerKey => { calls.preferences.push(providerKey); return { data: { selectedKey: providerKey } } },
     sendAssistantChat: async payload => { calls.chats.push(payload); return { data: { content: '检查日志', providerKey: payload.providerKey, providerName: '智维 Mini', model: 'qwen3:1.7b', citations: [{ id: '1', title: '指南', source: 'knowledge/linux/cpu.md', snippet: '查看负载' }], readOnly: true } } },
+    streamChat: async () => { throw new Error('stream not configured') },
     getModelConnections: async () => ({ data: [] }), invokeModelConnection: async () => { throw Error('legacy route') }
   }
   const key = '__assistantTest' + crypto.randomUUID().replaceAll('-', '')
   globalThis[key] = fixture
   let source = await readFile(new URL('../src/stores/aiChat.js', import.meta.url), 'utf8')
-  source = source.replace("import { chatAttachmentsApi } from '../api/chatAttachments.js'", `const chatAttachmentsApi = globalThis.${key}.chatAttachmentsApi`)
-  source = source.replace(/import \{([^}]+)\} from '\.\.\/(?:api\/(?:model|assistant)|security\/session)\.js'/g, (_, names) => names.split(',').map(name => {
+  source = source.replace("import { chatAttachmentsApi } from '../api/chatAttachments.ts'", `const chatAttachmentsApi = globalThis.${key}.chatAttachmentsApi`)
+  source = source.replace(/import \{([^}]+)\} from '\.\.\/(?:api\/(?:model|assistant|stream)|security\/session)\.(?:js|ts)'/g, (_, names) => names.split(',').map(name => {
     name = name.trim()
     return 'const ' + name + ' = ' + (name === 'currentSession' ? 'globalThis.' + key + '.' + name : '(...args) => globalThis.' + key + '.' + name + '(...args)')
   }).join('\n'))
     .replace("'pinia'", JSON.stringify(import.meta.resolve('pinia')))
     .replace("'vue'", JSON.stringify(import.meta.resolve('vue')))
-    .replace("'../domain/chat/history.js'", JSON.stringify(new URL('../src/domain/chat/history.js', import.meta.url).href))
+    .replace("'../domain/chat/history.ts'", JSON.stringify(new URL('../src/domain/chat/history.ts', import.meta.url).href))
   setActivePinia(createPinia())
   const { useAiChatStore } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64') + '#' + key)
   return { store: useAiChatStore(), fixture, calls, values }
@@ -230,7 +231,7 @@ test('legacy history and optional provider/citation metadata survive restoration
 })
 
 test('assistant API uses unified endpoints, explicit payload and 150 second timeout', async () => {
-  const source = await readFile(new URL('../src/api/assistant.js', import.meta.url), 'utf8')
+  const source = await readFile(new URL('../src/api/assistant.ts', import.meta.url), 'utf8')
   const calls = []
   globalThis.__assistantRequest = config => { calls.push(config); return Promise.resolve({ data: {} }) }
   const module = await import('data:text/javascript;base64,' + Buffer.from(source.replace(/import request from ['"][^'"]+['"]/, 'const request = globalThis.__assistantRequest')).toString('base64'))

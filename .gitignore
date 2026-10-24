@@ -756,7 +756,13 @@ api/generated/
 
 # Local build / tool caches (never commit)
 /.m2/
+/backend/.m2/
 /.workbuddy/
+/frontend/.vite-once-cache/
+/frontend/components.d.ts
+
+# 用户运行时产生的知识库数据（首次使用时生成，不入公开仓库）
+/backend/data/knowledge/users/
 
 # ============================================================
 # End
