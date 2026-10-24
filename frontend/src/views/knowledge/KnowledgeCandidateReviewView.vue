@@ -38,7 +38,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { getKnowledgeCandidate, getKnowledgeCandidates } from '../../api/operations.js'
+import { getKnowledgeCandidate, getKnowledgeCandidates } from '../../api/operations.ts'
 import { candidateStatusLabel } from '../../components/operations/operationRunHistory.js'
 import { reviewQueueWithGuide } from '../../components/knowledge/knowledgeCandidateGuide.js'
 import { renderKnowledgeMarkdown } from '../../components/knowledge/renderKnowledgeMarkdown.js'

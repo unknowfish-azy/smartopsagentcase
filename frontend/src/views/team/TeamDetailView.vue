@@ -28,8 +28,8 @@
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { RouterLink, onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { currentSession } from '../../security/session.js'
-import { teamApi, teamNotificationsApi } from '../../api/teams.js'
-import { TEAM_ROLE_LABELS, assignableRoles, canManageMember, isTeamManager } from '../../domain/team/permissions.js'
+import { teamApi, teamNotificationsApi } from '../../api/teams.ts'
+import { TEAM_ROLE_LABELS, assignableRoles, canManageMember, isTeamManager } from '../../domain/team/permissions.ts'
 import '../../assets/styles/team-workspace.css'
 const route = useRoute(), router = useRouter()
 const teamId = computed(() => route.params.teamId)

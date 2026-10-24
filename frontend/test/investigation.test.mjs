@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createPinia, setActivePinia } from 'pinia'
-import { createFaultEvent, createInvestigationContext } from '../src/domain/investigation/faultEvent.js'
+import { createFaultEvent, createInvestigationContext } from '../src/domain/investigation/faultEvent.ts'
 import { useInvestigationStore } from '../src/stores/investigation.js'
 
 test('Fault Event requires evidence and never grants execution permission', () => {

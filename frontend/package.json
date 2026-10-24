@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "preview:admin": "vite preview --config vite.config.admin.mjs --port 5174",
     "test": "node --test test/**/*.test.mjs",
-    "typecheck": "node --check src/components/common/whaleQuality.js",
+    "typecheck": "tsc --noEmit",
     "lint": "node --check src/components/common/whaleQuality.js",
     "visual-check": "node test/visual-check.mjs",
     "personal-navigation-check": "node test/personal-navigation-visual-check.mjs"
@@ -35,6 +35,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.0",
     "playwright": "^1.63.0",
+    "typescript": "^5.9.3",
     "unplugin-vue-components": "^32.1.0",
     "vite": "^7.0.0"
   }

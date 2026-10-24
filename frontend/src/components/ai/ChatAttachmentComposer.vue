@@ -24,9 +24,9 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useAiChatStore } from '../../stores/aiChat.js'
-import { createAttachmentQueue, attachmentFiles } from '../../domain/chat/attachments.js'
-import { captureCamera, captureScreen } from '../../domain/chat/visualCapture.js'
-import { chatAttachmentsApi } from '../../api/chatAttachments.js'
+import { createAttachmentQueue, attachmentFiles } from '../../domain/chat/attachments.ts'
+import { captureCamera, captureScreen } from '../../domain/chat/visualCapture.ts'
+import { chatAttachmentsApi } from '../../api/chatAttachments.ts'
 
 const store = useAiChatStore()
 const emit = defineEmits(['context-change'])

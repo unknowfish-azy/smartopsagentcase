@@ -16,7 +16,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { diagnosticsApi } from '../../api/diagnostics.js'
+import { diagnosticsApi } from '../../api/diagnostics.ts'
 import { normalizeDiagnosticFailure } from './healthState.js'
 
 const props = defineProps({ certificateMode: { type: Boolean, default: false } })

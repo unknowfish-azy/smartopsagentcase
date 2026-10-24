@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { parseFunctionCallResponse } from '../src/domain/agent/functionCallParser.js'
+import { parseFunctionCallResponse } from '../src/domain/agent/functionCallParser.ts'
 
 const tools = [{ id: 'host-health', readOnly: true }, { id: 'service-restart', readOnly: false, requireConfirm: true }]
 

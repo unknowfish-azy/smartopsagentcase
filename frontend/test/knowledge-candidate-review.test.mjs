@@ -16,7 +16,7 @@ test('knowledge candidate review route is available under Memory', async () => {
 
 test('review workbench loads candidates and renders markdown without publishing controls', async () => {
   const view = await readFile(new URL('../src/views/knowledge/KnowledgeCandidateReviewView.vue', import.meta.url), 'utf8')
-  const api = await readFile(new URL('../src/api/operations.js', import.meta.url), 'utf8')
+  const api = await readFile(new URL('../src/api/operations.ts', import.meta.url), 'utf8')
 
   assert.match(api, /getKnowledgeCandidates/)
   assert.match(api, /getKnowledgeCandidate/)

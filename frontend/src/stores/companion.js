@@ -1,8 +1,8 @@
 import { computed, reactive, ref, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
-import { createCompanionEvent, createCompanionEventBus, immutableSnapshot } from '../domain/companion/eventBus.js'
-import { createCompanionContext, snapshotCompanionContext } from '../domain/companion/context.js'
-import { resolveAttention, capabilityStatuses } from '../domain/companion/attention.js'
+import { createCompanionEvent, createCompanionEventBus, immutableSnapshot } from '../domain/companion/eventBus.ts'
+import { createCompanionContext, snapshotCompanionContext } from '../domain/companion/context.ts'
+import { resolveAttention, capabilityStatuses } from '../domain/companion/attention.ts'
 import { useInvestigationStore } from './investigation.js'
 
 export const useCompanionStore = defineStore('companion', () => {

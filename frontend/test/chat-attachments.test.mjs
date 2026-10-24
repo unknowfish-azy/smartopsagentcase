@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createAttachmentQueue, attachmentFiles } from '../src/domain/chat/attachments.js'
+import { createAttachmentQueue, attachmentFiles } from '../src/domain/chat/attachments.ts'
 
 const file = (name = 'error.log', type = 'text/plain', size = 20) => ({ name, type, size, lastModified: 1 })
 

@@ -19,7 +19,7 @@ test('service diagnostic tools are read-only and use controlled execution types'
 test('diagnostic pages use target IDs and local config diff without arbitrary URL input', async () => {
   const network = await source('src/components/diagnostics/NetworkDiagnosticTool.vue')
   const diff = await source('src/components/diagnostics/ConfigDiffTool.vue')
-  const api = await source('src/api/diagnostics.js')
+  const api = await source('src/api/diagnostics.ts')
   assert.match(network, /targetId/)
   assert.equal(network.includes('type="url"'), false)
   assert.match(api, /\/api\/diagnostics\/http/)

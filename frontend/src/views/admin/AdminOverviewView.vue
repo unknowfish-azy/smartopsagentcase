@@ -11,7 +11,7 @@
 </template>
 <script setup>
 import { onMounted } from 'vue'
-import { adminApi } from '../../api/admin.js'
+import { adminApi } from '../../api/admin.ts'
 import { useAdminResource } from '../../composables/useAdminResource.js'
 const { data, loading, error, load } = useAdminResource(adminApi.overview)
 const metrics = [{ key: 'usersTotal', label: '账户总数' }, { key: 'usersEnabled', label: '启用账户' }, { key: 'adminsEnabled', label: '启用管理员' }, { key: 'activeSessions', label: '活动会话' }, { key: 'recentFailures', label: '近期登录失败' }, { key: 'pendingPasswordChanges', label: '待首次改密' }]

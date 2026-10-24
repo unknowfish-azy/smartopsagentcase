@@ -11,33 +11,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { backendOrigin, devProxy } from './vite.shared.mjs'
+import { backendOrigin, devProxy, manualChunks } from './vite.shared.mjs'
 import { adminHtmlFallback } from './vite.admin-fallback.mjs'
-
-function manualChunks(id) {
-    if (!id.includes('node_modules')) {
-        return undefined
-    }
-
-    const normalizedId = id.replaceAll('\\', '/')
-    if (normalizedId.includes('/three/')) {
-        return 'vendor-three'
-    }
-    if (normalizedId.includes('/echarts/')) {
-        return 'vendor-echarts'
-    }
-    if (normalizedId.includes('/@xterm/')) {
-        return 'vendor-terminal'
-    }
-    if (normalizedId.includes('/vue/') || normalizedId.includes('/vue-router/') || normalizedId.includes('/pinia/')) {
-        return 'vendor-vue'
-    }
-    if (normalizedId.includes('/axios/') || normalizedId.includes('/yaml/')) {
-        return 'vendor-utils'
-    }
-
-    return undefined
-}
 
 export default defineConfig({
     plugins: [

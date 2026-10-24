@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { initialWorkspace, changePlugin, importManifest, decodeWorkspace } from '../src/domain/plugins/workspace.js'
+import { initialWorkspace, changePlugin, importManifest, decodeWorkspace } from '../src/domain/plugins/workspace.ts'
 const manifest = { id: 'my-test', name: '我的排障', description: '测试清单', version: '1.0.0', entry: 'knowledge', category: '知识与记忆', dependencies: ['ops-knowledge'] }
 test('workspace dependency lifecycle protects dependents and persists custom metadata', () => {
   let state = initialWorkspace()

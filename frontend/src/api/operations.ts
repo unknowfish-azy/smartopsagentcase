@@ -1,5 +1,5 @@
 import http from '../utils/request'
-export { splitPane, orderOperationSessions, canConnect, capabilityLabel } from './operationsState.js'
+export { splitPane, orderOperationSessions, canConnect, capabilityLabel } from './operationsState.ts'
 
 export function getOperationCapabilities() {
   return http.get('/api/operations/capabilities')

@@ -10,7 +10,7 @@
 </template>
 <script setup>
 import { onMounted, ref } from 'vue'
-import { adminApi } from '../../api/admin.js'
+import { adminApi } from '../../api/admin.ts'
 const labels = { root: '最高管理员', deputy: '副管理员', specialist: '专项管理员' }
 const items = ref([]), loading = ref(false), error = ref(''), form = ref({ id: '', level: 'deputy', capabilities: '', password: '' }), selected = ref(null), revokePassword = ref('')
 async function load() { loading.value = true; error.value = ''; try { items.value = await adminApi.governance() } catch (failure) { error.value = failure.message || '管理员授权加载失败' } finally { loading.value = false } }

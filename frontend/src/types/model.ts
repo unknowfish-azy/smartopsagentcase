@@ -12,7 +12,7 @@ export function createEmptyModelConnection() {
     }
 }
 
-export function normalizeModelConnection(item = {}) {
+export function normalizeModelConnection(item: Record<string, any> = {}) {
     return {
         id: item.id ?? null,
         userId: item.userId ?? null,

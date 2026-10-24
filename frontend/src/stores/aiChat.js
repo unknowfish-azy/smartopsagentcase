@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { getAssistantOptions, saveAssistantPreference, sendAssistantChat } from '../api/assistant.js'
-import { streamChat } from '../api/stream.js'
+import { getAssistantOptions, saveAssistantPreference, sendAssistantChat } from '../api/assistant.ts'
+import { streamChat } from '../api/stream.ts'
 import { currentSession } from '../security/session.js'
-import { chatAttachmentsApi } from '../api/chatAttachments.js'
-import { assistantHistory, createConversation, historyStorageKey, replyMetadata, restoreHistory } from '../domain/chat/history.js'
+import { chatAttachmentsApi } from '../api/chatAttachments.ts'
+import { assistantHistory, createConversation, historyStorageKey, replyMetadata, restoreHistory } from '../domain/chat/history.ts'
 
 function unwrap(value) {
   return value?.data ?? value

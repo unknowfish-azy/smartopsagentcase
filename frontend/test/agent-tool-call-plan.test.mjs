@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { advanceToolCallPlan, canExecuteToolCall, createToolCallPlan } from '../src/domain/agent/toolCallPlan.js'
+import { advanceToolCallPlan, canExecuteToolCall, createToolCallPlan } from '../src/domain/agent/toolCallPlan.ts'
 
 test('creates a read-only plan at preview without granting execution yet', () => {
   const plan = createToolCallPlan({ task: '检查主机负载', tool: { id: 'host-health', readOnly: true, riskLevel: 'LOW' } })

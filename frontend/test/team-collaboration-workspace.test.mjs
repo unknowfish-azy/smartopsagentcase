@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { teamToolGroups, teamWorkspaceState } from '../src/domain/team/teamCollaboration.js'
+import { teamToolGroups, teamWorkspaceState } from '../src/domain/team/teamCollaboration.ts'
 
 test('team collaboration groups only the server returned tools', () => {
   const tools = [

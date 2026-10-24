@@ -1,17 +1,17 @@
 const MB = 1024 * 1024
 const extensions = /\.(png|jpe?g|txt|log|md)$/i
 
-export function attachmentFiles(transfer) {
-  const items = Array.from(transfer?.items || [])
+export function attachmentFiles(transfer: any) {
+  const items = Array.from(transfer?.items || []) as any[]
   if (items.length) return items.filter(item => item.kind === 'file').map(item => item.getAsFile()).filter(Boolean)
-  return Array.from(transfer?.files || [])
+  return Array.from(transfer?.files || []) as File[]
 }
 
-export function createAttachmentQueue({ createUrl = file => URL.createObjectURL(file), revokeUrl = url => URL.revokeObjectURL(url) } = {}) {
+export function createAttachmentQueue({ createUrl = (file: File) => URL.createObjectURL(file), revokeUrl = (url: string) => URL.revokeObjectURL(url) }: { createUrl?: (file: File) => string; revokeUrl?: (url: string) => void } = {}) {
   let generation = 0
   return {
-    items: [], error: '', busy: false,
-    add(files, source = 'FILE') {
+    items: [] as any[], error: '', busy: false,
+    add(files: File[], source = 'FILE') {
       if (this.busy) return
       this.error = ''
       for (const file of files) {

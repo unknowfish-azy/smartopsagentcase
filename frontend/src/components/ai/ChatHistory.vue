@@ -29,7 +29,7 @@ import { ElMessageBox } from 'element-plus/es/components/message-box/index.mjs'
 import 'element-plus/es/components/message-box/style/css.mjs'
 import { ChatDotRound, MoreFilled, Plus, Search } from '@element-plus/icons-vue'
 import { useAiChatStore } from '../../stores/aiChat.js'
-import { groupConversations } from '../../domain/chat/history.js'
+import { groupConversations } from '../../domain/chat/history.ts'
 
 const emit = defineEmits(['selected'])
 const store = useAiChatStore()

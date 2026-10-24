@@ -6,7 +6,7 @@ import {
   clearActiveOperationRuntime,
   getActiveOperationRuntime,
   setActiveOperationRuntime
-} from '../src/api/operationRuntimeState.js'
+} from '../src/api/operationRuntimeState.ts'
 
 test('shares only current runtime metadata between connections and tools', () => {
   const storage = new Map()

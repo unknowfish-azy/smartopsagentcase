@@ -22,3 +22,34 @@ export function devProxy(target) {
         }
     }
 }
+
+// 用户层与管理员层共用的分包策略。
+// zrender 是 echarts 的渲染底座，单独拆出可让两包并行加载、独立缓存，
+// 避免单个 vendor 包过大。
+export function manualChunks(id) {
+    if (!id.includes('node_modules')) {
+        return undefined
+    }
+
+    const normalizedId = id.replaceAll('\\', '/')
+    if (normalizedId.includes('/three/')) {
+        return 'vendor-three'
+    }
+    if (normalizedId.includes('/zrender/')) {
+        return 'vendor-zrender'
+    }
+    if (normalizedId.includes('/echarts/')) {
+        return 'vendor-echarts'
+    }
+    if (normalizedId.includes('/@xterm/')) {
+        return 'vendor-terminal'
+    }
+    if (normalizedId.includes('/vue/') || normalizedId.includes('/vue-router/') || normalizedId.includes('/pinia/')) {
+        return 'vendor-vue'
+    }
+    if (normalizedId.includes('/axios/') || normalizedId.includes('/yaml/')) {
+        return 'vendor-utils'
+    }
+
+    return undefined
+}

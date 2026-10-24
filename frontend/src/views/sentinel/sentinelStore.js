@@ -11,7 +11,7 @@
  */
 
 import { reactive } from 'vue'
-import request from '../../utils/request.js'
+import request from '../../utils/request.ts'
 
 /** 后端接口契约（与本文件一一对应，便于后端按契约实现）。 */
 export const SENTINEL_API = Object.freeze({

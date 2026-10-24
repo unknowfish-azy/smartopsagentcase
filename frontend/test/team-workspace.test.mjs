@@ -15,8 +15,8 @@ test('team permissions and API keep platform and team identities separate', asyn
     assert.equal(canManageMember('admin', 'admin', false), false)
     assert.equal(canManageMember('owner', 'member', true), false)
     assert.equal(canManageMember('admin', 'viewer', false), true)
-    const { default: request } = await server.ssrLoadModule('/src/utils/request.js')
-    const { teamApi, adminTeamsApi } = await server.ssrLoadModule('/src/api/teams.js')
+    const { default: request } = await server.ssrLoadModule('/src/utils/request.ts')
+    const { teamApi, adminTeamsApi } = await server.ssrLoadModule('/src/api/teams.ts')
     const calls = []
     request.defaults.adapter = async config => {
       calls.push({ url: config.url, method: config.method, body: config.data ? JSON.parse(config.data) : undefined, password: config.headers.get('X-Admin-Password') })

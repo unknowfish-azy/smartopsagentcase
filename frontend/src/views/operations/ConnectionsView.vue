@@ -335,8 +335,8 @@ import {
   previewMultiExec,
   startOperationTunnel,
   stopOperationTunnel
-} from '../../api/operations.js'
-import { clearActiveOperationRuntime, setActiveOperationRuntime } from '../../api/operationRuntimeState.js'
+} from '../../api/operations.ts'
+import { clearActiveOperationRuntime, setActiveOperationRuntime } from '../../api/operationRuntimeState.ts'
 
 const query = ref('')
 const openTabs = ref([])

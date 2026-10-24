@@ -58,8 +58,8 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { adminApi } from '../../api/admin.js'
-import { systemApi } from '../../api/adminSystem.js'
+import { adminApi } from '../../api/admin.ts'
+import { systemApi } from '../../api/adminSystem.ts'
 import { currentSession, clearSession } from '../../security/session.js'
 import { useAdminResource, formatAdminTime } from '../../composables/useAdminResource.js'
 import AdminDialog from '../../components/admin/AdminDialog.vue'

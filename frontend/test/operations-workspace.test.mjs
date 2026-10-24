@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { orderOperationSessions, splitPane } from '../src/api/operationsState.js'
+import { orderOperationSessions, splitPane } from '../src/api/operationsState.ts'
 
 test('splitting one active terminal creates two panes without duplicating the session runtime', () => {
   const state = splitPane({ tabs: [{ runtimeId: 'r1' }], panes: [{ id: 'p1', runtimeId: 'r1' }] }, 'p1', 'vertical')

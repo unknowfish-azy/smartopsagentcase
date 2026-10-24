@@ -1,9 +1,9 @@
-import { builtinPlugins, pluginCategories, pluginEntries } from './catalog.js'
+import { builtinPlugins, pluginCategories, pluginEntries } from './catalog.ts'
 export const PLUGIN_STORAGE_KEY = 'smartops_plugin_workspace_v1'
 const owns = (value, key) => Object.prototype.hasOwnProperty.call(value, key)
 export function initialWorkspace() { return { version: 1, custom: [], installed: { 'ops-knowledge': true, 'ops-connections': true, 'ops-models': true } } }
 export function catalogFor(state) { return [...builtinPlugins, ...state.custom] }
-export function validateManifest(input, catalog) {
+export function validateManifest(input: any, catalog: any): any {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('清单必须是 JSON 对象。')
   const allowed = ['id', 'name', 'version', 'description', 'category', 'entry', 'dependencies']
   if (Object.keys(input).some(key => !allowed.includes(key))) throw new Error('仅支持模板中的字段；清单不能包含脚本、地址或密钥。')

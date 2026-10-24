@@ -3,9 +3,9 @@ const SOURCES = new Set(['VISION', 'DOM', 'OCR', 'API', 'USER', 'MONITORING'])
 
 function clean(value, fallback = '') { return typeof value === 'string' ? value.trim() : fallback }
 
-export function createFaultEvent(input = {}) {
+export function createFaultEvent(input: Record<string, any> = {}) {
   const now = new Date().toISOString()
-  const evidence = Array.isArray(input.evidence) ? input.evidence.filter(Boolean).map(item => ({
+  const evidence = Array.isArray(input.evidence) ? input.evidence.filter(Boolean).map((item: any) => ({
     id: clean(item.id) || `evidence-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     source: SOURCES.has(item.source) ? item.source : 'USER',
     content: clean(item.content),
@@ -29,7 +29,7 @@ export function createFaultEvent(input = {}) {
   })
 }
 
-export function createInvestigationContext(faultEvent, input = {}) {
+export function createInvestigationContext(faultEvent: any, input: Record<string, any> = {}) {
   if (!faultEvent?.id) throw new Error('Investigation Context 需要 Fault Event')
   const now = new Date().toISOString()
   return {

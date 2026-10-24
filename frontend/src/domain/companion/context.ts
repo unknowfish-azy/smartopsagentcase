@@ -1,10 +1,10 @@
-import { immutableSnapshot } from './eventBus.js'
+import { immutableSnapshot } from './eventBus.ts'
 
 const LIST_FIELDS = ['observations', 'evidence', 'questions', 'answers', 'hypotheses', 'recommendations', 'knowledgeReferences', 'incidents', 'infrastructureSignals', 'remoteSessionReferences', 'capabilityStatuses']
 
-function arrayValue(value) { return Array.isArray(value) ? [...value] : [] }
+function arrayValue(value: unknown): unknown[] { return Array.isArray(value) ? [...value] : [] }
 
-export function createCompanionContext(input = {}) {
+export function createCompanionContext(input: Record<string, any> = {}) {
   const now = new Date().toISOString()
   return {
     id: input.id || `companion-${Date.now()}`,
@@ -34,7 +34,7 @@ export function createCompanionContext(input = {}) {
   }
 }
 
-export function mergeCompanionContext(context, patch = {}) {
+export function mergeCompanionContext(context: Record<string, any>, patch: Record<string, any> = {}) {
   const next = createCompanionContext({ ...context, ...patch, updatedAt: new Date().toISOString() })
   for (const field of LIST_FIELDS) if (field in patch) next[field] = arrayValue(patch[field])
   return next

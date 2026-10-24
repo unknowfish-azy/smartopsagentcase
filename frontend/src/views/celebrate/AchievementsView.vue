@@ -107,7 +107,7 @@ import { useRoute } from 'vue-router'
 import MilestoneRain from '../../components/effects/MilestoneRain.vue'
 import { buildAchievements, CALL_TIERS, DEMO_ACHIEVEMENTS } from '../../components/celebrate/achievements.js'
 import { milestoneProgress } from '../../components/effects/milestoneRain.js'
-import { getModelAnalytics } from '../../api/modelAnalytics.js'
+import { getModelAnalytics } from '../../api/modelAnalytics.ts'
 
 const route = useRoute()
 const month = ref(new Date().toISOString().slice(0, 7))

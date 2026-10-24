@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { captureScreen, stopMediaStream, sourceLabel } from '../src/domain/chat/visualCapture.js'
+import { captureScreen, stopMediaStream, sourceLabel } from '../src/domain/chat/visualCapture.ts'
 
 test('source labels are stable for visual attachment origins', () => {
   assert.equal(sourceLabel('SCREENSHOT'), '截屏')

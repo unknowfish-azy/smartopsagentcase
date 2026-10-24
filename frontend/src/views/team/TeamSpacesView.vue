@@ -24,8 +24,8 @@
 <script setup>
 import { onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import { RouterLink, onBeforeRouteLeave, useRouter } from 'vue-router'
-import { teamApi } from '../../api/teams.js'
-import { TEAM_ROLE_LABELS } from '../../domain/team/permissions.js'
+import { teamApi } from '../../api/teams.ts'
+import { TEAM_ROLE_LABELS } from '../../domain/team/permissions.ts'
 import '../../assets/styles/team-workspace.css'
 const router = useRouter()
 const teams = ref({ items: [], total: 0 }), invitations = ref({ items: [], total: 0 })

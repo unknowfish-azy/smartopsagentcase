@@ -35,8 +35,8 @@ import { ArrowRight, Collection, Connection, Cpu, DataLine, DataAnalysis, Docume
 import SourceLinkReader from '../../components/ui/source-link-reader.vue'
 import ExtensionDemo from '../../components/ui/extension-demo.vue'
 import RadialOrbitalTimeline from '../../components/ui/radial-orbital-timeline.vue'
-import { pluginCategories, pluginEntries } from '../../domain/plugins/catalog.js'
-import { PLUGIN_STORAGE_KEY, initialWorkspace, decodeWorkspace, catalogFor, changePlugin, importManifest } from '../../domain/plugins/workspace.js'
+import { pluginCategories, pluginEntries } from '../../domain/plugins/catalog.ts'
+import { PLUGIN_STORAGE_KEY, initialWorkspace, decodeWorkspace, catalogFor, changePlugin, importManifest } from '../../domain/plugins/workspace.ts'
 const icons = { Collection, Connection, Cpu, DataLine, DataAnalysis, Document, Grid, Monitor, View }
 const error = ref(''), notice = ref(''), state = ref(initialWorkspace())
 try { state.value = decodeWorkspace(localStorage.getItem(PLUGIN_STORAGE_KEY)) } catch { error.value = '本地插件配置无法读取，已显示默认工作区；原保存内容未被覆盖。' }

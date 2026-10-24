@@ -10,11 +10,14 @@ async function source(path) {
 
 test('vite build separates heavy runtime dependencies into stable vendor chunks', async () => {
   const config = await source('vite.config.js')
+  const shared = await source('vite.shared.mjs')
 
   assert.match(config, /manualChunks/)
-  assert.match(config, /three/)
-  assert.match(config, /echarts/)
-  assert.match(config, /xterm/)
+  assert.match(shared, /manualChunks/)
+  assert.match(shared, /three/)
+  assert.match(shared, /echarts/)
+  assert.match(shared, /zrender/)
+  assert.match(shared, /xterm/)
   assert.doesNotMatch(config, /chunkSizeWarningLimit/)
 })
 

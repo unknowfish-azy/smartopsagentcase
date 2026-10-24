@@ -6,9 +6,9 @@ import { createServer } from 'vite'
 test('registration and administrator verification contracts', async context => {
   const server = await createServer({ root: fileURLToPath(new URL('../', import.meta.url)), server: { middlewareMode: true }, logLevel: 'silent' })
   try {
-    const { default: request } = await server.ssrLoadModule('/src/utils/request.js')
+    const { default: request } = await server.ssrLoadModule('/src/utils/request.ts')
     const session = await server.ssrLoadModule('/src/security/session.js')
-    const { adminApi } = await server.ssrLoadModule('/src/api/admin.js')
+    const { adminApi } = await server.ssrLoadModule('/src/api/admin.ts')
     const calls = []
     const policy = { enabled: true, usernameMinLength: 3, userPasswordMinLength: 12, adminPasswordMinLength: 16, passwordMaxBytes: 72 }
     request.defaults.adapter = async config => {

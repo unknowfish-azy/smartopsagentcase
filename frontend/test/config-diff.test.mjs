@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { compareConfigTexts } from '../src/domain/diagnostics/configDiff.js'
-import { redactConfigText } from '../src/domain/diagnostics/redactConfig.js'
+import { compareConfigTexts } from '../src/domain/diagnostics/configDiff.ts'
+import { redactConfigText } from '../src/domain/diagnostics/redactConfig.ts'
 
 test('local diff preserves Chinese, whitespace and added/deleted line evidence', () => {
   assert.equal(compareConfigTexts('', '').rows.length, 0)

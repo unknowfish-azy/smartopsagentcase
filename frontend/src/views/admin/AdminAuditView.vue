@@ -16,7 +16,7 @@
 </template>
 <script setup>
 import { onMounted, reactive } from 'vue'
-import { adminApi, AUDIT_ACTIONS, AUDIT_OUTCOMES } from '../../api/admin.js'
+import { adminApi, AUDIT_ACTIONS, AUDIT_OUTCOMES } from '../../api/admin.ts'
 import { useAdminResource, formatAdminTime } from '../../composables/useAdminResource.js'
 import AdminPagination from '../../components/admin/AdminPagination.vue'
 const filters = reactive({ q: '', action: '', outcome: '' })

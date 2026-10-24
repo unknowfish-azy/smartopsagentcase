@@ -53,8 +53,8 @@ export function conversationPrompt(messages, prompt) {
   return `以下是当前会话的历史记录，请结合上下文回答最后的问题。\n\n${transcript}\n\n用户：${prompt}`
 }
 
-export function replyMetadata(value) {
-  const metadata = {}
+export function replyMetadata(value: any) {
+  const metadata: Record<string, any> = {}
   for (const field of ['providerKey', 'providerName', 'model']) {
     if (typeof value?.[field] === 'string') metadata[field] = value[field]
   }

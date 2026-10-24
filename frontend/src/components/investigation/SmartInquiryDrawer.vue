@@ -55,7 +55,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useCompanionStore } from '../../stores/companion.js'
-import { normalizeAnswer } from '../../domain/investigation/inquiry.js'
+import { normalizeAnswer } from '../../domain/investigation/inquiry.ts'
 import { knowledgeReadApi } from '../../views/knowledge/knowledgeLibrary.js'
 
 const store = useCompanionStore()

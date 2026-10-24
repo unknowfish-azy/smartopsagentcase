@@ -30,11 +30,11 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { ChatLineRound, Cpu, Tools, Plus, DocumentChecked } from '@element-plus/icons-vue'
-import { teamApi } from '../../api/teams.js'
-import { teamAgentsApi, teamConversationApi, teamToolsApi, teamRunsApi } from '../../api/teamAgents.js'
+import { teamApi } from '../../api/teams.ts'
+import { teamAgentsApi, teamConversationApi, teamToolsApi, teamRunsApi } from '../../api/teamAgents.ts'
 import { currentSession } from '../../security/session.js'
-import { TEAM_ROLE_LABELS, isTeamManager } from '../../domain/team/permissions.js'
-import { teamToolGroups, teamWorkspaceState } from '../../domain/team/teamCollaboration.js'
+import { TEAM_ROLE_LABELS, isTeamManager } from '../../domain/team/permissions.ts'
+import { teamToolGroups, teamWorkspaceState } from '../../domain/team/teamCollaboration.ts'
 import './teamCollaboration.css'
 
 const route = useRoute(), router = useRouter()

@@ -19,7 +19,7 @@
 
 <script setup>
 import { reactive } from 'vue'
-import { systemApi } from '../../../api/adminSystem.js'
+import { systemApi } from '../../../api/adminSystem.ts'
 import { useAdminResource, formatAdminTime } from '../../../composables/useAdminResource.js'
 import AdminPagination from '../../../components/admin/AdminPagination.vue'
 const filters = reactive({ q: '' })

@@ -11,7 +11,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { adminApi } from '../../api/admin.js'
+import { adminApi } from '../../api/admin.ts'
 import { clearSession } from '../../security/session.js'
 import { useAdminResource, formatAdminTime } from '../../composables/useAdminResource.js'
 import AdminDialog from '../../components/admin/AdminDialog.vue'

@@ -1,4 +1,4 @@
-import request from '../utils/request.js'
+import request from '../utils/request.ts'
 
 const data = promise => promise.then(response => response.data)
 const confirmation = password => ({ headers: { 'X-Admin-Password': password } })

@@ -1,7 +1,7 @@
 <template><div class="source-reader"><label :for="id">GitHub / HTTPS 链接</label><div class="source-row"><input :id="id" v-model="link" type="url" :disabled="busy" placeholder="https://github.com/owner/repo/tree/main/skills/example" /><button type="button" :disabled="busy || !link.trim()" @click="read">{{ busy ? '读取中…' : '读取链接' }}</button></div><p>GitHub 目录自动读取 {{ kind === 'skill' ? 'SKILL.md' : 'smartops-plugin.json' }}。其他站点需提供允许跨域读取的公开原始文件；私有仓库请手动粘贴内容。</p><p v-if="error" role="alert" class="source-error">{{ error }}</p></div></template>
 <script setup>
 import { ref, useId, onBeforeUnmount } from 'vue'
-import { readRemoteSource } from '../../domain/plugins/remoteSource.js'
+import { readRemoteSource } from '../../domain/plugins/remoteSource.ts'
 const props = defineProps({ kind: { type: String, required: true } })
 const emit = defineEmits(['loaded'])
 const id = useId(), link = ref(''), busy = ref(false), error = ref('')

@@ -187,7 +187,7 @@
 
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
-import { createKnowledgeCandidateFromRun, getOperationRun, getOperationRuns } from '../../api/operations.js'
+import { createKnowledgeCandidateFromRun, getOperationRun, getOperationRuns } from '../../api/operations.ts'
 import { candidateStatusLabel, cleanRunQuery, formatDuration, normalizeDateTime, outputState, runStatusLabel, validateRunTimeRange, visibleOutput } from '../../components/operations/operationRunHistory.js'
 import DecodeText from '../../components/common/DecodeText.vue'
 import { findRunHistoryGuide, runPageWithGuides } from '../../components/operations/runHistoryGuides.js'

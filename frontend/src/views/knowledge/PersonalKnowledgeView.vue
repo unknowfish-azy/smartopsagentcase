@@ -14,7 +14,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { createKnowledgeEntry, createKnowledgeLibrary, listKnowledgeLibraries, reindexKnowledgeLibrary, archiveKnowledgeEntry, getKnowledgeEntries, updateKnowledgeEntry } from '../../api/personalKnowledge.js'
+import { createKnowledgeEntry, createKnowledgeLibrary, listKnowledgeLibraries, reindexKnowledgeLibrary, archiveKnowledgeEntry, getKnowledgeEntries, updateKnowledgeEntry } from '../../api/personalKnowledge.ts'
 const libraries = ref([]), selected = ref(null), entries = ref([]), selectedEntry = ref(null), draft = ref({ title: '', contentMarkdown: '' }), query = ref(''), error = ref(''), notice = ref('')
 const unwrap = value => value?.data ?? value
 async function createLibrary() { const name = window.prompt('知识库名称')?.trim(); if (!name) return; try { const result = unwrap(await createKnowledgeLibrary({ name, description: '个人排障经验' })); libraries.value.push(result); await selectLibrary(result); notice.value = '知识库已创建'; error.value = '' } catch (cause) { error.value = cause.message || '创建失败' } }

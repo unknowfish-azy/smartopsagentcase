@@ -17,7 +17,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import request from '../../utils/request.js'
+import request from '../../utils/request.ts'
 const status = ref(null)
 const loading = ref(false)
 const error = ref('')

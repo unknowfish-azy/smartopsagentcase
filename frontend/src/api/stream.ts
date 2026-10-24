@@ -11,7 +11,7 @@ const AI_SERVICE_BASE = import.meta.env.VITE_AI_SERVICE_URL || '/ai'
  * 解析单条 SSE 报文。
  * @returns {{ event: string, data: any } | null}
  */
-function parseSse(raw) {
+function parseSse(raw: string): { event: string; data: any } | null {
   let event = 'message'
   const dataLines = []
   for (const line of raw.split('\n')) {
@@ -40,12 +40,18 @@ function parseSse(raw) {
  * @param {(payload: object) => void} [callbacks.onDone]
  * @param {(error: Error) => void} [callbacks.onError]
  */
-export async function streamChat(message, {
+export async function streamChat(message: string, {
   signal,
   onThinking,
   onToken,
   onDone,
   onError,
+}: {
+  signal?: AbortSignal
+  onThinking?: (step: any) => void
+  onToken?: (delta: string) => void
+  onDone?: (payload: any) => void
+  onError?: (error: any) => void
 } = {}) {
   const response = await fetch(`${AI_SERVICE_BASE}/api/chat/stream`, {
     method: 'POST',

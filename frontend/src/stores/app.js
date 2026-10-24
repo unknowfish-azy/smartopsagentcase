@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getStorage, setStorage } from '../utils/storage.js'
+import { getStorage, setStorage } from '../utils/storage.ts'
 import { setVisualMode, visualMode } from '../visual/visualMode.js'
 import { personalSystemGroups } from '../navigation/personalSystemNavigation.js'
 import {

@@ -14,8 +14,8 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
-import { adminTeamsApi } from '../../api/teams.js'
-import { TEAM_ROLE_LABELS } from '../../domain/team/permissions.js'
+import { adminTeamsApi } from '../../api/teams.ts'
+import { TEAM_ROLE_LABELS } from '../../domain/team/permissions.ts'
 import '../../assets/styles/team-workspace.css'
 const query = ref(''), status = ref(''), page = ref(1), result = ref({ items: [], total: 0 })
 const loading = ref(false), busy = ref(false), error = ref(''), message = ref(''), pending = ref(null), password = ref(''), passwordInput = ref(null), confirmationPanel = ref(null)

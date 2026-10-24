@@ -6,7 +6,7 @@ import { createServer } from 'vite'
 test('MFA pending login never becomes an authenticated client session', async () => {
   const server = await createServer({ root: fileURLToPath(new URL('../', import.meta.url)), server: { middlewareMode: true }, logLevel: 'silent' })
   try {
-    const { default: request } = await server.ssrLoadModule('/src/utils/request.js')
+    const { default: request } = await server.ssrLoadModule('/src/utils/request.ts')
     const session = await server.ssrLoadModule('/src/security/session.js')
     const calls = []
     let user = null

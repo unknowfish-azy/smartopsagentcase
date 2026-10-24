@@ -1,4 +1,4 @@
-import request from '../utils/request.js'
+import request from '../utils/request.ts'
 
 // 管理层系统管理 API：部门/岗位/角色/菜单/字典/公告/登录日志。
 // 全部位于 /api/admin/system/**，由后端 hasRole("ADMIN") + AdminConfirmationFilter 守卫：

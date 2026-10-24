@@ -42,7 +42,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
-import { mfaApi } from '../../api/mfa.js'
+import { mfaApi } from '../../api/mfa.ts'
 const status = ref(null), notices = ref([]), password = ref(''), code = ref(''), draft = ref(null)
 const recoveryCodes = ref([]), saved = ref(false), confirmDisable = ref(false), busy = ref(false), error = ref(''), message = ref(''), remaining = ref(0)
 let timer, deadline = 0, disposed = false

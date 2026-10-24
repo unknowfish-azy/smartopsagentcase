@@ -5,31 +5,7 @@ import {
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-
-function manualChunks(id) {
-    if (!id.includes('node_modules')) {
-        return undefined
-    }
-
-    const normalizedId = id.replaceAll('\\', '/')
-    if (normalizedId.includes('/three/')) {
-        return 'vendor-three'
-    }
-    if (normalizedId.includes('/echarts/')) {
-        return 'vendor-echarts'
-    }
-    if (normalizedId.includes('/@xterm/')) {
-        return 'vendor-terminal'
-    }
-    if (normalizedId.includes('/vue/') || normalizedId.includes('/vue-router/') || normalizedId.includes('/pinia/')) {
-        return 'vendor-vue'
-    }
-    if (normalizedId.includes('/axios/') || normalizedId.includes('/yaml/')) {
-        return 'vendor-utils'
-    }
-
-    return undefined
-}
+import { manualChunks } from './vite.shared.mjs'
 
 export default defineConfig({
     plugins: [

@@ -20,7 +20,7 @@
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { diagnosticsApi } from '../../api/diagnostics.js'
+import { diagnosticsApi } from '../../api/diagnostics.ts'
 import { createDiagnosticState, healthStateLabel } from './healthState.js'
 
 const props = defineProps({ admin: { type: Boolean, default: false } })

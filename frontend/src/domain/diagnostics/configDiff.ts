@@ -1,4 +1,4 @@
-import { redactConfigText } from './redactConfig.js'
+import { redactConfigText } from './redactConfig.ts'
 
 function linesOf(text) {
   if (new TextEncoder().encode(text).length > 256 * 1024) throw new Error('每侧文本不能超过 256 KiB')

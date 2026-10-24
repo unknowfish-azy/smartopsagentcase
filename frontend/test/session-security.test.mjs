@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 test('development authentication uses the same-origin proxy and credentials', async () => {
-  const request = await readFile(new URL('../src/utils/request.js', import.meta.url), 'utf8')
+  const request = await readFile(new URL('../src/utils/request.ts', import.meta.url), 'utf8')
   assert.match(request, /import\.meta\.env\.DEV\s*\?\s*''/)
   assert.match(request, /withCredentials:\s*true/)
 })
@@ -23,7 +23,7 @@ test('navigation verifies the server session rather than trusting preview storag
 })
 
 test('browser model invocations use the user boundary, not the internal endpoint', async () => {
-  const model = await readFile(new URL('../src/api/model.js', import.meta.url), 'utf8')
+  const model = await readFile(new URL('../src/api/model.ts', import.meta.url), 'utf8')
   assert.ok(model.includes('/api/chat/connections/${id}/invoke'))
   assert.ok(!model.includes('/api/model-connections/${id}/invoke'))
 })

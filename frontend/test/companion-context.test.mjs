@@ -1,8 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createPinia, setActivePinia } from 'pinia'
-import { createCompanionContext, mergeCompanionContext, snapshotCompanionContext } from '../src/domain/companion/context.js'
-import { resolveAttention } from '../src/domain/companion/attention.js'
+import { createCompanionContext, mergeCompanionContext, snapshotCompanionContext } from '../src/domain/companion/context.ts'
+import { resolveAttention } from '../src/domain/companion/attention.ts'
 import { useCompanionStore } from '../src/stores/companion.js'
 
 test('companion context keeps a read-only execution boundary', () => {

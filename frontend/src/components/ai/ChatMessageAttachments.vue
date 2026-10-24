@@ -12,7 +12,7 @@
 
 <script setup>
 import { onBeforeUnmount, ref } from 'vue'
-import { chatAttachmentsApi } from '../../api/chatAttachments.js'
+import { chatAttachmentsApi } from '../../api/chatAttachments.ts'
 import VisionEventCard from './VisionEventCard.vue'
 const props = defineProps({ conversationId: String, attachments: Array, visionEvents: Array })
 const previewUrl = ref(''), visible = ref(false), selected = ref(null), error = ref(''), loading = ref(false)

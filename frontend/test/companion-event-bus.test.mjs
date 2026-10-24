@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {
   createCompanionEvent,
   createCompanionEventBus
-} from '../src/domain/companion/eventBus.js'
+} from '../src/domain/companion/eventBus.ts'
 
 test('creates events with metadata and an ISO timestamp', () => {
   const event = createCompanionEvent({

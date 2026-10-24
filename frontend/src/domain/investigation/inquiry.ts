@@ -1,4 +1,4 @@
-export function questionsForFault(fault = {}) {
+export function questionsForFault(fault: Record<string, any> = {}) {
   const title = `${fault.title || ''} ${fault.evidence?.map(item => item.content).join(' ') || ''}`.toLowerCase()
   if (title.includes('502') || title.includes('bad gateway')) return [
     { id: 'persistence', priority: 'HIGH', prompt: '这个问题是否持续存在？', why: '持续性可以区分瞬时网络波动与持续的上游/配置故障。', type: 'single', options: [['once', '只出现一次'], ['persistent', '持续发生'], ['intermittent', '间歇发生'], ['unknown', '不确定']] },

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createConversation, restoreHistory, historyStorageKey, groupConversations, conversationPrompt } from '../src/domain/chat/history.js'
+import { createConversation, restoreHistory, historyStorageKey, groupConversations, conversationPrompt } from '../src/domain/chat/history.ts'
 
 test('new conversations have unique identities and empty messages', () => {
   const first = createConversation()

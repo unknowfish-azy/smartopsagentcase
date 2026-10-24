@@ -421,10 +421,10 @@ export function patch(
  * =========================================================
  */
 export function upload(
-    url,
-    file,
-    extraData = {},
-    config = {}
+    url: string,
+    file: File | Blob,
+    extraData: Record<string, any> = {},
+    config: Record<string, any> = {}
 ) {
 
     const formData =

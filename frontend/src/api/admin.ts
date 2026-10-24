@@ -1,4 +1,4 @@
-import request from '../utils/request.js'
+import request from '../utils/request.ts'
 
 export const AUDIT_ACTIONS = Object.freeze([
   { value: 'LOGIN', label: '登录' }, { value: 'LOGOUT', label: '退出' },

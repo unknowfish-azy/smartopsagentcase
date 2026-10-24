@@ -1,4 +1,4 @@
-import request from '../utils/request.js'
+import request from '../utils/request.ts'
 
 const value = promise => promise.then(response => response.data)
 const base = teamId => `/api/teams/${encodeURIComponent(teamId)}/agents`

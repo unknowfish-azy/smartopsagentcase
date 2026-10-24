@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { parseSkill, installSkill, emptySkills, decodeSkills, skillPrompt } from '../src/domain/skills/workspace.js'
-import { normalizeSourceLink, readRemoteSource } from '../src/domain/plugins/remoteSource.js'
+import { parseSkill, installSkill, emptySkills, decodeSkills, skillPrompt } from '../src/domain/skills/workspace.ts'
+import { normalizeSourceLink, readRemoteSource } from '../src/domain/plugins/remoteSource.ts'
 const md = '---\nname: test-skill\ndescription: |\n  先收集证据\n  再分析原因\n---\n# 指令\n输出验证步骤。'
 test('skill metadata, persistence, explicit activation and prompt use', () => {
   assert.equal(parseSkill(md).name, 'test-skill')

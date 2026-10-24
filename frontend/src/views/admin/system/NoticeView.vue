@@ -25,7 +25,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import { systemApi } from '../../../api/adminSystem.js'
+import { systemApi } from '../../../api/adminSystem.ts'
 import { useAdminResource, formatAdminTime } from '../../../composables/useAdminResource.js'
 import AdminDialog from '../../../components/admin/AdminDialog.vue'
 const { data, loading, error, load } = useAdminResource(() => systemApi.notices(true))

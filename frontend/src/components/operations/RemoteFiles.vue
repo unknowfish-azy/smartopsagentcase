@@ -14,7 +14,7 @@
 </template>
 <script setup>
 import { ref, onMounted } from 'vue'
-import { listRemoteFiles, downloadRemoteFile, uploadRemoteFile } from '../../api/operations.js'
+import { listRemoteFiles, downloadRemoteFile, uploadRemoteFile } from '../../api/operations.ts'
 import { remoteChild } from './connectionWorkspace.js'
 const props = defineProps({ runtimeId: String, sessionName: String })
 const path = ref('.'), files = ref([]), busy = ref(false), error = ref(''), status = ref(''), loaded = ref(false)

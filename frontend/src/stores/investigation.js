@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
-import { createFaultEvent, createInvestigationContext } from '../domain/investigation/faultEvent.js'
-import { questionsForFault } from '../domain/investigation/inquiry.js'
+import { createFaultEvent, createInvestigationContext } from '../domain/investigation/faultEvent.ts'
+import { questionsForFault } from '../domain/investigation/inquiry.ts'
 
 export const useInvestigationStore = defineStore('investigation', {
   state: () => ({ faultEvents: [], activeContext: null, history: [] }),

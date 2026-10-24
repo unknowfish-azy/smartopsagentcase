@@ -3,7 +3,7 @@
 </template>
 <script setup>
 import { onMounted, ref } from 'vue'
-import { createArtifactDraft, getArtifactDrafts, submitArtifactDraft } from '../../api/artifactDrafts.js'
+import { createArtifactDraft, getArtifactDrafts, submitArtifactDraft } from '../../api/artifactDrafts.ts'
 const drafts = ref([]), error = ref('')
 const unwrap = value => value?.data ?? value
 async function load() { try { drafts.value = unwrap(await getArtifactDrafts()) || [] } catch (cause) { error.value = cause.message || '读取失败' } }

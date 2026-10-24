@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { SKILL_KEY, emptySkills, decodeSkills, installSkill, skillPrompt } from '../domain/skills/workspace.js'
+import { SKILL_KEY, emptySkills, decodeSkills, installSkill, skillPrompt } from '../domain/skills/workspace.ts'
 export const useSkillsStore = defineStore('skills', {
   state: () => ({ workspace: emptySkills(), loaded: false, error: '' }),
   getters: { enabled: state => state.workspace.skills.filter(item => item.enabled) },

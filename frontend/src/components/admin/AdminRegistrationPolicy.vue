@@ -17,7 +17,7 @@
 </template>
 <script setup>
 import { onMounted, ref } from 'vue'
-import { adminApi } from '../../api/admin.js'
+import { adminApi } from '../../api/admin.ts'
 import { useAdminResource } from '../../composables/useAdminResource.js'
 import AdminDialog from './AdminDialog.vue'
 

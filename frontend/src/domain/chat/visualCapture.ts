@@ -16,7 +16,7 @@ async function frameToFile(video, source, { documentRef = globalThis.document } 
   canvas.width = video.videoWidth || 1280
   canvas.height = video.videoHeight || 720
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
-  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
   if (!blob) throw new Error('VISUAL_CAPTURE_EMPTY')
   return new File([blob], `${source.toLowerCase()}-${Date.now()}.png`, { type: 'image/png', lastModified: Date.now() })
 }

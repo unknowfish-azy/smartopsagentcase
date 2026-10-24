@@ -1,4 +1,4 @@
-import request from '../utils/request.js'
+import request from '../utils/request.ts'
 
 export function getAssistantOptions() {
   return request({ url: '/api/assistant/options', method: 'get' })

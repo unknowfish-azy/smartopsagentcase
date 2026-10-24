@@ -1,8 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createPinia, setActivePinia } from 'pinia'
-import { questionsForFault, normalizeAnswer } from '../src/domain/investigation/inquiry.js'
-import { createFaultEvent } from '../src/domain/investigation/faultEvent.js'
+import { questionsForFault, normalizeAnswer } from '../src/domain/investigation/inquiry.ts'
+import { createFaultEvent } from '../src/domain/investigation/faultEvent.ts'
 import { useInvestigationStore } from '../src/stores/investigation.js'
 
 test('502 faults produce a prioritized structured inquiry', () => {

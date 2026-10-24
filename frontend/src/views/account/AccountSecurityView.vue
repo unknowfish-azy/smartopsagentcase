@@ -34,7 +34,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { currentSession, changePassword, logoutSession } from '../../security/session.js'
-import request from '../../utils/request.js'
+import request from '../../utils/request.ts'
 import { passwordError } from '../../security/passwordPolicy.js'
 import { isAdminSession } from '../../security/portalPolicy.js'
 import { themeMode, setThemeMode } from '../../theme.js'
