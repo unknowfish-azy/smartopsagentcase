@@ -1,0 +1,389 @@
+/* 哨兵 / 脚本 / 告警 三个模块的共享样式。
+   全部作用域限定在 .sentinel-surface 内，沿用项目既有 --smart-* 令牌，
+   因此不会影响用户层其它页面，也自动跟随浅色/深色主题。 */
+
+.sentinel-surface {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+  color: var(--smart-text);
+}
+
+.sentinel-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sentinel-page-header h1 {
+  margin: 4px 0 0;
+  font-size: clamp(22px, 2.6vw, 28px);
+  color: var(--smart-text);
+}
+
+.sentinel-eyebrow {
+  margin: 0;
+  color: var(--smart-primary-strong);
+  font: 10px var(--font-mono, monospace);
+  letter-spacing: .14em;
+}
+
+.sentinel-lede {
+  margin: 0;
+  max-width: 78ch;
+  color: var(--smart-muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.sentinel-hint {
+  margin: 0;
+  color: var(--smart-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.sentinel-muted { color: var(--smart-muted); }
+
+.sentinel-mono {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* 提示条 */
+.sentinel-notice {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--smart-border-strong);
+  border-radius: 6px;
+  background: var(--smart-primary-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.sentinel-notice strong { font-weight: 600; }
+.sentinel-notice span { color: var(--smart-muted); }
+.sentinel-notice--warn { border-left-color: var(--smart-warning); }
+.sentinel-notice--danger { border-left-color: var(--smart-danger); }
+.sentinel-notice--ok { border-left-color: var(--smart-success); }
+
+/* 指标卡 */
+.sentinel-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.sentinel-stat {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--smart-border);
+  border-radius: 10px;
+  background: var(--smart-surface);
+}
+
+/* 双语标签：英文等宽上行 + 中文下行，对齐 MASTER.md 的 editorial 标签语言 */
+.sentinel-stat dt { display: grid; gap: 3px; color: var(--smart-muted); font-size: 11px; }
+.sentinel-stat dt b { color: var(--smart-muted); font: 10px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+
+/* 大号等宽数字：仪表语言的主角是数字，标签退后 */
+.sentinel-stat dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(30px, 3.2vw, 40px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  color: var(--smart-text);
+}
+
+/* 面板 */
+.sentinel-panel {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--smart-border);
+  border-radius: 12px;
+  background: var(--smart-surface);
+}
+
+.sentinel-panel h2 { margin: 0; font-size: 16px; }
+
+/* CRAWLER 巡网面板：蜘蛛画布的宿主契约 = position:relative + 确定高度；
+   画布 absolute 铺满 stage 且在 stage 边界内绘制，滚动不会被裁切 */
+.sentinel-crawler .crawler-stage {
+  position: relative;
+  height: clamp(220px, 26vw, 300px);
+  border: 1px solid var(--smart-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--smart-surface) 88%, transparent);
+  overflow: hidden;
+}
+
+/* 空态 */
+.sentinel-empty {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border: 1px dashed var(--smart-border-strong);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.sentinel-empty h3 { margin: 0; font-size: 15px; }
+.sentinel-empty p { margin: 0; color: var(--smart-muted); font-size: 13px; line-height: 1.7; }
+.sentinel-empty__links a { color: var(--smart-primary-strong); font-size: 13px; }
+
+/* 列表 */
+.sentinel-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sentinel-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--smart-border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.sentinel-list--danger li { border-color: var(--smart-danger); }
+
+/* 表格 */
+.sentinel-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--smart-border);
+  border-radius: 10px;
+  background: var(--smart-surface);
+}
+
+.sentinel-caption {
+  padding: 12px 16px;
+  text-align: left;
+  color: var(--smart-muted);
+  font-size: 12px;
+}
+
+.sentinel-surface table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.sentinel-surface th {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--smart-border);
+  color: var(--smart-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sentinel-surface td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--smart-border);
+  vertical-align: middle;
+}
+
+.sentinel-surface tbody tr:last-child td { border-bottom: 0; }
+
+/* 标签 */
+.sentinel-tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 1px solid var(--smart-border-strong);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.sentinel-tag--online, .sentinel-tag--low, .sentinel-tag--p3 { border-color: var(--smart-success); color: var(--smart-success); }
+.sentinel-tag--offline, .sentinel-tag--high, .sentinel-tag--p0 { border-color: var(--smart-danger); color: var(--smart-danger); }
+.sentinel-tag--error, .sentinel-tag--medium, .sentinel-tag--p1 { border-color: var(--smart-warning); color: var(--smart-warning); }
+.sentinel-tag--p2 { border-color: var(--smart-border-strong); color: var(--smart-muted); }
+.sentinel-tag--no_runtime { border-color: var(--smart-border-strong); color: var(--smart-muted); }
+
+.sentinel-hint--table { padding: 0 16px 14px; }
+
+/* 行内操作：三个按钮同行，窄屏自动换行，不做横向滚动条里的隐藏菜单。 */
+.sentinel-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.sentinel-actions button { min-height: 30px; padding: 4px 10px; font-size: 12px; }
+.sentinel-actions button:disabled { cursor: not-allowed; opacity: .55; }
+
+/* AI 研判结果：视觉上与告警表格区分开，强调"这是建议，不是结论"。 */
+.sentinel-advice { border-left: 3px solid var(--sentinel-accent, var(--smart-primary-strong)); }
+.sentinel-advice h2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sentinel-advice h3 { margin: 0 0 6px; font-size: 12.5px; color: var(--smart-muted); font-weight: 600; }
+.sentinel-advice__summary { margin: 0 0 14px; line-height: 1.75; }
+.sentinel-advice__grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.sentinel-advice__close { margin-top: 10px; }
+.sentinel-list--plain li { gap: 6px; }
+
+/* 执行预览：紧凑数值卡，避免四张卡占满一屏。 */
+.sentinel-stats--compact { margin: 10px 0 6px; }
+.sentinel-stats--compact .sentinel-stat { padding: 10px 12px; }
+.sentinel-stats--compact .sentinel-stat dd { font-size: 13px; word-break: break-all; }
+.sentinel-small { font-size: 11px; }
+
+/* 通知渠道多选：fieldset 自带边框，这里只做布局。 */
+.sentinel-field fieldset, fieldset.sentinel-field { border: 1px solid var(--smart-border); border-radius: 6px; padding: 8px 10px; }
+fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); font-size: 11px; }
+.sentinel-check { display: inline-flex; align-items: center; gap: 5px; margin-right: 14px; font-size: 12.5px; }
+
+/* 执行回放：输出用等宽块，长行可横向滚动而不是撑破布局。 */
+.sentinel-replay { margin-top: 14px; padding: 14px; border: 1px solid var(--smart-border); border-radius: 8px; background: var(--smart-bg); }
+.sentinel-replay h3 { margin: 0 0 10px; font-size: 13.5px; }
+.sentinel-replay h4 { margin: 14px 0 6px; font-size: 12px; color: var(--smart-muted); font-weight: 600; }
+.sentinel-replay__meta { display: grid; gap: 8px 18px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 6px; }
+.sentinel-replay__meta dt { color: var(--smart-muted); font-size: 11px; }
+.sentinel-replay__meta dd { margin: 2px 0 0; font-size: 12.5px; }
+.sentinel-output {
+  margin: 0; padding: 10px 12px; max-height: 280px; overflow: auto;
+  border: 1px solid var(--smart-border); border-radius: 6px; background: var(--smart-surface);
+  font-family: var(--font-mono); font-size: 11.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;
+}
+
+/* 编辑器 */
+.sentinel-editor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 14px;
+}
+
+.sentinel-field { display: grid; gap: 6px; font-size: 12px; color: var(--smart-muted); }
+.sentinel-field--wide { grid-column: 1 / -1; }
+
+.sentinel-field select,
+.sentinel-field textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--smart-border-strong);
+  border-radius: 8px;
+  background: var(--smart-bg);
+  color: var(--smart-text);
+  font: inherit;
+}
+
+.sentinel-field textarea {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12.5px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.sentinel-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.sentinel-editor__actions button,
+.sentinel-page-header button,
+.sentinel-surface td button {
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid var(--smart-border-strong);
+  border-radius: 8px;
+  background: var(--smart-surface);
+  color: var(--smart-primary-strong);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sentinel-editor__actions button:hover,
+.sentinel-page-header button:hover,
+.sentinel-surface td button:hover { border-color: var(--smart-primary-strong); }
+
+.sentinel-surface button:focus-visible,
+.sentinel-surface a:focus-visible,
+.sentinel-surface textarea:focus-visible,
+.sentinel-surface select:focus-visible {
+  outline: 3px solid var(--smart-primary-strong);
+  outline-offset: 2px;
+}
+
+/* 闭环流程 */
+.sentinel-flow {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 22px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.sentinel-flow li { color: var(--smart-text); }
+.sentinel-flow span { margin-left: 10px; color: var(--smart-muted); }
+
+/* ── 主题二 HUD（arwes / augmented-ui 范式，纯 CSS 零依赖）─────────────
+   clip-path 会裁掉 border，描边改用 inset box-shadow；
+   顶部 1px 渐隐高光模拟仪器扫描线。颜色全部走 --smart-* 令牌，
+   深浅主题自动适配；动画由下方 prefers-reduced-motion 契约统一关停。 */
+
+/* 页头扫描线：背景层（pointer-events:none），不干扰内容交互。 */
+.sentinel-page-header--hud { position: relative; }
+
+.sentinel-page-header--hud::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg,
+    var(--smart-primary-soft) 0 1px, transparent 1px 3px);
+  animation: sentinel-scan 6s linear infinite;
+}
+
+@keyframes sentinel-scan { to { background-position-y: 3px; } }
+
+/* 切角统计卡：左上 / 右下切 10px，几何锐利度来自切角而不是发光。 */
+.sentinel-stat--hud {
+  --hud-cut: 10px;
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: var(--smart-surface);
+  clip-path: polygon(var(--hud-cut) 0, 100% 0,
+    100% calc(100% - var(--hud-cut)), calc(100% - var(--hud-cut)) 100%,
+    0 100%, 0 var(--hud-cut));
+  box-shadow: inset 0 0 0 1px var(--smart-border),
+              inset 0 0 24px var(--smart-primary-soft);
+}
+
+/* 顶部扫描高光：两侧渐隐，比全宽实线更接近仪器面板。 */
+.sentinel-stat--hud::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--smart-primary-strong), transparent);
+  opacity: .8;
+}
+
+@media (max-width: 767px) {
+  .sentinel-panel { padding: 16px; }
+  .sentinel-stat dd { font-size: 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 伪元素也要显式列出：* 不匹配 ::before/::after，
+     否则 HUD 扫描线（.sentinel-page-header--hud::before）关不停。 */
+  .sentinel-surface *, .sentinel-surface *::before, .sentinel-surface *::after { transition: none !important; animation: none !important; }
+}

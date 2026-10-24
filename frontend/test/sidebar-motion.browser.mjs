@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict'
+import { chromium } from 'playwright'
+
+const browser = await chromium.launch({ executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', headless: true })
+try {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  await page.addInitScript(() => localStorage.setItem('smartops_preview_auth', JSON.stringify({ username: 'motion-check' })))
+  await page.goto('http://127.0.0.1:5174/agent', { waitUntil: 'networkidle' })
+  const sidebar = page.locator('.sidebar')
+  const icon = page.locator('.navigation-group__link .nav-icon').first()
+  const before = await icon.boundingBox()
+  const mainBefore = await page.locator('.main-area').boundingBox()
+  await page.mouse.move(55, 150)
+  await page.waitForTimeout(200)
+  const after = await icon.boundingBox()
+  assert.ok(Math.abs(before.x - after.x) < 1, 'Icon must not jump horizontally on expansion')
+  assert.ok(Math.abs(before.y - after.y) < 1, 'Icon must not jump vertically on expansion')
+  assert.equal(Math.round((await sidebar.boundingBox()).width), 252)
+  assert.deepEqual(await page.locator('.main-area').boundingBox(), mainBefore)
+  await page.mouse.move(280, 150)
+  await page.waitForTimeout(30)
+  assert.ok((await sidebar.getAttribute('class')).includes('sidebar--pointer-open'), 'Brief pointer exit must not collapse the menu')
+  await page.mouse.move(55, 150)
+  await page.waitForTimeout(150)
+  assert.equal(Math.round((await sidebar.boundingBox()).width), 252)
+  await page.mouse.move(600, 150)
+  await page.waitForTimeout(320)
+  assert.equal(Math.round((await sidebar.boundingBox()).width), 72)
+  await page.locator('.navigation-group__link').first().focus()
+  await page.waitForTimeout(200)
+  assert.equal(Math.round((await sidebar.boundingBox()).width), 252)
+  console.log('PASS stable icons, hover response, exit grace period, keyboard expansion and main content width')
+} finally { await browser.close() }

@@ -1,0 +1,157 @@
+{
+  "hash": "75ec8a91",
+  "configHash": "2c937ad6",
+  "lockfileHash": "d5605f26",
+  "browserHash": "11b27a86",
+  "optimized": {
+    "@element-plus/icons-vue": {
+      "src": "../../node_modules/@element-plus/icons-vue/dist/index.js",
+      "file": "@element-plus_icons-vue.js",
+      "fileHash": "a6127506",
+      "needsInterop": false
+    },
+    "@xterm/addon-fit": {
+      "src": "../../node_modules/@xterm/addon-fit/lib/addon-fit.js",
+      "file": "@xterm_addon-fit.js",
+      "fileHash": "12a81f99",
+      "needsInterop": true
+    },
+    "@xterm/xterm": {
+      "src": "../../node_modules/@xterm/xterm/lib/xterm.js",
+      "file": "@xterm_xterm.js",
+      "fileHash": "635b39e3",
+      "needsInterop": true
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "fe4b9611",
+      "needsInterop": false
+    },
+    "echarts/charts": {
+      "src": "../../node_modules/echarts/charts.js",
+      "file": "echarts_charts.js",
+      "fileHash": "4aedaebe",
+      "needsInterop": false
+    },
+    "echarts/components": {
+      "src": "../../node_modules/echarts/components.js",
+      "file": "echarts_components.js",
+      "fileHash": "54b4cf4e",
+      "needsInterop": false
+    },
+    "echarts/core": {
+      "src": "../../node_modules/echarts/core.js",
+      "file": "echarts_core.js",
+      "fileHash": "430c4ce4",
+      "needsInterop": false
+    },
+    "echarts/renderers": {
+      "src": "../../node_modules/echarts/renderers.js",
+      "file": "echarts_renderers.js",
+      "fileHash": "2536401b",
+      "needsInterop": false
+    },
+    "element-plus/es/components/message-box/index.mjs": {
+      "src": "../../node_modules/element-plus/es/components/message-box/index.mjs",
+      "file": "element-plus_es_components_message-box_index__mjs.js",
+      "fileHash": "21e38ae5",
+      "needsInterop": false
+    },
+    "element-plus/es/components/message-box/style/css.mjs": {
+      "src": "../../node_modules/element-plus/es/components/message-box/style/css.mjs",
+      "file": "element-plus_es_components_message-box_style_css__mjs.js",
+      "fileHash": "17079d1b",
+      "needsInterop": false
+    },
+    "element-plus/es/components/message/index.mjs": {
+      "src": "../../node_modules/element-plus/es/components/message/index.mjs",
+      "file": "element-plus_es_components_message_index__mjs.js",
+      "fileHash": "0c2e6f40",
+      "needsInterop": false
+    },
+    "pinia": {
+      "src": "../../node_modules/pinia/dist/pinia.mjs",
+      "file": "pinia.js",
+      "fileHash": "e44b51f5",
+      "needsInterop": false
+    },
+    "three": {
+      "src": "../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "3c168c78",
+      "needsInterop": false
+    },
+    "vue": {
+      "src": "../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      "file": "vue.js",
+      "fileHash": "ac341e46",
+      "needsInterop": false
+    },
+    "vue-router": {
+      "src": "../../node_modules/vue-router/dist/vue-router.mjs",
+      "file": "vue-router.js",
+      "fileHash": "37084ca5",
+      "needsInterop": false
+    },
+    "yaml": {
+      "src": "../../node_modules/yaml/browser/index.js",
+      "file": "yaml.js",
+      "fileHash": "4d805f2c",
+      "needsInterop": false
+    },
+    "element-plus/es": {
+      "src": "../../node_modules/element-plus/es/index.mjs",
+      "file": "element-plus_es.js",
+      "fileHash": "e537a15e",
+      "needsInterop": false
+    },
+    "element-plus/es/components/base/style/css": {
+      "src": "../../node_modules/element-plus/es/components/base/style/css.mjs",
+      "file": "element-plus_es_components_base_style_css.js",
+      "fileHash": "76a0a8d1",
+      "needsInterop": false
+    },
+    "element-plus/es/components/icon/style/css": {
+      "src": "../../node_modules/element-plus/es/components/icon/style/css.mjs",
+      "file": "element-plus_es_components_icon_style_css.js",
+      "fileHash": "577bdddd",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-QGKPQUJ5": {
+      "file": "chunk-QGKPQUJ5.js"
+    },
+    "chunk-NYO76HOK": {
+      "file": "chunk-NYO76HOK.js"
+    },
+    "chunk-SC6X7ORO": {
+      "file": "chunk-SC6X7ORO.js"
+    },
+    "chunk-OPWDSWMT": {
+      "file": "chunk-OPWDSWMT.js"
+    },
+    "chunk-XTHSRYVR": {
+      "file": "chunk-XTHSRYVR.js"
+    },
+    "chunk-BM5EWRTZ": {
+      "file": "chunk-BM5EWRTZ.js"
+    },
+    "chunk-LGLXAFQW": {
+      "file": "chunk-LGLXAFQW.js"
+    },
+    "chunk-ZTI6EOFE": {
+      "file": "chunk-ZTI6EOFE.js"
+    },
+    "chunk-QEAS254U": {
+      "file": "chunk-QEAS254U.js"
+    },
+    "chunk-ROJ2BRTL": {
+      "file": "chunk-ROJ2BRTL.js"
+    },
+    "chunk-PX6F3LHL": {
+      "file": "chunk-PX6F3LHL.js"
+    }
+  }
+}

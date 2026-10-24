@@ -1,0 +1,66 @@
+import assert from 'node:assert/strict'
+import { mkdir } from 'node:fs/promises'
+import { chromium } from 'playwright'
+const browser = await chromium.launch({ executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', headless: true })
+await mkdir('test-artifacts/skills', { recursive: true })
+const md = '---\nname: github-nginx-skill\ndescription: 先收集日志，再分析上游服务。\n---\n# 验收\n给出三条有证据支持的排查建议，不执行命令。'
+try {
+  for (const width of [1440, 375]) {
+    const page = await browser.newPage({ viewport: { width, height: 1000 }, reducedMotion: 'reduce' })
+    const errors = [], calls = []
+    page.on('pageerror', error => errors.push(error.message))
+    await page.addInitScript(() => { localStorage.setItem('smartops_preview_auth', '{"username":"skill-test"}'); localStorage.setItem('smartops_theme', 'dark') })
+    await page.route('https://raw.githubusercontent.com/**', route => route.fulfill({ headers: { 'access-control-allow-origin': '*' }, body: route.request().url().endsWith('SKILL.md') ? md : JSON.stringify({ id: 'remote-plugin', name: '链接插件', description: '通过 GitHub 安装的入口', version: '1.0.0', category: '知识与记忆', entry: 'knowledge', dependencies: [] }) }))
+    await page.route('**/api/**', route => {
+      const req = route.request(), headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }
+      if (!new URL(req.url()).pathname.startsWith('/api/')) return route.continue()
+      if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers })
+      if (req.url().endsWith('/invoke')) { calls.push(req.postDataJSON()); return route.fulfill({ headers, json: { content: '技能指令已收到', usage: { total_tokens: 30 } } }) }
+      if (req.url().endsWith('/model-connections')) return route.fulfill({ headers, json: [{ id: 1, name: '测试模型', modelName: 'test', provider: 'custom', enabled: true, timeoutSeconds: 60 }] })
+      return route.fulfill({ headers, json: { code: 200, data: [] } })
+    })
+    await page.goto('http://127.0.0.1:5174/skills', { waitUntil: 'networkidle' })
+    await page.getByRole('button', { name: '安装 Skill', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('GitHub / HTTPS 链接').fill('https://github.com/acme/test/tree/main/skill')
+    await dialog.getByRole('button', { name: '读取链接' }).click()
+    await page.waitForFunction(() => document.querySelector('#skill-content')?.value.includes('github-nginx-skill'))
+    await dialog.getByRole('button', { name: '确认安装' }).click()
+    await page.getByRole('heading', { name: 'github-nginx-skill' }).waitFor()
+    await page.getByRole('button', { name: '启用', exact: true }).click()
+    await page.getByLabel('Agent 目标与验收标准').fill('排查生产 Nginx 502，并给出证据。')
+    await page.getByRole('button', { name: '保存任务目标' }).click()
+    await page.reload({ waitUntil: 'networkidle' })
+    assert.equal(await page.getByRole('button', { name: '停用', exact: true }).count(), 1)
+    assert.match(await page.getByLabel('Agent 目标与验收标准').inputValue(), /生产 Nginx/)
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true)
+    await page.evaluate(() => scrollTo(0, 0))
+    await page.screenshot({ path: `test-artifacts/skills/${width}-dark.png`, fullPage: true })
+    await page.getByLabel('选择主题模式').selectOption('light')
+    await page.screenshot({ path: `test-artifacts/skills/${width}-light.png`, fullPage: true })
+    await page.getByRole('link', { name: '查看 Agent 当前指令 →' }).click()
+    await page.waitForURL('**/agent', { timeout: 15000 })
+    await page.getByText('查看将应用的完整指令').click()
+    assert.match(await page.locator('.agent-guidance pre').innerText(), /三条有证据/)
+    await page.goto('http://127.0.0.1:5174/model-settings', { waitUntil: 'networkidle' })
+    await page.getByRole('button', { name: '测试模型', exact: true }).click()
+    await page.getByRole('checkbox', { name: /应用已启用 Skill/ }).check()
+    await page.getByRole('button', { name: '发送测试' }).click()
+    await page.locator('.test-output').waitFor()
+    assert.match(calls.at(-1).systemPrompt, /三条有证据/)
+    assert.match(calls.at(-1).systemPrompt, /生产 Nginx/)
+    await page.goto('http://127.0.0.1:5174/plugins', { waitUntil: 'networkidle' })
+    await page.getByRole('button', { name: '导入自定义插件', exact: true }).click()
+    await dialog.getByLabel('GitHub / HTTPS 链接').fill('https://github.com/acme/test')
+    await dialog.getByRole('button', { name: '读取链接' }).click()
+    await page.waitForFunction(() => document.querySelector('#plugin-manifest')?.value.includes('remote-plugin'))
+    await dialog.getByRole('button', { name: '校验并导入' }).click()
+    await page.getByRole('complementary', { name: '插件详情' }).getByRole('heading', { name: '链接插件' }).waitFor()
+    await page.reload({ waitUntil: 'networkidle' })
+    await page.getByLabel('搜索插件').fill('链接插件')
+    assert.equal(await page.locator('.plugin-card').count(), 1)
+    assert.deepEqual(errors, [])
+    console.log(`PASS ${width}px GitHub skill/plugin install, preview, persistence, goal, agent guidance, actual model payload (mock network)`)
+    await page.close()
+  }
+} finally { await browser.close() }

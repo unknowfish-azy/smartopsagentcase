@@ -1,0 +1,80 @@
+:root {
+  color-scheme: dark;
+  --smart-bg: #05090d; --smart-surface-ghost: rgba(7, 16, 24, .48); --smart-signal-running: #7ad7f5; --smart-signal-idle: #92a6b5; --smart-focus-ring: #b8eeff; --smart-shadow-command: 0 22px 70px rgba(0,0,0,.34); --smart-surface: #071018; --smart-surface-raised: #0b1721; --smart-card: #0a1118; --smart-text: #e8f2f7; --smart-muted: #92a6b5;
+  --smart-primary: #2496ed; --smart-primary-strong: #7ad7f5; --smart-border: rgba(159, 190, 207, .18);
+  --smart-primary-soft: rgba(122, 215, 245, .12); --smart-primary-foreground: #ffffff; --smart-border-strong: rgba(159, 190, 207, .34);
+  --smart-glass-bg: rgba(10, 20, 29, .62); --smart-glass-bg-strong: rgba(12, 25, 36, .8);
+  --smart-glass-border: rgba(181, 224, 239, .2); --smart-glass-highlight: rgba(235, 252, 255, .42);
+  --smart-glass-shadow: 0 18px 52px rgba(0, 0, 0, .26), inset 0 1px 0 rgba(235, 252, 255, .08);
+  --smart-success: #8bcfb4; --smart-warning: #d9b96d; --smart-danger: #dc8490;
+  --smart-effect-primary: #2496ed; --smart-effect-strong: #7ad7f5; --smart-effect-muted: #92a6b5; --smart-effect-star: #a8dfff;
+  --smart-accent-foreground: #071018;
+  --pet-action-bg: #071018; --pet-action-text: #e8f2f7; --pet-action-border: rgba(122, 215, 245, .35); --pet-action-shadow: 0 5px 14px rgba(0, 0, 0, .22);
+  --pet-panel-bg: rgba(7, 16, 24, .97); --pet-panel-border: rgba(122, 215, 245, .3); --pet-border: rgba(122, 215, 245, .42); --pet-core-bg: rgba(5, 9, 13, .84); --pet-core-border: rgba(184, 238, 255, .66); --pet-core-text: #b8eeff;
+  --font-cn: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-display: Geist, "Segoe UI", var(--font-cn);
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --display-cn: clamp(3.5rem, 5.2vw, 5.25rem);
+  --display-en: clamp(1.25rem, 2vw, 1.9rem);
+  --section-cn: clamp(2.25rem, 3.8vw, 3.35rem);
+  --section-en: clamp(.9rem, 1.3vw, 1.35rem);
+  --body-cn: clamp(.95rem, 1.1vw, 1.1rem);
+  --body-en: clamp(.78rem, .9vw, .95rem);
+  --label-size: 10px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px; --space-12: 48px; --space-16: 64px; --space-24: 96px;
+  --radius-sm: 2px; --duration-fast: 160ms; --sidebar-width: 252px;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --smart-bg: #f4f7f9; --smart-surface-ghost: rgba(255,255,255,.72); --smart-signal-running: #0e5f92; --smart-signal-idle: #496679; --smart-focus-ring: #0e5f92; --smart-shadow-command: 0 20px 50px rgba(16,53,70,.15);
+  --smart-surface: #ffffff;
+  --smart-surface-raised: #fafdff;
+  --smart-card: #ffffff;
+  --smart-text: #10212b;
+  --smart-muted: #4d606c;
+  --smart-primary: #0e5f92;
+  --smart-primary-strong: #084b73;
+  --smart-primary-soft: rgba(14, 95, 146, .08);
+  --smart-primary-foreground: #ffffff;
+  --smart-border-strong: rgba(16, 53, 70, .34);
+  --smart-border: rgba(16, 53, 70, .22);
+  --smart-glass-bg: rgba(255, 255, 255, .96);
+  --smart-glass-bg-strong: #ffffff;
+  --smart-glass-border: rgba(16, 53, 70, .22);
+  --smart-glass-highlight: rgba(255, 255, 255, .98);
+  --smart-glass-shadow: 0 12px 28px rgba(16, 53, 70, .10), inset 0 1px 0 rgba(255, 255, 255, .98);
+  --smart-success: #176b50;
+  --smart-warning: #8a5a08;
+  --smart-danger: #a33f52;
+  --smart-effect-primary: #355e78; --smart-effect-strong: #183c53; --smart-effect-muted: #496679; --smart-effect-star: #243e50;
+  --smart-accent-foreground: #ffffff;
+  --pet-action-bg: #ffffff; --pet-action-text: #10212b; --pet-action-border: rgba(16, 53, 70, .22); --pet-action-shadow: 0 6px 16px rgba(16, 53, 70, .12);
+  --pet-panel-bg: rgba(255, 255, 255, .98); --pet-panel-border: rgba(16, 53, 70, .22); --pet-border: rgba(14, 95, 146, .38); --pet-core-bg: #ffffff; --pet-core-border: rgba(14, 95, 146, .42); --pet-core-text: #084b73;
+}
+
+:root[data-theme] {
+  --el-text-color-primary: var(--smart-text); --el-text-color-regular: var(--smart-text);
+  --el-text-color-secondary: var(--smart-muted); --el-text-color-placeholder: var(--smart-muted); --el-text-color-disabled: var(--smart-muted);
+  --el-bg-color: var(--smart-surface); --el-bg-color-page: var(--smart-bg); --el-bg-color-overlay: var(--smart-surface);
+  --el-fill-color-blank: var(--smart-surface); --el-fill-color: var(--smart-card);
+  --el-fill-color-light: color-mix(in srgb, var(--smart-text) 5%, var(--smart-surface));
+  --el-fill-color-lighter: color-mix(in srgb, var(--smart-text) 3%, var(--smart-surface));
+  --el-fill-color-extra-light: var(--smart-surface); --el-fill-color-dark: var(--smart-bg);
+  --el-border-color: var(--smart-border-strong); --el-border-color-light: var(--smart-border); --el-border-color-lighter: var(--smart-border); --el-border-color-extra-light: var(--smart-border);
+  --el-color-primary: var(--smart-primary); --el-color-primary-dark-2: var(--smart-primary-strong);
+  --el-color-primary-light-3: color-mix(in srgb, var(--smart-primary) 70%, var(--smart-surface));
+  --el-color-primary-light-5: color-mix(in srgb, var(--smart-primary) 50%, var(--smart-surface));
+  --el-color-primary-light-7: color-mix(in srgb, var(--smart-primary) 30%, var(--smart-surface));
+  --el-color-primary-light-8: color-mix(in srgb, var(--smart-primary) 20%, var(--smart-surface));
+  --el-color-primary-light-9: color-mix(in srgb, var(--smart-primary) 8%, var(--smart-surface));
+  --el-color-success: var(--smart-success); --el-color-warning: var(--smart-warning); --el-color-danger: var(--smart-danger); --el-color-error: var(--smart-danger); --el-color-info: var(--smart-muted);
+  --el-color-success-light-8: color-mix(in srgb, var(--smart-success) 20%, var(--smart-surface));
+  --el-color-success-light-9: color-mix(in srgb, var(--smart-success) 8%, var(--smart-surface));
+  --el-color-warning-light-8: color-mix(in srgb, var(--smart-warning) 20%, var(--smart-surface));
+  --el-color-warning-light-9: color-mix(in srgb, var(--smart-warning) 8%, var(--smart-surface));
+  --el-color-danger-light-8: color-mix(in srgb, var(--smart-danger) 20%, var(--smart-surface));
+  --el-color-danger-light-9: color-mix(in srgb, var(--smart-danger) 8%, var(--smart-surface));
+  --el-color-info-light-8: color-mix(in srgb, var(--smart-muted) 20%, var(--smart-surface));
+  --el-color-info-light-9: color-mix(in srgb, var(--smart-muted) 8%, var(--smart-surface));
+}

@@ -1,0 +1,36 @@
+import request from '../utils/request.js'
+
+const value = promise => promise.then(response => response.data)
+const base = teamId => `/api/teams/${encodeURIComponent(teamId)}/agents`
+const agent = (teamId, agentId) => `${base(teamId)}/${encodeURIComponent(agentId)}`
+
+export const teamAgentsApi = {
+  list: teamId => value(request.get(base(teamId))),
+  catalog: teamId => value(request.get(`${base(teamId)}/catalog`)),
+  detail: (teamId, agentId) => value(request.get(agent(teamId, agentId))),
+  create: (teamId, input) => value(request.post(base(teamId), input)),
+  saveDraft: (teamId, agentId, input) => value(request.put(`${agent(teamId, agentId)}/draft`, input)),
+  publish: (teamId, agentId) => value(request.post(`${agent(teamId, agentId)}/publish`))
+}
+
+export const teamConversationApi = {
+  list: teamId => value(request.get('/api/assistant/conversations', { params: { teamId } })),
+  create: (teamId, title) => value(request.post('/api/assistant/conversations', { id: crypto.randomUUID(), title, teamId })),
+  detail: id => value(request.get(`/api/assistant/conversations/${encodeURIComponent(id)}`)),
+  append: (id, text) => value(request.post(`/api/assistant/conversations/${encodeURIComponent(id)}/messages`, {
+    requestId: crypto.randomUUID(), text, attachmentIds: []
+  }))
+}
+
+export const teamToolsApi = {
+  list: (teamId, agentId) => value(request.get(`${agent(teamId, agentId)}/tools`))
+}
+
+export const teamRunsApi = {
+  list: teamId => value(request.get(`/api/teams/${encodeURIComponent(teamId)}/runs`)),
+  pendingApprovals: teamId => value(request.get(`/api/teams/${encodeURIComponent(teamId)}/approvals`)),
+  create: (teamId, agentId, input) => value(request.post(`${agent(teamId, agentId)}/runs`, input)),
+  preview: runId => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/preview`)),
+  approve: runId => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/approve`)),
+  execute: runId => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/execute`))
+}

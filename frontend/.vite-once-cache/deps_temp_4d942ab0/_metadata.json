@@ -1,0 +1,130 @@
+{
+  "hash": "75ec8a91",
+  "configHash": "2c937ad6",
+  "lockfileHash": "d5605f26",
+  "browserHash": "b876a09a",
+  "optimized": {
+    "@element-plus/icons-vue": {
+      "src": "../../node_modules/@element-plus/icons-vue/dist/index.js",
+      "file": "@element-plus_icons-vue.js",
+      "fileHash": "4e27520d",
+      "needsInterop": false
+    },
+    "@xterm/addon-fit": {
+      "src": "../../node_modules/@xterm/addon-fit/lib/addon-fit.js",
+      "file": "@xterm_addon-fit.js",
+      "fileHash": "53688b1b",
+      "needsInterop": true
+    },
+    "@xterm/xterm": {
+      "src": "../../node_modules/@xterm/xterm/lib/xterm.js",
+      "file": "@xterm_xterm.js",
+      "fileHash": "e88dd9ae",
+      "needsInterop": true
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "c8df3aaa",
+      "needsInterop": false
+    },
+    "echarts/charts": {
+      "src": "../../node_modules/echarts/charts.js",
+      "file": "echarts_charts.js",
+      "fileHash": "6bcf01cb",
+      "needsInterop": false
+    },
+    "echarts/components": {
+      "src": "../../node_modules/echarts/components.js",
+      "file": "echarts_components.js",
+      "fileHash": "3cc366ae",
+      "needsInterop": false
+    },
+    "echarts/core": {
+      "src": "../../node_modules/echarts/core.js",
+      "file": "echarts_core.js",
+      "fileHash": "c28f39ee",
+      "needsInterop": false
+    },
+    "echarts/renderers": {
+      "src": "../../node_modules/echarts/renderers.js",
+      "file": "echarts_renderers.js",
+      "fileHash": "8837f5d5",
+      "needsInterop": false
+    },
+    "element-plus/es/components/message-box/index.mjs": {
+      "src": "../../node_modules/element-plus/es/components/message-box/index.mjs",
+      "file": "element-plus_es_components_message-box_index__mjs.js",
+      "fileHash": "9a8ddf29",
+      "needsInterop": false
+    },
+    "element-plus/es/components/message-box/style/css.mjs": {
+      "src": "../../node_modules/element-plus/es/components/message-box/style/css.mjs",
+      "file": "element-plus_es_components_message-box_style_css__mjs.js",
+      "fileHash": "d7220d24",
+      "needsInterop": false
+    },
+    "element-plus/es/components/message/index.mjs": {
+      "src": "../../node_modules/element-plus/es/components/message/index.mjs",
+      "file": "element-plus_es_components_message_index__mjs.js",
+      "fileHash": "f67e9b82",
+      "needsInterop": false
+    },
+    "pinia": {
+      "src": "../../node_modules/pinia/dist/pinia.mjs",
+      "file": "pinia.js",
+      "fileHash": "abe6d0d9",
+      "needsInterop": false
+    },
+    "three": {
+      "src": "../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "a9c9ac2a",
+      "needsInterop": false
+    },
+    "vue": {
+      "src": "../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      "file": "vue.js",
+      "fileHash": "c7e86876",
+      "needsInterop": false
+    },
+    "vue-router": {
+      "src": "../../node_modules/vue-router/dist/vue-router.mjs",
+      "file": "vue-router.js",
+      "fileHash": "9014ecb4",
+      "needsInterop": false
+    },
+    "yaml": {
+      "src": "../../node_modules/yaml/browser/index.js",
+      "file": "yaml.js",
+      "fileHash": "e2b701e4",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-JYRSJLFP": {
+      "file": "chunk-JYRSJLFP.js"
+    },
+    "chunk-3HXLVWAV": {
+      "file": "chunk-3HXLVWAV.js"
+    },
+    "chunk-QHTPNM44": {
+      "file": "chunk-QHTPNM44.js"
+    },
+    "chunk-HVZFRQGB": {
+      "file": "chunk-HVZFRQGB.js"
+    },
+    "chunk-2IC2EAVI": {
+      "file": "chunk-2IC2EAVI.js"
+    },
+    "chunk-6YEUBRXX": {
+      "file": "chunk-6YEUBRXX.js"
+    },
+    "chunk-TC3D7C7U": {
+      "file": "chunk-TC3D7C7U.js"
+    },
+    "chunk-AXQFWXYZ": {
+      "file": "chunk-AXQFWXYZ.js"
+    }
+  }
+}

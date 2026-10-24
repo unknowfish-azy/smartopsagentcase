@@ -1,0 +1,49 @@
+.team-page{color:var(--smart-text);max-width:1240px;margin:0 auto;padding:clamp(16px,3vw,32px);font:15px/1.65 var(--font-cn,system-ui,sans-serif);overflow-wrap:anywhere}
+.team-page *{box-sizing:border-box}
+.team-page h1{font-size:clamp(24px,3vw,34px);line-height:1.25;margin:4px 0 12px}
+.team-page h2{font-size:19px;line-height:1.4;margin:0 0 14px}
+.team-page p{margin:8px 0}
+.team-eyebrow{font-size:11px;letter-spacing:.12em;color:var(--smart-muted)}
+.team-muted{color:var(--smart-muted)}
+.team-heading,.team-row,.team-actions{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.team-heading{align-items:flex-start;margin-bottom:24px}
+.team-heading>div{flex:1;min-width:180px}
+.team-page button,.team-page .team-button{min-height:44px;padding:9px 15px;border:1px solid var(--smart-border);background:var(--smart-surface);color:var(--smart-text);border-radius:8px;cursor:pointer;font:inherit;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.team-page button:disabled{opacity:.55;cursor:not-allowed}
+.team-page button.primary{background:var(--smart-primary-strong);color:var(--smart-on-primary,#fff);border-color:var(--smart-primary-strong)}
+:root[data-theme='dark'] .team-page button.primary{color:var(--smart-bg)}
+.team-page button.danger{color:var(--smart-danger)}
+.team-page :is(button,input,textarea,select,a):focus-visible{outline:2px solid var(--smart-primary-strong);outline-offset:3px}
+.team-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr);gap:22px;align-items:start}
+.team-panel{background:var(--smart-surface);border:1px solid var(--smart-border);border-radius:14px;padding:22px;margin-bottom:20px;min-width:0}
+.team-card{border-top:1px solid var(--smart-border);padding:18px 0}
+.team-card:first-of-type{border-top:0}
+.team-card h3{font-size:18px;margin:0 0 4px}
+.team-page a{color:var(--smart-primary-strong)}
+.team-badge{display:inline-block;border:1px solid var(--smart-border);border-radius:5px;padding:2px 8px;font-size:12px;color:var(--smart-muted);white-space:nowrap}
+.team-form{display:grid;gap:14px}
+.team-form label{display:grid;gap:5px;font-weight:600;min-width:0}
+.team-page input,.team-page select,.team-page textarea{width:100%;min-height:44px;min-width:0;padding:9px 12px;font:inherit;border:1px solid var(--smart-border);border-radius:7px;color:var(--smart-text);background:var(--smart-surface)}
+.team-page textarea{resize:vertical;min-height:86px}
+.team-page fieldset{padding:0;margin:0;border:0;min-width:0}
+.team-page legend{font-weight:600;margin-bottom:12px}
+.team-error,.team-success,.team-notice{border:1px solid var(--smart-border);border-left:3px solid var(--smart-primary-strong);border-radius:6px;padding:12px 15px;background:var(--smart-surface);margin:16px 0}
+.team-error{border-left-color:var(--smart-danger);color:var(--smart-danger)}
+.team-member{padding:14px 0;border-top:1px solid var(--smart-border);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.team-member:first-of-type{border-top:0}
+.team-member-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.team-member-controls select{width:auto;max-width:100%}
+.team-pagination{display:flex;gap:12px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.team-roadmap{padding-left:20px;color:var(--smart-muted)}
+@media(max-width:800px){.team-grid{grid-template-columns:1fr}.team-panel{padding:16px}.team-page{padding:16px 8px}.team-heading>div{min-width:0;width:100%;flex-basis:100%}.team-member-controls{width:100%}}
+/* 桌面端双栏工作台：视口锁定，左右两栏各自独立滚动，页面本身不滚动——
+   滚哪栏、另一栏不动（与成就页 /milestones 同一契约）。
+   206 = 顶栏 56 + 工作区条 54 + main.content 底部留白 96（global.css .content）。
+   两栏均 min-height:0 + overflow-y:auto；窄屏（≤800px）单列时回退页面自然滚动。 */
+@media (min-width: 801px) {
+  .team-page { display: flex; flex-direction: column; height: 100vh; height: calc(100dvh - 206px); }
+  .team-page > * { flex: 0 0 auto; }
+  .team-heading { margin-bottom: 16px; }
+  .team-grid { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+  .team-col { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--smart-border) transparent; padding-right: 2px; }
+}
