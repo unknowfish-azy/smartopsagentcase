@@ -1,3 +1,4 @@
+import asyncio
 from uuid import uuid4
 
 from ..schemas.chat import (
@@ -143,6 +144,88 @@ class ChatService:
                 "version": request.version,
             },
         )
+
+    async def chat_stream(
+        self,
+        request: ChatRequest,
+    ):
+        """流式对话：产出 SSE 事件（thinking / token / done），用于前端 AI 思考可视化。"""
+
+        conversation_id = (
+            request.conversation_id
+            or str(uuid4())
+        )
+
+        rag_data: dict = {
+            "results": [],
+            "citations": [],
+            "trust_score": 0.0,
+        }
+
+        if request.use_rag:
+            rag_data = await self.rag.retrieve(
+                query=request.message,
+                top_k=request.top_k,
+                version=request.version,
+            )
+
+        results = rag_data.get("results", [])
+        context = self.rag.build_context(results)
+        prompt = self._build_prompt(
+            message=request.message,
+            context=context,
+        )
+
+        # 1) AI 思考过程事件（驱动前端可视化）
+        thinking_steps = [
+            {"stage": "retrieve", "label": "知识检索", "detail": f"检索知识库 top_k={request.top_k}"},
+            {"stage": "evidence", "label": "证据验证", "detail": f"命中 {len(rag_data.get('citations', []))} 条证据"},
+            {"stage": "plan", "label": "Agent 规划", "detail": "将故障拆解为可执行步骤"},
+            {"stage": "risk", "label": "风险判定", "detail": "策略引擎评估操作风险"},
+            {"stage": "answer", "label": "生成回答", "detail": "基于证据生成可信回答"},
+        ]
+        for step in thinking_steps:
+            yield {"event": "thinking", "data": step}
+            await asyncio.sleep(0.15)
+
+        # 2) 流式 token
+        async for delta in self.llm.generate_stream(
+            prompt,
+            system_prompt=SYSTEM_PROMPT,
+        ):
+            yield {"event": "token", "data": {"delta": delta}}
+
+        # 3) 完成事件
+        citations = [
+            Citation(
+                citation_id=item.get("citation_id", index),
+                source=item.get("source", ""),
+                chunk_id=item.get("chunk_id", ""),
+                version=item.get("version"),
+                score=float(item.get("score", 0.0)),
+            )
+            for index, item in enumerate(
+                rag_data.get("citations", []),
+                start=1,
+            )
+        ]
+
+        yield {
+            "event": "done",
+            "data": {
+                "conversation_id": conversation_id,
+                "model": self._get_model_name(),
+                "provider": self._get_provider(),
+                "trust_score": float(rag_data.get("trust_score", 0.0)),
+                "citations": [c.model_dump() for c in citations],
+                "evidence": rag_data.get("evidences", []),
+                "metadata": {
+                    "rag_enabled": request.use_rag,
+                    "top_k": request.top_k,
+                    "version": request.version,
+                },
+            },
+        }
 
     @staticmethod
     def _build_prompt(

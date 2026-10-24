@@ -1,3 +1,5 @@
+import asyncio
+import re
 from typing import Any
 
 from ..core.config import settings
@@ -37,6 +39,70 @@ class LLMService:
         raise LLMException(
             f"暂不支持的 LLM Provider: {provider}"
         )
+
+    async def generate_stream(
+        self,
+        prompt: str,
+        *,
+        system_prompt: str | None = None,
+        **kwargs: Any,
+    ):
+        """流式生成：逐块 yield 文本片段。mock/ollama 阶段用模拟分块。"""
+
+        provider = settings.llm_provider.lower()
+
+        if provider == "mock":
+            async for chunk in self._mock_stream(prompt):
+                yield chunk
+            return
+
+        if provider == "ollama":
+            async for chunk in self._ollama_stream(
+                prompt=prompt,
+                system_prompt=system_prompt,
+            ):
+                yield chunk
+            return
+
+        # 真实 Provider 接入时在此按 stream=True 解析 SSE/NDJSON
+        raise LLMException(
+            f"暂不支持的 LLM Provider: {provider}"
+        )
+
+    @staticmethod
+    async def _mock_stream(prompt: str):
+
+        text = (
+            "这是 SmartOpsAgent AI Service "
+            "的开发阶段模拟回答。\n\n"
+            "当前系统已经完成请求接收、RAG 编排和 "
+            "LLM 服务接口预留。\n\n"
+            f"用户问题：{prompt}"
+        )
+
+        for piece in re.split(r"(\s+)", text):
+            if not piece:
+                continue
+            await asyncio.sleep(0.015)
+            yield piece
+
+    @staticmethod
+    async def _ollama_stream(
+        prompt: str,
+        system_prompt: str | None,
+    ):
+
+        text = (
+            "（Ollama 模拟回答）\n\n"
+            "当前 LLM Provider 为 ollama，外部模型服务调用已临时注释。\n"
+            f"用户问题：{prompt}"
+        )
+
+        for piece in re.split(r"(\s+)", text):
+            if not piece:
+                continue
+            await asyncio.sleep(0.015)
+            yield piece
 
     @staticmethod
     def _mock_generate(
