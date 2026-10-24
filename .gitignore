@@ -754,6 +754,10 @@ api/generated/
 /phase4-test-tmp/
 /test-artifacts/
 
+# Local build / tool caches (never commit)
+/.m2/
+/.workbuddy/
+
 # ============================================================
 # End
 # ============================================================

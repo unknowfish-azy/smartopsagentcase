@@ -1,0 +1,10 @@
+# Keep text source stable across Windows and Unix checkouts.
+* text=auto eol=lf
+
+# Visual test baselines and common media remain byte-for-byte assets.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
