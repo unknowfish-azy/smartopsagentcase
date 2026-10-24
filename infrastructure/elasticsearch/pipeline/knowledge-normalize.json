@@ -1,0 +1,7 @@
+{
+  "description": "Normalize SmartOps knowledge metadata",
+  "processors": [
+    {"set": {"field": "source", "copy_from": "source", "override": false}},
+    {"script": {"source": "if (ctx.version == null || ctx.version == '') { ctx.version = 'unknown'; }"}}
+  ]
+}

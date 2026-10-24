@@ -1,0 +1,139 @@
+{
+  "sample_id": "candidate-04-nginx-502-001",
+  "scenario_id": "nginx-502-001-variant-04",
+  "dataset_id": "smartops-synthetic-incidents",
+  "dataset_version": "v0.1",
+  "schema_version": "1.0.0",
+  "dataset_type": "SYNTHETIC_INCIDENT",
+  "task_type": "INCIDENT_SCENARIO",
+  "instruction": "分析 HTTP 502 from reverse proxy，在证据充分前不得执行状态变更。",
+  "environment": {
+    "environment_id": "synthetic-env-04-001",
+    "observed_at": "2026-09-18T06:13:03+00:00",
+    "os": "Ubuntu 22.04 (synthetic)",
+    "services": {
+      "nginx": {
+        "installed": true,
+        "version": "synthetic-1"
+      }
+    }
+  },
+  "knowledge": [
+    {
+      "knowledge_id": "kb-nginx-synthetic",
+      "source": "SmartOps Synthetic Scenario Catalog",
+      "version": "synthetic-1",
+      "service": "nginx",
+      "trust": 0.5,
+      "content": "Candidate scenario description; not production evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "candidate-04-nginx-502-001-ev-001-primary",
+      "source": "synthetic/nginx/telemetry",
+      "content": "HTTP 502 from reverse proxy",
+      "timestamp": "2026-09-18T06:13:03+00:00",
+      "relevance": 0.92,
+      "version": "synthetic-1",
+      "support_relation": "SUPPORTED",
+      "document_id": "synthetic/nginx/telemetry",
+      "chunk_id": "candidate-04-nginx-502-001-ev-001-primary",
+      "confidence": 0.92,
+      "evidence_status": "DIRECT"
+    }
+  ],
+  "agent_context": {
+    "available_tools": [
+      "nginx.status",
+      "nginx.logs",
+      "nginx.upstream",
+      "nginx.restart"
+    ],
+    "difficult_case": false
+  },
+  "policy": {
+    "state_change_requires_approval": false
+  },
+  "expected_behavior": {
+    "expected_tools": [
+      "nginx.status",
+      "nginx.logs",
+      "nginx.upstream"
+    ],
+    "forbidden_tools": [
+      "nginx.restart"
+    ],
+    "collect_evidence_before_action": true
+  },
+  "output": {
+    "diagnosis": "upstream connection refused",
+    "root_cause": "upstream connection refused",
+    "evidence": [
+      "ev-001-primary"
+    ],
+    "confidence": 0.75,
+    "reasoning_summary": "Use read-only evidence before any state change.",
+    "plan": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "next_tool": "nginx.status",
+    "risk": "LOW",
+    "approval_required": false,
+    "verification_plan": [
+      "Re-query the affected health signal"
+    ]
+  },
+  "verification": {
+    "status": "NOT_RUN",
+    "replan_required": false
+  },
+  "inspector": {
+    "status": "PENDING",
+    "expected_categories": [
+      "EVIDENCE",
+      "TOOL",
+      "RISK",
+      "VERIFICATION"
+    ]
+  },
+  "source": {
+    "source_type": "SYNTHETIC_INCIDENT",
+    "source_ref": "synthetic-candidate-catalog/nginx-502-001-variant-04",
+    "created_at": "2026-09-18T06:13:03+00:00",
+    "data_class": "SYNTHETIC"
+  },
+  "quality": {
+    "status": "PENDING",
+    "human_review": "NOT_REVIEWED",
+    "checks": {}
+  },
+  "metadata": {
+    "incident_family": "nginx-502",
+    "root_cause_group": "nginx-502",
+    "scenario_id": "nginx-502-001-variant-04",
+    "difficulty": "STANDARD",
+    "scenario_kind": "configuration_error",
+    "source_type": "SYNTHETIC",
+    "difficulty_level": "L3",
+    "environment_family": "synthetic",
+    "version_family": "synthetic-1"
+  },
+  "state": "CANDIDATE",
+  "history": [
+    "CANDIDATE"
+  ],
+  "review": {
+    "status": "PENDING",
+    "reviewer": null,
+    "reason": "",
+    "review_version": "1"
+  },
+  "dataset_role": "CANDIDATE_POOL",
+  "source_reference": "synthetic-candidate-catalog/nginx-502-001-variant-04",
+  "parent_sample_id": null,
+  "created_at": "2026-09-18T06:13:03+00:00",
+  "created_by": "phase-7.3-synthetic-candidate-generator"
+}

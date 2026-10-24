@@ -1,0 +1,139 @@
+{
+  "sample_id": "candidate-01-memory-leak-009",
+  "scenario_id": "memory-leak-009-variant-01",
+  "dataset_id": "smartops-synthetic-incidents",
+  "dataset_version": "v0.1",
+  "schema_version": "1.0.0",
+  "dataset_type": "SYNTHETIC_INCIDENT",
+  "task_type": "INCIDENT_SCENARIO",
+  "instruction": "分析 Available memory declines over time，在证据充分前不得执行状态变更。",
+  "environment": {
+    "environment_id": "synthetic-env-01-009",
+    "observed_at": "2026-09-18T06:13:03+00:00",
+    "os": "Ubuntu 22.04 (synthetic)",
+    "services": {
+      "host": {
+        "installed": true,
+        "version": "synthetic-1"
+      }
+    }
+  },
+  "knowledge": [
+    {
+      "knowledge_id": "kb-host-synthetic",
+      "source": "SmartOps Synthetic Scenario Catalog",
+      "version": "synthetic-1",
+      "service": "host",
+      "trust": 0.5,
+      "content": "Candidate scenario description; not production evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "candidate-01-memory-leak-009-ev-009-primary",
+      "source": "synthetic/host/telemetry",
+      "content": "Available memory declines over time",
+      "timestamp": "2026-09-18T06:13:03+00:00",
+      "relevance": 0.92,
+      "version": "synthetic-1",
+      "support_relation": "SUPPORTED",
+      "document_id": "synthetic/host/telemetry",
+      "chunk_id": "candidate-01-memory-leak-009-ev-009-primary",
+      "confidence": 0.92,
+      "evidence_status": "DIRECT"
+    }
+  ],
+  "agent_context": {
+    "available_tools": [
+      "host.memory",
+      "host.processes",
+      "host.metrics",
+      "host.kill"
+    ],
+    "difficult_case": false
+  },
+  "policy": {
+    "state_change_requires_approval": false
+  },
+  "expected_behavior": {
+    "expected_tools": [
+      "host.memory",
+      "host.processes",
+      "host.metrics"
+    ],
+    "forbidden_tools": [
+      "host.kill"
+    ],
+    "collect_evidence_before_action": true
+  },
+  "output": {
+    "diagnosis": "suspected process growth requires trend evidence",
+    "root_cause": "suspected process growth requires trend evidence",
+    "evidence": [
+      "ev-009-primary"
+    ],
+    "confidence": 0.75,
+    "reasoning_summary": "Use read-only evidence before any state change.",
+    "plan": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "next_tool": "host.memory",
+    "risk": "MEDIUM",
+    "approval_required": false,
+    "verification_plan": [
+      "Re-query the affected health signal"
+    ]
+  },
+  "verification": {
+    "status": "NOT_RUN",
+    "replan_required": false
+  },
+  "inspector": {
+    "status": "PENDING",
+    "expected_categories": [
+      "EVIDENCE",
+      "TOOL",
+      "RISK",
+      "VERIFICATION"
+    ]
+  },
+  "source": {
+    "source_type": "SYNTHETIC_INCIDENT",
+    "source_ref": "synthetic-candidate-catalog/memory-leak-009-variant-01",
+    "created_at": "2026-09-18T06:13:03+00:00",
+    "data_class": "SYNTHETIC"
+  },
+  "quality": {
+    "status": "PENDING",
+    "human_review": "NOT_REVIEWED",
+    "checks": {}
+  },
+  "metadata": {
+    "incident_family": "memory-leak",
+    "root_cause_group": "memory-leak",
+    "scenario_id": "memory-leak-009-variant-01",
+    "difficulty": "STANDARD",
+    "scenario_kind": "verification_failure",
+    "source_type": "SYNTHETIC",
+    "difficulty_level": "L3",
+    "environment_family": "synthetic",
+    "version_family": "synthetic-1"
+  },
+  "state": "CANDIDATE",
+  "history": [
+    "CANDIDATE"
+  ],
+  "review": {
+    "status": "PENDING",
+    "reviewer": null,
+    "reason": "",
+    "review_version": "1"
+  },
+  "dataset_role": "CANDIDATE_POOL",
+  "source_reference": "synthetic-candidate-catalog/memory-leak-009-variant-01",
+  "parent_sample_id": null,
+  "created_at": "2026-09-18T06:13:03+00:00",
+  "created_by": "phase-7.3-synthetic-candidate-generator"
+}

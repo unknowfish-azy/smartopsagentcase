@@ -1,0 +1,17 @@
+{
+  "mappings": {
+    "properties": {
+      "document_id": {"type": "keyword"},
+      "chunk_id": {"type": "keyword"},
+      "title": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+      "content": {"type": "text"},
+      "source": {"type": "keyword"},
+      "version": {"type": "keyword"},
+      "os": {"type": "keyword"},
+      "service": {"type": "keyword"},
+      "section": {"type": "keyword"},
+      "created_at": {"type": "date"},
+      "updated_at": {"type": "date"}
+    }
+  }
+}

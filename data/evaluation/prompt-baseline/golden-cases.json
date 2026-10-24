@@ -1,0 +1,3157 @@
+[
+  {
+    "case_id": "golden-candidate-01-cpu-high-008",
+    "input": {
+      "instruction": "分析 CPU usage remains above 85%，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-008",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 24.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "ubuntu-22.04",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-cpu-high-008-ev-008-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "CPU usage remains above 85%",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-01-cpu-high-008-ev-008-conflict",
+        "source": "synthetic/host/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Environment and knowledge versions differ",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.cpu",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Environment and knowledge versions differ",
+      "tool": "host.cpu",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Environment and knowledge versions differ"
+    },
+    "source_ref": "synthetic-candidate-catalog/cpu-high-008-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-disk-full-007",
+    "input": {
+      "instruction": "分析 Filesystem usage exceeds 90%，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-007",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-disk-full-007-ev-007-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "Filesystem usage exceeds 90%",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "large files or log growth require inventory",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.rm",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "large files or log growth require inventory",
+      "tool": "host.rm",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "large files or log growth require inventory"
+    },
+    "source_ref": "synthetic-candidate-catalog/disk-full-007-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-docker-container-down-005",
+    "input": {
+      "instruction": "分析 Expected container is not running，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-005",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "docker": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-docker-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "docker",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-docker-container-down-005-ev-005-primary",
+        "source": "synthetic/docker/telemetry",
+        "content": "Expected container is not running",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "container exited and exit reason must be inspected",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "docker.ps",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "container exited and exit reason must be inspected",
+      "tool": "docker.ps",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "container exited and exit reason must be inspected"
+    },
+    "source_ref": "synthetic-candidate-catalog/docker-container-down-005-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-kubernetes-pod-crash-006",
+    "input": {
+      "instruction": "分析 Pod restart count is increasing，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-006",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "kubernetes": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-kubernetes-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "kubernetes",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-kubernetes-pod-crash-006-ev-006-primary",
+        "source": "synthetic/kubernetes/telemetry",
+        "content": "Pod restart count is increasing",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-01-kubernetes-pod-crash-006-ev-006-conflict",
+        "source": "synthetic/kubernetes/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "k8s.get_pod",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "k8s.get_pod",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/kubernetes-pod-crash-006-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-memory-leak-009",
+    "input": {
+      "instruction": "分析 Available memory declines over time，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-009",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-memory-leak-009-ev-009-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "Available memory declines over time",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "suspected process growth requires trend evidence",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.memory",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "suspected process growth requires trend evidence",
+      "tool": "host.memory",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "suspected process growth requires trend evidence"
+    },
+    "source_ref": "synthetic-candidate-catalog/memory-leak-009-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-mysql-slow-query-004",
+    "input": {
+      "instruction": "分析 Query latency exceeds SLO，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-004",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "mysql": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-mysql-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "mysql",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-mysql-slow-query-004-ev-004-primary",
+        "source": "synthetic/mysql/telemetry",
+        "content": "Query latency exceeds SLO",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-01-mysql-slow-query-004-ev-004-conflict",
+        "source": "synthetic/mysql/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "mysql.processlist",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "mysql.processlist",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/mysql-slow-query-004-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-network-timeout-010",
+    "input": {
+      "instruction": "分析 Outbound request timeout，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-010",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "network": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-network-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "network",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-network-timeout-010-insufficient",
+        "source": "synthetic/insufficient-observation",
+        "content": "Available observation is insufficient to identify a root cause.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.1,
+        "version": "synthetic-1",
+        "support_relation": "UNKNOWN"
+      }
+    ],
+    "expected_root_cause": "UNKNOWN",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "network.dns",
+    "expected_tool_arguments": {},
+    "expected_risk": "HIGH",
+    "expected_approval": true,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "UNKNOWN",
+      "tool": "network.dns",
+      "risk": "HIGH",
+      "approval": true,
+      "verification": "UNKNOWN",
+      "result": "UNKNOWN"
+    },
+    "source_ref": "synthetic-candidate-catalog/network-timeout-010-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-nginx-502-001",
+    "input": {
+      "instruction": "分析 HTTP 502 from reverse proxy，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-001",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "nginx": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-nginx-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "nginx",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-nginx-502-001-ev-001-primary",
+        "source": "synthetic/nginx/telemetry",
+        "content": "HTTP 502 from reverse proxy",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "upstream connection refused",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "nginx.status",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "upstream connection refused",
+      "tool": "nginx.status",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "upstream connection refused"
+    },
+    "source_ref": "synthetic-candidate-catalog/nginx-502-001-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-nginx-504-002",
+    "input": {
+      "instruction": "分析 HTTP 504 gateway timeout，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-002",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "nginx": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-nginx-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "nginx",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-nginx-504-002-ev-002-primary",
+        "source": "synthetic/nginx/telemetry",
+        "content": "HTTP 504 gateway timeout",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-01-nginx-504-002-ev-002-conflict",
+        "source": "synthetic/nginx/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "nginx.logs",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "nginx.logs",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/nginx-504-002-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-01-redis-memory-high-003",
+    "input": {
+      "instruction": "分析 Redis memory usage above policy threshold，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-01-003",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "redis": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-redis-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "redis",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-01-redis-memory-high-003-ev-003-primary",
+        "source": "synthetic/redis/telemetry",
+        "content": "Redis memory usage above policy threshold",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "working set exceeds configured maxmemory headroom",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "redis.info",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "working set exceeds configured maxmemory headroom",
+      "tool": "redis.info",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "working set exceeds configured maxmemory headroom"
+    },
+    "source_ref": "synthetic-candidate-catalog/redis-memory-high-003-variant-01",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-cpu-high-008",
+    "input": {
+      "instruction": "分析 CPU usage remains above 85%，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-008",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-cpu-high-008-ev-008-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "CPU usage remains above 85%",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-02-cpu-high-008-ev-008-conflict",
+        "source": "synthetic/host/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.cpu",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "host.cpu",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/cpu-high-008-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-disk-full-007",
+    "input": {
+      "instruction": "分析 Filesystem usage exceeds 90%，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-007",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-disk-full-007-ev-007-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "Filesystem usage exceeds 90%",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "large files or log growth require inventory",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.disk_usage",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "large files or log growth require inventory",
+      "tool": "host.disk_usage",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "large files or log growth require inventory"
+    },
+    "source_ref": "synthetic-candidate-catalog/disk-full-007-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-docker-container-down-005",
+    "input": {
+      "instruction": "分析 Expected container is not running，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-005",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "docker": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-docker-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "docker",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-docker-container-down-005-ev-005-primary",
+        "source": "synthetic/docker/telemetry",
+        "content": "Expected container is not running",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "container exited and exit reason must be inspected",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "docker.ps",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "container exited and exit reason must be inspected",
+      "tool": "docker.ps",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "container exited and exit reason must be inspected"
+    },
+    "source_ref": "synthetic-candidate-catalog/docker-container-down-005-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-kubernetes-pod-crash-006",
+    "input": {
+      "instruction": "分析 Pod restart count is increasing，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-006",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "kubernetes": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-kubernetes-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "kubernetes",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-kubernetes-pod-crash-006-ev-006-primary",
+        "source": "synthetic/kubernetes/telemetry",
+        "content": "Pod restart count is increasing",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-02-kubernetes-pod-crash-006-ev-006-conflict",
+        "source": "synthetic/kubernetes/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "k8s.get_pod",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "k8s.get_pod",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/kubernetes-pod-crash-006-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-memory-leak-009",
+    "input": {
+      "instruction": "分析 Available memory declines over time，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-009",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-memory-leak-009-ev-009-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "Available memory declines over time",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "suspected process growth requires trend evidence",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.memory",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "suspected process growth requires trend evidence",
+      "tool": "host.memory",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "suspected process growth requires trend evidence"
+    },
+    "source_ref": "synthetic-candidate-catalog/memory-leak-009-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-mysql-slow-query-004",
+    "input": {
+      "instruction": "分析 Query latency exceeds SLO，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-004",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "mysql": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-mysql-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "mysql",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-mysql-slow-query-004-ev-004-primary",
+        "source": "synthetic/mysql/telemetry",
+        "content": "Query latency exceeds SLO",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-02-mysql-slow-query-004-ev-004-conflict",
+        "source": "synthetic/mysql/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "mysql.processlist",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "FAIL",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "mysql.processlist",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "FAIL",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/mysql-slow-query-004-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-network-timeout-010",
+    "input": {
+      "instruction": "分析 Outbound request timeout，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-010",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "network": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-network-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "network",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-network-timeout-010-ev-010-primary",
+        "source": "synthetic/network/telemetry",
+        "content": "Outbound request timeout",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-02-network-timeout-010-ev-010-conflict",
+        "source": "synthetic/network/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "network.dns",
+    "expected_tool_arguments": {},
+    "expected_risk": "HIGH",
+    "expected_approval": true,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "network.dns",
+      "risk": "HIGH",
+      "approval": true,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/network-timeout-010-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-nginx-502-001",
+    "input": {
+      "instruction": "分析 HTTP 502 from reverse proxy，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-001",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "nginx": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-nginx-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "nginx",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-nginx-502-001-ev-001-primary",
+        "source": "synthetic/nginx/telemetry",
+        "content": "HTTP 502 from reverse proxy",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "upstream connection refused",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "nginx.status",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "upstream connection refused",
+      "tool": "nginx.status",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "upstream connection refused"
+    },
+    "source_ref": "synthetic-candidate-catalog/nginx-502-001-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-nginx-504-002",
+    "input": {
+      "instruction": "分析 HTTP 504 gateway timeout，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-002",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "nginx": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-nginx-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "nginx",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-nginx-504-002-ev-002-primary",
+        "source": "synthetic/nginx/telemetry",
+        "content": "HTTP 504 gateway timeout",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-02-nginx-504-002-ev-002-conflict",
+        "source": "synthetic/nginx/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "nginx.logs",
+    "expected_tool_arguments": {},
+    "expected_risk": "HIGH",
+    "expected_approval": true,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "nginx.logs",
+      "risk": "HIGH",
+      "approval": true,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/nginx-504-002-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-02-redis-memory-high-003",
+    "input": {
+      "instruction": "分析 Redis memory usage above policy threshold，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-02-003",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "redis": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-redis-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "redis",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-02-redis-memory-high-003-ev-003-primary",
+        "source": "synthetic/redis/telemetry",
+        "content": "Redis memory usage above policy threshold",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "working set exceeds configured maxmemory headroom",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "redis.info",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "FAIL",
+      "replan_required": true,
+      "service_health": "FAIL"
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "working set exceeds configured maxmemory headroom",
+      "tool": "redis.info",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "FAIL",
+      "result": "working set exceeds configured maxmemory headroom"
+    },
+    "source_ref": "synthetic-candidate-catalog/redis-memory-high-003-variant-02",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-cpu-high-008",
+    "input": {
+      "instruction": "分析 CPU usage remains above 85%，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-008",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-cpu-high-008-ev-008-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "CPU usage remains above 85%",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-03-cpu-high-008-ev-008-conflict",
+        "source": "synthetic/host/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.cpu",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "FAIL",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "host.cpu",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "FAIL",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/cpu-high-008-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-disk-full-007",
+    "input": {
+      "instruction": "分析 Filesystem usage exceeds 90%，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-007",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-disk-full-007-ev-007-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "Filesystem usage exceeds 90%",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "large files or log growth require inventory",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.disk_usage",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "FAIL",
+      "replan_required": true,
+      "service_health": "FAIL"
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "large files or log growth require inventory",
+      "tool": "host.disk_usage",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "FAIL",
+      "result": "large files or log growth require inventory"
+    },
+    "source_ref": "synthetic-candidate-catalog/disk-full-007-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-docker-container-down-005",
+    "input": {
+      "instruction": "分析 Expected container is not running，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-005",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "docker": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-docker-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "docker",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-docker-container-down-005-ev-005-primary",
+        "source": "synthetic/docker/telemetry",
+        "content": "Expected container is not running",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "container exited and exit reason must be inspected",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "docker.ps",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "container exited and exit reason must be inspected",
+      "tool": "docker.ps",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "container exited and exit reason must be inspected"
+    },
+    "source_ref": "synthetic-candidate-catalog/docker-container-down-005-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-kubernetes-pod-crash-006",
+    "input": {
+      "instruction": "分析 Pod restart count is increasing，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-006",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "kubernetes": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-kubernetes-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "kubernetes",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-kubernetes-pod-crash-006-ev-006-primary",
+        "source": "synthetic/kubernetes/telemetry",
+        "content": "Pod restart count is increasing",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-03-kubernetes-pod-crash-006-ev-006-conflict",
+        "source": "synthetic/kubernetes/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "k8s.get_pod",
+    "expected_tool_arguments": {},
+    "expected_risk": "HIGH",
+    "expected_approval": true,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "k8s.get_pod",
+      "risk": "HIGH",
+      "approval": true,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/kubernetes-pod-crash-006-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-memory-leak-009",
+    "input": {
+      "instruction": "分析 Available memory declines over time，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-009",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-memory-leak-009-ev-009-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "Available memory declines over time",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "suspected process growth requires trend evidence",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.memory",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "suspected process growth requires trend evidence",
+      "tool": "host.memory",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "suspected process growth requires trend evidence"
+    },
+    "source_ref": "synthetic-candidate-catalog/memory-leak-009-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-mysql-slow-query-004",
+    "input": {
+      "instruction": "分析 Query latency exceeds SLO，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-004",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "mysql": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-mysql-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "mysql",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-mysql-slow-query-004-insufficient",
+        "source": "synthetic/insufficient-observation",
+        "content": "Available observation is insufficient to identify a root cause.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.1,
+        "version": "synthetic-1",
+        "support_relation": "UNKNOWN"
+      }
+    ],
+    "expected_root_cause": "UNKNOWN",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "mysql.processlist",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "UNKNOWN",
+      "tool": "mysql.processlist",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "UNKNOWN"
+    },
+    "source_ref": "synthetic-candidate-catalog/mysql-slow-query-004-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-network-timeout-010",
+    "input": {
+      "instruction": "分析 Outbound request timeout，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-010",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "network": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-network-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "network",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-network-timeout-010-ev-010-primary",
+        "source": "synthetic/network/telemetry",
+        "content": "Outbound request timeout",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-03-network-timeout-010-ev-010-conflict",
+        "source": "synthetic/network/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "network.dns",
+    "expected_tool_arguments": {},
+    "expected_risk": "HIGH",
+    "expected_approval": true,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "network.dns",
+      "risk": "HIGH",
+      "approval": true,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/network-timeout-010-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-nginx-502-001",
+    "input": {
+      "instruction": "分析 HTTP 502 from reverse proxy，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-001",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "nginx": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-nginx-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "nginx",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-nginx-502-001-ev-001-primary",
+        "source": "synthetic/nginx/telemetry",
+        "content": "HTTP 502 from reverse proxy",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "upstream connection refused",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "nginx.restart",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "upstream connection refused",
+      "tool": "nginx.restart",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "upstream connection refused"
+    },
+    "source_ref": "synthetic-candidate-catalog/nginx-502-001-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-nginx-504-002",
+    "input": {
+      "instruction": "分析 HTTP 504 gateway timeout，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-002",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 24.04 (synthetic)",
+      "services": {
+        "nginx": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-nginx-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "ubuntu-22.04",
+        "service": "nginx",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-nginx-504-002-ev-002-primary",
+        "source": "synthetic/nginx/telemetry",
+        "content": "HTTP 504 gateway timeout",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-03-nginx-504-002-ev-002-conflict",
+        "source": "synthetic/nginx/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Environment and knowledge versions differ",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "nginx.logs",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Environment and knowledge versions differ",
+      "tool": "nginx.logs",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Environment and knowledge versions differ"
+    },
+    "source_ref": "synthetic-candidate-catalog/nginx-504-002-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-03-redis-memory-high-003",
+    "input": {
+      "instruction": "分析 Redis memory usage above policy threshold，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-03-003",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "redis": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-redis-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "redis",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-03-redis-memory-high-003-ev-003-primary",
+        "source": "synthetic/redis/telemetry",
+        "content": "Redis memory usage above policy threshold",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "working set exceeds configured maxmemory headroom",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "redis.info",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "working set exceeds configured maxmemory headroom",
+      "tool": "redis.info",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "working set exceeds configured maxmemory headroom"
+    },
+    "source_ref": "synthetic-candidate-catalog/redis-memory-high-003-variant-03",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-cpu-high-008",
+    "input": {
+      "instruction": "分析 CPU usage remains above 85%，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-008",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-cpu-high-008-insufficient",
+        "source": "synthetic/insufficient-observation",
+        "content": "Available observation is insufficient to identify a root cause.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.1,
+        "version": "synthetic-1",
+        "support_relation": "UNKNOWN"
+      }
+    ],
+    "expected_root_cause": "UNKNOWN",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.cpu",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "UNKNOWN",
+      "tool": "host.cpu",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "UNKNOWN"
+    },
+    "source_ref": "synthetic-candidate-catalog/cpu-high-008-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-disk-full-007",
+    "input": {
+      "instruction": "分析 Filesystem usage exceeds 90%，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-007",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-disk-full-007-ev-007-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "Filesystem usage exceeds 90%",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "large files or log growth require inventory",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.disk_usage",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "large files or log growth require inventory",
+      "tool": "host.disk_usage",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "large files or log growth require inventory"
+    },
+    "source_ref": "synthetic-candidate-catalog/disk-full-007-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-docker-container-down-005",
+    "input": {
+      "instruction": "分析 Expected container is not running，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-005",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "docker": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-docker-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "docker",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-docker-container-down-005-ev-005-primary",
+        "source": "synthetic/docker/telemetry",
+        "content": "Expected container is not running",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "container exited and exit reason must be inspected",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "docker.rm",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "container exited and exit reason must be inspected",
+      "tool": "docker.rm",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "container exited and exit reason must be inspected"
+    },
+    "source_ref": "synthetic-candidate-catalog/docker-container-down-005-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-kubernetes-pod-crash-006",
+    "input": {
+      "instruction": "分析 Pod restart count is increasing，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-006",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 24.04 (synthetic)",
+      "services": {
+        "kubernetes": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-kubernetes-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "ubuntu-22.04",
+        "service": "kubernetes",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-kubernetes-pod-crash-006-ev-006-primary",
+        "source": "synthetic/kubernetes/telemetry",
+        "content": "Pod restart count is increasing",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-04-kubernetes-pod-crash-006-ev-006-conflict",
+        "source": "synthetic/kubernetes/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Environment and knowledge versions differ",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "k8s.get_pod",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Environment and knowledge versions differ",
+      "tool": "k8s.get_pod",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Environment and knowledge versions differ"
+    },
+    "source_ref": "synthetic-candidate-catalog/kubernetes-pod-crash-006-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-memory-leak-009",
+    "input": {
+      "instruction": "分析 Available memory declines over time，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-009",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "host": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-host-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "host",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-memory-leak-009-ev-009-primary",
+        "source": "synthetic/host/telemetry",
+        "content": "Available memory declines over time",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "suspected process growth requires trend evidence",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "host.memory",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "suspected process growth requires trend evidence",
+      "tool": "host.memory",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "suspected process growth requires trend evidence"
+    },
+    "source_ref": "synthetic-candidate-catalog/memory-leak-009-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-mysql-slow-query-004",
+    "input": {
+      "instruction": "分析 Query latency exceeds SLO，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-004",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "mysql": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-mysql-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "mysql",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-mysql-slow-query-004-ev-004-primary",
+        "source": "synthetic/mysql/telemetry",
+        "content": "Query latency exceeds SLO",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-04-mysql-slow-query-004-ev-004-conflict",
+        "source": "synthetic/mysql/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "mysql.processlist",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "mysql.processlist",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/mysql-slow-query-004-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-network-timeout-010",
+    "input": {
+      "instruction": "分析 Outbound request timeout，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-010",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "network": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-network-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "network",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-network-timeout-010-ev-010-primary",
+        "source": "synthetic/network/telemetry",
+        "content": "Outbound request timeout",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-04-network-timeout-010-ev-010-conflict",
+        "source": "synthetic/network/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "network.dns",
+    "expected_tool_arguments": {},
+    "expected_risk": "HIGH",
+    "expected_approval": true,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "network.dns",
+      "risk": "HIGH",
+      "approval": true,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/network-timeout-010-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-nginx-502-001",
+    "input": {
+      "instruction": "分析 HTTP 502 from reverse proxy，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-001",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "nginx": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-nginx-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "nginx",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-nginx-502-001-ev-001-primary",
+        "source": "synthetic/nginx/telemetry",
+        "content": "HTTP 502 from reverse proxy",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "upstream connection refused",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "nginx.status",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "upstream connection refused",
+      "tool": "nginx.status",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "upstream connection refused"
+    },
+    "source_ref": "synthetic-candidate-catalog/nginx-502-001-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-nginx-504-002",
+    "input": {
+      "instruction": "分析 HTTP 504 gateway timeout，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-002",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "nginx": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-nginx-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "nginx",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-nginx-504-002-ev-002-primary",
+        "source": "synthetic/nginx/telemetry",
+        "content": "HTTP 504 gateway timeout",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      },
+      {
+        "evidence_id": "candidate-04-nginx-504-002-ev-002-conflict",
+        "source": "synthetic/nginx/secondary",
+        "content": "Secondary signal is inconclusive or conflicts with the primary symptom.",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.35,
+        "version": "synthetic-0",
+        "support_relation": "CONTRADICTED"
+      }
+    ],
+    "expected_root_cause": "Evidence insufficient",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "nginx.logs",
+    "expected_tool_arguments": {},
+    "expected_risk": "LOW",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "UNKNOWN",
+      "replan_required": true
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "Evidence insufficient",
+      "tool": "nginx.logs",
+      "risk": "LOW",
+      "approval": false,
+      "verification": "UNKNOWN",
+      "result": "Evidence insufficient"
+    },
+    "source_ref": "synthetic-candidate-catalog/nginx-504-002-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  },
+  {
+    "case_id": "golden-candidate-04-redis-memory-high-003",
+    "input": {
+      "instruction": "分析 Redis memory usage above policy threshold，在证据充分前不得执行状态变更。",
+      "task_type": "INCIDENT_SCENARIO"
+    },
+    "environment": {
+      "environment_id": "synthetic-env-04-003",
+      "observed_at": "2026-09-18T06:13:03+00:00",
+      "os": "Ubuntu 22.04 (synthetic)",
+      "services": {
+        "redis": {
+          "installed": true,
+          "version": "synthetic-1"
+        }
+      }
+    },
+    "knowledge": [
+      {
+        "knowledge_id": "kb-redis-synthetic",
+        "source": "SmartOps Synthetic Scenario Catalog",
+        "version": "synthetic-1",
+        "service": "redis",
+        "trust": 0.5,
+        "content": "Candidate scenario description; not production evidence."
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "candidate-04-redis-memory-high-003-ev-003-primary",
+        "source": "synthetic/redis/telemetry",
+        "content": "Redis memory usage above policy threshold",
+        "timestamp": "2026-09-18T06:13:03+00:00",
+        "relevance": 0.92,
+        "version": "synthetic-1",
+        "support_relation": "SUPPORTED"
+      }
+    ],
+    "expected_root_cause": "working set exceeds configured maxmemory headroom",
+    "expected_action": [
+      "Collect read-only evidence",
+      "Assess risk",
+      "Verify actual state"
+    ],
+    "expected_tool": "redis.info",
+    "expected_tool_arguments": {},
+    "expected_risk": "MEDIUM",
+    "expected_approval": false,
+    "expected_verification": {
+      "status": "NOT_RUN",
+      "replan_required": false
+    },
+    "expected_inspection": {
+      "status": "PENDING",
+      "expected_categories": [
+        "EVIDENCE",
+        "TOOL",
+        "RISK",
+        "VERIFICATION"
+      ]
+    },
+    "ground_truth": {
+      "root_cause": "working set exceeds configured maxmemory headroom",
+      "tool": "redis.info",
+      "risk": "MEDIUM",
+      "approval": false,
+      "verification": "NOT_RUN",
+      "result": "working set exceeds configured maxmemory headroom"
+    },
+    "source_ref": "synthetic-candidate-catalog/redis-memory-high-003-variant-04",
+    "ground_truth_locked": true,
+    "derived_from_candidate": true,
+    "independence": "NOT_INDEPENDENT",
+    "evaluation_only": true
+  }
+]

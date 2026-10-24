@@ -1,0 +1,94 @@
+### 1 基础概述
+
+Docker 是容器化引擎，基于 Linux 内核 cgroup、namespace 实现进程级隔离。容器共享宿主机内核，轻量、启动速度快，适合微服务与应用打包部署。
+核心组件：docker daemon（dockerd 守护进程）、docker client、镜像 image、容器 container、数据卷 volume、网络 network。
+
+### 2 基础运维命令
+
+```
+# 查看运行容器
+docker ps
+# 查看全部容器（含停止）
+docker ps -a
+# 拉取镜像
+docker pull [image_name]:tag
+# 启动容器
+docker run -d --name demo -p 8080:80 nginx
+# 进入容器终端
+docker exec -it [container_id] /bin/bash
+# 查看容器日志
+docker logs [container_id]
+# 实时日志跟踪
+docker logs -f [container_id]
+# 查看容器详细信息
+docker inspect [container_id]
+# 查看docker事件（OOM、重启、创建销毁）
+docker events
+# 停止/删除容器
+docker stop [id]
+docker rm [id]
+# 删除镜像
+docker rmi [image_id]
+# 查看卷列表
+docker volume ls
+# 查看网络
+docker network ls
+```
+
+### 3 常见故障排查
+
+#### 3.1 Docker 守护进程无法启动
+
+现象：`systemctl start docker` 失败
+排查步骤：
+
+1. 查看 dockerd 日志：`journalctl -u docker -f`
+2. 常见原因：
+   - `/etc/docker/daemon.json` 配置语法错误（JSON 逗号、引号错误）
+   - 存储驱动不兼容，overlay2 推荐
+   - 磁盘空间耗尽
+   - 内核版本过低
+   修复：修正 daemon.json；清理磁盘；升级 Linux 内核。
+
+#### 3.2 容器启动后立刻退出（exited (0)）
+
+原因：容器主进程执行完成，无常驻前台进程。
+排查：`docker run -it --entrypoint /bin/sh image` 交互式启动调试，检查 Dockerfile 的 CMD/ENTRYPOINT。
+
+#### 3.3 端口映射失败、端口冲突
+
+报错：`Bind for 0.0.0.0:80 failed: port is already allocated`
+排查：宿主机端口被占用 `ss -tulnp | grep 80`
+解决：更换宿主机映射端口，停止占用端口进程。
+
+#### 3.4 容器 OOM 被杀死
+
+现象：容器状态 OOMKilled
+排查：`docker events` 查看 oom 事件；`dmesg` 查看内核 OOM 日志。
+解决：调整容器内存限制 `--memory`；优化应用内存占用。
+
+#### 3.5 容器内无法访问外部网络
+
+排查方向：
+
+1. docker 网桥 `docker network inspect bridge`
+2. 宿主机 iptables/ufw 防火墙拦截
+3. DNS 异常，检查容器内 `/etc/resolv.conf`
+
+### 4 数据持久化运维
+
+- volume：docker 托管持久存储，推荐生产使用
+- bind mount：直接挂载宿主机目录，注意权限 UID/GID 问题，容易出现 403 权限错误
+⚠️ 不要把业务数据直接放在容器读写层，容器删除数据丢失。
+
+### 5 安全运维要点
+
+1. 尽量避免容器进程以 root 运行
+2. 限制容器 CPU / 内存资源，防止资源抢占
+3. 镜像定期扫描漏洞，不要使用 latest 生产镜像
+4. 不要随意挂载宿主机 `/`、`/etc` 敏感目录
+
+### 6 日志管理
+
+Docker 容器日志默认驱动为 json-file，长期运行日志持续占用磁盘。
+配置 daemon.json 限制日志最大大小与文件数量，防止磁盘打满。

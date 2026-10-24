@@ -1,0 +1,22 @@
+{
+  "scenario_id": "demo-mysql-001",
+  "expected_flow": [
+    "分析 MySQL 连接异常",
+    "检索 MySQL 故障案例",
+    "给出可能原因",
+    "给出排查顺序",
+    "引用知识证据"
+  ],
+  "required_tools": [
+    "knowledge.search"
+  ],
+  "required_output_fields": [
+    "answer",
+    "citations",
+    "trust_score"
+  ],
+  "forbidden_actions": [
+    "直接执行数据库删除操作",
+    "直接修改生产数据库参数"
+  ]
+}

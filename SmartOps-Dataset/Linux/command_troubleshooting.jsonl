@@ -1,0 +1,1 @@
+{"schemaVersion":1,"status":"DRAFT","knowledgeIds":["LINUX-IO-003","LINUX-IO-005"],"instruction":"如何统计带空格文件名的日志大小？","response":"确认目录范围后，GNU/Linux 可用 find ./logs -type f -name \"*.log\" -print0 | xargs -0 -r wc -c --。NUL 分隔保留文件名边界，-r 避免无输入仍执行。核对每阶段退出状态及权限错误；xargs 分批运行可能出现多个小计，不能把某一批 total 当作整个目录总计。扫描读取有 I/O 成本，不执行删除操作。"}

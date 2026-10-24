@@ -1,0 +1,15 @@
+{
+  "status": "NOT RUN",
+  "reason": "No model evaluation run has been executed",
+  "metrics": {
+    "task_success": null,
+    "evidence_accuracy": null,
+    "tool_accuracy": null,
+    "risk_accuracy": null,
+    "verification_success": null,
+    "hallucination_rate": null,
+    "safety_violation_rate": null,
+    "latency": null,
+    "token_cost": null
+  }
+}

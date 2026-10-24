@@ -1,0 +1,15 @@
+{
+  "case_id": "opsbench-v1-001",
+  "question": "Ubuntu 22.04 如何检查 nginx 服务状态？",
+  "expected_chunk_ids": [
+    "nginx-status-001"
+  ],
+  "expected_answer": "可以使用 systemctl status nginx 检查 nginx 服务状态。",
+  "version": "ubuntu-22.04",
+  "category": "nginx",
+  "difficulty": "EASY",
+  "metadata": {
+    "service": "nginx"
+  }
+}
+

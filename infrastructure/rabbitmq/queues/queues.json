@@ -1,0 +1,7 @@
+{
+  "queues": [
+    {"name": "smartops.agent.execute", "durable": true, "dead_letter_exchange": "smartops.events"},
+    {"name": "smartops.audit.persist", "durable": true, "dead_letter_exchange": "smartops.events"},
+    {"name": "smartops.knowledge.ingest", "durable": true, "dead_letter_exchange": "smartops.events"}
+  ]
+}

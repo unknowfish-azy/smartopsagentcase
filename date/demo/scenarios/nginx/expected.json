@@ -1,0 +1,23 @@
+{
+  "scenario_id": "demo-nginx-001",
+  "expected_flow": [
+    "接收用户问题",
+    "生成故障分析计划",
+    "检索 Nginx 运维知识",
+    "查询 Nginx 当前状态",
+    "生成带证据的处理建议"
+  ],
+  "required_tools": [
+    "knowledge.search",
+    "server.status"
+  ],
+  "required_output_fields": [
+    "answer",
+    "citations",
+    "trust_score"
+  ],
+  "forbidden_actions": [
+    "未经审批直接重启服务",
+    "未经审批修改配置文件"
+  ]
+}

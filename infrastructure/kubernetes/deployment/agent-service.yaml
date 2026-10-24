@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service
+  namespace: smartops
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: agent-service}
+  template:
+    metadata:
+      labels: {app: agent-service}
+    spec:
+      containers:
+        - name: agent-service
+          image: smartops/agent-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8003
+          envFrom:
+            - configMapRef: {name: smartops-app-config}
+            - secretRef: {name: smartops-secrets}

@@ -1,0 +1,1 @@
+{"schemaVersion":1,"status":"DRAFT","knowledgeIds":["LINUX-IO-001","LINUX-IO-002"],"instruction":"如何保存正常输出和错误输出？","response":"先确认 shell、命令和允许的日志目录。POSIX 风格可用 command >> deploy.log 2>&1 追加保存，command 是待审核命令占位符。Bash 的 &> 默认覆盖，不能默认用于 sh。使用 tee 时核对各阶段退出状态，避免前段失败被掩盖。保存日志可能泄露敏感字段或写满磁盘，需脱敏和容量管理。"}

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-service
+  namespace: smartops
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: knowledge-service}
+  template:
+    metadata:
+      labels: {app: knowledge-service}
+    spec:
+      containers:
+        - name: knowledge-service
+          image: smartops/knowledge-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8002
+          envFrom:
+            - configMapRef: {name: smartops-app-config}
+            - secretRef: {name: smartops-secrets}

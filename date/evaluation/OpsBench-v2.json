@@ -1,0 +1,80 @@
+[
+  {
+    "case_id": "opsbench-v2-001",
+    "question": "Ubuntu 22.04 环境下如何重启 nginx？",
+    "expected_chunk_ids": [
+      "nginx-restart-ubuntu2204-001"
+    ],
+    "expected_answer": "Ubuntu 22.04 通常可以使用 systemctl restart nginx 重启服务，但执行前应先确认配置检查通过并确认操作风险。",
+    "version": "ubuntu-22.04",
+    "category": "nginx",
+    "difficulty": "MEDIUM",
+    "metadata": {
+      "service": "nginx",
+      "os": "ubuntu",
+      "operation": "restart",
+      "risk_level": "HIGH"
+    }
+  },
+  {
+    "case_id": "opsbench-v2-002",
+    "question": "CentOS 7 环境下 nginx 启动失败应该如何排查？",
+    "expected_chunk_ids": [
+      "nginx-centos7-failure-001"
+    ],
+    "expected_answer": "应检查 nginx 服务状态、配置文件、端口占用以及错误日志，并结合 CentOS 7 对应版本知识进行判断。",
+    "version": "centos-7",
+    "category": "nginx",
+    "difficulty": "HARD",
+    "metadata": {
+      "service": "nginx",
+      "os": "centos",
+      "operation": "diagnosis"
+    }
+  },
+  {
+    "case_id": "opsbench-v2-003",
+    "question": "MySQL 无法连接时是否应该直接重启数据库？",
+    "expected_chunk_ids": [
+      "mysql-safe-diagnosis-001"
+    ],
+    "expected_answer": "不应该直接重启。应先检查服务状态、端口、连接数、错误日志和相关资源，并根据风险策略决定是否需要人工审批。",
+    "version": "latest",
+    "category": "mysql",
+    "difficulty": "HARD",
+    "metadata": {
+      "service": "mysql",
+      "operation": "diagnosis",
+      "risk_level": "HIGH"
+    }
+  },
+  {
+    "case_id": "opsbench-v2-004",
+    "question": "Docker 容器频繁退出时应该如何处理？",
+    "expected_chunk_ids": [
+      "docker-container-exit-001"
+    ],
+    "expected_answer": "应先检查容器日志、退出码、启动命令、资源限制和依赖服务，再决定后续处理方式。",
+    "version": "latest",
+    "category": "docker",
+    "difficulty": "HARD",
+    "metadata": {
+      "service": "docker",
+      "operation": "diagnosis"
+    }
+  },
+  {
+    "case_id": "opsbench-v2-005",
+    "question": "知识库中同时存在 Ubuntu 20.04 和 Ubuntu 22.04 文档时应该优先使用哪个版本？",
+    "expected_chunk_ids": [
+      "version-filter-001"
+    ],
+    "expected_answer": "应该优先使用与当前服务器环境匹配的版本，避免使用其他版本的过时操作方法。",
+    "version": "ubuntu-22.04",
+    "category": "knowledge",
+    "difficulty": "HARD",
+    "metadata": {
+      "feature": "version_filter"
+    }
+  }
+]

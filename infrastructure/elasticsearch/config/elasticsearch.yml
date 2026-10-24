@@ -1,0 +1,7 @@
+cluster.name: smartops-es
+node.name: smartops-es-01
+network.host: 0.0.0.0
+http.port: 9200
+discovery.type: single-node
+xpack.security.enabled: false
+# 生产环境请启用安全能力并使用Secret注入账号/密码。

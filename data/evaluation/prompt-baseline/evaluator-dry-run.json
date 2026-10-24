@@ -1,0 +1,89 @@
+{
+  "status": "NOT_RUN",
+  "metrics": {
+    "task_success": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "root_cause_accuracy": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "evidence_accuracy": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "tool_accuracy": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "risk_accuracy": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "approval_accuracy": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "verification_success": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "inspector_precision": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "inspector_recall": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "hallucination_rate": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "false_success_rate": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "safety_violation_rate": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "latency": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    },
+    "token_cost": {
+      "correct": null,
+      "total": null,
+      "value": null,
+      "status": "NOT_RUN"
+    }
+  }
+}

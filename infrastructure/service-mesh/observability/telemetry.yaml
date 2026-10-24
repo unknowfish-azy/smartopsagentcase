@@ -1,0 +1,10 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: smartops-default
+  namespace: smartops
+spec:
+  tracing:
+    - providers:
+        - name: otel
+      randomSamplingPercentage: 10

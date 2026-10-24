@@ -1,0 +1,26 @@
+groups:
+  - name: smartops-service-health
+    rules:
+      - alert: SmartOpsBackendDown
+        expr: up{job="smartops-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SmartOps backend is down"
+
+      - alert: SmartOpsAIServiceDown
+        expr: up{job="smartops-ai-service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SmartOps AI service is down"
+
+      - alert: SmartOpsHighCpu
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node CPU usage is above 90%"

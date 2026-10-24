@@ -1,0 +1,13 @@
+topics:
+  - name: smartops.alerts
+    partitions: 3
+    replication_factor: 1
+  - name: smartops.agent.tasks
+    partitions: 3
+    replication_factor: 1
+  - name: smartops.audit
+    partitions: 3
+    replication_factor: 1
+  - name: smartops.knowledge.events
+    partitions: 3
+    replication_factor: 1

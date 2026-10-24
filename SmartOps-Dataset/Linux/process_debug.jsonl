@@ -1,0 +1,1 @@
+{"schemaVersion":1,"status":"DRAFT","knowledgeIds":["LINUX-SERVICE-001"],"instruction":"nginx启动了吗？","response":"请确认目标主机及 systemd、容器等启动方式。在 systemd 环境先查看 systemctl status nginx --no-pager 和近期 journalctl 日志；配置相关错误再用 nginx -t 校验。进程存在和配置通过都不证明业务正常，还需监听、依赖与实际请求证据。不要默认重启；当前没有实时检查结果。"}

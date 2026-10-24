@@ -1,0 +1,15 @@
+{
+  "scenario_id": "demo-docker-001",
+  "title": "Docker 容器异常排查",
+  "category": "container_failure",
+  "question": "一个 Docker 容器运行异常，请分析问题并给出排查方案。",
+  "environment": {
+    "runtime": "Docker"
+  },
+  "user_role": "operator",
+  "expected_capabilities": [
+    "knowledge.search"
+  ],
+  "requires_execution": false,
+  "requires_human_approval": false
+}

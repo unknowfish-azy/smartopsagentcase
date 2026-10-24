@@ -1,0 +1,73 @@
+[
+  {
+    "case_id": "opsbench-v1-001",
+    "question": "Ubuntu 22.04 如何检查 nginx 服务状态？",
+    "expected_chunk_ids": [
+      "nginx-status-001"
+    ],
+    "expected_answer": "可以使用 systemctl status nginx 检查 nginx 服务状态。",
+    "version": "ubuntu-22.04",
+    "category": "nginx",
+    "difficulty": "EASY",
+    "metadata": {
+      "service": "nginx",
+      "os": "ubuntu"
+    }
+  },
+  {
+    "case_id": "opsbench-v1-002",
+    "question": "如何检查 nginx 配置文件是否正确？",
+    "expected_chunk_ids": [
+      "nginx-config-001"
+    ],
+    "expected_answer": "可以使用 nginx -t 检查 nginx 配置。",
+    "version": "latest",
+    "category": "nginx",
+    "difficulty": "EASY",
+    "metadata": {
+      "service": "nginx"
+    }
+  },
+  {
+    "case_id": "opsbench-v1-003",
+    "question": "MySQL 出现连接异常应该先排查什么？",
+    "expected_chunk_ids": [
+      "mysql-connect-001"
+    ],
+    "expected_answer": "应该先检查 MySQL 服务状态、监听端口和错误日志。",
+    "version": "latest",
+    "category": "mysql",
+    "difficulty": "MEDIUM",
+    "metadata": {
+      "service": "mysql"
+    }
+  },
+  {
+    "case_id": "opsbench-v1-004",
+    "question": "Docker 容器异常时应该先查看什么？",
+    "expected_chunk_ids": [
+      "docker-debug-001"
+    ],
+    "expected_answer": "应该先检查容器状态和容器日志。",
+    "version": "latest",
+    "category": "docker",
+    "difficulty": "EASY",
+    "metadata": {
+      "service": "docker"
+    }
+  },
+  {
+    "case_id": "opsbench-v1-005",
+    "question": "如何查看 Linux 当前系统负载？",
+    "expected_chunk_ids": [
+      "linux-load-001"
+    ],
+    "expected_answer": "可以使用 uptime 或 top 等命令查看系统负载。",
+    "version": "latest",
+    "category": "linux",
+    "difficulty": "EASY",
+    "metadata": {
+      "service": "linux"
+    }
+  }
+]

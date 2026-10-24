@@ -1,0 +1,4 @@
+service: auth-service
+strip_prefix: false
+retries: 2
+timeout_seconds: 10

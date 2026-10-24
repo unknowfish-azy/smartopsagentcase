@@ -1,0 +1,18 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: backend
+  namespace: smartops
+spec:
+  hosts:
+    - backend
+  http:
+    - timeout: 10s
+      retries:
+        attempts: 2
+        perTryTimeout: 5s
+      route:
+        - destination:
+            host: backend
+            port:
+              number: 8080

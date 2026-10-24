@@ -1,0 +1,25 @@
+{
+  "experiment_id": "EXP-BASELINE-001",
+  "status": "NOT RUN",
+  "model": null,
+  "dataset_version": null,
+  "data_class": null,
+  "reason": "no configured real model, approved dataset or evaluator",
+  "created_at": "2026-09-18T08:29:11.832794+00:00",
+  "metrics": {
+    "task_success": null,
+    "root_cause_accuracy": null,
+    "evidence_accuracy": null,
+    "tool_accuracy": null,
+    "risk_accuracy": null,
+    "approval_accuracy": null,
+    "verification_success": null,
+    "inspector_precision": null,
+    "inspector_recall": null,
+    "hallucination_rate": null,
+    "false_success_rate": null,
+    "safety_violation_rate": null,
+    "latency": null,
+    "token_cost": null
+  }
+}

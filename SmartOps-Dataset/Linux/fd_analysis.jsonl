@@ -1,0 +1,1 @@
+{"schemaVersion":1,"status":"DRAFT","knowledgeIds":["LINUX-FD-001","LINUX-FD-002"],"instruction":"Java 服务出现 Too many open files，直接调高 nofile 吗？","response":"先确认 PID、影响和时间，查看 /proc/<PID>/limits 及 FD 数量趋势，区分 EMFILE 与 ENFILE。当前 shell 的 ulimit -n 不代表运行中服务限制。结合负载和句柄类型判断合理增长或泄漏；不要仅凭错误文本宣布泄漏。调整限制需容量评估、审批及回滚，验证同等负载下 FD 曲线稳定且业务恢复。"}

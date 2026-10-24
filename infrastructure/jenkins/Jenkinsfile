@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        PROJECT_ROOT = '.'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Backend Test') {
+            steps {
+                sh 'cd backend && ./mvnw test -DskipTests=false || mvn test -DskipTests=false'
+            }
+        }
+
+        stage('AI Service Test') {
+            steps {
+                sh 'cd ai-service && python -m pytest'
+            }
+        }
+
+        stage('Frontend Build') {
+            steps {
+                sh 'cd frontend && npm ci && npm run build'
+            }
+        }
+
+        stage('Build Images') {
+            when { expression { return fileExists('deploy/docker/docker-compose.yml') } }
+            steps {
+                sh 'docker compose -f deploy/docker/docker-compose.yml config'
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'frontend/dist/**,target/**', allowEmptyArchive: true
+        }
+    }
+}

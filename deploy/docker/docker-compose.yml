@@ -1,0 +1,172 @@
+# ============================================================
+# SmartOpsAgent Development Infrastructure
+#
+# 当前负责：
+#   MySQL
+#   Redis
+#
+# Backend / AI Service / Frontend
+# 当前保持独立运行：
+#   Backend    -> 8080
+#   AI Service -> 8001
+#   Frontend   -> Nginx :80
+#
+# 启动：
+#   docker compose up -d
+#
+# 查看：
+#   docker compose ps
+#
+# 停止：
+#   docker compose down
+#
+# 查看日志：
+#   docker compose logs -f
+# ============================================================
+
+
+services:
+
+  # ==========================================================
+  # MySQL
+  # ==========================================================
+
+  mysql:
+
+    image: mysql:8.4
+
+    container_name: smartops-mysql
+
+    restart: unless-stopped
+
+    environment:
+
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root-password}
+
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-smartops}
+
+      MYSQL_USER: ${MYSQL_USER:-smartops}
+
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-password}
+
+      TZ: Asia/Shanghai
+
+
+    ports:
+
+      - "${MYSQL_PORT:-3306}:3306"
+
+
+    volumes:
+
+      - mysql_data:/var/lib/mysql
+
+      - ./mysql/conf/my.cnf:/etc/mysql/conf.d/smartops.cnf:ro
+
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+
+
+    healthcheck:
+
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"
+        ]
+
+      interval: 10s
+
+      timeout: 5s
+
+      retries: 10
+
+      start_period: 30s
+
+
+    networks:
+
+      - smartops-network
+
+
+  # ==========================================================
+  # Redis
+  # ==========================================================
+
+  redis:
+
+    image: redis:7.4
+
+    container_name: smartops-redis
+
+    restart: unless-stopped
+
+
+    command:
+      [
+        "redis-server",
+        "/usr/local/etc/redis/redis.conf"
+      ]
+
+
+    ports:
+
+      - "${REDIS_PORT:-6379}:6379"
+
+
+    volumes:
+
+      - redis_data:/data
+
+      - ./redis/conf/redis.conf:/usr/local/etc/redis/redis.conf:ro
+
+
+    healthcheck:
+
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ]
+
+      interval: 10s
+
+      timeout: 5s
+
+      retries: 10
+
+      start_period: 10s
+
+
+    networks:
+
+      - smartops-network
+
+
+# ============================================================
+# Persistent Volumes
+# ============================================================
+
+volumes:
+
+  mysql_data:
+
+    name: smartops-mysql-data
+
+
+  redis_data:
+
+    name: smartops-redis-data
+
+
+# ============================================================
+# Internal Network
+# ============================================================
+
+networks:
+
+  smartops-network:
+
+    name: smartops-network
+
+    driver: bridge

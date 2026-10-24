@@ -1,0 +1,6 @@
+{
+  "exchanges": [
+    {"name": "smartops.events", "type": "topic", "durable": true},
+    {"name": "smartops.commands", "type": "direct", "durable": true}
+  ]
+}

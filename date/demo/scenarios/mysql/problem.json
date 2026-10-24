@@ -1,0 +1,16 @@
+{
+  "scenario_id": "demo-mysql-001",
+  "title": "MySQL 连接异常排查",
+  "category": "database_failure",
+  "question": "MySQL 出现连接异常，请分析可能原因并告诉我应该如何排查。",
+  "environment": {
+    "os": "Ubuntu 22.04",
+    "service": "mysql"
+  },
+  "user_role": "operator",
+  "expected_capabilities": [
+    "knowledge.search"
+  ],
+  "requires_execution": false,
+  "requires_human_approval": false
+}
