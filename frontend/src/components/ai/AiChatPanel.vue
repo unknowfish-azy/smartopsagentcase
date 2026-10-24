@@ -5,8 +5,14 @@
     <div v-if="messages.length" ref="messageList" class="ai-chat-messages" aria-live="polite" role="log" aria-label="会话消息">
       <article v-for="message in messages" :key="message.id" class="ai-chat-message" :class="`ai-chat-message--${message.role}`">
         <div class="ai-chat-message__meta">{{ message.role === 'user' ? 'YOU' : message.providerKey === 'attachment-receipt' ? '附件保存回执 · 非 AI 分析' : 'SMARTOPS AGENT' }}</div>
-        <p v-if="message.pending" class="ai-chat-pending"><span></span><span></span><span></span></p>
-        <p v-else :class="{ 'ai-chat-message__error': message.error }">{{ message.content }}</p>
+        <ol v-if="message.thinking && message.thinking.length" class="ai-thinking" aria-label="AI 思考过程">
+          <li v-for="(step, index) in message.thinking" :key="index" :class="{ 'is-active': message.streaming && index === message.thinking.length - 1, 'is-done': !message.streaming }">
+            <span class="ai-thinking__label">{{ step.label }}</span>
+            <span class="ai-thinking__detail">{{ step.detail }}</span>
+          </li>
+        </ol>
+        <p v-if="message.pending && !message.streaming && !message.content" class="ai-chat-pending"><span></span><span></span><span></span></p>
+        <p v-else-if="message.content" :class="{ 'ai-chat-message__error': message.error }">{{ message.content }}<span v-if="message.streaming" class="ai-cursor" aria-hidden="true"></span></p>
         <AssistantEvidence v-if="!message.pending && !message.error" :message="message" />
         <ChatMessageAttachments :key="`${activeId}:${message.id}`" :conversation-id="activeId" :attachments="message.attachments" :vision-events="message.visionEvents" />
       </article>
@@ -122,7 +128,7 @@ async function sendMessage() {
   adjustHeight(true)
   const conversationId = activeId.value
   const generation = accountEpoch.value
-  const success = await chatStore.sendMessage(prompt)
+  const success = await chatStore.sendMessageStreaming(prompt)
   if (!success && !disposed && accountEpoch.value === generation && (!conversationId || activeId.value === conversationId) && !draft.value) draft.value = prompt
   await nextTick()
   if (!disposed && activeId.value === conversationId) textareaRef.value?.focus()
@@ -159,6 +165,17 @@ onBeforeUnmount(() => { disposed = true })
 .ai-chat-hint, .ai-chat-error { margin: 0; padding: 0 13px 9px; font-size: 11px; }.ai-chat-hint { color: var(--smart-muted); }
 .ai-chat-quick-actions { display: flex; flex-wrap: wrap; gap: 7px; }.ai-chat-quick-actions button { min-height: 32px; padding: 0 10px; border-color: var(--smart-border); border-radius: 999px; font-size: 11px; }.ai-chat-quick-actions button:hover { color: var(--smart-text); background: var(--smart-surface); border-color: var(--smart-border-strong); }
 .is-loading { animation: chat-spin 1s linear infinite; } @keyframes chat-spin { to { transform: rotate(360deg); } } @keyframes chat-pulse { 0%, 80%, 100% { opacity: .35; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+.ai-thinking { display: grid; gap: 5px; margin: 0 0 8px; padding: 8px 10px; list-style: none; border: 1px dashed var(--smart-border-strong); border-radius: 8px; background: color-mix(in srgb, var(--smart-surface) 60%, transparent); }
+.ai-thinking li { display: flex; align-items: baseline; gap: 7px; font-size: 11px; color: var(--smart-muted); opacity: .55; transition: opacity var(--duration-fast), color var(--duration-fast); }
+.ai-thinking li::before { content: ''; flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--smart-muted); transform: translateY(1px); }
+.ai-thinking li.is-done { opacity: 1; color: var(--smart-text); }
+.ai-thinking li.is-done::before { background: var(--smart-success, #5fbf8f); }
+.ai-thinking li.is-active { opacity: 1; color: var(--smart-primary-strong); }
+.ai-thinking li.is-active::before { background: var(--smart-primary-strong); animation: chat-pulse 1s infinite ease-in-out; }
+.ai-thinking__label { font-weight: 500; }
+.ai-thinking__detail { color: var(--smart-muted); }
+.ai-cursor { display: inline-block; width: 6px; height: 1em; margin-left: 2px; vertical-align: text-bottom; background: var(--smart-primary-strong); animation: chat-blink 1s steps(2, start) infinite; }
+@keyframes chat-blink { to { visibility: hidden; } }
 @media (max-width: 600px) { .ai-chat-message { max-width: 94%; }.ai-chat-empty { align-items: flex-start; }.ai-chat-quick-actions { gap: 6px; }.ai-chat-quick-actions button { flex: 1 1 140px; } }
 @media (prefers-reduced-motion: reduce) { .ai-chat-pending span, .is-loading { animation: none; } }
 </style>

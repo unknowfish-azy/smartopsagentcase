@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { getAssistantOptions, saveAssistantPreference, sendAssistantChat } from '../api/assistant.js'
+import { streamChat } from '../api/stream.js'
 import { currentSession } from '../security/session.js'
 import { chatAttachmentsApi } from '../api/chatAttachments.js'
 import { assistantHistory, createConversation, historyStorageKey, replyMetadata, restoreHistory } from '../domain/chat/history.js'
@@ -300,6 +301,78 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     }
   }
 
+  async function sendMessageStreaming(prompt) {
+    syncAccount()
+    if (activeConversation.value?.remote) return false
+    const normalized = String(prompt || '').trim()
+    validationError.value = ''
+    if (!normalized || sending.value) return false
+    if (normalized.length > 2000) {
+      validationError.value = '消息不能超过 2000 字符。'
+      return false
+    }
+    const generation = accountEpoch.value
+    if (!optionsLoaded.value && !await loadOptions()) return false
+    if (!sameAccount(generation) || !canSend.value || sending.value) return false
+    if (!activeConversation.value) newConversation()
+    const conversation = activeConversation.value
+    const providerKey = selectedKey.value
+    if (!conversation.messages.length && conversation.title === '新对话') conversation.title = normalized.replace(/\s+/g, ' ').slice(0, 32)
+    conversation.messages.push({ id: crypto.randomUUID(), role: 'user', content: normalized })
+    conversation.messages.push({ id: crypto.randomUUID(), role: 'assistant', content: '', pending: true, streaming: true, thinking: [], providerKey })
+    const pending = conversation.messages.at(-1)
+    conversation.updatedAt = Date.now()
+    persist()
+
+    try {
+      await streamChat(normalized, {
+        onThinking: (step) => {
+          if (!conversations.value.includes(conversation)) return
+          pending.thinking = [...(pending.thinking || []), step]
+        },
+        onToken: (delta) => {
+          if (!conversations.value.includes(conversation)) return
+          pending.content = (pending.content || '') + delta
+        },
+        onDone: (payload) => {
+          if (!conversations.value.includes(conversation)) return
+          Object.assign(pending, {
+            pending: false,
+            streaming: false,
+            provider: payload?.provider,
+            model: payload?.model,
+            trustScore: payload?.trust_score,
+            citations: payload?.citations || [],
+            evidence: payload?.evidence || [],
+            metadata: payload?.metadata || {},
+          })
+          conversation.updatedAt = Date.now()
+          persist()
+        },
+        onError: (err) => {
+          if (!conversations.value.includes(conversation)) return
+          pending.pending = false
+          pending.streaming = false
+          pending.error = true
+          pending.content = err?.message || '流式响应中断，请重试。'
+        },
+      })
+      return true
+    } catch (error) {
+      if (!conversations.value.includes(conversation)) return false
+      pending.pending = false
+      pending.streaming = false
+      pending.error = true
+      pending.content = error?.message || '暂时无法连接 AI 服务，请确认 ai-service 已启动。'
+      return false
+    } finally {
+      if (sameAccount(generation) && conversations.value.includes(conversation)) {
+        conversation.updatedAt = Date.now()
+        persist()
+      }
+    }
+  }
+
   function clearConversation() {
     deleteConversation(activeId.value)
   }
@@ -309,5 +382,5 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     remoteError, remoteLoading, loadRemoteConversations, loadRemoteDetail, prepareAttachmentConversation, setAttachmentLeaveGuard, invalidateRemoteReads,
     options, selectedKey, selectedOption, optionsLoaded, optionsLoading, optionsError, preferenceSaving,
     preferenceError, preferenceNotice, canSend, canSwitchToMini, accountEpoch, loadOptions, selectProvider,
-    syncAccount, newConversation, selectConversation, renameConversation, deleteConversation, sendMessage, clearConversation }
+    syncAccount, newConversation, selectConversation, renameConversation, deleteConversation, sendMessage, sendMessageStreaming, clearConversation }
 })
