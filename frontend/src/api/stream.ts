@@ -39,6 +39,8 @@ function parseSse(raw: string): { event: string; data: any } | null {
  * @param {(delta: string) => void} [callbacks.onToken]
  * @param {(payload: object) => void} [callbacks.onDone]
  * @param {(error: Error) => void} [callbacks.onError]
+ * @param {object} [options]
+ * @param {string[]} [options.images] 图像证据文件名（当前阶段仅传文件名参与模拟解析）
  */
 export async function streamChat(message: string, {
   signal,
@@ -52,11 +54,13 @@ export async function streamChat(message: string, {
   onToken?: (delta: string) => void
   onDone?: (payload: any) => void
   onError?: (error: any) => void
-} = {}) {
+} = {}, options: { images?: string[] } = {}) {
+  const body: Record<string, any> = { message, use_rag: true, top_k: 5 }
+  if (options.images?.length) body.images = options.images
   const response = await fetch(`${AI_SERVICE_BASE}/api/chat/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, use_rag: true, top_k: 5 }),
+    body: JSON.stringify(body),
     signal,
   })
 

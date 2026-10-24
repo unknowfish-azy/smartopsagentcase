@@ -301,10 +301,11 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     }
   }
 
-  async function sendMessageStreaming(prompt) {
+  async function sendMessageStreaming(prompt, { images } = {}) {
     syncAccount()
     if (activeConversation.value?.remote) return false
     const normalized = String(prompt || '').trim()
+    const imageEvidence = Array.isArray(images) ? images.map(name => String(name || '').trim()).filter(Boolean).slice(0, 5) : []
     validationError.value = ''
     if (!normalized || sending.value) return false
     if (normalized.length > 2000) {
@@ -318,7 +319,7 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     const conversation = activeConversation.value
     const providerKey = selectedKey.value
     if (!conversation.messages.length && conversation.title === '新对话') conversation.title = normalized.replace(/\s+/g, ' ').slice(0, 32)
-    conversation.messages.push({ id: crypto.randomUUID(), role: 'user', content: normalized })
+    conversation.messages.push({ id: crypto.randomUUID(), role: 'user', content: normalized, ...(imageEvidence.length ? { images: imageEvidence } : {}) })
     conversation.messages.push({ id: crypto.randomUUID(), role: 'assistant', content: '', pending: true, streaming: true, thinking: [], providerKey })
     const pending = conversation.messages.at(-1)
     conversation.updatedAt = Date.now()
@@ -356,7 +357,7 @@ export const useAiChatStore = defineStore('ai-chat', () => {
           pending.error = true
           pending.content = err?.message || '流式响应中断，请重试。'
         },
-      })
+      }, { images: imageEvidence })
       return true
     } catch (error) {
       if (!conversations.value.includes(conversation)) return false

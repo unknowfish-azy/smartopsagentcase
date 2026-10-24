@@ -166,7 +166,7 @@ cd frontend && npm test && npm run typecheck && npm run build
 - **LLM 集成（8%）**：OpenAI 兼容网关，可切换 Provider；Prompt 模板集中于 `agent/prompts/`，输出稳定可控。
 - **Agent / 工作流（8%）**：planner→executor→inspector 闭环，具备规划、工具调用、自主决策能力。
 - **RAG（6%）**：混合检索 + 证据验证，检索策略可解释，显著降低错误版本知识干扰。
-- **多模态（5%）**：Three.js 3D + ECharts 图表可视化；对话支持语音输入（Web Speech API，Chrome/Edge 可用）与截屏/拍照证据附件（本地保存，暂不参与模型分析）。
+- **多模态（5%）**：Three.js 3D + ECharts 图表可视化；对话支持语音输入（Web Speech API，Chrome/Edge 可用）与截屏/拍照图像证据（文件名随消息参与 AI 模拟解析，图片内容保留在本地不上传）。
 - **AI 安全与可控（4%）**：policies 权限/风险引擎 + 人工审批 + 审计留痕，体现"可信 AI"。
 - **MCP / 工具集成（4%）**：`agent/tools/adapters/mcp.py` 已实现 MCP 适配，支持外部工具/数据源接入。
 

@@ -22,6 +22,13 @@ class ChatRequest(BaseModel):
 
     version: str | None = None
 
+    # 图像证据（文件名列表，最多 5 张）。
+    # 当前阶段仅传递文件名用于模拟解析，图像内容不上传。
+    images: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+    )
+
     metadata: dict[str, Any] = Field(
         default_factory=dict
     )

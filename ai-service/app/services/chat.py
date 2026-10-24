@@ -78,6 +78,7 @@ class ChatService:
         prompt = self._build_prompt(
             message=request.message,
             context=context,
+            images=request.images,
         )
 
         answer = await self.llm.generate(
@@ -142,6 +143,7 @@ class ChatService:
                 "rag_enabled": request.use_rag,
                 "top_k": request.top_k,
                 "version": request.version,
+                "images": request.images,
             },
         )
 
@@ -174,10 +176,16 @@ class ChatService:
         prompt = self._build_prompt(
             message=request.message,
             context=context,
+            images=request.images,
         )
 
         # 1) AI 思考过程事件（驱动前端可视化）
-        thinking_steps = [
+        thinking_steps = []
+        if request.images:
+            thinking_steps.append(
+                {"stage": "vision", "label": "图像证据解析", "detail": f"解析 {len(request.images)} 张图像证据"}
+            )
+        thinking_steps += [
             {"stage": "retrieve", "label": "知识检索", "detail": f"检索知识库 top_k={request.top_k}"},
             {"stage": "evidence", "label": "证据验证", "detail": f"命中 {len(rag_data.get('citations', []))} 条证据"},
             {"stage": "plan", "label": "Agent 规划", "detail": "将故障拆解为可执行步骤"},
@@ -223,6 +231,7 @@ class ChatService:
                     "rag_enabled": request.use_rag,
                     "top_k": request.top_k,
                     "version": request.version,
+                    "images": request.images,
                 },
             },
         }
@@ -231,14 +240,25 @@ class ChatService:
     def _build_prompt(
         message: str,
         context: str,
+        images: list[str] | None = None,
     ) -> str:
+
+        image_section = ""
+        if images:
+            lines = "\n".join(
+                f"- {name}" for name in images
+            )
+            image_section = f"""
+图像证据（用户提供的截图/拍照，当前阶段仅提供文件名）：
+{lines}
+"""
 
         return f"""
 请回答下面的用户问题。
 
 用户问题：
 {message}
-
+{image_section}
 知识库证据：
 {context}
 

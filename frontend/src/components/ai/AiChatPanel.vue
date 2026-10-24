@@ -23,7 +23,7 @@
     </div>
 
     <form class="ai-chat-composer" :class="{ 'is-dragging': dragging }" @submit.prevent="sendMessage">
-      <p v-if="dragging" class="ai-chat-hint">松开以添加附件；不会发送给模型</p>
+      <p v-if="dragging" class="ai-chat-hint">松开以添加图像证据或附件；仅图像证据参与 AI 分析</p>
       <ChatAttachmentComposer ref="attachmentComposer" @context-change="preserveDraft" />
       <textarea ref="textareaRef" v-model="draft" rows="1" maxlength="2000" aria-label="输入消息" :placeholder="activeConversation?.remote ? '补充附件说明（可留空）…' : compact ? '输入一个运维问题…' : '描述你要完成的运维目标…'" :disabled="sending || attachmentBusy" @paste="attachmentComposer?.paste($event)" @input="adjustHeight()" @keydown="handleKeyDown"></textarea>
       <div class="ai-chat-composer__footer">
@@ -31,7 +31,7 @@
           <button v-if="speechSupported" type="button" class="ai-chat-icon-button" :class="{ 'is-recording': speechListening }" :disabled="sending || attachmentBusy" :aria-pressed="speechListening" :aria-label="speechListening ? '停止语音输入' : '语音输入'" :title="speechListening ? '停止语音输入' : '语音输入（需浏览器支持）'" @click="toggleVoice">
             <Microphone :size="16" aria-hidden="true" />
           </button>
-          <button type="button" class="ai-chat-icon-button" :disabled="sending || attachmentBusy" aria-label="添加附件" title="添加图片或文本附件（私有保存，暂不分析）" @click="attachmentComposer?.pick()">
+          <button type="button" class="ai-chat-icon-button" :disabled="sending || attachmentBusy" aria-label="添加附件" title="添加图像证据（参与 AI 分析）或文本附件（私有保存）" @click="attachmentComposer?.pick()">
             <Paperclip :size="16" aria-hidden="true" />
           </button>
           <button type="button" class="ai-chat-project" @click="attachmentNotice = '当前会话使用默认运维工作空间'">
@@ -151,13 +151,16 @@ async function sendMessage() {
     if (await attachmentComposer.value?.submit(prompt) && activeId.value === conversationId) { draft.value = ''; adjustHeight(true) }
     return
   }
-  if (!prompt || sending.value || !canSend.value || disposed) return
+  const images = attachmentComposer.value?.stagedImageNames?.() || []
+  const text = prompt || (images.length ? '请分析这些图像证据，给出运维建议。' : '')
+  if (!text || sending.value || !canSend.value || disposed) return
   attachmentNotice.value = ''
   draft.value = ''
   adjustHeight(true)
   const conversationId = activeId.value
   const generation = accountEpoch.value
-  const success = await chatStore.sendMessageStreaming(prompt)
+  const success = await chatStore.sendMessageStreaming(text, { images })
+  if (success) attachmentComposer.value?.clearStaged?.()
   if (!success && !disposed && accountEpoch.value === generation && (!conversationId || activeId.value === conversationId) && !draft.value) draft.value = prompt
   await nextTick()
   if (!disposed && activeId.value === conversationId) textareaRef.value?.focus()

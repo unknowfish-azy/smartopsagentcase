@@ -7,6 +7,7 @@
 ### Added
 - 前端 AI 对话支持语音输入（Web Speech API，渐进增强；不支持的浏览器自动隐藏入口）。
 - 语音识别结果仅追加到输入框，不自动发送、不上传音频。
+- 图像证据链路：普通会话中截屏/拍照/图片附件本地暂存，随流式消息将文件名传给 ai-service；`ChatRequest` 新增 `images` 字段，AI 思考过程新增"图像证据解析"阶段，提示词包含图像证据段落（mock 链路可演示，图片内容不上传）。
 
 ### Changed
 - 仓库卫生：停止跟踪 `backend/.m2` 本地 Maven 仓库、`frontend/.vite-once-cache` 预构建缓存与用户运行时知识库数据，并补齐 `.gitignore`。

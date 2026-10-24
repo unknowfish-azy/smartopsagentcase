@@ -9,7 +9,8 @@
         <button type="button" :disabled="busy" :aria-label="`移除 ${item.file.name}`" @click="remove(item)">移除</button>
       </article>
     </div>
-    <p v-if="queue.items.length || store.activeConversation?.remote" class="attachment-notice">个人私有附件会话 · 仅保存证据，尚未接入 OCR / 看图分析。请先在本地遮盖密码、密钥等敏感信息；旧文本历史不会上传。未发送附件刷新后丢失。</p>
+    <p v-if="store.activeConversation?.remote" class="attachment-notice">个人私有附件会话 · 仅保存证据，尚未接入 OCR / 看图分析。请先在本地遮盖密码、密钥等敏感信息；旧文本历史不会上传。未发送附件刷新后丢失。</p>
+    <p v-else-if="queue.items.length" class="attachment-notice">图像证据随消息参与 AI 分析（当前仅发送文件名进行模拟解析，图片内容保留在本地不上传）。</p>
     <p v-if="queue.error || error" class="attachment-error" role="alert">{{ queue.error || error }}</p>
     <div v-if="error && !busy" class="attachment-recovery"><button type="button" @click="store.loadRemoteDetail(store.activeId)">核对服务端记录</button><button type="button" @click="discard">丢弃本地附件草稿</button></div>
     <button v-if="busy" type="button" class="attachment-cancel" @click="cancel">取消本次发送</button>
@@ -46,10 +47,16 @@ let disposed = false
 
 function size(bytes) { return bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB` }
 function pick() { if (!busy.value && !store.sending) input.value?.click() }
+const isImageFile = file => /\.(png|jpe?g)$/i.test(file?.name || '')
 function add(files, source = 'FILE') {
   if (busy.value || store.sending || !files.length) return
-  const previousId = store.activeId
   if (!store.activeConversation?.remote) {
+    // 普通文本会话：图像作为证据本地暂存、随消息参与 AI 分析（仅文件名）；
+    // 一旦混入文本/日志附件，整组转为私有附件会话保存，不参与模型分析。
+    const images = files.filter(isImageFile)
+    const rest = files.filter(file => !isImageFile(file))
+    if (images.length && !rest.length) { queue.add(images, source); return }
+    const previousId = store.activeId
     queue.add(files, source)
     const accepted = queue.items.map(item => item.file)
     const validationError = queue.error
@@ -133,11 +140,17 @@ async function submit(text) {
   } finally { if (stillCurrent()) { busy.value = false; controller = null } }
 }
 
+function stagedImageNames() {
+  if (store.activeConversation?.remote) return []
+  return queue.items.filter(item => !item.stored && isImageFile(item.file)).map(item => item.file.name)
+}
+function clearStaged() { if (!busy.value) queue.clear() }
+
 watch(() => [store.activeId, store.accountEpoch], reset, { flush: 'sync' })
 onBeforeRouteLeave(() => confirmLeave())
 onMounted(() => { store.setAttachmentLeaveGuard(confirmLeave); window.addEventListener('beforeunload', beforeUnload) })
 onBeforeUnmount(() => { disposed = true; reset(); store.setAttachmentLeaveGuard(null); window.removeEventListener('beforeunload', beforeUnload) })
-defineExpose({ pick, paste, drop, submit, capture, count, busy })
+defineExpose({ pick, paste, drop, submit, capture, count, busy, stagedImageNames, clearStaged })
 </script>
 
 <style scoped>

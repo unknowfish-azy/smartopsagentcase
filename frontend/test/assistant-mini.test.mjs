@@ -242,3 +242,27 @@ test('assistant API uses unified endpoints, explicit payload and 150 second time
   assert.deepEqual(calls[1].data, { providerKey: 'mini' })
   assert.equal(calls[2].timeout, 150000)
 })
+
+test('streaming sends image evidence names and records vision thinking steps', async () => {
+  const { store, fixture } = await setup()
+  const stream = {}
+  fixture.streamChat = async (message, callbacks, options) => {
+    stream.message = message
+    stream.images = options?.images
+    callbacks.onThinking({ stage: 'vision', label: '图像证据解析', detail: `解析 ${options.images.length} 张图像证据` })
+    callbacks.onToken('分析')
+    callbacks.onToken('完成')
+    callbacks.onDone({ provider: 'mock', model: 'qwen3:1.7b', trust_score: 0.5, citations: [], evidence: [], metadata: { images: options?.images || [] } })
+  }
+  assert.equal(await store.sendMessageStreaming('分析这张图', { images: ['screen-a.png', ' screen-b.png ', ''] }), true)
+  assert.equal(stream.message, '分析这张图')
+  assert.deepEqual(stream.images, ['screen-a.png', 'screen-b.png'])
+  const [user, assistant] = store.messages
+  assert.deepEqual(user.images, ['screen-a.png', 'screen-b.png'])
+  assert.equal(assistant.thinking[0].stage, 'vision')
+  assert.equal(assistant.content, '分析完成')
+  assert.equal(assistant.streaming, false)
+  assert.deepEqual(assistant.metadata.images, ['screen-a.png', 'screen-b.png'])
+  assert.equal(await store.sendMessageStreaming('再来一次', { images: ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png'] }), true)
+  assert.deepEqual(stream.images, ['1.png', '2.png', '3.png', '4.png', '5.png'])
+})
