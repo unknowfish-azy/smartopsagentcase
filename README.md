@@ -7,6 +7,8 @@
 ![version](https://img.shields.io/badge/version-0.1.0-green)
 ![ai](https://img.shields.io/badge/AI-Agent%20%7C%20RAG%20%7C%20MCP-orange)
 
+**目录**：[项目定位](#1-项目定位与解决的问题) · [技术栈](#2-技术栈与命名) · [对比方案](#3-解决什么问题与传统运维对比) · [工作原理](#4-工作原理) · [目录结构](#5-目录结构) · [安装运行](#6-安装与运行) · [快速开始](#8-快速开始使用) · [AI 能力](#9-核心-ai-能力) · [创新点](#10-创新点) · [文档导航](#13-文档导航与交付材料)
+
 ---
 
 ## 1. 项目定位与解决的问题
@@ -86,11 +88,14 @@ SmartOpsAgent/
 ├── backend/         # Spring Boot 后端（数据/账户/审计）
 ├── ai-service/      # FastAPI AI 服务（LLM 网关、对话、RAG 编排）
 ├── agent/           # Python Agent 框架（planner/executor/inspector/memory/policies）
-├── knowledge/       # 知识库与混合检索服务
+├── knowledge/       # 知识库与混合检索服务（FastAPI，:8002）
 ├── infrastructure/  # 部署与可观测性（Prometheus/Grafana 等）
+├── deploy/          # 容器化部署（docker-compose、MySQL 初始化 SQL）
+├── design-system/   # 设计系统规范（MASTER.md）
 ├── docs/            # 架构、API、实验与竞赛材料
 ├── training/        # 训练与评测脚本
 ├── tests/           # 单元/集成/E2E 测试
+├── tools/           # 辅助工具（含竞赛材料打包脚本）
 ├── scripts/         # 启动与运维脚本（含 Windows）
 ├── data/            # 种子/样例数据（不含密钥与二进制）
 ├── .env.example     # 环境变量模板（密钥一律留空）
@@ -118,8 +123,8 @@ cp .env.example .env
 # 2) 启动 AI 服务（默认 mock 提供方，无需任何密钥即可跑通）
 cd ai-service && pip install -r requirements.txt && uvicorn app.main:app --port 8001
 
-# 3) 启动知识库服务
-cd knowledge && # 按 knowledge/README 启动检索编排
+# 3) 启动知识库服务（仓库根目录，:8002）
+pip install -r knowledge/requirements.txt && uvicorn knowledge.server:app --host 0.0.0.0 --port 8002
 
 # 4) 启动后端（Spring Boot）
 cd backend && ./mvnw spring-boot:run   # 或 mvn spring-boot:run
@@ -200,3 +205,19 @@ cd frontend && npm test && npm run typecheck && npm run build
 - 版本变更见 `CHANGELOG.md`；改了什么 → 改哪个文件 → 版本如何升，均在其中记录。
 - 路线图：流式多模态增强、端侧推理（Transformers.js / WebGPU）、多节点会话与 MFA。
 - 反馈与共建欢迎通过仓库 Issue 提出。
+
+---
+
+## 13. 文档导航与交付材料
+
+| 类别 | 文档 |
+|---|---|
+| 架构 | [架构总览](docs/SMARTOPS_ARCHITECTURE.md) · [模块地图](docs/SMARTOPS_MODULE_MAP.md) · [分层前端服务](docs/layered-frontend-services.md) |
+| API | [Agent](docs/api/agent.md) · [认证](docs/api/auth.md) · [知识](docs/api/knowledge.md) · [监控](docs/api/monitor.md) · [服务器](docs/api/server.md) |
+| 实验与评测 | [评测计划](docs/experiments/evaluation-plan.md) · [消融实验](docs/experiments/ablation-study.md) · [检索](docs/experiments/retrieval.md) · [可信度](docs/experiments/trust.md) |
+| 竞赛材料 | [项目计划书](docs/competition/project-plan.md) · [创新点](docs/competition/innovation.md) · [Demo 脚本](docs/competition/demo-script.md) · [答辩稿](docs/competition/defense.md) |
+| 调整方案清单 | [adjustment-plan.md](docs/competition/adjustment-plan.md)（仓库托管 / TS 改造 / 多模态 / 材料收口的逐项状态） |
+| 技术文档 | [technical-document.pdf](docs/competition/technical-document.pdf)（HTML 源：同目录 `technical-document.html`） |
+| 功能说明 | [AI 对话历史](docs/ai-chat-history.md) · [聊天附件](docs/chat-attachments.md) · [模型接入](docs/model-integrations.md) · [插件中心](docs/plugin-center.md) |
+
+> 生成技术文档 PDF：`cd frontend && node ../scripts/export-technical-pdf.mjs`（依赖 Playwright + Edge）。
