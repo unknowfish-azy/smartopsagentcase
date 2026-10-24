@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartops.mapper.OperationKnownHostMapper">
+    <resultMap id="OperationKnownHostMap" type="com.smartops.entity.OperationKnownHost">
+        <id property="id" column="id"/>
+        <result property="sessionId" column="session_id"/>
+        <result property="host" column="host"/>
+        <result property="port" column="port"/>
+        <result property="algorithm" column="algorithm"/>
+        <result property="fingerprint" column="fingerprint"/>
+        <result property="publicKey" column="public_key"/>
+        <result property="trustedAt" column="trusted_at"/>
+    </resultMap>
+
+    <select id="findBySessionHostAndPort" resultMap="OperationKnownHostMap">
+        SELECT id, session_id, host, port, algorithm, fingerprint, public_key, trusted_at
+        FROM operation_known_host
+        WHERE session_id = #{sessionId} AND host = #{host} AND port = #{port}
+    </select>
+
+    <insert id="insert" parameterType="com.smartops.entity.OperationKnownHost">
+        INSERT INTO operation_known_host (session_id, host, port, algorithm, fingerprint, public_key)
+        VALUES (#{sessionId}, #{host}, #{port}, #{algorithm}, #{fingerprint}, #{publicKey})
+    </insert>
+
+    <update id="update" parameterType="com.smartops.entity.OperationKnownHost">
+        UPDATE operation_known_host
+        SET algorithm = #{algorithm},
+            fingerprint = #{fingerprint},
+            public_key = #{publicKey},
+            trusted_at = CURRENT_TIMESTAMP
+        WHERE session_id = #{sessionId} AND host = #{host} AND port = #{port}
+    </update>
+</mapper>

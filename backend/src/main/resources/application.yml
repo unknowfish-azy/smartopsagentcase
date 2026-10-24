@@ -1,0 +1,110 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 21MB
+  application:
+    name: smartops-backend
+
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${SMARTOPS_SECURE_COOKIE:false}
+
+# ==============================
+# Actuator
+# ==============================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# ==============================
+# 日志
+# ==============================
+logging:
+  level:
+    root: INFO
+    com.smartops: DEBUG
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.smartops.entity
+  configuration:
+    map-underscore-to-camel-case: true
+smartops:
+  knowledge:
+    storage-root: ${SMARTOPS_KNOWLEDGE_STORAGE_ROOT:data/knowledge}
+  mini:
+    base-url: ${SMARTOPS_MINI_BASE_URL:http://127.0.0.1:11434}
+    model: ${SMARTOPS_MINI_MODEL:qwen3:1.7b}
+    knowledge-root: ${SMARTOPS_MINI_KNOWLEDGE_ROOT:../knowledge}
+  bootstrap:
+    username: ${SMARTOPS_BOOTSTRAP_USERNAME:admin}
+    password: ${SMARTOPS_BOOTSTRAP_PASSWORD:}
+  harbor:
+    url: ${SMARTOPS_HARBOR_URL:}
+    username: ${SMARTOPS_HARBOR_USERNAME:}
+    secret: ${SMARTOPS_HARBOR_SECRET:}
+  observability:
+    prometheus-url: ${SMARTOPS_PROMETHEUS_URL:}
+    prometheus-token: ${SMARTOPS_PROMETHEUS_TOKEN:}
+    loki-url: ${SMARTOPS_LOKI_URL:}
+    loki-token: ${SMARTOPS_LOKI_TOKEN:}
+  diagnostics:
+    targets: []
+  sentinel:
+    poll:
+      # 哨兵采集轮询：启动 20 秒后开始，每 30 秒检查一次到期任务
+      initial-delay-ms: ${SMARTOPS_SENTINEL_POLL_DELAY_MS:20000}
+      interval-ms: ${SMARTOPS_SENTINEL_POLL_INTERVAL_MS:30000}
+    schedule:
+      # 定时脚本默认**不开启**：到点只生成待审批预览，属"会自己发生"的行为，
+      # 应由部署方显式打开（设置成较小的 initial-delay-ms）。
+      initial-delay-ms: ${SMARTOPS_SENTINEL_SCHEDULE_DELAY_MS:9223372036854775807}
+      interval-ms: ${SMARTOPS_SENTINEL_SCHEDULE_INTERVAL_MS:60000}
+    notify:
+      webhook:
+        # 失败重试次数（4xx 不重试：对方明确拒绝，重试无意义）
+        max-attempts: ${SMARTOPS_SENTINEL_WEBHOOK_ATTEMPTS:2}
+        connect-timeout-ms: ${SMARTOPS_SENTINEL_WEBHOOK_CONNECT_TIMEOUT_MS:3000}
+        read-timeout-ms: ${SMARTOPS_SENTINEL_WEBHOOK_READ_TIMEOUT_MS:5000}
+        # 默认拒绝内网地址（防 SSRF）。需要投递到内网网关时在此显式列出主机名。
+        allow-hosts: ${SMARTOPS_SENTINEL_WEBHOOK_ALLOW_HOSTS:}
+      email:
+        # 未配置 host 与 from 时，邮件渠道如实报告 not_configured，不会假装已发送。
+        host: ${SMARTOPS_SENTINEL_SMTP_HOST:}
+        port: ${SMARTOPS_SENTINEL_SMTP_PORT:25}
+        username: ${SMARTOPS_SENTINEL_SMTP_USERNAME:}
+        password: ${SMARTOPS_SENTINEL_SMTP_PASSWORD:}
+        from: ${SMARTOPS_SENTINEL_SMTP_FROM:}
+        # 开启 STARTTLS 但保持证书校验，避免把凭据发给伪装服务器
+        starttls: ${SMARTOPS_SENTINEL_SMTP_STARTTLS:false}
+        timeout-ms: ${SMARTOPS_SENTINEL_SMTP_TIMEOUT_MS:8000}
+  security:
+    human-verification:
+      enabled: ${SMARTOPS_HUMAN_VERIFICATION_ENABLED:true}
+      site-key: ${SMARTOPS_TURNSTILE_SITE_KEY:}
+      secret-key: ${SMARTOPS_TURNSTILE_SECRET_KEY:}
+      hostnames: ${SMARTOPS_TURNSTILE_HOSTNAMES:}
+      # 普通用户层登录是否每次都要验证。默认 true：两个入口行为一致，避免正常用户
+      # 第一次遇到验证时对"突然出现的验证框"感到意外。设为 false 退回
+      # "同一 IP/账号失败三次后才强制"的按风险策略。
+      always-require-login: ${SMARTOPS_HUMAN_VERIFICATION_ALWAYS_REQUIRE_LOGIN:true}
+    api-key-encryption-key: ${SMARTOPS_API_KEY_ENCRYPTION_KEY:}
+    internal-token: ${SMARTOPS_INTERNAL_TOKEN:}
+    internal-bypass: ${SMARTOPS_INTERNAL_BYPASS:false}

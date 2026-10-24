@@ -1,0 +1,51 @@
+plugin:
+  id: smartops.mysql
+  name: SmartOps MySQL Plugin
+  version: 1.0.0
+  description: MySQL状态、变量与只读查询插件
+  type: operations
+  enabled: true
+
+permissions:
+  - resource: mysql
+    actions:
+      - status
+      - variables
+      - query_readonly
+
+risk:
+  default: MEDIUM
+
+  operations:
+    - operation: mysql.status
+      risk: LOW
+      approval_required: false
+
+    - operation: mysql.variables
+      risk: LOW
+      approval_required: false
+
+    - operation: mysql.query_readonly
+      risk: MEDIUM
+      approval_required: false
+
+    - operation: mysql.query_write
+      risk: HIGH
+      approval_required: true
+
+    - operation: mysql.drop
+      risk: CRITICAL
+      approval_required: true
+
+    - operation: mysql.truncate
+      risk: CRITICAL
+      approval_required: true
+
+skills:
+  - mysql-troubleshooting
+  - mysql-performance
+
+tools:
+  - mysql.status
+  - mysql.variables
+  - mysql.query_readonly

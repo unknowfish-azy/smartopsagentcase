@@ -1,0 +1,2 @@
+ALTER TABLE chat_attachment
+    ADD COLUMN IF NOT EXISTS source_type VARCHAR(32) NOT NULL DEFAULT 'FILE';

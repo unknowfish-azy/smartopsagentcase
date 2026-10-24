@@ -1,0 +1,55 @@
+plugin:
+  id: smartops.nginx
+  name: SmartOps Nginx Plugin
+  version: 1.0.0
+  description: Nginx状态、配置和日志分析插件
+  type: operations
+  enabled: true
+
+permissions:
+  - resource: nginx
+    actions:
+      - status
+      - config_test
+      - logs
+
+  - resource: filesystem
+    actions:
+      - read
+
+risk:
+  default: MEDIUM
+
+  operations:
+    - operation: nginx.status
+      risk: LOW
+      approval_required: false
+
+    - operation: nginx.config_test
+      risk: LOW
+      approval_required: false
+
+    - operation: nginx.logs
+      risk: LOW
+      approval_required: false
+
+    - operation: nginx.reload
+      risk: HIGH
+      approval_required: true
+
+    - operation: nginx.restart
+      risk: HIGH
+      approval_required: true
+
+    - operation: nginx.stop
+      risk: CRITICAL
+      approval_required: true
+
+skills:
+  - nginx-troubleshooting
+  - nginx-performance
+
+tools:
+  - nginx.status
+  - nginx.config_test
+  - nginx.logs

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartops.mapper.ServerMapper">
+
+    <!-- =========================================================
+         ServerEntity 字段映射
+         ========================================================= -->
+    <resultMap id="ServerResultMap"
+               type="com.smartops.entity.ServerEntity">
+
+        <id property="id"
+            column="id"/>
+
+        <result property="name"
+                column="name"/>
+
+        <result property="host"
+                column="host"/>
+
+        <result property="port"
+                column="port"/>
+
+        <result property="os"
+                column="os"/>
+
+        <result property="status"
+                column="status"/>
+
+        <result property="description"
+                column="description"/>
+
+        <result property="createdAt"
+                column="created_at"/>
+
+        <result property="updatedAt"
+                column="updated_at"/>
+
+    </resultMap>
+
+
+    <!-- =========================================================
+         查询全部服务器
+         ========================================================= -->
+    <select id="selectAll"
+            resultMap="ServerResultMap">
+
+        SELECT
+        id,
+        name,
+        host,
+        port,
+        os,
+        status,
+        description,
+        created_at,
+        updated_at
+        FROM server
+        ORDER BY id DESC
+
+    </select>
+
+
+    <!-- =========================================================
+         根据ID查询
+         ========================================================= -->
+    <select id="selectById"
+            parameterType="long"
+            resultMap="ServerResultMap">
+
+        SELECT
+        id,
+        name,
+        host,
+        port,
+        os,
+        status,
+        description,
+        created_at,
+        updated_at
+        FROM server
+        WHERE id = #{id}
+
+    </select>
+
+
+    <!-- =========================================================
+         根据名称查询
+         ========================================================= -->
+    <select id="selectByName"
+            parameterType="string"
+            resultMap="ServerResultMap">
+
+        SELECT
+        id,
+        name,
+        host,
+        port,
+        os,
+        status,
+        description,
+        created_at,
+        updated_at
+        FROM server
+        WHERE name = #{name}
+        LIMIT 1
+
+    </select>
+
+
+    <!-- =========================================================
+         判断名称是否存在
+         ========================================================= -->
+    <select id="countByName"
+            parameterType="string"
+            resultType="int">
+
+        SELECT COUNT(1)
+        FROM server
+        WHERE name = #{name}
+
+    </select>
+
+
+    <!-- =========================================================
+         新增服务器
+         ========================================================= -->
+    <insert id="insert"
+            parameterType="com.smartops.entity.ServerEntity"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+
+        INSERT INTO server
+        (
+        name,
+        host,
+        port,
+        os,
+        status,
+        description,
+        created_at,
+        updated_at
+        )
+        VALUES
+        (
+        #{name},
+        #{host},
+        #{port},
+        #{os},
+        #{status},
+        #{description},
+        #{createdAt},
+        #{updatedAt}
+        )
+
+    </insert>
+
+
+    <!-- =========================================================
+         修改服务器
+         ========================================================= -->
+    <update id="update"
+            parameterType="com.smartops.entity.ServerEntity">
+
+        UPDATE server
+        SET
+        name = #{name},
+        host = #{host},
+        port = #{port},
+        os = #{os},
+        status = #{status},
+        description = #{description},
+        updated_at = #{updatedAt}
+        WHERE id = #{id}
+
+    </update>
+
+
+    <!-- =========================================================
+         删除服务器
+         ========================================================= -->
+    <delete id="deleteById"
+            parameterType="long">
+
+        DELETE FROM server
+        WHERE id = #{id}
+
+    </delete>
+
+
+    <!-- =========================================================
+         更新服务器状态
+         ========================================================= -->
+    <update id="updateStatus">
+
+        UPDATE server
+        SET
+        status = #{status},
+        updated_at = NOW()
+        WHERE id = #{id}
+
+    </update>
+
+</mapper>

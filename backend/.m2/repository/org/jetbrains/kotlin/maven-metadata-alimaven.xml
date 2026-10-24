@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<metadata>
+  <plugins>
+    <plugin>
+      <prefix>kdoc</prefix>
+      <artifactId>kdoc-maven-plugin</artifactId>
+      <name>kdoc-maven-plugin</name>
+    </plugin>
+    <plugin>
+      <prefix>kotlin</prefix>
+      <artifactId>kotlin-maven-plugin</artifactId>
+      <name>Kotlin Maven Plugin</name>
+    </plugin>
+  </plugins>
+</metadata>

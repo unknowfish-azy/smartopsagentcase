@@ -1,0 +1,49 @@
+plugin:
+  id: smartops.server
+  name: SmartOps Server Plugin
+  version: 1.0.0
+  description: SmartOps服务器监控与运维能力插件
+
+permissions:
+  - resource: server
+    actions:
+      - status
+      - metrics
+
+  - resource: logs
+    actions:
+      - read
+
+risk:
+  default: MEDIUM
+
+  operations:
+    - operation: server.status
+      risk: LOW
+      approval_required: false
+      description: 查询服务器状态
+
+    - operation: server.metrics
+      risk: LOW
+      approval_required: false
+      description: 查询服务器指标
+
+    - operation: server.logs
+      risk: LOW
+      approval_required: false
+      description: 查询服务器日志
+
+    - operation: server.restart
+      risk: HIGH
+      approval_required: true
+      description: 重启服务器服务
+
+    - operation: server.stop
+      risk: HIGH
+      approval_required: true
+      description: 停止服务器服务
+
+    - operation: server.delete
+      risk: CRITICAL
+      approval_required: true
+      description: 删除服务器

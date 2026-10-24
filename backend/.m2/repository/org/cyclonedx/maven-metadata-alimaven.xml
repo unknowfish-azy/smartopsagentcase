@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<metadata>
+  <plugins>
+    <plugin>
+      <prefix>cyclonedx</prefix>
+      <artifactId>cyclonedx-maven-plugin</artifactId>
+      <name>CycloneDX Maven plugin</name>
+    </plugin>
+  </plugins>
+</metadata>

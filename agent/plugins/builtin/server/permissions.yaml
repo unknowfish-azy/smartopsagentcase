@@ -1,0 +1,13 @@
+permissions:
+  - resource: server
+    actions:
+      - status
+      - metrics
+
+  - resource: logs
+    actions:
+      - read
+
+  - resource: filesystem
+    actions:
+      - read

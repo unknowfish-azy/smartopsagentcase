@@ -1,0 +1,53 @@
+plugin:
+  id: smartops.docker
+  name: SmartOps Docker Plugin
+  version: 1.0.0
+  description: Docker容器与Compose运维插件
+  type: operations
+  enabled: true
+
+permissions:
+  - resource: docker
+    actions:
+      - ps
+      - inspect
+      - logs
+
+  - resource: docker-compose
+    actions:
+      - config
+
+risk:
+  default: MEDIUM
+
+  operations:
+    - operation: docker.ps
+      risk: LOW
+      approval_required: false
+
+    - operation: docker.inspect
+      risk: LOW
+      approval_required: false
+
+    - operation: docker.logs
+      risk: LOW
+      approval_required: false
+
+    - operation: docker.compose
+      risk: MEDIUM
+      approval_required: true
+
+    - operation: docker.restart
+      risk: HIGH
+      approval_required: true
+
+skills:
+  - docker-troubleshooting
+  - docker-deployment
+
+tools:
+  - docker.ps
+  - docker.inspect
+  - docker.logs
+  - docker.compose
+  - docker.restart

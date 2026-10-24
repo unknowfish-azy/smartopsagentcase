@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartops.mapper.ModelConnectionMapper">
+
+    <resultMap id="ModelConnectionMap"
+               type="com.smartops.entity.ModelConnection">
+
+        <id property="id"
+            column="id"/>
+
+        <result property="userId"
+                column="user_id"/>
+
+        <result property="name"
+                column="name"/>
+
+        <result property="provider"
+                column="provider"/>
+
+        <result property="baseUrl"
+                column="base_url"/>
+
+        <result property="modelName"
+                column="model_name"/>
+
+        <result property="apiKeyCiphertext"
+                column="api_key_ciphertext"/>
+
+        <result property="apiKeyLast4"
+                column="api_key_last4"/>
+
+        <result property="enabled"
+                column="enabled"/>
+
+        <result property="timeoutSeconds"
+                column="timeout_seconds"/>
+
+        <result property="createdAt"
+                column="created_at"/>
+
+        <result property="updatedAt"
+                column="updated_at"/>
+
+    </resultMap>
+
+
+    <insert id="insert"
+            parameterType="com.smartops.entity.ModelConnection"
+            useGeneratedKeys="true"
+            keyProperty="id">
+
+        INSERT INTO model_connections (
+        user_id,
+        name,
+        provider,
+        base_url,
+        model_name,
+        api_key_ciphertext,
+        api_key_last4,
+        enabled,
+        timeout_seconds
+        )
+        VALUES (
+        #{userId},
+        #{name},
+        #{provider},
+        #{baseUrl},
+        #{modelName},
+        #{apiKeyCiphertext},
+        #{apiKeyLast4},
+        #{enabled},
+        #{timeoutSeconds}
+        )
+
+    </insert>
+
+
+    <update id="update"
+            parameterType="com.smartops.entity.ModelConnection">
+
+        UPDATE model_connections
+
+        <set>
+
+            <if test="name != null">
+                name = #{name},
+            </if>
+
+            <if test="provider != null">
+                provider = #{provider},
+            </if>
+
+            <if test="baseUrl != null">
+                base_url = #{baseUrl},
+            </if>
+
+            <if test="modelName != null">
+                model_name = #{modelName},
+            </if>
+
+            <if test="apiKeyCiphertext != null">
+                api_key_ciphertext = #{apiKeyCiphertext},
+            </if>
+
+            <if test="apiKeyLast4 != null">
+                api_key_last4 = #{apiKeyLast4},
+            </if>
+
+            <if test="enabled != null">
+                enabled = #{enabled},
+            </if>
+
+            <if test="timeoutSeconds != null">
+                timeout_seconds = #{timeoutSeconds},
+            </if>
+
+        </set>
+
+        WHERE id = #{id}
+        AND user_id = #{userId}
+
+    </update>
+
+
+    <delete id="deleteById">
+
+        DELETE FROM model_connections
+
+        WHERE id = #{id}
+        AND user_id = #{userId}
+
+    </delete>
+
+
+    <select id="findById"
+            resultMap="ModelConnectionMap">
+
+        SELECT *
+        FROM model_connections
+
+        WHERE id = #{id}
+        AND user_id = #{userId}
+
+        LIMIT 1
+
+    </select>
+
+
+    <select id="findByUserId"
+            resultMap="ModelConnectionMap">
+
+        SELECT *
+        FROM model_connections
+
+        WHERE user_id = #{userId}
+
+        ORDER BY id DESC
+
+    </select>
+
+</mapper>

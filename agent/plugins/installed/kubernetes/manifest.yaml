@@ -1,0 +1,52 @@
+plugin:
+  id: smartops.kubernetes
+  name: SmartOps Kubernetes Plugin
+  version: 1.0.0
+  description: Kubernetes集群查询与故障排查插件
+  type: operations
+  enabled: true
+
+permissions:
+  - resource: kubernetes
+    actions:
+      - get
+      - describe
+      - logs
+
+risk:
+  default: MEDIUM
+
+  operations:
+    - operation: kubernetes.get_pods
+      risk: LOW
+      approval_required: false
+
+    - operation: kubernetes.describe
+      risk: LOW
+      approval_required: false
+
+    - operation: kubernetes.logs
+      risk: LOW
+      approval_required: false
+
+    - operation: kubernetes.get_services
+      risk: LOW
+      approval_required: false
+
+    - operation: kubernetes.delete_pod
+      risk: HIGH
+      approval_required: true
+
+    - operation: kubernetes.scale
+      risk: HIGH
+      approval_required: true
+
+skills:
+  - kubernetes-troubleshooting
+  - kubernetes-deployment
+
+tools:
+  - kubernetes.get_pods
+  - kubernetes.describe
+  - kubernetes.logs
+  - kubernetes.get_services

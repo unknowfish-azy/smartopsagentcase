@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS team_agent_run (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    team_id BIGINT NOT NULL,
+    agent_id BIGINT NOT NULL,
+    version_id BIGINT NOT NULL,
+    requester_id BIGINT NOT NULL,
+    runtime_id VARCHAR(128) NOT NULL,
+    tool_id VARCHAR(128) NOT NULL,
+    read_only BOOLEAN NOT NULL,
+    parameters_json TEXT NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    previewed_by BIGINT NULL,
+    preview_digest VARCHAR(64) NULL,
+    approved_by BIGINT NULL,
+    grant_token VARCHAR(128) NULL,
+    grant_expires_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX ix_team_agent_run_team_status (team_id, status, created_at),
+    INDEX ix_team_agent_run_requester (requester_id, created_at)
+);

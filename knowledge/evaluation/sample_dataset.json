@@ -1,0 +1,18 @@
+[
+  {
+    "question": "Ubuntu 22.04 如何重启 nginx？",
+    "expected_chunk_ids": [
+      "chunk-nginx-001"
+    ],
+    "expected_answer": "使用 systemctl restart nginx 重启 nginx。",
+    "version": "ubuntu-22.04"
+  },
+  {
+    "question": "如何检查 nginx 配置是否正确？",
+    "expected_chunk_ids": [
+      "chunk-nginx-002"
+    ],
+    "expected_answer": "使用 nginx -t 检查配置文件。",
+    "version": "latest"
+  }
+]

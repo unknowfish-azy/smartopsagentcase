@@ -1,0 +1,11 @@
+permissions:
+
+  - resource: docker
+    actions:
+      - ps
+      - inspect
+      - logs
+
+  - resource: docker-compose
+    actions:
+      - config

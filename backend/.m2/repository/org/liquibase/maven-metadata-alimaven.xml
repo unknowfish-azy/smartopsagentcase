@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<metadata>
+  <plugins>
+    <plugin>
+      <prefix>liquibase</prefix>
+      <artifactId>liquibase-maven-plugin</artifactId>
+      <name>Liquibase Maven Plugin</name>
+    </plugin>
+    <plugin>
+      <prefix>liquibase-plugin</prefix>
+      <artifactId>liquibase-plugin</artifactId>
+      <name>liquibase-plugin</name>
+    </plugin>
+  </plugins>
+</metadata>

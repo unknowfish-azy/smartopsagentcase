@@ -1,0 +1,32 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.smartops:smartops-backend >--------------------
+[INFO] Building smartops-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- dependency:3.6.1:tree (default-cli) @ smartops-backend ---
+[WARNING] The POM for org.apache.maven.reporting:maven-reporting-impl:jar:3.2.0 is missing, no dependency information available
+[WARNING] The POM for org.codehaus.plexus:plexus-archiver:jar:4.8.0 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven.shared:maven-dependency-analyzer:jar:1.13.2 is missing, no dependency information available
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.996 s
+[INFO] Finished at: 2026-10-17T11:07:19+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-dependency-plugin:3.6.1:tree (default-cli) on project smartops-backend: Execution default-cli of goal org.apache.maven.plugins:maven-dependency-plugin:3.6.1:tree failed: Plugin org.apache.maven.plugins:maven-dependency-plugin:3.6.1 or one of its dependencies could not be resolved:
+[ERROR] 	Cannot access alimaven (http://maven.aliyun.com/nexus/content/groups/public/) in offline mode and the artifact org.apache.maven.doxia:doxia-sink-api:jar:1.11.1 has not been downloaded from it before.
+[ERROR] 	Cannot access alimaven (http://maven.aliyun.com/nexus/content/groups/public/) in offline mode and the artifact org.apache.maven.doxia:doxia-logging-api:jar:1.11.1 has not been downloaded from it before.
+[ERROR] 	Cannot access alimaven (http://maven.aliyun.com/nexus/content/groups/public/) in offline mode and the artifact org.apache.maven.reporting:maven-reporting-api:jar:3.1.1 has not been downloaded from it before.
+[ERROR] 	Cannot access alimaven (http://maven.aliyun.com/nexus/content/groups/public/) in offline mode and the artifact org.apache.maven.reporting:maven-reporting-impl:jar:3.2.0 has not been downloaded from it before.
+[ERROR] 	Cannot access alimaven (http://maven.aliyun.com/nexus/content/groups/public/) in offline mode and the artifact org.codehaus.plexus:plexus-archiver:jar:4.8.0 has not been downloaded from it before.
+[ERROR] 	Cannot access alimaven (http://maven.aliyun.com/nexus/content/groups/public/) in offline mode and the artifact org.codehaus.plexus:plexus-io:jar:3.4.1 has not been downloaded from it before.
+[ERROR] 	Cannot access alimaven (http://maven.aliyun.com/nexus/content/groups/public/) in offline mode and the artifact org.apache.maven.shared:maven-dependency-analyzer:jar:1.13.2 has not been downloaded from it before.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/PluginResolutionException

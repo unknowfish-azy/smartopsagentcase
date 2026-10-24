@@ -1,0 +1,14 @@
+# SmartOpsAgent Knowledge Module
+
+# 数值计算
+numpy>=1.26,<3
+
+# PDF 文档解析
+pypdf>=5.0,<7
+
+# Embedding / Reranker 预留
+sentence-transformers>=3.0,<6
+
+# OCR（当前先作为可选依赖）
+pytesseract>=0.3.13
+Pillow>=10.0

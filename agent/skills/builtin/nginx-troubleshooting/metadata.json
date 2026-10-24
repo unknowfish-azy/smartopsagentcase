@@ -1,0 +1,14 @@
+{
+  "name": "nginx-troubleshooting",
+  "version": "1.0.0",
+  "description": "Nginx服务故障排查技能",
+  "author": "SmartOpsAgent",
+  "tags": [
+    "nginx",
+    "linux",
+    "troubleshooting",
+    "web"
+  ],
+  "risk_level": "LOW",
+  "requires_approval_for_execution": true
+}

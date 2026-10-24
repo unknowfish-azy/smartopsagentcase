@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS vision_event (
+    id VARCHAR(36) PRIMARY KEY,
+    conversation_id VARCHAR(36) NOT NULL,
+    attachment_id VARCHAR(36) NOT NULL,
+    user_id BIGINT NOT NULL,
+    source_type VARCHAR(32) NOT NULL,
+    ocr_status VARCHAR(32) NOT NULL DEFAULT 'QUEUED',
+    analysis_status VARCHAR(32) NOT NULL DEFAULT 'NOT_STARTED',
+    privacy_status VARCHAR(32) NOT NULL DEFAULT 'UNREVIEWED',
+    user_confirmed BOOLEAN NOT NULL DEFAULT FALSE,
+    ocr_text LONGTEXT,
+    regions_json LONGTEXT,
+    signals_json LONGTEXT,
+    confidence DOUBLE,
+    analyzer_version VARCHAR(64),
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    UNIQUE KEY uq_vision_event_attachment (attachment_id),
+    INDEX idx_vision_event_scope (user_id, conversation_id, created_at)
+);

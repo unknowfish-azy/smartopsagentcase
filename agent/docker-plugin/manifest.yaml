@@ -1,0 +1,46 @@
+plugin:
+  id: smartops.docker
+  name: SmartOps Docker Plugin
+  version: 1.0.0
+  description: Docker容器查询、检查、日志、Compose与重启能力插件
+
+permissions:
+  - resource: docker
+    actions:
+      - ps
+      - inspect
+      - logs
+
+  - resource: docker-compose
+    actions:
+      - config
+
+risk:
+  default: MEDIUM
+
+  operations:
+
+    - operation: docker.ps
+      risk: LOW
+      approval_required: false
+      description: 查询Docker容器列表
+
+    - operation: docker.inspect
+      risk: LOW
+      approval_required: false
+      description: 查看Docker容器详细信息
+
+    - operation: docker.logs
+      risk: LOW
+      approval_required: false
+      description: 查看Docker容器日志
+
+    - operation: docker.compose
+      risk: MEDIUM
+      approval_required: true
+      description: 执行受限制的Docker Compose操作
+
+    - operation: docker.restart
+      risk: HIGH
+      approval_required: true
+      description: 重启Docker容器

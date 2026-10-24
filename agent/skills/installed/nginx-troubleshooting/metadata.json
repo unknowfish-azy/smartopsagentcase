@@ -1,0 +1,32 @@
+{
+  "name": "nginx-troubleshooting",
+  "display_name": "Nginx Troubleshooting",
+  "version": "1.0.0",
+  "description": "用于安全、证据优先地分析 Nginx 服务状态、配置、日志和常见异常。",
+  "author": "SmartOps",
+  "license": "Apache-2.0",
+  "category": "operations",
+  "tags": [
+    "nginx",
+    "web",
+    "reverse-proxy",
+    "troubleshooting",
+    "linux",
+    "operations"
+  ],
+  "entrypoint": "SKILL.md",
+  "status": "stable",
+  "risk_level": "LOW",
+  "requires_approval": false,
+  "read_only": true,
+  "supports_verification": true,
+  "supports_audit": true,
+  "supported_platforms": [
+    "linux"
+  ],
+  "tools": [
+    "nginx.status",
+    "nginx.config_test",
+    "nginx.logs"
+  ]
+}

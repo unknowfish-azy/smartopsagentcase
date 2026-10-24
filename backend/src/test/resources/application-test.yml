@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: smartops-backend-test
+
+  datasource:
+    url: jdbc:h2:mem:smartops_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.smartops.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    root: WARN
+    com.smartops: DEBUG
+
+# 测试专用 AES-GCM 加密密钥（32 字节 Base64），仅供测试环境使用
+smartops:
+  attachments:
+    cleanup-enabled: false
+  security:
+    human-verification:
+      enabled: false
+    api-key-encryption-key: U21hcnRPcHNBZ2VudFRlc3RLZXkhMjAyNiFhYmNkZWY=
+    internal-token: test-internal-token
+    internal-bypass: false

@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS artifact_draft (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    artifact_type VARCHAR(32) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content LONGTEXT NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'DRAFT',
+    risk VARCHAR(32) NOT NULL DEFAULT 'READ_ONLY',
+    source_ref VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_artifact_draft_user_status (user_id, status, updated_at)
+);

@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS assistant_preference (
+    user_id BIGINT PRIMARY KEY,
+    provider_key VARCHAR(64) NOT NULL DEFAULT 'mini',
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,45 @@
+plugin:
+  id: smartops.redis
+  name: SmartOps Redis Plugin
+  version: 1.0.0
+  description: Redis状态、信息、内存分析与受控重启插件
+  type: operations
+  enabled: true
+
+permissions:
+  - resource: redis
+    actions:
+      - info
+      - memory
+
+  - resource: redis-service
+    actions:
+      - status
+
+risk:
+  default: MEDIUM
+
+  operations:
+    - operation: redis.info
+      risk: LOW
+      approval_required: false
+      description: 查询Redis运行信息
+
+    - operation: redis.memory
+      risk: LOW
+      approval_required: false
+      description: 查询Redis内存状态
+
+    - operation: redis.restart
+      risk: HIGH
+      approval_required: true
+      description: 重启Redis服务
+
+skills:
+  - redis-troubleshooting
+  - redis-performance
+
+tools:
+  - redis.info
+  - redis.memory
+  - redis.restart
