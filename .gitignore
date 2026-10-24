@@ -1,0 +1,759 @@
+# ============================================================
+# SmartOpsAgent .gitignore
+# ============================================================
+
+# ============================================================
+# Operating System
+# ============================================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.nfs*
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# VS Code
+.vscode/
+!.vscode/settings.json.example
+!.vscode/extensions.json.example
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+.nb-gradle/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+*.un~
+Session.vim
+Sessionx.vim
+
+# Emacs
+*~
+\#*\#
+/.#*
+
+# ============================================================
+# Environment / Secrets
+# ============================================================
+
+.env
+.env.*
+!.env.example
+!.env.test.example
+!.env.production.example
+
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Secret files
+secrets/
+secret/
+*.secret
+*.secrets
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# SSH
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# ============================================================
+# Python
+# ============================================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.so
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Pytest
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Coverage
+coverage.xml
+*.cover
+*.py,cover
+.cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Ruff
+.ruff_cache/
+
+# Pylint
+.pylint.d/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python test outputs
+test-results/
+pytest-report/
+reports/
+
+# ============================================================
+# Node / Vue / Frontend
+# ============================================================
+
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.yarn-cache/
+.yarn-integrity
+
+# Vite
+frontend/dist/
+# 管理员层独立服务的构建产物（vite.config.admin.mjs）
+frontend/dist-admin/
+frontend/.vite/
+
+# Vue
+frontend/.cache/
+
+# npm logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# ============================================================
+# Java / Maven / Spring Boot
+# ============================================================
+
+# Maven
+backend/target/
+target/
+
+# Gradle
+.gradle/
+build/
+
+# Java compiled files
+*.class
+
+# Spring Boot generated logs
+backend/logs/
+logs/
+
+# Spring Boot temporary files
+*.log
+*.log.*
+
+# ============================================================
+# Application Logs
+# ============================================================
+
+*.out
+*.err
+
+# Preserve log directory structure if required
+!logs/.gitkeep
+!backend/logs/.gitkeep
+
+# ============================================================
+# Runtime / PID / Lock
+# ============================================================
+
+/.runtime/
+
+*.pid
+*.pid.lock
+*.lock
+*.lck
+
+# ============================================================
+# Database
+# ============================================================
+
+# SQLite
+*.db
+*.db3
+*.sqlite
+*.sqlite3
+
+# Local MySQL / PostgreSQL dumps
+*.sql.gz
+*.dump
+*.bak
+*.backup
+
+# Database temporary files
+*.ibd
+*.frm
+*.MYD
+*.MYI
+
+# Keep database schema / migration source files
+!**/schema/*.sql
+!**/migration/*.sql
+!**/migrations/*.sql
+!**/resources/db/*.sql
+
+# ============================================================
+# Redis
+# ============================================================
+
+dump.rdb
+appendonly.aof
+
+# ============================================================
+# AI / ML / Embeddings
+# ============================================================
+
+# Model caches
+.huggingface/
+.cache/huggingface/
+.cache/torch/
+.cache/pip/
+
+# Sentence Transformers
+.cache/sentence_transformers/
+
+# Local downloaded model files
+models/
+model-cache/
+checkpoints/
+
+# Large vector indexes
+*.faiss
+*.index
+*.npy
+*.npz
+*.pkl
+*.pickle
+
+# Allow explicitly versioned small test fixtures
+!tests/**/fixtures/*.npy
+!tests/**/fixtures/*.npz
+
+# ============================================================
+# Knowledge Base
+# ============================================================
+
+# Generated ingestion output
+knowledge/data/
+knowledge/output/
+knowledge/cache/
+knowledge/tmp/
+
+# OCR temporary files
+knowledge/ocr/tmp/
+knowledge/ocr/cache/
+
+# Generated embeddings
+knowledge/embedding/cache/
+
+# Generated retrieval indexes
+knowledge/retrieval/index/
+
+# Evaluation generated output
+knowledge/evaluation/results/
+knowledge/evaluation/reports/
+
+# ============================================================
+# SmartOps Agent Runtime
+# ============================================================
+
+# Agent runtime state
+agent/runtime/
+agent/state/
+agent/cache/
+agent/tmp/
+agent/logs/
+
+# Agent local memory
+agent/memory/data/
+agent/memory/cache/
+
+# Plugin runtime data
+agent/plugins/runtime/
+agent/plugins/cache/
+agent/plugins/tmp/
+
+# Installed plugin temporary data
+agent/plugins/installed/**/cache/
+agent/plugins/installed/**/tmp/
+agent/plugins/installed/**/runtime/
+agent/plugins/installed/**/logs/
+
+# Skill generated runtime data
+agent/skills/**/.cache/
+agent/skills/**/cache/
+agent/skills/**/tmp/
+agent/skills/**/runtime/
+agent/skills/**/logs/
+
+# Keep source Skill files
+!agent/skills/**/SKILL.md
+!agent/skills/**/README.md
+!agent/skills/**/metadata.json
+
+# ============================================================
+# SmartOps Harness Generated Files
+# ============================================================
+
+# Local agent and build working state
+.m2-local/
+.phase1-pytest-temp/
+.pytest-runtime/
+.pytest-tmp/
+.superpowers/
+.worktrees/
+.tmp-*/
+.vision-skill-staging/
+
+*.harness.json
+*.runtime.json
+*.audit.json
+*.trace.json
+*.events.json
+
+harness-runtime/
+harness-cache/
+harness-logs/
+
+# ============================================================
+# Docker
+# ============================================================
+
+# Docker local state
+.docker/
+docker-data/
+docker-volumes/
+
+# Docker compose local overrides
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Keep example compose files
+!docker-compose.example.yml
+!docker-compose.yml.example
+
+# ============================================================
+# Kubernetes
+# ============================================================
+
+# Generated K8s manifests
+infrastructure/kubernetes/generated/
+infrastructure/kubernetes/rendered/
+
+# Helm generated output
+infrastructure/kubernetes/**/charts/
+infrastructure/kubernetes/**/.helm/
+
+# Local kube config
+kubeconfig
+kubeconfig.*
+.kube/
+
+# Keep templates
+!infrastructure/kubernetes/**/*.yaml
+!infrastructure/kubernetes/**/*.yml
+
+# ============================================================
+# Infrastructure Runtime Data
+# ============================================================
+
+infrastructure/**/data/
+infrastructure/**/cache/
+infrastructure/**/tmp/
+infrastructure/**/logs/
+
+# Prometheus
+infrastructure/prometheus/data/
+
+# Grafana
+infrastructure/grafana/data/
+
+# Elasticsearch
+infrastructure/elasticsearch/data/
+
+# RabbitMQ
+infrastructure/rabbitmq/data/
+
+# Kafka
+infrastructure/kafka/data/
+
+# Jenkins
+infrastructure/jenkins/data/
+
+# ============================================================
+# Scripts Generated Files
+# ============================================================
+
+scripts/**/tmp/
+scripts/**/cache/
+scripts/**/logs/
+scripts/**/output/
+
+# Windows script outputs
+*.bat.log
+*.ps1.log
+
+# ============================================================
+# Build / Generated Artifacts
+# ============================================================
+
+generated/
+generated-code/
+artifacts/
+artifact/
+output/
+outputs/
+tmp/
+temp/
+cache/
+
+# ============================================================
+# Documentation Generated Files
+# ============================================================
+
+docs/_build/
+docs/.cache/
+docs/generated/
+
+# MkDocs
+site/
+
+# Sphinx
+docs/_build/
+
+# ============================================================
+# Test Artifacts
+# ============================================================
+
+tests/.cache/
+tests/tmp/
+tests/output/
+tests/artifacts/
+
+# E2E screenshots / videos
+tests/e2e/screenshots/
+tests/e2e/videos/
+tests/e2e/artifacts/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
+
+# ============================================================
+# Frontend E2E
+# ============================================================
+
+frontend/test-results/
+frontend/test-artifacts/
+frontend/playwright-report/
+frontend/coverage/
+frontend/cypress/screenshots/
+frontend/cypress/videos/
+
+# ============================================================
+# OS / Temporary Archives
+# ============================================================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.backup
+*.old
+
+# Archives produced locally
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+
+# ============================================================
+# Large Local Files
+# ============================================================
+
+*.iso
+*.img
+*.qcow2
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+
+# ============================================================
+# Local IDE / AI Tool State
+# ============================================================
+
+.codex/
+.cursor/
+.claude/
+.copilot/
+
+# Local AI tool configuration
+.agents/
+.agent-runtime/
+
+# ============================================================
+# OS Virtualization
+# ============================================================
+
+.virtualbox/
+VirtualBox VMs/
+
+# ============================================================
+# Local Certificates
+# ============================================================
+
+certs/
+certificates/
+
+# Keep example certificates if intentionally committed
+!certs/example/
+!certificates/example/
+
+# ============================================================
+# Local Configuration
+# ============================================================
+
+config.local.*
+application-local.yml
+application-local.yaml
+application-local.properties
+
+# Keep examples
+!application-local.example.yml
+!application-local.example.yaml
+!application-local.example.properties
+
+# ============================================================
+# Frontend Local Environment
+# ============================================================
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# ============================================================
+# Backend Local Environment
+# ============================================================
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# ============================================================
+# AI Service Local Environment
+# ============================================================
+
+ai-service/.env
+ai-service/.env.*
+!ai-service/.env.example
+
+# ============================================================
+# Knowledge Local Environment
+# ============================================================
+
+knowledge/.env
+knowledge/.env.*
+!knowledge/.env.example
+
+# ============================================================
+# Agent Local Environment
+# ============================================================
+
+agent/.env
+agent/.env.*
+!agent/.env.example
+
+# ============================================================
+# Local Development Database
+# ============================================================
+
+data/local/
+data/runtime/
+data/cache/
+data/tmp/
+
+# Keep seed / demo source data
+!data/seed/
+!data/demo/
+!data/sample/
+
+# ============================================================
+# Local Uploads
+# ============================================================
+
+uploads/
+upload/
+storage/
+storage-local/
+
+# ============================================================
+# User Uploaded Files
+# ============================================================
+
+data/uploads/
+data/user-files/
+
+# ============================================================
+# Backup Files
+# ============================================================
+
+backup/
+backups/
+*.snapshot
+
+# ============================================================
+# Security / Audit Local Data
+# ============================================================
+
+audit/
+audit-data/
+security-logs/
+approval-logs/
+
+# Keep structure markers
+!audit/.gitkeep
+!audit-data/.gitkeep
+
+# ============================================================
+# Machine Specific
+# ============================================================
+
+*.machine.json
+*.local.json
+*.local.yaml
+*.local.yml
+
+# ============================================================
+# Generated API / OpenAPI
+# ============================================================
+
+openapi.generated.json
+openapi.generated.yaml
+api/generated/
+
+# ============================================================
+# Temporary HTTP Files
+# ============================================================
+
+.http/
+.http-client.private.env.json
+
+# ============================================================
+# Keep Important Source Files
+# ============================================================
+
+# Always keep environment examples
+!.env.example
+
+# Always keep project documentation
+!README.md
+!AGENTS.md
+!docs/reports/
+!docs/reports/**
+
+# Always keep Skill source
+!**/SKILL.md
+!**/metadata.json
+
+# Always keep test source
+!tests/**/*.py
+!tests/**/*.md
+
+# ============================================================
+# Competition Repo Hygiene (additions)
+# ============================================================
+
+# Binary / native build artifacts that must never be committed
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+*.map
+*.pth
+*.onnx
+*.gguf
+
+# Unrelated / local-only working dirs (kept out of the public submission)
+/resume-site/
+/phase4-test-tmp/
+/test-artifacts/
+
+# ============================================================
+# End
+# ============================================================
