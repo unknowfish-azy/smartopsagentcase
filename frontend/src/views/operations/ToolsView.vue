@@ -52,7 +52,7 @@
       <div v-else class="operation-tool-workspace">
         <div class="tool-definition-header">
           <div><strong>{{ activeTool.label }}</strong><p>{{ activeTool.subtitle }}</p></div>
-          <div class="tool-badges"><span>{{ activeTool.readOnly ? 'READ ONLY / 只读' : 'MUTATING / 变更' }}</span><span :class="`risk-${activeTool.riskLevel.toLowerCase()}`">RISK {{ activeTool.riskLevel }}</span><span v-if="activeTool.requireConfirm">REQUIRE CONFIRM / 需要确认</span></div>
+          <div class="tool-badges"><span>{{ activeTool.readOnly ? 'READ ONLY / 只读' : 'MUTATING / 变更' }}</span><span :class="`risk-${activeTool.riskLevel.toLowerCase()}`">RISK {{ activeTool.riskLevel }}</span><span v-if="activeTool.requireConfirm">REQUIRE CONFIRM / 需要确认</span><span :class="`impl-${implementationState.toLowerCase()}`">IMPL {{ implementationState }}</span></div>
         </div>
         <div class="tool-definition-grid">
           <section>
@@ -103,7 +103,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProcessDiagnosticScenario, processDiagnosticScenarios } from './processDiagnostics.js'
 import { findOperationTool, operationToolGroups, previewOperationToolCommands } from './toolCatalog.js'
-import { executeOperationTool } from '../../api/operations.ts'
+import { executeOperationTool, getOperationTools } from '../../api/operations.ts'
 import { getActiveOperationRuntime } from '../../api/operationRuntimeState.ts'
 import { cloudCoverage } from './cloudCoverage.js'
 import ObservabilityQuery from '../../components/operations/ObservabilityQuery.vue'
@@ -129,6 +129,36 @@ const observabilitySource = computed(() => ({ 'prometheus-query': 'prometheus', 
 const isHarborBrowser = computed(() => selectedTool.value === 'harbor-browser')
 const isDiagnosticTool = computed(() => ['service-http-check', 'service-certificate-check', 'config-diff'].includes(selectedTool.value))
 const activeTool = computed(() => findOperationTool(selectedTool.value) || findOperationTool('processes'))
+
+// OPS-01：页面目录与后端能力目录必须对齐。
+// 前端 catalog 里有相当一部分条目只是"页面展示"，后端没有对应执行入口；
+// 这里以后端目录为准，显式标注实现状态，并阻止不可执行的条目发起调用，
+// 避免"点了执行、拿到 404 或 127"这种伪执行结果。
+const backendTools = ref({})
+const backendTool = computed(() => backendTools.value[selectedTool.value] || null)
+const implementationState = computed(() => {
+  if (!backendTool.value) return 'UI_ONLY'
+  return backendTool.value.implementationStatus || 'REAL'
+})
+const executionBlockedReason = computed(() => {
+  if (!backendTool.value) return '该工具只存在于页面目录，后端没有对应的执行入口'
+  if (implementationState.value === 'TEMPLATE') return '后端标记为 TEMPLATE（仅有命令模板，尚无适配器）'
+  if (implementationState.value === 'UNAVAILABLE') return '后端标记为 UNAVAILABLE（外部平台写入尚未接入）'
+  return ''
+})
+
+async function loadBackendCatalog() {
+  try {
+    const response = await getOperationTools()
+    const payload = response?.data?.data ?? response?.data ?? []
+    const list = Array.isArray(payload) ? payload : []
+    backendTools.value = Object.fromEntries(list.map(item => [item.toolId, item]))
+  } catch {
+    // 目录加载失败不阻塞页面，但所有工具都会被标为 UI_ONLY 并禁止执行。
+    backendTools.value = {}
+  }
+}
+loadBackendCatalog()
 const toolValues = reactive({})
 watch(activeTool, tool => {
   for (const key of Object.keys(toolValues)) delete toolValues[key]
@@ -167,6 +197,11 @@ async function runTool() {
     runError.value = '该变更工具需要独立审批流程，当前只读执行入口已阻止执行。'
     return
   }
+  // OPS-01：后端目录没有该工具，或标记为非 REAL，一律不发起调用。
+  if (executionBlockedReason.value) {
+    runError.value = executionBlockedReason.value
+    return
+  }
   running.value = true
   runError.value = ''
   runResult.value = null
@@ -190,4 +225,7 @@ function openConnections() { router.push('/connections') }
  .process-workspace{padding:22px}.process-context{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding-bottom:18px;border-bottom:1px solid var(--smart-border)}.process-context strong{color:var(--smart-primary-strong);font:11px var(--font-mono);letter-spacing:.1em}.process-context span,.process-context small{color:var(--smart-muted);font:10px var(--font-mono)}.process-context small{flex-basis:100%;font-family:var(--font-cn);font-size:12px}.process-scenarios{display:flex;flex-wrap:wrap;gap:8px;padding:18px 0}.process-scenario{font-family:var(--font-cn)}.process-scenario.active{background:var(--smart-primary-strong);color:#071018}.process-detail{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding-top:10px}.process-detail h2{margin:0 0 8px;font:400 24px var(--font-cn)}.process-detail h3{margin:0 0 10px;color:var(--smart-primary-strong);font:10px var(--font-mono);letter-spacing:.1em}.process-detail p,.process-detail li{color:var(--smart-muted);font:13px/1.7 var(--font-cn)}.process-detail ul{margin:0;padding-left:18px}.command-preview{display:grid;gap:8px}.command-preview code{display:grid;gap:5px;padding:10px;border:1px solid var(--smart-border);background:rgba(5,17,25,.5);color:var(--smart-text);font:12px var(--font-mono)}.command-preview small{color:var(--smart-muted);font:11px var(--font-cn)}.process-risk{grid-column:1/-1;padding-top:16px;border-top:1px solid var(--smart-border)}@media(max-width:800px){.process-workspace{padding:16px}.process-detail{grid-template-columns:1fr}.process-risk{grid-column:auto}}
 .operation-tool-workspace{padding:22px}.tool-definition-header{display:flex;justify-content:space-between;gap:20px;padding-bottom:18px;border-bottom:1px solid var(--smart-border)}.tool-definition-header strong{color:var(--smart-primary-strong);font:13px var(--font-mono);letter-spacing:.08em}.tool-definition-header p,.tool-note,.bridge-gate p,.tool-definition-grid li{color:var(--smart-muted);font:12px/1.7 var(--font-cn)}.tool-badges{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.tool-badges span{height:max-content;padding:6px 8px;border:1px solid var(--smart-border);color:var(--smart-muted);font:9px var(--font-mono)}.tool-badges .risk-high{border-color:#aa6670;color:#dc9aa3}.tool-definition-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding-top:22px}.tool-definition-grid section{min-width:0}.tool-definition-grid h2{margin:0 0 12px;color:var(--smart-primary-strong);font:10px var(--font-mono);letter-spacing:.12em}.tool-parameters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.tool-parameters label{display:grid;gap:6px;color:var(--smart-muted);font:11px var(--font-cn)}.tool-parameters input{min-width:0;padding:9px;border:1px solid var(--smart-border);background:rgba(5,17,25,.5);color:var(--smart-text);font:12px var(--font-mono);outline:0}.tool-parameters input:focus{border-color:var(--smart-primary-strong)}.tool-error{color:#dc9aa3;font:12px var(--font-cn)}.bridge-gate{display:grid;align-content:start;justify-items:start;gap:10px}.bridge-gate .capability-chip{margin-bottom:4px}@media(max-width:800px){.tool-definition-header{display:grid}.tool-badges{justify-content:flex-start}.tool-definition-grid{grid-template-columns:1fr}.tool-parameters{grid-template-columns:1fr}}
 .tool-run-result{margin-top:24px;padding-top:20px;border-top:1px solid var(--smart-border)}.tool-run-result>header{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px;color:var(--smart-muted);font:10px var(--font-mono)}.tool-run-result>header strong{color:var(--smart-primary-strong)}.command-result{display:grid;gap:12px;padding:16px 0;border-top:1px solid rgba(130,160,180,.14)}.command-result>div{display:flex;justify-content:space-between;gap:16px}.command-result code{color:var(--smart-text);font:12px var(--font-mono)}.command-result h3{margin:0 0 6px;color:var(--smart-primary-strong);font:10px var(--font-mono)}.command-result pre{max-height:280px;margin:0;padding:12px;overflow:auto;border:1px solid var(--smart-border);background:#03070d;color:var(--smart-text);font:11px/1.6 var(--font-mono);white-space:pre-wrap}.exit-ok{color:#8fc7af}.exit-failed{color:#dc9aa3}
+.tool-badges .impl-real{border-color:#8fc7af;color:#8fc7af}
+.tool-badges .impl-template{border-color:#c8b077;color:#c8b077}
+.tool-badges .impl-unavailable,.tool-badges .impl-ui_only{border-color:#aa6670;color:#dc9aa3}
 </style>

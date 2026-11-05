@@ -143,6 +143,113 @@ services:
       - smartops-network
 
 
+  # ==========================================================
+  # Backend（PERF-08：可运行发布入口）
+  # ==========================================================
+  # 说明：此前 compose 只起 MySQL/Redis，后端与 AI 服务"独立运行"，
+  # 导致发布链路在 compose 这一层是断的。这里补上真实可 `up` 的服务定义。
+
+  backend:
+
+    build:
+
+      context: ../../backend
+
+      dockerfile: Dockerfile
+
+    image: smartops-backend:local
+
+    container_name: smartops-backend
+
+    restart: unless-stopped
+
+    depends_on:
+
+      mysql:
+
+        condition: service_healthy
+
+      redis:
+
+        condition: service_healthy
+
+    environment:
+
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+
+      MYSQL_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-smartops}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+
+      MYSQL_USERNAME: ${MYSQL_USER:-smartops}
+
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-password}
+
+      REDIS_HOST: redis
+
+      REDIS_PORT: 6379
+
+      TZ: Asia/Shanghai
+
+    ports:
+
+      - "${BACKEND_PORT:-8080}:8080"
+
+    # 优雅停机：server.shutdown=graceful 需要编排侧给出足够的终止宽限期
+    stop_grace_period: 40s
+
+    healthcheck:
+
+      test:
+
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8080/actuator/health/readiness || exit 1"
+        ]
+
+      interval: 15s
+
+      timeout: 5s
+
+      retries: 10
+
+      start_period: 60s
+
+    networks:
+
+      - smartops-network
+
+
+  # ==========================================================
+  # AI Service
+  # ==========================================================
+
+  ai-service:
+
+    build:
+
+      context: ../../ai-service
+
+      dockerfile: Dockerfile
+
+    image: smartops-ai-service:local
+
+    container_name: smartops-ai-service
+
+    restart: unless-stopped
+
+    environment:
+
+      TZ: Asia/Shanghai
+
+    ports:
+
+      - "${AI_SERVICE_PORT:-8001}:8001"
+
+    # 健康检查由镜像内 HEALTHCHECK 提供（slim 镜像不含 curl）
+    networks:
+
+      - smartops-network
+
+
 # ============================================================
 # Persistent Volumes
 # ============================================================

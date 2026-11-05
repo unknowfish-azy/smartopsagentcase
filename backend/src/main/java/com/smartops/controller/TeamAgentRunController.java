@@ -102,7 +102,8 @@ public class TeamAgentRunController {
             catch (com.fasterxml.jackson.core.JsonProcessingException invalid) {
                 throw new BusinessException(400, "TEAM_TOOL_PARAMETERS_INVALID");
             }
-            var result = operations.executeApprovedTeamRun(actor.id(), run.runtimeId(), run.toolId(), parameters);
+            var result = operations.executeApprovedTeamRun(actor.id(), run.runtimeId(), run.toolId(), parameters,
+                    "team-run-" + runId);
             runs.finish(actor, runId, result.status().equals("SUCCEEDED") ? "SUCCEEDED" : "FAILED");
             return ApiResponse.success(result);
         } catch (RuntimeException failure) {

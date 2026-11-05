@@ -181,6 +181,17 @@
         </dependency>
 
         <!-- =========================
+             Micrometer Prometheus 注册表
+             PERF-08：没有它 /actuator/prometheus 不会存在，
+             Prometheus 抓取路径就是一条"看起来配好了、实际抓不到"的断链。
+             版本由 Spring Boot parent 管理。
+             ========================= -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- =========================
              Lombok
              减少实体类、DTO等模板代码
              ========================= -->

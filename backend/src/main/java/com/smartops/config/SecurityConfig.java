@@ -51,6 +51,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/favicon.ico", "/actuator/health", "/error", "/api/auth/session", "/api/auth/login", "/api/auth/register", "/api/auth/registration",
                                 "/api/auth/human-verification", "/api/auth/human-verification/verify").permitAll()
+                        // PERF-08：抓取与探针端点只放行 GET，且仅这三条白名单。
+                        // /actuator/prometheus 建议由部署侧网络策略限制为内网可访问。
+                        .requestMatchers(HttpMethod.GET, "/actuator/prometheus",
+                                "/actuator/health/liveness", "/actuator/health/readiness").permitAll()
                         .requestMatchers(INTERNAL).permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/models").permitAll()
                         .requestMatchers(HttpMethod.POST, "/v1/chat/completions").permitAll()
