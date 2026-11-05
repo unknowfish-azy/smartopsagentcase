@@ -11,7 +11,7 @@ import {
     createWebHistory
 } from 'vue-router'
 
-import { sessionRouteDecision } from '../security/portalPolicy.js'
+import { sessionRouteDecision, isAdminSession } from '../security/portalPolicy.js'
 import { clearSession, loadSession } from '../security/session.js'
 
 const routes = [
@@ -26,6 +26,8 @@ const routes = [
             { path: 'teams', name: 'AdminTeams', component: () => import('../views/admin/AdminTeamsView.vue') },
             { path: 'sessions', name: 'AdminSessions', component: () => import('../views/admin/AdminSessionsView.vue') },
             { path: 'audit', name: 'AdminAudit', component: () => import('../views/admin/AdminAuditView.vue') },
+            { path: 'approvals', name: 'AdminApprovals', component: () => import('../views/admin/AdminApprovalsView.vue') },
+            { path: 'models', name: 'AdminModels', component: () => import('../views/admin/AdminModelGovernanceView.vue') },
             { path: 'security', name: 'AdminMfa', component: () => import('../views/admin/AdminMfaView.vue') },
             { path: 'readiness', name: 'AdminReadiness', component: () => import('../views/admin/AdminReadinessView.vue') },
             { path: 'system/dept', name: 'AdminDept', component: () => import('../views/admin/system/DeptView.vue') },
@@ -34,7 +36,9 @@ const routes = [
             { path: 'system/menu', name: 'AdminMenu', component: () => import('../views/admin/system/MenuView.vue') },
             { path: 'system/dict', name: 'AdminDict', component: () => import('../views/admin/system/DictView.vue') },
             { path: 'system/notice', name: 'AdminNotice', component: () => import('../views/admin/system/NoticeView.vue') },
-            { path: 'system/loginlog', name: 'AdminLoginLog', component: () => import('../views/admin/system/LoginLogView.vue') }
+            { path: 'system/loginlog', name: 'AdminLoginLog', component: () => import('../views/admin/system/LoginLogView.vue') },
+            // 管理端内部无效访问不再静默回总览：明确告知页面不存在及其边界。
+            { path: ':pathMatch(.*)*', name: 'AdminNotFound', component: () => import('../views/admin/AdminNotFoundView.vue') }
         ]
     }
 ]
@@ -67,6 +71,11 @@ router.beforeEach(async (to) => {
     }
     if (to.meta.public && !user?.mustChangePassword) return true
     if (to.matched.length === 0) return { path: user ? '/admin' : '/login' }
+    // 管理路由只对管理员入口会话开放。非管理员会话在这里明确退回登录页，
+    // 避免跳回服务上未注册的 '/' 造成无限重定向；不授予任何降级访问。
+    if (user && !user.mustChangePassword && !isAdminSession(user) && /^\/admin(?:\/|$)/.test(to.path)) {
+        return { path: '/login', query: { portal: 'admin', reason: 'denied', redirect: to.fullPath } }
+    }
     return sessionRouteDecision(user, to)
 })
 

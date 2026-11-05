@@ -29,8 +29,10 @@ export const teamToolsApi = {
 export const teamRunsApi = {
   list: teamId => value(request.get(`/api/teams/${encodeURIComponent(teamId)}/runs`)),
   pendingApprovals: teamId => value(request.get(`/api/teams/${encodeURIComponent(teamId)}/approvals`)),
+  detail: runId => value(request.get(`/api/team-agent-runs/${encodeURIComponent(runId)}`)),
   create: (teamId, agentId, input) => value(request.post(`${agent(teamId, agentId)}/runs`, input)),
   preview: runId => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/preview`)),
-  approve: runId => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/approve`)),
+  // 决策依据可选；服务端只在提供时写入审计，且要求审批人先完成预览。
+  approve: (runId, decisionBasis) => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/approve`, decisionBasis ? { decisionBasis } : {})),
   execute: runId => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/execute`))
 }

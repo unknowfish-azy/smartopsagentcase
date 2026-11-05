@@ -52,6 +52,7 @@
         切换{{ otherPortal.label }}：<code>{{ otherPortal.address }}</code>（独立服务，需重新登录）
       </p>
       <p v-if="route.query.reason === 'password-changed'" role="status">密码已更新，旧会话已退出，请重新登录。</p>
+      <p v-if="route.query.reason === 'denied'" role="status">当前账号没有管理员入口。请使用管理员账号登录，或切换到用户门户。</p>
       <p v-if="success" class="login-form__notice" role="status">{{ success }}</p>
       <div id="portal-fields" class="login-form__fields" :role="registering ? 'group' : 'tabpanel'" :aria-label="registering ? '普通账号注册信息' : undefined" :aria-labelledby="registering ? undefined : `portal-${form.portal}`">
         <label class="login-field" :class="{ 'login-field--focused': focusedInput === 'username' }">

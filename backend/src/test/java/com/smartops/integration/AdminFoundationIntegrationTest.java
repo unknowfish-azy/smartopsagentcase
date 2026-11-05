@@ -235,5 +235,144 @@ class AdminFoundationIntegrationTest {
         mvc.perform(get("/api/admin/audit").session(target.session())).andExpect(status().isForbidden());
     }
 
+    @Test void deputyWithoutConfigCapabilityCannotWriteSystemConfiguration() throws Exception {
+        jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(44,'foundation-config-less',?,'admin')", new BCryptPasswordEncoder().encode(PASSWORD));
+        var root = new com.smartops.security.SessionUser(11L, "foundation-admin", "admin", "admin", false, 0);
+        accounts.appointPlatformAdmin(root, 44L, "specialist", List.of("admin.users"));
+        Client limited = login("foundation-config-less", PASSWORD, "admin");
+        // 账号页需要读取组织选项：admin.users 可读配置元数据，但写配置必须 admin.config。
+        mvc.perform(get("/api/admin/system/depts").session(limited.session())).andExpect(status().isOk());
+        send(limited, post("/api/admin/system/posts"), Map.of("code", "ops", "name", "运维", "sort", 1, "remark", "")).andExpect(status().isForbidden());
+        // 审计与登录日志需要 admin.audit，不在 admin.users 范围内。
+        mvc.perform(get("/api/admin/audit").session(limited.session())).andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/system/login-logs").session(limited.session())).andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/users").session(limited.session())).andExpect(status().isOk());
+    }
+
+    @Test void revokedPlatformAdminLosesManagementReadsAfterRelogin() throws Exception {
+        jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(55,'foundation-revoked',?,'admin')", new BCryptPasswordEncoder().encode(PASSWORD));
+        var root = new com.smartops.security.SessionUser(11L, "foundation-admin", "admin", "admin", false, 0);
+        accounts.appointPlatformAdmin(root, 55L, "deputy", List.of("admin.users"));
+        accounts.revokePlatformAdmin(root, 55L);
+        Client revoked = login("foundation-revoked", PASSWORD, "admin");
+        mvc.perform(get("/api/admin/users").session(revoked.session())).andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/overview").session(revoked.session())).andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/users/22/context").session(revoked.session())).andExpect(status().isForbidden());
+    }
+
+    @Test void capabilityCatalogFollowsServerGrantRules() throws Exception {
+        Client manager = admin();
+        JsonNode catalog = data(mvc.perform(get("/api/admin/governance/capabilities").session(manager.session())).andExpect(status().isOk()));
+        assertThat(catalog.path("level").asText()).isEqualTo("root");
+        assertThat(catalog.path("manageableLevels").toString()).contains("deputy", "specialist");
+        assertThat(catalog.path("items").size()).isEqualTo(9);
+        for (JsonNode item : catalog.path("items")) {
+            assertThat(item.path("grantable").asBoolean()).isTrue();
+            assertThat(item.path("label").asText()).isNotBlank();
+        }
+        // 历史未建档管理员继续按最高管理员语义放行。
+        jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(66,'foundation-deputy2',?,'admin')", new BCryptPasswordEncoder().encode(PASSWORD));
+        accounts.appointPlatformAdmin(new com.smartops.security.SessionUser(11L, "foundation-admin", "admin", "admin", false, 0), 66L, "deputy", List.of("admin.users"));
+        Client deputy = login("foundation-deputy2", PASSWORD, "admin");
+        JsonNode deputyCatalog = data(mvc.perform(get("/api/admin/governance/capabilities").session(deputy.session())).andExpect(status().isOk()));
+        assertThat(deputyCatalog.path("level").asText()).isEqualTo("deputy");
+        assertThat(deputyCatalog.path("manageableLevels").toString()).contains("specialist").doesNotContain("deputy");
+        for (JsonNode item : deputyCatalog.path("items")) {
+            String capability = item.path("value").asText();
+            // 副管理员可转授除 admin.security 之外的能力，转授范围以服务端规则为准。
+            assertThat(item.path("grantable").asBoolean()).isEqualTo(!capability.equals("admin.security"));
+        }
+    }
+
+    @Test void accountContextSummarisesGovernanceMetadataWithoutSecrets() throws Exception {
+        Client manager = admin();
+        var result = mvc.perform(get("/api/admin/users/22/context").session(manager.session())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.account.username").value("foundation-user"))
+                .andExpect(jsonPath("$.data.platformAdmin.profiled").value(false))
+                .andExpect(jsonPath("$.data.protection.self").value(false))
+                .andExpect(jsonPath("$.data.rbacRoles").isArray())
+                .andExpect(jsonPath("$.data.sessions").isArray())
+                .andExpect(jsonPath("$.data.recentAudit").isArray()).andReturn();
+        assertThat(result.getResponse().getContentAsString()).doesNotContain("password_hash", "passwordHash", PASSWORD, manager.csrf(), "sessionId");
+        mvc.perform(get("/api/admin/users/99991/context").session(manager.session())).andExpect(status().isNotFound());
+    }
+
+    @Test void auditSearchSupportsTargetAndDateRangeWithDetail() throws Exception {
+        Client manager = admin();
+        audit.record(new com.smartops.security.SessionUser(22L, "foundation-user", "operator", "user", false, 0), "TEAM_AGENT_RUN_APPROVE", "901", "SUCCESS", "approved: window 901");
+        JsonNode page = data(mvc.perform(get("/api/admin/audit").param("target", "901").session(manager.session())).andExpect(status().isOk()));
+        assertThat(page.path("total").asLong()).isEqualTo(1);
+        long id = page.path("items").get(0).path("id").asLong();
+        // 详情与列表同一作用域：依据必须单独可查，且不被拼进 outcome。
+        JsonNode detail = data(mvc.perform(get("/api/admin/audit/" + id).session(manager.session())).andExpect(status().isOk()));
+        assertThat(detail.path("detail").asText()).isEqualTo("approved: window 901");
+        assertThat(detail.path("outcome").asText()).isEqualTo("SUCCESS");
+        mvc.perform(get("/api/admin/audit").param("from", "2999-01-01").session(manager.session()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(0));
+        mvc.perform(get("/api/admin/audit").param("from", "2026-13-01").session(manager.session())).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/admin/audit").param("target", "not-allowed").param("from", "2999-01-01").session(manager.session()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(0));
+        mvc.perform(get("/api/admin/audit/999999").session(manager.session())).andExpect(status().isNotFound());
+    }
+
+    @Test void modelGovernanceIsRedactedReadOnlyAndCapabilityGuarded() throws Exception {
+        // 先清空网关元数据，保证断言只依赖本用例写入的数据。
+        jdbc.update("DELETE FROM model_gateway_invocation");
+        jdbc.update("DELETE FROM model_gateway_route");
+        jdbc.update("DELETE FROM model_gateway_group");
+        jdbc.update("DELETE FROM model_gateway_key");
+        String hash = "a".repeat(64);
+        jdbc.update("INSERT INTO model_gateway_key(id,owner_user_id,name,key_prefix,key_hash,scope) VALUES(901,22,'foundation-key','sk-found',?, 'PERSONAL')", hash);
+        jdbc.update("INSERT INTO model_gateway_group(id,owner_user_id,name,slug) VALUES(902,22,'基础组','foundation-group')");
+        jdbc.update("INSERT INTO model_gateway_route(id,group_id,connection_id) VALUES(903,902,77)");
+        jdbc.update("INSERT INTO model_gateway_invocation(id,key_id,group_slug,model_name,status,total_tokens) VALUES"
+                + "(904,901,'foundation-group','m1','SUCCESS',120),(905,901,'foundation-group','m1','SUCCESS',NULL),"
+                + "(906,901,'foundation-group','m1','FAILED',NULL)");
+        Client manager = admin();
+        var result = mvc.perform(get("/api/admin/model-governance").session(manager.session()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.summary.calls").value(3))
+                .andExpect(jsonPath("$.data.summary.failures").value(1))
+                .andExpect(jsonPath("$.data.summary.unknownUsageCalls").value(1))
+                .andExpect(jsonPath("$.data.summary.knownTokens").value(120))
+                .andExpect(jsonPath("$.data.keys[0].prefix").value("sk-found"))
+                .andExpect(jsonPath("$.data.groups[0].slug").value("foundation-group"))
+                .andExpect(jsonPath("$.data.routes[0].healthy").value(true)).andReturn();
+        // 只读契约不泄露密钥哈希与明文凭证。
+        assertThat(result.getResponse().getContentAsString()).doesNotContain(hash, "key_hash", "keyHash");
+        // 只有 admin.users 的专项管理员不能读取模型治理清单。
+        jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(88,'foundation-model-less',?,'admin')", new BCryptPasswordEncoder().encode(PASSWORD));
+        accounts.appointPlatformAdmin(new com.smartops.security.SessionUser(11L, "foundation-admin", "admin", "admin", false, 0), 88L, "specialist", List.of("admin.users"));
+        Client limited = login("foundation-model-less", PASSWORD, "admin");
+        mvc.perform(get("/api/admin/model-governance").session(limited.session())).andExpect(status().isForbidden());
+    }
+
+    @Test void workbenchOnlyExposesItemsWithinCallerAuthority() throws Exception {
+        jdbc.update("DELETE FROM team_agent_run WHERE team_id=100");
+        jdbc.update("DELETE FROM team_member WHERE team_id=100");
+        jdbc.update("DELETE FROM team_workspace WHERE id=100");
+        jdbc.update("INSERT INTO team_workspace(id,name,owner_id,status) VALUES(100,'foundation-team',11,'active')");
+        jdbc.update("INSERT INTO team_member(team_id,user_id,role) VALUES(100,11,'owner')");
+        jdbc.update("INSERT INTO team_agent_run(team_id,agent_id,version_id,requester_id,runtime_id,tool_id,read_only,parameters_json,status) "
+                + "VALUES(100,1,1,22,'rt-foundation','window.restart',FALSE,'{}','PENDING_APPROVAL')");
+        audit.record(new com.smartops.security.SessionUser(22L, "foundation-user", "operator", "user", false, 0), "LOGIN", "22", "DENIED");
+        Client manager = admin();
+        JsonNode items = data(mvc.perform(get("/api/admin/workbench").session(manager.session())).andExpect(status().isOk())).path("items");
+        // 团队批准资格与审计能力都由服务端判定；示例中带团队名，便于直接行动。
+        assertThat(items.toString()).contains("APPROVALS", "AUDIT_ATTENTION");
+        JsonNode approvals = null;
+        for (JsonNode item : items) if (item.path("type").asText().equals("APPROVALS")) approvals = item;
+        assertThat(approvals).isNotNull();
+        assertThat(approvals.path("count").asLong()).isEqualTo(1);
+        assertThat(approvals.path("samples").get(0).path("teamName").asText()).isEqualTo("foundation-team");
+
+        // 专项管理员没有 admin.audit、也不属于该团队：不得看到审计或审批项。
+        jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(99,'foundation-workbench-less',?,'admin')", new BCryptPasswordEncoder().encode(PASSWORD));
+        accounts.appointPlatformAdmin(new com.smartops.security.SessionUser(11L, "foundation-admin", "admin", "admin", false, 0), 99L, "specialist", List.of("admin.users"));
+        Client limited = login("foundation-workbench-less", PASSWORD, "admin");
+        JsonNode limitedItems = data(mvc.perform(get("/api/admin/workbench").session(limited.session())).andExpect(status().isOk())).path("items");
+        assertThat(limitedItems.toString()).doesNotContain("APPROVALS", "AUDIT_ATTENTION", "READINESS_GAP");
+    }
+
     private record Client(MockHttpSession session, String csrf) {}
 }

@@ -145,12 +145,14 @@
 /* --- 多标签页（卡片式） ------------------------------------------------- */
 .admin-tabs { display: flex; align-items: flex-end; gap: 6px; flex: 0 0 auto; height: 42px; padding: 8px 16px 0; border-bottom: 1px solid var(--admin-border); background: var(--admin-bg); overflow-x: auto; white-space: nowrap; }
 .admin-tab {
-  position: relative; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; flex: 0 0 auto;
+  position: relative; display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 8px 0 12px; flex: 0 0 auto;
   border: 1px solid var(--admin-border-strong); border-bottom: none; border-radius: 6px 6px 0 0;
-  background: var(--admin-panel); color: var(--admin-muted); font-size: 13px; text-decoration: none;
+  background: var(--admin-panel); color: var(--admin-muted); font-size: 13px;
 }
 .admin-tab:hover { color: var(--admin-text); }
 .admin-tab.is-active { color: var(--admin-accent-text); border-color: var(--admin-accent); background: color-mix(in srgb, var(--admin-accent) 6%, var(--admin-panel)); font-weight: 500; }
+.admin-tab-link { display: inline-flex; align-items: center; height: 100%; border-radius: 4px; color: inherit; text-decoration: none; }
+.admin-tab-link:focus-visible { outline: 2px solid var(--admin-accent); outline-offset: 1px; }
 .admin-tab-close { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; min-height: 16px; padding: 0; border: none; border-radius: 50%; background: transparent; color: var(--admin-muted); font-size: 14px; line-height: 1; cursor: pointer; }
 .admin-tab-close:hover { background: var(--admin-border-strong); color: var(--admin-text); }
 
@@ -229,6 +231,13 @@
 
 /* --- 空态 --------------------------------------------------------------- */
 .admin-empty { margin: 0; padding: 32px 20px; text-align: center; color: var(--admin-muted); }
+
+/* --- 状态标签：账户状态、审计结果等统一呈现 ------------------------------ */
+.admin-status { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border: 1px solid var(--admin-border); border-radius: var(--admin-radius-pill); background: var(--admin-surface-2); color: var(--admin-muted); font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap; }
+.admin-status--success { border-color: color-mix(in srgb, var(--admin-success-text) 32%, var(--admin-border)); background: var(--admin-success-bg); color: var(--admin-success-text); }
+.admin-status--warning { border-color: color-mix(in srgb, var(--admin-warning-text) 32%, var(--admin-border)); background: var(--admin-warning-bg); color: var(--admin-warning-text); }
+.admin-status--danger { border-color: color-mix(in srgb, var(--admin-danger) 34%, var(--admin-border)); background: color-mix(in srgb, var(--admin-danger) 10%, var(--admin-panel)); color: var(--admin-danger); }
+.admin-status--muted { background: var(--admin-surface-2); color: var(--admin-muted); }
 
 /* --- 指标卡 ------------------------------------------------------------- */
 .admin-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }

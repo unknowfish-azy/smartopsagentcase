@@ -36,6 +36,10 @@ public class SecurityAuditService {
     }
 
     public AuditPage list(String action, String outcome, String query, int page, int pageSize) {
+        return list(action, outcome, query, null, null, null, page, pageSize);
+    }
+
+    public AuditPage list(String action, String outcome, String query, String targetId, String from, String to, int page, int pageSize) {
         validatePage(page, pageSize);
         if (action != null && !action.isBlank() && !ACTIONS.contains(action)) throw new BusinessException(400, "审计事件类型无效");
         if (outcome != null && !outcome.isBlank() && !OUTCOMES.contains(outcome)) throw new BusinessException(400, "审计结果无效");
@@ -47,6 +51,13 @@ public class SecurityAuditService {
             if (query.length() > 64) throw new BusinessException(400, "搜索内容不能超过 64 个字符");
             where.append(" AND LOCATE(LOWER(?),LOWER(actor_username))>0"); values.add(query.trim());
         }
+        if (targetId != null && !targetId.isBlank()) {
+            if (targetId.length() > 64) throw new BusinessException(400, "目标标识不能超过 64 个字符");
+            where.append(" AND target_id=?"); values.add(targetId.trim());
+        }
+        // 时间范围按服务器本地时区解释，[起始日 00:00, 结束日次日 00:00) 的半开区间，避免跨日重复。
+        if (from != null && !from.isBlank()) { where.append(" AND created_at>=?"); values.add(boundary(from)); }
+        if (to != null && !to.isBlank()) { where.append(" AND created_at<?"); values.add(endBoundary(to)); }
         long total = jdbc.queryForObject("SELECT COUNT(*) FROM security_audit_event" + where, Long.class, values.toArray());
         values.add(pageSize); values.add((page - 1L) * pageSize);
         var items = jdbc.query("SELECT id,actor_id,actor_username,action,target_id,outcome,detail,created_at FROM security_audit_event" + where + " ORDER BY id DESC LIMIT ? OFFSET ?",
@@ -54,10 +65,32 @@ public class SecurityAuditService {
         return new AuditPage(items, total, page, pageSize);
     }
 
+    /** 单条审计详情：与列表同一作用域（控制器已校验 admin.audit），额外补 ip 列。 */
+    public AuditDetail detail(long id) {
+        var rows = jdbc.query("SELECT id,actor_id,actor_username,action,target_id,outcome,detail,ip,created_at FROM security_audit_event WHERE id=?",
+                (result, row) -> new AuditDetail(result.getLong("id"), result.getObject("actor_id", Long.class), result.getString("actor_username"), result.getString("action"),
+                        result.getString("target_id"), result.getString("outcome"), result.getString("detail"), result.getString("ip"), result.getTimestamp("created_at").toInstant().toString()), id);
+        if (rows.isEmpty()) throw new BusinessException(404, "审计记录不存在");
+        return rows.get(0);
+    }
+
+    private static final java.time.format.DateTimeFormatter DATE = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+
+    private static java.sql.Timestamp boundary(String date) {
+        try { return java.sql.Timestamp.valueOf(java.time.LocalDate.parse(date, DATE).atStartOfDay()); }
+        catch (java.time.format.DateTimeParseException invalid) { throw new BusinessException(400, "日期格式无效，应为 YYYY-MM-DD"); }
+    }
+
+    private static java.sql.Timestamp endBoundary(String date) {
+        try { return java.sql.Timestamp.valueOf(java.time.LocalDate.parse(date, DATE).plusDays(1).atStartOfDay()); }
+        catch (java.time.format.DateTimeParseException invalid) { throw new BusinessException(400, "日期格式无效，应为 YYYY-MM-DD"); }
+    }
+
     public static void validatePage(int page, int pageSize) {
         if (page < 1 || page > 1000000 || pageSize < 1 || pageSize > 100) throw new BusinessException(400, "分页参数无效，每页需为 1–100 条");
     }
 
     public record AuditEntry(Long id, Long actorId, String actorUsername, String action, String targetId, String outcome, String detail, String createdAt) {}
+    public record AuditDetail(long id, Long actorId, String actorUsername, String action, String targetId, String outcome, String detail, String ip, String createdAt) {}
     public record AuditPage(List<AuditEntry> items, long total, int page, int pageSize) {}
 }

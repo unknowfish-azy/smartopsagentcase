@@ -1,7 +1,7 @@
 <template>
   <section aria-labelledby="role-title">
     <header class="admin-page-header"><div><p class="admin-eyebrow">SYSTEM / 权限模型</p><h1 id="role-title">角色管理</h1></div><button class="admin-primary" @click="open('create')">新增角色</button></header>
-    <p class="admin-muted">角色通过菜单/按钮权限控制可见范围；授权采用整树替换。写操作需输入管理员密码复核。</p>
+    <p class="admin-muted">角色通过菜单/按钮权限控制可见范围，授权采用整树替换。菜单隐藏只影响导航呈现，接口保护由平台能力与团队授权判定；数据权限（data_scope）仅记录定义，尚未被业务查询消费，修改它不会改变可查询的数据范围。写操作需输入管理员密码复核。</p>
     <p v-if="success" class="admin-notice" role="status">{{ success }}</p>
     <p v-if="error" class="admin-error" role="alert">{{ error }}</p>
     <p v-if="loading" role="status">正在加载角色…</p>

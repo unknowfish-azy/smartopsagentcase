@@ -30,10 +30,16 @@ public class AdminAccountsController {
     }
 
     @GetMapping("/overview")
-    public ApiResponse<Map<String, Long>> overview() { return ApiResponse.success(accounts.overview()); }
+    public ApiResponse<Map<String, Long>> overview(@AuthenticationPrincipal SessionUser actor) {
+        accounts.requirePlatformCapability(actor, "admin.users");
+        return ApiResponse.success(accounts.overview());
+    }
 
     @GetMapping("/registration")
-    public ApiResponse<UserAccountService.RegistrationPolicy> registration() { return ApiResponse.success(accounts.registrationPolicy()); }
+    public ApiResponse<UserAccountService.RegistrationPolicy> registration(@AuthenticationPrincipal SessionUser actor) {
+        accounts.requirePlatformCapability(actor, "admin.users");
+        return ApiResponse.success(accounts.registrationPolicy());
+    }
 
     @PutMapping("/registration")
     public ApiResponse<UserAccountService.RegistrationPolicy> registration(@AuthenticationPrincipal SessionUser actor, @Valid @RequestBody RegistrationSetting input) {
@@ -41,9 +47,15 @@ public class AdminAccountsController {
     }
 
     @GetMapping("/users")
-    public ApiResponse<UserAccountService.AccountPage> users(@RequestParam(required = false) String q, @RequestParam(required = false) String role,
+    public ApiResponse<UserAccountService.AccountPage> users(@AuthenticationPrincipal SessionUser actor, @RequestParam(required = false) String q, @RequestParam(required = false) String role,
             @RequestParam(required = false) Boolean enabled, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int pageSize) {
+        accounts.requirePlatformCapability(actor, "admin.users");
         return ApiResponse.success(accounts.list(q, role, enabled, page, pageSize));
+    }
+
+    @GetMapping("/users/{id}/context")
+    public ApiResponse<?> context(@AuthenticationPrincipal SessionUser actor, @PathVariable long id) {
+        return ApiResponse.success(accounts.accountContext(actor, id));
     }
 
     @GetMapping("/governance")
@@ -84,7 +96,8 @@ public class AdminAccountsController {
     }
 
     @GetMapping("/sessions")
-    public ApiResponse<Map<String, Object>> sessions(HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> sessions(@AuthenticationPrincipal SessionUser actor, HttpServletRequest request) {
+        accounts.requirePlatformCapability(actor, "admin.users");
         return ApiResponse.success(Map.of("items", sessions.list(null, request.getSession(false))));
     }
 
@@ -95,9 +108,22 @@ public class AdminAccountsController {
     }
 
     @GetMapping("/audit")
-    public ApiResponse<SecurityAuditService.AuditPage> audit(@RequestParam(required = false) String action, @RequestParam(required = false) String outcome,
-            @RequestParam(required = false) String q, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int pageSize) {
-        return ApiResponse.success(audit.list(action, outcome, q, page, pageSize));
+    public ApiResponse<SecurityAuditService.AuditPage> audit(@AuthenticationPrincipal SessionUser actor, @RequestParam(required = false) String action, @RequestParam(required = false) String outcome,
+            @RequestParam(required = false) String q, @RequestParam(required = false) String target, @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int pageSize) {
+        accounts.requirePlatformCapability(actor, "admin.audit");
+        return ApiResponse.success(audit.list(action, outcome, q, target, from, to, page, pageSize));
+    }
+
+    @GetMapping("/audit/{id}")
+    public ApiResponse<SecurityAuditService.AuditDetail> auditDetail(@AuthenticationPrincipal SessionUser actor, @PathVariable long id) {
+        accounts.requirePlatformCapability(actor, "admin.audit");
+        return ApiResponse.success(audit.detail(id));
+    }
+
+    @GetMapping("/governance/capabilities")
+    public ApiResponse<?> capabilities(@AuthenticationPrincipal SessionUser actor) {
+        return ApiResponse.success(accounts.capabilityCatalog(actor));
     }
 
     public record CreateAccount(@NotBlank @Size(max = 64) String username, @NotBlank @Size(max = 128) String password, @NotBlank String role, Long deptId, Long postId, List<Long> roleIds) {}
