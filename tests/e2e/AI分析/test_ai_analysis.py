@@ -17,6 +17,7 @@ E2E AI Analysis Test.
 from __future__ import annotations
 
 import pytest
+import httpx
 
 
 @pytest.mark.e2e
@@ -37,6 +38,8 @@ def test_ai_analysis(
     response = http_client.post(
         f"{require_ai_service}/api/chat",
         json=payload,
+        # Real local-model generation is bounded separately from fast API reads.
+        timeout=httpx.Timeout(120.0, connect=5.0),
     )
 
     assert response.status_code == 200
@@ -48,9 +51,6 @@ def test_ai_analysis(
         dict,
     )
 
-    # 允许不同版本的 response schema。
-    assert (
-        "answer" in data
-        or "message" in data
-        or "data" in data
-    )
+    assert isinstance(data.get("answer"), str) and data["answer"].strip()
+    assert isinstance(data.get("metadata"), dict)
+    assert isinstance(data["metadata"].get("degraded"), bool)

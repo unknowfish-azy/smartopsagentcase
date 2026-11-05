@@ -17,6 +17,7 @@ from typing import Any
 from uuid import uuid4
 
 from agent.inspector.enums import (
+    EvidenceLabel,
     InspectionCategory,
     InspectionStatus,
     InspectorTarget,
@@ -30,9 +31,8 @@ from agent.inspector.models import (
     EvidenceItem,
     InspectionResult,
     InspectorIssue,
-    ToolCallRecord,
 )
-from agent.inspector.verifiers.state_verifier import StateVerifier
+from agent.inspector.verifiers.state_verifier import StateVerifier, claims_resolved
 
 _SEVERITY_ORDER = {
     Severity.INFO: 0,
@@ -91,6 +91,33 @@ class InspectorPipeline:
             context.get("actual_state"),
         )
 
+        # Diagnostic conclusions need not claim execution. Explicit verification,
+        # a success claim, or a completed high-risk tool does require observations.
+        verification_required = (
+            context.get("actual_state") is not None
+            or claims_resolved(context.get("agent_claim"))
+            or (context.get("metadata") or {}).get("verification_required") is True
+            or any(call.success and (call.risk or "").upper() in {"HIGH", "CRITICAL"} for call in context.get("tool_calls") or [])
+        )
+        verification_result["required"] = verification_required
+        if verification_result.get("false_success") or verification_result.get("passed") is False:
+            verification_status = "failed"
+        elif verification_result.get("checked") and verification_result.get("passed") is True:
+            verification_status = "verified"
+        elif verification_required:
+            verification_status = "uncertain" if verification_result.get("uncertain") else "unverified"
+        else:
+            verification_status = "not_required"
+        verification_result["status"] = verification_status
+
+        if verification_status in {"uncertain", "unverified"}:
+            issues.append(InspectorIssue(
+                category=InspectionCategory.VERIFICATION,
+                severity=Severity.WARNING,
+                reason=verification_result.get("reason", "执行结果待核验"),
+                recommendation="补充目标系统的有效探针观测并复核，再确认执行结果",
+            ))
+
         issues.extend(self.state_verifier.check(context))
 
         return self._aggregate(context, issues, verification_result)
@@ -144,7 +171,7 @@ class InspectorPipeline:
             reason = "全部检查通过"
             recommendation = ""
 
-        requires_human = (
+        requires_human = verification_result.get("status") in {"uncertain", "unverified"} or (
             status
             in {
                 InspectionStatus.VIOLATION,
@@ -157,6 +184,14 @@ class InspectorPipeline:
                 Severity.CRITICAL,
             }
         )
+
+        evidence_result = EvidenceJudge.evaluate_evidence(
+            agent_claim,
+            evidence,
+        )
+        evidence_label = evidence_result.get("label")
+        if isinstance(evidence_label, str):
+            evidence_label = EvidenceLabel(evidence_label)
 
         return InspectionResult(
             inspection_id=(
@@ -178,23 +213,13 @@ class InspectorPipeline:
             recommendation=recommendation,
             requires_human=requires_human,
             issues=issues,
-            evidence_label=(
-                EvidenceJudge.evaluate_evidence(
-                    agent_claim,
-                    evidence,
-                )["label"]
-                if evidence or agent_claim
-                else None
-            ),
+            evidence_label=(evidence_label if evidence or agent_claim else None),
             policy_result={
                 "tool_calls": len(
                     context.get("tool_calls") or []
                 )
             },
-            evidence_result=EvidenceJudge.evaluate_evidence(
-                agent_claim,
-                evidence,
-            ),
+            evidence_result=evidence_result,
             verification_result=verification_result,
             metadata=context.get("metadata") or {},
         )

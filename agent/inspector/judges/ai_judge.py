@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from agent.inspector.enums import InspectionCategory, Severity
 from agent.inspector.judges.base import Judge
 from agent.inspector.models import InspectorIssue
 

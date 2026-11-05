@@ -2,6 +2,7 @@ package com.smartops.sentinel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartops.exception.BusinessException;
+import com.smartops.operations.HostKeyDecision;
 import com.smartops.operations.OperationRuntime;
 import com.smartops.operations.OperationRuntimeRegistry;
 import com.smartops.security.SessionUser;
@@ -66,16 +67,19 @@ public class SentinelService {
 
     private final JdbcTemplate jdbc;
     private final OperationRuntimeRegistry runtimes;
+    private final com.smartops.service.OperationConnectionService connections;
     private final ObjectMapper json = new ObjectMapper();
     private final Clock clock;
 
     public SentinelService(JdbcTemplate jdbc, OperationRuntimeRegistry runtimes,
+                           com.smartops.service.OperationConnectionService connections,
                            @org.springframework.beans.factory.annotation.Qualifier("mfaClock") Clock clock,
                            SentinelAdvisor advisor,
                            com.smartops.service.TeamNotificationService notifications,
                            SentinelNotifier notifier) {
         this.jdbc = jdbc;
         this.runtimes = runtimes;
+        this.connections = connections;
         this.clock = clock;
         this.advisor = advisor;
         this.notifications = notifications;
@@ -195,6 +199,32 @@ public class SentinelService {
         long userId = userId(actor);
         requireOwned("sentinel_task", id, userId, "哨兵任务");
         jdbc.update("UPDATE sentinel_task SET enabled=? WHERE id=? AND user_id=?", enabled, id, userId);
+    }
+
+    /**
+     * 把哨兵任务重绑到一个已授权的运行连接上。
+     *
+     * <p>为什么需要这个入口：运行通道是会话级资源，后端重启或用户关闭终端后，
+     * 任务里记的 runtimeId 就失效了，任务会如实标记为 {@code no_runtime}。
+     * 重新连接会生成**新的** runtimeId，若不提供重绑，用户只能删任务重建。</p>
+     *
+     * <p>连接上已有存活通道时直接复用，不重复建立 SSH 连接。</p>
+     *
+     * @param sessionId 连接中心里的会话 id；为空说明界面没选，直接拒绝而不是猜一个
+     */
+    @Transactional
+    public TaskView rebindRuntime(SessionUser actor, long id, Long sessionId) {
+        long userId = userId(actor);
+        requireOwned("sentinel_task", id, userId, "哨兵任务");
+        if (sessionId == null) throw new BusinessException(400, "请选择一个运行连接");
+        String runtimeId = runtimes.findBySession(userId, sessionId).orElse(null);
+        if (runtimeId == null) {
+            runtimeId = connections.connect(userId, sessionId, HostKeyDecision.TRUST_AND_SAVE).runtimeId();
+        }
+        // 清掉旧的采集状态：上一轮结果属于旧通道，留着会误导；下一轮采集会重新写。
+        jdbc.update("UPDATE sentinel_task SET runtime_id=?, last_status=NULL, last_error=NULL, last_seen_at=NULL "
+                + "WHERE id=? AND user_id=?", runtimeId, id, userId);
+        return findTask(userId, id);
     }
 
     @Transactional
@@ -1076,9 +1106,9 @@ public class SentinelService {
     /**
      * 按任务绑定的阈值模板判定。
      *
-     * <p>持续时间防抖的"起点"用上一轮采样的时间近似：只有当上一轮也越界时，
-     * 才把起点视为上一轮采样时刻，因此要求**连续两轮以上**越界才可能触发。
-     * 这比把起点放在内存里更稳，重启后不会凭空触发。</p>
+     * <p>持续时间防抖的起点持久化在 sentinel_task.breached_since：越界且无未结告警时
+     * 记下起点，持续到点后才触发；未越界时清空。重启后起点仍在，不会凭空触发也不会丢状态。
+     * 同一事件已有未结告警时直接跳过，不重复写入。</p>
      */
     private void evaluate(TaskView task, Map<String, Double> snapshot, Instant now) {
         if (task.templateId() == null) return;
@@ -1090,22 +1120,28 @@ public class SentinelService {
         String severity = meta.severity() == null ? "P2" : meta.severity();
         int debounceSec = meta.debounceSec();
 
-        if (!SentinelThreshold.breached(rules, snapshot)) return;
+        if (!SentinelThreshold.breached(rules, snapshot)) {
+            jdbc.update("UPDATE sentinel_task SET breached_since=NULL WHERE id=? AND breached_since IS NOT NULL", task.id());
+            return;
+        }
 
-        boolean previouslyBreached = Boolean.TRUE.equals(jdbc.queryForObject("""
+        boolean alertOpen = Boolean.TRUE.equals(jdbc.queryForObject("""
                 SELECT EXISTS(SELECT 1 FROM sentinel_alert
                                 WHERE task_id=? AND status IN ('OPEN','NOTIFIED','PENDING_APPROVAL','REMEDIATING'))
                 """, Boolean.class, task.id()));
-        if (!previouslyBreached) {
-            // 刚越界：只记录起点，不告警。起点用上一轮采样时间近似，下一轮再判定是否达标。
-            Long previous = jdbc.queryForObject("""
-                    SELECT UNIX_TIMESTAMP(MAX(sampled_at)) FROM sentinel_metric_sample WHERE task_id=?
-                    """, Long.class, task.id());
-            if (previous == null) return;
-            long held = now.getEpochSecond() - previous;
-            if (held < debounceSec) return;
-        }
+        if (alertOpen) return;
 
+        Long since = jdbc.queryForObject("SELECT UNIX_TIMESTAMP(breached_since) FROM sentinel_task WHERE id=?",
+                Long.class, task.id());
+        if (since == null) {
+            // 刚越界：只记录起点，不告警。
+            jdbc.update("UPDATE sentinel_task SET breached_since=? WHERE id=?", java.sql.Timestamp.from(now), task.id());
+            return;
+        }
+        long held = now.getEpochSecond() - since;
+        if (held < debounceSec) return;
+
+        jdbc.update("UPDATE sentinel_task SET breached_since=NULL WHERE id=?", task.id());
         String observed = describeObserved(rules, snapshot);
         fireAlert(task, rules.get(0).metric(), observed, SentinelThreshold.describe(rules), severity, snapshot, now);
     }

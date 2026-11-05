@@ -31,5 +31,21 @@ public class OperationRuntimeRegistry {
         return runtime;
     }
 
+    /**
+     * 找出该用户在此连接上仍然存活的运行通道。
+     *
+     * <p>用于「重绑运行连接」：同一连接重复绑定时应复用已有通道，
+     * 否则每绑一次就多挂一条 SSH 连接，且旧通道没人回收。</p>
+     */
+    public java.util.Optional<String> findBySession(Long userId, Long sessionId) {
+        if (userId == null || sessionId == null) return java.util.Optional.empty();
+        return runtimes.entrySet().stream()
+                .filter(entry -> entry.getValue().isOpen()
+                        && userId.equals(entry.getValue().userId())
+                        && sessionId.equals(entry.getValue().sessionId()))
+                .map(Map.Entry::getKey)
+                .findFirst();
+    }
+
     public int size() { return runtimes.size(); }
 }

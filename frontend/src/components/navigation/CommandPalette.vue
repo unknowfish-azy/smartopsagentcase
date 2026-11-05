@@ -67,7 +67,10 @@ async function keys(event) {
 }
 function shortcut(event) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k' && !event.isComposing) {
-    if (!dialog.value.open && document.querySelector('dialog[open], [aria-modal="true"]')) return
+    // 只拦"可见"的遮罩/对话框：聊天页的 Element Plus 抽屉常驻 DOM（display:none），
+    // 若只看 aria-modal 属性存在会永远打不开命令面板。
+    const blocker = document.querySelector('dialog[open], [aria-modal="true"]')
+    if (!dialog.value.open && blocker && blocker.getClientRects().length) return
     event.preventDefault(); dialog.value.open ? close() : open()
   }
 }

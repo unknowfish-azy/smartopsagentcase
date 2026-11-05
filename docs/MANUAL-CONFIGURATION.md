@@ -25,6 +25,8 @@
 | `LLM_MODEL` | 非 Mock 模型时 | 模型名称 | `<provider-model-name>` | 否 |
 | `OLLAMA_BASE_URL` | 使用 Ollama 时 | Ollama 地址 | `http://localhost:11434` | 否 |
 | `KNOWLEDGE_SERVICE_URL` | AI Service 使用 RAG 时 | Knowledge 地址 | `http://localhost:8002` | 否 |
+| `KNOWLEDGE_API_KEY` | Knowledge 对外暴露时 | 调用方需带 `X-API-Key` | `<random-key>` | 是 |
+| `KNOWLEDGE_ALLOW_INGEST` | 本地演示需要匿名写入时 | 放开 `/api/documents` | `0`（默认关闭）/ `1` | 否 |
 | `VITE_API_BASE_URL` | 前端不与 Backend 同源时 | Backend 地址 | `http://localhost:8080` | 否 |
 | `SMARTOPS_INTERNAL_BYPASS` | 仅显式本地开发 | 跳过 Internal Token Filter | `false` | 否 |
 

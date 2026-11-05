@@ -18,13 +18,14 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { onMounted, reactive } from 'vue'
 import { systemApi } from '../../../api/adminSystem.ts'
 import { useAdminResource, formatAdminTime } from '../../../composables/useAdminResource.js'
 import AdminPagination from '../../../components/admin/AdminPagination.vue'
 const filters = reactive({ q: '' })
 const query = reactive({ q: '', page: 1, pageSize: 20 })
 const { data, loading, error, load } = useAdminResource(() => systemApi.loginLogs({ ...query }))
+onMounted(load)
 function search() { Object.assign(query, filters, { page: 1 }); load() }
 function changePage(page) { query.page = page; load() }
 function resize(pageSize) { query.pageSize = pageSize; changePage(1) }

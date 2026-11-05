@@ -2,26 +2,26 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { ref, computed } from 'vue'
-import { parse, babelParse } from '@vue/compiler-sfc'
+import { babelParse } from '@vue/compiler-sfc'
 import * as helpers from '../src/components/operations/operationRunHistory.js'
 import * as guides from '../src/components/operations/runHistoryGuides.js'
-const source = readFileSync(new URL('../src/views/operations/RunHistoryView.vue', import.meta.url), 'utf8')
+const source = readFileSync(new URL('../src/composables/useRunHistory.js', import.meta.url), 'utf8')
 function setup(overrides = {}) {
   const deps = {ref, computed, onMounted() {}, onBeforeUnmount() {}, ...helpers, ...guides,
     getOperationRuns: async () => ({items: [], total: 0}), getOperationRun: async () => {throw Error('detail failed')},
     createKnowledgeCandidateFromRun: async () => ({}), navigator: {clipboard: {writeText: async () => {throw Error('denied')}}}, window: globalThis, ...overrides}
-  const block = parse(source).descriptor.scriptSetup.content
-  const imports = babelParse(block, { sourceType: 'module' }).program.body.filter(node => node.type === 'ImportDeclaration')
-  let script = block
+  const imports = babelParse(source, { sourceType: 'module' }).program.body.filter(node => node.type === 'ImportDeclaration')
+  let script = source
   for (const node of imports.reverse()) script = script.slice(0, node.start) + script.slice(node.end)
-  return Function(...Object.keys(deps), script + '\nreturn {loadRuns,loadDetail,copyTrace,selectRun,filters,page,detail,error,detailError,selectedId,detailLoading,getFormError:()=>typeof formError === "undefined" ? null : formError.value,getCopyFailed:()=>typeof copyFailed === "undefined" ? null : copyFailed.value}')(...Object.values(deps))
+  script = script.replace(/^export /gm, '')
+  return Function(...Object.keys(deps), script + '\nreturn useRunHistory()')(...Object.values(deps))
 }
 test('invalid time range keeps existing results and uses form feedback', async () => {
  const vm=setup(); vm.page.value.items=[{id:1}]; vm.filters.value.startedFrom='2026-10-17T16:00'; vm.filters.value.startedTo='2026-10-17T15:00'
- await vm.loadRuns(); assert.equal(vm.error.value,''); assert.ok(vm.getFormError()); assert.equal(vm.page.value.items.length,1)
+ await vm.loadRuns(); assert.equal(vm.error.value,''); assert.ok(vm.formError.value); assert.equal(vm.page.value.items.length,1)
 })
 test('clipboard rejection is independent of detail loading', async () => {
- const vm=setup(); await vm.copyTrace('trace'); assert.equal(vm.detailError.value,''); assert.equal(vm.getCopyFailed(),true)
+ const vm=setup(); await vm.copyTrace('trace'); assert.equal(vm.detailError.value,''); assert.equal(vm.copyFailed.value,true)
 })
 test('null selection never requests a detail', async () => {
  let calls=0; const vm=setup({getOperationRun:async()=>{calls++;return {}}}); await vm.loadDetail(null); assert.equal(calls,0)

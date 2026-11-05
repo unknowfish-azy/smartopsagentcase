@@ -1,0 +1,731 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smartops.local/schemas/recovery-contract/v1/schema.json",
+  "title": "SmartOps Recovery Contract v1 七对象 schema",
+  "description": "本文件冻结 RecoveryContract、Claim、EvidenceObservation、ObligationResult、ProbeDecision、VerificationReceipt、ReplayBundle 七个对象。根 schema 用 oneOf 校验单个对象；examples/*.json 的 input 中每个具名对象按对应 $defs 条目逐对象校验。canonical JSON 规则：UTF-8 编码；对象键按 Unicode 码位升序排列；不输出任何无意义空白；数组顺序保持；数值使用最短可往返表示（禁止 NaN/Infinity）；null 保留。digest 规则：对对象自身删除 digest 字段后的 canonical JSON 做 SHA-256，输出小写十六进制并加前缀 sha256:。digest 只证明字节一致，不证明采集事实真实；真实性依赖采集器身份、权限与存储控制。所有时间字段使用 UTC ISO-8601 date-time；判定使用 run 单调时钟，展示使用 UTC。extensions 仅用于未冻结的扩展数据，不得把已冻结字段改名后放入 extensions。",
+  "$comment": "状态词典见 semantics.md。action/inspection/recovery/authorization/证据平面/receipt_state 六类状态不可互相替代。非 VERIFIED 时 receipt_state 必须为 NOT_ISSUED 且 issued_at/valid_until 必须为 null。",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$",
+      "description": "稳定标识。与 run-event-v1 的 id 模式保持一致；客户端提供的 ID 是不可信标签，不得当身份、审批或成功凭证。"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "canonical JSON 的 SHA-256 摘要；前缀固定 sha256:，十六进制小写。"
+    },
+    "reason_code": {
+      "type": "string",
+      "enum": [
+        "MISSING",
+        "STALE",
+        "WRONG_TARGET",
+        "WRONG_REVISION",
+        "CONFLICT",
+        "TIMEOUT",
+        "MALFORMED"
+      ],
+      "description": "义务值的原因码。无效或过期观测为 UNKNOWN，不得当作 FALSE 抵消；采集超时默认 UNKNOWN；只有契约把“从该观测位置可达”定义为业务条件时才可判 FALSE。"
+    },
+    "evidence_value": {
+      "type": "string",
+      "enum": ["TRUE", "FALSE", "UNKNOWN"],
+      "description": "义务三值。UNKNOWN 是义务值，不是恢复判定；不得与 INSUFFICIENT 或 INTERRUPTED 混用。"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["VERIFIED", "CONTRADICTED", "INSUFFICIENT"],
+      "description": "恢复判定。任一必需义务 FALSE => CONTRADICTED；无 FALSE 但有必需义务 UNKNOWN => INSUFFICIENT；全部必需义务 TRUE 且窗口满足 => VERIFIED。"
+    },
+    "receipt_state": {
+      "type": "string",
+      "enum": ["NOT_ISSUED", "ACTIVE", "INVALIDATED", "EXPIRED"],
+      "description": "回执当前状态。只有 VERIFIED 可以签发；ACTIVE 需历史 VERIFIED 且当前仍有效；历史回执不可改写，失效只追加事件。"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_id", "target_kind"],
+      "properties": {
+        "target_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "目标精确匹配键。资格判定只比较 target_id 字符串相等；显示名不参与匹配。"
+        },
+        "target_kind": {
+          "enum": ["SERVICE", "PROCESS", "ENDPOINT"],
+          "description": "目标类型，仅用于解释与白名单分类，不替代 target_id 匹配。"
+        },
+        "endpoint": {
+          "anyOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ],
+          "description": "只读探针入口；同一 target_id 的 endpoint 变化不自动视为不同目标，但需在契约中冻结。"
+        }
+      }
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_groups",
+        "min_first_last_gap_ms",
+        "max_adjacent_gap_ms",
+        "max_intra_group_skew_ms",
+        "min_next_group_gap_ms"
+      ],
+      "properties": {
+        "sample_groups": {"const": 3, "description": "V1 最少 3 组有效采样。"},
+        "min_first_last_gap_ms": {"const": 4000, "description": "首组组时间到末组组时间至少 4000ms。"},
+        "max_adjacent_gap_ms": {"const": 4000, "description": "相邻两组组时间间隔不超过 4000ms。"},
+        "max_intra_group_skew_ms": {"const": 1250, "description": "组内 A/B 两条有效观测采集时间最大偏差 1250ms。"},
+        "min_next_group_gap_ms": {"const": 2000, "description": "下一组最早启动时间 = 前组完成后 2000ms；实际启动间隔仍须核对，不以计划时间替代事实。"}
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_probe_calls",
+        "per_probe_timeout_ms",
+        "run_deadline_ms",
+        "evidence_ttl_ms",
+        "receipt_ttl_ms"
+      ],
+      "properties": {
+        "max_probe_calls": {"const": 12, "description": "run 级总探针调用上限；窗口内同一路径的后续采样与重试都扣预算。"},
+        "per_probe_timeout_ms": {"const": 1000, "description": "单探针绝对时限，包含连接、完整 body 读取与解析；按 run 剩余时间裁剪。"},
+        "run_deadline_ms": {"const": 30000, "description": "run 级总 deadline；等待也受其约束；失败后的新轮次不重置。"},
+        "evidence_ttl_ms": {"const": 15000, "description": "签发时证据年龄上限。"},
+        "receipt_ttl_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "回执有效期上限的参数；valid_until 取 issued_at + receipt_ttl 与全部必需观测 observed_at + evidence_ttl 的最小值。生产取值未验证。"
+        }
+      }
+    },
+    "obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "obligation_id",
+        "predicate_id",
+        "predicate_version",
+        "required",
+        "weight",
+        "collector_ids",
+        "source_groups",
+        "binding_revision",
+        "scope",
+        "target"
+      ],
+      "properties": {
+        "obligation_id": {"$ref": "#/$defs/id"},
+        "predicate_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$",
+          "description": "已审核的结构化业务谓词模板 ID。LLM 自由文本只能生成候选 Claim，不得作为谓词。"
+        },
+        "predicate_version": {"type": "string", "minLength": 1},
+        "predicate_params": {"type": "object", "description": "谓词参数；必须是契约冻结值。"},
+        "required": {"type": "boolean", "description": "必需义务为 false 时只记录反例，不单独阻断 VERIFIED。"},
+        "weight": {"type": "number", "exclusiveMinimum": 0, "description": "补证调度权重；不代表故障概率、模型置信度或审批额度。"},
+        "collector_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"},
+          "description": "可覆盖该义务的受信采集器。未登记采集器的观测不合格。"
+        },
+        "source_groups": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"},
+          "description": "该义务要求出现的来源组；独立性由采集器登记与人工审阅确认，不由 URL 不同自动推断。"
+        },
+        "binding_revision": {"type": "string", "minLength": 1, "description": "采集任务绑定的版本；必须与本契约 expected_revision 相符才合格。"},
+        "scope": {"type": "string", "minLength": 1},
+        "target": {"$ref": "#/$defs/target"}
+      }
+    },
+    "RecoveryContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "id",
+        "version",
+        "scope",
+        "target",
+        "expected_revision",
+        "template_id",
+        "template_version",
+        "obligations",
+        "source_groups",
+        "window",
+        "budgets",
+        "expires_after",
+        "digest"
+      ],
+      "properties": {
+        "schema_version": {"const": "recovery-contract/v1"},
+        "id": {"$ref": "#/$defs/id"},
+        "version": {"type": "string", "minLength": 1, "description": "契约版本；变更必须版本化，禁止多个执行者各自改字段。"},
+        "scope": {"type": "string", "minLength": 1, "description": "主体可见范围标签；证据必须落在该范围内。"},
+        "target": {"$ref": "#/$defs/target"},
+        "expected_revision": {"type": "string", "minLength": 1, "description": "本契约期望的目标版本。"},
+        "template_id": {"type": "string", "minLength": 1, "description": "已审核声明模板 ID。V1 只支持已审核模板。"},
+        "template_version": {"type": "string", "minLength": 1},
+        "obligations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/obligation"},
+          "description": "空义务集必须被拒绝（minItems=1）；没有可计算义务的契约不能签发任何回执。"
+        },
+        "source_groups": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"},
+          "description": "登记的来源组。V1 至少两个，且每组采样须同时含 A/B 两个故障/采集路径分离的观测；同一内部缓存的两个别名算同一来源组。"
+        },
+        "window": {"$ref": "#/$defs/window"},
+        "budgets": {"$ref": "#/$defs/budgets"},
+        "expires_after": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "契约有效时长（毫秒）；与回执 valid_until 分开冻结。"
+        },
+        "digest": {"$ref": "#/$defs/sha256"},
+        "extensions": {
+          "type": "object",
+          "description": "未冻结扩展数据。放入此处的字段在 V1 中按 UNKNOWN 处理，不得参与必需判定。"
+        }
+      }
+    },
+    "Claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "contract_digest",
+        "scope",
+        "target",
+        "expected_revision",
+        "claim_type"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "contract_digest": {"$ref": "#/$defs/sha256"},
+        "scope": {"type": "string", "minLength": 1},
+        "target": {"$ref": "#/$defs/target"},
+        "expected_revision": {"type": "string", "minLength": 1},
+        "claim_type": {
+          "enum": ["BUSINESS_RECOVERY"],
+          "description": "V1 只批准结构化业务恢复声明；自然语言结论只能作为候选，不得进入可信判定。新增类型须通过版本化修订。"
+        },
+        "extensions": {
+          "type": "object",
+          "description": "未冻结扩展数据；V1 按 UNKNOWN 处理。"
+        }
+      }
+    },
+    "EvidenceObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "run_id",
+        "verification_round",
+        "collector_id",
+        "collector_version",
+        "probe_id",
+        "scope",
+        "target",
+        "binding_revision",
+        "observed_revision",
+        "source_group",
+        "sequence",
+        "observed_at",
+        "elapsed_ms",
+        "artifact_digest"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "run_id": {"$ref": "#/$defs/id"},
+        "verification_round": {"type": "integer", "minimum": 1},
+        "collector_id": {"$ref": "#/$defs/id"},
+        "collector_version": {"type": "string", "minLength": 1},
+        "probe_id": {"$ref": "#/$defs/id"},
+        "scope": {"type": "string", "minLength": 1},
+        "target": {"$ref": "#/$defs/target"},
+        "binding_revision": {"type": "string", "minLength": 1, "description": "采集任务绑定的版本。别轮/旧版本任务的健康记录不合格。"},
+        "observed_revision": {
+          "anyOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ],
+          "description": "响应实际报告的版本；null 表示响应未报告。binding_revision 与 expected_revision 相符但 observed_revision 明确不同，是有效的版本反例，不得过滤为无关旧记录。"
+        },
+        "source_group": {"$ref": "#/$defs/id"},
+        "sequence": {"type": "integer", "minimum": 0, "description": "同一 run/轮次/探针内的采集序号；判定按 sequence 与 observed_at，不按数组顺序。"},
+        "observed_at": {"type": "string", "format": "date-time", "description": "UTC 采集时间。未来时间（> decision_time）不合格。"},
+        "elapsed_ms": {"type": "integer", "minimum": 0, "maximum": 1000, "description": "单次调用耗时，包含连接、完整 body 读取与解析；上限沿用单探针绝对 1s 预算。"},
+        "payload": {
+          "anyOf": [
+            {"type": "object"},
+            {"type": "string"}
+          ],
+          "description": "受控响应摘要或受控原文；payload 与 error 至少一个非 null。"
+        },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code"],
+          "properties": {
+            "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,63}$", "description": "V1 采集错误码：TIMEOUT、MALFORMED。其他码进入 extensions 并保持 UNKNOWN。"},
+            "message": {"type": "string", "description": "受控短消息；不得含凭证或任意异常堆栈。"}
+          },
+          "description": "采集错误；error 与 payload 至少一个非 null。"
+        },
+        "artifact_digest": {"$ref": "#/$defs/sha256", "description": "payload/受控原文的摘要；structural/digest 校验失败按 MALFORMED 处理。"},
+        "extensions": {
+          "type": "object",
+          "description": "未冻结扩展数据；V1 按 UNKNOWN 处理。"
+        }
+      },
+      "anyOf": [
+        {
+          "required": ["payload"],
+          "properties": {"payload": {"not": {"type": "null"}}}
+        },
+        {
+          "required": ["error"],
+          "properties": {"error": {"not": {"type": "null"}}}
+        }
+      ]
+    },
+    "rejected_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "reason_code"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/id"},
+        "reason_code": {"$ref": "#/$defs/reason_code"}
+      },
+      "description": "被拒绝或被作废的证据及原因；拒绝记录保留，不得删除历史反例。"
+    },
+    "ObligationResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "obligation_id",
+        "value",
+        "reason_codes",
+        "used_evidence_ids",
+        "rejected_evidence",
+        "checked_at"
+      ],
+      "properties": {
+        "obligation_id": {"$ref": "#/$defs/id"},
+        "value": {"$ref": "#/$defs/evidence_value"},
+        "reason_codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/reason_code"}
+        },
+        "used_evidence_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "rejected_evidence": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/rejected_evidence"}
+        },
+        "checked_at": {"type": "string", "format": "date-time"},
+        "extensions": {
+          "type": "object",
+          "description": "未冻结扩展数据；V1 按 UNKNOWN 处理。"
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"value": {"const": "TRUE"}}, "required": ["value"]},
+          "then": {"properties": {"reason_codes": {"maxItems": 0}}}
+        },
+        {
+          "if": {"properties": {"value": {"const": "UNKNOWN"}}, "required": ["value"]},
+          "then": {"properties": {"reason_codes": {"minItems": 1}}}
+        }
+      ],
+      "description": "TRUE 必须无原因码；UNKNOWN 必须至少一个原因码。FALSE 是有效业务观测明确失败，原因码可为空。"
+    },
+    "budget_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calls_used", "calls_remaining", "deadline_at"],
+      "properties": {
+        "calls_used": {"type": "integer", "minimum": 0},
+        "calls_remaining": {"type": "integer", "minimum": 0},
+        "deadline_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "probe_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "probe_id",
+        "eligible",
+        "score",
+        "registered_cost",
+        "covered_obligation_ids"
+      ],
+      "properties": {
+        "probe_id": {"$ref": "#/$defs/id"},
+        "eligible": {"type": "boolean"},
+        "score": {"type": "number", "minimum": 0},
+        "registered_cost": {"type": "number", "minimum": 1},
+        "covered_obligation_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "filter_reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "UNREGISTERED",
+              "IDENTITY",
+              "SCOPE",
+              "TARGET_ALLOWLIST",
+              "TOOL_PERMISSION",
+              "READ_ONLY",
+              "QUOTA",
+              "DEADLINE",
+              "COST",
+              "DUPLICATE"
+            ]
+          },
+          "description": "不可用候选的过滤理由；登记本身不是观测结果。"
+        }
+      }
+    },
+    "ProbeDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_id",
+        "policy_version",
+        "candidates",
+        "score",
+        "decision",
+        "selected_probe_id",
+        "next_eligible_at",
+        "stop_reason",
+        "budget_before",
+        "budget_after"
+      ],
+      "properties": {
+        "decision_id": {"$ref": "#/$defs/id"},
+        "policy_version": {"type": "string", "minLength": 1},
+        "candidates": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/probe_candidate"},
+          "description": "候选与过滤理由；每次只发一个探针，收到结果后重新计算。"
+        },
+        "score": {"type": "number", "minimum": 0, "description": "score(p) = 尚缺必需义务权重之和 / max(登记成本单位, 1)。"},
+        "decision": {
+          "enum": ["SELECTED", "WAIT", "STOP"],
+          "description": "每次只选一个探针；到时前的时序槽输出 WAIT；运行中不再可完成输出 STOP 并给出缺口。等待不是无信息重试，也不扣探针调用次数，但受总 deadline 约束。"
+        },
+        "selected_probe_id": {
+          "anyOf": [
+            {"$ref": "#/$defs/id"},
+            {"type": "null"}
+          ]
+        },
+        "next_eligible_at": {
+          "anyOf": [
+            {"type": "string", "format": "date-time"},
+            {"type": "null"}
+          ]
+        },
+        "stop_reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "BUDGET_EXHAUSTED",
+                "DEADLINE_EXCEEDED",
+                "NO_COVERAGE",
+                "STATIC_INCOMPATIBLE",
+                "NO_NEW_INFORMATION"
+              ]
+            },
+            {"type": "null"}
+          ]
+        },
+        "budget_before": {"$ref": "#/$defs/budget_state"},
+        "budget_after": {"$ref": "#/$defs/budget_state"},
+        "extensions": {
+          "type": "object",
+          "description": "未冻结扩展数据；V1 按 UNKNOWN 处理。"
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"decision": {"const": "SELECTED"}}, "required": ["decision"]},
+          "then": {
+            "required": ["selected_probe_id"],
+            "properties": {"selected_probe_id": {"not": {"type": "null"}}}
+          }
+        },
+        {
+          "if": {"properties": {"decision": {"const": "WAIT"}}, "required": ["decision"]},
+          "then": {
+            "required": ["next_eligible_at"],
+            "properties": {"next_eligible_at": {"not": {"type": "null"}}}
+          }
+        },
+        {
+          "if": {"properties": {"decision": {"const": "STOP"}}, "required": ["decision"]},
+          "then": {
+            "required": ["stop_reason"],
+            "properties": {"stop_reason": {"not": {"type": "null"}}}
+          }
+        }
+      ]
+    },
+    "VerificationReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "contract_digest",
+        "claim_digest",
+        "evidence_snapshot_digest",
+        "policy_version",
+        "collector_versions",
+        "run_id",
+        "verification_round",
+        "target",
+        "binding_revision",
+        "observed_revision",
+        "obligation_results",
+        "verdict",
+        "receipt_state",
+        "issued_at",
+        "valid_until",
+        "invalidation_event_ids"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "contract_digest": {"$ref": "#/$defs/sha256"},
+        "claim_digest": {"$ref": "#/$defs/sha256"},
+        "evidence_snapshot_digest": {"$ref": "#/$defs/sha256"},
+        "policy_version": {"type": "string", "minLength": 1},
+        "collector_versions": {
+          "type": "object",
+          "additionalProperties": {"type": "string", "minLength": 1},
+          "description": "采集器 ID 到版本的映射；签发时冻结。"
+        },
+        "run_id": {"$ref": "#/$defs/id"},
+        "verification_round": {"type": "integer", "minimum": 1},
+        "target": {"$ref": "#/$defs/target"},
+        "binding_revision": {"type": "string", "minLength": 1},
+        "observed_revision": {
+          "anyOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ]
+        },
+        "obligation_results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/ObligationResult"}
+        },
+        "verdict": {"$ref": "#/$defs/verdict"},
+        "receipt_state": {"$ref": "#/$defs/receipt_state"},
+        "issued_at": {
+          "anyOf": [
+            {"type": "string", "format": "date-time"},
+            {"type": "null"}
+          ]
+        },
+        "valid_until": {
+          "anyOf": [
+            {"type": "string", "format": "date-time"},
+            {"type": "null"}
+          ]
+        },
+        "invalidation_event_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"},
+          "description": "已收到的失效事件引用；历史回执不可改写，只能追加。"
+        },
+        "extensions": {
+          "type": "object",
+          "description": "未冻结扩展数据；V1 按 UNKNOWN 处理。"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {"properties": {"verdict": {"const": "CONTRADICTED"}}, "required": ["verdict"]},
+              {"properties": {"verdict": {"const": "INSUFFICIENT"}}, "required": ["verdict"]}
+            ]
+          },
+          "then": {
+            "properties": {
+              "receipt_state": {"const": "NOT_ISSUED"},
+              "issued_at": {"const": null},
+              "valid_until": {"const": null}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"verdict": {"const": "VERIFIED"}}, "required": ["verdict"]},
+          "then": {
+            "properties": {
+              "receipt_state": {"enum": ["ACTIVE", "INVALIDATED", "EXPIRED"]},
+              "issued_at": {"type": "string", "format": "date-time"},
+              "valid_until": {"type": "string", "format": "date-time"}
+            }
+          }
+        }
+      ],
+      "description": "回执引用 contract_digest、claim_digest、evidence_snapshot_digest、策略版本、采集器版本、目标 revision、run_id、逐义务结果、采样时间与有效期。三类核验结论都保留结果记录，只有 VERIFIED 可以签发 ACTIVE 回执。"
+    },
+    "ReplayBundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "bundle_id",
+        "contract",
+        "claim",
+        "observations",
+        "source_mapping",
+        "policy_version",
+        "policy_config",
+        "decision_clock",
+        "observation_order",
+        "prerecorded_probe_map",
+        "budget",
+        "run_event_refs",
+        "dependency_versions",
+        "digest",
+        "parent_bundle_id",
+        "mutation_diff",
+        "is_historical_fact"
+      ],
+      "properties": {
+        "schema_version": {"const": "recovery-replay/v1"},
+        "bundle_id": {"$ref": "#/$defs/id"},
+        "contract": {"$ref": "#/$defs/RecoveryContract"},
+        "claim": {"$ref": "#/$defs/Claim"},
+        "observations": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/EvidenceObservation"}
+        },
+        "source_mapping": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/id"},
+          "description": "采集器到来源组的映射；冻结后的映射不得在回放时由 URL 自动推断。"
+        },
+        "policy_version": {"type": "string", "minLength": 1},
+        "policy_config": {
+          "type": "object",
+          "description": "旧/新策略配置；差异必须显式列入 diff。"
+        },
+        "decision_clock": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "decision_time", "monotonic_origin_id"],
+          "properties": {
+            "mode": {"enum": ["RECORDED", "EXPLICIT"]},
+            "decision_time": {"type": "string", "format": "date-time"},
+            "monotonic_origin_id": {"type": "string", "minLength": 1, "description": "run 单调时钟原点标识。进程重启后不得直接续用旧原点。"}
+          },
+          "description": "显式逻辑时钟。回放不得使用当前墙钟覆盖录制时间。"
+        },
+        "observation_order": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"},
+          "description": "显式观测顺序；缺失时按 sequence 与 observed_at 排序并标记不完整。"
+        },
+        "prerecorded_probe_map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"$ref": "#/$defs/id"}
+          },
+          "description": "预录探针到观测 ID 的映射；新调度器选择未录制探针时输出 REPLAY_INCOMPLETE，不补造结果。"
+        },
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["limits", "calls_used", "deadline_at"],
+          "properties": {
+            "limits": {"$ref": "#/$defs/budgets"},
+            "calls_used": {"type": "integer", "minimum": 0},
+            "deadline_at": {"type": "string", "format": "date-time"}
+          }
+        },
+        "run_event_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"},
+          "description": "运行事件引用；关联 ID 不代表身份、审批或成功。"
+        },
+        "dependency_versions": {
+          "type": "object",
+          "additionalProperties": {"type": "string", "minLength": 1},
+          "description": "依赖版本；旧/新策略配置不同必须显式列入 diff。"
+        },
+        "digest": {"$ref": "#/$defs/sha256"},
+        "parent_bundle_id": {
+          "anyOf": [
+            {"$ref": "#/$defs/id"},
+            {"type": "null"}
+          ],
+          "description": "变形实验包的父包；原历史事实必须为 null。"
+        },
+        "mutation_diff": {
+          "anyOf": [
+            {"type": "object"},
+            {"type": "null"}
+          ],
+          "description": "删证据/加反例等变形必须新建带新 ID、digest、parent 与 diff 的合法实验包，并标明不是原历史事实；原包保持不可改写。"
+        },
+        "is_historical_fact": {
+          "type": "boolean",
+          "description": "true 表示原历史事实；false 表示变形实验包。"
+        },
+        "extensions": {
+          "type": "object",
+          "description": "未冻结扩展数据；V1 按 UNKNOWN 处理。"
+        }
+      },
+      "description": "一次 replay 包冻结契约、结构化声明、原始观测摘要/受控原文、来源映射、策略版本、配置、显式判定时钟、探针预算与运行事件引用。重放不得访问网络、重新调用 LLM 或使用当前墙钟；完整性核验须对照外部受信 expected digest，篡改原包直接拒绝。"
+    }
+  },
+  "oneOf": [
+    {"$ref": "#/$defs/RecoveryContract"},
+    {"$ref": "#/$defs/Claim"},
+    {"$ref": "#/$defs/EvidenceObservation"},
+    {"$ref": "#/$defs/ObligationResult"},
+    {"$ref": "#/$defs/ProbeDecision"},
+    {"$ref": "#/$defs/VerificationReceipt"},
+    {"$ref": "#/$defs/ReplayBundle"}
+  ]
+}

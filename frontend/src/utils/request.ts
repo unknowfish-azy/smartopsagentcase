@@ -53,6 +53,14 @@ request.interceptors.request.use(
     config => {
 
         /**
+         * 关联 ID：让浏览器、Java MDC 与服务日志使用同一个请求编号。
+         * 仅作为标签，不携带身份或凭据。
+         */
+        if (!config.headers['X-Request-ID']) {
+            config.headers['X-Request-ID'] = crypto.randomUUID()
+        }
+
+        /**
          * 后续 JWT 接入位置
          *
          * 例如：

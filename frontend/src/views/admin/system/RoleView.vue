@@ -41,15 +41,18 @@
       <p v-if="saveError" class="admin-error" role="alert">{{ saveError }}</p>
       <footer><button type="button" :disabled="saving" @click="close">取消</button><button class="admin-primary" type="submit" :disabled="saving" @click="saveGrant">{{ saving ? '提交中…' : '保存授权' }}</button></footer>
     </AdminDialog>
+    <AdminConfirmAction :open="!!passwordRequest" :title="passwordRequest?.title || ''" :description="passwordRequest?.description || ''" :busy="confirmBusy" :error="confirmError" @confirm="confirmPassword" @cancel="cancelPassword" />
   </section>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { systemApi } from '../../../api/adminSystem.ts'
 import { useAdminResource } from '../../../composables/useAdminResource.js'
 import AdminDialog from '../../../components/admin/AdminDialog.vue'
+import AdminConfirmAction from '../../../components/admin/AdminConfirmAction.vue'
 const { data, loading, error, load } = useAdminResource(() => systemApi.roles())
+onMounted(load)
 const action = ref('')
 const saving = ref(false)
 const saveError = ref('')
@@ -104,20 +107,36 @@ async function saveGrant() {
   catch (failure) { saveError.value = failure.message || '授权失败，请重试' }
   finally { saving.value = false }
 }
-function askPassword(label) { return window.prompt(`请输入当前管理员密码以${label}（仅用于本次身份复核）`) }
-async function toggle(role) {
-  const password = askPassword(role.status === 1 ? '停用角色' : '启用角色')
-  if (!password) return
-  success.value = ''; error.value = ''
-  try { await systemApi.roleStatus(role.id, role.status === 1 ? 0 : 1, password); success.value = '角色状态已更新。'; await load() }
-  catch (failure) { error.value = failure.message || '操作失败' }
+const passwordRequest = ref(null)
+const confirmBusy = ref(false)
+const confirmError = ref('')
+function askPassword(title, description, fallback, action) { confirmError.value = ''; passwordRequest.value = { title, description, fallback, action } }
+function cancelPassword() { if (confirmBusy.value) return; passwordRequest.value = null; confirmError.value = '' }
+async function confirmPassword(password) {
+  if (confirmBusy.value || !passwordRequest.value) return
+  const request = passwordRequest.value
+  confirmError.value = ''
+  confirmBusy.value = true
+  try { await request.action(password); passwordRequest.value = null }
+  catch (failure) { confirmError.value = failure.message || request.fallback }
+  finally { confirmBusy.value = false }
 }
-async function remove(role) {
+function toggle(role) {
+  const label = role.status === 1 ? '停用角色' : '启用角色'
+  askPassword(label, `请输入当前管理员密码以${label}（仅用于本次身份复核）`, '操作失败', async password => {
+    success.value = ''; error.value = ''
+    await systemApi.roleStatus(role.id, role.status === 1 ? 0 : 1, password)
+    success.value = '角色状态已更新。'
+    await load()
+  })
+}
+function remove(role) {
   if (!window.confirm(`确认删除角色「${role.name}」？`)) return
-  const password = askPassword('删除角色')
-  if (!password) return
-  success.value = ''; error.value = ''
-  try { await systemApi.deleteRole(role.id, password); success.value = '角色已删除。'; await load() }
-  catch (failure) { error.value = failure.message || '删除失败' }
+  askPassword('删除角色', `请输入当前管理员密码以删除角色「${role.name}」（仅用于本次身份复核）`, '删除失败', async password => {
+    success.value = ''; error.value = ''
+    await systemApi.deleteRole(role.id, password)
+    success.value = '角色已删除。'
+    await load()
+  })
 }
 </script>

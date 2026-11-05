@@ -1,0 +1,150 @@
+{
+  "baseline": "Work Buddy SmartOpsAgent-src-20261103.tar.gz (pre-remediation dirty workspace, not clean HEAD)",
+  "files": [
+    {
+      "path": ".env.example",
+      "after_sha256": "15ed28aee9fcb1c395a9b79a9993ba96a765ed2b4d8950c8d5093b6397c9509c",
+      "before_sha256": "15cef5def82fca8aaea0dc1e07d6f69cd084846b4d61969988c49e2d3a00e12b"
+    },
+    {
+      "path": "agent/inspector/collectors/trace_collector.py",
+      "after_sha256": "7115f5e042ee678a2b9bb3952171c1fd98ef92d6527c59770261b0b739123ee9",
+      "before_sha256": "f691ea4aa07bb53154e5222e44f5f25e7df518422ddda09b34cad6ff2ed3b552"
+    },
+    {
+      "path": "agent/inspector/pipeline.py",
+      "after_sha256": "480416f28f039ea0b33b32f5b8c338c4fcfb11e72a8f11c17b5431d7278c16fe",
+      "before_sha256": "d0194fdde7382528328303dccf5373707818df67e9d6cffcf76837de01e33595"
+    },
+    {
+      "path": "agent/inspector/verifiers/state_verifier.py",
+      "after_sha256": "c77c4099535cee7e15b460f06d31b8a83e2957f557690cddc90361347ed0fc75",
+      "before_sha256": "d1707e3c1cadbae95b6db646735bad93f7e249c7939f59e042f0dc3c1ea1cbee"
+    },
+    {
+      "path": "ai-service/app/services/chat.py",
+      "after_sha256": "fcdb3c30d6ffeded686a82db51db305dbbd0e8a3d81f73d976245a945b3cdce2",
+      "before_sha256": "617a24d10ab778ab61f4410ad136867e163ef0320fa88917b13d4d4fa1ad78d8"
+    },
+    {
+      "path": "ai-service/app/services/llm.py",
+      "after_sha256": "d5082d234b0f0410b5c174a28094f4c00597d24cdc0a3582492a05fa8a663580",
+      "before_sha256": "f4dfeea1d92b29a9d6deeff59f6be2ee3eb0fd8bb824b9adddfef9c2452ae95b"
+    },
+    {
+      "path": "ai-service/app/tests/conftest.py",
+      "after_sha256": "689fb0aeb64a6207b11915846e7df4fe28d01246c751e0c0a3d61ccf85acfdd6",
+      "before_sha256": "edc9668f479423c8eb4e431d332a5e5c91c88750953d24206437328e5d97caec"
+    },
+    {
+      "path": "ai-service/app/tests/test_chat.py",
+      "after_sha256": "ce0803f1927d38f169141275fc591ef9cbfb281f15361ec077a66d2dd373c1a2",
+      "before_sha256": "cb15cb6f011be6b012a957f4e5f63fc4f97af14f202de512dde5cbafbaaf8b34"
+    },
+    {
+      "path": "ai-service/app/tests/test_services.py",
+      "after_sha256": "74701b48cd0e643357a1ad4a9eb30836bff70a01ed6e233847e08e910d6a9ef6",
+      "before_sha256": "b602419ca77ef28365af95306bda7c1496ea91d7f9a6263b020949f66e74a08b"
+    },
+    {
+      "path": "frontend/src/components/ai/AiChatPanel.vue",
+      "after_sha256": "8d0bb6a735c664b07e5a5d57c740949bce9f9c30b0244408b505fa74c30c4b57",
+      "before_sha256": "0f7bafb6e7207ad3d5db6214370328647a78c0a979efa7220ac84d56d66112d2"
+    },
+    {
+      "path": "frontend/test/ai-chat.test.mjs",
+      "after_sha256": "fde3023d38d80f96bbd0f9706185cb82e2f52cc0da8658a7d525783b12257379",
+      "before_sha256": "60c23ae7fec226451140b66d7b09f6e28aba9d774fff1e9fdcb71b6b7a9fba73"
+    },
+    {
+      "path": "scripts/README.md",
+      "after_sha256": "72c0e7b5f9e4dfd69cbe3bdf708af9d6f97a23ee4d9f9c38513bae3e39912567",
+      "before_sha256": "31e2655457d6a1d527143f4aa0623e155ae7f386e5258bf3bc140e1a636ab141"
+    },
+    {
+      "path": "scripts/check_llm_live.py",
+      "after_sha256": "8c91b1df4b0bd95fc3873bf1b8c30bc884862d02eb7265abd703f32ff1cf8eb8",
+      "before_sha256": null
+    },
+    {
+      "path": "scripts/check_numeric_consistency.py",
+      "after_sha256": "010fd453062dd7e6c54c8ad3f5c17ba481868265d4690654355b2849ed166027",
+      "before_sha256": null
+    },
+    {
+      "path": "scripts/collect_probes.py",
+      "after_sha256": "ce38f47f4d89793c6ec5deda97852c8b02dd9fbfd241d5814fce92ebceb01da0",
+      "before_sha256": null
+    },
+    {
+      "path": "scripts/eval_false_success.py",
+      "after_sha256": "21e7edda4353da6cc781959fab5c3829b2cdcdd7b6cd5fcac65191c48563b83d",
+      "before_sha256": null
+    },
+    {
+      "path": "scripts/eval_retrieval.py",
+      "after_sha256": "f4b4f6211192a83b9be46db23c17bf01d96c96e2ca43a7e74c49bde92d5a718f",
+      "before_sha256": null
+    },
+    {
+      "path": "scripts/rollback_defense.py",
+      "after_sha256": "958d0878f9167d06a23f656f8534d574f35aa81db8b734aee6d230917c72e688",
+      "before_sha256": null
+    },
+    {
+      "path": "scripts/scan_anonymity.py",
+      "after_sha256": "d0d1d246b43d62f5dc360d7db03ee409fcbc6e0fb6545d7c035002d91f148a0f",
+      "before_sha256": null
+    },
+    {
+      "path": "scripts/windows/README.md",
+      "after_sha256": "3f86fe62ce336218ff3499adfc8b980de5f24c72e574bd23a2bb0faaeaf23f7b",
+      "before_sha256": "728117de6879264ed1785e323ee11001507b9005f03378c0227c429c3150249c"
+    },
+    {
+      "path": "scripts/windows/start-all.ps1",
+      "after_sha256": "f1fbeb6aecde10b75cba5add307f7f30770916c3b3f671ba8cffb23125446ebc",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/fixtures/defense/false_success.json",
+      "after_sha256": "28c757cdabcfd24d69e27cb4bc3abdbd185d793ea3d5dbe4340093cacf86d45a",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/inspector/test_eventbus_integration.py",
+      "after_sha256": "cbeb10898d92ce953b7c33058d9bda749917a025fe81144ff2a39c5648fc2887",
+      "before_sha256": "90b8876fe732d11a973d8b43b3eebb4c6bb85adcbe0de43cf27e1b9b19ea9a8f"
+    },
+    {
+      "path": "tests/inspector/test_pipeline.py",
+      "after_sha256": "9bf59975b334990f668048383db0aa5d42c89203adbd58c32eb8eee39be637e6",
+      "before_sha256": "4f3a7cb69fff38c8ca551b9debd464462233a0be4ae57b9cec2e817edf0c939e"
+    },
+    {
+      "path": "tests/inspector/test_state_verifier.py",
+      "after_sha256": "a92d8b803d383ee9379a709b07972c784c5c8ddecd6ab5663f4d1dca2171d63c",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/scripts/test_eval_false_success.py",
+      "after_sha256": "855d06889ff3db98c1c489abcb2c4eb369f68f687b8248dc9f547cbd87d92743",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/scripts/test_eval_retrieval.py",
+      "after_sha256": "a412d49e3a33fb1f7a373963e779756fbb0d901f2c25b3fbeba486d75ff02138",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/scripts/test_numeric_consistency.py",
+      "after_sha256": "8596a21aa22b59e7c6fdf15affcb2f28fc16b4562c3083717a8a8e6c5c3641fb",
+      "before_sha256": null
+    },
+    {
+      "path": "tests/scripts/test_rollback_defense.py",
+      "after_sha256": "72f7b169861b9fd3b2c92adc1f99d1c6d975419df502c26fac322814c93599cd",
+      "before_sha256": null
+    }
+  ]
+}

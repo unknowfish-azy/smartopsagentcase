@@ -7,8 +7,8 @@
       <ParticleWhale v-if="showEnhancedHomeVisuals" :placement="whalePlacement" :state="whaleState" />
       <CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace" :placement="whalePlacement" :state="whaleState" />
       <LivingJellyfish v-if="!isConnectionWorkspace && visualMode !== 'reduced-motion'" class="app-jellyfish" :class="`app-jellyfish--${whalePlacement}`" :state="jellyfishState" ecosystem="protected" />
-      <OpsSpiderPet v-if="!isTeamSpace" :state="opsSpiderState" :agent-state="whaleState" :compact="route.name === 'Connections'" @navigate="openOpsSpiderAction" />
-      <button v-if="opsSpider.hidden && !isTeamSpace" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
+      <OpsSpiderPet v-if="!isTeamSpace && !isKnowledgeSpace" :state="opsSpiderState" :agent-state="whaleState" :compact="route.name === 'Connections'" @navigate="openOpsSpiderAction" />
+      <button v-if="opsSpider.hidden && !isTeamSpace && !isKnowledgeSpace" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
       <SmartInquiryDrawer v-if="!isTeamSpace" />
 
       <button class="sidebar-expand-control" type="button" aria-label="展开主菜单" title="展开主菜单" :aria-expanded="!appStore.sidebarCollapsed" @click="expandSidebar">
@@ -107,6 +107,8 @@ aiChat.syncAccount()
 let disconnectCompanion
 const route = useRoute()
 const isTeamSpace = computed(() => route.meta.space === 'team')
+/* 知识库为长文阅读页，桌宠漫游会遮挡检索结果，因此该区不显示桌宠。 */
+const isKnowledgeSpace = computed(() => route.path.startsWith('/knowledge'))
 const router = useRouter()
 const isConnectionWorkspace = computed(() => route.name === 'Connections')
 const isToolsPage = computed(() => route.name === 'Tools')

@@ -50,9 +50,9 @@ class TestConfig:
 
     backend_url: str = "http://127.0.0.1:8080"
 
-    ai_service_url: str = "http://127.0.0.1:8000"
+    ai_service_url: str = "http://127.0.0.1:8001"
 
-    knowledge_service_url: str = "http://127.0.0.1:8001"
+    knowledge_service_url: str = "http://127.0.0.1:8002"
 
     mysql_host: str = "127.0.0.1"
 

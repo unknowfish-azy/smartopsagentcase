@@ -22,6 +22,13 @@ class ChatRequest(BaseModel):
 
     version: str | None = None
 
+    # 以下字段全部可选，默认 None 表示沿用 knowledge 服务默认值。
+    # 由后端/前端在"检索调试"场景下显式传入。
+    source: str | None = None
+    score_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+    vector_weight: float | None = Field(default=None, ge=0.0, le=1.0)
+    bm25_weight: float | None = Field(default=None, ge=0.0, le=1.0)
+
     # 图像证据（文件名列表，最多 5 张）。
     # 当前阶段仅传递文件名用于模拟解析，图像内容不上传。
     images: list[str] = Field(
@@ -37,6 +44,10 @@ class ChatRequest(BaseModel):
 class Citation(BaseModel):
 
     citation_id: int
+
+    title: str = ""
+
+    snippet: str = ""
 
     source: str
 

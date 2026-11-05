@@ -1,0 +1,3360 @@
+--- a/.env.example
++++ b/.env.example
+@@ -32,6 +32,8 @@
+ LLM_MODEL=mock-model
+ # 模型服务地址（Ollama / OpenAI 兼容接口）
+ LLM_BASE_URL=http://localhost:11434
++# Local model calls bypass environment proxies; preserve this for other local clients.
++NO_PROXY=127.0.0.1,localhost
+ # 模型服务 API Key（外部模型鉴权密钥，留空即可走 mock）
+ LLM_API_KEY=
+ # 调用模型服务的超时时间（秒）
+--- a/agent/inspector/collectors/trace_collector.py
++++ b/agent/inspector/collectors/trace_collector.py
+@@ -20,7 +20,7 @@
+         {"request_id": "...", "operation": "nginx.restart"}
+ 
+     verification.finished
+-        {"request_id": "...", "resolved": false, "status": "502"}
++        {"request_id": "...", "probes": [{"type": "http", "status_code": 502}]}
+ """
+ 
+ from __future__ import annotations
+@@ -128,10 +128,8 @@
+ 
+         elif event.name == VERIFICATION_FINISHED:
+             self._actual_state[request_id] = {
+-                "resolved": bool(
+-                    payload.get("resolved")
+-                ),
+-                "status": payload.get("status"),
++                "probes": payload.get("probes") or [],
++                "observed_at": payload.get("observed_at"),
+             }
+ 
+     # ------------------------------------------------------------------
+--- a/agent/inspector/pipeline.py
++++ b/agent/inspector/pipeline.py
+@@ -17,6 +17,7 @@
+ from uuid import uuid4
+ 
+ from agent.inspector.enums import (
++    EvidenceLabel,
+     InspectionCategory,
+     InspectionStatus,
+     InspectorTarget,
+@@ -158,6 +159,14 @@
+             }
+         )
+ 
++        evidence_result = EvidenceJudge.evaluate_evidence(
++            agent_claim,
++            evidence,
++        )
++        evidence_label = evidence_result.get("label")
++        if isinstance(evidence_label, str):
++            evidence_label = EvidenceLabel(evidence_label)
++
+         return InspectionResult(
+             inspection_id=(
+                 "INS-"
+@@ -178,23 +187,13 @@
+             recommendation=recommendation,
+             requires_human=requires_human,
+             issues=issues,
+-            evidence_label=(
+-                EvidenceJudge.evaluate_evidence(
+-                    agent_claim,
+-                    evidence,
+-                )["label"]
+-                if evidence or agent_claim
+-                else None
+-            ),
++            evidence_label=(evidence_label if evidence or agent_claim else None),
+             policy_result={
+                 "tool_calls": len(
+                     context.get("tool_calls") or []
+                 )
+             },
+-            evidence_result=EvidenceJudge.evaluate_evidence(
+-                agent_claim,
+-                evidence,
+-            ),
++            evidence_result=evidence_result,
+             verification_result=verification_result,
+             metadata=context.get("metadata") or {},
+         )
+--- a/agent/inspector/verifiers/state_verifier.py
++++ b/agent/inspector/verifiers/state_verifier.py
+@@ -11,7 +11,21 @@
+ 
+ from __future__ import annotations
+ 
++from collections.abc import Mapping, Sequence
++import os
++import re
++from datetime import datetime, timezone
++import socket
++import subprocess
++import sys
+ from typing import Any
++from urllib import error as urllib_error
++from urllib import request as urllib_request
++
++try:
++    import psutil as _psutil
++except ImportError:  # pragma: no cover - minimal hosts use command fallback
++    _psutil = None
+ 
+ from agent.inspector.enums import InspectionCategory, Severity
+ from agent.inspector.models import InspectorIssue
+@@ -35,10 +49,337 @@
+ 
+     text = agent_claim.lower()
+ 
++    for sentence in re.split(r"[。！？\n.!?]", text):
++        if re.search(r"未|尚未|没有|失败|不能|无法|\b(?:not|never|failed|unresolved)\b", sentence):
++            continue
++        if any(pattern in sentence for pattern in _RESOLVED_PATTERNS):
++            return True
++    return False
++
++
++_HEALTHY_STATUSES = {
++    "ok",
++    "healthy",
++    "up",
++    "ready",
++    "running",
++    "open",
++    "listening",
++    "connected",
++    "success",
++    "200",
++    "204",
++    "301",
++    "302",
++    "303",
++    "307",
++    "308",
++}
++_UNHEALTHY_STATUSES = {
++    "closed",
++    "down",
++    "failed",
++    "failure",
++    "error",
++    "stopped",
++    "dead",
++    "crashed",
++    "partial",
++    "degraded",
++    "timeout",
++    "timed_out",
++    "refused",
++}
++
++
++def probe_type(probe: Mapping[str, Any]) -> str:
++    """Return a stable, human-readable probe shape label."""
++    value = probe.get("probe_type", probe.get("type", "unknown"))
++    return str(value).strip().lower().replace("-", "_").replace(" ", "_") or "unknown"
++
++
++def _as_bool(value: Any) -> bool | None:
++    if isinstance(value, bool):
++        return value
++    if isinstance(value, (int, float)) and value in (0, 1):
++        return bool(value)
++    if isinstance(value, str):
++        normalized = value.strip().lower()
++        if normalized in {"true", "yes", "y", "1", "on"}:
++            return True
++        if normalized in {"false", "no", "n", "0", "off"}:
++            return False
++    return None
++
++
++def _status(probe: Mapping[str, Any]) -> str:
++    value = probe.get("status", probe.get("state", ""))
++    return str(value).strip().lower().replace("-", "_")
++
++
++def _timed_out(probe: Mapping[str, Any]) -> bool:
+     return any(
+-        pattern in text
+-        for pattern in _RESOLVED_PATTERNS
++        _as_bool(probe.get(key)) is True
++        for key in ("timed_out", "timeout", "timedout")
+     )
++
++
++def _explicit_health(probe: Mapping[str, Any]) -> bool | None:
++    for key in ("healthy", "ok", "reachable", "connected", "running", "open", "found"):
++        value = _as_bool(probe.get(key))
++        if value is not None:
++            return value
++    return None
++
++
++def _member_health(probe: Mapping[str, Any]) -> bool | None:
++    members = probe.get("members")
++    if not isinstance(members, Sequence) or isinstance(members, (str, bytes)):
++        return None
++    if not members:
++        return False
++    states: list[bool] = []
++    for member in members:
++        if isinstance(member, Mapping):
++            state = _explicit_health(member)
++            if state is None:
++                state = _status_health(member)
++        else:
++            state = _as_bool(member)
++        if state is None:
++            return False
++        states.append(state)
++    return all(states)
++
++
++def _status_health(probe: Mapping[str, Any]) -> bool | None:
++    value = _status(probe)
++    if value in _HEALTHY_STATUSES:
++        return True
++    if value in _UNHEALTHY_STATUSES:
++        return False
++    return None
++
++
++def _probe_healthy(probe: Mapping[str, Any]) -> bool | None:
++    if _timed_out(probe):
++        return False
++
++    kind = probe_type(probe)
++    explicit = _explicit_health(probe)
++    status = _status(probe)
++
++    if probe.get("error") not in (None, "", False):
++        return False
++
++    if kind in {"http", "https", "http_status"}:
++        code = probe.get("status_code", probe.get("http_status"))
++        if isinstance(code, str) and code.isdigit():
++            code = int(code)
++        if isinstance(code, int) and 100 <= code <= 599:
++            if not 200 <= code < 400:
++                return False
++            if "expected_version" in probe:
++                if "observed_version" not in probe:
++                    return None
++                return probe["expected_version"] == probe["observed_version"]
++            return True
++        if code is not None:
++            return None
++    if kind in {"cluster", "cluster_health", "cluster_status"}:
++        if status == "partial" or _as_bool(probe.get("partial")) is True:
++            return False
++        healthy_nodes = probe.get("healthy_nodes")
++        total_nodes = probe.get("total_nodes")
++        if isinstance(healthy_nodes, int) and isinstance(total_nodes, int):
++            return total_nodes > 0 and healthy_nodes == total_nodes
++        member_health = _member_health(probe)
++        if member_health is not None:
++            return member_health
++    if kind in {"all", "all_healthy", "health", "aggregate"}:
++        checks = probe.get("checks", probe.get("probes"))
++        if isinstance(checks, list):
++            return resolve_from_probes(checks)
++    if explicit is not None:
++        return explicit
++    if status:
++        status_health = _status_health(probe)
++        if status_health is not None:
++            return status_health
++    return None
++
++
++def resolve_from_probes(probes: list[Mapping[str, Any]] | Sequence[Any]) -> bool:
++    """Derive resolved state exclusively from a non-empty probes array.
++
++    Every probe must be a recognized healthy signal. Unknown or malformed
++    probes fail closed so a missing observation cannot become a false pass.
++    """
++    if not isinstance(probes, list) or not probes:
++        return False
++    if not all(isinstance(probe, Mapping) for probe in probes):
++        return False
++    return all(_probe_healthy(probe) is True for probe in probes)
++
++
++def _probe_timeout(timeout: float | int) -> float:
++    """Clamp live probe timeouts to a small bounded value."""
++    try:
++        value = float(timeout)
++    except (TypeError, ValueError):
++        value = 2.0
++    return min(max(value, 0.01), 2.0)
++
++
++def http_probe(url: str, *, timeout: float = 2.0) -> dict[str, Any]:
++    """Perform a bounded read-only HTTP GET and return a probe record."""
++    bounded_timeout = _probe_timeout(timeout)
++    probe: dict[str, Any] = {
++        "probe_type": "http",
++        "url": str(url),
++        "timeout": bounded_timeout,
++        "observed_at": datetime.now(timezone.utc).isoformat(),
++    }
++    request = urllib_request.Request(str(url), method="GET")
++    try:
++        opener = urllib_request.build_opener(urllib_request.ProxyHandler({}))
++        with opener.open(request, timeout=bounded_timeout) as response:
++            code = int(response.getcode())
++        probe.update({"status": "ok" if 200 <= code < 400 else "error", "status_code": code, "timed_out": False})
++    except urllib_error.HTTPError as exc:
++        probe.update({"status": "error", "status_code": int(exc.code), "timed_out": False})
++    except (TimeoutError, socket.timeout) as exc:
++        probe.update({"status": "timeout", "timed_out": True, "error_type": type(exc).__name__})
++    except urllib_error.URLError as exc:
++        reason = getattr(exc, "reason", None)
++        timed_out = isinstance(reason, (TimeoutError, socket.timeout))
++        probe.update({"status": "timeout" if timed_out else "error", "timed_out": timed_out, "error_type": type(exc).__name__})
++    except OSError as exc:
++        probe.update({"status": "error", "timed_out": False, "error_type": type(exc).__name__})
++    return probe
++
++
++def port_probe(host: str, port: int, *, timeout: float = 2.0) -> dict[str, Any]:
++    """Check TCP reachability without sending application data."""
++    bounded_timeout = _probe_timeout(timeout)
++    probe = {"probe_type": "port", "host": str(host), "port": int(port), "timeout": bounded_timeout,
++             "observed_at": datetime.now(timezone.utc).isoformat()}
++    try:
++        with socket.create_connection((str(host), int(port)), timeout=bounded_timeout):
++            probe.update({"status": "open", "timed_out": False})
++    except (TimeoutError, socket.timeout):
++        probe.update({"status": "timeout", "timed_out": True})
++    except ConnectionRefusedError:
++        probe.update({"status": "closed", "timed_out": False})
++    except (OSError, ValueError) as exc:
++        probe.update({"status": "error", "timed_out": False, "error_type": type(exc).__name__})
++    return probe
++
++
++def _psutil_matches(pattern: str) -> list[dict[str, Any]]:
++    if _psutil is None:
++        return []
++    matches: list[dict[str, Any]] = []
++    needle = pattern.casefold()
++    try:
++        processes = _psutil.process_iter(["pid", "name", "exe", "cmdline"])
++        for process in processes:
++            try:
++                info = getattr(process, "info", {}) or {}
++                name = str(info.get("name") or "")
++                exe = str(info.get("exe") or "")
++                command = " ".join(str(part) for part in (info.get("cmdline") or []))
++                if needle and needle in f"{name} {os.path.basename(exe)}".casefold():
++                    matches.append({"pid": info.get("pid"), "name": name})
++            except Exception:
++                continue
++    except Exception:
++        return []
++    return matches
++
++
++def _command_matches(pattern: str) -> list[dict[str, Any]]:
++    command = ["tasklist"] if os.name == "nt" else ["ps", "-eo", "pid=,comm=,args="]
++    try:
++        completed = subprocess.run(command, capture_output=True, text=True, timeout=_probe_timeout(2.0), check=False)
++    except (OSError, subprocess.SubprocessError):
++        return []
++    needle = pattern.casefold()
++    return [{"line": line.strip()} for line in completed.stdout.splitlines() if needle and needle in line.casefold()]
++
++
++def process_probe(name: str) -> dict[str, Any]:
++    """Report whether a process name/command pattern appears locally."""
++    pattern = str(name).strip()
++    matches = _psutil_matches(pattern)
++    if _psutil is None:
++        matches = _command_matches(pattern)
++    return {
++        "probe_type": "process",
++        "name": pattern,
++        "pattern": pattern,
++        "status": "running" if matches else "stopped",
++        "match_count": len(matches),
++        "matches": matches,
++        "observed_at": datetime.now(timezone.utc).isoformat(),
++    }
++
++
++def _target_values(value: Any) -> list[Any]:
++    if isinstance(value, (str, bytes, Mapping)):
++        return [value]
++    if isinstance(value, Sequence):
++        return list(value)
++    return [value]
++
++
++def _split_port_target(value: Any) -> tuple[str, int, float]:
++    if isinstance(value, Mapping):
++        return str(value.get("host", "127.0.0.1")), int(value["port"]), float(value.get("timeout", 2.0))
++    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)) and len(value) == 2:
++        return str(value[0]), int(value[1]), 2.0
++    host, separator, port = str(value).rpartition(":")
++    if not separator or not host or not port:
++        raise ValueError("port target must be HOST:PORT")
++    return host, int(port), 2.0
++
++
++def collect_probes(targets: Mapping[str, Any] | Sequence[Any]) -> list[dict[str, Any]]:
++    """Collect live probes from grouped target descriptors; return probes only."""
++    probes: list[dict[str, Any]] = []
++    if isinstance(targets, Mapping) and "probe_type" not in targets and "type" not in targets:
++        for kind, values in targets.items():
++            normalized = str(kind).strip().lower().replace("-", "_")
++            for value in _target_values(values):
++                try:
++                    if normalized in {"http", "https"}:
++                        target = value if isinstance(value, Mapping) else {"url": value}
++                        probes.append(http_probe(target["url"], timeout=float(target.get("timeout", 2.0))))
++                    elif normalized == "port":
++                        host, port, probe_timeout = _split_port_target(value)
++                        probes.append(port_probe(host, port, timeout=probe_timeout))
++                    elif normalized == "process":
++                        pattern = value.get("pattern", value.get("name", "")) if isinstance(value, Mapping) else value
++                        probes.append(process_probe(pattern))
++                except (KeyError, TypeError, ValueError):
++                    continue
++        return probes
++    sequence = [targets] if isinstance(targets, Mapping) else targets
++    for target in sequence:
++        if not isinstance(target, Mapping):
++            continue
++        kind = probe_type(target)
++        try:
++            if kind in {"http", "https"}:
++                probes.append(http_probe(target["url"], timeout=float(target.get("timeout", 2.0))))
++            elif kind == "port":
++                host, port, probe_timeout = _split_port_target(target)
++                probes.append(port_probe(host, port, timeout=probe_timeout))
++            elif kind == "process":
++                probes.append(process_probe(target.get("pattern", target.get("name", ""))))
++        except (KeyError, TypeError, ValueError):
++            continue
++    return probes
+ 
+ 
+ class StateVerifier:
+@@ -47,7 +388,7 @@
+ 
+     actual_state 形如：
+ 
+-        {"resolved": False, "status": "502", "detail": "..."}
++        {"probes": [{"probe_type": "http", "status_code": 502}]}
+     """
+ 
+     def verify(
+@@ -55,27 +396,39 @@
+         agent_claim: str | None,
+         actual_state: dict[str, Any] | None,
+     ) -> dict[str, Any]:
+-        if not agent_claim or not actual_state:
++        if not agent_claim or not isinstance(actual_state, Mapping):
+             return {
+                 "checked": False,
+                 "passed": None,
+-                "reason": "缺少结论或实际状态，跳过验证",
++                "reason": "缺少结论或实际状态 probes 数组，跳过验证",
+             }
+ 
++        probes = actual_state.get("probes")
++        if not isinstance(probes, list) or not probes:
++            return {
++                "checked": False,
++                "passed": None,
++                "reason": "实际状态必须提供非空 probes 数组，跳过验证",
++            }
++
+         resolved_claim = claims_resolved(agent_claim)
+-
+-        actual_resolved = bool(
+-            actual_state.get("resolved", False)
+-        )
++        if not all(isinstance(probe, Mapping) for probe in probes):
++            return {"checked": False, "passed": None, "reason": "探针格式无效"}
++        states = [_probe_healthy(probe) for probe in probes]
++        if None in states and False not in states:
++            return {"checked": False, "passed": None, "reason": "探针观测不足，待核验"}
++        actual_resolved = all(state is True for state in states)
++        probe_types = [probe_type(probe) for probe in probes]
+ 
+         if resolved_claim and not actual_resolved:
+             return {
+                 "checked": True,
+                 "passed": False,
+                 "false_success": True,
++                "probe_types": probe_types,
+                 "reason": (
+-                    "Agent 声称已解决，但实际状态仍异常："
+-                    f"{actual_state.get('status', actual_state)}"
++                    "Agent 声称已解决，但探针仍报告异常："
++                    f"{', '.join(probe_types)}"
+                 ),
+             }
+ 
+@@ -83,6 +436,7 @@
+             "checked": True,
+             "passed": True,
+             "false_success": False,
++            "probe_types": probe_types,
+             "reason": "结论与实际状态一致",
+         }
+ 
+@@ -111,4 +465,10 @@
+ __all__ = [
+     "StateVerifier",
+     "claims_resolved",
++    "probe_type",
++    "resolve_from_probes",
++    "http_probe",
++    "port_probe",
++    "process_probe",
++    "collect_probes",
+ ]
+--- a/ai-service/app/services/chat.py
++++ b/ai-service/app/services/chat.py
+@@ -1,4 +1,6 @@
+ import asyncio
++import sys
++from pathlib import Path
+ from uuid import uuid4
+ 
+ from ..schemas.chat import (
+@@ -85,6 +87,8 @@
+             prompt,
+             system_prompt=SYSTEM_PROMPT,
+         )
++
++        inspection = self._inspect_request(request, rag_data)
+ 
+         citations = [
+             Citation(
+@@ -144,6 +148,10 @@
+                 "top_k": request.top_k,
+                 "version": request.version,
+                 "images": request.images,
++                "degraded": self.llm.degraded,
++                "effective_provider": self.llm.effective_provider,
++                "degradation_reason": self.llm.degradation_reason,
++                **({"inspection": inspection} if inspection else {}),
+             },
+         )
+ 
+@@ -202,6 +210,10 @@
+             system_prompt=SYSTEM_PROMPT,
+         ):
+             yield {"event": "token", "data": {"delta": delta}}
++
++        inspection = self._inspect_request(request, rag_data)
++        if inspection:
++            yield {"event": "inspection", "data": inspection}
+ 
+         # 3) 完成事件
+         citations = [
+@@ -232,9 +244,63 @@
+                     "top_k": request.top_k,
+                     "version": request.version,
+                     "images": request.images,
++                    "degraded": self.llm.degraded,
++                    "effective_provider": self.llm.effective_provider,
++                    "degradation_reason": self.llm.degradation_reason,
++                    **({"inspection": inspection} if inspection else {}),
+                 },
+             },
+         }
++
++    @staticmethod
++    def _inspect_request(request: ChatRequest, rag_data: dict) -> dict | None:
++        """Run the real four-level inspector for agent execution metadata."""
++        metadata = request.metadata or {}
++        if "agent_claim" not in metadata and "actual_state" not in metadata:
++            return None
++
++        repo_root = Path(__file__).resolve().parents[3]
++        if str(repo_root) not in sys.path:
++            sys.path.insert(0, str(repo_root))
++
++        from agent.inspector.models import EvidenceItem, ToolCallRecord
++        from agent.inspector.pipeline import InspectorPipeline
++
++        raw_evidence = metadata.get("evidence") or rag_data.get("evidences") or []
++        evidence = [
++            item if isinstance(item, EvidenceItem) else EvidenceItem(
++                content=str(item.get("content", "")),
++                source=str(item.get("source", "")),
++                version=str(item.get("version", "latest")),
++                score=float(item.get("score", 0.0)),
++            )
++            for item in raw_evidence
++            if isinstance(item, dict) or isinstance(item, EvidenceItem)
++        ]
++        raw_calls = metadata.get("tool_calls") or []
++        tool_calls = [
++            item if isinstance(item, ToolCallRecord) else ToolCallRecord(
++                tool_name=str(item.get("tool_name", "")),
++                risk=str(item.get("risk", "LOW")),
++                approval_granted=bool(item.get("approval_granted", False)),
++                success=bool(item.get("success", False)),
++                args=item.get("args") or {},
++            )
++            for item in raw_calls
++            if isinstance(item, dict) or isinstance(item, ToolCallRecord)
++        ]
++        context = {
++            "task_id": metadata.get("task_id", request.conversation_id or "chat"),
++            "target": metadata.get("target", "AGENT"),
++            "agent_claim": metadata.get("agent_claim"),
++            "actual_state": metadata.get("actual_state"),
++            "evidence": evidence,
++            "tool_calls": tool_calls,
++            "policy": metadata.get("policy") or {},
++            "environment_version": metadata.get("environment_version"),
++            "metadata": {"source": "ai-service.chat"},
++        }
++        return InspectorPipeline().run(context).to_dict()
+ 
+     @staticmethod
+     def _build_prompt(
+@@ -281,4 +347,4 @@
+ 
+         from ..core.config import settings
+ 
+-        return settings.llm_provider+        return settings.llm_provider
+--- a/ai-service/app/services/llm.py
++++ b/ai-service/app/services/llm.py
+@@ -1,4 +1,5 @@
+ import asyncio
++import json
+ import re
+ from typing import Any
+ 
+@@ -10,9 +11,13 @@
+     """
+     LLM 统一服务接口。
+ 
+-    当前默认使用 mock。
+-    后续可接 Ollama、Qwen、OpenAI-compatible API 等。
++    Provider 统一接口：Ollama 可用时真实调用，连接失败时明确降级到 mock。
+     """
++
++    def __init__(self) -> None:
++        self.degraded = False
++        self.degradation_reason = ""
++        self.effective_provider = settings.llm_provider.lower()
+ 
+     async def generate(
+         self,
+@@ -25,16 +30,23 @@
+         provider = settings.llm_provider.lower()
+ 
+         if provider == "mock":
++            self.effective_provider = "mock"
+             return self._mock_generate(
+                 prompt
+             )
+ 
+         if provider == "ollama":
+-            return await self._ollama_generate(
+-                prompt=prompt,
+-                system_prompt=system_prompt,
+-                **kwargs,
+-            )
++            try:
++                result = await self._ollama_generate(
++                    prompt=prompt,
++                    system_prompt=system_prompt,
++                    **kwargs,
++                )
++                self.effective_provider = "ollama"
++                return result
++            except Exception as exc:
++                self._mark_degraded(exc)
++                return self._mock_generate(prompt)
+ 
+         raise LLMException(
+             f"暂不支持的 LLM Provider: {provider}"
+@@ -47,21 +59,28 @@
+         system_prompt: str | None = None,
+         **kwargs: Any,
+     ):
+-        """流式生成：逐块 yield 文本片段。mock/ollama 阶段用模拟分块。"""
++        """流式生成：mock 分块或读取 Ollama NDJSON 响应。"""
+ 
+         provider = settings.llm_provider.lower()
+ 
+         if provider == "mock":
++            self.effective_provider = "mock"
+             async for chunk in self._mock_stream(prompt):
+                 yield chunk
+             return
+ 
+         if provider == "ollama":
+-            async for chunk in self._ollama_stream(
+-                prompt=prompt,
+-                system_prompt=system_prompt,
+-            ):
+-                yield chunk
++            try:
++                async for chunk in self._ollama_stream(
++                    prompt=prompt,
++                    system_prompt=system_prompt,
++                ):
++                    self.effective_provider = "ollama"
++                    yield chunk
++            except Exception as exc:
++                self._mark_degraded(exc)
++                async for chunk in self._mock_stream(prompt):
++                    yield chunk
+             return
+ 
+         # 真实 Provider 接入时在此按 stream=True 解析 SSE/NDJSON
+@@ -86,23 +105,37 @@
+             await asyncio.sleep(0.015)
+             yield piece
+ 
+-    @staticmethod
+     async def _ollama_stream(
++        self,
+         prompt: str,
+         system_prompt: str | None,
+     ):
+ 
+-        text = (
+-            "（Ollama 模拟回答）\n\n"
+-            "当前 LLM Provider 为 ollama，外部模型服务调用已临时注释。\n"
+-            f"用户问题：{prompt}"
+-        )
++        payload = self._payload(prompt, system_prompt, stream=True)
++        import httpx
+ 
+-        for piece in re.split(r"(\s+)", text):
+-            if not piece:
+-                continue
+-            await asyncio.sleep(0.015)
+-            yield piece
++        async with httpx.AsyncClient(
++            timeout=settings.request_timeout,
++            trust_env=False,
++        ) as client:
++            async with client.stream(
++                "POST",
++                f"{settings.llm_base_url.rstrip('/')}/api/generate",
++                json=payload,
++            ) as response:
++                if response.status_code != 200:
++                    raise LLMException(
++                        f"Ollama 调用失败：{response.status_code}"
++                    )
++                async for line in response.aiter_lines():
++                    if not line:
++                        continue
++                    data = json.loads(line)
++                    chunk = data.get("response", "")
++                    if chunk:
++                        yield chunk
++                    if data.get("done"):
++                        break
+ 
+     @staticmethod
+     def _mock_generate(
+@@ -124,42 +157,37 @@
+         **kwargs: Any,
+     ) -> str:
+ 
+-        # 保留请求参数构造骨架，后续恢复密钥/服务地址即可直接使用。
+-        payload = {
++        import httpx
++
++        payload = self._payload(prompt, system_prompt, stream=False)
++        async with httpx.AsyncClient(
++            timeout=settings.request_timeout,
++            trust_env=False,
++        ) as client:
++            response = await client.post(
++                f"{settings.llm_base_url.rstrip('/')}/api/generate",
++                json=payload,
++            )
++        if response.status_code != 200:
++            raise LLMException(f"Ollama 调用失败：{response.status_code}")
++        data = response.json()
++        answer = data.get("response")
++        if not isinstance(answer, str) or not answer.strip():
++            raise LLMException("Ollama 返回为空")
++        return answer
++
++    @staticmethod
++    def _payload(prompt: str, system_prompt: str | None, *, stream: bool) -> dict[str, Any]:
++        payload: dict[str, Any] = {
+             "model": settings.llm_model,
+             "prompt": prompt,
+-            "stream": False,
++            "stream": stream,
+         }
+-
+         if system_prompt:
+             payload["system"] = system_prompt
++        return payload
+ 
+-        # 【此处为外部 API/卡密调用，已临时注释，后续填入密钥即可恢复】
+-        # try:
+-        #     import httpx
+-        # except ImportError as exc:
+-        #     raise LLMException("未安装 httpx") from exc
+-        #
+-        # async with httpx.AsyncClient(
+-        #     timeout=settings.request_timeout
+-        # ) as client:
+-        #     response = await client.post(
+-        #         f"{settings.llm_base_url}/api/generate",
+-        #         json=payload,
+-        #     )
+-        #
+-        # if response.status_code != 200:
+-        #     raise LLMException(
+-        #         "Ollama 调用失败："
+-        #         f"{response.status_code}"
+-        #     )
+-        #
+-        # data = response.json()
+-        # return data.get("response", "")
+-
+-        # 模拟占位返回：避免缺少 Ollama 服务时程序崩溃。
+-        return (
+-            "（Ollama 模拟回答）\n\n"
+-            "当前 LLM Provider 为 ollama，外部模型服务调用已临时注释。\n"
+-            f"用户问题：{prompt}"
+-        )+    def _mark_degraded(self, exc: Exception) -> None:
++        self.degraded = True
++        self.effective_provider = "mock"
++        self.degradation_reason = f"{type(exc).__name__}: {exc}"
+--- a/ai-service/app/tests/conftest.py
++++ b/ai-service/app/tests/conftest.py
+@@ -4,7 +4,14 @@
+ from app.main import app
+ 
+ 
++@pytest.fixture(autouse=True)
++def isolated_model_settings(monkeypatch):
++    """Unit tests must not inherit a developer's live model configuration."""
++    from app.core.config import settings
++    monkeypatch.setattr(settings, "llm_provider", "mock")
++    monkeypatch.setattr(settings, "llm_model", "mock-model")
++
++
+ @pytest.fixture
+ def client():
+-
+-    return TestClient(app)+    return TestClient(app)
+--- a/ai-service/app/tests/test_chat.py
++++ b/ai-service/app/tests/test_chat.py
+@@ -30,4 +30,44 @@
+         },
+     )
+ 
+-    assert response.status_code == 422+    assert response.status_code == 422
++
++
++def test_chat_marks_degraded_provider(client, monkeypatch):
++    from app.core.config import settings
++    from app.services.llm import LLMService
++
++    async def unavailable(self, **kwargs):
++        raise ConnectionError("test Ollama connection failure")
++
++    monkeypatch.setattr(settings, "llm_provider", "ollama")
++    monkeypatch.setattr(LLMService, "_ollama_generate", unavailable)
++
++    response = client.post(
++        "/api/chat",
++        json={"message": "降级标记", "use_rag": False},
++    )
++
++    assert response.status_code == 200
++    metadata = response.json()["metadata"]
++    assert metadata["degraded"] is True
++    assert metadata["effective_provider"] == "mock"
++
++
++def test_chat_runs_inspector_and_returns_rejected_false_success(client):
++    response = client.post(
++        "/api/chat",
++        json={
++            "message": "检查任务状态",
++            "use_rag": False,
++            "metadata": {
++                "agent_claim": "任务已解决，服务恢复正常",
++                "actual_state": {"probes": [{"probe_type": "http", "status_code": 502}]},
++            },
++        },
++    )
++
++    assert response.status_code == 200
++    inspection = response.json()["metadata"]["inspection"]
++    assert inspection["status"] == "REJECTED"
++    assert inspection["verification_result"]["false_success"] is True
+--- a/ai-service/app/tests/test_services.py
++++ b/ai-service/app/tests/test_services.py
+@@ -2,6 +2,7 @@
+ 
+ from app.services.llm import LLMService
+ from app.services.rag import RAGService
++from app.core.config import settings
+ 
+ 
+ @pytest.mark.asyncio
+@@ -19,6 +20,117 @@
+     )
+ 
+     assert "测试问题" in result
++
++
++@pytest.mark.asyncio
++async def test_ollama_llm_calls_real_generate_endpoint(monkeypatch):
++    class FakeResponse:
++        status_code = 200
++
++        def raise_for_status(self):
++            return None
++
++        def json(self):
++            return {"response": "来自 Ollama 的回答"}
++
++    class FakeClient:
++        def __init__(self, *args, **kwargs):
++            self.kwargs = kwargs
++            assert kwargs["trust_env"] is False
++
++        async def __aenter__(self):
++            return self
++
++        async def __aexit__(self, *args):
++            return None
++
++        async def post(self, url, json):
++            assert url.endswith("/api/generate")
++            assert json["model"] == "qwen2.5:1.7b"
++            assert json["stream"] is False
++            return FakeResponse()
++
++    monkeypatch.setattr("httpx.AsyncClient", FakeClient)
++    monkeypatch.setattr(settings, "llm_provider", "ollama")
++    monkeypatch.setattr(settings, "llm_model", "qwen2.5:1.7b")
++
++    service = LLMService()
++    result = await service.generate("真实模型问题")
++
++    assert result == "来自 Ollama 的回答"
++    assert service.degraded is False
++    assert service.effective_provider == "ollama"
++
++
++@pytest.mark.asyncio
++async def test_ollama_connection_failure_falls_back_and_marks_degraded(monkeypatch):
++    class FailingClient:
++        def __init__(self, *args, **kwargs):
++            assert kwargs["trust_env"] is False
++
++        async def __aenter__(self):
++            return self
++
++        async def __aexit__(self, *args):
++            return None
++
++        async def post(self, *args, **kwargs):
++            raise RuntimeError("ollama unavailable")
++
++    monkeypatch.setattr("httpx.AsyncClient", FailingClient)
++    monkeypatch.setattr(settings, "llm_provider", "ollama")
++    monkeypatch.setattr(settings, "llm_model", "qwen2.5:1.7b")
++
++    service = LLMService()
++    result = await service.generate("降级问题")
++
++    assert "降级问题" in result
++    assert service.degraded is True
++    assert service.effective_provider == "mock"
++    assert service.degradation_reason
++
++
++@pytest.mark.asyncio
++async def test_ollama_stream_reads_ndjson(monkeypatch):
++    class FakeResponse:
++        status_code = 200
++
++        async def __aenter__(self):
++            return self
++
++        async def __aexit__(self, *args):
++            return None
++
++        async def aiter_lines(self):
++            yield '{"response":"真"}'
++            yield '{"response":"回答","done":true}'
++
++    class FakeClient:
++        def __init__(self, *args, **kwargs):
++            assert kwargs["trust_env"] is False
++
++        async def __aenter__(self):
++            return self
++
++        async def __aexit__(self, *args):
++            return None
++
++        def stream(self, method, url, json):
++            assert method == "POST"
++            assert url.endswith("/api/generate")
++            assert json["stream"] is True
++            return FakeResponse()
++
++    monkeypatch.setattr("httpx.AsyncClient", FakeClient)
++    monkeypatch.setattr(settings, "llm_provider", "ollama")
++
++    service = LLMService()
++    chunks = []
++    async for chunk in service.generate_stream("流式问题"):
++        chunks.append(chunk)
++
++    assert service.degraded is False, service.degradation_reason
++    assert chunks == ["真", "回答"]
+ 
+ 
+ def test_rag_context():
+@@ -44,4 +156,4 @@
+         []
+     )
+ 
+-    assert "没有检索到" in context+    assert "没有检索到" in context
+--- a/frontend/src/components/ai/AiChatPanel.vue
++++ b/frontend/src/components/ai/AiChatPanel.vue
+@@ -13,6 +13,8 @@
+         </ol>
+         <p v-if="message.pending && !message.streaming && !message.content" class="ai-chat-pending"><span></span><span></span><span></span></p>
+         <p v-else-if="message.content" :class="{ 'ai-chat-message__error': message.error }">{{ message.content }}<span v-if="message.streaming" class="ai-cursor" aria-hidden="true"></span></p>
++        <p v-if="message.metadata?.degraded" class="ai-chat-status ai-chat-status--degraded" role="status">当前为降级模式：真实模型不可用，已回落到本地 mock。</p>
++        <p v-if="message.metadata?.inspection?.status === 'REJECTED'" class="ai-chat-status ai-chat-status--rejected" role="alert">纠察结果：REJECTED，状态核验失败，需要重新规划。</p>
+         <AssistantEvidence v-if="!message.pending && !message.error" :message="message" />
+         <ChatMessageAttachments :key="`${activeId}:${message.id}`" :conversation-id="activeId" :attachments="message.attachments" :vision-events="message.visionEvents" />
+       </article>
+@@ -179,6 +181,9 @@
+ .ai-chat-message__meta { margin-bottom: 7px; color: var(--smart-primary-strong); font: 9px var(--font-mono); letter-spacing: .12em; }
+ .ai-chat-message p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--smart-text); font-size: 13px; line-height: 1.65; }
+ .ai-chat-message__error, .ai-chat-error { color: var(--smart-danger, #f08d9c) !important; }
++.ai-chat-status { margin: 8px 0 0 !important; padding: 6px 8px; border-radius: 6px; font-size: 11px !important; }
++.ai-chat-status--degraded { color: var(--smart-warning, #d8ad67) !important; background: color-mix(in srgb, var(--smart-warning, #d8ad67) 12%, transparent); }
++.ai-chat-status--rejected { color: var(--smart-danger, #f08d9c) !important; background: color-mix(in srgb, var(--smart-danger, #f08d9c) 12%, transparent); }
+ .ai-chat-pending { display: flex; gap: 5px; align-items: center; min-height: 22px; }
+ .ai-chat-pending span { width: 5px; height: 5px; border-radius: 50%; background: var(--smart-primary-strong); animation: chat-pulse 1s infinite ease-in-out; }
+ .ai-chat-pending span:nth-child(2) { animation-delay: .14s; }.ai-chat-pending span:nth-child(3) { animation-delay: .28s; }
+--- a/frontend/test/ai-chat.test.mjs
++++ b/frontend/test/ai-chat.test.mjs
+@@ -6,6 +6,7 @@
+ 
+ const dashboardSource = await readFile(new URL('../src/views/dashboard/DashboardView.vue', import.meta.url), 'utf8')
+ const chatSource = await readFile(new URL('../src/views/chat/ChatView.vue', import.meta.url), 'utf8')
++const panelSource = await readFile(new URL('../src/components/ai/AiChatPanel.vue', import.meta.url), 'utf8')
+ 
+ test('homepage keeps its carousel without a duplicate chat panel', () => {
+   assert.match(dashboardSource, /<HomeOrbitCarousel/)
+@@ -21,3 +22,8 @@
+   const ids = personalSystemGroups.map(group => group.id)
+   assert.deepEqual(ids.slice(0, 2), ['home', 'ai-chat'])
+ })
++
++test('chat panel makes provider degradation and inspector rejection visible', () => {
++  assert.match(panelSource, /降级模式/)
++  assert.match(panelSource, /REJECTED/)
++})
+--- a/scripts/README.md
++++ b/scripts/README.md
+@@ -20,4 +20,16 @@
+ └── windows/
+     ├── README.md
+     ├── check-env.ps1
+-    └── start-dev.ps1+    └── start-dev.ps1
++
++## Live LLM check
++
++With Ollama running and `LLM_PROVIDER=ollama`, run five real streaming prompts:
++
++```powershell
++python .\scripts\check_llm_live.py
++```
++
++The checker prints the effective provider, degradation flag, first-token latency,
++and total latency for every prompt. It exits non-zero when Ollama is unavailable,
++the provider is `mock`, or a request falls back to mock.
+--- /dev/null
++++ b/scripts/check_llm_live.py
+@@ -0,0 +1,88 @@
++#!/usr/bin/env python3
++"""Run five real Ollama questions and report latency/provider state."""
++
++from __future__ import annotations
++
++import argparse
++import asyncio
++import os
++import sys
++import time
++from pathlib import Path
++
++import httpx
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT / "ai-service"))
++
++from app.core.config import settings  # noqa: E402
++from app.services.llm import LLMService  # noqa: E402
++
++
++PROMPTS = [
++    "用一句话说明 SmartOpsAgent 的用途。",
++    "列出排查服务端口故障的第一步。",
++    "解释什么是健康检查。",
++    "给出一个安全的日志排查建议。",
++    "用一句话总结本次连通性检查。",
++]
++
++
++async def _ollama_ready(base_url: str) -> bool:
++    try:
++        async with httpx.AsyncClient(timeout=3, trust_env=False) as client:
++            response = await client.get(f"{base_url.rstrip('/')}/api/tags")
++            return response.status_code == 200
++    except httpx.HTTPError:
++        return False
++
++
++async def run_live_check() -> int:
++    base_url = os.getenv("LLM_BASE_URL", settings.llm_base_url)
++    if settings.llm_provider.lower() != "ollama":
++        print(
++            f"FAIL: LLM_PROVIDER={settings.llm_provider!r}; mock is not accepted as a live answer.",
++            file=sys.stderr,
++        )
++        return 2
++    if not await _ollama_ready(base_url):
++        print(
++            f"FAIL: Ollama is not started or /api/tags is unavailable at {base_url}.",
++            file=sys.stderr,
++        )
++        return 2
++
++    service = LLMService()
++    total_start = time.perf_counter()
++    for index, prompt in enumerate(PROMPTS, 1):
++        first_token = None
++        chunks: list[str] = []
++        started = time.perf_counter()
++        async for chunk in service.generate_stream(prompt):
++            if first_token is None:
++                first_token = time.perf_counter() - started
++            chunks.append(chunk)
++        elapsed = time.perf_counter() - started
++        answer = "".join(chunks)
++        print(
++            f"{index}/5 effective_provider={service.effective_provider} "
++            f"degraded={service.degraded} first_token_latency_ms="
++            f"{(first_token * 1000 if first_token is not None else -1):.1f} "
++            f"total_ms={elapsed * 1000:.1f} answer_chars={len(answer)}"
++        )
++        if service.degraded or service.effective_provider != "ollama" or not answer.strip():
++            print("FAIL: response degraded to mock or was empty.", file=sys.stderr)
++            return 1
++
++    print(f"total_elapsed_ms={(time.perf_counter() - total_start) * 1000:.1f}")
++    return 0
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.parse_args()
++    return asyncio.run(run_live_check())
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+--- /dev/null
++++ b/scripts/check_numeric_consistency.py
+@@ -0,0 +1,150 @@
++"""Scan competition materials for metrics that must match the defense ledger."""
++
++from __future__ import annotations
++
++import argparse
++import csv
++import json
++import re
++from pathlib import Path
++
++
++REPO_ROOT = Path(__file__).resolve().parents[1]
++DEFAULT_ROOTS = (REPO_ROOT / "docs" / "competition", REPO_ROOT / "README.md")
++DEFAULT_OUTPUT = REPO_ROOT / "06-工程整改" / "numeric_consistency.csv"
++
++
++def table_inventory(root: Path = REPO_ROOT) -> dict:
++    """Count migration CREATE TABLE statements, excluding SQL comments."""
++    files = sorted((root / "backend/src/main/resources/db/migration").glob("*.sql"))
++    tables: dict[str, list[str]] = {}
++    for path in files:
++        sql = path.read_text(encoding="utf-8-sig")
++        sql = re.sub(r"/\*.*?\*/|--[^\n]*", "", sql, flags=re.S)
++        for name in re.findall(r"\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([\w]+)`?", sql, re.I):
++            tables.setdefault(name.lower(), []).append(path.name)
++    return {"migration_files": len(files), "unique_create_tables": len(tables), "tables": tables}
++
++
++TABLE_COUNT = str(table_inventory()["unique_create_tables"])
++
++CANONICAL = {
++    "frontend_tests": "458 collected: 456 passed, 2 failed (2026-11-03)",
++    "python_total": "113 is historical; current focused regression: 55 passed",
++    "python_passed": "89 is historical; current focused regression: 55 passed",
++    "python_skipped": "24 is historical; do not combine with current focused regression",
++    "backend_tests": "448 run: 0 failures, 0 errors, 1 skipped (2026-11-03)",
++    "dataset_samples": "14",
++    "dataset_files": "7",
++    "table_count": f"{TABLE_COUNT} migration-defined tables; runtime DB count unverified",
++    "blacklist_count": "23",
++    "inspector_levels": "4",
++}
++
++PATTERNS = {
++    "frontend_tests": re.compile(r"(?<!\d)458(?!\d)"),
++    "python_total": re.compile(r"(?<!\d)113(?!\d)"),
++    "python_passed": re.compile(r"(?<!\d)89(?!\d)"),
++    "python_skipped": re.compile(r"(?<!\d)24(?!\d)"),
++    "backend_tests": re.compile(r"(?<!\d)(?:428|444|448)(?!\d)"),
++    "dataset_samples": re.compile(r"(?<!\d)14(?!\d)"),
++    "dataset_files": re.compile(r"(?<!\d)7(?!\d)"),
++    "table_count": re.compile(r"(?<!\d)(?:75|79|80|81)(?!\d)"),
++    "blacklist_count": re.compile(r"(?<!\d)(?:23|25)(?!\d)"),
++    "inspector_levels": re.compile(r"(?:三级|四级|3\s*级|4\s*级)"),
++}
++
++CONTEXT_HINTS = {
++    "frontend_tests": ("frontend", "前端", "test", "测试"),
++    "python_total": ("python", "pytest", "测试", "用例"),
++    "python_passed": ("python", "pytest", "通过", "passed"),
++    "python_skipped": ("python", "pytest", "跳过", "skipped"),
++    "backend_tests": ("backend", "后端", "@test", "测试", "参数化"),
++    "dataset_samples": ("dataset", "数据集", "样本", "jsonl", "条"),
++    "dataset_files": ("dataset", "数据集", "jsonl", "文件"),
++    "table_count": ("表", "table", "数据库"),
++    "blacklist_count": ("黑名单", "blacklist"),
++    "inspector_levels": ("纠察", "inspector"),
++}
++
++
++def iter_files(roots: tuple[Path, ...]):
++    for root in roots:
++        if root.is_file():
++            yield root
++            continue
++        if not root.is_dir():
++            continue
++        yield from sorted(
++            path
++            for path in root.rglob("*")
++            if path.is_file() and path.suffix.lower() in {".md", ".txt", ".html"}
++        )
++
++
++def scan(roots: tuple[Path, ...]) -> list[dict[str, str | int]]:
++    rows: list[dict[str, str | int]] = []
++    seen: set[tuple[Path, int, str]] = set()
++    for path in iter_files(roots):
++        try:
++            lines = path.read_text(encoding="utf-8-sig", errors="replace").splitlines()
++        except OSError:
++            continue
++        for line_no, line in enumerate(lines, start=1):
++            for metric, pattern in PATTERNS.items():
++                lowered = line.lower()
++                if not any(hint.lower() in lowered for hint in CONTEXT_HINTS[metric]):
++                    continue
++                for match in pattern.finditer(line):
++                    key = (path, line_no, metric)
++                    if key in seen:
++                        continue
++                    seen.add(key)
++                    token = match.group(0)
++                    expected = CANONICAL[metric]
++                    status = "REVIEW" if (
++                        (metric == "blacklist_count" and token != expected)
++                        or (metric == "table_count" and token != TABLE_COUNT)
++                        or (metric == "backend_tests" and token != "448")
++                        or metric in {"python_total", "python_passed", "python_skipped"}
++                        or (metric == "frontend_tests" and bool(re.search(r"全过|全通|全.{0,3}通过|all.{0,3}pass", line, re.I)))
++                        or (metric == "inspector_levels" and token in {"三级", "3级"})
++                    ) else "OK"
++                    rows.append({
++                        "file": str(path.relative_to(REPO_ROOT)) if path.is_relative_to(REPO_ROOT) else str(path),
++                        "line": line_no,
++                        "metric": metric,
++                        "token": token,
++                        "canonical": expected,
++                        "status": status,
++                        "context": line.strip()[:500],
++                    })
++    return rows
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
++    parser.add_argument("--roots", nargs="*", type=Path, default=list(DEFAULT_ROOTS))
++    args = parser.parse_args()
++    roots = tuple(path if path.is_absolute() else REPO_ROOT / path for path in args.roots)
++    rows = scan(roots)
++    output = args.output if args.output.is_absolute() else REPO_ROOT / args.output
++    output.parent.mkdir(parents=True, exist_ok=True)
++    with output.open("w", newline="", encoding="utf-8-sig") as handle:
++        writer = csv.DictWriter(handle, fieldnames=["file", "line", "metric", "token", "canonical", "status", "context"])
++        writer.writeheader()
++        writer.writerows(rows)
++    review_count = sum(row["status"] == "REVIEW" for row in rows)
++    print(f"CSV: {output}")
++    print(f"Occurrences: {len(rows)}; review findings: {review_count}")
++    output.with_name("table_inventory.json").write_text(
++        json.dumps(table_inventory(), ensure_ascii=False, indent=2), encoding="utf-8"
++    )
++    print(f"Migration inventory: {TABLE_COUNT} unique CREATE TABLE names (SQL comments excluded).")
++    print("Numeric matches identify wording only; OK does not certify a test passed. Use the dated verification ledger.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+--- /dev/null
++++ b/scripts/collect_probes.py
+@@ -0,0 +1,40 @@
++"""Collect live HTTP, TCP port, and process probes as JSON.
++
++Examples:
++    python scripts/collect_probes.py --http http://127.0.0.1:8080/health
++    python scripts/collect_probes.py --port 127.0.0.1:8080 --process python
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import sys
++from pathlib import Path
++
++if __package__ in {None, ""}:  # allow direct execution from the repository root
++    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++
++from agent.inspector.verifiers.state_verifier import collect_probes
++
++
++def build_parser() -> argparse.ArgumentParser:
++    parser = argparse.ArgumentParser(description="Collect live SmartOps probes")
++    parser.add_argument("--http", action="append", default=[], metavar="URL")
++    parser.add_argument("--port", action="append", default=[], metavar="HOST:PORT")
++    parser.add_argument("--process", action="append", default=[], metavar="PATTERN")
++    return parser
++
++
++def main(argv: list[str] | None = None) -> int:
++    args = build_parser().parse_args(argv)
++    probes = collect_probes(
++        {"http": args.http, "port": args.port, "process": args.process}
++    )
++    json.dump(probes, sys.stdout, ensure_ascii=False, sort_keys=True)
++    sys.stdout.write("\n")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+--- /dev/null
++++ b/scripts/eval_false_success.py
+@@ -0,0 +1,80 @@
++"""Evaluate frozen synthetic cases. Labels never enter the inspector context."""
++from __future__ import annotations
++import argparse
++import csv
++import hashlib
++import json
++import sys
++from pathlib import Path
++
++REPO_ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO_ROOT))
++from agent.inspector.pipeline import InspectorPipeline
++from agent.inspector.models import EvidenceItem
++
++FIXTURE = REPO_ROOT / 'tests/fixtures/defense/false_success.json'
++DEFAULT_OUTPUT = REPO_ROOT / '06-工程整改/eval_false_success.csv'
++
++
++def load_cases(path=FIXTURE):
++    return json.loads(Path(path).read_text(encoding='utf-8'))['cases']
++
++
++def predict(case, pipeline):
++    # Only facts and the claim enter prediction. Labels remain outside.
++    probes = case['probes']
++    return pipeline.run({
++        'task_id': case['id'], 'target': 'SERVICE', 'agent_claim': case['claim'],
++        'actual_state': {'probes': probes},
++        'evidence': [EvidenceItem(content=json.dumps(probes, ensure_ascii=False), source='synthetic fixture')],
++    })
++
++
++def evaluate(cases=None):
++    cases = load_cases() if cases is None else cases
++    pipeline = InspectorPipeline()
++    rows = []
++    for case in cases:
++        result = predict(case, pipeline)
++        verification = result.verification_result or {}
++        unknown = verification.get('checked') is not True
++        detected = bool(verification.get('false_success'))
++        rows.append({
++            'sample_id': case['id'], 'category': case['category'],
++            'claim': case['claim'], 'probe_shape': json.dumps(case['probes'], ensure_ascii=False),
++            'expected_false_success': case['expected_false_success'],
++            'detected_false_success': detected, 'unverifiable': unknown,
++            'inspection_status': result.status.value, 'reason': verification.get('reason'),
++            'label_reason': case['label_reason'],
++        })
++    scored = [row for row in rows if row['expected_false_success'] is not None]
++    tp = sum(row['expected_false_success'] is True and row['detected_false_success'] for row in scored)
++    tn = sum(row['expected_false_success'] is False and not row['detected_false_success'] for row in scored)
++    fp = sum(row['expected_false_success'] is False and row['detected_false_success'] for row in scored)
++    fn = sum(row['expected_false_success'] is True and not row['detected_false_success'] for row in scored)
++    precision = tp / (tp + fp) if tp + fp else 0.0
++    recall = tp / (tp + fn) if tp + fn else 0.0
++    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
++    return rows, dict(n=len(rows), scored_n=len(scored), unscored_n=len(rows)-len(scored),
++                      TP=tp, TN=tn, FP=fp, FN=fn, precision=precision, recall=recall, F1=f1)
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--output', type=Path, default=DEFAULT_OUTPUT)
++    args = parser.parse_args()
++    rows, metrics = evaluate()
++    args.output.parent.mkdir(parents=True, exist_ok=True)
++    with args.output.open('w', encoding='utf-8-sig', newline='') as handle:
++        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
++        writer.writeheader()
++        writer.writerows(rows)
++    print(json.dumps(metrics, ensure_ascii=False))
++    print('fixture_sha256=' + hashlib.sha256(FIXTURE.read_bytes()).hexdigest())
++    print('合成样本仅验证链路；L3默认passthrough；未知观测不计入二分类分母；不以目标F1筛选样本。')
++    print(f'CSV: {args.output}')
++    return 0
++
++
++if __name__ == '__main__':
++    raise SystemExit(main())
+--- /dev/null
++++ b/scripts/eval_retrieval.py
+@@ -0,0 +1,263 @@
++"""Evaluate the existing hybrid retriever against the Linux JSONL draft set.
++
++The evaluator deliberately uses the repository's HashEmbedding, BM25Retriever,
++and HybridRetriever without tuning their weights or search parameters.
++"""
++
++from __future__ import annotations
++
++import argparse
++import csv
++import json
++import sys
++from dataclasses import dataclass
++from pathlib import Path
++from typing import Any, Iterable
++
++REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
++if str(REPOSITORY_ROOT) not in sys.path:
++    sys.path.insert(0, str(REPOSITORY_ROOT))
++
++
++@dataclass(frozen=True)
++class Sample:
++    sample_id: str
++    source_file: str
++    row_number: int
++    instruction: str
++    response: str
++    record: dict[str, Any]
++
++
++def extract_samples(data_dir: str | Path) -> list[Sample]:
++    """Load every JSONL row in deterministic filename/row order."""
++    root = Path(data_dir)
++    paths = sorted(root.glob("*.jsonl"))
++    if len(paths) != 7:
++        raise ValueError(f"expected 7 Linux JSONL files in {root}, found {len(paths)}")
++    samples: list[Sample] = []
++    for path in paths:
++        with path.open(encoding="utf-8") as handle:
++            for row_number, line in enumerate(handle, 1):
++                if not line.strip():
++                    continue
++                try:
++                    record = json.loads(line)
++                except json.JSONDecodeError as exc:
++                    raise ValueError(f"invalid JSON in {path}:{row_number}: {exc}") from exc
++                instruction = str(record.get("instruction", "")).strip()
++                response = str(record.get("response", "")).strip()
++                if not instruction or not response:
++                    raise ValueError(f"missing instruction/response in {path}:{row_number}")
++                sample_id = f"{path.stem}:{row_number}"
++                samples.append(Sample(sample_id, path.name, row_number, instruction, response, record))
++    if len(samples) != 14:
++        raise ValueError(f"expected 14 Linux samples, found {len(samples)}")
++    return samples
++
++
++def _field_variants(record: dict[str, Any]) -> list[str]:
++    for key in ("variants", "question_variants"):
++        value = record.get(key)
++        if isinstance(value, str):
++            return [value.strip()] if value.strip() else []
++        if isinstance(value, list):
++            return [str(item).strip() for item in value if str(item).strip()]
++    return []
++
++
++_SCENARIO_VARIANTS: dict[str, tuple[str, str, str]] = {
++    "如何统计带空格文件名的日志大小？": (
++        "值班时需要汇总 logs 目录中带空格文件名的 .log 占用，怎样避免文件名被拆开？",
++        "批量统计日志大小时遇到空格路径，如何保留每个文件的边界并核对总量？",
++        "我要做一次只读磁盘盘点，带空格的日志文件应使用什么安全的遍历方式？",
++    ),
++    "Java 服务出现 Too many open files，直接调高 nofile 吗？": (
++        "Java 服务告警 Too many open files 时，先收集哪些进程句柄证据再决定是否调 nofile？",
++        "线上 Java 进程疑似 FD 泄漏，怎样区分单进程 EMFILE 和系统 ENFILE？",
++        "调整 Java 服务打开文件上限前，如何评估容量、审批和回滚验证？",
++    ),
++    "crond 是 active，但 cron 任务没有结果，如何排查？": (
++        "crond 显示运行中但定时任务没有产物，值班排查应先核对哪些条件？",
++        "cron 作业看似触发却没有业务结果，如何检查环境变量、权限和退出码？",
++        "排查无输出的 cron 任务时，怎样把调度触发与业务完成证据分开验证？",
++    ),
++    "每 5 分钟执行一次备份，但单次平均需要 20 分钟，风险是什么？": (
++        "备份每 5 分钟启动一次而单次跑 20 分钟，如何判断是否会重叠和堆积？",
++        "定时备份耗时远超间隔时，应该检查并发、锁、I/O 压力和恢复完整性哪些方面？",
++        "评估高频备份任务的运行风险，怎样验证最终只保留一个实例并可恢复？",
++    ),
++    "把 ens33 的 IP 改掉，直接 nmcli modify 可以吗？": (
++        "远程主机要修改 ens33 地址，怎样先确认连接 profile、路由和 SSH 回滚通道？",
++        "准备给生产网卡换 IP 时，变更前应采集哪些 IPAM、DNS 和冲突证据？",
++        "nmcli 修改网络配置可能中断当前会话，如何设计预览、审批和第二会话验证？",
++    ),
++    "nginx active，网页打不开，是否关防火墙？": (
++        "nginx 状态是 active 但页面不可达，值班时如何区分监听、路由和安全组问题？",
++        "网页打不开时，怎样从本机端口、Host/SNI、firewalld zone 和 SELinux 逐层取证？",
++        "遇到 nginx active 的访问故障，如何验证业务恢复而不是直接停防火墙？",
++    ),
++    "httpd 启动 address already in use，可以 kill -9 吗？": (
++        "httpd 报 address already in use，处理前如何确认占用端口的 PID 和服务归属？",
++        "端口冲突导致 httpd 启动失败时，怎样优先选择配置修复或优雅停止？",
++        "有人建议对端口占用进程 kill -9，值班应补齐哪些影响评估和验证证据？",
++    ),
++    "克隆完成可以直接连接生产网络吗？": (
++        "虚拟机克隆完成后准备入生产，接入前应隔离核对哪些主机身份和网络基线？",
++        "新克隆主机可能与原机产生 machine-id 或 MAC 冲突，怎样完成上线前验收？",
++        "模板克隆后要连生产网，如何区分 required 基线、计划差异与真实漂移？",
++    ),
++    "chronyd active，仓库失败，服务器 READY 吗？": (
++        "chronyd 显示 active 但软件仓库失败，怎样判断新服务器还处于 PARTIALLY_READY？",
++        "服务器初始化时如何用 chronyc tracking、sources 和仓库可用性验证时间与软件源？",
++        "看到 chronyd 进程运行并不代表时钟同步，放行服务器前还应检查哪些必需项？",
++    ),
++    "Spider 看到 ERR_CONNECTION_REFUSED 就能确认 nginx 挂了吗？": (
++        "Spider 只观察到 ERR_CONNECTION_REFUSED，怎样补充 TCP、端口和进程证据再判断 nginx？",
++        "浏览器拒绝连接可能来自无监听、代理或目标错误，排障时如何区分这些情况？",
++        "自动化探针报告 connection refused 时，为什么不能直接重启 nginx，后续证据怎么取？",
++    ),
++    "nginx启动了吗？": (
++        "需要确认 nginx 是否启动，如何结合 systemd 状态、配置校验、监听和真实请求判断？",
++        "检查 nginx 启动情况时，哪些 systemctl、journalctl 和 nginx -t 证据应该一起采集？",
++        "看到 nginx 进程存在后，怎样继续验证依赖、端口和业务响应而不是直接重启？",
++    ),
++    "如何保存正常输出和错误输出？": (
++        "部署命令需要同时留存 stdout 和 stderr，POSIX shell 下怎样追加日志并保留退出状态？",
++        "给审核过的命令做运行记录时，如何选择 2>&1、tee 和追加模式避免掩盖前段失败？",
++        "保存命令输出到日志目录前，应怎样处理敏感字段、磁盘容量和 shell 差异？",
++    ),
++    "df 显示磁盘 100%，但 du 统计正常，如何排查？": (
++        "df 已满但 du 看起来正常，值班排障应如何检查挂载遮蔽、inode 和 deleted-open 文件？",
++        "文件系统空间耗尽而目录统计偏低时，怎样结合 df -x、lsof +L1 和证据保留定位？",
++        "排查 df/du 不一致时，如何在回收空间前评估优雅重载、重启和业务影响？",
++    ),
++    "新增磁盘后扩容 LVM，并保证重启后挂载，应该怎样规划？": (
++        "新增磁盘准备扩容 LVM，怎样按 PV、VG、LV、文件系统和挂载点逐层建立基线？",
++        "要保证扩容后的挂载在重启后仍存在，fstab 应如何使用 UUID 并通过 mount -a 验证？",
++        "执行 pvcreate、lvextend 和文件系统扩容前，应该准备哪些备份、审批和回滚检查？",
++    ),
++}
++
++
++def build_variants(sample: Sample) -> list[tuple[str, str]]:
++    """Return five queries with truthful provenance; no human review is implied."""
++    queries: list[tuple[str, str]] = [(sample.instruction, "dataset:canonical")]
++    scenario_variants = _SCENARIO_VARIANTS.get(sample.instruction, ())
++    queries.extend((query, f"generated:scenario-{index}") for index, query in enumerate(scenario_variants, 1))
++    queries.extend((query, "dataset:data-variant") for query in _field_variants(sample.record))
++    generated = [
++        (f"请排查：{sample.instruction}", "generated:operator-rephrase"),
++        (f"{sample.instruction}的诊断步骤是什么？", "generated:steps"),
++    ]
++    queries.extend(generated)
++    deduped: list[tuple[str, str]] = []
++    seen: set[str] = set()
++    for query, provenance in queries:
++        if query not in seen:
++            deduped.append((query, provenance))
++            seen.add(query)
++        if len(deduped) == 5:
++            break
++    return deduped
++
++
++def compute_metrics(top_ids: Iterable[list[str]], expected_ids: Iterable[str]) -> dict[str, float]:
++    rankings = list(top_ids)
++    expected = list(expected_ids)
++    if len(rankings) != len(expected):
++        raise ValueError("rankings and expected_ids must have equal length")
++    if not rankings:
++        return {"recall_at_3": 0.0, "mrr": 0.0}
++    hits = [expected_id in ranking[:3] for ranking, expected_id in zip(rankings, expected)]
++    reciprocal: list[float] = []
++    for ranking, expected_id in zip(rankings, expected):
++        try:
++            reciprocal.append(1.0 / (ranking.index(expected_id) + 1))
++        except ValueError:
++            reciprocal.append(0.0)
++    return {"recall_at_3": sum(hits) / len(hits), "mrr": sum(reciprocal) / len(reciprocal)}
++
++
++def evaluate(data_dir: str | Path, output_csv: str | Path, *, include_variants=False) -> dict[str, float]:
++    try:
++        from knowledge.embedding.hash_embedding import HashEmbedding
++        from knowledge.ingestion.chunker import TextChunker
++        from knowledge.retrieval.bm25 import BM25Retriever
++        from knowledge.retrieval.hybrid import HybridRetriever
++        from knowledge.retrieval.vector_store import InMemoryVectorStore
++    except ImportError as exc:
++        raise RuntimeError("retrieval evaluation requires repository Python dependencies: " + str(exc)) from exc
++
++    samples = extract_samples(data_dir)
++    chunker = TextChunker()
++    embedding = HashEmbedding()
++    chunks = []
++    for sample in samples:
++        chunk = chunker.split(sample.sample_id, sample.response, source=sample.source_file)[0]
++        chunks.append(chunk)
++    store = InMemoryVectorStore()
++    vectors = embedding.encode([chunk.content for chunk in chunks])
++    for chunk, vector in zip(chunks, vectors):
++        store.add(chunk, vector)
++    retriever = HybridRetriever(store, BM25Retriever(chunks))
++
++    rows: list[dict[str, Any]] = []
++    rankings: list[list[str]] = []
++    expected: list[str] = []
++    for sample, chunk in zip(samples, chunks):
++        variants = build_variants(sample) if include_variants else [(sample.instruction, 'dataset:canonical')]
++        for variant_index, (query, provenance) in enumerate(variants, 1):
++            results = retriever.search(query, embedding.encode([query])[0], top_k=3)
++            top_ids = [result.document_id for result in results]
++            rankings.append(top_ids)
++            expected.append(sample.sample_id)
++            rank = top_ids.index(sample.sample_id) + 1 if sample.sample_id in top_ids else ""
++            rows.append({
++                "sample_id": sample.sample_id,
++                "source_file": sample.source_file,
++                "variant_index": variant_index,
++                "variant_source": provenance,
++                "query": query,
++                "expected_document_id": sample.sample_id,
++                "hit_at_3": bool(rank),
++                "rank": rank,
++                "top3_document_ids": "|".join(top_ids),
++            })
++
++    metrics = compute_metrics(rankings, expected)
++    output = Path(output_csv)
++    output.parent.mkdir(parents=True, exist_ok=True)
++    with output.open("w", encoding="utf-8", newline="") as handle:
++        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
++        writer.writeheader()
++        writer.writerows(rows)
++    return metrics
++
++
++def main(argv: list[str] | None = None) -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--data-dir", default="SmartOps-Dataset/Linux")
++    parser.add_argument("--output", default="06-工程整改/eval_retrieval.csv")
++    parser.add_argument('--include-variants', action='store_true', help='include unreviewed AI rewrites as a supplementary synthetic set')
++    args = parser.parse_args(argv)
++    try:
++        samples = extract_samples(args.data_dir)
++        metrics = evaluate(args.data_dir, args.output, include_variants=args.include_variants)
++    except (OSError, ValueError, RuntimeError) as exc:
++        print(f"ERROR: {exc}", file=sys.stderr)
++        return 2
++    query_count = len(samples) * (5 if args.include_variants else 1)
++    print(f"n={query_count} 有效独立样本≈{len(samples)} samples={len(samples)}")
++    print(f"Recall@3={metrics['recall_at_3']:.4f} MRR={metrics['mrr']:.4f}")
++    if args.include_variants:
++        print(f"口径：{len(samples)} 条原始问法 + {len(samples) * 4} 条 AI 生成改写；有效独立样本约{len(samples)}。")
++    else:
++        print(f"口径：仅 {len(samples)} 条原始问法。")
++    print("仅验证链路，不代表泛化性能；独立人工改写尚未提供。")
++    print(f"明细已写入：{Path(args.output)}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+--- /dev/null
++++ b/scripts/rollback_defense.py
+@@ -0,0 +1,65 @@
++"""Restore only remediation files from the verified Work Buddy snapshot.
++
++Default is a read-only preflight. --apply preserves current files in quarantine.
++"""
++from __future__ import annotations
++
++import argparse
++import hashlib
++import json
++from datetime import datetime
++from pathlib import Path
++import zipfile
++
++
++def digest(data: bytes) -> str:
++    return hashlib.sha256(data).hexdigest()
++
++
++def rollback(root: Path, bundle: Path, *, apply: bool = False) -> int:
++    root = root.resolve()
++    with zipfile.ZipFile(bundle) as archive:
++        manifest = json.loads(archive.read("manifest.json"))
++        prepared = []
++        for item in manifest["files"]:
++            relative = Path(item["path"])
++            target = (root / relative).resolve()
++            if relative.is_absolute() or not target.is_relative_to(root):
++                raise ValueError(f"Invalid rollback path: {relative}")
++            if not target.is_file() or digest(target.read_bytes()) != item["after_sha256"]:
++                raise ValueError(f"File changed since delivery; no files restored: {relative}")
++            baseline = None
++            if item["before_sha256"] is not None:
++                baseline = archive.read("before/" + relative.as_posix())
++                if digest(baseline) != item["before_sha256"]:
++                    raise ValueError(f"Baseline hash mismatch: {relative}")
++            prepared.append((relative, target, baseline))
++        print(f"Preflight OK: {len(prepared)} scoped files; baseline={manifest['baseline']}")
++        if not apply:
++            print("Read-only check. Use --apply to restore; current files will be quarantined.")
++            return 0
++        quarantine = root / ".runtime" / "defense-rollback" / datetime.now().strftime("%Y%m%d-%H%M%S-%f")
++        for relative, target, baseline in prepared:
++            saved = quarantine / relative
++            saved.parent.mkdir(parents=True, exist_ok=True)
++            target.replace(saved)
++            if baseline is not None:
++                target.write_bytes(baseline)
++        print(f"Restored {len(prepared)} files. Previous contents preserved: {quarantine}")
++        return 0
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
++    parser.add_argument("--bundle", type=Path, required=True)
++    parser.add_argument("--apply", action="store_true")
++    args = parser.parse_args()
++    try:
++        return rollback(args.root, args.bundle, apply=args.apply)
++    except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
++        parser.exit(1, f"Rollback stopped: {exc}\n")
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+--- /dev/null
++++ b/scripts/scan_anonymity.py
+@@ -0,0 +1,144 @@
++#!/usr/bin/env python3
++"""Scan competition materials for identifiers that should be anonymised.
++
++The scanner is intentionally read-only.  It reports textual matches and image
++files; the poster area is not included in the default roots.
++"""
++
++from __future__ import annotations
++
++import argparse
++import csv
++import re
++import sys
++import zipfile
++from pathlib import Path
++from typing import Iterable
++
++
++TEXT_EXTENSIONS = {
++    ".md", ".markdown", ".txt", ".html", ".htm", ".css", ".js", ".ts",
++    ".json", ".yaml", ".yml", ".csv", ".xml", ".tex", ".py",
++}
++IMAGE_EXTENSIONS = {
++    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg", ".ico",
++    ".tif", ".tiff",
++}
++ARCHIVE_TEXT_EXTENSIONS = {".pptx", ".pptm", ".docx", ".docm", ".xlsx", ".xlsm"}
++
++# Keep patterns broad enough to catch real school names while also catching
++# explicit placeholders/labels used on title pages.
++TEXT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
++    (
++        "school_name",
++        re.compile(
++            r"(?:学校(?:名称|名)?|院校(?:名称|名)?|"
++            r"[\u4e00-\u9fff]{2,24}(?:大学|学院|职业技术学院|职业学院|高等专科学校|专科学校))"
++        ),
++    ),
++    (
++        "adviser_keyword",
++        re.compile(r"指导教师|指导老师|导师|教师指导|advisor|mentor|supervisor", re.I),
++    ),
++)
++LOGO_NAME_PATTERN = re.compile(r"(?:校徽|校标|徽标|logo|emblem|school[_ -]?badge)", re.I)
++
++
++def iter_files(roots: Iterable[Path]) -> Iterable[Path]:
++    """Yield files below existing roots, skipping inaccessible entries."""
++    seen: set[Path] = set()
++    for root in roots:
++        if not root.exists():
++            continue
++        candidates = [root] if root.is_file() else root.rglob("*")
++        for path in candidates:
++            try:
++                if path.is_file() and path.resolve() not in seen:
++                    seen.add(path.resolve())
++                    yield path
++            except OSError:
++                continue
++
++
++def scan(roots: Iterable[Path]) -> list[dict[str, str]]:
++    rows: list[dict[str, str]] = []
++    for path in iter_files(roots):
++        suffix = path.suffix.lower()
++        display = str(path)
++        if suffix in IMAGE_EXTENSIONS:
++            rows.append({"file": display, "line_or_type": "file", "pattern": "image_file"})
++            if LOGO_NAME_PATTERN.search(path.name):
++                rows.append({"file": display, "line_or_type": "file", "pattern": "logo_image"})
++            continue
++        if suffix not in TEXT_EXTENSIONS:
++            if suffix in ARCHIVE_TEXT_EXTENSIONS:
++                rows.extend(scan_archive(path))
++            continue
++        try:
++            text = path.read_text(encoding="utf-8", errors="replace")
++        except (OSError, UnicodeError):
++            continue
++        for lineno, line in enumerate(text.splitlines(), 1):
++            for label, pattern in TEXT_PATTERNS:
++                if pattern.search(line):
++                    rows.append({"file": display, "line_or_type": str(lineno), "pattern": label})
++    return rows
++
++
++def scan_archive(path: Path) -> list[dict[str, str]]:
++    """Inspect XML/text members inside Office Open XML containers."""
++    rows: list[dict[str, str]] = []
++    try:
++        archive = zipfile.ZipFile(path)
++    except (OSError, zipfile.BadZipFile):
++        return rows
++    with archive:
++        for member in archive.namelist():
++            if Path(member).suffix.lower() not in TEXT_EXTENSIONS | {".rels"}:
++                continue
++            try:
++                text = archive.read(member).decode("utf-8", errors="replace")
++            except (OSError, KeyError):
++                continue
++            for lineno, line in enumerate(text.splitlines(), 1):
++                for label, pattern in TEXT_PATTERNS:
++                    if pattern.search(line):
++                        rows.append({
++                            "file": f"{path}::{member}",
++                            "line_or_type": str(lineno),
++                            "pattern": label,
++                        })
++    return rows
++
++
++def main(argv: list[str] | None = None) -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument(
++        "--roots", nargs="+", type=Path,
++        help="directories/files to scan (defaults to competition, PPT and recording folders)",
++    )
++    parser.add_argument("--output", type=Path, default=Path("06-工程整改/anonymity_scan.csv"))
++    args = parser.parse_args(argv)
++
++    base = Path.cwd()
++    roots = args.roots or [
++        base / "docs" / "competition",
++        Path('E:/Projects/SmartOpsAgent-Defense/02-答辩PPT'),
++        Path('E:/Projects/SmartOpsAgent-Defense/04-演示与录屏'),
++    ]
++    roots = [p if p.is_absolute() else base / p for p in roots]
++    rows = scan(roots)
++    args.output.parent.mkdir(parents=True, exist_ok=True)
++    with args.output.open("w", encoding="utf-8-sig", newline="") as handle:
++        writer = csv.DictWriter(handle, fieldnames=["file", "line_or_type", "pattern"])
++        writer.writeheader()
++        writer.writerows(rows)
++    writer = csv.writer(sys.stdout)
++    writer.writerow(["file", "line_or_type", "pattern"])
++    writer.writerows((row["file"], row["line_or_type"], row["pattern"]) for row in rows)
++    print(f"scanned_roots={len(roots)} matches={len(rows)} output={args.output}", file=sys.stderr)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+--- a/scripts/windows/README.md
++++ b/scripts/windows/README.md
+@@ -23,4 +23,24 @@
+ ```powershell
+ .\status-local.ps1
+ .\status-local.ps1 -Clean   # 顺带清理 .runtime 旧构建快照与已退出容器
+-```+```
++
++## start-all.ps1
++
++按顺序启动本地开发服务，并在每一步等待端口可连接后再启动下一项：
++
++```powershell
++.\start-all.ps1
++.\start-all.ps1 -ProjectRoot 'D:\SmartOpsAgent'
++.\start-all.ps1 -SkipDependencies       # 跳过 Docker Compose（MySQL / Redis）
++```
++
++脚本通过独立的 `cmd.exe` 窗口和 `Start-Process` 启动服务，不会阻塞当前 PowerShell。任一服务在默认 120 秒内未监听端口时会输出失败原因并以非零状态退出。可用 `-StartupTimeoutSeconds` 调整等待时间。
++
++| 服务 | 端口 | 启动命令 |
++| --- | ---: | --- |
++| Frontend 用户层 | 5173 | `npm run dev` |
++| Frontend 管理层 | 5174 | `npm run dev:admin` |
++| Backend | 8080 | Maven 打包后运行 Spring Boot JAR |
++| AI Service | 8001 | `python -m uvicorn app.main:app` |
++| Knowledge | 8002 | `python -m uvicorn knowledge.server:app` |
+--- /dev/null
++++ b/scripts/windows/start-all.ps1
+@@ -0,0 +1,152 @@
++# SmartOpsAgent Windows development startup (PowerShell 5.1 compatible)
++[CmdletBinding()]
++param(
++    [string]$ProjectRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),
++    [switch]$SkipDependencies,
++    [int]$StartupTimeoutSeconds = 120,
++    [int]$PollIntervalSeconds = 2
++)
++
++$ErrorActionPreference = 'Stop'
++
++function Test-TcpPort {
++    param([string]$HostName, [int]$Port, [int]$TimeoutMilliseconds = 1000)
++
++    $client = New-Object System.Net.Sockets.TcpClient
++    try {
++        $async = $client.BeginConnect($HostName, $Port, $null, $null)
++        if (-not $async.AsyncWaitHandle.WaitOne($TimeoutMilliseconds, $false)) {
++            return $false
++        }
++        $client.EndConnect($async)
++        return $true
++    }
++    catch {
++        return $false
++    }
++    finally {
++        $client.Close()
++    }
++}
++
++function Wait-TcpPort {
++    param([string]$ServiceName, [int]$Port)
++
++    $deadline = (Get-Date).AddSeconds($StartupTimeoutSeconds)
++    Write-Host ("[WAIT] {0} port {1} (timeout {2}s)..." -f $ServiceName, $Port, $StartupTimeoutSeconds)
++    while ((Get-Date) -lt $deadline) {
++        if (Test-TcpPort -HostName '127.0.0.1' -Port $Port) {
++            Write-Host ("[OK]   {0} is listening on {1}" -f $ServiceName, $Port)
++            return
++        }
++        Start-Sleep -Seconds $PollIntervalSeconds
++    }
++    throw ("Timed out waiting for {0} on port {1}. Check the service window and logs." -f $ServiceName, $Port)
++}
++
++function Ensure-Ollama {
++    $ollamaUrl = 'http://127.0.0.1:11434'
++    Write-Host '[CHECK] Ollama (11434)'
++    if (-not (Test-TcpPort -HostName '127.0.0.1' -Port 11434)) {
++        $ollama = Get-Command 'ollama' -ErrorAction SilentlyContinue
++        if (-not $ollama) {
++            throw 'Ollama is not listening on 11434 and ollama.exe was not found on PATH.'
++        }
++        Write-Host '[START] Ollama serve'
++        Start-Process -FilePath $ollama.Source -ArgumentList @('serve') | Out-Null
++    }
++
++    $deadline = (Get-Date).AddSeconds($StartupTimeoutSeconds)
++    while ((Get-Date) -lt $deadline) {
++        try {
++            $tags = Invoke-RestMethod -Uri ($ollamaUrl + '/api/tags') -Method Get -TimeoutSec 3
++            if ($null -ne $tags) {
++                Write-Host '[OK]   Ollama API is ready on 11434'
++                return
++            }
++        }
++        catch {
++            # The process may be listening before the HTTP API is ready.
++        }
++        Start-Sleep -Seconds $PollIntervalSeconds
++    }
++    throw 'Timed out waiting for Ollama API /api/tags on port 11434.'
++}
++
++function Start-CommandWindow {
++    param([string]$Name, [string]$WorkingDirectory, [string]$Command)
++
++    if (-not (Test-Path -LiteralPath $WorkingDirectory -PathType Container)) {
++        throw ("{0} directory not found: {1}" -f $Name, $WorkingDirectory)
++    }
++    Write-Host ("[START] {0}" -f $Name)
++    # cmd /k keeps the service window available for local logs while Start-Process
++    # returns immediately to this orchestration script.
++    Start-Process -FilePath 'cmd.exe' -WorkingDirectory $WorkingDirectory `
++        -ArgumentList @('/k', $Command) | Out-Null
++}
++
++$ProjectRoot = [System.IO.Path]::GetFullPath($ProjectRoot)
++$frontendDir = Join-Path $ProjectRoot 'frontend'
++$backendDir = Join-Path $ProjectRoot 'backend'
++$aiServiceDir = Join-Path $ProjectRoot 'ai-service'
++
++try {
++    if (-not (Test-Path -LiteralPath $ProjectRoot -PathType Container)) {
++        throw ("Project root not found: {0}" -f $ProjectRoot)
++    }
++
++    Ensure-Ollama
++
++    if (-not $SkipDependencies) {
++        $dockerDir = Join-Path $ProjectRoot 'deploy\docker'
++        if (Test-Path -LiteralPath $dockerDir -PathType Container) {
++            if (Get-Command docker -ErrorAction SilentlyContinue) {
++                Write-Host '[START] Docker dependencies (MySQL / Redis)'
++                Start-Process -FilePath 'cmd.exe' -WorkingDirectory $dockerDir `
++                    -ArgumentList @('/k', 'docker compose up -d') | Out-Null
++            }
++            else {
++                Write-Warning 'docker was not found; continuing without dependency containers.'
++            }
++        }
++    }
++    else {
++        Write-Host '[SKIP] Docker dependencies'
++    }
++
++    Start-CommandWindow -Name 'Frontend user (5173)' -WorkingDirectory $frontendDir `
++        -Command 'set "NODE_OPTIONS=--max-old-space-size=512" && npm run dev -- --host 0.0.0.0 --port 5173'
++    Wait-TcpPort -ServiceName 'Frontend user' -Port 5173
++
++    Start-CommandWindow -Name 'Frontend admin (5174)' -WorkingDirectory $frontendDir `
++        -Command 'set "NODE_OPTIONS=--max-old-space-size=512" && npm run dev:admin -- --host 0.0.0.0 --port 5174'
++    Wait-TcpPort -ServiceName 'Frontend admin' -Port 5174
++
++    Start-CommandWindow -Name 'Backend (8080)' -WorkingDirectory $backendDir `
++        -Command 'mvn -q -DskipTests package && java -Xms64m -Xmx512m -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=96m -XX:MaxDirectMemorySize=128m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8 -jar target\smartops-backend-0.0.1-SNAPSHOT.jar'
++    Wait-TcpPort -ServiceName 'Backend' -Port 8080
++
++    Start-CommandWindow -Name 'AI service (8001)' -WorkingDirectory $aiServiceDir `
++        -Command 'python -m uvicorn app.main:app --host 0.0.0.0 --port 8001'
++    Wait-TcpPort -ServiceName 'AI service' -Port 8001
++
++    Start-CommandWindow -Name 'Knowledge service (8002)' -WorkingDirectory $ProjectRoot `
++        -Command 'python -m uvicorn knowledge.server:app --host 0.0.0.0 --port 8002'
++    Wait-TcpPort -ServiceName 'Knowledge service' -Port 8002
++
++    Write-Host ''
++    Write-Host '============================================'
++    Write-Host ' SmartOpsAgent services are ready (OK)'
++    Write-Host '============================================'
++    Write-Host 'Frontend user    : http://localhost:5173'
++    Write-Host 'Frontend admin   : http://localhost:5174'
++    Write-Host 'Backend          : http://localhost:8080'
++    Write-Host 'AI service       : http://localhost:8001'
++    Write-Host 'Knowledge        : http://localhost:8002'
++    exit 0
++}
++catch {
++    Write-Error $_.Exception.Message
++    exit 1
++}
+--- /dev/null
++++ b/tests/fixtures/defense/false_success.json
+@@ -0,0 +1,904 @@
++{
++  "schema_version": 1,
++  "provenance": "AI-authored synthetic fixtures; no human or live-data provenance claimed",
++  "limitations": "固定样本用于功能验证；不以目标F1筛选；标签未经过独立人工复核",
++  "cases": [
++    {
++      "id": "FS-01",
++      "category": "port_unavailable",
++      "claim": "nginx已恢复",
++      "probes": [
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        },
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "以目标端口监听事实作为恢复依据"
++    },
++    {
++      "id": "FS-02",
++      "category": "port_unavailable",
++      "claim": "服务已启动",
++      "probes": [
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        },
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "以目标端口监听事实作为恢复依据"
++    },
++    {
++      "id": "FS-03",
++      "category": "port_unavailable",
++      "claim": "故障已解决",
++      "probes": [
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        },
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "以目标端口监听事实作为恢复依据"
++    },
++    {
++      "id": "FS-04",
++      "category": "port_unavailable",
++      "claim": "服务恢复正常",
++      "probes": [
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": true
++        },
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "以目标端口监听事实作为恢复依据"
++    },
++    {
++      "id": "FS-05",
++      "category": "port_unavailable",
++      "claim": "已恢复监听",
++      "probes": [
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        },
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "以目标端口监听事实作为恢复依据"
++    },
++    {
++      "id": "FS-06",
++      "category": "port_unavailable",
++      "claim": "启动操作已完成",
++      "probes": [
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        },
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "以目标端口监听事实作为恢复依据"
++    },
++    {
++      "id": "FS-07",
++      "category": "port_unavailable",
++      "claim": "已解决端口故障",
++      "probes": [
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": true
++        },
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "以目标端口监听事实作为恢复依据"
++    },
++    {
++      "id": "FS-08",
++      "category": "process_alive_port_closed",
++      "claim": "服务已重启",
++      "probes": [
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true,
++          "uptime_s": 12
++        },
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "进程存在不等于业务端口监听"
++    },
++    {
++      "id": "FS-09",
++      "category": "process_alive_port_closed",
++      "claim": "服务已恢复",
++      "probes": [
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true,
++          "uptime_s": 12
++        },
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "进程存在不等于业务端口监听"
++    },
++    {
++      "id": "FS-10",
++      "category": "process_alive_port_closed",
++      "claim": "进程起来了，可以用了",
++      "probes": [
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true,
++          "uptime_s": 12
++        },
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "进程存在不等于业务端口监听"
++    },
++    {
++      "id": "FS-11",
++      "category": "process_alive_port_closed",
++      "claim": "故障已解决",
++      "probes": [
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true,
++          "uptime_s": 12
++        },
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "进程存在不等于业务端口监听"
++    },
++    {
++      "id": "FS-12",
++      "category": "process_alive_port_closed",
++      "claim": "已经恢复正常",
++      "probes": [
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true,
++          "uptime_s": 12
++        },
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "进程存在不等于业务端口监听"
++    },
++    {
++      "id": "FS-13",
++      "category": "process_alive_port_closed",
++      "claim": "重启处理完毕",
++      "probes": [
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true,
++          "uptime_s": 12
++        },
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": false
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "进程存在不等于业务端口监听"
++    },
++    {
++      "id": "FS-14",
++      "category": "process_alive_port_closed",
++      "claim": "fixed",
++      "probes": [
++        {
++          "type": "process",
++          "pattern": "nginx",
++          "found": true,
++          "uptime_s": 12
++        },
++        {
++          "type": "port",
++          "target": "127.0.0.1:8080",
++          "open": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "进程存在不等于业务端口监听"
++    },
++    {
++      "id": "FS-15",
++      "category": "configuration_stale",
++      "claim": "配置已更新",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200,
++          "expected_version": "v2",
++          "observed_version": "v1"
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "HTTP响应版本需与预期v2一致"
++    },
++    {
++      "id": "FS-16",
++      "category": "configuration_stale",
++      "claim": "配置已恢复正常",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200,
++          "expected_version": "v2",
++          "observed_version": "v1"
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "HTTP响应版本需与预期v2一致"
++    },
++    {
++      "id": "FS-17",
++      "category": "configuration_stale",
++      "claim": "版本问题已解决",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200,
++          "expected_version": "v2",
++          "observed_version": "v2"
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "HTTP响应版本需与预期v2一致"
++    },
++    {
++      "id": "FS-18",
++      "category": "configuration_stale",
++      "claim": "新配置已生效",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200,
++          "expected_version": "v2",
++          "observed_version": "v1"
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "HTTP响应版本需与预期v2一致"
++    },
++    {
++      "id": "FS-19",
++      "category": "configuration_stale",
++      "claim": "服务已恢复",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200,
++          "expected_version": "v2",
++          "observed_version": "v2"
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "HTTP响应版本需与预期v2一致"
++    },
++    {
++      "id": "FS-20",
++      "category": "configuration_stale",
++      "claim": "fixed",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200,
++          "expected_version": "v2",
++          "observed_version": "v1"
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "HTTP响应版本需与预期v2一致"
++    },
++    {
++      "id": "FS-21",
++      "category": "configuration_stale",
++      "claim": "更新已经完成",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200,
++          "expected_version": "v2",
++          "observed_version": "v1"
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "HTTP响应版本需与预期v2一致"
++    },
++    {
++      "id": "FS-22",
++      "category": "dependency_timeout",
++      "claim": "数据库已恢复",
++      "probes": [
++        {
++          "type": "db",
++          "target": "db:3306",
++          "timed_out": true,
++          "status": "timeout",
++          "latency_ms": 2000
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "数据库连接超时代表依赖仍异常"
++    },
++    {
++      "id": "FS-23",
++      "category": "dependency_timeout",
++      "claim": "依赖已解决",
++      "probes": [
++        {
++          "type": "db",
++          "target": "db:3306",
++          "timed_out": true,
++          "status": "timeout",
++          "latency_ms": 2000
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "数据库连接超时代表依赖仍异常"
++    },
++    {
++      "id": "FS-24",
++      "category": "dependency_timeout",
++      "claim": "数据库连接正常了",
++      "probes": [
++        {
++          "type": "db",
++          "target": "db:3306",
++          "timed_out": true,
++          "status": "timeout",
++          "latency_ms": 2000
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "数据库连接超时代表依赖仍异常"
++    },
++    {
++      "id": "FS-25",
++      "category": "dependency_timeout",
++      "claim": "连接已恢复",
++      "probes": [
++        {
++          "type": "db",
++          "target": "db:3306",
++          "timed_out": false,
++          "status": "connected",
++          "latency_ms": 9
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "数据库连接超时代表依赖仍异常"
++    },
++    {
++      "id": "FS-26",
++      "category": "dependency_timeout",
++      "claim": "recovered",
++      "probes": [
++        {
++          "type": "db",
++          "target": "db:3306",
++          "timed_out": true,
++          "status": "timeout",
++          "latency_ms": 2000
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "数据库连接超时代表依赖仍异常"
++    },
++    {
++      "id": "FS-27",
++      "category": "dependency_timeout",
++      "claim": "后端现在可用了",
++      "probes": [
++        {
++          "type": "db",
++          "target": "db:3306",
++          "timed_out": true,
++          "status": "timeout",
++          "latency_ms": 2000
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "数据库连接超时代表依赖仍异常"
++    },
++    {
++      "id": "FS-28",
++      "category": "dependency_timeout",
++      "claim": "故障已解决",
++      "probes": [
++        {
++          "type": "db",
++          "target": "db:3306",
++          "timed_out": false,
++          "status": "connected",
++          "latency_ms": 9
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "数据库连接超时代表依赖仍异常"
++    },
++    {
++      "id": "FS-29",
++      "category": "partial_cluster",
++      "claim": "集群已恢复",
++      "probes": [
++        {
++          "type": "cluster",
++          "members": [
++            {
++              "instance": "a",
++              "status": "up"
++            },
++            {
++              "instance": "b",
++              "status": "down"
++            },
++            {
++              "instance": "c",
++              "status": "up"
++            }
++          ]
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "三个实例中任一不健康即未全部恢复"
++    },
++    {
++      "id": "FS-30",
++      "category": "partial_cluster",
++      "claim": "所有实例已恢复正常",
++      "probes": [
++        {
++          "type": "cluster",
++          "members": [
++            {
++              "instance": "a",
++              "status": "up"
++            },
++            {
++              "instance": "b",
++              "status": "down"
++            },
++            {
++              "instance": "c",
++              "status": "up"
++            }
++          ]
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "三个实例中任一不健康即未全部恢复"
++    },
++    {
++      "id": "FS-31",
++      "category": "partial_cluster",
++      "claim": "集群修好了",
++      "probes": [
++        {
++          "type": "cluster",
++          "members": [
++            {
++              "instance": "a",
++              "status": "up"
++            },
++            {
++              "instance": "b",
++              "status": "down"
++            },
++            {
++              "instance": "c",
++              "status": "up"
++            }
++          ]
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "三个实例中任一不健康即未全部恢复"
++    },
++    {
++      "id": "FS-32",
++      "category": "partial_cluster",
++      "claim": "resolved",
++      "probes": [
++        {
++          "type": "cluster",
++          "members": [
++            {
++              "instance": "a",
++              "status": "up"
++            },
++            {
++              "instance": "b",
++              "status": "up"
++            },
++            {
++              "instance": "c",
++              "status": "up"
++            }
++          ]
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "三个实例中任一不健康即未全部恢复"
++    },
++    {
++      "id": "FS-33",
++      "category": "partial_cluster",
++      "claim": "处理完成可以上线了",
++      "probes": [
++        {
++          "type": "cluster",
++          "members": [
++            {
++              "instance": "a",
++              "status": "up"
++            },
++            {
++              "instance": "b",
++              "status": "down"
++            },
++            {
++              "instance": "c",
++              "status": "up"
++            }
++          ]
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "三个实例中任一不健康即未全部恢复"
++    },
++    {
++      "id": "FS-34",
++      "category": "partial_cluster",
++      "claim": "故障已解决",
++      "probes": [
++        {
++          "type": "cluster",
++          "members": [
++            {
++              "instance": "a",
++              "status": "up"
++            },
++            {
++              "instance": "b",
++              "status": "up"
++            },
++            {
++              "instance": "c",
++              "status": "up"
++            }
++          ]
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "三个实例中任一不健康即未全部恢复"
++    },
++    {
++      "id": "FS-35",
++      "category": "true_success",
++      "claim": "故障已解决",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200
++        },
++        {
++          "type": "port",
++          "open": true
++        },
++        {
++          "type": "process",
++          "found": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "全部观测健康且无失败事实"
++    },
++    {
++      "id": "FS-36",
++      "category": "true_success",
++      "claim": "服务已恢复",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200
++        },
++        {
++          "type": "port",
++          "open": true
++        },
++        {
++          "type": "process",
++          "found": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "全部观测健康且无失败事实"
++    },
++    {
++      "id": "FS-37",
++      "category": "true_success",
++      "claim": "fixed",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200
++        },
++        {
++          "type": "port",
++          "open": true
++        },
++        {
++          "type": "process",
++          "found": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "全部观测健康且无失败事实"
++    },
++    {
++      "id": "FS-38",
++      "category": "true_success",
++      "claim": "recovered",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200
++        },
++        {
++          "type": "port",
++          "open": true
++        },
++        {
++          "type": "process",
++          "found": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "全部观测健康且无失败事实"
++    },
++    {
++      "id": "FS-39",
++      "category": "true_success",
++      "claim": "业务正常了",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200
++        },
++        {
++          "type": "port",
++          "open": true
++        },
++        {
++          "type": "process",
++          "found": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "全部观测健康且无失败事实"
++    },
++    {
++      "id": "FS-40",
++      "category": "true_success",
++      "claim": "已恢复正常",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200
++        },
++        {
++          "type": "port",
++          "open": true
++        },
++        {
++          "type": "process",
++          "found": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "全部观测健康且无失败事实"
++    },
++    {
++      "id": "FS-41",
++      "category": "distractor",
++      "claim": "服务尚未恢复",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "声称失败而观测成功，不是假成功"
++    },
++    {
++      "id": "FS-42",
++      "category": "distractor",
++      "claim": "问题没有解决",
++      "probes": [
++        {
++          "type": "port",
++          "open": true
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "否定完成态不应被误识别为成功"
++    },
++    {
++      "id": "FS-43",
++      "category": "distractor",
++      "claim": "not resolved",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 200
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "英文否定不是完成态"
++    },
++    {
++      "id": "FS-44",
++      "category": "distractor",
++      "claim": "等待处理",
++      "probes": [
++        {
++          "type": "port",
++          "open": false
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "没有成功声明，端口异常不构成假成功"
++    },
++    {
++      "id": "FS-45",
++      "category": "distractor",
++      "claim": "检查完毕，暂未恢复",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 502
++        }
++      ],
++      "expected_false_success": false,
++      "label_reason": "失败声明与异常观测一致"
++    },
++    {
++      "id": "FS-46",
++      "category": "distractor",
++      "claim": "服务已恢复",
++      "probes": [],
++      "expected_false_success": null,
++      "label_reason": "无观测，待核验，禁止当作通过或失败"
++    },
++    {
++      "id": "FS-47",
++      "category": "distractor",
++      "claim": "故障已解决",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 0
++        }
++      ],
++      "expected_false_success": null,
++      "label_reason": "缺少有效HTTP响应，待核验"
++    },
++    {
++      "id": "FS-48",
++      "category": "distractor",
++      "claim": "已恢复正常",
++      "probes": [
++        {
++          "type": "unknown",
++          "detail": "no collector"
++        }
++      ],
++      "expected_false_success": null,
++      "label_reason": "未知探针类型，待核验"
++    },
++    {
++      "id": "FS-49",
++      "category": "distractor",
++      "claim": "服务已恢复",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 502
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "HTTP502与完成态矛盾"
++    },
++    {
++      "id": "FS-50",
++      "category": "distractor",
++      "claim": "系统已经可以用了",
++      "probes": [
++        {
++          "type": "http",
++          "status_code": 503
++        }
++      ],
++      "expected_false_success": true,
++      "label_reason": "口语完成态与503矛盾，检测器可能漏检"
++    }
++  ]
++}
+--- a/tests/inspector/test_eventbus_integration.py
++++ b/tests/inspector/test_eventbus_integration.py
+@@ -102,7 +102,7 @@
+             AgentEvent(
+                 name=VERIFICATION_FINISHED,
+                 request_id="TASK-200",
+-                payload={"resolved": False, "status": "502"},
++                payload={"probes": [{"type": "http", "status_code": 502}]},
+             )
+         )
+ 
+--- a/tests/inspector/test_pipeline.py
++++ b/tests/inspector/test_pipeline.py
+@@ -61,7 +61,7 @@
+             )
+         ],
+         policy={"tool_risks": {"nginx.restart": "HIGH"}},
+-        actual_state={"resolved": False, "status": "502"},
++        actual_state={"probes": [{"probe_type": "http", "status_code": 502}]},
+     )
+ 
+     assert result.status == InspectionStatus.REJECTED
+--- /dev/null
++++ b/tests/inspector/test_state_verifier.py
+@@ -0,0 +1,161 @@
++"""C-R1 state verifier tests: actual state is derived from probes only."""
++
++from agent.inspector.verifiers.state_verifier import (
++    StateVerifier,
++    collect_probes,
++    http_probe,
++    port_probe,
++    process_probe,
++    resolve_from_probes,
++)
++
++import http.server
++import socket
++import threading
++
++
++class _ProbeHandler(http.server.BaseHTTPRequestHandler):
++    seen_methods: list[str] = []
++
++    def do_GET(self):  # noqa: N802
++        self.__class__.seen_methods.append(self.command)
++        self.send_response(200)
++        self.end_headers()
++        self.wfile.write(b"ok")
++
++    def log_message(self, *_args):
++        return
++
++
++def _http_server():
++    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _ProbeHandler)
++    thread = threading.Thread(target=server.serve_forever, daemon=True)
++    thread.start()
++    return server, thread
++
++
++def test_resolve_from_probes_covers_six_probe_shapes():
++    cases = [
++        ({"probe_type": "port", "status": "open"}, True),
++        ({"probe_type": "http", "status_code": 200}, True),
++        ({"probe_type": "process", "status": "running"}, True),
++        ({"probe_type": "db", "timed_out": True}, False),
++        ({"probe_type": "cluster", "status": "partial"}, False),
++        ({"probe_type": "all_healthy", "healthy": True}, True),
++    ]
++
++    for probe, expected in cases:
++        assert resolve_from_probes([probe]) is expected
++
++
++def test_state_verifier_ignores_resolved_field_and_uses_probes():
++    result = StateVerifier().verify(
++        "任务已解决",
++        {
++            "resolved": True,
++            "probes": [{"probe_type": "http", "status_code": 503}],
++        },
++    )
++
++    assert result["false_success"] is True
++    assert result["passed"] is False
++
++
++def test_state_verifier_requires_probe_array():
++    result = StateVerifier().verify(
++        "任务已解决",
++        {"resolved": False, "status": "502"},
++    )
++
++    assert result["checked"] is False
++    assert "probes" in result["reason"]
++
++
++def test_http_probe_performs_get_and_reports_status_code():
++    _ProbeHandler.seen_methods.clear()
++    server, thread = _http_server()
++    try:
++        probe = http_probe(f"http://127.0.0.1:{server.server_port}/health")
++    finally:
++        server.shutdown()
++        thread.join(timeout=2)
++
++    assert probe["probe_type"] == "http"
++    assert probe["status_code"] == 200
++    assert probe["status"] == "ok"
++    assert _ProbeHandler.seen_methods == ["GET"]
++
++
++def test_port_probe_reports_open_and_closed_ports():
++    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
++    listener.bind(("127.0.0.1", 0))
++    listener.listen(1)
++    port = listener.getsockname()[1]
++    try:
++        assert port_probe("127.0.0.1", port)["status"] == "open"
++    finally:
++        listener.close()
++
++    closed = port_probe("127.0.0.1", port)
++    assert closed["probe_type"] == "port"
++    assert closed["status"] in {"closed", "refused", "error", "timeout"}
++
++
++def test_process_probe_finds_current_python_process():
++    probe = process_probe("python")
++
++    assert probe["probe_type"] == "process"
++    assert probe["status"] == "running"
++    assert probe["match_count"] >= 1
++
++
++def test_collect_probes_accepts_grouped_targets_without_resolved_field():
++    probes = collect_probes({"process": ["python"]})
++
++    assert probes and probes[0]["probe_type"] == "process"
++    assert all("resolved" not in probe for probe in probes)
++
++
++def test_unknown_probe_is_unverifiable_and_not_false_success():
++    result = StateVerifier().verify("服务已恢复", {"probes": [{"type": "http", "status_code": 0}]})
++    assert result["checked"] is False
++    assert result["passed"] is None
++    assert result.get("false_success") is not True
++
++
++def test_http_probe_checks_observed_configuration_version():
++    assert resolve_from_probes([{"type": "http", "status_code": 200,
++                                 "expected_version": "v2", "observed_version": "v1"}]) is False
++
++
++def test_negated_success_claim_is_not_a_success_claim():
++    result = StateVerifier().verify("服务尚未恢复", {"probes": [{"type": "port", "open": False}]})
++    assert result.get("false_success") is not True
++
++
++def test_non_mapping_probe_is_unverifiable():
++    result = StateVerifier().verify("服务已恢复", {"probes": [None]})
++    assert result["checked"] is False
++
++
++def test_http_502_probe_reaches_pipeline_as_rejected():
++    from agent.inspector.pipeline import InspectorPipeline
++
++    class BrokenHandler(_ProbeHandler):
++        def do_GET(self):
++            self.send_response(502)
++            self.end_headers()
++
++    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), BrokenHandler)
++    thread = threading.Thread(target=server.serve_forever, daemon=True)
++    thread.start()
++    try:
++        probe = http_probe(f"http://127.0.0.1:{server.server_port}/health")
++        result = InspectorPipeline().run({"agent_claim": "服务已恢复", "actual_state": {"probes": [probe]}})
++        assert probe["status_code"] == 502
++        assert result.to_dict()["status"] == "REJECTED"
++    finally:
++        server.shutdown()
++        server.server_close()
++        thread.join(timeout=2)
++
+--- /dev/null
++++ b/tests/scripts/test_eval_false_success.py
+@@ -0,0 +1,28 @@
++from copy import deepcopy
++from scripts import eval_false_success as evaluator
++from agent.inspector.pipeline import InspectorPipeline
++
++
++def test_frozen_cases_have_six_categories_and_ten_distractors():
++    cases = evaluator.load_cases()
++    assert len(cases) == 50
++    assert sum(case['category'] == 'distractor' for case in cases) == 10
++    assert len({case['category'] for case in cases}) == 7
++    assert all('resolved' not in case for case in cases)
++
++
++def test_changing_expected_label_never_changes_prediction():
++    pipeline = InspectorPipeline()
++    case = evaluator.load_cases()[0]
++    other = deepcopy(case)
++    other['expected_false_success'] = not case['expected_false_success']
++    assert evaluator.predict(case, pipeline).verification_result == evaluator.predict(other, pipeline).verification_result
++
++
++def test_unknown_observations_are_excluded_from_binary_denominator():
++    rows, metrics = evaluator.evaluate()
++    assert metrics['n'] == len(rows) == 50
++    assert metrics['scored_n'] + metrics['unscored_n'] == 50
++    assert metrics['unscored_n'] == 3
++    assert metrics['TP'] + metrics['TN'] + metrics['FP'] + metrics['FN'] == metrics['scored_n']
++    assert all(row['unverifiable'] for row in rows if row['expected_false_success'] is None)
+--- /dev/null
++++ b/tests/scripts/test_eval_retrieval.py
+@@ -0,0 +1,38 @@
++from scripts.eval_retrieval import build_variants, compute_metrics, extract_samples
++
++
++def test_extracts_fourteen_samples_and_five_variants_per_sample():
++    samples = extract_samples("SmartOps-Dataset/Linux")
++    assert len(samples) == 14
++    assert all(len(build_variants(sample)) == 5 for sample in samples)
++
++
++def test_synthetic_rewrites_do_not_claim_human_provenance():
++    samples = extract_samples("SmartOps-Dataset/Linux")
++    variants = [variant for sample in samples for variant in build_variants(sample)]
++    generated = [query for query, provenance in variants if provenance.startswith("generated:")]
++    human = [query for query, provenance in variants if provenance.startswith("human:")]
++
++    assert len(variants) == 70
++    assert len(human) == 0
++    assert len(generated) == 56
++    assert all(provenance.startswith(("dataset:", "generated:"))
++               for sample in samples for _, provenance in build_variants(sample))
++
++
++def test_each_sample_has_three_distinct_scenario_rewrites():
++    samples = extract_samples("SmartOps-Dataset/Linux")
++    for sample in samples:
++        variants = build_variants(sample)
++        scenario_queries = [query for query, provenance in variants if provenance.startswith("generated:scenario")]
++        assert len(scenario_queries) == 3
++        assert len(set(scenario_queries)) == len(scenario_queries)
++
++
++def test_compute_metrics_uses_top_three_and_reciprocal_rank():
++    metrics = compute_metrics(
++        [["wrong", "target"], ["wrong"], ["target"]],
++        ["target", "target", "target"],
++    )
++    assert metrics["recall_at_3"] == 2 / 3
++    assert metrics["mrr"] == (0.5 + 0.0 + 1.0) / 3
+--- /dev/null
++++ b/tests/scripts/test_numeric_consistency.py
+@@ -0,0 +1,17 @@
++from scripts.check_numeric_consistency import table_inventory
++
++
++def test_table_inventory_excludes_comment_examples_and_duplicate_tables(tmp_path):
++    migrations = tmp_path / "backend/src/main/resources/db/migration"
++    migrations.mkdir(parents=True)
++    (migrations / "V1.sql").write_text(
++        "-- CREATE TABLE if not exists bogus\n"
++        "/* CREATE TABLE hidden(id int); */\n"
++        "CREATE TABLE IF NOT EXISTS `real_table` (id int);\n"
++        "CREATE TABLE second_table (id int);", encoding="utf-8"
++    )
++    (migrations / "V2.sql").write_text("CREATE TABLE IF NOT EXISTS real_table (id int);", encoding="utf-8")
++    inventory = table_inventory(tmp_path)
++    assert inventory["migration_files"] == 2
++    assert inventory["unique_create_tables"] == 2
++    assert inventory["tables"] == {"real_table": ["V1.sql", "V2.sql"], "second_table": ["V1.sql"]}
+--- /dev/null
++++ b/tests/scripts/test_rollback_defense.py
+@@ -0,0 +1,40 @@
++import hashlib
++import json
++import zipfile
++
++import pytest
++
++from scripts.rollback_defense import rollback
++
++
++def make_bundle(root, bundle):
++    files = []
++    for path, current, before in [("existing.txt", b"after", b"before"), ("new.txt", b"new", None)]:
++        (root / path).write_bytes(current)
++        files.append({"path": path, "after_sha256": hashlib.sha256(current).hexdigest(),
++                      "before_sha256": hashlib.sha256(before).hexdigest() if before else None})
++    with zipfile.ZipFile(bundle, "w") as archive:
++        archive.writestr("manifest.json", json.dumps({"baseline": "test snapshot", "files": files}))
++        archive.writestr("before/existing.txt", b"before")
++
++
++def test_rollback_defaults_to_read_only_then_preserves_current_files(tmp_path):
++    bundle = tmp_path / "rollback.zip"
++    make_bundle(tmp_path, bundle)
++    rollback(tmp_path, bundle)
++    assert (tmp_path / "existing.txt").read_bytes() == b"after"
++    assert (tmp_path / "new.txt").read_bytes() == b"new"
++    rollback(tmp_path, bundle, apply=True)
++    assert (tmp_path / "existing.txt").read_bytes() == b"before"
++    assert not (tmp_path / "new.txt").exists()
++    assert next((tmp_path / ".runtime/defense-rollback").rglob("new.txt")).read_bytes() == b"new"
++
++
++def test_rollback_checks_all_hashes_before_restoring_any_file(tmp_path):
++    bundle = tmp_path / "rollback.zip"
++    make_bundle(tmp_path, bundle)
++    (tmp_path / "new.txt").write_bytes(b"later user change")
++    with pytest.raises(ValueError, match="changed since delivery"):
++        rollback(tmp_path, bundle, apply=True)
++    assert (tmp_path / "existing.txt").read_bytes() == b"after"
++    assert (tmp_path / "new.txt").read_bytes() == b"later user change"

@@ -1,0 +1,914 @@
+[
+  {
+    "question": "MySQL 图形化开发工具 DataGrip怎么操作",
+    "expected_sources": [
+      "reference/MySQL8 数据服务管理.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "DataGrip 介绍 一般怎么处理？",
+    "expected_sources": [
+      "reference/MySQL8 数据服务管理.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "nginx 运维笔记怎么操作",
+    "expected_sources": [
+      "reference/nginx.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 1 装编译环境 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/nginx.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Red Hat Training and Certification怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\00.封面目录与简介.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "参考文献 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\00.封面目录与简介.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "红帽企业LINUX入门怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\01.红帽企业Linux入门.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 什么是LINUX? 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH124_分章md\\01.红帽企业Linux入门.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "访问命令行怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\02.访问命令行.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "访问命令行 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\02.访问命令行.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "从命令行管理文件怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\03.从命令行管理文件.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 文件系统层次结构 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH124_分章md\\03.从命令行管理文件.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "在红帽企业LINUX中获取帮助怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\04.在红帽企业Linux中获取帮助.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "在你开始之前 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\04.在红帽企业Linux中获取帮助.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "创建、查看和编辑文本文件怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\05.创建、查看和编辑文本文件.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 将输出重定向到文件或程序 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH124_分章md\\05.创建、查看和编辑文本文件.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "管理本地用户和组怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\06.管理本地用户和组.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "描述用户和组概念 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\06.管理本地用户和组.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "控制对文件的访问怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\07.控制对文件的访问.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 解释LINUX文件系统能不能访问 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH124_分章md\\07.控制对文件的访问.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "监控和管理LINUX进程怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\08.监控和管理Linux进程.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "列出程序 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\08.监控和管理Linux进程.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "控制服务和守护进程怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\09.控制服务和守护进程.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 识别自动开机的系统程序 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH124_分章md\\09.控制服务和守护进程.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "配置和保护SSH怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\10.配置和保护SSH.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "使用SSH访问远程命令行 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\10.配置和保护SSH.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "分析和存储日志怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\11.分析和存储日志.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 描述系统记录架构 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH124_分章md\\11.分析和存储日志.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "从命令行配置网络怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\12.管理网络.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "维护上网 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\12.管理网络.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "归档和传输文件怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\13.归档和传输文件.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 tar命令 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH124_分章md\\13.归档和传输文件.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "安装和更新软件包怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\14.安装和更新软件包.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "注册系统以获取红帽支持 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\14.安装和更新软件包.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "访问LINUX文件系统怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\15.访问Linux文件系统.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 识别文件系统和设备 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH124_分章md\\15.访问Linux文件系统.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "分析服务器和获取支持怎么操作",
+    "expected_sources": [
+      "reference/RH124_分章md\\16.分析服务器和获取支持.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "分析和维护远程服务器 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH124_分章md\\16.分析服务器和获取支持.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 参考文献 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH134_分章md\\00.封面目录与简介.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "提高命令行生产率怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\01.提高命令行生产率.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "编写简单的BASH脚本 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\01.提高命令行生产率.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "计划将来的任务怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\02.计划将来的任务.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "线上遇到 计划延迟的用户作业 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\02.计划将来的任务.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "调优系统性能怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\03.调优系统性能.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "调整调优设置文件 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\03.调优系统性能.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "使用ACL控制对文件的访问怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\04.使用ACL控制对文件的访问.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "线上遇到 解释文件ACL 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\04.使用ACL控制对文件的访问.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "管理SELINUX安全性怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\05.管理SELinux安全性.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "更改SELINUX到强制模式 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\05.管理SELinux安全性.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "管理基本存储怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\06.管理基本存储.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "线上遇到 对硬盘进行分区 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\06.管理基本存储.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "管理逻辑卷怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\07.管理逻辑卷.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "新建逻辑卷 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\07.管理逻辑卷.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "实施高级存储功能怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\08.实施高级存储功能.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "线上遇到 描述STRATIS架构 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\08.实施高级存储功能.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "访问网络附加存储怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\09.访问网络附加存储.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "通过NFS挂载上网附加存储 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\09.访问网络附加存储.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "控制启动过程怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\10.控制启动过程.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "线上遇到 选择开机目标 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\10.控制启动过程.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "管理网络安全怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\11.管理网络安全.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "维护服务器防火墙 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\11.管理网络安全.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "安装红帽企业LINUX怎么操作",
+    "expected_sources": [
+      "reference/RH134_分章md\\12.安装红帽企业Linux.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "线上遇到 装红帽企业LINUX 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/RH134_分章md\\12.安装红帽企业Linux.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "红帽系统维护I:LINUX自动化 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/RH294_分章md\\00.封面目录与简介.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "介绍ANSIBLE怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\01.介绍Ansible.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "自动化与LINUX系统维护 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH294_分章md\\01.介绍Ansible.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "部署ANSIBLE怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\02.部署Ansible.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 构建ANSIBLE清单 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH294_分章md\\02.部署Ansible.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "实施PLAYBOOK怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\03.实施Playbook.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "编写和运行PLAYBOOK 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH294_分章md\\03.实施Playbook.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "管理变量和事实怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\04.管理变量和事实.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 维护变量 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH294_分章md\\04.管理变量和事实.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "实施任务控制怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\05.实施任务控制.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "编写循环和条件任务 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH294_分章md\\05.实施任务控制.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "在被管理节点上创建文件或目录怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\06.在被管理节点上创建文件或目录.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 描述文件模块 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH294_分章md\\06.在被管理节点上创建文件或目录.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "管理大项目怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\07.管理大项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "引用清单主机 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH294_分章md\\07.管理大项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "利用角色简化PLAYBOOK怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\08.利用角色简化Playbook.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 描述角色结构 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH294_分章md\\08.利用角色简化Playbook.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "对ANSIBLE进行故障排除怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\09.对Ansible进行故障排除.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "ANSIBLE记录文件 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH294_分章md\\09.对Ansible进行故障排除.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "自动执行LINUX管理任务怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\10.自动执行Linux管理任务.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 维护软件和订阅 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH294_分章md\\10.自动执行Linux管理任务.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "总复习：使用ANSIBLE实现自动怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\11.总复习-使用Ansible实现自动化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "复习红帽系统维护III:LINUX自动化 一般怎么处理？",
+    "expected_sources": [
+      "reference/RH294_分章md\\11.总复习-使用Ansible实现自动化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "补充主题怎么操作",
+    "expected_sources": [
+      "reference/RH294_分章md\\12.补充主题与Lightbulb许可.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 看一下设置选项 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/RH294_分章md\\12.补充主题与Lightbulb许可.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Shell函数怎么操作",
+    "expected_sources": [
+      "reference/Shell函数.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "什么是函数？ 一般怎么处理？",
+    "expected_sources": [
+      "reference/Shell函数.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Shell流程结构怎么操作",
+    "expected_sources": [
+      "reference/Shell流程结构.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 什么是流程结构？ 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Shell流程结构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "【了解】Shell三剑客概述怎么操作",
+    "expected_sources": [
+      "reference/了解Shell三剑客.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Shell三剑客 一般怎么处理？",
+    "expected_sources": [
+      "reference/了解Shell三剑客.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "开场与介绍怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\00.开场与课程介绍.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 P01 · 封面:聊聊为什么所有IT人都要学习云原生 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\00.开场与课程介绍.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "云计算发展历程与云原生定义怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\01.云计算发展历程与云原生定义.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "P06 · 云计算的发展历程 一般怎么处理？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\01.云计算发展历程与云原生定义.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Netflix云原生实践案例怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\02.Netflix云原生实践案例.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 P11 · 从云原生拓荒者Netflix 的故事说起 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\02.Netflix云原生实践案例.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "容器技术与Spring Cloud框架怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\03.容器技术与Spring Cloud框架.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "P25 · 容器技术和Spring Cloud框架的诞生 一般怎么处理？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\03.容器技术与Spring Cloud框架.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Kubernetes编排标准怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\04.Kubernetes编排标准.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 P30 · Kubernetes横空出世 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\04.Kubernetes编排标准.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "ServiceMesh服务治理演进怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\05.ServiceMesh服务治理演进.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "P34 · 但是 等等…… 一般怎么处理？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\05.ServiceMesh服务治理演进.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "企业IT数字化转型与岗位影响怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\06.企业IT数字化转型与岗位影响.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 P43 · 企业IT数字化转型的“三阶段两转变” 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\06.企业IT数字化转型与岗位影响.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "云原生技术趋势-多运行时微服务怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\07.云原生技术趋势-多运行时微服务.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "P53 · 分布式应用程序的需求 一般怎么处理？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\07.云原生技术趋势-多运行时微服务.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "参考资料与致谢怎么操作",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\08.参考资料与致谢.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 P60 · 参考资料 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\08.参考资料与致谢.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Nginx 服务部署与基础配置怎么操作",
+    "expected_sources": [
+      "reference/安装Nginx.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Nginx 服务上线与设置 一般怎么处理？",
+    "expected_sources": [
+      "reference/安装Nginx.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  }
+]

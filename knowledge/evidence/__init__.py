@@ -12,7 +12,22 @@ SmartOpsAgent Knowledge Evidence Module.
 
 from .models import Evidence
 from .citation import build_evidence, build_citations
-from .trust_score import TrustScoreCalculator
+from .support import (
+    ClaimSupport,
+    DedupeResult,
+    SupportLabel,
+    dedupe_evidences,
+    label_claim,
+)
+from .trust_score import (
+    INTERPRETATION,
+    SCORE_VERSION,
+    L3Advice,
+    L3JudgeConfig,
+    TrustBreakdown,
+    TrustScoreCalculator,
+    build_breakdown,
+)
 
 
 __all__ = [
@@ -20,4 +35,15 @@ __all__ = [
     "build_evidence",
     "build_citations",
     "TrustScoreCalculator",
+    "TrustBreakdown",
+    "build_breakdown",
+    "L3JudgeConfig",
+    "L3Advice",
+    "SCORE_VERSION",
+    "INTERPRETATION",
+    "SupportLabel",
+    "ClaimSupport",
+    "DedupeResult",
+    "label_claim",
+    "dedupe_evidences",
 ]

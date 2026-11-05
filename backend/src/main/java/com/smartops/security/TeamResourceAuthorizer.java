@@ -37,10 +37,7 @@ public class TeamResourceAuthorizer {
                 (result, row) -> new TeamPermission(teamId, result.getString("status"), result.getString("role"), result.getBoolean("enabled")),
                 actor.id(), teamId);
         if (teams.isEmpty()) {
-            if (isPlatformRoot(actor) && teamExists(teamId)) {
-                String status = jdbc.queryForObject("SELECT status FROM team_workspace WHERE id=?", String.class, teamId);
-                return new TeamPermission(teamId, status, "root", true);
-            }
+            // 管理员入口不授予团队成员权限：管理端走 /api/admin/teams 的独立授权路径。
             throw new BusinessException(403, "TEAM_ACCESS_FORBIDDEN");
         }
         TeamPermission permission = teams.get(0);
@@ -82,14 +79,6 @@ public class TeamResourceAuthorizer {
             case "approve", "manage" -> Set.of("owner", "admin", "root").contains(role);
             default -> false;
         };
-    }
-
-    private boolean isPlatformRoot(SessionUser actor) {
-        return "admin".equals(actor.role()) && "admin".equals(actor.portal());
-    }
-
-    private boolean teamExists(long teamId) {
-        return !jdbc.queryForList("SELECT id FROM team_workspace WHERE id=?", Long.class, teamId).isEmpty();
     }
 
     public record TeamPermission(long teamId, String status, String role, boolean enabled) {}

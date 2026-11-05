@@ -11,9 +11,11 @@ test('development authentication uses the same-origin proxy and credentials', as
 test('terminal development traffic shares the authenticated origin', async () => {
   const terminal = await readFile(new URL('../src/components/operations/OperationsTerminal.vue', import.meta.url), 'utf8')
   const vite = await readFile(new URL('../vite.config.js', import.meta.url), 'utf8')
+  // 代理已收敛到 vite.shared.mjs：入口配置只允许引用共享工厂，避免两端口各写一份。
+  const shared = await readFile(new URL('../vite.shared.mjs', import.meta.url), 'utf8')
   assert.match(terminal, /import\.meta\.env\.DEV\s*\?\s*''/)
-  assert.match(vite, /['"]\/ws['"]\s*:/)
-  assert.match(vite, /ws:\s*true/)
+  assert.match(vite, /proxy:\s*devProxy\(backendOrigin\(\)\)/)
+  assert.match(shared, /['"]\/ws['"]\s*:\s*\{\s*target,\s*ws:\s*true\s*\}/)
 })
 
 test('navigation verifies the server session rather than trusting preview storage', async () => {

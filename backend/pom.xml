@@ -150,6 +150,19 @@
         </dependency>
 
         <!-- =========================
+             Flyway 数据库迁移
+             flyway-core 自带 H2 支持（测试用），flyway-mysql 提供 MySQL 方言
+             ========================= -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
+        <!-- =========================
              Redis
              用于缓存、任务状态、告警状态等
              ========================= -->

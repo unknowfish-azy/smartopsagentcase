@@ -1,0 +1,32 @@
+{
+  "schema": "smartops.golden.v1",
+  "batch_id": "golden-v1-20261105",
+  "status": "BLOCKED",
+  "blocked_reason": "缺 2+ 独立标注者，case_count=0，需至少 30+ case 的 oracle_health=complete",
+  "frozen_at": null,
+  "frozen_by": null,
+  "case_count": 0,
+  "split_distribution": {"train": 0, "holdout": 0, "withdrawn": 0},
+  "family_distribution": {"F-NET": 0, "F-HTTP": 0, "F-L4": 0, "F-DB": 0, "F-SSH": 0, "F-CONF": 0},
+  "oracle_health_distribution": {"complete": 0, "degraded": 0, "insufficient": 0, "unknown": 0},
+  "agreement_rate": null,
+  "cohens_kappa": null,
+  "corpus_version": "smartops.corpus.v1",
+  "corpus_sha256": "d2c3559ff06a49da073888d8f75e69b2e4b026515ad280d8e175f30c4e8781628",
+  "notes": [
+    "RH124/RH134/RH294 已移除，corpus_sha256 更新为移除后值",
+    "DATA-P0-01 协议已冻结（docs/development/P0-DATA-01-Golden标注协议-v1.md）",
+    "synthetic fixture 50/20 已冻结作受控 prototype，不作正式 Golden",
+    "正式 Golden 需 2+ 独立标注者 + 30+ case oracle_health=complete，当前未达标"
+  ],
+  "synthetic_prototype": {
+    "status": "FROZEN_PROTOTYPE",
+    "fixture_main": {"path": "tests/fixtures/defense/false_success.json", "sha256": "28c757cdabcfd24d69e27cb4bc3abdbd185d793ea3d5dbe4340093cacf86d45a"},
+    "fixture_holdout": {"path": "tests/fixtures/defense/false_success_holdout.json", "sha256": "424a636a2c6d0d02e329247138953478aa4e467d6505de1ce87e9ffa1094a304"},
+    "fixture_main_stats": {"positive": 36, "negative": 14, "unscored": 3},
+    "fixture_holdout_stats": {"positive": 15, "negative": 5, "unscored": 0},
+    "baseline_metrics": {"TP": 5, "TN": 4, "FP": 1, "FN": 10, "F1": 0.47619047619047616},
+    "baseline_source": ".runtime/score-p0-01/holdout-metrics.json",
+    "boundary_note": "受控 prototype，不得外推到真实业务效果，不得作正式评测分母"
+  }
+}

@@ -9,6 +9,7 @@ import {
   createSpider,
   createWeb,
   legsStepping,
+  pickTargetTaskKey,
   restPose,
   stepSpider
 } from '../src/components/effects/spiderCrawler.js'
@@ -130,4 +131,62 @@ test('different seeds place spiders and webs differently', () => {
   const webA = createWeb({ width: 800, height: 400, seed: 1 })
   const webB = createWeb({ width: 800, height: 400, seed: 2 })
   assert.notDeepEqual(webA.segments, webB.segments)
+})
+
+test('pickTargetTaskKey returns the most-recently-sampled non-offline node', () => {
+  const tasks = [
+    { id: 'a', status: 'online', lastSeenAt: '2026-11-03T10:00:00Z' },
+    { id: 'b', status: 'error', lastSeenAt: '2026-11-03T10:05:00Z' },
+    { id: 'c', status: 'offline', lastSeenAt: '2026-11-03T10:10:00Z' },
+    { id: 'd', status: 'no_runtime', lastSeenAt: '2026-11-03T10:12:00Z' }
+  ]
+  const web = createWeb({ width: 800, height: 400, seed: 42, tasks })
+  const key = pickTargetTaskKey(web, tasks, null)
+  assert.equal(key, web.taskNodeKey.get('b'), 'b is the most recent non-offline node')
+})
+
+test('pickTargetTaskKey honors activeId override', () => {
+  const tasks = [
+    { id: 'a', status: 'online', lastSeenAt: '2026-11-03T10:00:00Z' },
+    { id: 'b', status: 'error', lastSeenAt: '2026-11-03T10:05:00Z' }
+  ]
+  const web = createWeb({ width: 800, height: 400, seed: 42, tasks })
+  const key = pickTargetTaskKey(web, tasks, 'a')
+  assert.equal(key, web.taskNodeKey.get('a'), 'activeId wins over latest-sampled')
+})
+
+test('pickTargetTaskKey skips offline/no_runtime even when most recent', () => {
+  const tasks = [
+    { id: 'a', status: 'online', lastSeenAt: '2026-11-03T10:00:00Z' },
+    { id: 'c', status: 'offline', lastSeenAt: '2026-11-03T11:00:00Z' }
+  ]
+  const web = createWeb({ width: 800, height: 400, seed: 42, tasks })
+  assert.equal(pickTargetTaskKey(web, tasks, null), web.taskNodeKey.get('a'))
+})
+
+test('pickTargetTaskKey returns null with no tasks', () => {
+  const web = createWeb({ width: 800, height: 400, seed: 42 })
+  assert.equal(pickTargetTaskKey(web, [], null), null)
+  assert.equal(pickTargetTaskKey(web, null, null), null)
+})
+
+test('spider converges toward the active target node (live crawling feedback)', () => {
+  const tasks = [
+    { id: 'a', status: 'online', lastSeenAt: '2026-11-03T10:00:00Z' },
+    { id: 'b', status: 'online', lastSeenAt: '2026-11-03T10:05:00Z' }
+  ]
+  const web = createWeb({ width: 800, height: 400, seed: 42, tasks })
+  const spider = createSpider(web, createRng(99))
+  const rng = createRng(5)
+  const targetKey = web.taskNodeKey.get('b')
+  const tx = web.nodeX.get(targetKey)
+  const ty = web.nodeY.get(targetKey)
+  let minDist = Infinity
+  for (let i = 0; i < 60 * 60; i += 1) { // 模拟 1 分钟
+    stepSpider(spider, web, 1 / 60, rng, targetKey)
+    assert.ok(Number.isFinite(spider.bodyX) && Number.isFinite(spider.bodyY), 'no NaN with target')
+    const d = Math.hypot(spider.bodyX - tx, spider.bodyY - ty)
+    if (d < minDist) minDist = d
+  }
+  assert.ok(minDist < 50, `spider reached near target (minDist=${minDist.toFixed(1)}px)`)
 })

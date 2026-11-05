@@ -47,7 +47,9 @@ class ModelGatewayServiceTest {
         when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq(4L)))
                 .thenReturn(List.of(Map.of("requests", -1L, "tokens", -1L)));
         when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq("ops"), eq(9L)))
-                .thenReturn(List.of(Map.of("routeId", 101L, "connectionId", 11L), Map.of("routeId", 102L, "connectionId", 12L)));
+                .thenAnswer(call -> call.getArgument(0, String.class).contains("request_limit_24h")
+                        ? List.<Map<String, Long>>of()
+                        : List.of(Map.of("routeId", 101L, "connectionId", 11L), Map.of("routeId", 102L, "connectionId", 12L)));
         when(connections.invoke(eq(9L), eq(11L), any(ModelInvocationRequest.class)))
                 .thenThrow(new IllegalStateException("provider down"));
         when(connections.invoke(eq(9L), eq(12L), any(ModelInvocationRequest.class)))
@@ -56,5 +58,18 @@ class ModelGatewayServiceTest {
         var result = gateway.invoke(principal, "ops", new ModelInvocationRequest());
 
         assertEquals("ok", result.getContent());
+    }
+
+    @Test void groupQuotaStillAppliesWhenKeyHasNoLimit() {
+        var principal = new ModelGatewayService.GatewayPrincipal(4L, 9L, "PERSONAL");
+        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq(4L)))
+                .thenReturn(List.of(Map.of("requests", -1L, "tokens", -1L)));
+        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq("ops"), eq(9L)))
+                .thenReturn(List.of(Map.of("requests", 5L, "tokens", -1L)));
+        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq(9L), eq("ops")))
+                .thenReturn(List.of(Map.of("calls", 5L, "tokens", 0L)));
+
+        assertEquals(429, assertThrows(BusinessException.class,
+                () -> gateway.invoke(principal, "ops", new ModelInvocationRequest())).getCode());
     }
 }

@@ -48,15 +48,18 @@
         <footer><button type="button" :disabled="saving" @click="closeData">取消</button><button class="admin-primary" type="submit" :disabled="saving">{{ saving ? '提交中…' : '保存' }}</button></footer>
       </form>
     </AdminDialog>
+    <AdminConfirmAction :open="!!passwordRequest" :title="passwordRequest?.title || ''" :description="passwordRequest?.description || ''" :busy="confirmBusy" :error="confirmError" @confirm="confirmPassword" @cancel="cancelPassword" />
   </section>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { systemApi } from '../../../api/adminSystem.ts'
 import { useAdminResource } from '../../../composables/useAdminResource.js'
 import AdminDialog from '../../../components/admin/AdminDialog.vue'
+import AdminConfirmAction from '../../../components/admin/AdminConfirmAction.vue'
 const { data, loading, error, load } = useAdminResource(() => systemApi.dictTypes())
+onMounted(load)
 const currentType = ref('')
 const dictData = ref([])
 const typeAction = ref('')
@@ -107,28 +110,43 @@ async function saveData() {
   } catch (failure) { saveError.value = failure.message || '保存失败，请重试' }
   finally { saving.value = false }
 }
-function askPassword(label) { return window.prompt(`请输入当前管理员密码以${label}（仅用于本次身份复核）`) }
-async function removeType(type) {
+const passwordRequest = ref(null)
+const confirmBusy = ref(false)
+const confirmError = ref('')
+function askPassword(title, description, fallback, action) { confirmError.value = ''; passwordRequest.value = { title, description, fallback, action } }
+function cancelPassword() { if (confirmBusy.value) return; passwordRequest.value = null; confirmError.value = '' }
+async function confirmPassword(password) {
+  if (confirmBusy.value || !passwordRequest.value) return
+  const request = passwordRequest.value
+  confirmError.value = ''
+  confirmBusy.value = true
+  try { await request.action(password); passwordRequest.value = null }
+  catch (failure) { confirmError.value = failure.message || request.fallback }
+  finally { confirmBusy.value = false }
+}
+function removeType(type) {
   if (!window.confirm(`确认删除字典类型「${type.name}」？其下所有数据项将一并删除。`)) return
-  const password = askPassword('删除字典类型')
-  if (!password) return
-  success.value = ''; error.value = ''
-  try { await systemApi.deleteDictType(type.id, password); success.value = '字典类型已删除。'; await load() }
-  catch (failure) { error.value = failure.message || '删除失败' }
+  askPassword('删除字典类型', `请输入当前管理员密码以删除字典类型「${type.name}」（仅用于本次身份复核）`, '删除失败', async password => {
+    success.value = ''; error.value = ''
+    await systemApi.deleteDictType(type.id, password)
+    success.value = '字典类型已删除。'
+    await load()
+  })
 }
-async function toggleData(item) {
-  const password = askPassword(item.status === 1 ? '停用数据项' : '启用数据项')
-  if (!password) return
-  success.value = ''; error.value = ''
-  try { await systemApi.dictDataStatus(item.id, item.status === 1 ? 0 : 1, password); await refreshData() }
-  catch (failure) { error.value = failure.message || '操作失败' }
+function toggleData(item) {
+  const label = item.status === 1 ? '停用数据项' : '启用数据项'
+  askPassword(label, `请输入当前管理员密码以${label}（仅用于本次身份复核）`, '操作失败', async password => {
+    success.value = ''; error.value = ''
+    await systemApi.dictDataStatus(item.id, item.status === 1 ? 0 : 1, password)
+    await refreshData()
+  })
 }
-async function removeData(item) {
+function removeData(item) {
   if (!window.confirm(`确认删除数据项「${item.label}」？`)) return
-  const password = askPassword('删除数据项')
-  if (!password) return
-  success.value = ''; error.value = ''
-  try { await systemApi.deleteDictData(item.id, password); await refreshData() }
-  catch (failure) { error.value = failure.message || '删除失败' }
+  askPassword('删除数据项', `请输入当前管理员密码以删除数据项「${item.label}」（仅用于本次身份复核）`, '删除失败', async password => {
+    success.value = ''; error.value = ''
+    await systemApi.deleteDictData(item.id, password)
+    await refreshData()
+  })
 }
 </script>

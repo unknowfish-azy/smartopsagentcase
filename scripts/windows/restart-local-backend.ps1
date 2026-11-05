@@ -6,6 +6,18 @@ $backend = Join-Path $root 'backend'
 $jar = Join-Path $backend 'target\smartops-backend-0.0.1-SNAPSHOT.jar'
 if (!(Test-Path -LiteralPath $jar)) { throw 'Build the backend jar before restarting' }
 if (!(Test-Path -LiteralPath $Java)) { throw 'Java 17 executable not found' }
+# JVM 上限：本地演示按算卦平台（HTLB）已验证的参数封顶。
+# 不给 -Xmx 时默认堆会随负载扩到 GB 级；SerialGC 在单机单实例场景
+# 比 G1 少一层 remembered set / 并发线程的常驻开销。
+$jvmOptions = @(
+    '-Xms64m',
+    '-Xmx512m',
+    '-XX:MaxMetaspaceSize=192m',
+    '-XX:ReservedCodeCacheSize=96m',
+    '-XX:MaxDirectMemorySize=128m',
+    '-XX:+UseSerialGC',
+    '-XX:+ExitOnOutOfMemoryError'
+)
 if (Test-Path -LiteralPath (Join-Path $root '.runtime\mini\runtime\ollama.exe')) { & (Join-Path $PSScriptRoot 'start-mini.ps1') }
 $credentialFile = Join-Path $root '.runtime\secrets\bootstrap.env'
 if (!(Test-Path -LiteralPath $credentialFile)) { throw 'Create a private bootstrap environment before first startup' }
@@ -34,7 +46,7 @@ try {
     }
     $logs = Join-Path $root '.runtime\logs'
     [System.IO.Directory]::CreateDirectory($logs) | Out-Null
-    $process = Start-Process -FilePath $Java -ArgumentList @('-Dfile.encoding=UTF-8', '-jar', "`"$runtimeJar`"", '--server.address=127.0.0.1', '--smartops.security.internal-bypass=false') -WorkingDirectory $backend -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logs "backend-secure-$stamp.out.log") -RedirectStandardError (Join-Path $logs "backend-secure-$stamp.err.log")
+    $process = Start-Process -FilePath $Java -ArgumentList (@('-Dfile.encoding=UTF-8') + $jvmOptions + @('-jar', "`"$runtimeJar`"", '--server.address=127.0.0.1', '--smartops.security.internal-bypass=false')) -WorkingDirectory $backend -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logs "backend-secure-$stamp.out.log") -RedirectStandardError (Join-Path $logs "backend-secure-$stamp.err.log")
     Write-Output "Backend launched: PID $($process.Id), logs .runtime/logs/backend-secure-$stamp.*.log"
 } finally {
     foreach ($name in $previous.Keys) { [Environment]::SetEnvironmentVariable($name, $previous[$name], 'Process') }

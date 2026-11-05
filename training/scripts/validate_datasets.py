@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from training.baseline_runner import baseline_not_run
-from training.manifest import DATASET_TYPES, build_manifest, write_manifests
+from training.manifest import write_manifests
 
 
 def main() -> int:

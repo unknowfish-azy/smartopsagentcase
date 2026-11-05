@@ -110,11 +110,11 @@ public class PersonalKnowledgeService {
         int safePage = Math.max(1, page);
         int safeSize = Math.max(1, Math.min(100, pageSize));
         boolean filtered = query != null && !query.isBlank();
-        String where = filtered ? " WHERE user_id=? AND library_id=? AND (LOWER(title) LIKE ? OR LOWER(summary) LIKE ?)" : " WHERE user_id=? AND library_id=?";
+        String where = filtered ? " WHERE user_id=? AND library_id=? AND (LOWER(title) LIKE ? OR LOWER(summary) LIKE ? OR LOWER(CAST(content_markdown AS VARCHAR(2000))) LIKE ?)" : " WHERE user_id=? AND library_id=?";
         String value = filtered ? "%" + query.trim().toLowerCase() + "%" : null;
-        Object[] countArgs = filtered ? new Object[]{userId, libraryId, value, value} : new Object[]{userId, libraryId};
+        Object[] countArgs = filtered ? new Object[]{userId, libraryId, value, value, value} : new Object[]{userId, libraryId};
         long total = jdbc.queryForObject("SELECT COUNT(*) FROM personal_knowledge_entry" + where, Long.class, countArgs);
-        Object[] args = filtered ? new Object[]{userId, libraryId, value, value, safeSize, (safePage - 1) * safeSize} : new Object[]{userId, libraryId, safeSize, (safePage - 1) * safeSize};
+        Object[] args = filtered ? new Object[]{userId, libraryId, value, value, value, safeSize, (safePage - 1) * safeSize} : new Object[]{userId, libraryId, safeSize, (safePage - 1) * safeSize};
         List<Entry> items = jdbc.query("SELECT id,library_id,user_id,title,summary,content_markdown,source_type,source_ref,verification_status,version,created_at,updated_at FROM personal_knowledge_entry" + where + " ORDER BY updated_at DESC,id DESC LIMIT ? OFFSET ?", this::mapEntry, args);
         return new EntryPage(items, total, safePage, safeSize);
     }

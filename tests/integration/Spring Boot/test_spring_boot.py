@@ -12,7 +12,6 @@ Spring Boot Integration Test.
 
 from __future__ import annotations
 
-import pytest
 
 
 def test_spring_boot_health(
@@ -44,22 +43,7 @@ def test_spring_boot_health(
     )
 
 
-def test_spring_boot_server_api(
-    http_client,
-    require_backend,
-):
-    """
-    Spring Boot → Server Controller。
-    """
-    response = http_client.get(
-        f"{require_backend}/api/servers"
-    )
-
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert isinstance(
-        data,
-        dict,
-    )
+def test_spring_boot_anonymous_server_api(http_client, require_backend):
+    """Protected controller rejects anonymous access; health remains public."""
+    response = http_client.get(f"{require_backend}/api/servers")
+    assert response.status_code == 401

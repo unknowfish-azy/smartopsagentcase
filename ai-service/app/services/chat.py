@@ -1,6 +1,15 @@
-import asyncio
+import logging
+import sys
+from pathlib import Path
 from uuid import uuid4
 
+# CLI may start in ai-service/; the shared contract lives beside that package.
+repo_root = Path(__file__).resolve().parents[3]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+from agent.runtime_events import RunIdentity, terminal_event
+
+from ..core.exceptions import LLMException
 from ..schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -9,6 +18,8 @@ from ..schemas.chat import (
 from .llm import LLMService
 from .rag import RAGService
 
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """
 你是智维Agent的AI运维助手。
@@ -45,8 +56,14 @@ class ChatService:
     async def chat(
         self,
         request: ChatRequest,
+        identity: RunIdentity | None = None,
     ) -> ChatResponse:
 
+        identity = identity or RunIdentity.create(request_id=request.metadata.get("request_id"), task_id=request.metadata.get("task_id"))
+        logger.info(
+            "chat.start request_id=%s task_id=%s run_id=%s mode=blocking",
+            identity.request_id, identity.task_id, identity.run_id,
+        )
         conversation_id = (
             request.conversation_id
             or str(uuid4())
@@ -58,12 +75,27 @@ class ChatService:
             "trust_score": 0.0,
         }
 
+        rag_status = "disabled"
+
         if request.use_rag:
 
             rag_data = await self.rag.retrieve(
                 query=request.message,
                 top_k=request.top_k,
                 version=request.version,
+                source=request.source,
+                score_threshold=request.score_threshold,
+                vector_weight=request.vector_weight,
+                bm25_weight=request.bm25_weight,
+                request_id=identity.request_id,
+                task_id=identity.task_id,
+                run_id=identity.run_id,
+            )
+            rag_status = self._rag_metadata(request, rag_data)["rag_status"]
+            logger.info(
+                "chat.rag request_id=%s task_id=%s run_id=%s status=%s results=%s",
+                identity.request_id, identity.task_id, identity.run_id,
+                rag_status, len(rag_data.get("results", [])),
             )
 
         results = rag_data.get(
@@ -86,11 +118,21 @@ class ChatService:
             system_prompt=SYSTEM_PROMPT,
         )
 
+        inspection = self._inspect_request(request, rag_data)
+
         citations = [
             Citation(
                 citation_id=item.get(
                     "citation_id",
                     index,
+                ),
+                title=item.get(
+                    "title",
+                    "",
+                ),
+                snippet=item.get(
+                    "snippet",
+                    "",
                 ),
                 source=item.get(
                     "source",
@@ -119,6 +161,11 @@ class ChatService:
             )
         ]
 
+        logger.info(
+            "chat.terminal request_id=%s task_id=%s run_id=%s status=succeeded rag_status=%s",
+            identity.request_id, identity.task_id, identity.run_id, rag_status,
+        )
+
         return ChatResponse(
             answer=answer,
             conversation_id=conversation_id,
@@ -140,16 +187,67 @@ class ChatService:
                 [],
             ),
             metadata={
+                "run_event": terminal_event(identity, "ai-service", "succeeded"),
                 "rag_enabled": request.use_rag,
                 "top_k": request.top_k,
                 "version": request.version,
                 "images": request.images,
+                "degraded": self.llm.degraded,
+                "effective_provider": self.llm.effective_provider,
+                "degradation_reason": self.llm.degradation_reason,
+                **self._rag_metadata(request, rag_data),
+                **({"inspection": inspection} if inspection else {}),
             },
         )
 
     async def chat_stream(
         self,
         request: ChatRequest,
+        identity: RunIdentity | None = None,
+    ):
+        identity = identity or RunIdentity.create(request_id=request.metadata.get("request_id"), task_id=request.metadata.get("task_id"))
+        logger.info(
+            "chat.start request_id=%s task_id=%s run_id=%s mode=stream",
+            identity.request_id, identity.task_id, identity.run_id,
+        )
+        status = "failed"
+        code = "CHAT_PIPELINE_FAILED"
+        degraded = False
+        provider = "-"
+        yield {"event": "run", "data": terminal_event(identity, "ai-service", "started")}
+        try:
+            async for event in self._chat_stream(request, identity):
+                if event["event"] == "done":
+                    status, code = "succeeded", "-"
+                    metadata = event["data"].get("metadata", {})
+                    degraded = bool(metadata.get("degraded"))
+                    provider = metadata.get("effective_provider") or "-"
+                elif event["event"] == "error":
+                    status = "failed"
+                    code = event["data"].get("code", "AI_ERROR")
+                if event["event"] in {"done", "error"}:
+                    record = terminal_event(identity, "ai-service", "failed" if event["event"] == "error" else "succeeded")
+                    if event["event"] == "done":
+                        event["data"]["metadata"]["run_event"] = record
+                    else:
+                        event["data"]["run_event"] = record
+                yield event
+        except Exception:
+            status, code = "failed", "CHAT_PIPELINE_FAILED"
+            yield {"event": "error", "data": {
+                "code": "CHAT_PIPELINE_FAILED", "message": "对话处理失败，请根据运行编号复查服务日志",
+                "run_event": terminal_event(identity, "ai-service", "failed"),
+            }}
+        finally:
+            logger.info(
+                "chat.terminal request_id=%s task_id=%s run_id=%s status=%s code=%s degraded=%s provider=%s",
+                identity.request_id, identity.task_id, identity.run_id, status, code, degraded, provider,
+            )
+
+    async def _chat_stream(
+        self,
+        request: ChatRequest,
+        identity: RunIdentity,
     ):
         """流式对话：产出 SSE 事件（thinking / token / done），用于前端 AI 思考可视化。"""
 
@@ -169,6 +267,20 @@ class ChatService:
                 query=request.message,
                 top_k=request.top_k,
                 version=request.version,
+                source=request.source,
+                score_threshold=request.score_threshold,
+                vector_weight=request.vector_weight,
+                bm25_weight=request.bm25_weight,
+                request_id=identity.request_id,
+                task_id=identity.task_id,
+                run_id=identity.run_id,
+            )
+            rag_meta = self._rag_metadata(request, rag_data)
+            logger.info(
+                "chat.rag request_id=%s task_id=%s run_id=%s status=%s results=%s degraded=%s reason=%s",
+                identity.request_id, identity.task_id, identity.run_id,
+                rag_meta["rag_status"], len(rag_data.get("results", [])),
+                rag_meta["rag_degraded"], rag_meta["rag_degradation_reason"] or "-",
             )
 
         results = rag_data.get("results", [])
@@ -179,34 +291,46 @@ class ChatService:
             images=request.images,
         )
 
-        # 1) AI 思考过程事件（驱动前端可视化）
+        # Report only stages actually performed by this chat path.
         thinking_steps = []
         if request.images:
             thinking_steps.append(
-                {"stage": "vision", "label": "图像证据解析", "detail": f"解析 {len(request.images)} 张图像证据"}
+                {"stage": "attachments", "label": "附件已接收", "detail": f"收到 {len(request.images)} 个图像文件名，尚未执行图像识别"}
             )
-        thinking_steps += [
-            {"stage": "retrieve", "label": "知识检索", "detail": f"检索知识库 top_k={request.top_k}"},
-            {"stage": "evidence", "label": "证据验证", "detail": f"命中 {len(rag_data.get('citations', []))} 条证据"},
-            {"stage": "plan", "label": "Agent 规划", "detail": "将故障拆解为可执行步骤"},
-            {"stage": "risk", "label": "风险判定", "detail": "策略引擎评估操作风险"},
-            {"stage": "answer", "label": "生成回答", "detail": "基于证据生成可信回答"},
-        ]
+        if request.use_rag:
+            rag_metadata = self._rag_metadata(request, rag_data)
+            thinking_steps.append({
+                "stage": "retrieve", "label": "知识检索结果",
+                "detail": f"状态：{rag_metadata['rag_status']}；返回 {len(results)} 条知识片段",
+            })
+        thinking_steps.append({"stage": "answer", "label": "生成回答", "detail": "根据当前可用信息生成回答"})
         for step in thinking_steps:
             yield {"event": "thinking", "data": step}
-            await asyncio.sleep(0.15)
 
         # 2) 流式 token
-        async for delta in self.llm.generate_stream(
-            prompt,
-            system_prompt=SYSTEM_PROMPT,
-        ):
-            yield {"event": "token", "data": {"delta": delta}}
+        try:
+            async for delta in self.llm.generate_stream(
+                prompt,
+                system_prompt=SYSTEM_PROMPT,
+            ):
+                yield {"event": "token", "data": {"delta": delta}}
+        except LLMException:
+            yield {"event": "error", "data": {
+                "code": "LLM_STREAM_INTERRUPTED",
+                "message": "模型输出中断，已保留部分回答，请重试",
+            }}
+            return
+
+        inspection = self._inspect_request(request, rag_data)
+        if inspection:
+            yield {"event": "inspection", "data": inspection}
 
         # 3) 完成事件
         citations = [
             Citation(
                 citation_id=item.get("citation_id", index),
+                title=item.get("title", ""),
+                snippet=item.get("snippet", ""),
                 source=item.get("source", ""),
                 chunk_id=item.get("chunk_id", ""),
                 version=item.get("version"),
@@ -232,9 +356,78 @@ class ChatService:
                     "top_k": request.top_k,
                     "version": request.version,
                     "images": request.images,
+                    "degraded": self.llm.degraded,
+                    "effective_provider": self.llm.effective_provider,
+                    "degradation_reason": self.llm.degradation_reason,
+                    **self._rag_metadata(request, rag_data),
+                    **({"inspection": inspection} if inspection else {}),
                 },
             },
         }
+
+    @staticmethod
+    def _rag_metadata(request: ChatRequest, rag_data: dict) -> dict:
+        return {
+            "rag_status": (
+                rag_data.get("retrieval_status", "ok" if rag_data.get("results") else "empty")
+                if request.use_rag else "disabled"
+            ),
+            "rag_degraded": bool(rag_data.get("degraded", False)) if request.use_rag else False,
+            "rag_degradation_reason": rag_data.get("degradation_reason", "") if request.use_rag else "",
+        }
+
+    @staticmethod
+    def _inspect_request(request: ChatRequest, rag_data: dict) -> dict | None:
+        """Run the real four-level inspector for agent execution metadata."""
+        metadata = request.metadata or {}
+        if "agent_claim" not in metadata and "actual_state" not in metadata and metadata.get("verification_required") is not True:
+            return None
+
+        repo_root = Path(__file__).resolve().parents[3]
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+
+        from agent.inspector.models import EvidenceItem, ToolCallRecord
+        from agent.inspector.pipeline import InspectorPipeline
+
+        raw_evidence = metadata.get("evidence") or rag_data.get("evidences") or []
+        evidence = [
+            item if isinstance(item, EvidenceItem) else EvidenceItem(
+                content=str(item.get("content", "")),
+                source=str(item.get("source", "")),
+                version=str(item.get("version", "latest")),
+                score=float(item.get("score", 0.0)),
+            )
+            for item in raw_evidence
+            if isinstance(item, dict) or isinstance(item, EvidenceItem)
+        ]
+        raw_calls = metadata.get("tool_calls") or []
+        tool_calls = [
+            item if isinstance(item, ToolCallRecord) else ToolCallRecord(
+                tool_name=str(item.get("tool_name", "")),
+                risk=str(item.get("risk", "LOW")),
+                approval_granted=bool(item.get("approval_granted", False)),
+                success=bool(item.get("success", False)),
+                args=item.get("args") or {},
+            )
+            for item in raw_calls
+            if isinstance(item, dict) or isinstance(item, ToolCallRecord)
+        ]
+        context = {
+            "task_id": metadata.get("task_id", request.conversation_id or "chat"),
+            "target": metadata.get("target", "AGENT"),
+            "agent_claim": metadata.get("agent_claim"),
+            "actual_state": metadata.get("actual_state"),
+            "evidence": evidence,
+            "tool_calls": tool_calls,
+            "policy": metadata.get("policy") or {},
+            "environment_version": metadata.get("environment_version"),
+            "metadata": {
+                "source": "ai-service.chat",
+                "verification_required": metadata.get("verification_required") is True,
+            },
+        }
+        return InspectorPipeline().run(context).to_dict()
 
     @staticmethod
     def _build_prompt(

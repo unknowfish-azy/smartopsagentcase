@@ -15,9 +15,12 @@
     "preview:admin": "vite preview --config vite.config.admin.mjs --port 5174",
     "test": "node --test test/**/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "node --check src/components/common/whaleQuality.js",
+    "lint": "eslint . --max-warnings 31",
     "visual-check": "node test/visual-check.mjs",
-    "personal-navigation-check": "node test/personal-navigation-visual-check.mjs"
+    "personal-navigation-check": "node test/personal-navigation-visual-check.mjs",
+    "test:visual": "node test/visual-suite.mjs",
+    "perf:baseline": "node test/performance-baseline.browser.mjs",
+    "test:a11y": "node test/accessibility.browser.mjs"
   },
   "dependencies": {
     "@guochenwang/lggc": "^1.0.0",
@@ -33,7 +36,12 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@vitejs/plugin-vue": "^6.0.0",
+    "axe-core": "^4.14.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-vue": "^10.12.0",
+    "globals": "^15.15.0",
     "playwright": "^1.63.0",
     "typescript": "^5.9.3",
     "unplugin-vue-components": "^32.1.0",

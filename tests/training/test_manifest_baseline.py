@@ -1,4 +1,3 @@
-import json
 
 from training.baseline_runner import run_baseline
 from training.manifest import build_manifest

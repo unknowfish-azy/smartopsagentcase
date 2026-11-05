@@ -9,6 +9,17 @@ spring:
   profiles:
     active: dev
 
+  # ==============================
+  # 数据库迁移（Flyway）
+  # 已有库的基线版本取当前最高迁移号：首次接入时把已存在的表视为已应用，
+  # 不会重跑非幂等的 ALTER 脚本；全新库（空 schema）仍会从 V001 开始全部执行。
+  # ==============================
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 20261103
+
 server:
   port: 8080
   servlet:
@@ -77,6 +88,14 @@ smartops:
       # 应由部署方显式打开（设置成较小的 initial-delay-ms）。
       initial-delay-ms: ${SMARTOPS_SENTINEL_SCHEDULE_DELAY_MS:9223372036854775807}
       interval-ms: ${SMARTOPS_SENTINEL_SCHEDULE_INTERVAL_MS:60000}
+    guardian:
+      # 守护 Agent：告警自动取证（只读）与指标基线学习（只出建议，不自动改阈值）
+      collect:
+        initial-delay-ms: ${SMARTOPS_SENTINEL_GUARDIAN_COLLECT_DELAY_MS:45000}
+        interval-ms: ${SMARTOPS_SENTINEL_GUARDIAN_COLLECT_INTERVAL_MS:30000}
+      learn:
+        initial-delay-ms: ${SMARTOPS_SENTINEL_GUARDIAN_LEARN_DELAY_MS:120000}
+        interval-ms: ${SMARTOPS_SENTINEL_GUARDIAN_LEARN_INTERVAL_MS:600000}
     notify:
       webhook:
         # 失败重试次数（4xx 不重试：对方明确拒绝，重试无意义）

@@ -17,7 +17,8 @@
       </div><div class="team-col team-col--secondary">
         <section class="team-panel"><h2>团队资料</h2><form v-if="manager && !frozen" @submit.prevent="mutate(() => teamApi.update(teamId, { ...settings }), '团队资料已更新。')"><fieldset :disabled="busy || loading" class="team-form"><label>团队名称<input v-model="settings.name" required maxlength="80" /></label><label>团队描述<textarea v-model="settings.description" maxlength="500" /></label><button type="submit">保存团队资料</button></fieldset></form><p v-else>{{ detail.team.description || '暂无描述' }}</p><p class="team-muted">所有者 {{ detail.team.ownerName }} · {{ frozen ? '已冻结' : '正常' }}</p></section>
         <section v-if="manager && !frozen" class="team-panel"><h2>邀请成员</h2><form @submit.prevent="invite"><fieldset :disabled="busy || loading" class="team-form"><label>已有账号的用户名<input v-model="invitation.username" required maxlength="64" autocomplete="off" /></label><label>授予角色<select v-model="invitation.role"><option v-for="role in roles" :key="role" :value="role">{{ TEAM_ROLE_LABELS[role] }}</option></select></label><p class="team-muted">对方在团队空间接受后才会加入，邀请七天有效。团队管理员不能授予管理员角色。</p><button type="submit" class="primary">发送站内邀请</button></fieldset></form></section>
-        <section class="team-panel"><h2>协作工作台</h2><p class="team-muted">共享 Agent 草稿与发布、工具目录和团队会话已经单独归属当前团队。服务器授权和协作执行仍以服务端权限为准。</p><RouterLink :to="`/teams/${teamId}/workspace`">进入协作工作台</RouterLink></section>
+        <section v-if="manager && !frozen" class="team-panel"><h2>邀请链接</h2><p class="team-muted">生成后复制给同事，对方登录后打开链接即可直接加入。每个链接仅限一人使用，七天有效。</p><form @submit.prevent="createInviteLink"><fieldset :disabled="busy || loading" class="team-form"><label>授予角色<select v-model="inviteLinkRole"><option v-for="role in roles" :key="role" :value="role">{{ TEAM_ROLE_LABELS[role] }}</option></select></label><button type="submit" class="primary">生成邀请链接</button></fieldset></form><p v-if="inviteLinkError" class="team-error" role="alert">{{ inviteLinkError }}</p><div v-if="inviteLink" class="team-invite-link"><input :value="inviteLinkUrl" readonly aria-label="邀请链接" @focus="$event.target.select()" /><button type="button" @click="copyInviteLink">复制链接</button></div><article v-for="link in inviteLinks" :key="link.id" class="team-member"><div><strong>{{ TEAM_ROLE_LABELS[link.role] }} · {{ inviteLinkStatus(link) }}</strong><p class="team-muted">{{ new Date(link.expiresAt).toLocaleString('zh-CN') }} 到期<template v-if="link.usedBy"> · 已由 {{ link.usedBy }} 使用</template></p></div><button v-if="link.status === 'active'" class="danger" :disabled="busy || loading" @click="revokeInviteLink(link)">撤销链接</button></article></section>
+<section class="team-panel"><h2>协作工作台</h2><p class="team-muted">共享 Agent 草稿与发布、工具目录和团队会话已经单独归属当前团队。服务器授权和协作执行仍以服务端权限为准。</p><RouterLink :to="`/teams/${teamId}/workspace`">进入协作工作台</RouterLink></section>
         <section class="team-panel"><div class="team-row"><h2>团队通知</h2><button :disabled="notificationLoading" @click="loadNotifications">刷新通知</button></div><p v-if="notificationError" class="team-error" role="alert">{{ notificationError }}</p><p v-else-if="!notifications.length" class="team-muted">暂无未读通知。</p><article v-for="item in notifications" :key="item.id" class="team-member"><div><strong>{{ item.message }}</strong><p class="team-muted">{{ new Date(item.createdAt).toLocaleString('zh-CN') }}</p></div><button :disabled="notificationLoading" @click="markNotificationRead(item)">标记已读</button></article></section>
         <section class="team-panel"><div class="team-row"><h2>团队活动</h2><button :disabled="activityLoading" @click="loadActivity">{{ activityLoading ? '读取中…' : '刷新记录' }}</button></div><p v-if="activityError" class="team-error" role="alert">{{ activityError }}</p><p v-else-if="!activities.length" class="team-muted">暂无活动记录。</p><article v-for="item in activities" :key="item.id" class="team-member"><div><strong>{{ item.action }}</strong><p class="team-muted">{{ item.actorUsername }} · {{ new Date(item.createdAt).toLocaleString('zh-CN') }}<span v-if="item.targetId"> · {{ item.targetId }}</span></p></div></article></section>
       </div></div>
@@ -28,7 +29,7 @@
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { RouterLink, onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { currentSession } from '../../security/session.js'
-import { teamApi, teamNotificationsApi } from '../../api/teams.ts'
+import { teamApi, teamInviteLinksApi, teamNotificationsApi } from '../../api/teams.ts'
 import { TEAM_ROLE_LABELS, assignableRoles, canManageMember, isTeamManager } from '../../domain/team/permissions.ts'
 import '../../assets/styles/team-workspace.css'
 const route = useRoute(), router = useRouter()
@@ -37,16 +38,41 @@ const detail = ref(null), busy = ref(false), loading = ref(false), error = ref('
 const activities = ref([]), activityLoading = ref(false), activityError = ref('')
 const notifications = ref([]), notificationLoading = ref(false), notificationError = ref('')
 const settings = reactive({ name: '', description: '' }), invitation = reactive({ username: '', role: 'member' }), roleDraft = ref({})
+const inviteLink = ref(null), inviteLinks = ref([]), inviteLinkRole = ref('member'), inviteLinkError = ref('')
+const inviteLinkUrl = computed(() => inviteLink.value ? `${window.location.origin}/teams/join/${inviteLink.value.token}` : '')
 const manager = computed(() => isTeamManager(detail.value?.team.role)), frozen = computed(() => detail.value?.team.status === 'frozen'), roles = computed(() => assignableRoles(detail.value?.team.role))
 let generation = 0, disposed = false
 async function load() {
   const current = ++generation; loading.value = true; error.value = ''; detail.value = null
-  try { const result = await teamApi.detail(teamId.value); if (!disposed && current === generation) { detail.value = result; Object.assign(settings, { name: result.team.name, description: result.team.description }); roleDraft.value = Object.fromEntries(result.members.map(member => [member.userId, member.role])); await Promise.all([loadActivity(), loadNotifications()]) } }
+  try { const result = await teamApi.detail(teamId.value); if (!disposed && current === generation) { detail.value = result; Object.assign(settings, { name: result.team.name, description: result.team.description }); roleDraft.value = Object.fromEntries(result.members.map(member => [member.userId, member.role])); await Promise.all([loadActivity(), loadNotifications(), loadInviteLinks()]) } }
   catch (failure) { if (!disposed && current === generation) error.value = failure.message || '团队不存在或无权访问' }
   finally { if (!disposed && current === generation) loading.value = false }
 }
 async function loadActivity() { activityLoading.value = true; activityError.value = ''; try { activities.value = await teamApi.activity(teamId.value, { limit: 30 }) } catch (failure) { activityError.value = failure.message || '活动记录加载失败' } finally { activityLoading.value = false } }
 async function loadNotifications() { notificationLoading.value = true; notificationError.value = ''; try { notifications.value = await teamNotificationsApi.list(true) } catch (failure) { notificationError.value = failure.message || '通知加载失败' } finally { notificationLoading.value = false } }
+async function loadInviteLinks({ keep = false } = {}) {
+  if (!keep) inviteLink.value = null
+  if (!manager.value) { inviteLinks.value = []; return }
+  try { inviteLinks.value = await teamInviteLinksApi.list(teamId.value) } catch { inviteLinks.value = [] }
+}
+function inviteLinkStatus(link) {
+  if (link.status === 'used') return '已被使用'
+  if (link.status === 'revoked') return '已撤销'
+  return new Date(link.expiresAt) <= new Date() ? '已过期' : '待使用'
+}
+async function createInviteLink() {
+  if (busy.value || loading.value) return
+  busy.value = true; inviteLinkError.value = ''
+  try { inviteLink.value = await teamInviteLinksApi.create(teamId.value, inviteLinkRole.value); await loadInviteLinks({ keep: true }) }
+  catch (failure) { inviteLinkError.value = failure.message || '生成邀请链接失败' }
+  finally { busy.value = false }
+}
+async function copyInviteLink() {
+  if (!inviteLinkUrl.value) return
+  try { await navigator.clipboard.writeText(inviteLinkUrl.value); message.value = '邀请链接已复制，可发送给同事。' }
+  catch { inviteLinkError.value = '浏览器未授权剪贴板，请手动选择链接后复制。' }
+}
+async function revokeInviteLink(link) { if (window.confirm('确认撤销该邀请链接？链接将立即失效。')) await mutate(() => teamInviteLinksApi.revoke(teamId.value, link.id), '邀请链接已撤销。') }
 async function markNotificationRead(item) { notificationLoading.value = true; try { await teamNotificationsApi.markRead(item.id); notifications.value = notifications.value.filter(entry => entry.id !== item.id) } catch (failure) { notificationError.value = failure.message || '通知更新失败' } finally { notificationLoading.value = false } }
 async function mutate(operation, success) {
   if (busy.value || loading.value) return false
@@ -68,5 +94,9 @@ async function leave() {
 onBeforeRouteLeave(() => !busy.value)
 onBeforeRouteUpdate(() => !busy.value)
 onBeforeUnmount(() => { disposed = true; generation++ })
-watch(teamId, () => { message.value = ''; invitation.username = ''; load() }, { immediate: true })
+watch(teamId, () => { message.value = ''; invitation.username = ''; inviteLinkError.value = ''; load() }, { immediate: true })
 </script>
+<style scoped>
+.team-invite-link{display:flex;gap:10px;align-items:center;margin:10px 0}
+.team-invite-link input{flex:1 1 auto;font:12px var(--font-mono)}
+</style>

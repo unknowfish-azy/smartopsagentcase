@@ -50,8 +50,18 @@ test('labels generated knowledge candidates as pending human review', () => {
   assert.equal(candidateStatusLabel('CUSTOM'), 'CUSTOM')
 })
 
+async function readRunHistorySources() {
+  const files = [
+    '../src/views/operations/RunHistoryView.vue',
+    '../src/components/operations/RunHistoryDetailPanel.vue',
+    '../src/composables/useRunHistory.js'
+  ]
+  const chunks = await Promise.all(files.map(file => readFile(new URL(file, import.meta.url), 'utf8')))
+  return chunks.join('\n')
+}
+
 test('run detail exposes a reviewed knowledge candidate action without direct publishing', async () => {
-  const source = await readFile(new URL('../src/views/operations/RunHistoryView.vue', import.meta.url), 'utf8')
+  const source = await readRunHistorySources()
   assert.match(source, /沉淀为知识候选/)
   assert.match(source, /createKnowledgeCandidateFromRun/)
   assert.doesNotMatch(source, /直接发布|publishKnowledge/)
@@ -80,7 +90,7 @@ test('real runs and active filters never mix with examples', () => {
 })
 
 test('run examples cannot create knowledge candidates', async () => {
-  const source = await readFile(new URL('../src/views/operations/RunHistoryView.vue', import.meta.url), 'utf8')
+  const source = await readRunHistorySources()
   assert.match(source, /v-if="!detail\.run\.isGuide"/)
   assert.match(source, /detail\.value\.run\.isGuide/)
   assert.match(source, /findRunHistoryGuide\(id\)/)

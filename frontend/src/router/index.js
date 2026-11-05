@@ -29,6 +29,7 @@ const routes = [
         component: () => import('../layouts/MainLayout.vue'),
         children: [
             { path: 'teams', name: 'TeamSpaces', component: () => import('../views/team/TeamSpacesView.vue'), meta: { space: 'team', section: 'TEAM SPACE / 团队空间' } },
+            { path: 'teams/join/:token', name: 'TeamJoin', component: () => import('../views/team/TeamJoinView.vue'), meta: { space: 'team', section: 'TEAM INVITE / 接受邀请' } },
             { path: 'teams/:teamId', name: 'TeamDetail', component: () => import('../views/team/TeamDetailView.vue'), meta: { space: 'team', section: 'TEAM MEMBERS / 团队成员' } },
             { path: 'teams/:teamId/workspace', name: 'TeamCollaboration', component: () => import('../views/team/TeamCollaborationView.vue'), meta: { space: 'team', section: 'TEAM OPERATIONS / 团队协作' } },
             {
@@ -73,6 +74,7 @@ const routes = [
             { path: 'sentinel', name: 'SentinelDashboard', component: () => import('../views/sentinel/SentinelDashboardView.vue'), meta: { section: 'SENTINEL / 哨兵监控' } },
             { path: 'sentinel/scripts', name: 'ScriptLibrary', component: () => import('../views/sentinel/ScriptLibraryView.vue'), meta: { section: 'SCRIPT LIBRARY / 脚本库' } },
             { path: 'sentinel/alerts', name: 'AlertCenter', component: () => import('../views/sentinel/AlertCenterView.vue'), meta: { section: 'ALERT CENTER / 告警中心' } },
+            { path: 'sentinel/guardian', name: 'SentinelGuardian', component: () => import('../views/sentinel/SentinelGuardianView.vue'), meta: { section: 'SENTINEL / 守护 Agent' } },
             { path: 'connections', name: 'Connections', component: () => import('../views/operations/ConnectionsView.vue'), meta: { ...routeMetaFor('Connections'), section: '连接中心 / 远程运维' } },
             { path: 'harbor', name: 'HarborWorkbench', component: () => import('../views/harbor/HarborWorkbenchView.vue'), meta: { ...routeMetaFor('HarborWorkbench'), section: 'HARBOR WORKBENCH / Harbor 工作台' } },
             { path: 'cloud-native', name: 'CloudNativeWorkbench', component: () => import('../views/cloud/CloudNativeWorkbenchView.vue'), meta: { ...routeMetaFor('CloudNativeWorkbench'), section: 'CLOUD NATIVE / 云原生工程' } },

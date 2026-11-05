@@ -9,7 +9,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@MybatisTest
+@MybatisTest(properties = "spring.flyway.enabled=false")
 class ServerMapperTest {
 
     @Autowired

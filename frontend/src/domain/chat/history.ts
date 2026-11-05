@@ -19,7 +19,16 @@ export function restoreHistory(raw) {
       const messages = item.messages.filter(message => message && ['user', 'assistant'].includes(message.role) && typeof message.content === 'string').map(message => ({
         id: crypto.randomUUID(), role: message.role,
         content: message.pending ? '上次回复已中断，请重新发送问题。' : message.content,
-        error: Boolean(message.error || message.pending), pending: false, ...replyMetadata(message)
+        error: Boolean(message.error || message.pending), pending: false, ...replyMetadata(message),
+        // 失败恢复信息要随历史一起还原，否则刷新后错误旁的重试按钮存在但点不动。
+        ...(Array.isArray(message.images) ? { images: message.images.filter(item => typeof item === 'string' && item.trim()).slice(0, 5) } : {}),
+        ...(typeof message.prompt === 'string' && message.prompt.trim() ? { prompt: message.prompt.slice(0, 2000) } : {}),
+        ...(Number.isInteger(message.attempt) && message.attempt > 1 ? { attempt: Math.min(message.attempt, 99) } : {}),
+        ...(message.recovered === true ? { recovered: true } : {}),
+        ...(message.rag === true ? { rag: true } : {}),
+        // 诊断耗时随历史保留，刷新后诊断区仍能看到本次流的表现。
+        ...(Number.isFinite(message.firstTokenMs) && message.firstTokenMs >= 0 ? { firstTokenMs: Math.min(Math.round(message.firstTokenMs), 3_600_000) } : {}),
+        ...(Number.isFinite(message.totalMs) && message.totalMs >= 0 ? { totalMs: Math.min(Math.round(message.totalMs), 3_600_000) } : {}),
       }))
       return [{ id: item.id, title: String(item.title || '新对话').slice(0, 80),
         createdAt: Number.isFinite(item.createdAt) ? item.createdAt : Date.now(),
@@ -55,6 +64,34 @@ export function conversationPrompt(messages, prompt) {
 
 export function replyMetadata(value: any) {
   const metadata: Record<string, any> = {}
+  const safe: Record<string, any> = {}
+  const record = value?.metadata?.run_event
+  if (record && ['started', 'succeeded', 'failed', 'denied', 'dry_run'].includes(record.status)) {
+    const event: Record<string, any> = {}
+    for (const field of ['schema_version', 'event_id', 'request_id', 'task_id', 'run_id', 'source', 'status', 'timestamp']) {
+      if (typeof record[field] === 'string' && record[field].length <= 96 && !/[\r\n]/.test(record[field])) event[field] = record[field]
+    }
+    if (record.step_id === null || typeof record.step_id === 'string' && record.step_id.length <= 96) event.step_id = record.step_id
+    if (event.request_id && event.run_id) safe.run_event = event
+  }
+  if (typeof value?.metadata?.degraded === 'boolean') safe.degraded = value.metadata.degraded
+  if (typeof value?.metadata?.effective_provider === 'string') safe.effective_provider = value.metadata.effective_provider.slice(0, 80)
+  for (const field of ['degradation_reason', 'rag_degradation_reason']) {
+    const text = value?.metadata?.[field]
+    if (typeof text === 'string' && text.trim()) safe[field] = text.replace(/[\r\n]+/g, ' ').slice(0, 160)
+  }
+  if (typeof value?.metadata?.rag_enabled === 'boolean') safe.rag_enabled = value.metadata.rag_enabled
+  if (typeof value?.metadata?.rag_degraded === 'boolean') safe.rag_degraded = value.metadata.rag_degraded
+  if (['ok', 'empty', 'disabled'].includes(value?.metadata?.rag_status)) safe.rag_status = value.metadata.rag_status
+  if (Number.isFinite(value?.metadata?.top_k) && value.metadata.top_k >= 1 && value.metadata.top_k <= 100) safe.top_k = Math.round(value.metadata.top_k)
+  const inspection = value?.metadata?.inspection
+  if (inspection && ['PASS', 'WARN', 'VIOLATION', 'REJECTED'].includes(inspection.status)) {
+    const item: Record<string, any> = { status: inspection.status, requires_human: inspection.requires_human === true }
+    if (['INFO', 'NOTICE', 'WARNING', 'HIGH', 'CRITICAL'].includes(inspection.severity)) item.severity = inspection.severity
+    if (typeof inspection.reason === 'string' && inspection.reason.trim()) item.reason = inspection.reason.replace(/[\r\n]+/g, ' ').slice(0, 160)
+    safe.inspection = item
+  }
+  if (Object.keys(safe).length) metadata.metadata = safe
   for (const field of ['providerKey', 'providerName', 'model']) {
     if (typeof value?.[field] === 'string') metadata[field] = value[field]
   }

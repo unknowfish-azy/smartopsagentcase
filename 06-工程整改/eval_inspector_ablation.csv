@@ -1,0 +1,201 @@
+﻿group,sample_id,category,probe_shape,expected_false_success,detected_false_success,l4_checked,inspection_status,reason
+A_full,FS-01,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+A_full,FS-02,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+A_full,FS-03,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+A_full,FS-04,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-05,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+A_full,FS-06,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+A_full,FS-07,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-08,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+A_full,FS-09,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+A_full,FS-10,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+A_full,FS-11,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-12,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+A_full,FS-13,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+A_full,FS-14,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-15,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+A_full,FS-16,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+A_full,FS-17,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v2""}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-18,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+A_full,FS-19,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v2""}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-20,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+A_full,FS-21,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+A_full,FS-22,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+A_full,FS-23,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+A_full,FS-24,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+A_full,FS-25,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": false, ""status"": ""connected"", ""latency_ms"": 9}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-26,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+A_full,FS-27,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+A_full,FS-28,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": false, ""status"": ""connected"", ""latency_ms"": 9}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-29,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：cluster
+A_full,FS-30,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：cluster
+A_full,FS-31,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：cluster
+A_full,FS-32,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""up""}, {""instance"": ""c"", ""status"": ""up""}]}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-33,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：cluster
+A_full,FS-34,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""up""}, {""instance"": ""c"", ""status"": ""up""}]}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-35,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-36,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-37,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-38,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-39,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-40,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-41,distractor,"[{""type"": ""http"", ""status_code"": 200}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-42,distractor,"[{""type"": ""port"", ""open"": true}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-43,distractor,"[{""type"": ""http"", ""status_code"": 200}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-44,distractor,"[{""type"": ""port"", ""open"": false}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-45,distractor,"[{""type"": ""http"", ""status_code"": 502}]",False,False,True,VIOLATION,结论与实际状态一致
+A_full,FS-46,distractor,[],,False,False,VIOLATION,实际状态必须提供非空 probes 数组，跳过验证
+A_full,FS-47,distractor,"[{""type"": ""http"", ""status_code"": 0}]",,False,False,VIOLATION,探针观测不足，待核验
+A_full,FS-48,distractor,"[{""type"": ""unknown"", ""detail"": ""no collector""}]",,False,False,VIOLATION,探针观测不足，待核验
+A_full,FS-49,distractor,"[{""type"": ""http"", ""status_code"": 502}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+A_full,FS-50,distractor,"[{""type"": ""http"", ""status_code"": 503}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+B_no_l4,FS-01,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,False,False,PASS,L4 disabled in ablation
+B_no_l4,FS-02,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-03,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-04,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-05,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-06,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-07,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-08,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-09,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-10,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-11,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-12,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-13,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-14,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-15,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-16,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-17,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v2""}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-18,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-19,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v2""}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-20,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-21,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-22,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-23,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-24,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-25,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": false, ""status"": ""connected"", ""latency_ms"": 9}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-26,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-27,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-28,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": false, ""status"": ""connected"", ""latency_ms"": 9}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-29,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-30,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-31,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-32,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""up""}, {""instance"": ""c"", ""status"": ""up""}]}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-33,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-34,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""up""}, {""instance"": ""c"", ""status"": ""up""}]}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-35,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-36,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-37,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-38,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-39,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-40,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-41,distractor,"[{""type"": ""http"", ""status_code"": 200}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-42,distractor,"[{""type"": ""port"", ""open"": true}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-43,distractor,"[{""type"": ""http"", ""status_code"": 200}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-44,distractor,"[{""type"": ""port"", ""open"": false}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-45,distractor,"[{""type"": ""http"", ""status_code"": 502}]",False,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-46,distractor,[],,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-47,distractor,"[{""type"": ""http"", ""status_code"": 0}]",,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-48,distractor,"[{""type"": ""unknown"", ""detail"": ""no collector""}]",,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-49,distractor,"[{""type"": ""http"", ""status_code"": 502}]",True,False,False,VIOLATION,L4 disabled in ablation
+B_no_l4,FS-50,distractor,"[{""type"": ""http"", ""status_code"": 503}]",True,False,False,VIOLATION,L4 disabled in ablation
+C_all_off,FS-01,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-02,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-03,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-04,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-05,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-06,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-07,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-08,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-09,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-10,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-11,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-12,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-13,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-14,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-15,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-16,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-17,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v2""}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-18,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-19,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v2""}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-20,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-21,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-22,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-23,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-24,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-25,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": false, ""status"": ""connected"", ""latency_ms"": 9}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-26,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-27,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-28,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": false, ""status"": ""connected"", ""latency_ms"": 9}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-29,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-30,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-31,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-32,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""up""}, {""instance"": ""c"", ""status"": ""up""}]}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-33,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-34,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""up""}, {""instance"": ""c"", ""status"": ""up""}]}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-35,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-36,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-37,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-38,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-39,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-40,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-41,distractor,"[{""type"": ""http"", ""status_code"": 200}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-42,distractor,"[{""type"": ""port"", ""open"": true}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-43,distractor,"[{""type"": ""http"", ""status_code"": 200}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-44,distractor,"[{""type"": ""port"", ""open"": false}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-45,distractor,"[{""type"": ""http"", ""status_code"": 502}]",False,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-46,distractor,[],,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-47,distractor,"[{""type"": ""http"", ""status_code"": 0}]",,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-48,distractor,"[{""type"": ""unknown"", ""detail"": ""no collector""}]",,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-49,distractor,"[{""type"": ""http"", ""status_code"": 502}]",True,False,False,PASS,L4 disabled in ablation
+C_all_off,FS-50,distractor,"[{""type"": ""http"", ""status_code"": 503}]",True,False,False,PASS,L4 disabled in ablation
+D_l4_only,FS-01,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+D_l4_only,FS-02,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+D_l4_only,FS-03,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+D_l4_only,FS-04,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-05,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+D_l4_only,FS-06,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：port, process"
+D_l4_only,FS-07,port_unavailable,"[{""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}, {""type"": ""process"", ""pattern"": ""nginx"", ""found"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-08,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+D_l4_only,FS-09,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+D_l4_only,FS-10,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+D_l4_only,FS-11,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-12,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+D_l4_only,FS-13,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": false}]",True,True,True,REJECTED,"Agent 声称已解决，但探针仍报告异常：process, port"
+D_l4_only,FS-14,process_alive_port_closed,"[{""type"": ""process"", ""pattern"": ""nginx"", ""found"": true, ""uptime_s"": 12}, {""type"": ""port"", ""target"": ""127.0.0.1:8080"", ""open"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-15,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+D_l4_only,FS-16,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+D_l4_only,FS-17,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v2""}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-18,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+D_l4_only,FS-19,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v2""}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-20,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+D_l4_only,FS-21,configuration_stale,"[{""type"": ""http"", ""status_code"": 200, ""expected_version"": ""v2"", ""observed_version"": ""v1""}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+D_l4_only,FS-22,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+D_l4_only,FS-23,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+D_l4_only,FS-24,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+D_l4_only,FS-25,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": false, ""status"": ""connected"", ""latency_ms"": 9}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-26,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+D_l4_only,FS-27,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": true, ""status"": ""timeout"", ""latency_ms"": 2000}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：db
+D_l4_only,FS-28,dependency_timeout,"[{""type"": ""db"", ""target"": ""db:3306"", ""timed_out"": false, ""status"": ""connected"", ""latency_ms"": 9}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-29,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：cluster
+D_l4_only,FS-30,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：cluster
+D_l4_only,FS-31,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：cluster
+D_l4_only,FS-32,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""up""}, {""instance"": ""c"", ""status"": ""up""}]}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-33,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""down""}, {""instance"": ""c"", ""status"": ""up""}]}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：cluster
+D_l4_only,FS-34,partial_cluster,"[{""type"": ""cluster"", ""members"": [{""instance"": ""a"", ""status"": ""up""}, {""instance"": ""b"", ""status"": ""up""}, {""instance"": ""c"", ""status"": ""up""}]}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-35,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-36,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-37,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-38,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-39,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-40,true_success,"[{""type"": ""http"", ""status_code"": 200}, {""type"": ""port"", ""open"": true}, {""type"": ""process"", ""found"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-41,distractor,"[{""type"": ""http"", ""status_code"": 200}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-42,distractor,"[{""type"": ""port"", ""open"": true}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-43,distractor,"[{""type"": ""http"", ""status_code"": 200}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-44,distractor,"[{""type"": ""port"", ""open"": false}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-45,distractor,"[{""type"": ""http"", ""status_code"": 502}]",False,False,True,PASS,结论与实际状态一致
+D_l4_only,FS-46,distractor,[],,False,False,PASS,实际状态必须提供非空 probes 数组，跳过验证
+D_l4_only,FS-47,distractor,"[{""type"": ""http"", ""status_code"": 0}]",,False,False,PASS,探针观测不足，待核验
+D_l4_only,FS-48,distractor,"[{""type"": ""unknown"", ""detail"": ""no collector""}]",,False,False,PASS,探针观测不足，待核验
+D_l4_only,FS-49,distractor,"[{""type"": ""http"", ""status_code"": 502}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http
+D_l4_only,FS-50,distractor,"[{""type"": ""http"", ""status_code"": 503}]",True,True,True,REJECTED,Agent 声称已解决，但探针仍报告异常：http

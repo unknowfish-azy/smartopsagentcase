@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
@@ -27,6 +27,8 @@ class AuditRecord:
 
     error: str | None = None
 
+    run_event: dict[str, Any] = field(default_factory=dict)
+
     @classmethod
     def create(
         cls,
@@ -38,9 +40,11 @@ class AuditRecord:
         risk_level: str,
         output: Any = None,
         error: str | None = None,
+        run_event: dict[str, Any] | None = None,
     ):
 
         return cls(
+            run_event=run_event if run_event is not None else {},
             request_id=request_id,
             user_id=user_id,
             tool_name=tool_name,

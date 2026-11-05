@@ -1,0 +1,9 @@
+{
+  "url": "http://127.0.0.1:59081/timeout",
+  "status": null,
+  "body": "",
+  "outcome": "timeout",
+  "mode": "CONTROLLED",
+  "claim": "request succeeded",
+  "expected_false_success": true
+}

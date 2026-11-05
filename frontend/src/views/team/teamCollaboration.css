@@ -62,6 +62,10 @@
 .team-workbench__messages textarea{flex:1;resize:vertical}
 .team-workbench__empty{padding:25px 0;color:var(--smart-muted)}
 .team-workbench__error{color:var(--smart-danger);margin:10px 0}
+.team-workbench__shared-entry{display:grid;gap:6px;padding:12px 0;border-bottom:1px solid var(--smart-border);overflow-wrap:anywhere}
+.team-workbench__shared-entry span{font-size:11px;color:var(--smart-muted)}
+.team-workbench__shared-entry p{margin:0;color:var(--smart-muted);font-size:12px}
+.team-workbench__shared-entry pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;padding:10px;border:1px solid var(--smart-border);background:var(--smart-surface);max-width:100%}
 .team-workbench :is(button,a,input,select,textarea):focus-visible{outline:2px solid var(--smart-primary-strong);outline-offset:2px}
 @media(max-width:1050px){.team-workbench__layout{grid-template-columns:160px minmax(0,1fr)}.team-workbench__session{grid-template-columns:160px minmax(0,1fr)}}
 @media(max-width:800px){.team-workbench{padding:14px}.team-workbench__header{align-items:stretch;flex-direction:column;gap:12px}.team-workbench__layout{display:block}.team-workbench__menu{display:flex;overflow:auto;min-height:0;border:0;border-bottom:1px solid var(--smart-border);padding:0 0 8px;margin-bottom:18px}.team-workbench__menu button{white-space:nowrap}.team-workbench__menu-end{display:none}.team-workbench__editor,.team-workbench__run-form{grid-template-columns:1fr}.team-workbench__session{grid-template-columns:1fr}.team-workbench__session aside{display:flex;overflow:auto;border:0;border-bottom:1px solid var(--smart-border)}.team-workbench__session aside button{min-width:140px}.team-workbench__messages{min-height:350px;padding:14px}}

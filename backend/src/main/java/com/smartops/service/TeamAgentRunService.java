@@ -163,8 +163,8 @@ public class TeamAgentRunService {
                  WHERE id=? AND status='PENDING_APPROVAL'
                 """, actor.id(), token, Timestamp.from(clock.instant().plusSeconds(300)), basis, runId);
         if (changed != 1) throw new BusinessException(409, "TEAM_RUN_NOT_PENDING");
-        audit.record(actor, "TEAM_AGENT_RUN_APPROVE", Long.toString(runId),
-                basis == null ? "SUCCESS" : "SUCCESS_BASIS:" + truncateForAudit(basis));
+        audit.record(actor, "TEAM_AGENT_RUN_APPROVE", Long.toString(runId), "SUCCESS",
+                basis == null ? null : truncateForAudit(basis));
         return find(runId);
     }
 

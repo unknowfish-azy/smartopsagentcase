@@ -1,0 +1,405 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-11-05T08:09:00.351734+00:00",
+  "purpose": "管理层优化计划的 GitHub 来源证据清单",
+  "verification_mode": "OFFLINE_LOCAL_BYTE_VERIFICATION",
+  "hash_algorithms": {
+    "sha256": "SHA-256(file_bytes)",
+    "git_blob_sha": "SHA-1(ASCII(\"blob \") + ASCII(decimal byte length) + NUL + file_bytes)"
+  },
+  "source_manifests": [
+    {
+      "path": ".runtime/execution-gate-20261104-084309/github/github-repositories.json",
+      "fetched_at": "2026-11-04T00:52:53.191477+00:00",
+      "actual": {
+        "bytes": 15234,
+        "sha256": "d2b3d6f9a6e94c61efa9be647b3cdd7d2ff7f4b9cd1f0caff18bfc1fcf39a65d",
+        "git_blob_sha": "5b10d5833170885b425d470389216fbd4230400c"
+      }
+    },
+    {
+      "path": ".runtime/execution-gate-20261104-084309/github/license-evidence.json",
+      "fetched_at": "2026-11-04T00:56:59.748793+00:00",
+      "actual": {
+        "bytes": 4824,
+        "sha256": "4ee35b41b01738bb3a1d229abbc9716059ada0facff3217aa743db517e68f77b",
+        "git_blob_sha": "892bae748093d290c60ee42ced6c70a0867b7060"
+      }
+    }
+  ],
+  "verified_historical_sources": [
+    {
+      "repository": "microsoft/playwright",
+      "url": "https://github.com/microsoft/playwright",
+      "status": "HISTORICAL_LOCAL_EVIDENCE_VERIFIED",
+      "source_collected_at": {
+        "repository_metadata_and_readme": "2026-11-04T00:52:53.191477+00:00",
+        "license_content": "2026-11-04T00:56:59.748793+00:00"
+      },
+      "recorded_default_branch": "main",
+      "default_branch_commit_sha": null,
+      "current_version": null,
+      "current_license": null,
+      "recorded_license_at_collection": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "recorded_license_file_url": "https://github.com/microsoft/playwright/blob/main/LICENSE",
+      "readme": {
+        "path": ".runtime/execution-gate-20261104-084309/github/readmes/microsoft--playwright.md",
+        "expected_sha256": "223a20c60327e670117058a8c7f444dde975d35f28fd0a9853a8b996f5a44cec",
+        "expected_git_blob_sha": "be771cef2a2521d3e369db88952bc8202b7cf37b",
+        "actual": {
+          "bytes": 11280,
+          "sha256": "223a20c60327e670117058a8c7f444dde975d35f28fd0a9853a8b996f5a44cec",
+          "git_blob_sha": "be771cef2a2521d3e369db88952bc8202b7cf37b"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "status": "VERIFIED"
+      },
+      "license_file": {
+        "path": ".runtime/execution-gate-20261104-084309/github/licenses/microsoft--playwright.txt",
+        "expected_sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb",
+        "expected_git_blob_sha": "df112373eb2e23e459bf93ec412be1764dc5a38b",
+        "expected_bytes": 11601,
+        "actual": {
+          "bytes": 11601,
+          "sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb",
+          "git_blob_sha": "df112373eb2e23e459bf93ec412be1764dc5a38b"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "bytes_match": true,
+        "status": "VERIFIED"
+      },
+      "license_blob_consistent_between_sources": true,
+      "limitation": "仅重新计算本地历史 README/LICENSE 字节的 SHA256 与 Git blob SHA；未联网复核当前版本、当前许可或远端现状；未锁定整个默认分支 commit，两个文件的 blob 也不能证明来自同一仓库提交。"
+    },
+    {
+      "repository": "open-telemetry/opentelemetry-collector",
+      "url": "https://github.com/open-telemetry/opentelemetry-collector",
+      "status": "HISTORICAL_LOCAL_EVIDENCE_VERIFIED",
+      "source_collected_at": {
+        "repository_metadata_and_readme": "2026-11-04T00:52:53.191477+00:00",
+        "license_content": "2026-11-04T00:56:59.748793+00:00"
+      },
+      "recorded_default_branch": "main",
+      "default_branch_commit_sha": null,
+      "current_version": null,
+      "current_license": null,
+      "recorded_license_at_collection": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "recorded_license_file_url": "https://github.com/open-telemetry/opentelemetry-collector/blob/main/LICENSE",
+      "readme": {
+        "path": ".runtime/execution-gate-20261104-084309/github/readmes/open-telemetry--opentelemetry-collector.md",
+        "expected_sha256": "a2a5495273901450873dd627c3be7266d6b849a8c4f9abac0c273108832ad294",
+        "expected_git_blob_sha": "95bb0001d74b1415b0111e72f07ec2e806b80c0b",
+        "actual": {
+          "bytes": 24409,
+          "sha256": "a2a5495273901450873dd627c3be7266d6b849a8c4f9abac0c273108832ad294",
+          "git_blob_sha": "95bb0001d74b1415b0111e72f07ec2e806b80c0b"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "status": "VERIFIED"
+      },
+      "license_file": {
+        "path": ".runtime/execution-gate-20261104-084309/github/licenses/open-telemetry--opentelemetry-collector.txt",
+        "expected_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "expected_git_blob_sha": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+        "expected_bytes": 11358,
+        "actual": {
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "git_blob_sha": "d645695673349e3947e8e5ae42332d0ac3164cd7"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "bytes_match": true,
+        "status": "VERIFIED"
+      },
+      "license_blob_consistent_between_sources": true,
+      "limitation": "仅重新计算本地历史 README/LICENSE 字节的 SHA256 与 Git blob SHA；未联网复核当前版本、当前许可或远端现状；未锁定整个默认分支 commit，两个文件的 blob 也不能证明来自同一仓库提交。"
+    },
+    {
+      "repository": "rundeck/rundeck",
+      "url": "https://github.com/rundeck/rundeck",
+      "status": "HISTORICAL_LOCAL_EVIDENCE_VERIFIED",
+      "source_collected_at": {
+        "repository_metadata_and_readme": "2026-11-04T00:52:53.191477+00:00",
+        "license_content": "2026-11-04T00:56:59.748793+00:00"
+      },
+      "recorded_default_branch": "main",
+      "default_branch_commit_sha": null,
+      "current_version": null,
+      "current_license": null,
+      "recorded_license_at_collection": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "recorded_license_file_url": "https://github.com/rundeck/rundeck/blob/main/LICENSE",
+      "readme": {
+        "path": ".runtime/execution-gate-20261104-084309/github/readmes/rundeck--rundeck.md",
+        "expected_sha256": "3a500b8f72716abb3e2634e6c82938f611208736dc71733bd7fe8239d00c7fcf",
+        "expected_git_blob_sha": "2f39220de908f97660a641b40cf7254ef141c482",
+        "actual": {
+          "bytes": 5185,
+          "sha256": "3a500b8f72716abb3e2634e6c82938f611208736dc71733bd7fe8239d00c7fcf",
+          "git_blob_sha": "2f39220de908f97660a641b40cf7254ef141c482"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "status": "VERIFIED"
+      },
+      "license_file": {
+        "path": ".runtime/execution-gate-20261104-084309/github/licenses/rundeck--rundeck.txt",
+        "expected_sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+        "expected_git_blob_sha": "8dada3edaf50dbc082c9a125058f25def75e625a",
+        "expected_bytes": 11357,
+        "actual": {
+          "bytes": 11357,
+          "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+          "git_blob_sha": "8dada3edaf50dbc082c9a125058f25def75e625a"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "bytes_match": true,
+        "status": "VERIFIED"
+      },
+      "license_blob_consistent_between_sources": true,
+      "limitation": "仅重新计算本地历史 README/LICENSE 字节的 SHA256 与 Git blob SHA；未联网复核当前版本、当前许可或远端现状；未锁定整个默认分支 commit，两个文件的 blob 也不能证明来自同一仓库提交。"
+    },
+    {
+      "repository": "prometheus/alertmanager",
+      "url": "https://github.com/prometheus/alertmanager",
+      "status": "HISTORICAL_LOCAL_EVIDENCE_VERIFIED",
+      "source_collected_at": {
+        "repository_metadata_and_readme": "2026-11-04T00:52:53.191477+00:00",
+        "license_content": "2026-11-04T00:56:59.748793+00:00"
+      },
+      "recorded_default_branch": "main",
+      "default_branch_commit_sha": null,
+      "current_version": null,
+      "current_license": null,
+      "recorded_license_at_collection": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "recorded_license_file_url": "https://github.com/prometheus/alertmanager/blob/main/LICENSE",
+      "readme": {
+        "path": ".runtime/execution-gate-20261104-084309/github/readmes/prometheus--alertmanager.md",
+        "expected_sha256": "c8a1c9e7a1b15e5b48f193ae9a94fab151e5ab39476b916ea3cdf70debef24c7",
+        "expected_git_blob_sha": "acc4c9ca342e3cb091f63a4b5cd7572ed9a35c5a",
+        "actual": {
+          "bytes": 18025,
+          "sha256": "c8a1c9e7a1b15e5b48f193ae9a94fab151e5ab39476b916ea3cdf70debef24c7",
+          "git_blob_sha": "acc4c9ca342e3cb091f63a4b5cd7572ed9a35c5a"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "status": "VERIFIED"
+      },
+      "license_file": {
+        "path": ".runtime/execution-gate-20261104-084309/github/licenses/prometheus--alertmanager.txt",
+        "expected_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+        "expected_git_blob_sha": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+        "expected_bytes": 11357,
+        "actual": {
+          "bytes": 11357,
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "git_blob_sha": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "bytes_match": true,
+        "status": "VERIFIED"
+      },
+      "license_blob_consistent_between_sources": true,
+      "limitation": "仅重新计算本地历史 README/LICENSE 字节的 SHA256 与 Git blob SHA；未联网复核当前版本、当前许可或远端现状；未锁定整个默认分支 commit，两个文件的 blob 也不能证明来自同一仓库提交。"
+    },
+    {
+      "repository": "promptfoo/promptfoo",
+      "url": "https://github.com/promptfoo/promptfoo",
+      "status": "HISTORICAL_LOCAL_EVIDENCE_VERIFIED",
+      "source_collected_at": {
+        "repository_metadata_and_readme": "2026-11-04T00:52:53.191477+00:00",
+        "license_content": "2026-11-04T00:56:59.748793+00:00"
+      },
+      "recorded_default_branch": "main",
+      "default_branch_commit_sha": null,
+      "current_version": null,
+      "current_license": null,
+      "recorded_license_at_collection": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "recorded_license_file_url": "https://github.com/promptfoo/promptfoo/blob/main/LICENSE",
+      "readme": {
+        "path": ".runtime/execution-gate-20261104-084309/github/readmes/promptfoo--promptfoo.md",
+        "expected_sha256": "7fd57809624e22da73bf6b6feb027c9e09aec74e0099bdea711fe2e276e87c4a",
+        "expected_git_blob_sha": "2a56017c2609e3a92d7d5539147c9c7e620a3420",
+        "actual": {
+          "bytes": 4599,
+          "sha256": "7fd57809624e22da73bf6b6feb027c9e09aec74e0099bdea711fe2e276e87c4a",
+          "git_blob_sha": "2a56017c2609e3a92d7d5539147c9c7e620a3420"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "status": "VERIFIED"
+      },
+      "license_file": {
+        "path": ".runtime/execution-gate-20261104-084309/github/licenses/promptfoo--promptfoo.txt",
+        "expected_sha256": "bf813686553f451e1b833fbd827488aee49b60b189626915bf3108d10b754e44",
+        "expected_git_blob_sha": "af3fa111d9303b3041d225fb851534e50a4bbec2",
+        "expected_bytes": 1053,
+        "actual": {
+          "bytes": 1053,
+          "sha256": "bf813686553f451e1b833fbd827488aee49b60b189626915bf3108d10b754e44",
+          "git_blob_sha": "af3fa111d9303b3041d225fb851534e50a4bbec2"
+        },
+        "sha256_match": true,
+        "git_blob_sha_match": true,
+        "bytes_match": true,
+        "status": "VERIFIED"
+      },
+      "license_blob_consistent_between_sources": true,
+      "limitation": "仅重新计算本地历史 README/LICENSE 字节的 SHA256 与 Git blob SHA；未联网复核当前版本、当前许可或远端现状；未锁定整个默认分支 commit，两个文件的 blob 也不能证明来自同一仓库提交。"
+    }
+  ],
+  "candidates": [
+    {
+      "repository": "vbenjs/vue-vben-admin",
+      "url": "https://github.com/vbenjs/vue-vben-admin",
+      "status": "CANDIDATE_ONLY",
+      "current_version": null,
+      "current_license": null,
+      "default_branch_commit_sha": null,
+      "readme_verified": false,
+      "license_verified": false,
+      "note": "仅为后续机制借鉴候选；本次未联网采集，当前版本和许可证未知。"
+    },
+    {
+      "repository": "yangzongzhuan/RuoYi-Vue",
+      "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
+      "status": "CANDIDATE_ONLY",
+      "current_version": null,
+      "current_license": null,
+      "default_branch_commit_sha": null,
+      "readme_verified": false,
+      "license_verified": false,
+      "note": "仅为后续机制借鉴候选；本次未联网采集，当前版本和许可证未知。"
+    },
+    {
+      "repository": "casbin/jcasbin",
+      "url": "https://github.com/casbin/jcasbin",
+      "status": "CANDIDATE_ONLY",
+      "current_version": null,
+      "current_license": null,
+      "default_branch_commit_sha": null,
+      "readme_verified": false,
+      "license_verified": false,
+      "note": "仅为后续机制借鉴候选；本次未联网采集，当前版本和许可证未知。"
+    },
+    {
+      "repository": "keycloak/keycloak",
+      "url": "https://github.com/keycloak/keycloak",
+      "status": "CANDIDATE_ONLY",
+      "current_version": null,
+      "current_license": null,
+      "default_branch_commit_sha": null,
+      "readme_verified": false,
+      "license_verified": false,
+      "note": "仅为后续机制借鉴候选；本次未联网采集，当前版本和许可证未知。"
+    },
+    {
+      "repository": "BerriAI/litellm",
+      "url": "https://github.com/BerriAI/litellm",
+      "status": "CANDIDATE_ONLY",
+      "current_version": null,
+      "current_license": null,
+      "default_branch_commit_sha": null,
+      "readme_verified": false,
+      "license_verified": false,
+      "note": "仅为后续机制借鉴候选；本次未联网采集，当前版本和许可证未知。"
+    },
+    {
+      "repository": "langfuse/langfuse",
+      "url": "https://github.com/langfuse/langfuse",
+      "status": "CANDIDATE_ONLY",
+      "current_version": null,
+      "current_license": null,
+      "default_branch_commit_sha": null,
+      "readme_verified": false,
+      "license_verified": false,
+      "note": "仅为后续机制借鉴候选；本次未联网采集，当前版本和许可证未知。"
+    },
+    {
+      "repository": "jumpserver/jumpserver",
+      "url": "https://github.com/jumpserver/jumpserver",
+      "status": "CANDIDATE_ONLY",
+      "current_version": null,
+      "current_license": null,
+      "default_branch_commit_sha": null,
+      "readme_verified": false,
+      "license_verified": false,
+      "note": "仅为后续机制借鉴候选；本次未联网采集，当前版本和许可证未知。"
+    },
+    {
+      "repository": "1Panel-dev/1Panel",
+      "url": "https://github.com/1Panel-dev/1Panel",
+      "status": "CANDIDATE_ONLY",
+      "current_version": null,
+      "current_license": null,
+      "default_branch_commit_sha": null,
+      "readme_verified": false,
+      "license_verified": false,
+      "note": "仅为后续机制借鉴候选；本次未联网采集，当前版本和许可证未知。"
+    }
+  ],
+  "network_status": {
+    "provenance": "主任务提供的本会话网络执行结果；本子任务未重放网络请求，未调用 collector。",
+    "first_standard_request": {
+      "status": "FAILED",
+      "error": "WinError 10013"
+    },
+    "subsequent_read_only_escalated_request": {
+      "status": "NOT_EXECUTED",
+      "stage": "AUTOMATIC_APPROVAL_INFRASTRUCTURE",
+      "http_status": 404,
+      "reason": "自动审批基础设施不支持 gpt-5.6-luna，申请的只读升级行动未执行。"
+    },
+    "network_requests_executed_by_this_subtask": false,
+    "collector_invoked_by_this_subtask": false,
+    "approval_bypassed": false
+  },
+  "limitations": [
+    "源采集时间为 2026-11-04；本次离线校验不代表 2026-11-05 远端内容或许可证仍相同。",
+    "本地哈希匹配只证明本地文件与历史清单所录内容一致，不重新证明上游来源真实性。",
+    "历史元数据未保存默认分支 commit SHA 或 release/tag；不能称作整个项目、版本或依赖已经固定。",
+    "未执行第三方项目代码、collector、安装、克隆、服务启动或当前许可证适用性评估。"
+  ],
+  "summary": {
+    "historical_repositories": 5,
+    "verified_files": 10,
+    "candidate_only_repositories": 8,
+    "failures": []
+  }
+}

@@ -106,6 +106,7 @@
         <el-select
             v-model="statusFilter"
             placeholder="服务器状态"
+            aria-label="服务器状态筛选"
             clearable
             style="width: 160px"
         >

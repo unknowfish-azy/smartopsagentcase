@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SmartOps minimal run event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_id", "request_id", "task_id", "run_id", "step_id", "source", "status", "timestamp"],
+  "$defs": {"id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$"}},
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "event_id": {"$ref": "#/$defs/id"},
+    "request_id": {"$ref": "#/$defs/id"},
+    "task_id": {"$ref": "#/$defs/id"},
+    "run_id": {"$ref": "#/$defs/id"},
+    "step_id": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+    "source": {"enum": ["executor", "ai-service", "backend"]},
+    "status": {"enum": ["started", "succeeded", "failed", "denied", "dry_run"]},
+    "timestamp": {"type": "string", "format": "date-time"}
+  },
+  "$comment": "Correlation only: never an identity, approval, success verification or credential transport. IDs supplied by clients are untrusted labels. No arbitrary payload or exception text is permitted."
+}

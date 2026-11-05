@@ -61,7 +61,7 @@ def test_false_success_rejected():
             )
         ],
         policy={"tool_risks": {"nginx.restart": "HIGH"}},
-        actual_state={"resolved": False, "status": "502"},
+        actual_state={"probes": [{"probe_type": "http", "status_code": 502}]},
     )
 
     assert result.status == InspectionStatus.REJECTED

@@ -9,10 +9,16 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 
 @Service
@@ -125,6 +131,76 @@ public class TeamWorkspaceService {
     }
 
     @Transactional
+    public InviteLink createInviteLink(SessionUser actor, long id, String role) {
+        lock(id);
+        String actorRole = requireManager(id, actor.id()); requireActive(id);
+        assignable(actorRole, role);
+        if (count("SELECT COUNT(*) FROM team_invite_link WHERE team_id=? AND status='active' AND expires_at>?", id, Timestamp.from(Instant.now())) >= 20) throw new BusinessException(409, "有效邀请链接已达上限，请先撤销旧链接");
+        String token = newInviteToken();
+        String hash = inviteTokenHash(token);
+        Timestamp expiresAt = Timestamp.from(Instant.now().plus(7, ChronoUnit.DAYS));
+        jdbc.update("INSERT INTO team_invite_link(team_id,token_hash,role,created_by,expires_at) VALUES(?,?,?,?,?)", id, hash, role, actor.id(), expiresAt);
+        long linkId = jdbc.queryForObject("SELECT id FROM team_invite_link WHERE token_hash=?", Long.class, hash);
+        activity.record(actor, id, "TEAM_INVITE_LINK_CREATE", "link:" + linkId);
+        audit.record(actor, "TEAM_INVITE_LINK_CREATE", id + ":link:" + linkId + ":" + role, "SUCCESS");
+        return new InviteLink(linkId, id, role, token, expiresAt.toInstant().toString());
+    }
+
+    public List<InviteLinkSummary> inviteLinks(SessionUser actor, long id) {
+        requireManager(id, actor.id());
+        if (jdbc.queryForList("SELECT id FROM team_workspace WHERE id=?", Long.class, id).isEmpty()) throw missing();
+        return jdbc.query("SELECT l.id,l.role,l.status,l.expires_at,l.created_at,u.username AS used_by_name FROM team_invite_link l LEFT JOIN app_user u ON u.id=l.used_by WHERE l.team_id=? ORDER BY l.id DESC LIMIT 50",
+                (result, row) -> new InviteLinkSummary(result.getLong("id"), result.getString("role"), result.getString("status"), result.getString("used_by_name"), result.getTimestamp("expires_at").toInstant().toString(), result.getTimestamp("created_at").toInstant().toString()), id);
+    }
+
+    public InviteLinkPreview previewInviteLink(SessionUser actor, String token) {
+        if (token == null || token.isBlank() || token.length() > 128) throw new BusinessException(404, "邀请链接无效或已失效");
+        var links = jdbc.query("SELECT l.id,l.team_id,l.role,l.created_by,l.status,l.expires_at,t.name AS team_name,t.status AS team_status,u.username AS creator_name FROM team_invite_link l JOIN team_workspace t ON t.id=l.team_id JOIN app_user u ON u.id=l.created_by WHERE l.token_hash=?",
+                (result, row) -> new LinkRow(result.getLong("id"), result.getLong("team_id"), result.getString("role"), result.getLong("created_by"), result.getString("status"), result.getTimestamp("expires_at").toInstant(), result.getString("team_name"), result.getString("team_status"), result.getString("creator_name")), inviteTokenHash(token));
+        if (links.isEmpty()) throw new BusinessException(404, "邀请链接无效或已失效");
+        LinkRow link = links.get(0);
+        String creatorRole = role(link.teamId(), link.createdBy());
+        boolean valid = "active".equals(link.status()) && link.expiresAt().isAfter(Instant.now()) && "active".equals(link.teamStatus()) && manages(creatorRole);
+        return new InviteLinkPreview(link.teamId(), link.teamName(), link.teamStatus(), link.role(), link.creatorName(), link.expiresAt().toString(), valid, role(link.teamId(), actor.id()) != null);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public long acceptInviteLink(SessionUser actor, String token) {
+        if (token == null || token.isBlank() || token.length() > 128) throw new BusinessException(404, "邀请链接无效或已失效");
+        var links = jdbc.queryForList("SELECT team_id FROM team_invite_link WHERE token_hash=?", Long.class, inviteTokenHash(token));
+        if (links.isEmpty()) throw new BusinessException(404, "邀请链接无效或已失效");
+        long id = links.get(0); lock(id);
+        var rows = jdbc.query("SELECT id,role,created_by,status,expires_at FROM team_invite_link WHERE token_hash=? FOR UPDATE",
+                (result, row) -> new LinkRow(result.getLong("id"), id, result.getString("role"), result.getLong("created_by"), result.getString("status"), result.getTimestamp("expires_at").toInstant(), null, null, null), inviteTokenHash(token));
+        if (rows.isEmpty()) throw new BusinessException(404, "邀请链接无效或已失效");
+        LinkRow link = rows.get(0);
+        if (!"active".equals(link.status()) || !link.expiresAt().isAfter(Instant.now())) throw new BusinessException(409, "邀请链接已使用、撤销或过期");
+        requireActive(id);
+        String creatorRole = role(id, link.createdBy());
+        if (!manages(creatorRole) || count("SELECT COUNT(*) FROM app_user WHERE id=? AND enabled=TRUE", link.createdBy()) != 1) throw new BusinessException(409, "邀请人授权已失效，请联系团队所有者");
+        assignable(creatorRole, link.role());
+        if (role(id, actor.id()) != null) throw new BusinessException(409, "已加入团队");
+        if (count("SELECT COUNT(*) FROM team_member WHERE team_id=?", id) >= 100) throw new BusinessException(409, "团队成员已达上限");
+        jdbc.update("INSERT INTO team_member(team_id,user_id,role) VALUES(?,?,?)", id, actor.id(), link.role());
+        jdbc.update("UPDATE team_invite_link SET status='used',used_by=?,used_at=? WHERE id=? AND status='active'", actor.id(), Timestamp.from(Instant.now()), link.id());
+        activity.record(actor, id, "TEAM_INVITE_LINK_JOIN", "link:" + link.id());
+        audit.record(actor, "TEAM_INVITE_LINK_JOIN", id + ":link:" + link.id() + ":" + link.role(), "SUCCESS");
+        return id;
+    }
+
+    @Transactional
+    public void revokeInviteLink(SessionUser actor, long id, long linkId) {
+        lock(id);
+        String actorRole = requireManager(id, actor.id()); requireActive(id);
+        var roles = jdbc.queryForList("SELECT role FROM team_invite_link WHERE id=? AND team_id=? AND status='active'", String.class, linkId, id);
+        if (roles.isEmpty()) throw missing();
+        assignable(actorRole, roles.get(0));
+        jdbc.update("UPDATE team_invite_link SET status='revoked' WHERE id=?", linkId);
+        activity.record(actor, id, "TEAM_INVITE_LINK_REVOKE", "link:" + linkId);
+        audit.record(actor, "TEAM_INVITE_LINK_REVOKE", id + ":link:" + linkId, "SUCCESS");
+    }
+
+    @Transactional
     public void changeMember(SessionUser actor, long id, long target, String nextRole) {
         lock(id);
         String actorRole = requireManager(id, actor.id()); requireActive(id);
@@ -174,6 +250,19 @@ public class TeamWorkspaceService {
         audit.record(actor, "TEAM_STATUS", id + ":" + status, "SUCCESS");
     }
 
+    private static final SecureRandom INVITE_RANDOM = new SecureRandom();
+    private String newInviteToken() {
+        byte[] value = new byte[32];
+        INVITE_RANDOM.nextBytes(value);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(value);
+    }
+    private String inviteTokenHash(String token) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException failure) {
+            throw new IllegalStateException("SHA-256 unavailable", failure);
+        }
+    }
     private void cancelIssued(long id, long userId) { jdbc.update("UPDATE team_invitation SET status='cancelled' WHERE team_id=? AND invited_by=? AND status='pending'", id, userId); }
     private void lock(long id) { if (jdbc.queryForList("SELECT id FROM team_workspace WHERE id=? FOR UPDATE", Long.class, id).isEmpty()) throw missing(); }
     private void requireActive(long id) { if (!"active".equals(jdbc.queryForObject("SELECT status FROM team_workspace WHERE id=?", String.class, id))) throw new BusinessException(403, "团队已冻结，请联系平台管理员"); }
@@ -186,7 +275,11 @@ public class TeamWorkspaceService {
         if (!manages(actorRole) || "admin".equals(role) && !"owner".equals(actorRole)) throw new BusinessException(403, "只有团队所有者可以管理团队管理员");
         if ("specialist".equals(role) && !List.of("owner", "admin").contains(actorRole)) throw new BusinessException(403, "只有团队负责人或副负责人可以任命专项负责人");
     }
-    private void requireAdmin(SessionUser actor) { if (actor == null || !"admin".equals(actor.role()) || !"admin".equals(actor.portal())) throw new BusinessException(403, "需要管理层会话"); }
+    /** 管理端团队视图要求平台 teams.view 能力，避免被撤销的管理员仅凭 admin 角色继续读取。 */
+    private void requireAdmin(SessionUser actor) {
+        if (actor == null || !"admin".equals(actor.role()) || !"admin".equals(actor.portal())) throw new BusinessException(403, "需要管理层会话");
+        accounts.requirePlatformCapability(actor, "teams.view");
+    }
     private void validStatus(String status) { if (!List.of("active", "frozen").contains(status)) throw new BusinessException(400, "团队状态无效"); }
     private long count(String sql, Object... values) { return jdbc.queryForObject(sql, Long.class, values); }
     private String text(String value, int maximum) { if (value == null || value.isBlank() || value.trim().length() > maximum || value.chars().anyMatch(Character::isISOControl)) throw new BusinessException(400, "名称或用户名无效"); return value.trim(); }
@@ -202,6 +295,10 @@ public class TeamWorkspaceService {
     private Team team(java.sql.ResultSet result) throws java.sql.SQLException { return new Team(result.getLong("id"), result.getString("name"), result.getString("description"), result.getLong("owner_id"), result.getString("owner_name"), result.getString("status"), result.getString("role"), result.getLong("member_count"), result.getTimestamp("created_at").toInstant().toString()); }
     private Invitation invitation(java.sql.ResultSet result) throws java.sql.SQLException { return new Invitation(result.getLong("id"), result.getLong("team_id"), result.getString("team_name"), result.getString("team_status"), result.getString("username"), result.getString("role"), result.getTimestamp("expires_at").toInstant().toString()); }
     private record Pending(long inviter, String role) {}
+    private record LinkRow(long id, long teamId, String role, long createdBy, String status, Instant expiresAt, String teamName, String teamStatus, String creatorName) {}
+    public record InviteLink(long id, long teamId, String role, String token, String expiresAt) {}
+    public record InviteLinkSummary(long id, String role, String status, String usedBy, String expiresAt, String createdAt) {}
+    public record InviteLinkPreview(long teamId, String teamName, String teamStatus, String role, String creatorName, String expiresAt, boolean valid, boolean member) {}
     public record Team(long id, String name, String description, long ownerId, String ownerName, String status, String role, long memberCount, String createdAt) {}
     public record Member(long userId, String username, String role, boolean enabled) {}
     public record Invitation(long id, long teamId, String teamName, String teamStatus, String username, String role, String expiresAt) {}

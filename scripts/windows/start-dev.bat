@@ -46,16 +46,19 @@ where docker >nul 2>nul && (
 )
 
 REM ---------- 3. Backend ----------
+REM 不用 mvn spring-boot:run：它会让 Maven 启动器 JVM（实测 343MB）与
+REM 应用 JVM 同时常驻。改为先打包，再用封顶参数直接跑 jar。
 echo [启动] Backend（Spring Boot，端口 8080）...
-start "SmartOps-Backend" /D "%PROJECT_ROOT%\backend" cmd /k "mvn spring-boot:run"
+start "SmartOps-Backend" /D "%PROJECT_ROOT%\backend" cmd /k "mvn -q -DskipTests package && java -Xms64m -Xmx512m -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=96m -XX:MaxDirectMemorySize=128m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8 -jar target\smartops-backend-0.0.1-SNAPSHOT.jar"
 
 REM ---------- 4. AI Service ----------
+REM 不加 --reload：它会常驻 reloader 父进程 + worker，演示期不需要热重载。
 echo [启动] AI Service（端口 8001）...
-start "SmartOps-AI" /D "%PROJECT_ROOT%\ai-service" cmd /k "python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001"
+start "SmartOps-AI" /D "%PROJECT_ROOT%\ai-service" cmd /k "python -m uvicorn app.main:app --host 0.0.0.0 --port 8001"
 
 REM ---------- 5. Frontend ----------
 echo [启动] Frontend（Vite，端口 5173）...
-start "SmartOps-Frontend" /D "%PROJECT_ROOT%\frontend" cmd /k "npm run dev"
+start "SmartOps-Frontend" /D "%PROJECT_ROOT%\frontend" cmd /k "set NODE_OPTIONS=--max-old-space-size=512&&npm run dev"
 
 echo.
 echo ============================================

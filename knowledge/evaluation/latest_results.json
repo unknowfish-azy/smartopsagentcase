@@ -1,0 +1,60 @@
+[
+  {
+    "cases": 114,
+    "hit@k": 0.7544,
+    "recall@k": 0.7544,
+    "mrr": 0.6882,
+    "ndcg@k": 0.705,
+    "latency_ms_avg": 106.63,
+    "latency_ms_p50": 102.79,
+    "by_style": {
+      "paraphrase": {
+        "cases": 58,
+        "hit@k": 0.6897,
+        "recall@k": 0.6897,
+        "mrr": 0.6414,
+        "ndcg@k": 0.6536
+      },
+      "verbatim": {
+        "cases": 56,
+        "hit@k": 0.8214,
+        "recall@k": 0.8214,
+        "mrr": 0.7366,
+        "ndcg@k": 0.7581
+      }
+    },
+    "backend": "hash",
+    "backend_actual": "HashEmbedding",
+    "documents": 61,
+    "chunks": 2465
+  },
+  {
+    "cases": 114,
+    "hit@k": 0.8509,
+    "recall@k": 0.8509,
+    "mrr": 0.7539,
+    "ndcg@k": 0.7786,
+    "latency_ms_avg": 290.9,
+    "latency_ms_p50": 284.68,
+    "by_style": {
+      "paraphrase": {
+        "cases": 58,
+        "hit@k": 0.7759,
+        "recall@k": 0.7759,
+        "mrr": 0.6457,
+        "ndcg@k": 0.6787
+      },
+      "verbatim": {
+        "cases": 56,
+        "hit@k": 0.9286,
+        "recall@k": 0.9286,
+        "mrr": 0.8661,
+        "ndcg@k": 0.882
+      }
+    },
+    "backend": "bge",
+    "backend_actual": "CachedEmbedding",
+    "documents": 61,
+    "chunks": 2465
+  }
+]

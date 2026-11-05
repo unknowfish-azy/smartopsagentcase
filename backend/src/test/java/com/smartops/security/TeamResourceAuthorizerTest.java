@@ -62,5 +62,12 @@ class TeamResourceAuthorizerTest {
                 .isInstanceOf(BusinessException.class).hasMessage("TEAM_CAPABILITY_FORBIDDEN");
     }
 
+    @Test
+    void adminPortalSessionDoesNotBypassTeamMembership() {
+        var admin = new SessionUser(9L, "admin9", "admin", "admin", false, 0);
+        assertThatThrownBy(() -> authorizer.requireMember(admin, 10, "view"))
+                .isInstanceOf(BusinessException.class).hasMessage("TEAM_ACCESS_FORBIDDEN");
+    }
+
     private SessionUser user(long id) { return new SessionUser(id, "u" + id, "operator", "user", false, 0); }
 }

@@ -20,6 +20,24 @@ test('history restores active conversation and marks interrupted requests', () =
   assert.match(restored.conversations[0].messages[1].content, /中断/)
 })
 
+test('history keeps failed-answer recovery fields so retry survives reload', () => {
+  const conversation = createConversation()
+  conversation.messages.push(
+    { id: 'q', role: 'user', content: '检查磁盘', images: ['disk.png', '', 42] },
+    { id: 'a', role: 'assistant', content: '磁盘使用率偏高。', error: true, prompt: '检查磁盘', attempt: 2, rag: true },
+    { id: 'a2', role: 'assistant', content: '已完成磁盘检查。', recovered: true, attempt: 3, prompt: '检查磁盘', metadata: { run_event: { request_id: 'req-ok', run_id: 'run-ok', status: 'succeeded' } } }
+  )
+  const restored = restoreHistory(JSON.stringify({ version: 1, conversations: [conversation], activeId: conversation.id }))
+  const [question, failed, recovered] = restored.conversations[0].messages
+  assert.deepEqual(question.images, ['disk.png'])
+  assert.equal(failed.prompt, '检查磁盘')
+  assert.equal(failed.attempt, 2)
+  assert.equal(failed.rag, true)
+  assert.equal(recovered.recovered, true)
+  assert.equal(recovered.attempt, 3)
+  assert.equal(recovered.metadata.run_event.status, 'succeeded')
+})
+
 test('invalid storage is rejected without throwing, invalid rows are ignored', () => {
   assert.equal(restoreHistory('{broken').conversations.length, 0)
   assert.equal(restoreHistory(JSON.stringify({ version: 2, conversations: [] })).conversations.length, 0)

@@ -1,5 +1,4 @@
 import json
-import socket
 import tempfile
 import unittest
 import time

@@ -1,0 +1,9 @@
+{
+  "url": "http://127.0.0.1:59081/ok",
+  "status": 200,
+  "body": "controlled-200",
+  "outcome": "response",
+  "mode": "CONTROLLED",
+  "claim": "request succeeded",
+  "expected_false_success": false
+}

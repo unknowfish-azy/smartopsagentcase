@@ -22,6 +22,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ModelGatewayController {
     private final ModelGatewayService gateway;
+    private final com.smartops.security.UserAccountService accounts;
 
     @PostMapping("/api/admin/model-gateway/keys")
     public ResponseEntity<ModelGatewayService.IssuedKey> issue(@AuthenticationPrincipal SessionUser user, @RequestBody Map<String, Object> body) {
@@ -190,7 +191,7 @@ public class ModelGatewayController {
     private String jsonString(String value) { return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n") + "\""; }
 
     private String bearer(String value) { if (value == null || !value.startsWith("Bearer ")) throw new BusinessException(401, "Bearer key required"); return value.substring(7).trim(); }
-    private void requireAdmin(SessionUser user) { if (user == null || !"admin".equals(user.role())) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN, "Admin role required"); }
+    private void requireAdmin(SessionUser user) { if (user == null || !"admin".equals(user.role())) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN, "Admin role required"); accounts.requirePlatformCapability(user, "admin.config"); }
     private void requireUser(SessionUser user) { if (user == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Login required"); }
 
     @ExceptionHandler(BusinessException.class)

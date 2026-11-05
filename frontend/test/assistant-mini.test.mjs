@@ -39,6 +39,20 @@ async function setup({ selectedKey = 'mini', options = [mini, external] } = {}) 
   return { store: useAiChatStore(), fixture, calls, values }
 }
 
+test('stream failure preserves partial real answer and reports failure', async () => {
+  const { store, fixture } = await setup({ options: [mini] })
+  fixture.streamChat = async (_message, callbacks) => {
+    callbacks.onToken('真实模型已返回的部分')
+    callbacks.onError(new Error('输出中断'))
+    throw new Error('输出中断')
+  }
+  assert.equal(await store.sendMessageStreaming('检查服务'), false)
+  assert.match(store.messages.at(-1).content, /真实模型已返回的部分/)
+  assert.equal(store.messages.at(-1).content.match(/输出中断/g).length, 1)
+  assert.equal(store.messages.at(-1).error, true)
+  assert.equal(store.messages.at(-1).streaming, false)
+})
+
 test('new account without model connections chats with explicit Mini and saves response metadata', async () => {
   const { store, calls } = await setup({ options: [mini] })
   assert.equal(await store.sendMessage('你好'), true)

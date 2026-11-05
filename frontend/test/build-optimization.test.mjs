@@ -63,7 +63,7 @@ test('business code imports Element Plus feedback APIs from component modules', 
     source('src/views/plugins/PluginCenterView.vue'),
     source('src/views/model/ModelSettingsView.vue'),
     source('src/views/server/ServerListView.vue'),
-    source('src/views/server/ServerDetailView.vue')
+    source('src/composables/useServerDetail.js')
   ])
   const content = sources.join('\n')
 
@@ -101,6 +101,30 @@ test('Three.js visual modules use tree-shakeable named imports', async () => {
   for (const content of [whale, galaxy]) {
     assert.equal(content.includes("import * as THREE from 'three'"), false)
     assert.match(content, /from 'three'/)
+  }
+})
+
+test('chat message list renders a bounded window instead of the full history', async () => {
+  const panel = await source('src/components/ai/AiChatPanel.vue')
+
+  assert.equal(panel.includes('v-for="message in messages"'), false)
+  assert.match(panel, /v-for="message in visibleMessages"/)
+  assert.match(panel, /slice\(-visibleCount\.value\)/)
+  assert.match(panel, /MESSAGE_BATCH/)
+})
+
+test('ECharts and the knowledge catalog stay behind lazy route boundaries', async () => {
+  const router = await source('src/router/index.js')
+  const main = await source('src/main.js')
+  const mainLayout = await source('src/layouts/MainLayout.vue')
+
+  assert.match(router, /component: \(\) => import\('\.\.\/views\/dashboard\/DashboardView\.vue'\)/)
+  assert.match(router, /component: \(\) => import\('\.\.\/views\/model\/ModelAnalyticsView\.vue'\)/)
+  assert.match(router, /component: \(\) => import\('\.\.\/views\/knowledge\/KnowledgeView\.vue'\)/)
+  assert.match(router, /component: \(\) => import\('\.\.\/views\/knowledge\/QuizView\.vue'\)/)
+  for (const content of [main, mainLayout]) {
+    assert.equal(content.includes('echarts'), false)
+    assert.equal(content.includes('knowledgeCatalog'), false)
   }
 })
 

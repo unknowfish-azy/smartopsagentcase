@@ -1,0 +1,194 @@
+--- /dev/null
++++ b/docs/development/云计算运维专业化不足与优化清单-20261105.md
+@@ -0,0 +1,191 @@
++# SmartOpsAgent 云计算运维专业化不足与优化清单
++
++> 日期：2026-11-05。项目：智维 Agent / SmartOpsAgent。工作区：`D:\SmartOpsAgent`。
++>
++> 用途：根据现有项目不足，形成可交给其他大模型执行的任务清单。本轮交付为文档，未实施业务改造、接入云账号、启动服务或执行压测。事实依据为当前工作区的源码静态核查；运行表现、性能收益和外部组件兼容性需要后续验收。
++
++## 1. 优化目标与阅读方式
++
++下一阶段重点补齐五条链路：**资产管理、专业诊断、批量执行、故障恢复、性能验证**。
++
++项目已有 SSH 远程连接、审批与审计、Prometheus/Loki 查询，以及主机、Docker、Kubernetes、Helm 等工具基础。后续应复用这些实现，把局部工具扩展为可验证的故障处置流程。
++
++- **P0**：先处理能力真实性、接口契约、执行恢复和交付可靠性，建立后续扩展基础。
++- **P1**：完善常见故障诊断、作业流程、观测和恢复能力。
++- **P2**：出现明确业务需求和数据基础后，再投入成本治理、多集群、边缘和演练。
++- 所有任务勾选框均表示“本清单要求的增量改造已验收”，不代表相关领域从零开始，也不代表当前已完成。
++- “未见”仅表示本轮检查范围内未发现；接单模型应先复核实际调用路径、部署配置和已有整改记录。
++
++## 2. 当前项目不足与源码依据
++
++| 编号 | 不足或成熟度缺口 | 当前基础与证据 | 后续影响 / 对应任务 |
++|---|---|---|---|
++| F01 | 工具入口与真实实现未完全对齐 | [OperationToolService.java](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/service/OperationToolService.java:90) 中知识、数据库、Grafana、慢 SQL 仍使用 `smartops ...` 命令模板；本轮未发现配套 CLI 实现 | 需逐项标明真实适配、模板和不可用状态，见 OPS-01、OPS-07 |
++| F02 | 告警静默仍缺实际写入能力 | 同一工具服务 [148 行](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/service/OperationToolService.java:148) 的 `executeApprovedTeamRun()` 对 `alerts-suppress` 返回 501 | 需补外部平台静默、TTL、审批与撤销，见 OPS-09 |
++| F03 | Python 工具存在不同调用契约 | [PluginTool](/D:/SmartOpsAgent/agent/sdk/tool.py:20) 为异步 `execute(arguments, context)`；[旧执行器](/D:/SmartOpsAgent/agent/executor/executor.py:124) 同步调用 `tool.execute(**arguments)`；策略读取的风险字段也不同 | 新 SDK 插件直接接入旧 Executor/PolicyEngine 存在契约冲突；实际适配路径待验收，见 OPS-01 |
++| F04 | 云资源接入与资产关系仍需建设 | [服务器实体](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/entity/ServerEntity.java:15) 以名称、主机、端口、系统等基础字段为主；本轮未见三家云 SDK 的实际接入代码 | 缺少账号、地域、资源 ID、业务归属和依赖关系的统一上下文，见 OPS-02、OPS-03 |
++| F05 | 云原生工具以基础查询为主 | [工具定义](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/service/OperationToolService.java:45) 已含 Helm、存储、RBAC；Terraform 仅检查版本，网格仅查看 Pod/Service | 深化为工作负载、存储、网络及变更诊断，见 OPS-05、OPS-06、OPS-12 |
++| F06 | 执行记录与崩溃恢复之间仍有缺口 | [JdbcOperationRunRecorder.java](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/service/JdbcOperationRunRecorder.java:26) 已持久化 Run；工具在请求内执行后更新终态 | 需核实崩溃后悬挂任务、重复执行与远端状态不确定的处理，见 OPS-04 |
++| F07 | 监控采集存在串行累积耗时 | [SentinelService.java](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/sentinel/SentinelService.java:1200) 查询最多 50 个任务后逐个采集；单任务采集允许 15 秒 | 慢目标可能拖累整批；多副本领取与背压需补验收，见 PERF-01 |
++| F08 | HTTP 连接与上游容量管理可优化 | [LLM 服务](/D:/SmartOpsAgent/ai-service/app/services/llm.py:124)、[RAG 服务](/D:/SmartOpsAgent/ai-service/app/services/rag.py:66) 在调用内创建 `AsyncClient` | 评估连接池复用、上游并发闸门和有限队列，见 PERF-02 |
++| F09 | SSH 连接生命周期和输出预算不足 | [运行连接注册表](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/operations/OperationRuntimeRegistry.java:12) 使用进程内集合；[SSH 执行](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/operations/SshConnectionAdapter.java:188) 缓冲命令输出 | 保留已有局部连接复用，补配额、空闲回收和流式限额，见 PERF-03 |
++| F10 | 批量发送与执行结果需进一步关联 | [MultiExecService.java](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/service/MultiExecService.java:46) 向目标写入并返回 `SENT` | 需持续区分已发送、执行完成和健康验证通过，见 OPS-11、PERF-04 |
++| F11 | 海量资产与指标查询缺少完整预算 | [资产列表](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/service/impl/ServerServiceImpl.java:84) 调用 `selectAll`；指标时间范围查询需继续核查结果上限与保留策略 | 补分页、过滤、索引一致性、点数限制与降采样，见 PERF-05 |
++| F12 | 平台自身的指标暴露配置未对齐 | [Prometheus 配置](/D:/SmartOpsAgent/infrastructure/prometheus/prometheus.yml:14) 抓取 `/actuator/prometheus`，而[默认配置](/D:/SmartOpsAgent/backend/src/main/resources/application.yml:41) 仅暴露 `health,info`；本轮未见 AI `/metrics` 注册 | 仓库默认配置与抓取目标尚未闭合，运行时覆盖待核验；见 OPS-10、PERF-08 |
++| F13 | 基础设施模板尚需变成可运行交付 | [AI Dockerfile](/D:/SmartOpsAgent/infrastructure/microservices/ai-service/Dockerfile:1) 仍运行 Java `app.jar`；[HPA](/D:/SmartOpsAgent/infrastructure/kubernetes/hpa/backend.yaml:17) 使用 CPU 利用率，而对应 Deployment 未声明 CPU request | 核实实际发布入口，补镜像、探针、资源预算和扩缩容验收，见 PERF-08 |
++| F14 | 备份与恢复证据仍需体系化 | [部署脚本](/D:/SmartOpsAgent/deploy/server/deploy.sh:180) 有发布目录备份；这与数据库、附件、知识数据的一致恢复是不同事项 | 建立恢复集合、异机副本和隔离恢复演练，见 OPS-13 |
++
++### 2.1 已有能力应继续复用
++
++- Prometheus/Loki 已有真实 HTTP 查询适配，见 [ObservabilityService.java](/D:/SmartOpsAgent/backend/src/main/java/com/smartops/service/ObservabilityService.java:47)。目前有时间范围、条数、响应大小、超时和审计限制；后续补团队数据源授权和跨信号关联。
++- SSH、审批预览、一次性授权、运行记录、哨兵与诊断目标策略已有实现，应接入同一条执行链。
++- HTTP 可用性、HTTPS 证书和配置差异工具已有基础，后续强化调度、历史与资源关联。
++- 已有前端性能与长会话优化记录应保留；fixture 浏览器结果与真实云端吞吐、模型延迟分别报告。
++- 源码行号是本次核对位置，后续改动可能使行号漂移，接单者需按类名、方法名重新定位。
++- 部署结论限定于所列模板；实际部署入口、环境变量覆盖、集群 LimitRange 或资源注入是否补齐，本轮未验证。
++
++## 3. 功能与工具改进清单
++
++| 勾选 | ID / 优先级 | 对应不足与目标 | 具体增量工作 | 验收标准 | 前置关系 |
++|---|---|---|---|---|---|
++| [ ] | **OPS-01 / P0** | F01、F03：统一工具能力目录 | 统一 Java/Python 工具语义与适配；声明版本、实现状态、输入输出 Schema、目标、风险、权限、超时、输出上限和核验方式；处理同名冲突与加载失败 | 现有工具逐项可追溯到真实实现；前端、目录与执行一致；模板明确标记；成功、失败、拒绝和不可用均有记录 | 首批建立接口契约 |
++| [ ] | **OPS-02 / P0** | F04：多云 SDK 适配 | 先完成一家云的资源只读清单，再按同一契约扩展腾讯云、阿里云、华为云；绑定账号、地域、项目、凭据引用 | 覆盖分页、429 退避、权限不足、部分失败；资源 ID 稳定；跨团队请求拒绝；输出不含凭据 | OPS-01；云连接范围明确 |
++| [ ] | **OPS-03 / P0** | F04：轻量 CMDB | 统一资源身份、来源、采集时间、负责人、环境和业务；维护主机、集群、数据库、负载均衡关系及增量变更 | 同一资源重复同步不重复建档；删除、失联、过期可区分；能按业务展示受影响资源及关系依据 | OPS-01、OPS-02 的首家云接入 |
++| [ ] | **OPS-04 / P0** | F06、F09：执行恢复与资源治理 | 沿用 Java 权威 Run，补 lease、heartbeat、attempt、幂等、绝对 deadline、取消与输出预算；必要时增加可靠事件投递 | 在领取、审批消费、远端动作后、结果写库前中断；无重复副作用；不确定结果有明确状态与核验流程；不盲目重试写操作 | OPS-01；复用既有 Run 整改 |
++| [ ] | **OPS-05 / P1** | F05：Kubernetes 诊断包 | 覆盖 CrashLoopBackOff、OOM、Pending、镜像拉取、探针失败、PVC 挂载；补 previous 日志、时间窗、节点压力与 EndpointSlice | 明确 cluster/context/namespace；输出结构化证据和来源时间；区分无权限、数据缺失和故障 | OPS-01、连接与权限契约 |
++| [ ] | **OPS-06 / P1** | F05：网络链路诊断 | 串联 DNS→负载均衡/Ingress→Service→EndpointSlice→Pod；补安全组、路由、TLS 与网络策略 | 每层报告检查项、实际证据和失败原因；不能访问的环节标为未核验；有总超时和采集范围 | OPS-02、OPS-05 按场景依赖 |
++| [ ] | **OPS-07 / P1** | F01：数据库真实诊断 | 替换数据库命令模板；强化 MySQL 连接、锁等待、慢 SQL、复制延迟；预留 PostgreSQL/openGauss 适配 | 使用只读账号和驱动；限制单语句、耗时、行数、字节；慢查询脱敏；真实失败进入审计 | OPS-01、凭据引用与连接授权 |
++| [ ] | **OPS-08 / P1** | F05：主机、中间件与 Java 诊断 | 补 CPU、内存、磁盘/inode、I/O、systemd、时间同步；深化 Redis 复制/持久化、Nginx upstream；接入受控 JVM 诊断 | 每类检查有结构化结果、采样窗口和查询预算；避免整文件读日志；高开销诊断有限额和退出机制 | OPS-01；优先复用现有插件 |
++| [ ] | **OPS-09 / P1** | F02：告警与事故管理 | 去重、分组、恢复关联、维护窗口、负责人、事故时间线；补真实静默 API、TTL、审批、撤销 | 重复告警可聚合；静默目标和期限清晰；外部请求失败不显示成功；静默到期与撤销可验证 | OPS-01、OPS-03、OPS-04 |
++| [ ] | **OPS-10 / P1** | F12：SLI/SLO 与恢复判定 | 补可用率、错误率、延迟、采集新鲜度、执行成功率；制定错误预算和燃烧率规则；关联日志、指标和运行链路 | 指标可抓取；口径、窗口、分母可复核；区分真实、mock、fixture、degraded；以独立业务证据判定恢复 | PERF-08；复用 P0-RUN-01 / P1-OBS-01 |
++| [ ] | **OPS-11 / P1** | F10：Runbook 与批量作业 | 参数化流程、目标快照、金丝雀、批次、并发上限、失败停止、逐目标状态和复盘 | 目标集与批准内容绑定；刷新、重启后结果一致；`SENT`、执行成功、验证通过分别记录；同请求幂等 | OPS-01、OPS-04；与 PERF-04 共用实现 |
++| [ ] | **OPS-12 / P1** | F05：IaC/GitOps | Terraform validate/plan/show/漂移分析；接发布历史、期望与实际差异、commit 和镜像 digest、受控回滚 | plan 脱敏且识别销毁；应用动作绑定已批准计划与版本；处理状态锁、并发变更和变更后验证 | OPS-01、OPS-04、OPS-11 |
++| [ ] | **OPS-13 / P1** | F14：备份恢复与容灾 | 定义数据库、附件、知识 manifest、审计和密钥恢复集合；校验、异机副本、保留期、隔离恢复演练 | 恢复后核对数量、hash、引用关系与关键查询；记录真实 RPO/RTO；目录备份、持久卷与可恢复备份分别说明 | 先确定数据范围和业务恢复目标 |
++| [ ] | **OPS-14 / P2** | 新增：容量与 FinOps | 建容量趋势、闲置/超配分析、标签成本归集、预算与成本异常；支持资源规格建议 | 每条建议有采样窗口、账单来源、币种和分摊口径；不推断缺失成本；有业务约束和验证方式 | OPS-02、OPS-03、OPS-10 |
++| [ ] | **OPS-15 / P2** | 新增：安全与配置报告 | 先接入 Trivy、kube-bench、Falco 等真实报告，关联镜像、资产、修复与例外期限 | 保留工具版本、时间、范围与严重度；支持去重、修复复测和例外到期；主动扫描另设资源预算 | OPS-01、OPS-03 |
++| [ ] | **OPS-16 / P2** | 新增：多集群、边缘与演练 | 需求成立时评估 Karmada、KubeEdge、ChaosBlade；先做可退出的独立验证 | 说明必要性、额外控制面、权限、内核/集群兼容、开销和卸载步骤；演练有停止条件和恢复证据 | OPS-04、OPS-10、OPS-13；明确业务触发条件 |
++
++### 3.1 统一工具建议字段
++
++`tool_id`、`version`、`implementation_status`、`target_type`、`input_schema`、`output_schema`、`risk`、`required_scope`、`credential_ref`、`deadline`、`output_limit`、`idempotency`、`verification`。
++
++这些是对现有工具体系的契约建议，不要求再建一套平行注册器、审批状态机或审计账。MCP 扩展需验证真实 transport、工具发现、Schema 变化、目标授权、超时和审计，不能仅以适配器文件存在判定集成完成。
++
++## 4. 性能与可靠性专项清单
++
++**本节数字全部是建议验收条件，尚未实测。** 接单模型须先固定机器规格、版本、数据量、并发、网络和上游条件，再确认适用门槛。每次只改变一个主要变量，保留优化前后原始结果。
++
++| 勾选 | ID / 优先级 | 改进方向 | 建议验收方式 |
++|---|---|---|---|
++| [ ] | **PERF-01 / P0** | 监控改为有租约、有背压的有界并发调度；失败退避与 jitter；隔离慢目标 | 固定环境下测试 1,000 个任务、5% 慢目标；记录到期延迟和队列年龄；双副本连续 30 分钟无重复领取；明确失败任务下次采集时间 |
++| [ ] | **PERF-02 / P1** | FastAPI lifespan 管理共享 HTTP transport；按上游设置连接数、池等待与并发闸门 | 100 并发下记录握手次数、p95、连接和文件句柄；过载有明确响应；不同请求的凭据、上下文与结果保持隔离 |
++| [ ] | **PERF-03 / P1** | 保留已有 SSH 复用，补原子连接建立、索引、配额、idle TTL、失活清理和输出限额 | 同用户同会话 50 次并发连接不重复建立有效连接；空闲连接按 TTL 回收；100 MB 输出不产生同量级内存缓冲；显示截断标志 |
++| [ ] | **PERF-04 / P1** | 批量操作使用同一 Run 的目标子任务；无依赖的只读操作并发，同一交互 shell 保持顺序 | 100 目标、并发上限 10、10% 失败场景下逐目标状态完整；取消后停止派发；不确定远端状态单列；与 OPS-11 同一实现 |
++| [ ] | **PERF-05 / P1** | 资产分页、服务端过滤、批量 latest、索引对齐；指标点数预算、聚合和保留策略 | 可使用 10 万资产/千万指标固定数据集；记录分页 p95 和查询计划；建议单次指标返回不超过 2,000 点；不同初始化路径索引一致 |
++| [ ] | **PERF-06 / P1** | 整单 deadline 与取消传播；清理 HTTP stream、SSH channel、受控进程资源 | 覆盖慢连接、持续输出、断线与超时；建议预算结束后 2 秒内完成本地清理；远端停止需单独核验，等待超时不等于动作已终止 |
++| [ ] | **PERF-07 / P1** | 按任务筛选工具和证据、限制上下文、按复杂度路由模型；避免重复查询 | 用同一故障集比较正确率、假成功率、token、首响应及总耗时；先验证质量，再采用降本方案；缓存键包含租户、权限与版本 |
++| [ ] | **PERF-08 / P0** | 修通指标出口与可运行发布；核实真实镜像、探针、requests/limits、优雅排空和扩缩容 | 干净环境用发布产物启动声明的真实链路；指标连续 30 分钟可抓取；状态与任务归属机制就绪后测试 1→3→1 副本；失败可回退 |
++
++### 4.1 必须记录的性能口径
++
++- 请求量、并发、p50/p95/p99、吞吐、错误率、超时率、排队时间。
++- CPU、RSS/堆内存、GC、线程、文件句柄、HTTP/SSH/MySQL 连接及等待。
++- 模型首 token、生成时长、RAG 时长、工具执行时长、结果核验时长分别记录。
++- 持续运行期间连接、队列、缓存和输出缓冲是否有界。
++- 区分冷启动与预热，区分 fixture/mock 与真实 Provider，区分本地替身与远程执行。
++- 复用现有前端性能基线；本轮没有更换语言、JDK、GC 或增加消息平台的性能证据。
++
++## 5. 优先完成的五类故障闭环
++
++共同流程：**证据采集→原因判断→处置预览→审批→执行→独立验证→复盘**。
++
++| 勾选 | 场景 | 核心证据 | 恢复验证 |
++|---|---|---|---|
++| [ ] | Nginx 502 | upstream 配置、上游进程与端口、错误日志、连接状况、近期变更 | 业务探针、上游健康、错误率和延迟在约定观察窗口内恢复 |
++| [ ] | MySQL 连接耗尽 | 连接来源、活动会话、慢查询、锁等待、应用连接池 | 业务查询成功率、连接占用和等待情况恢复；副作用有记录 |
++| [ ] | Redis 内存压力 | 内存构成、淘汰策略、复制、持久化和慢命令 | 内存趋势、延迟、错误率、复制与持久化状态符合预期 |
++| [ ] | Kubernetes Pod 异常 | Events、previous 日志、资源限制、探针、节点压力和卷 | 工作负载就绪，Service 实际连通，业务探针满足预期 |
++| [ ] | 磁盘或 inode 耗尽 | 文件系统用量、增长来源、打开文件、占用进程与趋势 | 空间/inode、应用写入、错误日志和业务检查恢复；保留处置依据 |
++
++退出码 0、命令已发送、Pod Ready 都是局部证据。完整恢复应由独立业务检查确认；证据不足时保留未核验结论。
++
++## 6. 腾讯、阿里、华为及相关社区开源参考
++
++本节为**候选参考清单**。本轮未取得这些项目的在线版本证据，当前维护状态、官方仓库位置、许可证、社区/商业功能边界及依赖兼容均需复核。不要把候选写成已经集成。
++
++| 来源口径 | 项目入口 | 研究重点 | 对应任务 / 采用建议 |
++|---|---|---|---|
++| 腾讯蓝鲸开源生态 | [bk-cmdb](https://github.com/TencentBlueKing/bk-cmdb) | 资产、业务、主机及资源关系模型 | OPS-03；优先借鉴模型与同步契约，按需接 API |
++| 腾讯蓝鲸开源生态 | [bk-job](https://github.com/TencentBlueKing/bk-job) | 作业、分批执行、超时、文件分发、结果回收 | OPS-11、PERF-04；已有蓝鲸环境可评估接入，独立部署先核成本 |
++| 腾讯蓝鲸开源生态 | [bk-sops](https://github.com/TencentBlueKing/bk-sops) | 参数化流程、标准运维、失败处理 | OPS-11；借鉴 Runbook，不另建平行审批源 |
++| 阿里开源 | [Arthas](https://github.com/alibaba/arthas) | Java 运行时、线程、调用耗时、类加载诊断 | OPS-08；固定诊断命令与预算，核实运行用户权限 |
++| 阿里开源 | [KubeSkoop](https://github.com/alibaba/kubeskoop) | Kubernetes 网络数据路径和连通性诊断 | OPS-06；核查内核、集群权限、插件开销和结构化证据 |
++| 阿里采集器生态 | [LoongCollector](https://github.com/alibaba/loongcollector)、[iLogtail](https://github.com/alibaba/ilogtail) | 采集、解析、缓冲、输出与资源预算 | OPS-10；先核实迁移/重命名及兼容关系，按同一候选家族研究 |
++| 阿里发起的社区项目 | [OpenKruise](https://github.com/openkruise/kruise) | 应用升级与工作负载管理 | OPS-12；有发布需求后再核实 CRD、控制器与现有体系兼容 |
++| 阿里发起的社区项目 | [ChaosBlade](https://github.com/chaosblade-io/chaosblade) | 故障注入与恢复演练 | OPS-16；隔离验证，有终止条件与恢复证据 |
++| openEuler 社区生态 | [A-Ops 历史候选位置](https://gitee.com/openeuler/A-Ops) | Linux 主机巡检、配置与健康管理 | OPS-08；先核实当前维护仓库、组件拆分和交付范围 |
++| openEuler 社区生态 | [gala-gopher 历史候选位置](https://gitee.com/openeuler/gala-gopher) | Linux/eBPF 系统与应用观测 | OPS-08、OPS-10；先核实仓库、内核兼容、权限与探针开销 |
++| 华为参与发起的多方社区项目 | [Karmada](https://github.com/karmada-io/karmada) | 多集群分发、策略、故障迁移 | OPS-16；真实多集群需求成立后评估，不按厂商独占产品描述 |
++| 华为参与发起的多方社区项目 | [KubeEdge](https://github.com/kubeedge/kubeedge) | 云边协同、边缘节点与设备 | OPS-16；真实边缘运维需求成立后评估 |
++
++### 6.1 官方资料继续调研的方向
++
++| 资料入口 | 检索方向 | 应沉淀到本项目的成果 |
++|---|---|---|
++| [腾讯云文档](https://cloud.tencent.com/document) | 资源管理、自动化运维、监控、云审计、备份恢复 | 云适配字段、巡检规则、异常处理与验收条件 |
++| [阿里云帮助中心](https://help.aliyun.com/) | 自动化运维、云助手、日志、容器、成本与可靠性 | Runbook、证据关联、容量和成本口径 |
++| [华为云帮助中心](https://support.huaweicloud.com/) | 应用运维、统一运维、容器、主机与容灾 | 巡检项、事故流程、观测和恢复标准 |
++
++这些入口本轮未在线打开，不作为已读证据。商业云服务与开源组件分别选型；每项候选需要记录官方来源、tag/commit、采集日期、根及实际使用模块的许可证、额外部署依赖、资源预算和退出方式。
++
++前一轮公开 GET 联网核验被自动审批服务拒绝：HTTP 404，审核模型配置不受支持。请求未执行，因此本清单保留待联网复核状态。
++
++## 7. 实施顺序与多模型分工
++
++### 7.1 推荐批次
++
++1. **第一批：可信基础。** OPS-01、OPS-04、PERF-01、PERF-08。先冻结工具契约和 Run 语义；纠正能力标识与实际部署差异。
++2. **第二批：真实资源与诊断。** OPS-02、OPS-03、OPS-05～08；同步推进 PERF-02、03、05、06。
++3. **第三批：故障闭环。** OPS-09～11、OPS-13、PERF-04、PERF-07；验收五类故障流程。
++4. **第四批：交付与扩展。** OPS-12；按实际需求和数据基础决定 OPS-14～16。
++
++独立的只读调查和设计可并行。涉及共同接口、Run 状态机、迁移与部署入口的修改应先约定负责人，按依赖顺序集成。
++
++### 7.2 多模型任务边界
++
++| 角色 | 主责 | 与其他模型的边界 |
++|---|---|---|
++| 模型 A：工具与多云基础 | OPS-01～04 | 负责工具契约、云连接、资源身份与 Run 权威语义；接口冻结后供其他模型接入 |
++| 模型 B：专业诊断 | OPS-05～08 与五类证据包 | 复用 A 的接口和连接授权；不增加独立审批、凭据账或执行器 |
++| 模型 C：性能与可靠性 | PERF-01～08 | 先基线再逐项对照；OPS-04/11 与 A/D 只保留一份实现；PERF-08 与 D 协调交付入口 |
++| 模型 D：运维流程与验收 | OPS-09～15、恢复演练与发布验收 | 复用既有哨兵、审批和审计；OPS-16 按需另立验证任务；维护场景验收矩阵 |
++
++### 7.3 与已有任务书合并
++
++- 统一 Run、跨层标识和观测分别复用已有 `P0-RUN-01`、`P1-OBS-01` 方向。
++- 执行恢复、发布验收与相关 `ARCH-P0-*`、`HC-*` 历史任务对照，以当前源码复核任务状态。
++- 已有 [后续优化任务清单](/D:/SmartOpsAgent/docs/development/后续优化任务清单-多模型协同-20261105.md) 与 [架构方向](/D:/SmartOpsAgent/docs/ARCHITECTURE-DIRECTION.md) 可供合并依赖。
++- 对已补齐的关联头、已有 HTTP/证书检查、Prometheus/Loki 查询、SSH 局部复用及前端性能优化，采用增量完善。
++
++## 8. 可直接转交其他大模型的任务说明
++
++```text
++你接手 SmartOpsAgent 的云计算运维专业化改进。
++
++1. 先读取项目 AGENTS.md、本清单及相关已有任务书，重新核实当前源码和调用链。
++2. 从 OPS/PERF 中领取明确编号；区分已有、局部实现、占位、待集成验收，附文件与行号。
++3. 每批只改一个主要边界；接口依赖先与负责人对齐，保留 Java 权威身份、审批、Run 和审计。
++4. 新工具声明输入输出、目标、权限、风险、总超时、输出预算、幂等和核验方式。
++5. 新增开源组件先核官方来源、版本、许可证、部署开销、兼容与退出方式；候选不直接进入默认依赖。
++6. 同一负载下测量性能，不引用 fixture 或其他机器的结果证明真实云端收益。
++7. 针对实际变化运行相关检查；运行失败、部分成功、未知、拒绝、未执行分别报告。
++8. 交付改后文件、对照差分、验证记录、回滚脚本；保留既有未提交改动。
++9. 完成后更新本任务状态和证据，不将命令发送、退出码 0 或未配置状态写成完整恢复。
++```
++
++## 9. 本文档交付边界
++
++- 本清单覆盖 14 类静态不足、16 项功能/工具任务、8 项性能任务、5 类故障闭环和 12 项开源候选。
++- 任务完成状态以接单后的独立验证为准；本轮未完成任何业务改造或外部集成。
++- 未执行：真实云账号/集群/数据库连接验证、运行态故障复现、压力测试、镜像构建、扩缩容和恢复演练。
++- 文档交付辅助材料位于同级 `云运维清单交付-20261105/`，包含差分、验证记录和哈希保护回滚脚本。

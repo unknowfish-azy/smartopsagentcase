@@ -1,7 +1,7 @@
 # SmartOpsAgent Training Readiness Report
 
 - Status: **BLOCKED**
-- Created: `2026-09-18T08:16:01.371407+00:00`
+- Created: `2026-11-04T13:33:52.725355+00:00`
 - Training started: `NO`
 - Secrets included: `NO`
 
@@ -10,7 +10,7 @@
 | Check | Status | Reason |
 |---|---|---|
 | requirements | PARTIAL | optional training packages are missing |
-| model | PARTIAL | Mock provider is configured; it is not a REAL model baseline |
+| model | PARTIAL | provider and model are configured; run training.scripts.check_model for live connectivity |
 | dataset | BLOCKED | no dataset has approved samples and a passing leakage check |
 | hardware | READY | storage is available; GPU availability is reported separately |
 

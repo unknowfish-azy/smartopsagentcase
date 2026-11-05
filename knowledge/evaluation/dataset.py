@@ -22,6 +22,10 @@ def load_dataset(
                 "expected_chunk_ids",
                 [],
             ),
+            expected_sources=item.get(
+                "expected_sources",
+                [],
+            ),
             expected_answer=item.get(
                 "expected_answer",
                 "",
@@ -29,6 +33,10 @@ def load_dataset(
             version=item.get(
                 "version",
                 "latest",
+            ),
+            style=item.get(
+                "style",
+                "verbatim",
             ),
         )
         for item in data

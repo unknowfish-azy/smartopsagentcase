@@ -1,7 +1,12 @@
-import os
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# .env 定位为仓库根目录（ai-service/app/core/config.py → 上溯 3 级），
+# 与进程启动时的工作目录无关：无论 uvicorn 从仓库根、ai-service/ 还是其他目录启动，
+# 都能读到同一份配置，避免因 cwd 不同而静默退回 mock。
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
@@ -31,10 +36,14 @@ class Settings(BaseSettings):
         "http://localhost:8002"
     )
 
+    # Knowledge 服务开启鉴权时（KNOWLEDGE_API_KEY），调用侧需发送同名 X-API-Key。
+    # 留空表示 Knowledge 未开启鉴权。
+    knowledge_api_key: str = ""
+
     request_timeout: int = 30
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_REPO_ROOT / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

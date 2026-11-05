@@ -1,0 +1,122 @@
+[
+  {
+    "id": "independent-01",
+    "input": "controlled boundary /ok",
+    "incident_family": "gateway-ok",
+    "split": "test",
+    "origin": "CONTROLLED",
+    "derived_from_candidate": false,
+    "label_status": "pending_review",
+    "expected_false_success": false,
+    "claim": "request succeeded",
+    "evidence": {
+      "path": "probe-01.json",
+      "sha256": "de1c081d0ec5fe8d9b7246b23214f80af95de567f73a71099c81f88ba9a45c55"
+    }
+  },
+  {
+    "id": "independent-02",
+    "input": "controlled boundary /unauthorized",
+    "incident_family": "gateway-unauthorized",
+    "split": "test",
+    "origin": "CONTROLLED",
+    "derived_from_candidate": false,
+    "label_status": "pending_review",
+    "expected_false_success": true,
+    "claim": "request succeeded",
+    "evidence": {
+      "path": "probe-02.json",
+      "sha256": "20e5ac3fd7110feb6019827f8ef611f0eac42f48301e6e230adf426d7afcbcbf"
+    }
+  },
+  {
+    "id": "independent-03",
+    "input": "controlled boundary /forbidden",
+    "incident_family": "gateway-forbidden",
+    "split": "test",
+    "origin": "CONTROLLED",
+    "derived_from_candidate": false,
+    "label_status": "pending_review",
+    "expected_false_success": true,
+    "claim": "request succeeded",
+    "evidence": {
+      "path": "probe-03.json",
+      "sha256": "e06fa5e30ea682e3a5ca22671784cd655e0ae7dc5947038b1d6b095cbb3d9429"
+    }
+  },
+  {
+    "id": "independent-04",
+    "input": "controlled boundary /bad-gateway",
+    "incident_family": "gateway-bad-gateway",
+    "split": "test",
+    "origin": "CONTROLLED",
+    "derived_from_candidate": false,
+    "label_status": "pending_review",
+    "expected_false_success": true,
+    "claim": "request succeeded",
+    "evidence": {
+      "path": "probe-04.json",
+      "sha256": "2899dbe1b596c53f9a56e36e363887c6802043fb330d8b62181d6bbb08f65fe3"
+    }
+  },
+  {
+    "id": "independent-05",
+    "input": "controlled boundary /timeout-gateway",
+    "incident_family": "gateway-timeout-gateway",
+    "split": "test",
+    "origin": "CONTROLLED",
+    "derived_from_candidate": false,
+    "label_status": "pending_review",
+    "expected_false_success": true,
+    "claim": "request succeeded",
+    "evidence": {
+      "path": "probe-05.json",
+      "sha256": "a2d74b3589a79088dd304c33bb7114c0a435c2bef6707ba6c3694a76fdea0e8e"
+    }
+  },
+  {
+    "id": "independent-06",
+    "input": "controlled boundary /timeout",
+    "incident_family": "gateway-timeout",
+    "split": "test",
+    "origin": "CONTROLLED",
+    "derived_from_candidate": false,
+    "label_status": "pending_review",
+    "expected_false_success": true,
+    "claim": "request succeeded",
+    "evidence": {
+      "path": "probe-06.json",
+      "sha256": "93b93e341d6048a347e0589082d1d9de07619c964a6a3b4199818e68a9cb4f9b"
+    }
+  },
+  {
+    "id": "independent-07",
+    "input": "controlled boundary /missing",
+    "incident_family": "gateway-missing",
+    "split": "test",
+    "origin": "CONTROLLED",
+    "derived_from_candidate": false,
+    "label_status": "pending_review",
+    "expected_false_success": true,
+    "claim": "request succeeded",
+    "evidence": {
+      "path": "probe-07.json",
+      "sha256": "890d48646c9bc8ff2464f1fa2dbf0ab1c690b254a4a044408ff342369824b18b"
+    }
+  },
+  {
+    "id": "independent-08",
+    "input": "controlled boundary /ok",
+    "incident_family": "gateway-ok",
+    "split": "test",
+    "origin": "CONTROLLED",
+    "derived_from_candidate": false,
+    "label_status": "pending_review",
+    "expected_false_success": false,
+    "claim": "request succeeded",
+    "evidence": {
+      "path": "probe-08.json",
+      "sha256": "de1c081d0ec5fe8d9b7246b23214f80af95de567f73a71099c81f88ba9a45c55"
+    }
+  }
+]

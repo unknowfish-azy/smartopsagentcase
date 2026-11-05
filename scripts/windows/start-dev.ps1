@@ -99,9 +99,16 @@ Write-Host "[3/5] Starting Backend..."
 
 if (Test-Path $BackendDir) {
 
+    # 不要再使用 mvn spring-boot:run：它会额外驻留一个 Maven 启动器 JVM
+    # （实测 343MB），与应用 JVM（249MB）合计约 590MB。
+    # 改为「先打包，再用封顶参数的 JVM 直接跑 jar」，与算卦平台（HTLB）一致。
+    $BackendJvmOptions = "-Xms64m -Xmx512m -XX:MaxMetaspaceSize=192m " +
+        "-XX:ReservedCodeCacheSize=96m -XX:MaxDirectMemorySize=128m " +
+        "-XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError"
+
     Start-Process `
         -FilePath "cmd.exe" `
-        -ArgumentList "/k", "cd /d `"$BackendDir`" && mvn spring-boot:run"
+        -ArgumentList "/k", "cd /d `"$BackendDir`" && mvn -q -DskipTests package && java $BackendJvmOptions -Dfile.encoding=UTF-8 -jar target\smartops-backend-0.0.1-SNAPSHOT.jar"
 
 }
 else {
@@ -121,9 +128,11 @@ Write-Host "[4/5] Starting AI Service..."
 
 if (Test-Path $AIServiceDir) {
 
+    # 开发期不加 --reload：它会常驻一个 reloader 父进程 + 一个 worker，
+    # 演示时不需要热重载，直接单进程运行即可。
     Start-Process `
         -FilePath "cmd.exe" `
-        -ArgumentList "/k", "cd /d `"$AIServiceDir`" && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001"
+        -ArgumentList "/k", "cd /d `"$AIServiceDir`" && python -m uvicorn app.main:app --host 0.0.0.0 --port 8001"
 
 }
 else {
@@ -149,11 +158,11 @@ if (Test-Path $FrontendDir) {
 
     Start-Process `
         -FilePath "cmd.exe" `
-        -ArgumentList "/k", "cd /d `"$FrontendDir`" && npm run dev"
+        -ArgumentList "/k", "cd /d `"$FrontendDir`" && set `"NODE_OPTIONS=--max-old-space-size=512`" && npm run dev"
 
     Start-Process `
         -FilePath "cmd.exe" `
-        -ArgumentList "/k", "cd /d `"$FrontendDir`" && npm run dev:admin"
+        -ArgumentList "/k", "cd /d `"$FrontendDir`" && set `"NODE_OPTIONS=--max-old-space-size=512`" && npm run dev:admin"
 
 }
 else {

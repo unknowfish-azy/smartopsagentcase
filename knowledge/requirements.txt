@@ -6,8 +6,9 @@ numpy>=1.26,<3
 # PDF 文档解析
 pypdf>=5.0,<7
 
-# Embedding / Reranker 预留
-sentence-transformers>=3.0,<6
+# Embedding / Reranker（BGE 语义向量后端）
+# 范围放宽到 <7：实际安装并验证 6.2.0（BGE-small-zh 512 维，299 chunks 摄入+检索通过）
+sentence-transformers>=3.0,<7
 
 # OCR（当前先作为可选依赖）
 pytesseract>=0.3.13

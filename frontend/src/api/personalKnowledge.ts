@@ -15,3 +15,9 @@ export const getKnowledgeEntry = id => http.get(`/api/knowledge/personal/entries
 export const archiveKnowledgeEntry = id => http.post(`/api/knowledge/personal/entries/${id}/archive`)
 export const deleteKnowledgeEntry = id => http.delete(`/api/knowledge/personal/entries/${id}`)
 export const updateKnowledgeEntry = (id, payload) => http.patch(`/api/knowledge/personal/entries/${id}`, payload)
+
+export const listKnowledgeCrawlSources = () => http.get('/api/knowledge/crawl/sources')
+export const createKnowledgeCrawlSource = payload => http.post('/api/knowledge/crawl/sources', payload)
+// 同步抓取可能超过默认 15 秒超时，单独放宽
+export const runKnowledgeCrawlSource = id => http.post(`/api/knowledge/crawl/sources/${id}/run`, {}, { timeout: 120000 })
+export const getKnowledgeCrawlPages = (id, params = {}) => http.get(`/api/knowledge/crawl/sources/${id}/pages`, { params })

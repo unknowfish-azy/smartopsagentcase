@@ -1,0 +1,904 @@
+{
+  "schema_version": 1,
+  "provenance": "AI-authored synthetic fixtures; no human or live-data provenance claimed",
+  "limitations": "固定样本用于功能验证；不以目标F1筛选；标签未经过独立人工复核",
+  "cases": [
+    {
+      "id": "FS-01",
+      "category": "port_unavailable",
+      "claim": "nginx已恢复",
+      "probes": [
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        },
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "以目标端口监听事实作为恢复依据"
+    },
+    {
+      "id": "FS-02",
+      "category": "port_unavailable",
+      "claim": "服务已启动",
+      "probes": [
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        },
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "以目标端口监听事实作为恢复依据"
+    },
+    {
+      "id": "FS-03",
+      "category": "port_unavailable",
+      "claim": "故障已解决",
+      "probes": [
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        },
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "以目标端口监听事实作为恢复依据"
+    },
+    {
+      "id": "FS-04",
+      "category": "port_unavailable",
+      "claim": "服务恢复正常",
+      "probes": [
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": true
+        },
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "以目标端口监听事实作为恢复依据"
+    },
+    {
+      "id": "FS-05",
+      "category": "port_unavailable",
+      "claim": "已恢复监听",
+      "probes": [
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        },
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "以目标端口监听事实作为恢复依据"
+    },
+    {
+      "id": "FS-06",
+      "category": "port_unavailable",
+      "claim": "启动操作已完成",
+      "probes": [
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        },
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "以目标端口监听事实作为恢复依据"
+    },
+    {
+      "id": "FS-07",
+      "category": "port_unavailable",
+      "claim": "已解决端口故障",
+      "probes": [
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": true
+        },
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "以目标端口监听事实作为恢复依据"
+    },
+    {
+      "id": "FS-08",
+      "category": "process_alive_port_closed",
+      "claim": "服务已重启",
+      "probes": [
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true,
+          "uptime_s": 12
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "进程存在不等于业务端口监听"
+    },
+    {
+      "id": "FS-09",
+      "category": "process_alive_port_closed",
+      "claim": "服务已恢复",
+      "probes": [
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true,
+          "uptime_s": 12
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "进程存在不等于业务端口监听"
+    },
+    {
+      "id": "FS-10",
+      "category": "process_alive_port_closed",
+      "claim": "进程起来了，可以用了",
+      "probes": [
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true,
+          "uptime_s": 12
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "进程存在不等于业务端口监听"
+    },
+    {
+      "id": "FS-11",
+      "category": "process_alive_port_closed",
+      "claim": "故障已解决",
+      "probes": [
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true,
+          "uptime_s": 12
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "进程存在不等于业务端口监听"
+    },
+    {
+      "id": "FS-12",
+      "category": "process_alive_port_closed",
+      "claim": "已经恢复正常",
+      "probes": [
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true,
+          "uptime_s": 12
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "进程存在不等于业务端口监听"
+    },
+    {
+      "id": "FS-13",
+      "category": "process_alive_port_closed",
+      "claim": "重启处理完毕",
+      "probes": [
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true,
+          "uptime_s": 12
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "进程存在不等于业务端口监听"
+    },
+    {
+      "id": "FS-14",
+      "category": "process_alive_port_closed",
+      "claim": "fixed",
+      "probes": [
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true,
+          "uptime_s": 12
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "进程存在不等于业务端口监听"
+    },
+    {
+      "id": "FS-15",
+      "category": "configuration_stale",
+      "claim": "配置已更新",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v2",
+          "observed_version": "v1"
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "HTTP响应版本需与预期v2一致"
+    },
+    {
+      "id": "FS-16",
+      "category": "configuration_stale",
+      "claim": "配置已恢复正常",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v2",
+          "observed_version": "v1"
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "HTTP响应版本需与预期v2一致"
+    },
+    {
+      "id": "FS-17",
+      "category": "configuration_stale",
+      "claim": "版本问题已解决",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v2",
+          "observed_version": "v2"
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "HTTP响应版本需与预期v2一致"
+    },
+    {
+      "id": "FS-18",
+      "category": "configuration_stale",
+      "claim": "新配置已生效",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v2",
+          "observed_version": "v1"
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "HTTP响应版本需与预期v2一致"
+    },
+    {
+      "id": "FS-19",
+      "category": "configuration_stale",
+      "claim": "服务已恢复",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v2",
+          "observed_version": "v2"
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "HTTP响应版本需与预期v2一致"
+    },
+    {
+      "id": "FS-20",
+      "category": "configuration_stale",
+      "claim": "fixed",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v2",
+          "observed_version": "v1"
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "HTTP响应版本需与预期v2一致"
+    },
+    {
+      "id": "FS-21",
+      "category": "configuration_stale",
+      "claim": "更新已经完成",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v2",
+          "observed_version": "v1"
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "HTTP响应版本需与预期v2一致"
+    },
+    {
+      "id": "FS-22",
+      "category": "dependency_timeout",
+      "claim": "数据库已恢复",
+      "probes": [
+        {
+          "type": "db",
+          "target": "db:3306",
+          "timed_out": true,
+          "status": "timeout",
+          "latency_ms": 2000
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "数据库连接超时代表依赖仍异常"
+    },
+    {
+      "id": "FS-23",
+      "category": "dependency_timeout",
+      "claim": "依赖已解决",
+      "probes": [
+        {
+          "type": "db",
+          "target": "db:3306",
+          "timed_out": true,
+          "status": "timeout",
+          "latency_ms": 2000
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "数据库连接超时代表依赖仍异常"
+    },
+    {
+      "id": "FS-24",
+      "category": "dependency_timeout",
+      "claim": "数据库连接正常了",
+      "probes": [
+        {
+          "type": "db",
+          "target": "db:3306",
+          "timed_out": true,
+          "status": "timeout",
+          "latency_ms": 2000
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "数据库连接超时代表依赖仍异常"
+    },
+    {
+      "id": "FS-25",
+      "category": "dependency_timeout",
+      "claim": "连接已恢复",
+      "probes": [
+        {
+          "type": "db",
+          "target": "db:3306",
+          "timed_out": false,
+          "status": "connected",
+          "latency_ms": 9
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "数据库连接超时代表依赖仍异常"
+    },
+    {
+      "id": "FS-26",
+      "category": "dependency_timeout",
+      "claim": "recovered",
+      "probes": [
+        {
+          "type": "db",
+          "target": "db:3306",
+          "timed_out": true,
+          "status": "timeout",
+          "latency_ms": 2000
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "数据库连接超时代表依赖仍异常"
+    },
+    {
+      "id": "FS-27",
+      "category": "dependency_timeout",
+      "claim": "后端现在可用了",
+      "probes": [
+        {
+          "type": "db",
+          "target": "db:3306",
+          "timed_out": true,
+          "status": "timeout",
+          "latency_ms": 2000
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "数据库连接超时代表依赖仍异常"
+    },
+    {
+      "id": "FS-28",
+      "category": "dependency_timeout",
+      "claim": "故障已解决",
+      "probes": [
+        {
+          "type": "db",
+          "target": "db:3306",
+          "timed_out": false,
+          "status": "connected",
+          "latency_ms": 9
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "数据库连接超时代表依赖仍异常"
+    },
+    {
+      "id": "FS-29",
+      "category": "partial_cluster",
+      "claim": "集群已恢复",
+      "probes": [
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "down"
+            },
+            {
+              "instance": "c",
+              "status": "up"
+            }
+          ]
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "三个实例中任一不健康即未全部恢复"
+    },
+    {
+      "id": "FS-30",
+      "category": "partial_cluster",
+      "claim": "所有实例已恢复正常",
+      "probes": [
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "down"
+            },
+            {
+              "instance": "c",
+              "status": "up"
+            }
+          ]
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "三个实例中任一不健康即未全部恢复"
+    },
+    {
+      "id": "FS-31",
+      "category": "partial_cluster",
+      "claim": "集群修好了",
+      "probes": [
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "down"
+            },
+            {
+              "instance": "c",
+              "status": "up"
+            }
+          ]
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "三个实例中任一不健康即未全部恢复"
+    },
+    {
+      "id": "FS-32",
+      "category": "partial_cluster",
+      "claim": "resolved",
+      "probes": [
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "up"
+            },
+            {
+              "instance": "c",
+              "status": "up"
+            }
+          ]
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "三个实例中任一不健康即未全部恢复"
+    },
+    {
+      "id": "FS-33",
+      "category": "partial_cluster",
+      "claim": "处理完成可以上线了",
+      "probes": [
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "down"
+            },
+            {
+              "instance": "c",
+              "status": "up"
+            }
+          ]
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "三个实例中任一不健康即未全部恢复"
+    },
+    {
+      "id": "FS-34",
+      "category": "partial_cluster",
+      "claim": "故障已解决",
+      "probes": [
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "up"
+            },
+            {
+              "instance": "c",
+              "status": "up"
+            }
+          ]
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "三个实例中任一不健康即未全部恢复"
+    },
+    {
+      "id": "FS-35",
+      "category": "true_success",
+      "claim": "故障已解决",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        },
+        {
+          "type": "process",
+          "found": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "全部观测健康且无失败事实"
+    },
+    {
+      "id": "FS-36",
+      "category": "true_success",
+      "claim": "服务已恢复",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        },
+        {
+          "type": "process",
+          "found": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "全部观测健康且无失败事实"
+    },
+    {
+      "id": "FS-37",
+      "category": "true_success",
+      "claim": "fixed",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        },
+        {
+          "type": "process",
+          "found": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "全部观测健康且无失败事实"
+    },
+    {
+      "id": "FS-38",
+      "category": "true_success",
+      "claim": "recovered",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        },
+        {
+          "type": "process",
+          "found": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "全部观测健康且无失败事实"
+    },
+    {
+      "id": "FS-39",
+      "category": "true_success",
+      "claim": "业务正常了",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        },
+        {
+          "type": "process",
+          "found": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "全部观测健康且无失败事实"
+    },
+    {
+      "id": "FS-40",
+      "category": "true_success",
+      "claim": "已恢复正常",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        },
+        {
+          "type": "process",
+          "found": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "全部观测健康且无失败事实"
+    },
+    {
+      "id": "FS-41",
+      "category": "distractor",
+      "claim": "服务尚未恢复",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "声称失败而观测成功，不是假成功"
+    },
+    {
+      "id": "FS-42",
+      "category": "distractor",
+      "claim": "问题没有解决",
+      "probes": [
+        {
+          "type": "port",
+          "open": true
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "否定完成态不应被误识别为成功"
+    },
+    {
+      "id": "FS-43",
+      "category": "distractor",
+      "claim": "not resolved",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 200
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "英文否定不是完成态"
+    },
+    {
+      "id": "FS-44",
+      "category": "distractor",
+      "claim": "等待处理",
+      "probes": [
+        {
+          "type": "port",
+          "open": false
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "没有成功声明，端口异常不构成假成功"
+    },
+    {
+      "id": "FS-45",
+      "category": "distractor",
+      "claim": "检查完毕，暂未恢复",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 502
+        }
+      ],
+      "expected_false_success": false,
+      "label_reason": "失败声明与异常观测一致"
+    },
+    {
+      "id": "FS-46",
+      "category": "distractor",
+      "claim": "服务已恢复",
+      "probes": [],
+      "expected_false_success": null,
+      "label_reason": "无观测，待核验，禁止当作通过或失败"
+    },
+    {
+      "id": "FS-47",
+      "category": "distractor",
+      "claim": "故障已解决",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 0
+        }
+      ],
+      "expected_false_success": null,
+      "label_reason": "缺少有效HTTP响应，待核验"
+    },
+    {
+      "id": "FS-48",
+      "category": "distractor",
+      "claim": "已恢复正常",
+      "probes": [
+        {
+          "type": "unknown",
+          "detail": "no collector"
+        }
+      ],
+      "expected_false_success": null,
+      "label_reason": "未知探针类型，待核验"
+    },
+    {
+      "id": "FS-49",
+      "category": "distractor",
+      "claim": "服务已恢复",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 502
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "HTTP502与完成态矛盾"
+    },
+    {
+      "id": "FS-50",
+      "category": "distractor",
+      "claim": "系统已经可以用了",
+      "probes": [
+        {
+          "type": "http",
+          "status_code": 503
+        }
+      ],
+      "expected_false_success": true,
+      "label_reason": "口语完成态与503矛盾，检测器可能漏检"
+    }
+  ]
+}

@@ -14,6 +14,14 @@ spring:
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
 
+  # 测试库是每次新建的 H2：基线设为 0，保证所有迁移脚本都会执行一遍，
+  # 不受 spring.sql.init 与 Flyway 的先后顺序影响（schema.sql 只建最小集）。
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.smartops.entity

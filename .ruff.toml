@@ -1,0 +1,7 @@
+target-version = "py311"
+line-length = 100
+
+# 只开最小规则：语法错误 + 未使用/未定义名称。
+# 格式化与 import 排序先不强制，避免一次性改动过大。
+[lint]
+select = ["E9", "F"]

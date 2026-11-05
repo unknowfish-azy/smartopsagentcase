@@ -77,6 +77,23 @@ class AdminFoundationIntegrationTest {
         mvc.perform(get("/api/admin/overview").session(manager.session())).andExpect(status().isOk()).andExpect(jsonPath("$.data.usersTotal").value(2));
     }
 
+    @Test void revokedPlatformAdminDoesNotRegainCapabilities() {
+        jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(33,'foundation-deputy',?,'admin')", new BCryptPasswordEncoder().encode(PASSWORD));
+        var root = new com.smartops.security.SessionUser(11L, "foundation-admin", "admin", "admin", false, 0);
+        var deputy = new com.smartops.security.SessionUser(33L, "foundation-deputy", "admin", "admin", false, 0);
+
+        accounts.appointPlatformAdmin(root, 33L, "deputy", List.of("admin.users"));
+        assertThat(accounts.hasPlatformCapability(deputy, "admin.users")).isTrue();
+
+        accounts.revokePlatformAdmin(root, 33L);
+        // 撤销保留档案并写入 revoked_at：不得因为缺少能力行被当成“历史管理员”重新放行。
+        assertThat(accounts.hasPlatformCapability(deputy, "admin.users")).isFalse();
+        assertThat(accounts.hasPlatformCapability(deputy, "admin.audit")).isFalse();
+        assertThat(jdbc.queryForObject("SELECT revoked_at FROM platform_admin_profile WHERE user_id=33", java.sql.Timestamp.class)).isNotNull();
+        // 历史存量管理员（无档案）语义保持不变。
+        assertThat(accounts.hasPlatformCapability(root, "admin.users")).isTrue();
+    }
+
     private com.smartops.security.SessionUser revokedManager() {
         jdbc.update("UPDATE app_user SET role='admin' WHERE id=22");
         var snapshot = new com.smartops.security.SessionUser(22L, "foundation-user", "admin", "admin", false, 0);

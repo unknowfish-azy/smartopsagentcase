@@ -52,6 +52,19 @@ public class SentinelController {
         return ApiResponse.success();
     }
 
+    /**
+     * 重绑运行连接。
+     *
+     * <p>后端重启或终端关闭后 runtimeId 失效，任务会显示「缺少运行连接」；
+     * 重新连接会生成新的 runtimeId，这个端点把它写回任务，避免删任务重建。</p>
+     */
+    @PostMapping("/tasks/{id}/runtime")
+    public ApiResponse<SentinelService.TaskView> rebindRuntime(@AuthenticationPrincipal SessionUser actor,
+                                                              @PathVariable long id,
+                                                              @RequestBody RebindRequest request) {
+        return ApiResponse.success(sentinel.rebindRuntime(actor, id, request.sessionId()));
+    }
+
     /** 资产分组列表（含任务数与启用数），供批量启停使用。 */
     @GetMapping("/task-groups")
     public ApiResponse<List<Map<String, Object>>> taskGroups(@AuthenticationPrincipal SessionUser actor) {
@@ -367,6 +380,8 @@ public class SentinelController {
                               Long templateId, String runtimeId, String groupLabel) {}
 
     public record EnabledRequest(boolean enabled) {}
+
+    public record RebindRequest(Long sessionId) {}
 
     public record GroupRequest(String groupLabel) {}
 

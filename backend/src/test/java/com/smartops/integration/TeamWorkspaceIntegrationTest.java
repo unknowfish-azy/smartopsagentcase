@@ -15,6 +15,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
@@ -252,6 +254,43 @@ class TeamWorkspaceIntegrationTest {
             assertEquals(freeze ? 403 : 409, result.get(10, java.util.concurrent.TimeUnit.SECONDS));
             assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM team_member WHERE team_id=? AND user_id=?", Integer.class, id, recipient.id()));
         } finally { release.countDown(); pool.shutdownNow(); reset(jdbc); }
+    }
+
+    @Test void inviteLinkJoinsOnceAndCanBeRevoked() throws Exception {
+        Client owner = login(username, "user"); long id = create(owner); User recipient = other("operator", "user"); User late = other("operator", "user");
+        JsonNode link = data(send(owner, post("/api/teams/" + id + "/invite-links"), Map.of("role", "member")).andExpect(status().isOk()));
+        String token = link.path("token").asText();
+        mvc.perform(get("/api/teams/invite-links/" + token).session(recipient.client().session())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.valid").value(true)).andExpect(jsonPath("$.data.member").value(false))
+                .andExpect(jsonPath("$.data.role").value("member"));
+        send(recipient.client(), post("/api/teams/invite-links/" + token + "/accept"), Map.of()).andExpect(status().isOk());
+        mvc.perform(get("/api/teams/" + id).session(recipient.client().session())).andExpect(jsonPath("$.data.team.role").value("member"));
+        send(late.client(), post("/api/teams/invite-links/" + token + "/accept"), Map.of()).andExpect(status().isConflict());
+        send(recipient.client(), post("/api/teams/" + id + "/invite-links"), Map.of("role", "viewer")).andExpect(status().isForbidden());
+        JsonNode second = data(send(owner, post("/api/teams/" + id + "/invite-links"), Map.of("role", "viewer")).andExpect(status().isOk()));
+        send(owner, delete("/api/teams/" + id + "/invite-links/" + second.path("id").asLong()), Map.of()).andExpect(status().isOk());
+        send(late.client(), post("/api/teams/invite-links/" + second.path("token").asText() + "/accept"), Map.of()).andExpect(status().isConflict());
+    }
+
+    @Test void sharedKnowledgeIsReadableByTeamMembersOnly() throws Exception {
+        Client owner = login(username, "user"); long id = create(owner);
+        User member = other("operator", "user"); join(owner, id, member, "member");
+        User outsider = other("operator", "user");
+        Timestamp now = Timestamp.from(Instant.now());
+        jdbc.update("INSERT INTO personal_knowledge_library(user_id,name,description,status,created_at,updated_at) VALUES(?,?,?,?,?,?)", userId, "共享知识库", "只读共享", "ACTIVE", now, now);
+        long library = jdbc.queryForObject("SELECT MAX(id) FROM personal_knowledge_library WHERE user_id=?", Long.class, userId);
+        assertEquals(userId, jdbc.queryForObject("SELECT user_id FROM personal_knowledge_library WHERE id=?", Long.class, library));
+        jdbc.update("INSERT INTO personal_knowledge_entry(library_id,user_id,title,summary,content_markdown,source_type,verification_status,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                library, userId, "Nginx 502 排查", "上游超时", "# 排查步骤", "MANUAL", "VERIFIED", 1, now, now);
+        send(owner, post("/api/teams/" + id + "/shares"), Map.of("resourceType", "knowledge", "resourceId", library)).andExpect(status().isOk());
+        mvc.perform(get("/api/teams/" + id + "/shares").session(member.client().session())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].resourceId").value(library)).andExpect(jsonPath("$.data[0].entryCount").value(1));
+        mvc.perform(get("/api/teams/" + id + "/shares/knowledge/" + library + "/entries").session(member.client().session())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1)).andExpect(jsonPath("$.data.items[0].title").value("Nginx 502 排查"));
+        mvc.perform(get("/api/teams/" + id + "/shares").session(outsider.client().session())).andExpect(status().isForbidden());
+        send(member.client(), post("/api/teams/" + id + "/shares"), Map.of("resourceType", "knowledge", "resourceId", library)).andExpect(status().isForbidden());
+        send(owner, delete("/api/teams/" + id + "/shares/knowledge/" + library), Map.of()).andExpect(status().isOk());
+        mvc.perform(get("/api/teams/" + id + "/shares/knowledge/" + library + "/entries").session(member.client().session())).andExpect(status().isNotFound());
     }
 
     private long create(Client owner) throws Exception { return data(send(owner, post("/api/teams"), Map.of("name", "隔离团队", "description", "不共享个人资源")).andExpect(status().isOk())).path("id").asLong(); }

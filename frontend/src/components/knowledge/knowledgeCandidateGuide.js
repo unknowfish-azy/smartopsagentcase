@@ -763,7 +763,7 @@ kubectl get endpoints api -n demo
 ## 操作命令
 
 \`\`\`sql
-SHOW REPLICA STATUS\G
+SHOW REPLICA STATUS\\G
 SHOW GLOBAL STATUS LIKE 'Threads_running';
 SHOW FULL PROCESSLIST;
 SELECT * FROM performance_schema.replication_applier_status_by_worker;
@@ -796,7 +796,7 @@ Last_SQL_Error:
 ## 修复后验证
 
 \`\`\`sql
-SHOW REPLICA STATUS\G
+SHOW REPLICA STATUS\\G
 SELECT * FROM performance_schema.replication_applier_status_by_worker;
 \`\`\`
 

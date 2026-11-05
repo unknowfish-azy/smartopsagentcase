@@ -119,11 +119,25 @@ public class UserAccountService {
 
     public boolean hasPlatformCapability(SessionUser actor, String capability) {
         if (actor == null || !"admin".equals(actor.role()) || !"admin".equals(actor.portal()) || capability == null) return false;
+        List<PlatformProfile> profiles = profileOf(actor.id());
+        // 治理迁移前创建的管理员没有档案，沿用历史语义视为最高管理员。
+        if (profiles.isEmpty()) return true;
+        // 已撤销的管理员档案保留：不得因为缺少能力行而被重新放行。
+        if (profiles.get(0).revoked()) return false;
+        return jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=? AND capability=?", Integer.class, actor.id(), capability) > 0;
+    }
+
+    private record PlatformProfile(String level, java.sql.Timestamp revokedAt) {
+        boolean revoked() { return revokedAt != null; }
+    }
+
+    private List<PlatformProfile> profileOf(long userId) {
         try {
-            return jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=? AND capability=?", Integer.class, actor.id(), capability) > 0;
-        } catch (org.springframework.dao.DataAccessException ignored) {
-            // Compatibility for databases that have not applied the governance migration yet.
-            return "admin".equals(actor.role());
+            return jdbc.query("SELECT level,revoked_at FROM platform_admin_profile WHERE user_id=?",
+                    (result, row) -> new PlatformProfile(result.getString("level"), result.getTimestamp("revoked_at")), userId);
+        } catch (org.springframework.dao.DataAccessException unavailable) {
+            // 读不到治理表时不能假定为 root，否则会把部署故障变成提权。
+            throw new BusinessException(500, "平台治理数据不可用，请联系系统管理员");
         }
     }
 
@@ -134,7 +148,7 @@ public class UserAccountService {
     public List<PlatformAdminView> platformAdministrators(SessionUser actor) {
         requirePlatformCapability(actor, "admin.users");
         try {
-            return jdbc.query("SELECT u.id,u.username,u.enabled,p.level,COALESCE(GROUP_CONCAT(c.capability), '') capabilities FROM app_user u JOIN platform_admin_profile p ON p.user_id=u.id LEFT JOIN platform_admin_capability c ON c.user_id=u.id WHERE u.role='admin' GROUP BY u.id,u.username,u.enabled,p.level ORDER BY CASE p.level WHEN 'root' THEN 0 WHEN 'deputy' THEN 1 ELSE 2 END,u.id",
+            return jdbc.query("SELECT u.id,u.username,u.enabled,p.level,COALESCE(GROUP_CONCAT(c.capability), '') capabilities FROM app_user u JOIN platform_admin_profile p ON p.user_id=u.id LEFT JOIN platform_admin_capability c ON c.user_id=u.id WHERE u.role='admin' AND p.revoked_at IS NULL GROUP BY u.id,u.username,u.enabled,p.level ORDER BY CASE p.level WHEN 'root' THEN 0 WHEN 'deputy' THEN 1 ELSE 2 END,u.id",
                     (row, ignored) -> new PlatformAdminView(row.getLong("id"), row.getString("username"), row.getBoolean("enabled"), row.getString("level"), row.getString("capabilities").isBlank() ? List.of() : List.of(row.getString("capabilities").split(","))),
                     new Object[0]);
         } catch (org.springframework.dao.DataAccessException missingMigration) {
@@ -151,7 +165,7 @@ public class UserAccountService {
         if (!"admin".equals(target.role)) throw new BusinessException(400, "目标账号必须先具备管理员入口");
         List<String> requested = capabilities == null ? List.of() : capabilities.stream().distinct().toList();
         if (requested.stream().anyMatch(capability -> !PlatformAdminGovernance.canGrant(platformLevel(actor), capability))) throw new BusinessException(403, "包含不可转授的平台能力");
-        jdbc.update("INSERT INTO platform_admin_profile(user_id,level,appointed_by) VALUES(?,?,?) ON DUPLICATE KEY UPDATE level=VALUES(level),appointed_by=VALUES(appointed_by),appointed_at=CURRENT_TIMESTAMP", targetId, level, actor.id());
+        jdbc.update("INSERT INTO platform_admin_profile(user_id,level,appointed_by) VALUES(?,?,?) ON DUPLICATE KEY UPDATE level=VALUES(level),appointed_by=VALUES(appointed_by),appointed_at=CURRENT_TIMESTAMP,revoked_at=NULL", targetId, level, actor.id());
         jdbc.update("DELETE FROM platform_admin_capability WHERE user_id=?", targetId);
         requested.forEach(capability -> jdbc.update("INSERT INTO platform_admin_capability(user_id,capability,granted_by) VALUES(?,?,?)", targetId, capability, actor.id()));
         bumpVersion(targetId, target.mustChangePassword);
@@ -164,9 +178,13 @@ public class UserAccountService {
     public PlatformAdminView revokePlatformAdmin(SessionUser actor, long targetId) {
         requireMutationAuthority(actor, true);
         String actorLevel = platformLevel(actor);
-        String targetLevel = jdbc.queryForObject("SELECT level FROM platform_admin_profile WHERE user_id=?", String.class, targetId);
+        List<PlatformProfile> targetProfiles = profileOf(targetId);
+        if (targetProfiles.isEmpty()) throw new BusinessException(409, "该账号没有平台管理员档案，无法撤销");
+        if (targetProfiles.get(0).revoked()) throw new BusinessException(409, "该账号的平台权限已撤销");
+        String targetLevel = targetProfiles.get(0).level();
         if (!PlatformAdminGovernance.canManage(actorLevel, targetLevel)) throw new BusinessException(403, "无权撤销该管理员");
-        jdbc.update("DELETE FROM platform_admin_profile WHERE user_id=?", targetId);
+        // 保留档案并写入撤销时间：直接删档会让“无档案=历史管理员”的历史语义把它重新放行。
+        jdbc.update("UPDATE platform_admin_profile SET revoked_at=CURRENT_TIMESTAMP,appointed_by=? WHERE user_id=?", actor.id(), targetId);
         jdbc.update("DELETE FROM platform_admin_capability WHERE user_id=?", targetId);
         bumpVersion(targetId, true);
         audit.record(actor, "PLATFORM_ADMIN_REVOKE", Long.toString(targetId), "SUCCESS");
@@ -182,8 +200,9 @@ public class UserAccountService {
         if (targetId == actor.id()) throw new BusinessException(400, "不能转让给自己");
         Account target = requireAccount(targetId);
         if (!target.enabled || !"admin".equals(target.role())) throw new BusinessException(400, "接任者必须是启用的管理员账号");
-        String targetLevel = jdbc.queryForObject("SELECT level FROM platform_admin_profile WHERE user_id=?", String.class, targetId);
-        if (!PlatformAdminGovernance.DEPUTY.equals(targetLevel)) throw new BusinessException(409, "接任者必须是副管理员");
+        List<PlatformProfile> targetProfiles = profileOf(targetId);
+        if (targetProfiles.isEmpty() || targetProfiles.get(0).revoked() || !PlatformAdminGovernance.DEPUTY.equals(targetProfiles.get(0).level()))
+            throw new BusinessException(409, "接任者必须是未撤销的副管理员");
         jdbc.queryForObject("SELECT user_id FROM platform_admin_profile WHERE user_id=? FOR UPDATE", Long.class, actor.id());
         jdbc.queryForObject("SELECT user_id FROM platform_admin_profile WHERE user_id=? FOR UPDATE", Long.class, targetId);
         jdbc.update("UPDATE platform_admin_profile SET level='deputy',appointed_by=? WHERE user_id=?", actor.id(), actor.id());
@@ -196,8 +215,9 @@ public class UserAccountService {
     }
 
     private String platformLevel(SessionUser actor) {
-        try { return jdbc.queryForObject("SELECT level FROM platform_admin_profile WHERE user_id=?", String.class, actor.id()); }
-        catch (org.springframework.dao.DataAccessException missing) { return PlatformAdminGovernance.ROOT; }
+        List<PlatformProfile> profiles = profileOf(actor.id());
+        // 治理建档前的存量管理员没有档案，按历史语义视为最高管理员。
+        return profiles.isEmpty() ? PlatformAdminGovernance.ROOT : profiles.get(0).level();
     }
 
     public AccountPage list(String query, String role, Boolean enabled, int page, int pageSize) {

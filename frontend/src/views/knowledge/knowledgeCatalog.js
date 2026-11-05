@@ -30,13 +30,17 @@ import { cloudNativeLabEntries } from '../../../../knowledge/cloud_ops/cloudNati
 import { cloudNativeObservabilityEntries } from '../../../../knowledge/cloud_ops/cloudNativeObservabilityCatalog.js'
 import { cloudNativeGitOpsEntries } from '../../../../knowledge/cloud_ops/cloudNativeGitOpsCatalog.js'
 import { cloudNativeSupplyChainSecurityEntries } from '../../../../knowledge/cloud_ops/cloudNativeSupplyChainSecurityCatalog.js'
+import { ansibleEntries } from '../../../../knowledge/linux/ansibleAutomationKnowledge.js'
+import { linuxAccessEntries } from '../../../../knowledge/linux/linuxIdentityAccessKnowledge.js'
+import { nginxOpsEntries } from '../../../../knowledge/linux/nginxOperationsKnowledge.js'
+import { mysql8AdminEntries } from '../../../../knowledge/linux/mysql8AdministrationKnowledge.js'
 
 export const knowledgeDomains = [
-  { id: 'linux', label: 'Linux 基础', detail: '文件描述符 / Shell 输入输出 / 故障排查' },
+  { id: 'linux', label: 'Linux 基础', detail: '文件描述符 / Shell 输入输出 / 用户权限 / Ansible 自动化' },
   { id: 'cloud-operations', label: 'CLOUD OPERATIONS', detail: '云计算 / DevOps / 云原生 / AIOps' },
   { id: 'docker', label: 'DOCKER', detail: '容器 / 镜像 / 网络 / 资源' },
-  { id: 'mysql', label: 'MYSQL', detail: '连接 / 锁 / 复制 / 性能' },
-  { id: 'nginx', label: 'NGINX', detail: 'HTTP / Upstream / TLS / 网关' },
+  { id: 'mysql', label: 'MYSQL', detail: '连接 / 锁 / 复制 / 性能 / 备份恢复' },
+  { id: 'nginx', label: 'NGINX', detail: 'HTTP / Upstream / TLS / 缓存 / 网关排障' },
   { id: 'ubuntu', label: 'UBUNTU', detail: 'Systemd / 磁盘 / 进程 / DNS' },
   { id: 'centos', label: 'CENTOS', detail: 'SELinux / Yum / 网络 / 权限' }
 ]
@@ -63,6 +67,10 @@ export const knowledgeEntries = [
   ...kubernetesSchedulingLifecycleEntries,
   ...kubernetesControllerServiceEntries,
   ...kubernetesIngressEntries,
+  ...ansibleEntries,
+  ...linuxAccessEntries,
+  ...nginxOpsEntries,
+  ...mysql8AdminEntries,
   ...cloudNativeToolEntries,
   ...cloudNativeToolRunbookEntries,
   ...cloudNativeLabEntries,

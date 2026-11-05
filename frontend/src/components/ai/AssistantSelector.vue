@@ -11,7 +11,18 @@
         </select>
       </label>
       <button type="button" :disabled="optionsLoading || preferenceSaving" aria-label="刷新助手选项" @click="store.loadOptions(true)">{{ optionsLoading ? '加载中…' : '刷新' }}</button>
+      <button v-if="allowCreate" class="assistant-selector__create" type="button" aria-label="接入大模型" :aria-expanded="formOpen" @click="formOpen = !formOpen">{{ formOpen ? '收起' : '＋ 接入模型' }}</button>
     </div>
+    <form v-if="allowCreate && formOpen" class="assistant-selector__form" @submit.prevent="saveConnection">
+      <label>名称<input v-model.trim="form.name" required placeholder="如 DeepSeek"></label>
+      <label>接口地址<input v-model.trim="form.baseUrl" required placeholder="https://api.deepseek.com/v1"></label>
+      <label>模型名<input v-model.trim="form.modelName" required placeholder="deepseek-chat"></label>
+      <label>API 密钥<input v-model.trim="form.apiKey" type="password" required autocomplete="off" placeholder="sk-…"></label>
+      <p class="assistant-selector__hint">密钥由服务端 AES 加密保存，不会回显；保存后自动切换到该模型。</p>
+      <button type="submit" :disabled="saving">{{ saving ? '保存中…' : '保存并切换' }}</button>
+      <p v-if="formError" role="alert">{{ formError }}</p>
+    </form>
+    <RouterLink v-if="allowCreate" to="/model-settings" class="assistant-selector__link">去「模型接入」填写 API 密钥 ↗</RouterLink>
     <div class="assistant-selector__status" role="status">
       <span>智维 Mini · {{ miniStatus }}</span>
       <span v-if="optionsLoaded && selectedOption.kind === 'connection'">{{ selectedOption.enabled ? '已配置，未实测（未实时验证）' : '已保存的连接不可用，不会自动切换' }}</span>
@@ -27,9 +38,12 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAiChatStore } from '../../stores/aiChat.js'
+import { createModelConnection } from '../../api/model.ts'
+
+defineProps({ allowCreate: Boolean })
 
 const store = useAiChatStore()
 const { options, selectedKey, selectedOption, optionsLoaded, optionsLoading, optionsError, preferenceSaving,
@@ -48,6 +62,32 @@ async function changeProvider(event) {
   await store.selectProvider(providerKey)
   target.value = selectedKey.value
 }
+
+const formOpen = ref(false)
+const saving = ref(false)
+const formError = ref('')
+const form = reactive({ name: '', baseUrl: '', modelName: '', apiKey: '' })
+const unwrap = value => value?.data ?? value
+
+async function saveConnection() {
+  if (saving.value) return
+  saving.value = true
+  formError.value = ''
+  try {
+    const saved = unwrap(await createModelConnection({
+      name: form.name.trim(), provider: 'custom', baseUrl: form.baseUrl.trim().replace(/\/+$/, ''),
+      modelName: form.modelName.trim(), apiKey: form.apiKey.trim(), enabled: true, timeoutSeconds: 60,
+    }))
+    await store.loadOptions(true)
+    if (saved?.id) await store.selectProvider(`connection:${saved.id}`)
+    formOpen.value = false
+    Object.assign(form, { name: '', baseUrl: '', modelName: '', apiKey: '' })
+  } catch (error) {
+    formError.value = error?.response?.data?.message || error.message || '接入失败'
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -61,4 +101,16 @@ async function changeProvider(event) {
 .assistant-selector__status { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 6px; color: var(--smart-muted); }
 .assistant-selector p { margin: 6px 0 0; color: var(--smart-danger); }
 .assistant-selector__fallback { margin-top: 8px; }
+.assistant-selector__form { display: grid; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--smart-border); }
+.assistant-selector__form label { display: grid; gap: 4px; color: var(--smart-muted); }
+.assistant-selector__form input { min-height: 32px; padding: 4px 8px; border: 1px solid var(--smart-border-strong); border-radius: 6px; background: var(--smart-card); color: var(--smart-text); font: inherit; }
+.assistant-selector__hint { margin: 0; color: var(--smart-muted); }
+.assistant-selector__form button { justify-self: start; min-height: 32px; }
+.assistant-selector__link { display: none; margin-top: 6px; color: var(--smart-primary-strong); font-size: 12px; }
+
+/* 手机端：填密钥是长文本粘贴场景，不适合窄屏手输，只保留切换与跳转。 */
+@media (max-width: 600px) {
+  .assistant-selector__create, .assistant-selector__form { display: none; }
+  .assistant-selector__link { display: inline-flex; }
+}
 </style>

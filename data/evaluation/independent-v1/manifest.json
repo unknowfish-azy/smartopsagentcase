@@ -1,0 +1,7 @@
+{
+  "schema_version": "independent-v1",
+  "samples_path": "samples.json",
+  "samples_sha256": "ae5afbbdb7063539c21c4f600e8231359d14021e8e5aa88672323530e31f436f",
+  "dataset_role": "INDEPENDENT_EVALUATION_PENDING_REVIEW",
+  "frozen": true
+}

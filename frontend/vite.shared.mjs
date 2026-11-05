@@ -18,7 +18,9 @@ export function devProxy(target) {
         },
         '/ai': {
             target: 'http://127.0.0.1:8001',
-            changeOrigin: true
+            changeOrigin: true,
+            // 去掉 /ai 前缀：ai-service 的路由是 /api/chat/stream
+            rewrite: path => path.replace(/^\/ai/, '')
         }
     }
 }

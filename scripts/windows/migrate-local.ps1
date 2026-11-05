@@ -1,3 +1,6 @@
+# [已废弃] 后端 schema 已由 Flyway 接管（启动时按 db/migration 版本执行并记录
+# flyway_schema_history），本脚本仅保留用于 Flyway 接入前的历史库手工兜底，
+# 新环境不要再执行；需要补建/升级请直接启动后端或运行 mvn flyway:migrate。
 param(
     [string]$MysqlBin = 'C:\Program Files\MySQL\MySQL Server 8.0\bin',
     [string]$Database = 'smartops'

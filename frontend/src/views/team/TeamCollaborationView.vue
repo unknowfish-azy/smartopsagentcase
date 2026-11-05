@@ -20,7 +20,21 @@
         </section>
         <section v-else-if="activeView === 'tools'" aria-labelledby="team-tools-title"><div class="team-workbench__section-head"><h2 id="team-tools-title">工具菜单</h2><span>{{ toolGroups.reduce((sum, group) => sum + group.items.length, 0) }} 项</span></div><p v-if="!selectedAgent" class="team-workbench__empty">先选择共享 Agent。</p><template v-else><div v-for="group in toolGroups" :key="group.id" class="team-workbench__tool-group"><h3>{{ group.label }}</h3><div v-for="tool in group.items" :key="tool.toolId" class="team-workbench__tool"><strong>{{ tool.toolId }}</strong><span>{{ tool.readOnly ? '只读' : '需审批' }} · {{ tool.riskLevel }}</span></div></div><p v-if="!toolGroups.length" class="team-workbench__empty">当前 Agent 未开放工具。</p></template></section>
         <section v-else-if="activeView === 'runs'" aria-labelledby="team-runs-title"><div class="team-workbench__section-head"><h2 id="team-runs-title">运行与审批</h2><button type="button" :disabled="busy" @click="loadRuns">刷新</button></div><div v-if="canManage" class="team-workbench__approval-queue"><div class="team-workbench__section-head"><h3>待我审批 <span>{{ pendingApprovals.length }}</span></h3><button type="button" :disabled="busy" @click="loadApprovals">刷新队列</button></div><p v-if="!pendingApprovals.length" class="team-workbench__empty">暂无待审批运行。</p><p v-else class="team-workbench__muted">待审批运行会在团队冻结时自动失效，审批前必须完成预览。</p><ul v-if="pendingApprovals.length"><li v-for="item in pendingApprovals" :key="item.id">#{{ item.id }} · {{ item.toolId }} · 发起人 #{{ item.requesterId }}</li></ul></div><form v-if="selectedAgent && !frozen && team?.role !== 'viewer'" class="team-workbench__run-form" @submit.prevent="createRun"><label>工具<select v-model="runDraft.toolId" required><option value="" disabled>选择工具</option><option v-for="tool in tools" :key="tool.toolId" :value="tool.toolId">{{ tool.toolId }}{{ tool.readOnly ? ' · 只读' : ' · 需审批' }}</option></select></label><label>Runtime ID<input v-model.trim="runDraft.runtimeId" required maxlength="128" /></label><label>参数 JSON<textarea v-model.trim="runDraft.parameters" rows="3" spellcheck="false" /></label><button type="submit" :disabled="busy || !runDraft.toolId || !runDraft.runtimeId">提交运行请求</button></form><p v-else-if="!selectedAgent" class="team-workbench__empty">先选择共享 Agent。</p><div class="team-workbench__run-list"><article v-for="run in runs" :key="run.id"><div><strong>#{{ run.id }} · {{ run.toolId }}</strong><span>{{ run.status }} · Agent {{ run.agentId }}</span><span>发起人 #{{ run.requesterId }} · Runtime {{ run.runtimeId }}</span><pre v-if="runPreview?.id === run.id">{{ runPreview.commands.join('\n') }}</pre></div><div class="team-workbench__actions"><template v-if="run.status === 'PENDING_APPROVAL' && canManage && run.requesterId !== currentUserId && !frozen"><button type="button" :disabled="busy" @click="previewRun(run)">预览</button><button v-if="runPreview?.id === run.id" type="button" :disabled="busy" @click="approveRun(run)">批准</button></template><button v-if="run.status === 'APPROVED' && run.requesterId === currentUserId && !frozen" type="button" :disabled="busy" @click="executeRun(run)">执行</button></div></article><p v-if="!runs.length" class="team-workbench__empty">暂无运行记录。</p></div></section>
-        <section v-else aria-labelledby="team-session-title"><div class="team-workbench__section-head"><h2 id="team-session-title">协作记录</h2><button v-if="!frozen && team?.role !== 'viewer'" type="button" :disabled="busy" @click="createConversation"><Plus aria-hidden="true" />新建会话</button></div><div class="team-workbench__session"><aside aria-label="团队会话列表"><button v-for="conversation in conversations" :key="conversation.id" type="button" :class="{ active: selectedConversation?.id === conversation.id }" @click="openConversation(conversation.id)">{{ conversation.title }}</button><p v-if="!conversations.length">暂无会话</p></aside><div class="team-workbench__messages"><template v-if="selectedConversation"><div ref="transcriptEl" class="team-workbench__transcript"><article v-for="message in selectedConversation.messages" :key="message.id" :class="{ receipt: message.role === 'assistant' }"><small>{{ message.role === 'assistant' ? '系统回执' : '团队成员' }}</small><p>{{ message.content }}</p></article><p v-if="!selectedConversation.messages.length">开始记录本次协作。</p></div><form v-if="!frozen && team?.role !== 'viewer'" @submit.prevent="sendMessage"><label class="sr-only" for="team-message">发送协作消息</label><textarea id="team-message" ref="composerInput" v-model.trim="messageDraft" maxlength="2000" rows="3" placeholder="记录排查过程、判断和交接信息" /><button type="submit" :disabled="busy || !messageDraft">发送</button></form></template><p v-else class="team-workbench__empty">选择会话以查看团队记录。</p></div></div></section>
+        <section v-else-if="activeView === 'sessions'" aria-labelledby="team-session-title"><div class="team-workbench__section-head"><h2 id="team-session-title">协作记录</h2><button v-if="!frozen && team?.role !== 'viewer'" type="button" :disabled="busy" @click="createConversation"><Plus aria-hidden="true" />新建会话</button></div><div class="team-workbench__session"><aside aria-label="团队会话列表"><button v-for="conversation in conversations" :key="conversation.id" type="button" :class="{ active: selectedConversation?.id === conversation.id }" @click="openConversation(conversation.id)">{{ conversation.title }}</button><p v-if="!conversations.length">暂无会话</p></aside><div class="team-workbench__messages"><template v-if="selectedConversation"><div ref="transcriptEl" class="team-workbench__transcript"><article v-for="message in selectedConversation.messages" :key="message.id" :class="{ receipt: message.role === 'assistant' }"><small>{{ message.role === 'assistant' ? '系统回执' : '团队成员' }}</small><p>{{ message.content }}</p></article><p v-if="!selectedConversation.messages.length">开始记录本次协作。</p></div><form v-if="!frozen && team?.role !== 'viewer'" @submit.prevent="sendMessage"><label class="sr-only" for="team-message">发送协作消息</label><textarea id="team-message" ref="composerInput" v-model.trim="messageDraft" maxlength="2000" rows="3" placeholder="记录排查过程、判断和交接信息" /><button type="submit" :disabled="busy || !messageDraft">发送</button></form></template><p v-else class="team-workbench__empty">选择会话以查看团队记录。</p></div></div></section>
+        <section v-else aria-labelledby="team-resources-title">
+          <div class="team-workbench__section-head"><h2 id="team-resources-title">团队共享资料</h2><button type="button" :disabled="busy" @click="loadShares">刷新</button></div>
+          <p class="team-workbench__muted">团队成员共享的只读知识库；只有知识库所有者或团队管理员可以取消共享。</p>
+          <p v-if="shareError" class="team-workbench__error" role="alert">{{ shareError }}</p>
+          <div class="team-workbench__agent-list"><button v-for="item in sharedResources" :key="item.id" type="button" :class="{ active: selectedShare?.resourceId === item.resourceId }" @click="openShare(item)"><strong>{{ item.name }}</strong><span>{{ item.ownerName }} · {{ item.entryCount }} 条</span></button></div>
+          <p v-if="!sharedResources.length && !loading" class="team-workbench__empty">当前团队还没有共享资料，可在「我的知识库」中选择知识库共享到团队。</p>
+          <div v-if="selectedShare" class="team-workbench__detail">
+            <h3>{{ selectedShare.name }}</h3>
+            <p>{{ sharedLibrary?.description || selectedShare.description || '暂无描述' }}</p>
+            <article v-for="entry in shareEntries" :key="entry.id" class="team-workbench__shared-entry"><strong>{{ entry.title }}</strong><span>{{ entry.sourceType }} · {{ entry.verificationStatus }} · v{{ entry.version }}</span><p>{{ entry.summary }}</p><pre>{{ entry.contentMarkdown }}</pre></article>
+            <p v-if="!shareEntries.length" class="team-workbench__empty">该知识库暂无条目。</p>
+            <button v-if="canRemoveShare(selectedShare)" type="button" :disabled="busy" @click="unshareResource(selectedShare)">取消共享</button>
+          </div>
+        </section>
       </div>
     </div>
   </section>
@@ -29,8 +43,8 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { ChatLineRound, Cpu, Tools, Plus, DocumentChecked } from '@element-plus/icons-vue'
-import { teamApi } from '../../api/teams.ts'
+import { ChatLineRound, Cpu, Tools, Plus, DocumentChecked, FolderOpened } from '@element-plus/icons-vue'
+import { teamApi, teamSharesApi } from '../../api/teams.ts'
 import { teamAgentsApi, teamConversationApi, teamToolsApi, teamRunsApi } from '../../api/teamAgents.ts'
 import { currentSession } from '../../security/session.js'
 import { TEAM_ROLE_LABELS, isTeamManager } from '../../domain/team/permissions.ts'
@@ -38,12 +52,13 @@ import { teamToolGroups, teamWorkspaceState } from '../../domain/team/teamCollab
 import './teamCollaboration.css'
 
 const route = useRoute(), router = useRouter()
-const views = [{ id: 'agents', label: '共享 Agent', icon: Cpu }, { id: 'tools', label: '工具菜单', icon: Tools }, { id: 'runs', label: '运行与审批', icon: DocumentChecked }, { id: 'sessions', label: '协作会话', icon: ChatLineRound }]
+const views = [{ id: 'agents', label: '共享 Agent', icon: Cpu }, { id: 'tools', label: '工具菜单', icon: Tools }, { id: 'runs', label: '运行与审批', icon: DocumentChecked }, { id: 'sessions', label: '协作会话', icon: ChatLineRound }, { id: 'resources', label: '共享资料', icon: FolderOpened }]
 const currentUserId = computed(() => currentSession.value?.id)
 const state = reactive(teamWorkspaceState())
 const teams = ref([]), team = ref(null), agents = ref([]), tools = ref([]), catalog = ref([]), runs = ref([]), pendingApprovals = ref([]), conversations = ref([]), selectedConversation = ref(null)
 const runDraft = reactive({ toolId: '', runtimeId: '', parameters: '{}' })
 const runPreview = ref(null)
+const sharedResources = ref([]), selectedShare = ref(null), sharedLibrary = ref(null), shareEntries = ref([]), shareError = ref('')
 const activeView = ref('agents'), loading = ref(false), busy = ref(false), error = ref(''), creating = ref(false), messageDraft = ref('')
 const newAgent = reactive({ name: '', description: '' }), draft = reactive({ prompt: '', toolsJson: '[]' })
 const composerInput = ref(null), transcriptEl = ref(null)
@@ -73,15 +88,18 @@ async function load() {
     team.value = null; agents.value = []; catalog.value = []; runs.value = []; pendingApprovals.value = []; conversations.value = []; selectedConversation.value = null
     runPreview.value = null
     draft.prompt = ''; draft.toolsJson = '[]'
+    sharedResources.value = []; selectedShare.value = null; sharedLibrary.value = null; shareEntries.value = []; shareError.value = ''
   }
   error.value = ''; loading.value = true
   try {
-    const [list, detail, agentList, sessionList, runList] = await Promise.all([
+    const [list, detail, agentList, sessionList, runList, shareList] = await Promise.all([
       teamApi.list({ page: 1, pageSize: 100 }), teamApi.detail(state.teamId), teamAgentsApi.list(state.teamId),
-      teamConversationApi.list(state.teamId), teamRunsApi.list(state.teamId)
+      teamConversationApi.list(state.teamId), teamRunsApi.list(state.teamId), teamSharesApi.list(state.teamId).catch(() => [])
     ])
     if (epoch !== generation) return
     teams.value = list.items || []; team.value = detail.team; agents.value = agentList || []; tools.value = []; conversations.value = sessionList || []; runs.value = runList || []
+    sharedResources.value = shareList || []
+    if (selectedShare.value && !sharedResources.value.some(item => item.resourceId === selectedShare.value.resourceId)) { selectedShare.value = null; sharedLibrary.value = null; shareEntries.value = [] }
     pendingApprovals.value = isTeamManager(team.value?.role) ? await teamRunsApi.pendingApprovals(state.teamId).catch(() => []) : []
     catalog.value = isTeamManager(team.value?.role) && team.value?.status === 'active'
       ? await teamAgentsApi.catalog(state.teamId) : []
@@ -125,6 +143,26 @@ async function saveDraft() { await mutate(() => teamAgentsApi.saveDraft(state.te
 async function publishAgent() { await mutate(() => teamAgentsApi.publish(state.teamId, state.agentId)) }
 async function loadRuns() { try { runs.value = await teamRunsApi.list(state.teamId); await loadApprovals() } catch (failure) { error.value = failure.message || '无法读取运行记录' } }
 async function loadApprovals() { if (!canManage.value) return; try { pendingApprovals.value = await teamRunsApi.pendingApprovals(state.teamId) } catch (failure) { error.value = failure.message || '无法读取待审批队列' } }
+async function loadShares() {
+  shareError.value = ''
+  try { sharedResources.value = await teamSharesApi.list(state.teamId) }
+  catch (failure) { shareError.value = failure.message || '无法读取团队共享资料' }
+}
+async function openShare(item) {
+  shareError.value = ''; selectedShare.value = item; sharedLibrary.value = null; shareEntries.value = []
+  try {
+    const [library, page] = await Promise.all([teamSharesApi.knowledge(state.teamId, item.resourceId), teamSharesApi.knowledgeEntries(state.teamId, item.resourceId)])
+    if (selectedShare.value?.resourceId === item.resourceId) { sharedLibrary.value = library; shareEntries.value = page.items || [] }
+  } catch (failure) { shareError.value = failure.message || '无法读取共享知识库' }
+}
+function canRemoveShare(item) { return item.ownerId === currentUserId.value || canManage.value }
+async function unshareResource(item) {
+  if (!window.confirm(`确认取消共享《${item.name}》？团队成员将无法继续查看。`)) return
+  busy.value = true; shareError.value = ''
+  try { await teamSharesApi.unshare(state.teamId, 'knowledge', item.resourceId); selectedShare.value = null; sharedLibrary.value = null; shareEntries.value = []; await loadShares() }
+  catch (failure) { shareError.value = failure.message || '取消共享失败' }
+  finally { busy.value = false }
+}
 async function previewRun(run) {
   busy.value = true; error.value = ''; runPreview.value = null
   try { const result = await teamRunsApi.preview(run.id); runPreview.value = { id: run.id, commands: result.commands || [] } }

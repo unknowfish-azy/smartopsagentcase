@@ -1,0 +1,69 @@
+--- a/scripts/windows/start-all.ps1
++++ b/scripts/windows/start-all.ps1
+@@ -53,7 +53,9 @@
+             throw 'Ollama is not listening on 11434 and ollama.exe was not found on PATH.'
+         }
+         Write-Host '[START] Ollama serve'
+-        Start-Process -FilePath $ollama.Source -ArgumentList @('serve') | Out-Null
++        Start-Process -FilePath $ollama.Source -ArgumentList @('serve') -WindowStyle Hidden `
++            -RedirectStandardOutput (Join-Path $logDir 'ollama.out.log') `
++            -RedirectStandardError (Join-Path $logDir 'ollama.err.log') | Out-Null
+     }
+ 
+     $deadline = (Get-Date).AddSeconds($StartupTimeoutSeconds)
+@@ -80,10 +82,11 @@
+         throw ("{0} directory not found: {1}" -f $Name, $WorkingDirectory)
+     }
+     Write-Host ("[START] {0}" -f $Name)
+-    # cmd /k keeps the service window available for local logs while Start-Process
+-    # returns immediately to this orchestration script.
+-    Start-Process -FilePath 'cmd.exe' -WorkingDirectory $WorkingDirectory `
+-        -ArgumentList @('/k', $Command) | Out-Null
++    # Hidden service processes write logs instead of opening command windows.
++    Start-Process -FilePath 'cmd.exe' -WorkingDirectory $WorkingDirectory -WindowStyle Hidden `
++        -ArgumentList @('/c', $Command) `
++        -RedirectStandardOutput (Join-Path $logDir ($Name.Split(' ')[0] + '.out.log')) `
++        -RedirectStandardError (Join-Path $logDir ($Name.Split(' ')[0] + '.err.log')) | Out-Null
+ }
+ 
+ $ProjectRoot = [System.IO.Path]::GetFullPath($ProjectRoot)
+@@ -96,6 +99,28 @@
+         throw ("Project root not found: {0}" -f $ProjectRoot)
+     }
+ 
++    $logDir = Join-Path $ProjectRoot '.runtime\start-all'
++    [IO.Directory]::CreateDirectory($logDir) | Out-Null
++    # Read private local settings without printing values.
++    foreach ($file in @((Join-Path $ProjectRoot '.env'), (Join-Path $ProjectRoot '.runtime\secrets\bootstrap.env'))) {
++        if (Test-Path -LiteralPath $file) {
++            foreach ($line in Get-Content -LiteralPath $file -Encoding UTF8) {
++                if ($line -match '^([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {
++                    [Environment]::SetEnvironmentVariable($matches[1], $matches[2].Trim().Trim('"').Trim("'"), 'Process')
++                }
++            }
++        }
++    }
++    $env:NO_PROXY = '127.0.0.1,localhost'
++    $env:LLM_PROVIDER = 'ollama'
++    $env:LLM_MODEL = 'qwen3:1.7b'
++    $env:LLM_BASE_URL = 'http://127.0.0.1:11434'
++    $env:REQUEST_TIMEOUT = '120'
++    $jdk17 = Join-Path $env:USERPROFILE 'scoop\apps\openjdk17\current'
++    if (Test-Path -LiteralPath (Join-Path $jdk17 'bin\java.exe')) {
++        $env:JAVA_HOME = $jdk17
++        $env:PATH = (Join-Path $jdk17 'bin') + ';' + $env:PATH
++    }
+     Ensure-Ollama
+ 
+     if (-not $SkipDependencies) {
+@@ -103,8 +128,8 @@
+         if (Test-Path -LiteralPath $dockerDir -PathType Container) {
+             if (Get-Command docker -ErrorAction SilentlyContinue) {
+                 Write-Host '[START] Docker dependencies (MySQL / Redis)'
+-                Start-Process -FilePath 'cmd.exe' -WorkingDirectory $dockerDir `
+-                    -ArgumentList @('/k', 'docker compose up -d') | Out-Null
++                Start-Process -FilePath 'cmd.exe' -WorkingDirectory $dockerDir -WindowStyle Hidden `
++                    -ArgumentList @('/c', 'docker compose up -d') | Out-Null
+             }
+             else {
+                 Write-Warning 'docker was not found; continuing without dependency containers.'

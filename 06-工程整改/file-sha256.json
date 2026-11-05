@@ -1,0 +1,23 @@
+{
+  "anonymity_review.csv": "982dc28fa1def74bc6ed8e9bd051ab05921c187fc51efb031addb43572fbf5bd",
+  "anonymity_scan.csv": "36d5f911cf265eaebfdaac4769b8a4ddd4b4c10588d790f42de3829dcd72aa78",
+  "C-R1-假成功评测报告.md": "8d412a2602e0774c8ee7d3f01bcbb3322e4057efdbffc2e621dc706e1d0e47e0",
+  "C-R2-检索评测说明.md": "58c793ca3b86da617daf2f7f1ac08353c1056f218e32f31e5944679fa2f76b8f",
+  "changed-files.zip": "9652523fe1fb6efc48e5e1ea9ee30c22cbe991ae9d86f278420fa3f715052ba3",
+  "delivery-manifest.json": "e552a4631e41b5327670a5fc7a8b4cf434063be1bbc31acf582a2a51c960be2a",
+  "eval_false_success.csv": "625b8e9fb224f5aee934feb0213afde399a76f06b318203b5d1f342e99a68638",
+  "eval_retrieval.csv": "d52f636d6f0c4fcab651900cf627cc97e6b9a6f2f4cce07710e514629b739b1d",
+  "eval_retrieval_ai_variants.csv": "ce85691c4ebed3f0b0a5ad9bc8458ec2e73d7685c49f025b2ed39c7e7c219e94",
+  "numeric_consistency.csv": "d68fa434f174dba6902357b8bfddd8b3580d6d20abf6346de50ae614443fdcc0",
+  "README-交付.md": "9be00691f68c439856033c09e4ae5b07e90f2e5e5ca21bbf2fb7b84ed4d7b228",
+  "real_502_pipeline.json": "89aa177ac844622c4af56c711b06bf774bdc677d408675985889b5fdaf0ce5e3",
+  "rollback-bundle.zip": "c000a372d4567057e526f97968fc66641e8395d85c0036248aa9302587844b41",
+  "rollback-defense-changes.ps1": "4dec70256150f79d48847217a848d31720043a5c973ce7b4a4a28ac77aebf5be",
+  "startup-hardening.proposed.patch": "5a545f7af15a9e95311ce42c38563a8780cbb5ae9cc5f3922898bf7c06d38085",
+  "table_inventory.json": "b103074c0b1515d6f8f09a2bd5cade5865ad91a7a0723920249e40d57d4ff914",
+  "口径台账.md": "a081a48da39726df195f377a98d4bbc602039400f07e0650e7df6bb1c357e092",
+  "整改对照.patch": "569a17c290b9f4d548f666206651bcbcd39df564bacf5d87dbaa0fb6417d184a",
+  "整改对照差分.md": "f66db6ddd34914b972962681a54b58bb29cfcf34501ce70cc76a4db19943ca4b",
+  "整改验证记录-20261103.md": "ebedac7bc44722e5e0849f632ded2aa1a73c84f916ad526bc61753f042054df6",
+  "验证日志摘录.txt": "37620d95a90c92f71da517f599f4211ee76636d297a01289a64872d4a879dc59"
+}

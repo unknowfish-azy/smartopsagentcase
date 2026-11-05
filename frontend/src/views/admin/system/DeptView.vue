@@ -12,7 +12,7 @@
     </div>
     <AdminDialog v-if="action" :title="dialogTitle" :busy="saving" @close="close">
       <form class="admin-form" @submit.prevent="save">
-        <label>上级部门<select v-model="draft.parentId"><option :value="0">（顶级部门）</option><option v-for="row in flattened" :key="row.id" :value="row.id" :disabled="row.id === target?.id">{{ '　'.repeat(row.depth) }}{{ row.name }}</option></select></label>
+        <label>上级部门<select v-model="draft.parentId"><option :value="0">（顶级部门）</option><option v-for="row in flattened" :key="row.id" :value="row.id" :disabled="row.id === target?.id">{{ '\u3000'.repeat(row.depth) }}{{ row.name }}</option></select></label>
         <label>部门名称<input v-model.trim="draft.name" required maxlength="64"></label>
         <label>负责人<input v-model.trim="draft.leader" maxlength="32"></label>
         <label>联系电话<input v-model.trim="draft.phone" maxlength="32"></label>
@@ -23,15 +23,18 @@
         <footer><button type="button" :disabled="saving" @click="close">取消</button><button class="admin-primary" type="submit" :disabled="saving">{{ saving ? '提交中…' : '保存' }}</button></footer>
       </form>
     </AdminDialog>
+    <AdminConfirmAction :open="!!passwordRequest" :title="passwordRequest?.title || ''" :description="passwordRequest?.description || ''" :busy="confirmBusy" :error="confirmError" @confirm="confirmPassword" @cancel="cancelPassword" />
   </section>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { systemApi } from '../../../api/adminSystem.ts'
 import { useAdminResource } from '../../../composables/useAdminResource.js'
 import AdminDialog from '../../../components/admin/AdminDialog.vue'
+import AdminConfirmAction from '../../../components/admin/AdminConfirmAction.vue'
 const { data, loading, error, load } = useAdminResource(() => systemApi.depts())
+onMounted(load)
 const action = ref('')
 const saving = ref(false)
 const saveError = ref('')
@@ -74,20 +77,36 @@ async function save() {
   } catch (failure) { saveError.value = failure.message || '保存失败，请重试' }
   finally { saving.value = false }
 }
-function askPassword(label) { return window.prompt(`请输入当前管理员密码以${label}（仅用于本次身份复核）`) }
-async function toggle(dept) {
-  const password = askPassword(dept.status === 1 ? '停用部门' : '启用部门')
-  if (!password) return
-  success.value = ''; error.value = ''
-  try { await systemApi.deptStatus(dept.id, dept.status === 1 ? 0 : 1, password); success.value = '部门状态已更新。'; await load() }
-  catch (failure) { error.value = failure.message || '操作失败' }
+const passwordRequest = ref(null)
+const confirmBusy = ref(false)
+const confirmError = ref('')
+function askPassword(title, description, fallback, action) { confirmError.value = ''; passwordRequest.value = { title, description, fallback, action } }
+function cancelPassword() { if (confirmBusy.value) return; passwordRequest.value = null; confirmError.value = '' }
+async function confirmPassword(password) {
+  if (confirmBusy.value || !passwordRequest.value) return
+  const request = passwordRequest.value
+  confirmError.value = ''
+  confirmBusy.value = true
+  try { await request.action(password); passwordRequest.value = null }
+  catch (failure) { confirmError.value = failure.message || request.fallback }
+  finally { confirmBusy.value = false }
 }
-async function remove(dept) {
+function toggle(dept) {
+  const label = dept.status === 1 ? '停用部门' : '启用部门'
+  askPassword(label, `请输入当前管理员密码以${label}（仅用于本次身份复核）`, '操作失败', async password => {
+    success.value = ''; error.value = ''
+    await systemApi.deptStatus(dept.id, dept.status === 1 ? 0 : 1, password)
+    success.value = '部门状态已更新。'
+    await load()
+  })
+}
+function remove(dept) {
   if (!window.confirm(`确认删除部门「${dept.name}」？`)) return
-  const password = askPassword('删除部门')
-  if (!password) return
-  success.value = ''; error.value = ''
-  try { await systemApi.deleteDept(dept.id, password); success.value = '部门已删除。'; await load() }
-  catch (failure) { error.value = failure.message || '删除失败' }
+  askPassword('删除部门', `请输入当前管理员密码以删除部门「${dept.name}」（仅用于本次身份复核）`, '删除失败', async password => {
+    success.value = ''; error.value = ''
+    await systemApi.deleteDept(dept.id, password)
+    success.value = '部门已删除。'
+    await load()
+  })
 }
 </script>

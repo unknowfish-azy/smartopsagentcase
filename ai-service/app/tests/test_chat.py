@@ -31,3 +31,43 @@ def test_chat_validation(client):
     )
 
     assert response.status_code == 422
+
+
+def test_chat_marks_degraded_provider(client, monkeypatch):
+    from app.core.config import settings
+    from app.services.llm import LLMService
+
+    async def unavailable(self, **kwargs):
+        raise ConnectionError("test Ollama connection failure")
+
+    monkeypatch.setattr(settings, "llm_provider", "ollama")
+    monkeypatch.setattr(LLMService, "_ollama_generate", unavailable)
+
+    response = client.post(
+        "/api/chat",
+        json={"message": "降级标记", "use_rag": False},
+    )
+
+    assert response.status_code == 200
+    metadata = response.json()["metadata"]
+    assert metadata["degraded"] is True
+    assert metadata["effective_provider"] == "mock"
+
+
+def test_chat_runs_inspector_and_returns_rejected_false_success(client):
+    response = client.post(
+        "/api/chat",
+        json={
+            "message": "检查任务状态",
+            "use_rag": False,
+            "metadata": {
+                "agent_claim": "任务已解决，服务恢复正常",
+                "actual_state": {"probes": [{"probe_type": "http", "status_code": 502}]},
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    inspection = response.json()["metadata"]["inspection"]
+    assert inspection["status"] == "REJECTED"
+    assert inspection["verification_result"]["false_success"] is True

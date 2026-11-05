@@ -32,8 +32,16 @@ class BM25Retriever:
         self,
         query: str,
         top_k: int = 10,
-        version: str | None = None,
+        version: str | None = None,  # 保留签名兼容，但不再自实现过滤
     ):
+        """BM25 关键词检索。
+
+        版本过滤：VERSION-P0-01 重构后由 KnowledgeService 层统一用 VersionFilter
+        应用（任务书："召回前按服务端确认的 tenant/workspace/ACL 过滤；两路使用同一约束"）。
+        本 retriever 只做 BM25 评分 + 排序 + top_k，不做版本过滤。
+
+        version 参数保留以兼容现有调用方签名，但在此处不参与逻辑。
+        """
 
         query_tokens = tokenize(query)
 
@@ -71,13 +79,6 @@ class BM25Retriever:
         ):
 
             chunk = self.chunks[index]
-
-            if (
-                version
-                and version != "latest"
-                and chunk.version != version
-            ):
-                continue
 
             score = 0.0
             doc_len = len(doc)

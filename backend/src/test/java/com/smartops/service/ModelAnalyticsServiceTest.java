@@ -16,7 +16,7 @@ class ModelAnalyticsServiceTest {
     private ModelAnalyticsService service;
     @BeforeEach void setup() {
         var source = new DriverManagerDataSource("jdbc:h2:mem:analytics-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1", "sa", "");
-        new ResourceDatabasePopulator(new ClassPathResource("db/model-analytics.sql")).execute(source);
+        new ResourceDatabasePopulator(new ClassPathResource("db/migration/V20261001__model_analytics.sql")).execute(source);
         jdbc = new JdbcTemplate(source);
         service = new ModelAnalyticsService(jdbc);
     }

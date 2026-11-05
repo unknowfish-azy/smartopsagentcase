@@ -37,6 +37,10 @@ export function normalizeDateTime(value) {
   return Number.isNaN(date.getTime()) ? '' : date.toISOString()
 }
 
+const runTimeFormatter = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'medium', hour12: false })
+export function formatRunTime(value) { return value ? runTimeFormatter.format(new Date(value)) : '—' }
+export function runStatusClass(status) { return `status status-${String(status || '').toLowerCase()}` }
+
 export function validateRunTimeRange(startedFrom, startedTo) {
   const errors = {}
   if (startedFrom && !normalizeDateTime(startedFrom)) errors.startedFrom = '开始时间格式无效。'

@@ -92,10 +92,12 @@ public class ModelGatewayService {
         List<Map<String, Long>> limits = jdbc.query("SELECT request_limit_24h,token_limit_24h FROM model_gateway_key WHERE id=?", (rs, n) -> Map.of("requests", rs.getObject("request_limit_24h") == null ? -1L : rs.getLong("request_limit_24h"), "tokens", rs.getObject("token_limit_24h") == null ? -1L : rs.getLong("token_limit_24h")), keyId);
         if (limits.isEmpty()) throw new BusinessException(401, "Invalid gateway key");
         long requestLimit = limits.get(0).get("requests"), tokenLimit = limits.get(0).get("tokens");
-        if (requestLimit < 0 && tokenLimit < 0) return;
-        Map<String, Long> usage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(total_tokens),0) tokens FROM model_gateway_invocation WHERE key_id=? AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), keyId).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
-        if (requestLimit >= 0 && usage.get("calls") >= requestLimit) throw new BusinessException(429, "Gateway request quota exceeded");
-        if (tokenLimit >= 0 && usage.get("tokens") >= tokenLimit) throw new BusinessException(429, "Gateway token quota exceeded");
+        // key 两项额度都未配置时只是跳过 key 维度计量，仍必须继续校验模型组额度。
+        if (requestLimit >= 0 || tokenLimit >= 0) {
+            Map<String, Long> usage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(total_tokens),0) tokens FROM model_gateway_invocation WHERE key_id=? AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), keyId).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
+            if (requestLimit >= 0 && usage.get("calls") >= requestLimit) throw new BusinessException(429, "Gateway request quota exceeded");
+            if (tokenLimit >= 0 && usage.get("tokens") >= tokenLimit) throw new BusinessException(429, "Gateway token quota exceeded");
+        }
         List<Map<String, Long>> groupLimits = jdbc.query("SELECT request_limit_24h,token_limit_24h FROM model_gateway_group WHERE slug=? AND owner_user_id=?", (rs, n) -> Map.of("requests", rs.getObject("request_limit_24h") == null ? -1L : rs.getLong("request_limit_24h"), "tokens", rs.getObject("token_limit_24h") == null ? -1L : rs.getLong("token_limit_24h")), group, ownerUserId);
         if (!groupLimits.isEmpty()) {
             long groupRequestLimit = groupLimits.get(0).get("requests"), groupTokenLimit = groupLimits.get(0).get("tokens");

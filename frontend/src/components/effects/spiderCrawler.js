@@ -20,14 +20,28 @@ function nodeKey(spoke, ring) { return `${spoke}:${ring}` }
 // 几何蛛网：中心 + spokes 根辐条 + rings 层多边形环，全部直线段。
 // 网随宿主面板自适应为椭圆（宽面板横向铺满，参考图的满幅构图）；蜘蛛行走逻辑与形状无关。
 // 返回 segments（可绘制、可行走）与 adjacency（节点 → 相邻段），蜘蛛在节点处择路。
-export function createWeb({ width, height, seed = 7, spokes = 10, rings = 4, margin = 18 }) {
+// 采集状态 → 节点颜色。与哨兵表格的状态点配色保持一致语义（青=在线 / 红=离线 /
+// 橙=异常 / 灰=缺连接）。none 为装饰节点（未绑定任务的网眼）。
+export const STATUS_COLORS = {
+  online: '#7AD7F5',
+  offline: '#FF6B6B',
+  error: '#FFB347',
+  no_runtime: '#5A6B7B',
+  unknown: '#5A6B7B',
+  none: 'rgba(122, 215, 245, 0.35)'
+}
+
+export function createWeb({ width, height, seed = 7, spokes = 10, rings = 4, margin = 18, tasks = null }) {
   const rng = createRng(seed * 7919 + 13)
   const cx = width / 2
   const cy = height / 2
   const rx = Math.max(40, width / 2 - margin)
   const ry = Math.max(40, height / 2 - margin)
   const maxRadius = Math.min(rx, ry)
-  const spokeCount = Math.max(6, spokes)
+  // 有真实任务时，每个任务独占一根辐条的外圈节点，网面密度 = 任务数（封顶 36）
+  const spokeCount = tasks && tasks.length
+    ? Math.max(6, Math.min(36, tasks.length))
+    : Math.max(6, spokes)
   const ringCount = Math.max(2, rings)
 
   // 节点坐标：辐条角 + 环半径都带小幅抖动，破除机械对称（星海/蛛网的 topology flow 语言）
@@ -47,6 +61,21 @@ export function createWeb({ width, height, seed = 7, spokes = 10, rings = 4, mar
       const rr = ringRadius[r] * (0.99 + rng() * 0.015)
       nodeX.set(nodeKey(s, r), cx + Math.cos(spokeAngle[s]) * rx * ((r + 1) / ringCount) * rr)
       nodeY.set(nodeKey(s, r), cy + Math.sin(spokeAngle[s]) * ry * ((r + 1) / ringCount) * rr)
+    }
+  }
+
+  // 真实任务节点：每个哨兵任务映射到外圈一个节点，状态由采集数据决定（着色在绘制期完成）
+  const webTasks = new Map() // nodeKey → task
+  const taskNodeKey = new Map() // task.id → nodeKey
+  if (tasks && tasks.length) {
+    const outerRing = ringCount - 1
+    for (let s = 0; s < spokeCount; s += 1) {
+      const key = nodeKey(s, outerRing)
+      const task = tasks[s]
+      if (task) {
+        webTasks.set(key, task)
+        taskNodeKey.set(task.id, key)
+      }
     }
   }
 
@@ -83,7 +112,7 @@ export function createWeb({ width, height, seed = 7, spokes = 10, rings = 4, mar
     }
   }
 
-  return { width, height, cx, cy, maxRadius, spokeCount, ringCount, nodeX, nodeY, segments, adjacency }
+  return { width, height, cx, cy, maxRadius, spokeCount, ringCount, nodeX, nodeY, segments, adjacency, webTasks, taskNodeKey, taskCount: webTasks.size }
 }
 
 // 蜘蛛：随机落在一条外圈段上，8 条腿按左右各 4 只排布。
@@ -103,7 +132,7 @@ export function createSpider(web, rng, scale = 1) {
     speed: 34 * Math.sqrt(scale), // 大网等比提速（sqrt 保持巡检节奏感），px/s
     scale,
     bodyX: 0, bodyY: 0, heading: 0, bodyAngle: 0,
-    bob: 0, clock: 0, lastNodeKey: '',
+    bob: 0, clock: 0, pulsePhase: 0, lastNodeKey: '',
     legs: []
   }
   const pairs = [0.42, 0.72, 1.02, 1.32] // 髋角（相对垂直躯干轴，弧度），前两对偏前、后两对偏后
@@ -210,13 +239,17 @@ function exitPointY(web, entry, key) {
 }
 
 // 物理步进：沿段行走 → 节点择路 → 躯干微俯仰 → 步态换脚
-export function stepSpider(spider, web, dt, rng) {
+// targetKey 可选：给定要巡访的真实任务节点 key 时，蜘蛛会沿网趋近该节点（反映"去采那个点"）
+export function stepSpider(spider, web, dt, rng, targetKey) {
   if (!(dt > 0)) return
   spider.clock += dt
+  spider.pulsePhase = (spider.pulsePhase || 0) + dt
   const seg = web.segments[spider.segIndex]
   spider.t += (spider.dir * spider.speed * dt) / Math.max(8, seg.length)
   if (spider.t > 1 || spider.t < 0) {
-    const next = chooseNextSegment(web, spider, rng)
+    const next = (targetKey && web.taskNodeKey)
+      ? seekToward(web, spider, targetKey, rng)
+      : chooseNextSegment(web, spider, rng)
     spider.segIndex = next.segIndex
     spider.dir = next.dir
     spider.t = spider.dir > 0 ? 0 : 1
@@ -264,4 +297,57 @@ export function restPose(spider, web) {
 
 export function legsStepping(spider) {
   return spider.legs.filter(leg => leg.stepping).length
+}
+
+// 节点坐标查询（'center' 或 nodeKey）
+function nodePos(web, key) {
+  if (key === 'center') return { x: web.cx, y: web.cy }
+  const x = web.nodeX.get(key)
+  if (x === undefined) return null
+  return { x, y: web.nodeY.get(key) }
+}
+
+// 趋近式择路：到达节点时，从相邻段里挑"离目标节点最近"的那条，带少量随机抖动避免卡死。
+// 没有有效目标时退回 chooseNextSegment 的随机巡游。
+export function seekToward(web, spider, targetKey, rng) {
+  const seg = web.segments[spider.segIndex]
+  const arrivedEnd = spider.dir > 0 ? 'b' : 'a'
+  const key = nodeKeyForSegmentEnd(web, seg, arrivedEnd)
+  const options = (web.adjacency.get(key) || []).filter(entry => entry.seg.index !== seg.index)
+  if (!options.length) return { segIndex: seg.index, dir: -spider.dir }
+  const tp = nodePos(web, targetKey)
+  if (!tp) return chooseNextSegment(web, spider, rng)
+  let best = null
+  let bestScore = Infinity
+  for (const option of options) {
+    const ex = exitPointX(web, option, key)
+    const ey = exitPointY(web, option, key)
+    const dist = Math.hypot(ex - tp.x, ey - tp.y)
+    const score = dist + rng() * 28 // 抖动：避免两节点等距时来回黏滞
+    if (score < bestScore) { bestScore = score; best = option }
+  }
+  if (!best) return chooseNextSegment(web, spider, rng)
+  const startAtB = endMatches(web, best, key)
+  return { segIndex: best.seg.index, dir: startAtB ? -1 : 1 }
+}
+
+/**
+ * 选出当前巡访目标节点 key（纯函数，可单测）：
+ *   - activeId 优先：表格 hover 的行对应的任务节点；
+ *   - 否则取「最近一次采样」的在线/异常任务节点（反映真实采集活动）；
+ *   - 离线 / 缺连接节点不吸引蜘蛛（它们当前不能采集）。
+ * 没有真实任务或都没有有效时间时返回 null（蜘蛛退回随机巡游）。
+ */
+export function pickTargetTaskKey(web, nodes, activeId) {
+  if (!web || !web.taskNodeKey) return null
+  const list = nodes || []
+  if (activeId != null && web.taskNodeKey.has(activeId)) return web.taskNodeKey.get(activeId)
+  let bestId = null
+  let bestTime = -Infinity
+  for (const n of list) {
+    if (n.status === 'offline' || n.status === 'no_runtime') continue
+    const t = n.lastSeenAt ? Date.parse(n.lastSeenAt) : 0
+    if (t > bestTime) { bestTime = t; bestId = n.id }
+  }
+  return bestId != null ? (web.taskNodeKey.get(bestId) ?? null) : null
 }

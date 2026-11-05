@@ -107,7 +107,8 @@ export const personalSystemGroups = Object.freeze([
     children: [
       { label: 'DASHBOARD', cn: '哨兵监控台', routeName: 'SentinelDashboard', to: '/sentinel' },
       { label: 'SCRIPT LIBRARY', cn: '脚本库', routeName: 'ScriptLibrary', to: '/sentinel/scripts' },
-      { label: 'ALERT CENTER', cn: '告警中心', routeName: 'AlertCenter', to: '/sentinel/alerts' }
+      { label: 'ALERT CENTER', cn: '告警中心', routeName: 'AlertCenter', to: '/sentinel/alerts' },
+      { label: 'GUARDIAN', cn: '守护 Agent', routeName: 'SentinelGuardian', to: '/sentinel/guardian' }
     ]
   })
   ,directGroup({ id: 'admin', label: 'ADMIN', cn: '管理控制台', icon: 'Setting', routeName: 'AdminControlCenter', to: '/admin', roles: ['admin'] })

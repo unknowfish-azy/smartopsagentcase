@@ -102,7 +102,7 @@ def test_trace_collector_false_success():
             AgentEvent(
                 name=VERIFICATION_FINISHED,
                 request_id="TASK-200",
-                payload={"resolved": False, "status": "502"},
+                payload={"probes": [{"type": "http", "status_code": 502}]},
             )
         )
 

@@ -1,0 +1,104 @@
+{
+  "demonstration": "temporary real local HTTP server returning 502; random free port",
+  "input": {
+    "agent_claim": "服务已恢复",
+    "actual_state": {
+      "probes": [
+        {
+          "probe_type": "http",
+          "url": "http://127.0.0.1:60302/health",
+          "timeout": 2.0,
+          "observed_at": "2026-11-03T04:41:47.584245+00:00",
+          "status": "error",
+          "status_code": 502,
+          "timed_out": false
+        },
+        {
+          "probe_type": "port",
+          "host": "127.0.0.1",
+          "port": 60302,
+          "timeout": 2.0,
+          "observed_at": "2026-11-03T04:41:47.623166+00:00",
+          "status": "open",
+          "timed_out": false
+        },
+        {
+          "probe_type": "process",
+          "name": "python",
+          "pattern": "python",
+          "status": "running",
+          "match_count": 3,
+          "matches": [
+            {
+              "pid": 24212,
+              "name": "python.exe"
+            },
+            {
+              "pid": 28320,
+              "name": "python.exe"
+            },
+            {
+              "pid": 46120,
+              "name": "python.exe"
+            }
+          ],
+          "observed_at": "2026-11-03T04:41:47.714285+00:00"
+        }
+      ]
+    }
+  },
+  "inspection": {
+    "inspection_id": "INS-15443B5668CA",
+    "task_id": "",
+    "target": "AGENT",
+    "status": "REJECTED",
+    "severity": "HIGH",
+    "category": "VERIFICATION",
+    "agent_claim": "服务已恢复",
+    "actual_evidence": [],
+    "reason": "Agent 声称已解决，但探针仍报告异常：http, port, process",
+    "recommendation": "验证失败，触发 Re-plan，重新分析并再次验证",
+    "requires_human": true,
+    "issues": [
+      {
+        "category": "EVIDENCE",
+        "severity": "WARNING",
+        "reason": "Agent 给出结论，但证据仅 0 条，低于最低要求 1",
+        "recommendation": "先收集足够证据，再给出结论"
+      },
+      {
+        "category": "HALLUCINATION",
+        "severity": "HIGH",
+        "reason": "Agent 结论缺乏证据支持（UNSUPPORTED）",
+        "recommendation": "重新检索知识库并补充证据，无法确认时明确说明"
+      },
+      {
+        "category": "VERIFICATION",
+        "severity": "HIGH",
+        "reason": "Agent 声称已解决，但探针仍报告异常：http, port, process",
+        "recommendation": "验证失败，触发 Re-plan，重新分析并再次验证"
+      }
+    ],
+    "evidence_label": "UNSUPPORTED",
+    "policy_result": {
+      "tool_calls": 0
+    },
+    "evidence_result": {
+      "evidence_count": 0,
+      "label": "UNSUPPORTED",
+      "min_evidence": 1
+    },
+    "verification_result": {
+      "checked": true,
+      "passed": false,
+      "false_success": true,
+      "probe_types": [
+        "http",
+        "port",
+        "process"
+      ],
+      "reason": "Agent 声称已解决，但探针仍报告异常：http, port, process"
+    },
+    "metadata": {}
+  }
+}

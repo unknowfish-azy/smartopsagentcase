@@ -2,7 +2,7 @@ const safeName = /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,127}$/
 const safeNamespace = /^[a-z0-9][a-z0-9.-]{0,62}$/
 const safeNumber = /^[0-9]{1,6}$/
 const safeHost = /^[a-zA-Z0-9][a-zA-Z0-9.:-]{0,252}$/
-const safeUrl = /^https?:\/\/[a-zA-Z0-9][a-zA-Z0-9._~:/?#\[\]@!$&'()*+,;=%-]{0,1023}$/
+const safeUrl = /^https?:\/\/[a-zA-Z0-9][a-zA-Z0-9._~:/?#[\]@!$&'()*+,;=%-]{0,1023}$/
 
 const parameter = (id, label, pattern, defaultValue = '') => ({ id, label, pattern, defaultValue })
 const tool = definition => ({ riskLevel: 'LOW', readOnly: true, requireConfirm: false, parameters: [], commands: [], evidence: [], ...definition })

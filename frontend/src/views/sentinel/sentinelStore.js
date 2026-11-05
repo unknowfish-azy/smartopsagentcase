@@ -1,13 +1,15 @@
 /**
  * 哨兵 / 脚本 / 告警 三个模块的共享状态与后端接口层。
  *
- * 后端尚未提供 `sentinel_*` 接口（表结构见 docs/sentinel-scripts-alerts-design.md）。
- * 这里的做法是**如实反映真实状态**：
- *   - 请求成功 → 使用后端数据；
- *   - 接口不存在或失败 → 标记 `unavailable` 并在界面上明说"后端未接入"，
- *     绝不填充看起来像真的假数据。
+ * 后端 `sentinel_*` 接口**已实现**（`SentinelController`，映射与本文件 `SENTINEL_API` 一一对应，
+ * 表结构见 docs/sentinel-scripts-alerts-design.md）。这里**如实反映真实状态**：
+ *   - 请求成功（含空数据）→ `ready`，使用后端真实数据；
+ *   - 未登录（全部请求 401）→ `unauthorized`，界面提示先登录；
+ *   - 登录后接口仍缺失（404）/ 网络错误 → `unavailable`，界面明说"后端未接入"。
+ * 三种状态都**绝不填充看起来像真的假数据**。
  *
- * 接入时只需实现下面列出的接口，界面无需改动。
+ * 注意：Spring Security 在认证前就拦截，未登录时真实接口与假接口都返回 401，
+ * 因此只能区分"未登录"与"已登录但接口缺失"，无法在未登录时判断接口是否存在。
  */
 
 import { reactive } from 'vue'
@@ -18,6 +20,7 @@ export const SENTINEL_API = Object.freeze({
   tasks: '/api/sentinel/tasks',
   task: id => `/api/sentinel/tasks/${encodeURIComponent(id)}`,
   taskToggle: id => `/api/sentinel/tasks/${encodeURIComponent(id)}/enabled`,
+  taskRuntime: id => `/api/sentinel/tasks/${encodeURIComponent(id)}/runtime`,
   samples: (id, range) => `/api/sentinel/tasks/${encodeURIComponent(id)}/samples?range=${encodeURIComponent(range)}`,
   templates: '/api/sentinel/threshold-templates',
   scripts: '/api/sentinel/scripts',
@@ -51,9 +54,11 @@ export const SENTINEL_API = Object.freeze({
 export const sentinelState = reactive({
   loaded: false,
   loading: false,
-  /** 'ready' = 后端已接入；'unavailable' = 接口缺失或请求失败（界面据此如实提示） */
+  /** 'ready' = 后端已接入（含空数据）；'unauthorized' = 未登录，需先登录；'unavailable' = 登录后接口缺失或请求失败 */
   status: 'unknown',
   reason: '',
+  /** 最后一次成功拉到真实数据的时刻（ms 时间戳），用于界面展示"最后更新：N 秒前" */
+  lastPolledAt: null,
   tasks: [],
   templates: [],
   scripts: [],
@@ -64,6 +69,9 @@ export const sentinelState = reactive({
   taskGroups: []
 })
 
+/** 轮询定时器句柄（非响应式，避免被 Vue 追踪为依赖）。 */
+let pollingTimer = null
+
 function markUnavailable(failure) {
   const status = failure?.response?.status
   sentinelState.status = 'unavailable'
@@ -72,17 +80,36 @@ function markUnavailable(failure) {
     : (failure?.message || '无法读取哨兵数据。')
 }
 
+/**
+ * 并发收集多个哨兵接口；保留每个请求的成败与 HTTP 状态码，
+ * 以便在「未登录 401」与「接口未接入 404」之间做出准确判断
+ * （未登录时真实接口与假接口都返回 401，只有登录后才能区分两者）。
+ */
 async function collect(paths) {
-  const results = await Promise.all(paths.map(path => request.get(path).catch(() => null)))
-  return results
+  return Promise.all(paths.map(async path => {
+    try {
+      const data = await request.get(path)
+      return { ok: true, status: 200, data }
+    } catch (error) {
+      return { ok: false, status: error?.response?.status ?? 0, error }
+    }
+  }))
 }
 
-/** 一次性拉取三个模块的列表；任一接口 404 都按"未接入"处理，不抛给界面。 */
+/** 把后端返回的数据解包为数组；后端用 ApiResponse.success(list) 包裹，拦截器已剥掉外层，这里直接是数组。 */
+function unwrapList(payload) {
+  if (Array.isArray(payload)) return payload
+  if (payload && Array.isArray(payload.items)) return payload.items
+  if (payload && Array.isArray(payload.data)) return payload.data
+  return []
+}
+
+/** 一次性拉取三个模块的列表；按返回结果区分三种状态，绝不伪造数据。 */
 export async function loadSentinel() {
   if (sentinelState.loading) return
   sentinelState.loading = true
   try {
-    const [tasks, templates, scripts, alertRules, alerts, schedules, taskGroups] = await collect([
+    const [tasksR, templatesR, scriptsR, alertRulesR, alertsR, schedulesR, taskGroupsR] = await collect([
       SENTINEL_API.tasks,
       SENTINEL_API.templates,
       SENTINEL_API.scripts,
@@ -91,25 +118,53 @@ export async function loadSentinel() {
       SENTINEL_API.schedules,
       SENTINEL_API.taskGroups
     ])
-    if (!tasks && !scripts && !alerts) {
-      markUnavailable({ response: { status: 404 }, message: '哨兵接口不可用' })
+    const results = [tasksR, templatesR, scriptsR, alertRulesR, alertsR, schedulesR, taskGroupsR]
+    // 全部失败：要么是未登录（401），要么是接口/网络问题
+    if (results.every(r => !r.ok)) {
+      const allUnauthorized = results.every(r => r.status === 401)
+      if (allUnauthorized) {
+        sentinelState.status = 'unauthorized'
+        sentinelState.reason = '请先登录后再查看哨兵监控数据。'
+      } else {
+        markUnavailable(tasksR.error)
+      }
       return
     }
-    const unwrap = response => (Array.isArray(response?.data) ? response.data : (response?.data?.items ?? []))
-    sentinelState.tasks = unwrap(tasks)
-    sentinelState.templates = unwrap(templates)
-    sentinelState.scripts = unwrap(scripts)
-    sentinelState.alertRules = unwrap(alertRules)
-    sentinelState.alerts = unwrap(alerts)
-    sentinelState.schedules = unwrap(schedules)
-    sentinelState.taskGroups = unwrap(taskGroups)
+    sentinelState.tasks = unwrapList(tasksR.data)
+    sentinelState.templates = unwrapList(templatesR.data)
+    sentinelState.scripts = unwrapList(scriptsR.data)
+    sentinelState.alertRules = unwrapList(alertRulesR.data)
+    sentinelState.alerts = unwrapList(alertsR.data)
+    sentinelState.schedules = unwrapList(schedulesR.data)
+    sentinelState.taskGroups = unwrapList(taskGroupsR.data)
     sentinelState.status = 'ready'
     sentinelState.reason = ''
+    sentinelState.lastPolledAt = Date.now()
   } catch (failure) {
     markUnavailable(failure)
   } finally {
     sentinelState.loaded = true
     sentinelState.loading = false
+  }
+}
+
+/**
+ * 启动真实轮询：按 intervalMs 周期性拉取哨兵数据，让界面"活"起来
+ * （最近采样时间、节点状态翻转、表格与巡网联动都会随之刷新）。
+ * 重复调用会先清掉旧定时器，避免叠加；组件卸载务必调用 stopPolling()。
+ * 轮询打的是真实接口：后端未实现 /api/sentinel/* 时静默失败（界面继续显示"未接入"），
+ * 不会伪造数据，也不会刷爆后端。
+ */
+export function startPolling(intervalMs = 30000) {
+  if (pollingTimer) clearInterval(pollingTimer)
+  pollingTimer = setInterval(() => { loadSentinel() }, intervalMs)
+}
+
+/** 停止轮询，释放定时器。 */
+export function stopPolling() {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
   }
 }
 
@@ -122,6 +177,30 @@ export async function toggleTask(id, enabled) {
     return true
   } catch {
     return false
+  }
+}
+
+/**
+ * 把哨兵任务重绑到一个已授权的运行连接。
+ *
+ * 运行通道是会话级的：后端重启或终端关闭后任务会变成「缺少运行连接」，
+ * 重新连接产生的是新的 runtimeId，必须重绑而不是删任务重建。
+ * 后端若该连接已有存活通道会直接复用，不会重复挂 SSH。
+ */
+export async function rebindRuntime(id, sessionId) {
+  try {
+    const response = await request.post(SENTINEL_API.taskRuntime(id), { sessionId })
+    const task = sentinelState.tasks.find(item => item.id === id)
+    if (task && response.data) Object.assign(task, response.data)
+    return { ok: true, task: response.data }
+  } catch (failure) {
+    const status = failure?.response?.status
+    return {
+      ok: false,
+      message: status === 401 ? '会话已失效，请重新登录。'
+        : status === 404 ? '任务或运行连接不存在。'
+          : (failure?.response?.data?.message || failure.message || '重绑失败，请重试。')
+    }
   }
 }
 

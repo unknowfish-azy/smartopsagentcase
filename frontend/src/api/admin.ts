@@ -13,8 +13,22 @@ export const AUDIT_ACTIONS = Object.freeze([
   { value: 'TEAM_INVITE', label: '邀请成员' }, { value: 'TEAM_INVITE_RESPOND', label: '处理团队邀请' },
   { value: 'TEAM_INVITE_CANCEL', label: '撤销团队邀请' }, { value: 'TEAM_MEMBER_ROLE', label: '团队角色变更' },
   { value: 'TEAM_MEMBER_REMOVE', label: '移除或退出团队' }, { value: 'TEAM_STATUS', label: '冻结或恢复团队' },
+  { value: 'TEAM_INVITE_LINK_CREATE', label: '生成团队邀请链接' }, { value: 'TEAM_INVITE_LINK_JOIN', label: '通过邀请链接加入' },
+  { value: 'TEAM_INVITE_LINK_REVOKE', label: '撤销团队邀请链接' },
+  { value: 'TEAM_AGENT_RUN_CREATE', label: '提交 Agent 运行' }, { value: 'TEAM_AGENT_RUN_APPROVE', label: '审批 Agent 运行' },
+  { value: 'TEAM_AGENT_RUN_EXECUTE', label: '执行 Agent 运行' }, { value: 'TEAM_AGENT_RUN_FINISH', label: '结束 Agent 运行' },
   { value: 'CHAT_CONVERSATION_CREATE', label: '创建附件会话' }, { value: 'CHAT_CONVERSATION_DELETE', label: '删除附件会话' },
-  { value: 'CHAT_ATTACHMENT_UPLOAD', label: '上传私有附件' }
+  { value: 'CHAT_ATTACHMENT_UPLOAD', label: '上传私有附件' },
+  { value: 'PLATFORM_ADMIN_APPOINT', label: '任命平台管理员' }, { value: 'PLATFORM_ADMIN_REVOKE', label: '撤销平台管理员' },
+  { value: 'PLATFORM_ROOT_TRANSFER', label: '转移平台主管理员' },
+  { value: 'DEPT_CREATE', label: '新增部门' }, { value: 'DEPT_UPDATE', label: '修改部门' }, { value: 'DEPT_DELETE', label: '删除部门' }, { value: 'DEPT_STATUS', label: '启停部门' },
+  { value: 'POST_CREATE', label: '新增岗位' }, { value: 'POST_UPDATE', label: '修改岗位' }, { value: 'POST_DELETE', label: '删除岗位' }, { value: 'POST_STATUS', label: '启停岗位' },
+  { value: 'ROLE_CREATE', label: '新增角色' }, { value: 'ROLE_UPDATE', label: '修改角色' }, { value: 'ROLE_DELETE', label: '删除角色' },
+  { value: 'ROLE_STATUS', label: '启停角色' }, { value: 'ROLE_MENU_GRANT', label: '角色菜单授权' },
+  { value: 'MENU_CREATE', label: '新增菜单' }, { value: 'MENU_UPDATE', label: '修改菜单' }, { value: 'MENU_DELETE', label: '删除菜单' }, { value: 'MENU_STATUS', label: '启停菜单' },
+  { value: 'DICT_TYPE_CREATE', label: '新增字典类型' }, { value: 'DICT_TYPE_UPDATE', label: '修改字典类型' }, { value: 'DICT_TYPE_DELETE', label: '删除字典类型' }, { value: 'DICT_TYPE_STATUS', label: '启停字典类型' },
+  { value: 'DICT_DATA_CREATE', label: '新增字典数据' }, { value: 'DICT_DATA_UPDATE', label: '修改字典数据' }, { value: 'DICT_DATA_DELETE', label: '删除字典数据' }, { value: 'DICT_DATA_STATUS', label: '启停字典数据' },
+  { value: 'NOTICE_CREATE', label: '新增通知' }, { value: 'NOTICE_UPDATE', label: '修改通知' }, { value: 'NOTICE_DELETE', label: '删除通知' }, { value: 'NOTICE_PUBLISH', label: '发布通知' }
 ])
 export const AUDIT_OUTCOMES = Object.freeze([
   { value: 'SUCCESS', label: '成功' }, { value: 'FAILURE', label: '失败' }, { value: 'DENIED', label: '拒绝' }

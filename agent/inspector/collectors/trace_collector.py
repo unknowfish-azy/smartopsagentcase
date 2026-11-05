@@ -20,7 +20,7 @@ Inspector 可直接消费的上下文。
         {"request_id": "...", "operation": "nginx.restart"}
 
     verification.finished
-        {"request_id": "...", "resolved": false, "status": "502"}
+        {"request_id": "...", "probes": [{"type": "http", "status_code": 502}]}
 """
 
 from __future__ import annotations
@@ -128,10 +128,8 @@ class TraceCollector:
 
         elif event.name == VERIFICATION_FINISHED:
             self._actual_state[request_id] = {
-                "resolved": bool(
-                    payload.get("resolved")
-                ),
-                "status": payload.get("status"),
+                "probes": payload.get("probes") or [],
+                "observed_at": payload.get("observed_at"),
             }
 
     # ------------------------------------------------------------------

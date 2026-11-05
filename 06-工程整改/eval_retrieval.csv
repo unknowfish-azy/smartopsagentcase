@@ -1,0 +1,15 @@
+sample_id,source_file,variant_index,variant_source,query,expected_document_id,hit_at_3,rank,top3_document_ids
+command_troubleshooting:1,command_troubleshooting.jsonl,1,dataset:canonical,如何统计带空格文件名的日志大小？,command_troubleshooting:1,False,,storage_engineering:1|shell_io:1|job_scheduling:2
+fd_analysis:1,fd_analysis.jsonl,1,dataset:canonical,Java 服务出现 Too many open files，直接调高 nofile 吗？,fd_analysis:1,False,,storage_engineering:1|network_environment_initialization:6|command_troubleshooting:1
+job_scheduling:1,job_scheduling.jsonl,1,dataset:canonical,crond 是 active，但 cron 任务没有结果，如何排查？,job_scheduling:1,True,1,job_scheduling:1|process_debug:1|network_environment_initialization:2
+job_scheduling:2,job_scheduling.jsonl,1,dataset:canonical,每 5 分钟执行一次备份，但单次平均需要 20 分钟，风险是什么？,job_scheduling:2,True,2,storage_engineering:2|job_scheduling:2|shell_io:1
+network_environment_initialization:1,network_environment_initialization.jsonl,1,dataset:canonical,把 ens33 的 IP 改掉，直接 nmcli modify 可以吗？,network_environment_initialization:1,False,,shell_io:1|fd_analysis:1|command_troubleshooting:1
+network_environment_initialization:2,network_environment_initialization.jsonl,1,dataset:canonical,nginx active，网页打不开，是否关防火墙？,network_environment_initialization:2,True,2,process_debug:1|network_environment_initialization:2|network_environment_initialization:5
+network_environment_initialization:3,network_environment_initialization.jsonl,1,dataset:canonical,httpd 启动 address already in use，可以 kill -9 吗？,network_environment_initialization:3,False,,fd_analysis:1|shell_io:1|command_troubleshooting:1
+network_environment_initialization:4,network_environment_initialization.jsonl,1,dataset:canonical,克隆完成可以直接连接生产网络吗？,network_environment_initialization:4,False,,network_environment_initialization:1|job_scheduling:1|shell_io:1
+network_environment_initialization:5,network_environment_initialization.jsonl,1,dataset:canonical,chronyd active，仓库失败，服务器 READY 吗？,network_environment_initialization:5,True,1,network_environment_initialization:5|network_environment_initialization:2|network_environment_initialization:6
+network_environment_initialization:6,network_environment_initialization.jsonl,1,dataset:canonical,Spider 看到 ERR_CONNECTION_REFUSED 就能确认 nginx 挂了吗？,network_environment_initialization:6,False,,command_troubleshooting:1|storage_engineering:1|network_environment_initialization:1
+process_debug:1,process_debug.jsonl,1,dataset:canonical,nginx启动了吗？,process_debug:1,True,1,process_debug:1|network_environment_initialization:5|shell_io:1
+shell_io:1,shell_io.jsonl,1,dataset:canonical,如何保存正常输出和错误输出？,shell_io:1,False,,process_debug:1|command_troubleshooting:1|network_environment_initialization:6
+storage_engineering:1,storage_engineering.jsonl,1,dataset:canonical,df 显示磁盘 100%，但 du 统计正常，如何排查？,storage_engineering:1,True,1,storage_engineering:1|storage_engineering:2|process_debug:1
+storage_engineering:2,storage_engineering.jsonl,1,dataset:canonical,新增磁盘后扩容 LVM，并保证重启后挂载，应该怎样规划？,storage_engineering:2,True,1,storage_engineering:2|storage_engineering:1|network_environment_initialization:6

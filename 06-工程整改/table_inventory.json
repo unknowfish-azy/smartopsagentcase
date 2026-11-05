@@ -1,0 +1,246 @@
+{
+  "migration_files": 35,
+  "unique_create_tables": 79,
+  "tables": {
+    "account_security": [
+      "V002__admin_foundation.sql"
+    ],
+    "security_audit_event": [
+      "V002__admin_foundation.sql"
+    ],
+    "registration_policy": [
+      "V003__registration_policy.sql"
+    ],
+    "assistant_preference": [
+      "V004__assistant_preference.sql"
+    ],
+    "account_mfa": [
+      "V005__admin_mfa.sql"
+    ],
+    "account_mfa_recovery": [
+      "V005__admin_mfa.sql"
+    ],
+    "account_security_notice": [
+      "V005__admin_mfa.sql"
+    ],
+    "team_workspace": [
+      "V006__team_workspace.sql"
+    ],
+    "team_member": [
+      "V006__team_workspace.sql"
+    ],
+    "team_invitation": [
+      "V006__team_workspace.sql"
+    ],
+    "chat_conversation": [
+      "V007__chat_attachments.sql"
+    ],
+    "chat_message": [
+      "V007__chat_attachments.sql"
+    ],
+    "chat_attachment": [
+      "V007__chat_attachments.sql"
+    ],
+    "operation_run_record": [
+      "V20260927__operation_run_tables.sql",
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_run_output": [
+      "V20260927__operation_run_tables.sql",
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_run_evidence": [
+      "V20260927__operation_run_tables.sql",
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "server": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "server_metric": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "inspector_event": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "inspector_issue": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "inspection_evidence": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "inspection_verification": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "model_connections": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_session_group": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_credential": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_session": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_known_host": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_tunnel": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_transfer": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_command": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_audit_event": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "operation_workspace": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "knowledge_candidate": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "app_user": [
+      "V20261002__operations_and_accounts.sql"
+    ],
+    "team_agent_run": [
+      "V20261003__team_agent_runs.sql"
+    ],
+    "team_agent": [
+      "V20261003__team_agents.sql"
+    ],
+    "team_agent_version": [
+      "V20261003__team_agents.sql"
+    ],
+    "artifact_draft": [
+      "V20261004__artifact_drafts.sql"
+    ],
+    "model_gateway_key": [
+      "V20261004__model_gateway.sql"
+    ],
+    "model_gateway_group": [
+      "V20261004__model_gateway.sql"
+    ],
+    "model_gateway_route": [
+      "V20261004__model_gateway.sql"
+    ],
+    "model_gateway_invocation": [
+      "V20261004__model_gateway.sql"
+    ],
+    "operator_memory": [
+      "V20261004__operator_memory.sql"
+    ],
+    "personal_knowledge_library": [
+      "V20261004__personal_knowledge.sql"
+    ],
+    "personal_knowledge_entry": [
+      "V20261004__personal_knowledge.sql"
+    ],
+    "vision_event": [
+      "V20261004__vision_events.sql"
+    ],
+    "platform_admin_profile": [
+      "V20261005__platform_admin_governance.sql"
+    ],
+    "platform_admin_capability": [
+      "V20261005__platform_admin_governance.sql"
+    ],
+    "team_member_capability": [
+      "V20261006__team_governance.sql"
+    ],
+    "team_activity_event": [
+      "V20261008__team_activity_and_notifications.sql"
+    ],
+    "team_resource_grant": [
+      "V20261009__team_resource_grants.sql"
+    ],
+    "team_notification": [
+      "V20261010__team_notifications.sql"
+    ],
+    "sentinel_task": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_threshold_template": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_metric_sample": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_script": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_script_version": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_script_run": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_alert_rule": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_alert": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_notification": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_alert_event": [
+      "V20261011__sentinel.sql"
+    ],
+    "sentinel_knowledge_candidate": [
+      "V20261012__sentinel_knowledge.sql"
+    ],
+    "sentinel_script_schedule": [
+      "V20261013__sentinel_script_schedule.sql"
+    ],
+    "sys_dept": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_post": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_role": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_menu": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_user_role": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_role_menu": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_dict_type": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_dict_data": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_notice": [
+      "V20261018__sys_management.sql"
+    ],
+    "sys_login_log": [
+      "V20261018__sys_management.sql"
+    ],
+    "agent_decision_loop": [
+      "V20261024__agent_decision_loop.sql"
+    ],
+    "sentinel_guardian_evidence": [
+      "V20261025__sentinel_guardian.sql"
+    ],
+    "sentinel_learning_profile": [
+      "V20261025__sentinel_guardian.sql"
+    ],
+    "knowledge_crawl_source": [
+      "V20261026__knowledge_crawl.sql"
+    ],
+    "knowledge_crawl_page": [
+      "V20261026__knowledge_crawl.sql"
+    ]
+  }
+}

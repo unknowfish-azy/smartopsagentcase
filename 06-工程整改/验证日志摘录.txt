@@ -1,0 +1,51 @@
+SOURCE: .runtime/defense-v2/python-final.log
+.......................................................                  [100%]
+55 passed in 3.71s
+
+SOURCE: .runtime/defense-v2/frontend-tests.log
+  
+      at TestContext.<anonymous> (file:///D:/SmartOpsAgent/frontend/test/personal-system-navigation.test.mjs:68:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'SentinelGuardian' ],
+    expected: [ 'SentinelDashboard', 'ScriptLibrary', 'AlertCenter' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+SOURCE: .runtime/defense-v2/frontend-targeted.log
+✔ streaming sends image evidence names and records vision thinking steps (5.0703ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 282.502
+
+SOURCE: .runtime/defense-v2/typecheck.log
+
+> smartops-frontend@0.1.0 typecheck
+> tsc --noEmit
+
+
+SOURCE: .runtime/defense-v2/backend-tests-combined-repos.log
+[WARNING] Tests run: 448, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+[INFO] Total time:  01:49 min
+[INFO] Finished at: 2026-11-03T12:39:31+08:00
+
+SOURCE: .runtime/defense-v2/llm-live.log
+1/5 effective_provider=ollama degraded=False first_token_latency_ms=5220.7 total_ms=5441.0 answer_chars=63
+2/5 effective_provider=ollama degraded=False first_token_latency_ms=3375.9 total_ms=7240.0 answer_chars=1124
+3/5 effective_provider=ollama degraded=False first_token_latency_ms=2980.6 total_ms=6434.2 answer_chars=866
+4/5 effective_provider=ollama degraded=False first_token_latency_ms=3124.5 total_ms=10840.6 answer_chars=1736
+5/5 effective_provider=ollama degraded=False first_token_latency_ms=2305.0 total_ms=2429.8 answer_chars=27
+total_elapsed_ms=32386.7

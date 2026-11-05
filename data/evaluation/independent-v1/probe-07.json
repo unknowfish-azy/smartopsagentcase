@@ -1,0 +1,9 @@
+{
+  "url": "http://127.0.0.1:59081/missing",
+  "status": 404,
+  "body": "controlled-404",
+  "outcome": "http_error",
+  "mode": "CONTROLLED",
+  "claim": "request succeeded",
+  "expected_false_success": true
+}

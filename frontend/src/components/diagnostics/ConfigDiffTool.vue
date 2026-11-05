@@ -11,6 +11,7 @@ import { computed, ref } from 'vue'
 import { compareConfigTexts } from '../../domain/diagnostics/configDiff.ts'
 const left = ref(''); const right = ref(''); const ignoreTrailingWhitespace = ref(false)
 const error = ref('')
+// eslint-disable-next-line vue/no-side-effects-in-computed-properties -- 计算失败时直接回写错误态，此处为既定交互
 const diff = computed(() => { error.value = ''; try { if (!left.value && !right.value) return null; return compareConfigTexts(left.value, right.value, { ignoreTrailingWhitespace: ignoreTrailingWhitespace.value }) } catch (failure) { error.value = failure.message || '差异计算失败'; return null } })
 function clear() { left.value = ''; right.value = ''; error.value = '' }
 </script>

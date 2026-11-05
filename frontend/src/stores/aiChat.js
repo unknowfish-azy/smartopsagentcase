@@ -301,7 +301,7 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     }
   }
 
-  async function sendMessageStreaming(prompt, { images } = {}) {
+  async function sendMessageStreaming(prompt, { images, rag } = {}) {
     syncAccount()
     if (activeConversation.value?.remote) return false
     const normalized = String(prompt || '').trim()
@@ -320,23 +320,64 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     const providerKey = selectedKey.value
     if (!conversation.messages.length && conversation.title === '新对话') conversation.title = normalized.replace(/\s+/g, ' ').slice(0, 32)
     conversation.messages.push({ id: crypto.randomUUID(), role: 'user', content: normalized, ...(imageEvidence.length ? { images: imageEvidence } : {}) })
-    conversation.messages.push({ id: crypto.randomUUID(), role: 'assistant', content: '', pending: true, streaming: true, thinking: [], providerKey })
+    conversation.messages.push({ id: crypto.randomUUID(), role: 'assistant', content: '', pending: true, streaming: true, thinking: [], providerKey, prompt: normalized, attempt: 1, rag })
     const pending = conversation.messages.at(-1)
     conversation.updatedAt = Date.now()
     persist()
+    return streamInto({ conversation, pending, prompt: normalized, imageEvidence, rag, generation, attempt: 1 })
+  }
 
+  // 在失败的回答上原地重试：不追加用户消息、不追加回答，保证重试前后消息条数不变；
+  // attempt 递增，成功后置 recovered，便于前端区分"失败"和"恢复成功"。
+  async function retryMessageStreaming(messageId) {
+    syncAccount()
+    if (activeConversation.value?.remote) return false
+    const conversation = activeConversation.value
+    if (!conversation || sending.value) return false
+    const index = conversation.messages.findIndex(message => message.id === messageId)
+    const target = index >= 0 ? conversation.messages[index] : null
+    if (!target || target.role !== 'assistant' || !target.error) return false
+    const previousUser = [...conversation.messages.slice(0, index)].reverse().find(message => message.role === 'user')
+    // 兼容老历史：prompt 未落库时回退到上一条用户消息，避免重试按钮变成死按钮。
+    const prompt = target.prompt || previousUser?.content
+    if (!prompt) return false
+    const generation = accountEpoch.value
+    const imageEvidence = Array.isArray(previousUser?.images) ? previousUser.images.slice(0, 5) : []
+    const attempt = (target.attempt || 1) + 1
+    Object.assign(target, { content: '', pending: true, streaming: true, error: false, recovered: false, thinking: [], metadata: {}, firstTokenMs: null, totalMs: null, attempt })
+    conversation.updatedAt = Date.now()
+    persist()
+    return streamInto({ conversation, pending: target, prompt, imageEvidence, rag: target.rag, generation, attempt })
+  }
+
+  async function streamInto({ conversation, pending, prompt, imageEvidence, rag, generation, attempt }) {
+    // 首 token / 总耗时只统计本次流；重试时从新的开始点重新计时（字段在 retryMessageStreaming 中已清空）。
+    const startedAt = performance.now()
+    let firstTokenAt = null
+    const timing = () => ({
+      firstTokenMs: firstTokenAt == null ? null : Math.round(firstTokenAt - startedAt),
+      totalMs: Math.round(performance.now() - startedAt),
+    })
     try {
-      await streamChat(normalized, {
+      await streamChat(prompt, {
+        onRun: (event) => {
+          if (!sameAccount(generation) || !conversations.value.includes(conversation)) return
+          pending.metadata = { ...(pending.metadata || {}), ...replyMetadata({ metadata: { run_event: event } }).metadata }
+        },
         onThinking: (step) => {
-          if (!conversations.value.includes(conversation)) return
+          if (!sameAccount(generation) || !conversations.value.includes(conversation)) return
           pending.thinking = [...(pending.thinking || []), step]
         },
         onToken: (delta) => {
-          if (!conversations.value.includes(conversation)) return
+          if (!sameAccount(generation) || !conversations.value.includes(conversation)) return
+          if (firstTokenAt == null && delta) firstTokenAt = performance.now()
           pending.content = (pending.content || '') + delta
         },
         onDone: (payload) => {
-          if (!conversations.value.includes(conversation)) return
+          if (!sameAccount(generation) || !conversations.value.includes(conversation)) return
+          // stream.ts 允许最终 run 事件放在 metadata.run_event 或顶层 run_event，这里都要落库，
+          // 否则成功回答会残留 run 状态 started，失败/恢复 run 无法区分。
+          const finalRun = payload?.metadata?.run_event ?? payload?.run_event
           Object.assign(pending, {
             pending: false,
             streaming: false,
@@ -345,26 +386,37 @@ export const useAiChatStore = defineStore('ai-chat', () => {
             trustScore: payload?.trust_score,
             citations: payload?.citations || [],
             evidence: payload?.evidence || [],
-            metadata: payload?.metadata || {},
+            metadata: {
+              ...(pending.metadata || {}),
+              ...(payload?.metadata || {}),
+              ...(finalRun ? replyMetadata({ metadata: { run_event: finalRun } }).metadata : {}),
+            },
+            ...timing(),
           })
+          if (attempt > 1) pending.recovered = true
           conversation.updatedAt = Date.now()
           persist()
         },
-        onError: (err) => {
-          if (!conversations.value.includes(conversation)) return
+        onError: () => {
+          if (!sameAccount(generation) || !conversations.value.includes(conversation)) return
           pending.pending = false
           pending.streaming = false
           pending.error = true
-          pending.content = err?.message || '流式响应中断，请重试。'
         },
-      }, { images: imageEvidence })
+      }, { images: imageEvidence, rag, correlation: { request_id: crypto.randomUUID(), task_id: conversation.id } })
       return true
     } catch (error) {
-      if (!conversations.value.includes(conversation)) return false
+      if (!sameAccount(generation) || !conversations.value.includes(conversation)) return false
       pending.pending = false
       pending.streaming = false
       pending.error = true
-      pending.content = error?.message || '暂时无法连接 AI 服务，请确认 ai-service 已启动。'
+      Object.assign(pending, timing())
+      if (error?.runEvent) pending.metadata = {
+        ...(pending.metadata || {}),
+        ...replyMetadata({ metadata: { run_event: error.runEvent } }).metadata,
+      }
+      const streamError = error?.message || '暂时无法连接 AI 服务，请确认 ai-service 已启动。'
+      pending.content = [pending.content, streamError].filter(Boolean).join('\n\n')
       return false
     } finally {
       if (sameAccount(generation) && conversations.value.includes(conversation)) {
@@ -383,5 +435,5 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     remoteError, remoteLoading, loadRemoteConversations, loadRemoteDetail, prepareAttachmentConversation, setAttachmentLeaveGuard, invalidateRemoteReads,
     options, selectedKey, selectedOption, optionsLoaded, optionsLoading, optionsError, preferenceSaving,
     preferenceError, preferenceNotice, canSend, canSwitchToMini, accountEpoch, loadOptions, selectProvider,
-    syncAccount, newConversation, selectConversation, renameConversation, deleteConversation, sendMessage, sendMessageStreaming, clearConversation }
+    syncAccount, newConversation, selectConversation, renameConversation, deleteConversation, sendMessage, sendMessageStreaming, retryMessageStreaming, clearConversation }
 })

@@ -5,7 +5,7 @@ import {
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { manualChunks } from './vite.shared.mjs'
+import { backendOrigin, devProxy, manualChunks } from './vite.shared.mjs'
 
 export default defineConfig({
     plugins: [
@@ -26,21 +26,7 @@ export default defineConfig({
     server: {
         host: '127.0.0.1',
         port: 5173,
-        // 用户层入口，端口与代理语义保持不变。
-        // 管理员层入口在 vite.config.admin.mjs（默认 5174），两者指向同一后端。
-        proxy: {
-            '/ws': {
-                target: 'http://127.0.0.1:8080',
-                ws: true
-            },
-            '/api': {
-                target: 'http://127.0.0.1:8080',
-                changeOrigin: true
-            },
-            '/ai': {
-                target: 'http://127.0.0.1:8001',
-                changeOrigin: true
-            }
-        }
+        // 用户层入口端口保持 5173；代理与管理员层共用 vite.shared.mjs，避免两端口语义分裂。
+        proxy: devProxy(backendOrigin())
     }
 })

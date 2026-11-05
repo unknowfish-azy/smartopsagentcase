@@ -158,6 +158,17 @@ test('indexes the SmartOpsAgent developer knowledge specification', () => {
   assert.ok(results.some(result => result.id === 'smartops-developer-knowledge-spec'))
 })
 
+test('indexes Ansible automation, Linux access control, Nginx and MySQL administration packs', () => {
+  assert.ok(searchKnowledgeEntries({ query: 'ansible-inventory' }).some(result => result.id === 'ansible.inventory'))
+  assert.ok(searchKnowledgeEntries({ query: 'setfacl' }).some(result => result.id === 'linux.access.acl'))
+  assert.ok(searchKnowledgeEntries({ query: 'proxy_cache_key' }).some(result => result.id === 'nginx.ops.caching'))
+  assert.ok(searchKnowledgeEntries({ query: '--single-transaction' }).some(result => result.id === 'mysql8.admin.backup-logical'))
+  assert.ok(searchKnowledgeEntries({ domain: 'linux', service: 'ansible' }).length >= 11)
+  assert.ok(searchKnowledgeEntries({ domain: 'linux', service: 'identity-access' }).length >= 9)
+  assert.ok(searchKnowledgeEntries({ domain: 'nginx', service: 'nginx' }).length >= 10)
+  assert.ok(searchKnowledgeEntries({ domain: 'mysql', service: 'mysql-admin' }).length >= 11)
+})
+
 test('indexes the cloud native tool roadmap without changing existing operational packs', () => {
   const helm = searchKnowledgeEntries({ query: 'Helm' }).find(result => result.id === 'cloud-native.tool.helm')
   const argocd = searchKnowledgeEntries({ query: 'Argo CD' }).find(result => result.id === 'cloud-native.tool.argocd')

@@ -25,10 +25,10 @@
   "leakage_count": 0,
   "hash": null,
   "content_hash": null,
-  "manifest_hash": "e2ade5c3fedee87fb3d35036d1e43fcff78cdd50c9652340e9c1ada1c4f3cc0a",
+  "manifest_hash": "235fbaf7ffb751ce6cb17dab22320f6fae46675675793bd2336cd67d610a79c5",
   "evaluation_only": false,
   "frozen": false,
-  "created_at": "2026-09-18T08:29:11.828214+00:00",
+  "created_at": "2026-11-04T13:32:21.307749+00:00",
   "status": "DRAFT",
   "quality_report": "../quality_report.json",
   "leakage_report": null

@@ -31,10 +31,11 @@ test('administrator service has its own html entry and application entry', async
 
 test('user layer keeps its own port and the same-origin proxy invariant', async () => {
     const config = await read('vite.config.js')
+    const shared = await read('vite.shared.mjs')
     assert.match(config, /port:\s*5173/)
     // 与 test/session-security.test.mjs 相同的安全不变量：同源代理 + 凭据。
-    assert.match(config, /['"]\/ws['"]\s*:/)
-    assert.match(config, /ws:\s*true/)
+    assert.match(config, /proxy:\s*devProxy\(backendOrigin\(\)\)/)
+    assert.match(shared, /['"]\/ws['"]\s*:\s*\{\s*target,\s*ws:\s*true\s*\}/)
 })
 
 test('administrator router registers no user-layer routes', async () => {
