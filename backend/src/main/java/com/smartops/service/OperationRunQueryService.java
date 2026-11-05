@@ -62,6 +62,24 @@ public class OperationRunQueryService {
         return new RunDetail(rows.get(0), outputs, evidence);
     }
 
+    /**
+     * 请求取消一次仍在执行的 Run。
+     *
+     * <p>取消是"协作式"的：只置标记，由执行循环在命令之间读取并停止派发后续命令。
+     * 不会中断已在远端执行的命令，因为强制中断同样会让结果处于未知状态。</p>
+     */
+    public void requestCancel(Long userId, Long runId) {
+        int updated = jdbc.update(
+                "UPDATE operation_run_record SET cancel_requested=1 WHERE id=? AND user_id=? AND status='RUNNING'",
+                runId, userId);
+        if (updated == 0) {
+            List<String> statuses = jdbc.query("SELECT status FROM operation_run_record WHERE id=? AND user_id=?",
+                    (rs, row) -> rs.getString("status"), runId, userId);
+            if (statuses.isEmpty()) throw new BusinessException(404, "OPERATION_RUN_NOT_FOUND");
+            throw new BusinessException(409, "OPERATION_RUN_NOT_CANCELLABLE");
+        }
+    }
+
     private String where(Long userId, String traceId, String toolId, String status,
                          Instant from, Instant to, List<Object> args) {
         StringBuilder sql = new StringBuilder("WHERE r.user_id=?");

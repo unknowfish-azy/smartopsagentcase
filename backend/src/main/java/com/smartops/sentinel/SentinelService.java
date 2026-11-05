@@ -6,6 +6,7 @@ import com.smartops.operations.HostKeyDecision;
 import com.smartops.operations.OperationRuntime;
 import com.smartops.operations.OperationRuntimeRegistry;
 import com.smartops.security.SessionUser;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,6 +26,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.regex.Pattern;
 
 /**
@@ -71,12 +75,30 @@ public class SentinelService {
     private final ObjectMapper json = new ObjectMapper();
     private final Clock clock;
 
+    /* ── PERF-01：有界并发调度 ─────────────────────────────────────────── */
+    /** 并发采集上限；慢目标最多占满这些槽位，不会拖慢整轮。 */
+    private final int maxConcurrency;
+    /** 单轮最多认领的任务数（含背压余量）。 */
+    private final int batchSize;
+    /** 认领租约：超时未释放表示认领方已消失，允许其他副本接手。 */
+    private final long leaseMs;
+    /** 失败退避上限，避免故障目标被无限拉长间隔。 */
+    private final long maxBackoffSec;
+    private final String instanceId;
+    private final Semaphore inFlight;
+    private final ExecutorService workers;
+    private volatile SchedulerStats lastStats = new SchedulerStats(0, 0, 0, 0L, 0L);
+
     public SentinelService(JdbcTemplate jdbc, OperationRuntimeRegistry runtimes,
                            com.smartops.service.OperationConnectionService connections,
                            @org.springframework.beans.factory.annotation.Qualifier("mfaClock") Clock clock,
                            SentinelAdvisor advisor,
                            com.smartops.service.TeamNotificationService notifications,
-                           SentinelNotifier notifier) {
+                           SentinelNotifier notifier,
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.max-concurrency:8}") int maxConcurrency,
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.batch-size:40}") int batchSize,
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.lease-ms:90000}") long leaseMs,
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.max-backoff-sec:3600}") long maxBackoffSec) {
         this.jdbc = jdbc;
         this.runtimes = runtimes;
         this.connections = connections;
@@ -84,6 +106,22 @@ public class SentinelService {
         this.advisor = advisor;
         this.notifications = notifications;
         this.notifier = notifier;
+        this.maxConcurrency = Math.max(1, maxConcurrency);
+        this.batchSize = Math.max(this.maxConcurrency, batchSize);
+        this.leaseMs = Math.max(15_000, leaseMs);
+        this.maxBackoffSec = Math.max(60, maxBackoffSec);
+        this.instanceId = resolveInstanceId();
+        this.inFlight = new Semaphore(this.maxConcurrency);
+        this.workers = java.util.concurrent.Executors.newFixedThreadPool(this.maxConcurrency, runnable -> {
+            Thread thread = new Thread(runnable, "sentinel-poller");
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+
+    @PreDestroy
+    public void shutdownWorkers() {
+        workers.shutdownNow();
     }
 
     /* ── 视图记录 ─────────────────────────────────────────────────────── */
@@ -1009,29 +1047,59 @@ public class SentinelService {
         Instant now = clock.instant();
         OperationRuntime runtime = openRuntime(task);
         if (runtime == null) {
-            jdbc.update("UPDATE sentinel_task SET last_status='no_runtime', last_error=?, last_seen_at=NULL WHERE id=?",
-                    "没有可用的运行连接（会话级连接关闭后需重新建立）", task.id());
-            jdbc.update("UPDATE sentinel_task SET failure_count=failure_count+1 WHERE id=?", task.id());
+            recordFailure(task, true, "no_runtime",
+                    "没有可用的运行连接（会话级连接关闭后需重新建立）", now);
             return;
         }
         try {
             OperationRuntime.CommandResult result = runtime.execute(
                     collectionCommand(task.kind(), task.target(), task.matchRule()), 15_000);
             if (result.exitCode() != 0) {
-                jdbc.update("UPDATE sentinel_task SET last_status='error', last_error=?, failure_count=failure_count+1, last_seen_at=CURRENT_TIMESTAMP WHERE id=?",
-                        truncate("命令退出码 " + result.exitCode() + "：" + result.stderr(), 500), task.id());
+                recordFailure(task, false, "error",
+                        truncate("命令退出码 " + result.exitCode() + "：" + result.stderr(), 500), now);
                 return;
             }
             Map<String, Double> snapshot = parseMetrics(task, result.stdout());
             storeSamples(task, snapshot, now);
-            jdbc.update("UPDATE sentinel_task SET last_status='online', last_error=NULL, last_seen_at=CURRENT_TIMESTAMP, success_count=success_count+1 WHERE id=?",
-                    task.id());
+            // 成功：下一轮按任务周期执行；连续失败计数归零。
+            jdbc.update("UPDATE sentinel_task SET last_status='online', last_error=NULL, last_seen_at=CURRENT_TIMESTAMP, "
+                            + "success_count=success_count+1, consecutive_failures=0, next_run_at=?, "
+                            + "claimed_by=NULL, lease_expires_at=NULL WHERE id=?",
+                    java.sql.Timestamp.from(now.plusSeconds(Math.max(1, task.intervalSec()) + jitterSeconds())), task.id());
             evaluate(task, snapshot, now);
         } catch (Exception failure) {
             log.debug("sentinel sample failed task={}", task.id(), failure);
-            jdbc.update("UPDATE sentinel_task SET last_status='error', last_error=?, failure_count=failure_count+1 WHERE id=?",
-                    truncate(String.valueOf(failure.getMessage()), 500), task.id());
+            recordFailure(task, false, "error", truncate(String.valueOf(failure.getMessage()), 500), now);
         }
+    }
+
+    /**
+     * 失败落库：写入明确的下次采集时间（指数退避 + 抖动），并释放认领。
+     *
+     * <p>这是 PERF-01 的关键修正：原实现失败后只累加计数，到期判定仍按 last_seen_at，
+     * 故障目标会被每一轮反复重采，既压垮目标也占满采集槽位。</p>
+     */
+    private void recordFailure(TaskView task, boolean runtimeMissing, String status, String error, Instant now) {
+        Integer failures = jdbc.queryForObject(
+                "SELECT COALESCE(consecutive_failures,0) FROM sentinel_task WHERE id=?", Integer.class, task.id());
+        int next = (failures == null ? 0 : failures) + 1;
+        long backoff = backoffSeconds(task.intervalSec(), next);
+        if (runtimeMissing) {
+            jdbc.update("UPDATE sentinel_task SET last_status=?, last_error=?, last_seen_at=NULL, "
+                            + "failure_count=failure_count+1, consecutive_failures=?, next_run_at=?, "
+                            + "claimed_by=NULL, lease_expires_at=NULL WHERE id=?",
+                    status, error, next, java.sql.Timestamp.from(now.plusSeconds(backoff)), task.id());
+        } else {
+            jdbc.update("UPDATE sentinel_task SET last_status=?, last_error=?, last_seen_at=CURRENT_TIMESTAMP, "
+                            + "failure_count=failure_count+1, consecutive_failures=?, next_run_at=?, "
+                            + "claimed_by=NULL, lease_expires_at=NULL WHERE id=?",
+                    status, error, next, java.sql.Timestamp.from(now.plusSeconds(backoff)), task.id());
+        }
+    }
+
+    /** 成功轮次的轻微抖动，避免所有同周期任务在同一秒集中采集。 */
+    private static long jitterSeconds() {
+        return Math.round(java.util.concurrent.ThreadLocalRandom.current().nextDouble(0.0, 5.0));
     }
 
     private long taskUserId(long taskId) {
@@ -1192,33 +1260,136 @@ public class SentinelService {
     /* ── 轮询入口 ─────────────────────────────────────────────────────── */
 
     /**
-     * 对所有到期且启用的任务采样一次。
+     * 对所有到期且启用的任务采样。
      *
-     * <p>由 {@link SentinelPoller} 按固定间隔调用。到期判定基于 {@code last_seen_at}，
-     * 因此"采集周期"是真实生效的，而不是每轮全量重采。</p>
+     * <p><b>PERF-01</b>：不再串行 for 循环，而是"认领 → 有界并发执行 → 释放"。
+     * <ul>
+     *   <li>认领用条件 UPDATE，多副本并发轮询时同一任务只会被一个副本拿到；</li>
+     *   <li>并发额度由信号量限制，额度用完就停止本轮认领（背压），
+     *       未认领的任务留给下一轮，不会被塞进无界队列；</li>
+     *   <li>慢目标只占用有限槽位，不会把整轮拉成 N×15s；</li>
+     *   <li>成功写入 {@code next_run_at=now+interval}，失败写入指数退避 + 抖动的时间，
+     *       失败任务因此有明确的"下次采集时间"，不会被反复重采。</li>
+     * </ul>
+     * 本方法等待本批完成（最多一个租约时长），便于调用方与测试观察到确定结果；
+     * 超时未完成的任务由租约自动回退给下一轮，不会重复采集。</p>
      */
     public int pollDueTasks() {
-        List<TaskView> due = jdbc.query("""
+        Instant roundStarted = clock.instant();
+        List<TaskView> due = selectDueTasks();
+        if (due.isEmpty()) {
+            lastStats = new SchedulerStats(0, 0, 0, 0, 0L);
+            return 0;
+        }
+        List<Future<?>> futures = new ArrayList<>();
+        int claimed = 0;
+        int skippedForBackpressure = 0;
+        for (TaskView task : due) {
+            if (!inFlight.tryAcquire()) {
+                // 背压：并发额度已占满，本轮不再认领，避免任务堆积在无界队列里。
+                skippedForBackpressure = due.size() - claimed;
+                break;
+            }
+            Instant claimedAt = clock.instant();
+            if (!claim(task, claimedAt)) {
+                inFlight.release();
+                continue;
+            }
+            claimed++;
+            futures.add(workers.submit(() -> {
+                try {
+                    sampleOnce(task);
+                } catch (RuntimeException failure) {
+                    log.warn("sentinel sample crashed task={}", task.id(), failure);
+                    releaseClaim(task.id());
+                } finally {
+                    inFlight.release();
+                }
+            }));
+        }
+        long waitedMs = 0L;
+        for (Future<?> future : futures) {
+            long startedWaiting = System.nanoTime();
+            try {
+                future.get(leaseMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (Exception unfinished) {
+                // 超时或异常都不重试：租约到期后下一轮自然可以再次认领。
+                log.warn("sentinel sample unfinished task batch, defer to next round");
+                break;
+            } finally {
+                waitedMs += (System.nanoTime() - startedWaiting) / 1_000_000;
+            }
+        }
+        long roundMs = (clock.instant().toEpochMilli() - roundStarted.toEpochMilli());
+        lastStats = new SchedulerStats(due.size(), claimed, skippedForBackpressure, roundMs, waitedMs);
+        if (skippedForBackpressure > 0) {
+            log.info("sentinel backpressure: claimed={} deferred={} roundMs={}", claimed, skippedForBackpressure, roundMs);
+        }
+        return claimed;
+    }
+
+    /** 最近一轮调度的观测值，供状态接口与验证脚本读取。 */
+    public SchedulerStats schedulerStats() { return lastStats; }
+
+    public record SchedulerStats(int due, int claimed, int deferredByBackpressure, long roundMs, long waitMs) {}
+
+    private List<TaskView> selectDueTasks() {
+        return jdbc.query("""
                 SELECT id,name,kind,target,match_rule,interval_sec,template_id,enabled,last_seen_at,last_status,
                        last_error,success_count,failure_count,runtime_id,group_label
                   FROM sentinel_task
                  WHERE enabled=1
-                   AND (last_seen_at IS NULL OR TIMESTAMPDIFF(SECOND, last_seen_at, NOW()) >= interval_sec)
-                 ORDER BY last_seen_at IS NULL DESC, last_seen_at ASC
-                 LIMIT 50
+                   AND (claimed_by IS NULL OR lease_expires_at < NOW())
+                   AND ((next_run_at IS NOT NULL AND next_run_at <= NOW())
+                        OR (next_run_at IS NULL AND (last_seen_at IS NULL
+                             OR TIMESTAMPDIFF(SECOND, last_seen_at, NOW()) >= interval_sec)))
+                 ORDER BY next_run_at IS NULL DESC, next_run_at ASC, last_seen_at ASC
+                 LIMIT ?
                 """, (row, ignored) -> new TaskView(
                 row.getLong("id"), row.getString("name"), row.getString("kind"), row.getString("target"),
                 row.getString("match_rule"), row.getInt("interval_sec"), row.getObject("template_id", Long.class),
                 row.getBoolean("enabled"),
                 row.getTimestamp("last_seen_at") == null ? null : row.getTimestamp("last_seen_at").toInstant().toString(),
                 row.getString("last_status"), row.getString("last_error"),
-                row.getLong("success_count"), row.getLong("failure_count"), row.getString("runtime_id"), row.getString("group_label")));
-        int sampled = 0;
-        for (TaskView task : due) {
-            sampleOnce(task);
-            sampled++;
+                row.getLong("success_count"), row.getLong("failure_count"), row.getString("runtime_id"),
+                row.getString("group_label")), batchSize);
+    }
+
+    /**
+     * 条件认领：只有当前无人持有或租约已过期时才成功。
+     * 用单条 UPDATE 完成"检查 + 占用"，避免两个副本先查后改造成的重复采集。
+     */
+    private boolean claim(TaskView task, Instant now) {
+        int updated = jdbc.update(
+                "UPDATE sentinel_task SET claimed_by=?, lease_expires_at=? "
+                        + "WHERE id=? AND enabled=1 AND (claimed_by IS NULL OR lease_expires_at < ?)",
+                instanceId, java.sql.Timestamp.from(now.plusMillis(leaseMs)), task.id(),
+                java.sql.Timestamp.from(now));
+        return updated == 1;
+    }
+
+    private void releaseClaim(long taskId) {
+        jdbc.update("UPDATE sentinel_task SET claimed_by=NULL, lease_expires_at=NULL WHERE id=?", taskId);
+    }
+
+    private static String resolveInstanceId() {
+        String host;
+        try {
+            host = java.net.InetAddress.getLocalHost().getHostName();
+        } catch (Exception unknownHost) {
+            host = "unknown-host";
         }
-        return sampled;
+        return (host + "-" + ProcessHandle.current().pid()).substring(0,
+                Math.min(96, (host + "-" + ProcessHandle.current().pid()).length()));
+    }
+
+    /** 指数退避 + 抖动：失败任务有明确的下次采集时间，且多副本不会同一秒集中重试。 */
+    long backoffSeconds(int intervalSec, int consecutiveFailures) {
+        long base = Math.max(1, intervalSec);
+        long exponential = base * (1L << Math.min(6, Math.max(0, consecutiveFailures - 1)));
+        long capped = Math.min(maxBackoffSec, exponential);
+        double jitter = 1.0 + java.util.concurrent.ThreadLocalRandom.current().nextDouble(0.0, 0.25);
+        return Math.max(base, Math.round(capped * jitter));
     }
 
     /* ── 工具 ─────────────────────────────────────────────────────────── */

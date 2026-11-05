@@ -11,6 +11,7 @@ spec:
     metadata:
       labels: {app: ai-service}
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: ai-service
           image: smartops/ai-service:latest
@@ -20,7 +21,22 @@ spec:
           envFrom:
             - configMapRef: {name: smartops-app-config}
             - secretRef: {name: smartops-secrets}
+          # PERF-08：无 requests/limits 时节点过载会先杀它，且无法做资源规划。
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            httpGet: {path: /api/health, port: 8001}
+            periodSeconds: 5
+            failureThreshold: 12
           readinessProbe:
             httpGet: {path: /api/health, port: 8001}
-            initialDelaySeconds: 10
             periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/health, port: 8001}
+            initialDelaySeconds: 15
+            periodSeconds: 20

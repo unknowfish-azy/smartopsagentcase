@@ -1,7 +1,11 @@
+import asyncio
+import inspect
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from agent.runtime_events import RunIdentity, terminal_event
+from agent.sdk.tool import ImplementationStatus
 
 from .audit import AuditRecord
 from .models import ExecutionContext
@@ -120,10 +124,21 @@ class AgentExecutor:
 
         started = time.perf_counter()
 
-        try:
-            output = tool.execute(
-                **step.arguments
+        # OPS-01：实现状态不是 REAL 的工具在放行前就拒绝。
+        # 否则模板命令会以"执行失败"的形态出现，把"没有实现"伪装成"跑了但出错"。
+        status = getattr(getattr(tool, "definition", None), "implementation_status",
+                         ImplementationStatus.REAL)
+        if status != ImplementationStatus.REAL:
+            return ExecutionResult(
+                success=False,
+                tool_name=tool_name,
+                message="工具不可用",
+                error=f"TOOL_IMPLEMENTATION_UNAVAILABLE: {tool_name} ({status})",
+                duration_ms=0,
             )
+
+        try:
+            output = self._invoke(tool, step.arguments, context)
 
             success = True
             error = None
@@ -208,6 +223,31 @@ class AgentExecutor:
         return list(
             self.audit_records
         )
+
+    def _invoke(self, tool, arguments, context):
+        """统一工具调用契约（OPS-01）。
+
+        * 插件工具：`async execute(arguments, context)`
+        * 旧式内置工具：同步 `execute(**arguments)`
+
+        两种契约都走同一个入口，避免"注册的是异步插件、调用的是同步可调用"的错配。
+        """
+        execute = getattr(tool, "execute")
+        if inspect.iscoroutinefunction(execute):
+            return self._run_coroutine(execute(arguments, context))
+        return execute(**arguments)
+
+    @staticmethod
+    def _run_coroutine(coroutine):
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            # 常见路径：同步上下文，直接跑完事件循环
+            return asyncio.run(coroutine)
+        # 已有事件循环时不能嵌套 asyncio.run，放到独立线程执行，
+        # 保持 Executor 的同步返回契约，也避免把调用方的事件循环阻塞死。
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(asyncio.run, coroutine).result()
 
     def get_run_events(self):
         return deepcopy(self._run_events)

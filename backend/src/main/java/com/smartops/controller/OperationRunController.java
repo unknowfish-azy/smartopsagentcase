@@ -5,6 +5,7 @@ import com.smartops.service.OperationRunQueryService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,5 +37,16 @@ public class OperationRunController {
             @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
             @PathVariable Long id) {
         return ApiResponse.success(service.detail(userId, id));
+    }
+
+    /**
+     * 协作式取消：置位取消标记，执行循环在命令之间检查后停止派发后续命令。
+     */
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<Void> cancel(
+            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @PathVariable Long id) {
+        service.requestCancel(userId, id);
+        return ApiResponse.success(null);
     }
 }

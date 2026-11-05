@@ -51,7 +51,9 @@ class SentinelProposeRemediationPolicyTest {
     void genericExecutorRejectsProposalTool() throws Exception {
         String tools = source("service/OperationToolService.java");
         // 注册为非只读 → TeamAgentRun 会进入 PENDING_APPROVAL
-        assertTrue(tools.contains("new ToolDefinition(\"propose-remediation\", false"),
+        // 目录构造器在 OPS-01 中统一为 readOnly/mutating 两类；
+        // `mutating(...)` 保证 readOnly=false，约束与原先等价，只是写法收敛。
+        assertTrue(tools.contains("mutating(\"propose-remediation\""),
                 "必须是非只读工具，才会进入待审批");
         // 且不允许从通用执行入口直接跑掉
         assertTrue(tools.contains("TEAM_REMEDIATION_REQUIRES_SENTINEL_PREVIEW"),

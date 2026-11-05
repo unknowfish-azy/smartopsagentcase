@@ -20,8 +20,14 @@ spring:
     baseline-on-migrate: true
     baseline-version: 20261103
 
+  # 优雅停机：滚动升级时给在途请求留出完成时间（PERF-08）。
+  lifecycle:
+    timeout-per-shutdown-phase: ${SMARTOPS_SHUTDOWN_TIMEOUT:20s}
+
 server:
   port: 8080
+  # 发布与滚动升级时先停止接新请求，再等在途请求结束（PERF-08）。
+  shutdown: graceful
   servlet:
     context-path: /
     session:
@@ -38,11 +44,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
-
+        # prometheus 与 metrics 必须显式暴露，否则 Prometheus 抓取路径是断的（PERF-08）。
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when-authorized
+      probes:
+        # 启用 /actuator/health/liveness 与 /actuator/health/readiness，
+        # 让 K8s 探针区分"进程活着"与"可以接流量"。
+        enabled: true
+  metrics:
+    tags:
+      application: smartops-backend
 
 # ==============================
 # 日志
@@ -78,11 +91,40 @@ smartops:
     loki-token: ${SMARTOPS_LOKI_TOKEN:}
   diagnostics:
     targets: []
+  operations:
+    run:
+      # 单次运维执行的绝对预算（整单，不是单条命令超时）
+      deadline-ms: ${SMARTOPS_RUN_DEADLINE_MS:120000}
+      # 单条命令落库的输出预算，超出截断并标记
+      output-limit-bytes: ${SMARTOPS_RUN_OUTPUT_LIMIT_BYTES:524288}
+      # 运行租约：超时无心跳则被恢复扫描判定为悬挂（UNCERTAIN，不自动重试）
+      lease-ms: ${SMARTOPS_RUN_LEASE_MS:60000}
+      recovery-stale-ms: ${SMARTOPS_RUN_RECOVERY_STALE_MS:90000}
+      recovery-interval-ms: ${SMARTOPS_RUN_RECOVERY_INTERVAL_MS:60000}
+      recovery-initial-delay-ms: ${SMARTOPS_RUN_RECOVERY_DELAY_MS:30000}
+  cloud:
+    sync:
+      # 只读清单分页：单页条数与单次同步的页数上限，
+      # 超过页数上限按 PARTIAL 处理并保留已取到的部分，不把未取到的资源判成消失。
+      page-size: ${SMARTOPS_CLOUD_SYNC_PAGE_SIZE:50}
+      max-pages: ${SMARTOPS_CLOUD_SYNC_MAX_PAGES:20}
+      request-timeout-ms: ${SMARTOPS_CLOUD_HTTP_TIMEOUT_MS:15000}
+      # 429 / 5xx 的重试次数与指数退避上限；权限不足不重试。
+      max-attempts: ${SMARTOPS_CLOUD_HTTP_ATTEMPTS:3}
+      backoff-base-ms: ${SMARTOPS_CLOUD_BACKOFF_BASE_MS:500}
+      backoff-max-ms: ${SMARTOPS_CLOUD_BACKOFF_MAX_MS:4000}
+    # CMDB 资源超过该秒数未刷新即展示为 STALE（只影响展示，不改写资源状态）
+    stale-after-seconds: ${SMARTOPS_CLOUD_STALE_AFTER_SECONDS:3600}
   sentinel:
     poll:
       # 哨兵采集轮询：启动 20 秒后开始，每 30 秒检查一次到期任务
       initial-delay-ms: ${SMARTOPS_SENTINEL_POLL_DELAY_MS:20000}
       interval-ms: ${SMARTOPS_SENTINEL_POLL_INTERVAL_MS:30000}
+      # 有界并发：慢目标最多占用这些槽位；额度用满后本轮停止认领（背压）
+      max-concurrency: ${SMARTOPS_SENTINEL_MAX_CONCURRENCY:8}
+      batch-size: ${SMARTOPS_SENTINEL_BATCH_SIZE:40}
+      lease-ms: ${SMARTOPS_SENTINEL_LEASE_MS:90000}
+      max-backoff-sec: ${SMARTOPS_SENTINEL_MAX_BACKOFF_SEC:3600}
     schedule:
       # 定时脚本默认**不开启**：到点只生成待审批预览，属"会自己发生"的行为，
       # 应由部署方显式打开（设置成较小的 initial-delay-ms）。

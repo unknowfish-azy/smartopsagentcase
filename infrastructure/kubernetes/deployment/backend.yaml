@@ -4,13 +4,16 @@ metadata:
   name: backend
   namespace: smartops
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels: {app: backend}
   template:
     metadata:
       labels: {app: backend}
     spec:
+      # PERF-08：优雅停机。server.shutdown=graceful 生效时，
+      # 需要给在途请求留出时间；宽限期必须大于 spring.lifecycle 的 20s。
+      terminationGracePeriodSeconds: 40
       containers:
         - name: backend
           image: smartops/backend:latest
@@ -20,11 +23,31 @@ spec:
           envFrom:
             - configMapRef: {name: smartops-app-config}
             - secretRef: {name: smartops-secrets}
-          readinessProbe:
-            httpGet: {path: /actuator/health, port: 8080}
-            initialDelaySeconds: 20
+          # HPA 基于 CPU 扩缩容，必须有 CPU request 才能算出利用率；
+          # 此前的 Deployment 既无 request 也无 limit，HPA 的 70% 指标是无意义的。
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          # 启动探针与存活/就绪分开：冷启动慢时不会被存活探针误杀。
+          startupProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8080}
             periodSeconds: 10
+            failureThreshold: 12
+          readinessProbe:
+            # readiness 反映"能否接流量"，与 liveness（进程是否活着）不是一回事。
+            httpGet: {path: /actuator/health/readiness, port: 8080}
+            periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
-            httpGet: {path: /actuator/health, port: 8080}
-            initialDelaySeconds: 30
+            httpGet: {path: /actuator/health/liveness, port: 8080}
             periodSeconds: 20
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                # 先等端点摘流，再触发优雅停机，避免滚动升级时请求被硬切断。
+                command: ["sh", "-c", "sleep 5"]
