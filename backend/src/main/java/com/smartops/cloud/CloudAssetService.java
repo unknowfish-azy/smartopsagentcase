@@ -36,6 +36,11 @@ public class CloudAssetService {
             Set.of("HOSTED_ON", "MEMBER_OF", "ROUTES_TO", "DEPENDS_ON", "RUNS_ON");
     private static final Set<String> MANUAL_STATUSES = Set.of("ACTIVE", "DELETED");
 
+    /** 手工登记允许的资产类型，对应清单要求的资产种类。 */
+    private static final Set<String> MANUAL_ASSET_TYPES = Set.of(
+            "HOST", "VM", "CONTAINER", "K8S_CLUSTER", "SERVICE",
+            "DATABASE", "MIDDLEWARE", "DOMAIN", "IP");
+
     private final CloudAssetRepository repository;
     private final CloudCredentialResolver credentials;
     private final TeamResourceAuthorizer authorizer;
@@ -253,14 +258,14 @@ public class CloudAssetService {
 
     public ResourceView resource(SessionUser actor, String resourceUid) {
         CloudAssetRepository.AssetRow row = requireAsset(resourceUid);
-        requireAccount(actor, row.sourceAccountId(), "view");
+        requireAssetAccess(actor, row, "view");
         LocalDateTime staleBefore = LocalDateTime.now().minusSeconds(staleAfterSeconds);
         return toResourceView(row, staleBefore, relationsFor(List.of(resourceUid)));
     }
 
     public ResourceView markStatus(SessionUser actor, String resourceUid, StatusRequest request) {
         CloudAssetRepository.AssetRow row = requireAsset(resourceUid);
-        requireAccount(actor, row.sourceAccountId(), "manage");
+        requireAssetAccess(actor, row, "manage");
         String status = request.status() == null ? "" : request.status().trim().toUpperCase();
         if (!MANUAL_STATUSES.contains(status)) {
             throw new BusinessException(400, "ASSET_STATUS_INVALID");
@@ -327,8 +332,8 @@ public class CloudAssetService {
         }
         CloudAssetRepository.AssetRow from = requireAsset(request.fromUid().trim());
         CloudAssetRepository.AssetRow to = requireAsset(request.toUid().trim());
-        requireAccount(actor, from.sourceAccountId(), "view");
-        requireAccount(actor, to.sourceAccountId(), "view");
+        requireAssetAccess(actor, from, "view");
+        requireAssetAccess(actor, to, "view");
         repository.upsertRelation(from.resourceUid(), to.resourceUid(), type, "DECLARED", evidence);
         return repository.relationsAmong(List.of(from.resourceUid())).stream()
                 .filter(relation -> relation.fromUid().equals(from.resourceUid())
@@ -337,6 +342,218 @@ public class CloudAssetService {
                 .findFirst()
                 .map(RelationView::from)
                 .orElseThrow(() -> new BusinessException(500, "ASSET_RELATION_WRITE_FAILED"));
+    }
+
+    // ===================== 资产治理：变更历史 / 人工确认 / 目标解析 =====================
+
+    /** 资产变更历史（采集侧与人工侧同一时间线）。 */
+    public List<ChangeView> history(SessionUser actor, String resourceUid, int limit) {
+        CloudAssetRepository.AssetRow row = requireAsset(resourceUid);
+        requireAssetAccess(actor, row, "view");
+        return repository.listChanges(resourceUid, limit).stream().map(ChangeView::from).toList();
+    }
+
+    /**
+     * 人工确认资产。
+     *
+     * <p>CONFIRM：承认该资产存在，可同时补齐环境/业务/负责人；
+     * REJECT：确认该资产应下线，状态置为 DELETED。两者都必须给出依据。</p>
+     */
+    public ResourceView confirm(SessionUser actor, String resourceUid, ConfirmRequest request) {
+        CloudAssetRepository.AssetRow row = requireAsset(resourceUid);
+        requireAssetAccess(actor, row, "manage");
+
+        String decision = request.decision() == null ? "" : request.decision().trim().toUpperCase();
+        if (!"CONFIRM".equals(decision) && !"REJECT".equals(decision)) {
+            throw new BusinessException(400, "ASSET_CONFIRM_DECISION_INVALID");
+        }
+        String note = blankToNull(request.note());
+        if (note == null) {
+            throw new BusinessException(400, "ASSET_CONFIRM_NOTE_REQUIRED");
+        }
+        if (note.length() > 500) {
+            throw new BusinessException(400, "ASSET_CONFIRM_NOTE_TOO_LONG");
+        }
+
+        String actorName = actor == null ? null : actor.username();
+        String status = "CONFIRM".equals(decision) ? "ACTIVE" : "DELETED";
+
+        // 先补齐归属，再写决策，保证历史里能看到"确认时把环境/负责人定成了什么"
+        String environment = blankToNull(request.environment());
+        String business = blankToNull(request.business());
+        String owner = blankToNull(request.owner());
+        if (environment != null || business != null || owner != null) {
+            repository.updateAttribution(resourceUid, environment, business, owner);
+            recordAttributionChanges(resourceUid, row, environment, business, owner, actorName, note);
+        }
+        repository.confirmAsset(resourceUid, status, actorName, note);
+        repository.appendChange(new CloudAssetRepository.ChangeWrite(resourceUid,
+                "CONFIRM".equals(decision) ? "CONFIRMED" : "REJECTED", "status",
+                row.status(), status, actorName, note));
+        return resource(actor, resourceUid);
+    }
+
+    /**
+     * Agent 执行前的目标解析。
+     *
+     * <p>能唯一定位到 ACTIVE 资产才放行；查不到、匹配多条、资产已失联/删除
+     * 都返回 {@code requiresConfirmation=true}，交由人工确认后再执行。</p>
+     */
+    public TargetResolution resolveTarget(SessionUser actor, ResolveTargetRequest request) {
+        if (actor == null) {
+            throw new BusinessException(403, "ASSET_RESOLVE_FORBIDDEN");
+        }
+        String target = request == null ? null : blankToNull(request.target());
+        if (target == null) {
+            throw new BusinessException(400, "ASSET_TARGET_REQUIRED");
+        }
+        LocalDateTime staleBefore = LocalDateTime.now().minusSeconds(staleAfterSeconds);
+
+        // 1) 精确 resource_uid
+        CloudAssetRepository.AssetRow exact = repository.findAssetByUid(target).orElse(null);
+        if (exact != null) {
+            requireAssetAccess(actor, exact, "view");
+            return resolveFromRow(target, exact, staleBefore);
+        }
+
+        // 2) 名称 / 资源 ID / IP 关键字，限定在当前用户可见范围与环境内
+        CloudAssetRepository.AssetQuery query = new CloudAssetRepository.AssetQuery(
+                null, blankToNull(request.environment()), null, null, target, 1, 50)
+                .withUser(actor.id(), staleBefore);
+        List<CloudAssetRepository.AssetRow> matches = repository.queryAssets(query);
+
+        if (matches.isEmpty()) {
+            return new TargetResolution(target, false, true, "NO_MATCH",
+                    null, null, null, null, null, List.of());
+        }
+        if (matches.size() > 1) {
+            return new TargetResolution(target, false, true, "AMBIGUOUS",
+                    null, null, null, null, null,
+                    matches.stream().map(TargetResolution::candidate).toList());
+        }
+        return resolveFromRow(target, matches.get(0), staleBefore);
+    }
+
+    private TargetResolution resolveFromRow(String requested, CloudAssetRepository.AssetRow row,
+                                            LocalDateTime staleBefore) {
+        String status = effectiveStatus(row, staleBefore);
+        if (!"ACTIVE".equals(status)) {
+            return new TargetResolution(requested, false, true, "ASSET_NOT_ACTIVE",
+                    toResourceView(row, staleBefore, List.of()), row.environment(), row.business(), row.owner(),
+                    authorizationScope(row), List.of());
+        }
+        ResourceView view = toResourceView(row, staleBefore, relationsFor(List.of(row.resourceUid())));
+        return new TargetResolution(requested, true, false, "RESOLVED", view,
+                row.environment(), row.business(), row.owner(), authorizationScope(row), List.of());
+    }
+
+    private String authorizationScope(CloudAssetRepository.AssetRow row) {
+        if (row.sourceAccountId() == null) {
+            return "MANUAL";
+        }
+        return repository.findAccount(row.sourceAccountId())
+                .map(CloudAccount::credentialScope)
+                .orElse("MANUAL");
+    }
+
+    /**
+     * 资产可见性：云资产按云账号归属，手工资产按登记人/所属团队。
+     */
+    private void requireAssetAccess(SessionUser actor, CloudAssetRepository.AssetRow row, String capability) {
+        if (actor == null) {
+            throw new BusinessException(403, "CLOUD_ASSET_FORBIDDEN");
+        }
+        if (row.sourceAccountId() != null) {
+            requireAccount(actor, row.sourceAccountId(), capability);
+            return;
+        }
+        if (row.ownerUserId() != null && row.ownerUserId().equals(actor.id())) {
+            return;
+        }
+        if (row.teamId() != null) {
+            authorizer.requireMember(actor, row.teamId(), capability);
+            return;
+        }
+        throw new BusinessException(403, "CLOUD_ASSET_FORBIDDEN");
+    }
+
+    /**
+     * 手工登记资产（无云账号）。
+     *
+     * <p>清单要求的类型（主机/VM/容器/K8s/服务/数据库/中间件/域名/IP）之外一律拒绝，
+     * 避免 CMDB 变成自由文本表。登记即生效，同时写入变更历史。</p>
+     */
+    public ResourceView registerManualAsset(SessionUser actor, ManualAssetRequest request) {
+        if (actor == null) {
+            throw new BusinessException(403, "CLOUD_ASSET_FORBIDDEN");
+        }
+        String type = request.resourceType() == null ? "" : request.resourceType().trim().toUpperCase();
+        if (!MANUAL_ASSET_TYPES.contains(type)) {
+            throw new BusinessException(400, "ASSET_TYPE_UNSUPPORTED");
+        }
+        String name = blankToNull(request.name());
+        if (name == null || name.length() > 120) {
+            throw new BusinessException(400, "ASSET_NAME_INVALID");
+        }
+        String environment = blankToNull(request.environment());
+        if (environment == null) {
+            throw new BusinessException(400, "ASSET_ENVIRONMENT_REQUIRED");
+        }
+        String owner = blankToNull(request.owner());
+        if (owner == null) {
+            throw new BusinessException(400, "ASSET_OWNER_REQUIRED");
+        }
+        if (request.teamId() != null) {
+            authorizer.requireMember(actor, request.teamId(), "manage");
+        }
+
+        String uid = manualUid(type, name);
+        String tagsJson = writeJson(request.tags());
+        String metadataJson = writeJson(request.metadata());
+        try {
+            repository.insertManualAsset(new CloudAssetRepository.ManualAssetWrite(uid,
+                    blankToNull(request.region()) == null ? "manual" : request.region().trim(),
+                    type, blankToNull(request.externalId()) == null ? uid : request.externalId().trim(),
+                    name, environment, blankToNull(request.business()), owner,
+                    tagsJson, metadataJson, actor.id(), request.teamId()));
+        } catch (DuplicateKeyException duplicate) {
+            throw new BusinessException(400, "ASSET_ALREADY_REGISTERED");
+        }
+
+        repository.appendChange(new CloudAssetRepository.ChangeWrite(uid, "DISCOVERED", "status",
+                null, "ACTIVE", actor.username(), "人工登记资产：" + name));
+
+        return resource(actor, uid);
+    }
+
+    private String manualUid(String type, String name) {
+        String slug = name.trim().toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9\\u4e00-\\u9fa5]+", "-")
+                .replaceAll("^-+|-+$", "");
+        if (slug.isEmpty()) {
+            slug = "asset";
+        }
+        if (slug.length() > 120) {
+            slug = slug.substring(0, 120);
+        }
+        return "manual:" + type.toLowerCase(java.util.Locale.ROOT) + ":" + slug;
+    }
+
+    private void recordAttributionChanges(String resourceUid, CloudAssetRepository.AssetRow row,
+                                          String environment, String business, String owner,
+                                          String actorName, String note) {
+        recordIfChanged(resourceUid, "environment", row.environment(), environment, actorName, note);
+        recordIfChanged(resourceUid, "business", row.business(), business, actorName, note);
+        recordIfChanged(resourceUid, "owner", row.owner(), owner, actorName, note);
+    }
+
+    private void recordIfChanged(String resourceUid, String field, String before, String after,
+                                 String actorName, String note) {
+        if (after == null || (before == null ? false : before.equals(after))) {
+            return;
+        }
+        repository.appendChange(new CloudAssetRepository.ChangeWrite(resourceUid, "UPDATED", field,
+                before, after, actorName, note));
     }
 
     // ===================== 授权与辅助 =====================
@@ -582,5 +799,81 @@ public class CloudAssetService {
             List<ResourceView> resources,
             List<RelationView> relations,
             List<AccountView> incompleteAccounts
+    ) {}
+
+    // ===================== 治理相关对外记录 =====================
+
+    public record ConfirmRequest(
+            @NotBlank String decision,
+            @NotBlank String note,
+            String environment,
+            String business,
+            String owner
+    ) {}
+
+    public record ResolveTargetRequest(@NotBlank String target, String environment) {}
+
+    /** 手工登记资产请求。 */
+    public record ManualAssetRequest(
+            @NotBlank String resourceType,
+            @NotBlank String name,
+            String environment,
+            String business,
+            String owner,
+            String region,
+            String externalId,
+            Long teamId,
+            Map<String, String> tags,
+            Map<String, String> metadata
+    ) {}
+
+    public record ChangeView(
+            long id,
+            String changeType,
+            String fieldName,
+            String oldValue,
+            String newValue,
+            String actor,
+            String note,
+            LocalDateTime changedAt
+    ) {
+        static ChangeView from(CloudAssetRepository.ChangeRow row) {
+            return new ChangeView(row.id(), row.changeType(), row.fieldName(), row.oldValue(),
+                    row.newValue(), row.actor(), row.note(), row.changedAt());
+        }
+    }
+
+    /**
+     * 目标解析结果。
+     *
+     * <p>{@code requiresConfirmation=true} 时执行器必须停下来等人工确认，
+     * 不允许把 UNKNOWN 目标猜成某台机器继续跑。</p>
+     */
+    public record TargetResolution(
+            String requested,
+            boolean resolved,
+            boolean requiresConfirmation,
+            String reason,
+            ResourceView asset,
+            String environment,
+            String business,
+            String owner,
+            String authorizationScope,
+            List<TargetCandidate> candidates
+    ) {
+        static TargetCandidate candidate(CloudAssetRepository.AssetRow row) {
+            return new TargetCandidate(row.resourceUid(), row.name(), row.resourceType(), row.environment(),
+                    row.business(), row.owner(), row.status());
+        }
+    }
+
+    public record TargetCandidate(
+            String uid,
+            String name,
+            String resourceType,
+            String environment,
+            String business,
+            String owner,
+            String status
     ) {}
 }

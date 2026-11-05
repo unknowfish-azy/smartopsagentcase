@@ -44,7 +44,9 @@ class CloudAssetServiceTest {
                 "jdbc:h2:mem:cloud-asset-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1", "sa", "");
         new ResourceDatabasePopulator(
                 new ClassPathResource("schema.sql"),
-                new ClassPathResource("db/migration/V20261105.4__cloud_assets.sql")
+                new ClassPathResource("db/migration/V20261105.4__cloud_assets.sql"),
+                new ClassPathResource("db/migration/V20261105.5__asset_governance.sql"),
+                new ClassPathResource("db/migration/V20261105.6__manual_assets.sql")
         ).execute(source);
         jdbc = new JdbcTemplate(source);
         jdbc.execute("CREATE TABLE IF NOT EXISTS app_user (id BIGINT PRIMARY KEY, enabled BOOLEAN NOT NULL DEFAULT TRUE)");

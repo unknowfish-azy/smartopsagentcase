@@ -99,4 +99,38 @@ public class CloudAssetController {
             @Valid @RequestBody CloudAssetService.DeclareRelationRequest request) {
         return ApiResponse.success(service.declareRelation(actor, request));
     }
+
+    /** 手工登记资产（无云账号的主机/服务/数据库/域名等）。 */
+    @PostMapping("/resources")
+    public ApiResponse<CloudAssetService.ResourceView> registerManualAsset(
+            @AuthenticationPrincipal SessionUser actor,
+            @Valid @RequestBody CloudAssetService.ManualAssetRequest request) {
+        return ApiResponse.success(service.registerManualAsset(actor, request));
+    }
+
+    /** 资产变更历史（采集侧 + 人工侧同一时间线）。 */
+    @GetMapping("/resources/{uid}/history")
+    public ApiResponse<List<CloudAssetService.ChangeView>> history(
+            @AuthenticationPrincipal SessionUser actor,
+            @PathVariable String uid,
+            @RequestParam(defaultValue = "50") int limit) {
+        return ApiResponse.success(service.history(actor, uid, limit));
+    }
+
+    /** 人工确认资产：CONFIRM 承认存在并补齐归属，REJECT 确认下线。 */
+    @PostMapping("/resources/{uid}/confirm")
+    public ApiResponse<CloudAssetService.ResourceView> confirm(
+            @AuthenticationPrincipal SessionUser actor,
+            @PathVariable String uid,
+            @Valid @RequestBody CloudAssetService.ConfirmRequest request) {
+        return ApiResponse.success(service.confirm(actor, uid, request));
+    }
+
+    /** Agent 执行前的目标解析：无法唯一确定时必须转人工确认。 */
+    @PostMapping("/targets/resolve")
+    public ApiResponse<CloudAssetService.TargetResolution> resolveTarget(
+            @AuthenticationPrincipal SessionUser actor,
+            @Valid @RequestBody CloudAssetService.ResolveTargetRequest request) {
+        return ApiResponse.success(service.resolveTarget(actor, request));
+    }
 }
