@@ -347,6 +347,24 @@ public class CloudAssetRepository {
             String owner
     ) {}
 
+    /** 手工登记资产：没有云账号，可见范围由登记人/所属团队决定。 */
+    public void insertManualAsset(ManualAssetWrite write) {
+        LocalDateTime now = LocalDateTime.now();
+        jdbc.update("""
+                INSERT INTO asset_resource
+                    (resource_uid, provider, provider_account_id, region, resource_type, provider_resource_id,
+                     name, status, status_reason, environment, business, owner, source, source_account_id,
+                     last_sync_run_id, collected_at, first_seen_at, last_seen_at, tags_json, metadata_json,
+                     owner_user_id, team_id, created_at, updated_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                write.resourceUid(), "manual", "manual", write.region(), write.resourceType(),
+                write.providerResourceId(), write.name(), "ACTIVE", null, write.environment(), write.business(),
+                write.owner(), "MANUAL", null, null, timestamp(now), timestamp(now), timestamp(now),
+                write.tagsJson(), write.metadataJson(), write.ownerUserId(), write.teamId(),
+                timestamp(now), timestamp(now));
+    }
+
     public Optional<AssetRow> findAssetByUid(String resourceUid) {
         List<AssetRow> rows = jdbc.query(
                 "SELECT * FROM asset_resource WHERE resource_uid=?", assetMapper(), resourceUid);
@@ -363,7 +381,7 @@ public class CloudAssetRepository {
 
     public long countAssets(AssetQuery query) {
         List<Object> args = new ArrayList<>();
-        String sql = "SELECT COUNT(1) FROM asset_resource r JOIN cloud_account a ON a.id=r.source_account_id"
+        String sql = "SELECT COUNT(1) FROM asset_resource r LEFT JOIN cloud_account a ON a.id=r.source_account_id"
                 + scopedAssetWhere(args, query);
         Long count = jdbc.queryForObject(sql, Long.class, args.toArray());
         return count == null ? 0 : count;
@@ -378,14 +396,21 @@ public class CloudAssetRepository {
     }
 
     private String scopedAssetSelect(List<Object> args, AssetQuery query) {
-        return "SELECT r.* FROM asset_resource r JOIN cloud_account a ON a.id=r.source_account_id"
+        return "SELECT r.* FROM asset_resource r LEFT JOIN cloud_account a ON a.id=r.source_account_id"
                 + scopedAssetWhere(args, query);
     }
 
+    /**
+     * 可见范围：云资产按云账号归属，手工资产按登记人/归属团队。
+     * 手工资产的 source_account_id 为空，因此必须是 LEFT JOIN。
+     */
     private String scopedAssetWhere(List<Object> args, AssetQuery query) {
         StringBuilder where = new StringBuilder("""
-                 WHERE (a.owner_user_id=? OR a.team_id IN (SELECT team_id FROM team_member WHERE user_id=?))
+                 WHERE (a.owner_user_id=? OR a.team_id IN (SELECT team_id FROM team_member WHERE user_id=?)
+                        OR r.owner_user_id=? OR r.team_id IN (SELECT team_id FROM team_member WHERE user_id=?))
                 """);
+        args.add(query.userId());
+        args.add(query.userId());
         args.add(query.userId());
         args.add(query.userId());
         if (query.business() != null && !query.business().isBlank()) {
@@ -515,12 +540,19 @@ public class CloudAssetRepository {
                 result.getString("business"),
                 result.getString("owner"),
                 result.getString("source"),
-                result.getLong("source_account_id"),
+                nullableLong(result, "source_account_id"),
                 toTime(result, "collected_at"),
                 toTime(result, "first_seen_at"),
                 toTime(result, "last_seen_at"),
                 result.getString("tags_json"),
-                result.getString("metadata_json"));
+                result.getString("metadata_json"),
+                nullableLong(result, "owner_user_id"),
+                nullableLong(result, "team_id"));
+    }
+
+    private static Long nullableLong(ResultSet result, String column) throws SQLException {
+        long value = result.getLong(column);
+        return result.wasNull() ? null : value;
     }
 
     private static LocalDateTime toTime(ResultSet result, String column) throws SQLException {
@@ -569,6 +601,21 @@ public class CloudAssetRepository {
             String metadataJson
     ) {}
 
+    public record ManualAssetWrite(
+            String resourceUid,
+            String region,
+            String resourceType,
+            String providerResourceId,
+            String name,
+            String environment,
+            String business,
+            String owner,
+            String tagsJson,
+            String metadataJson,
+            long ownerUserId,
+            Long teamId
+    ) {}
+
     public record AssetRow(
             long id,
             String resourceUid,
@@ -584,12 +631,14 @@ public class CloudAssetRepository {
             String business,
             String owner,
             String source,
-            long sourceAccountId,
+            Long sourceAccountId,
             LocalDateTime collectedAt,
             LocalDateTime firstSeenAt,
             LocalDateTime lastSeenAt,
             String tagsJson,
-            String metadataJson
+            String metadataJson,
+            Long ownerUserId,
+            Long teamId
     ) {}
 
     public record RelationRow(
