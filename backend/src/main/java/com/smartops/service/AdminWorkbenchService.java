@@ -97,7 +97,7 @@ public class AdminWorkbenchService {
         if (total <= 0) return java.util.Optional.empty();
         Map<String, Object> entry = item("AUDIT_ATTENTION", "近 24 小时失败或拒绝的安全事件",
                 "来自审计账，按结果字段统计；依据详情见审计记录。",
-                total, "security_audit_event", List.of(), "/admin/audit?outcome=DENIED", (String) row.get("latest"));
+                total, "security_audit_event", List.of(), "/admin/audit", (String) row.get("latest"));
         return java.util.Optional.of(entry);
     }
 
