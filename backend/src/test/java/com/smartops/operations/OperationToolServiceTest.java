@@ -162,7 +162,7 @@ class OperationToolServiceTest {
                 "dig api.example.com"
         );
         assertThat(service.preview(1L, "database-readonly", Map.of("metric", "connections")).commands().get(0))
-                .endsWith("--read-only");
+                .contains("/api/operations/database/diagnose");
     }
 
     @Test
@@ -183,7 +183,9 @@ class OperationToolServiceTest {
         OperationToolService service = new OperationToolService(new OperationRuntimeRegistry());
         assertThat(service.preview(1L, "prometheus-query", Map.of("query", "up", "range", "15")).readOnly()).isTrue();
         assertThat(service.preview(1L, "mysql-slow-query", Map.of("database", "orders", "limit", "20")).commands())
-                .containsExactly("smartops db slow-queries --database orders --limit 20 --read-only");
+                .singleElement().satisfies(command -> assertThat(command)
+                        .contains("metric=SLOW_SQL")
+                        .contains("/api/operations/database/diagnose"));
         assertThat(service.preview(1L, "k8s-diagnose", Map.of("namespace", "demo", "name", "api")).commands())
                 .containsExactly(
                         "kubectl get pod,deploy,svc,endpoints -n demo -l app=api -o wide",
