@@ -47,6 +47,10 @@ test('admin and session clients honor frozen contracts without network requests'
       assert.deepEqual(calls.at(-1).body, { password: 'mock-reset' })
       await adminApi.sessions()
       assert.equal(calls.at(-1).url, '/api/admin/sessions')
+      await adminApi.workbench()
+      assert.equal(calls.at(-1).url, '/api/admin/workbench')
+      await adminApi.modelGovernance()
+      assert.equal(calls.at(-1).url, '/api/admin/model-governance')
       await adminApi.revokeSession('opaque/id')
       assert.equal(calls.at(-1).url, '/api/admin/sessions/opaque%2Fid')
       assert.equal(calls.at(-1).method, 'delete')
@@ -58,7 +62,8 @@ test('admin and session clients honor frozen contracts without network requests'
       assert.equal(calls.at(-1).params.q, '%')
     })
     await context.test('audit filters expose only frozen server action and outcome values', () => {
-      assert.deepEqual(AUDIT_ACTIONS?.map(item => item.value), ['LOGIN', 'LOGOUT', 'CREATE_USER', 'UPDATE_USER', 'RESET_PASSWORD', 'CHANGE_PASSWORD', 'REVOKE_SESSION', 'REGISTER', 'REGISTRATION_POLICY', 'ADMIN_VERIFY', 'HUMAN_VERIFY', 'MFA_ENABLE', 'MFA_DISABLE', 'MFA_VERIFY', 'MFA_RECOVERY_ROTATE', 'MFA_RECOVERY_USE', 'TEAM_CREATE', 'TEAM_UPDATE', 'TEAM_INVITE', 'TEAM_INVITE_RESPOND', 'TEAM_INVITE_CANCEL', 'TEAM_MEMBER_ROLE', 'TEAM_MEMBER_REMOVE', 'TEAM_STATUS', 'CHAT_CONVERSATION_CREATE', 'CHAT_CONVERSATION_DELETE', 'CHAT_ATTACHMENT_UPLOAD'])
+      // 与 SecurityAuditService.ACTIONS 同序同集：前端筛选值超出服务端目录会被 400 拒绝。
+      assert.deepEqual(AUDIT_ACTIONS?.map(item => item.value), ['LOGIN', 'LOGOUT', 'CREATE_USER', 'UPDATE_USER', 'RESET_PASSWORD', 'CHANGE_PASSWORD', 'PROFILE_UPDATE', 'REVOKE_SESSION', 'REGISTER', 'REGISTRATION_POLICY', 'ADMIN_VERIFY', 'HUMAN_VERIFY', 'MFA_ENABLE', 'MFA_DISABLE', 'MFA_VERIFY', 'MFA_RECOVERY_ROTATE', 'MFA_RECOVERY_USE', 'TEAM_CREATE', 'TEAM_UPDATE', 'TEAM_INVITE', 'TEAM_INVITE_RESPOND', 'TEAM_INVITE_CANCEL', 'TEAM_INVITE_LINK_CREATE', 'TEAM_INVITE_LINK_JOIN', 'TEAM_INVITE_LINK_REVOKE', 'TEAM_MEMBER_ROLE', 'TEAM_MEMBER_REMOVE', 'TEAM_STATUS', 'TEAM_AGENT_RUN_CREATE', 'TEAM_AGENT_RUN_APPROVE', 'TEAM_AGENT_RUN_EXECUTE', 'TEAM_AGENT_RUN_FINISH', 'CHAT_CONVERSATION_CREATE', 'CHAT_CONVERSATION_DELETE', 'CHAT_ATTACHMENT_UPLOAD', 'DEPT_CREATE', 'DEPT_UPDATE', 'DEPT_DELETE', 'DEPT_STATUS', 'POST_CREATE', 'POST_UPDATE', 'POST_DELETE', 'POST_STATUS', 'ROLE_CREATE', 'ROLE_UPDATE', 'ROLE_DELETE', 'ROLE_STATUS', 'ROLE_MENU_GRANT', 'MENU_CREATE', 'MENU_UPDATE', 'MENU_DELETE', 'MENU_STATUS', 'DICT_TYPE_CREATE', 'DICT_TYPE_UPDATE', 'DICT_TYPE_DELETE', 'DICT_TYPE_STATUS', 'DICT_DATA_CREATE', 'DICT_DATA_UPDATE', 'DICT_DATA_DELETE', 'DICT_DATA_STATUS', 'NOTICE_CREATE', 'NOTICE_UPDATE', 'NOTICE_DELETE', 'NOTICE_PUBLISH', 'PLATFORM_ADMIN_APPOINT', 'PLATFORM_ADMIN_REVOKE', 'PLATFORM_ROOT_TRANSFER'])
       assert.deepEqual(AUDIT_OUTCOMES?.map(item => item.value), ['SUCCESS', 'FAILURE', 'DENIED'])
     })
     await context.test('forced password gate blocks requests before transport and allows password/logout', async () => {

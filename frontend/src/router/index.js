@@ -19,6 +19,8 @@ const routes = [
             { path: 'teams', name: 'AdminTeams', component: () => import('../views/admin/AdminTeamsView.vue') },
             { path: 'sessions', name: 'AdminSessions', component: () => import('../views/admin/AdminSessionsView.vue') },
             { path: 'audit', name: 'AdminAudit', component: () => import('../views/admin/AdminAuditView.vue') },
+            { path: 'approvals', name: 'AdminApprovals', component: () => import('../views/admin/AdminApprovalsView.vue') },
+            { path: 'models', name: 'AdminModels', component: () => import('../views/admin/AdminModelGovernanceView.vue') },
             { path: 'security', name: 'AdminMfa', component: () => import('../views/admin/AdminMfaView.vue') },
             { path: 'readiness', name: 'AdminReadiness', component: () => import('../views/admin/AdminReadinessView.vue') }
         ]

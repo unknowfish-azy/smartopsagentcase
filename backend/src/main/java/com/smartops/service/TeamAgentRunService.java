@@ -232,7 +232,7 @@ public class TeamAgentRunService {
                 row.getLong("requester_id"), row.getString("runtime_id"), row.getString("tool_id"), row.getBoolean("read_only"),
                 row.getString("parameters_json"), row.getString("status"), row.getObject("previewed_by", Long.class), row.getString("preview_digest"), row.getObject("approved_by", Long.class),
                 row.getString("grant_token"), row.getTimestamp("grant_expires_at") == null ? null : row.getTimestamp("grant_expires_at").toInstant(),
-                columnOrNull(row, "decision_basis"));
+                columnOrNull(row, "decision_basis"), instantOrNull(row, "created_at"));
     }
 
     /** 列可能尚未添加（旧库），读不到时返回 null 而不是让整个查询失败。 */
@@ -244,9 +244,19 @@ public class TeamAgentRunService {
         }
     }
 
+    /** 兼容旧库缺列：提交时间只用于展示，读不到时返回 null。 */
+    private static String instantOrNull(java.sql.ResultSet row, String column) {
+        try {
+            var value = row.getTimestamp(column);
+            return value == null ? null : value.toInstant().toString();
+        } catch (java.sql.SQLException missing) {
+            return null;
+        }
+    }
+
     public record Run(long id, long teamId, long agentId, long versionId, long requesterId, String runtimeId,
                       String toolId, boolean readOnly, @JsonIgnore String parametersJson, String status, Long previewedBy,
                       @JsonIgnore String previewDigest, Long approvedBy,
                       @JsonIgnore String grantToken, Instant grantExpiresAt,
-                      String decisionBasis) {}
+                      String decisionBasis, String createdAt) {}
 }

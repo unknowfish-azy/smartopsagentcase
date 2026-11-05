@@ -1,7 +1,7 @@
 <template>
   <section aria-labelledby="menu-title">
     <header class="admin-page-header"><div><p class="admin-eyebrow">SYSTEM / 权限模型</p><h1 id="menu-title">菜单管理</h1></div><button class="admin-primary" @click="open('create')">新增菜单</button></header>
-    <p class="admin-muted">菜单三级：目录/菜单/按钮；按钮权限标识用 system:module:action 三段式。写操作需输入管理员密码复核。</p>
+    <p class="admin-muted">菜单三级：目录/菜单/按钮；按钮权限标识用 system:module:action 三段式。菜单可见性与按钮权限只影响导航与展示，接口保护由平台能力校验判定；写操作需输入管理员密码复核。</p>
     <p v-if="success" class="admin-notice" role="status">{{ success }}</p>
     <p v-if="error" class="admin-error" role="alert">{{ error }}</p>
     <p v-if="loading" role="status">正在加载菜单…</p>

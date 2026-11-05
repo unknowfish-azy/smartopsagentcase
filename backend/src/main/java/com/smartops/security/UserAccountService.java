@@ -145,6 +145,72 @@ public class UserAccountService {
         if (!hasPlatformCapability(actor, capability)) throw new BusinessException(403, "平台权限不足：" + capability);
     }
 
+    /** 多个能力中任一即可的显式组合规则；不用“角色取并集”隐式放宽。 */
+    public void requireAnyPlatformCapability(SessionUser actor, String... capabilities) {
+        for (String capability : capabilities) if (hasPlatformCapability(actor, capability)) return;
+        throw new BusinessException(403, "平台权限不足：" + String.join("|", capabilities));
+    }
+
+    /** 能力目录：服务端给出级别、可任命级别与可转授能力，前端不再自行拼装。 */
+    public CapabilityCatalog capabilityCatalog(SessionUser actor) {
+        requirePlatformCapability(actor, "admin.users");
+        String level = platformLevel(actor);
+        var manageable = new ArrayList<String>();
+        if (PlatformAdminGovernance.ROOT.equals(level)) {
+            manageable.add(PlatformAdminGovernance.DEPUTY);
+            manageable.add(PlatformAdminGovernance.SPECIALIST);
+        } else if (PlatformAdminGovernance.DEPUTY.equals(level)) {
+            manageable.add(PlatformAdminGovernance.SPECIALIST);
+        }
+        var items = PlatformAdminGovernance.ROOT_CAPABILITIES.stream().sorted()
+                .map(capability -> new CapabilityView(capability, PlatformAdminGovernance.label(capability), PlatformAdminGovernance.canGrant(level, capability)))
+                .toList();
+        return new CapabilityCatalog(level, manageable, items);
+    }
+
+    /**
+     * 账户上下文：组织归属、系统角色、平台管理员档案、活动会话与近期审计元数据。
+     * 只汇总治理元数据，不返回私人知识、聊天正文或连接凭据。
+     */
+    public AccountContext accountContext(SessionUser actor, long id) {
+        requirePlatformCapability(actor, "admin.users");
+        Account account = requireAccount(id);
+        var chain = new ArrayList<String>();
+        Long deptId = account.deptId();
+        while (deptId != null && chain.size() < 10) {
+            var rows = jdbc.queryForList("SELECT name,parent_id FROM sys_dept WHERE id=?", deptId);
+            if (rows.isEmpty()) break;
+            chain.add(0, String.valueOf(rows.get(0).get("name")));
+            Object parent = rows.get(0).get("parent_id");
+            deptId = parent == null ? null : ((Number) parent).longValue();
+        }
+        String postName = account.postId() == null ? null
+                : jdbc.query("SELECT name FROM sys_post WHERE id=?", (result, row) -> result.getString(1), account.postId()).stream().findFirst().orElse(null);
+        var rbacRoles = jdbc.query("SELECT r.id,r.name,r.code,r.data_scope,r.status FROM sys_role r JOIN sys_user_role ur ON ur.role_id=r.id WHERE ur.user_id=? ORDER BY r.id",
+                (result, row) -> new RbacRoleView(result.getLong("id"), result.getString("name"), result.getString("code"), result.getInt("data_scope"), result.getInt("status")), id);
+        List<PlatformProfile> profiles = profileOf(id);
+        PlatformAdminContext platform = profiles.isEmpty() ? new PlatformAdminContext(false, null, false, null, List.of())
+                : new PlatformAdminContext(true, profiles.get(0).level(), profiles.get(0).revoked(), appointedAt(id), capabilitiesOf(id));
+        long enabledAdmins = count("SELECT COUNT(*) FROM app_user WHERE role='admin' AND enabled=TRUE");
+        boolean lastAdmin = "admin".equals(account.role()) && account.enabled() && enabledAdmins <= 1;
+        var recentAudit = jdbc.query("SELECT id,actor_username,action,outcome,detail,created_at FROM security_audit_event WHERE actor_id=? OR target_id=? ORDER BY id DESC LIMIT 20",
+                (result, row) -> new AuditLite(result.getLong("id"), result.getString("actor_username"), result.getString("action"), result.getString("outcome"), result.getString("detail"), result.getTimestamp("created_at").toInstant().toString()),
+                id, Long.toString(id));
+        return new AccountContext(viewOf(account), chain.isEmpty() ? null : String.join(" / ", chain), postName, rbacRoles, platform,
+                sessions.list(id, null), new ProtectionView(actor != null && actor.id() == id, lastAdmin), recentAudit);
+    }
+
+    private String appointedAt(long userId) {
+        return jdbc.query("SELECT appointed_at FROM platform_admin_profile WHERE user_id=?", (result, row) -> {
+            Timestamp value = result.getTimestamp(1);
+            return value == null ? null : value.toInstant().toString();
+        }, userId).stream().findFirst().orElse(null);
+    }
+
+    private List<String> capabilitiesOf(long userId) {
+        return jdbc.query("SELECT capability FROM platform_admin_capability WHERE user_id=? ORDER BY capability", (result, row) -> result.getString(1), userId);
+    }
+
     public List<PlatformAdminView> platformAdministrators(SessionUser actor) {
         requirePlatformCapability(actor, "admin.users");
         try {
@@ -438,4 +504,13 @@ public class UserAccountService {
                               Long deptId, Long postId, String realName, String phone, String email, List<Long> roleIds) {}
     public record AccountPage(List<AccountView> items, long total, int page, int pageSize) {}
     public record PlatformAdminView(long id, String username, boolean enabled, String level, List<String> capabilities) {}
+    public record CapabilityView(String value, String label, boolean grantable) {}
+    public record CapabilityCatalog(String level, List<String> manageableLevels, List<CapabilityView> items) {}
+    public record RbacRoleView(long id, String name, String code, int dataScope, int status) {}
+    public record PlatformAdminContext(boolean profiled, String level, boolean revoked, String appointedAt, List<String> capabilities) {}
+    public record ProtectionView(boolean self, boolean lastEnabledAdmin) {}
+    public record AuditLite(long id, String actorUsername, String action, String outcome, String detail, String createdAt) {}
+    public record AccountContext(AccountView account, String deptPath, String postName, List<RbacRoleView> rbacRoles,
+                                 PlatformAdminContext platformAdmin, List<AccountSessionRegistry.SessionView> sessions,
+                                 ProtectionView protection, List<AuditLite> recentAudit) {}
 }
