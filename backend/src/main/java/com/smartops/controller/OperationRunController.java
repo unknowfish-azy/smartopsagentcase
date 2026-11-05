@@ -2,10 +2,14 @@ package com.smartops.controller;
 
 import com.smartops.common.ApiResponse;
 import com.smartops.service.OperationRunQueryService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,6 +42,22 @@ public class OperationRunController {
             @PathVariable Long id) {
         return ApiResponse.success(service.detail(userId, id));
     }
+
+    /**
+     * 人工核验 UNCERTAIN 的运行结果：确认远端动作是否已生效。
+     */
+    @PostMapping("/{id}/verify")
+    public ApiResponse<OperationRunQueryService.RunDetail> verify(
+            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @PathVariable Long id,
+            @Valid @RequestBody VerifyRequest request) {
+        return ApiResponse.success(service.verify(userId, id, request.decision(), request.note()));
+    }
+
+    public record VerifyRequest(
+            @NotBlank String decision,
+            @NotBlank @Size(max = 500) String note
+    ) {}
 
     /**
      * 协作式取消：置位取消标记，执行循环在命令之间检查后停止派发后续命令。

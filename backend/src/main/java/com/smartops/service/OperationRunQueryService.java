@@ -63,6 +63,39 @@ public class OperationRunQueryService {
     }
 
     /**
+     * 人工核验一次 UNCERTAIN 的运行结果。
+     *
+     * <p>只有 UNCERTAIN 才允许核验：它表示"执行中断、远端是否已生效未知"。
+     * 核验后落到 {@code VERIFIED_SUCCEEDED} / {@code VERIFIED_FAILED}，
+     * 与普通失败区分开，避免把未核实的写操作当成安全可重试的失败。</p>
+     */
+    public RunDetail verify(Long userId, Long runId, String decision, String note) {
+        String normalized = decision == null ? "" : decision.trim().toUpperCase();
+        if (!"DONE".equals(normalized) && !"NOT_DONE".equals(normalized)) {
+            throw new BusinessException(400, "OPERATION_RUN_VERIFY_DECISION_INVALID");
+        }
+        String evidence = note == null ? "" : note.trim();
+        if (evidence.isEmpty()) throw new BusinessException(400, "OPERATION_RUN_VERIFY_NOTE_REQUIRED");
+        if (evidence.length() > 500) throw new BusinessException(400, "OPERATION_RUN_VERIFY_NOTE_TOO_LONG");
+
+        String target = "DONE".equals(normalized) ? "VERIFIED_SUCCEEDED" : "VERIFIED_FAILED";
+        int updated = jdbc.update(
+                "UPDATE operation_run_record SET status=? WHERE id=? AND user_id=? AND status='UNCERTAIN'",
+                target, runId, userId);
+        if (updated == 0) {
+            List<String> statuses = jdbc.query("SELECT status FROM operation_run_record WHERE id=? AND user_id=?",
+                    (rs, row) -> rs.getString("status"), runId, userId);
+            if (statuses.isEmpty()) throw new BusinessException(404, "OPERATION_RUN_NOT_FOUND");
+            throw new BusinessException(409, "OPERATION_RUN_NOT_UNCERTAIN");
+        }
+        jdbc.update("INSERT INTO operation_run_evidence(run_id,evidence_type,content,source_ref,created_at) VALUES(?,?,?,?,?)",
+                runId, "RUN_VERIFIED",
+                "人工核验结论=" + normalized + "；依据：" + evidence + "；不自动重试写操作",
+                "human-verification", Timestamp.from(Instant.now()));
+        return detail(userId, runId);
+    }
+
+    /**
      * 请求取消一次仍在执行的 Run。
      *
      * <p>取消是"协作式"的：只置标记，由执行循环在命令之间读取并停止派发后续命令。
