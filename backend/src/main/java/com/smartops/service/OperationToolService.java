@@ -153,21 +153,23 @@ public class OperationToolService {
                     "kubectl get pod,deploy,svc,endpoints -n " + namespace + " -l app=" + name + " -o wide",
                     "kubectl get events -n " + namespace + " --sort-by=.lastTimestamp");
         }).params("namespace", "name"));
-        // ── 以下四项只有命令模板，仓库内没有配套 smartops CLI 实现 ──
+        // ── 以下两项只有命令模板，仓库内没有配套 smartops CLI 实现 ──
         add(entries, template("knowledge-retrieval", "知识检索需要 smartops CLI 或知识服务适配器，本仓库未实现",
                 values -> List.of("smartops knowledge search --query '" + safeSearch(values, "keyword") + "' --top-k " + positiveInteger(values, "topK", "5")),
                 "keyword", "topK"));
-        add(entries, template("database-readonly", "数据库只读巡检需要 JDBC 适配器与只读凭据，本仓库未实现",
-                values -> List.of("smartops db inspect --metric " + safeName(values, "metric") + " --read-only"),
-                "metric"));
         add(entries, template("grafana-dashboard", "Grafana 面板读取需要 Grafana API 适配器与凭据，本仓库未实现",
                 values -> List.of("smartops grafana panel --dashboard " + safeName(values, "dashboard")
                         + " --panel " + safeName(values, "panel") + " --read-only"),
                 "dashboard", "panel"));
-        add(entries, template("mysql-slow-query", "慢 SQL 诊断需要 MySQL 只读连接与脱敏实现，本仓库未实现",
-                values -> List.of("smartops db slow-queries --database " + safeName(values, "database")
-                        + " --limit " + positiveInteger(values, "limit", "20") + " --read-only"),
-                "database", "limit"));
+        // 数据库诊断已由进程内 JDBC 适配器实现：这里不再渲染仓库中不存在的 smartops CLI。
+        add(entries, real("database-readonly", values -> List.of(
+                "# 数据库只读诊断由进程内 JDBC 适配器执行：POST /api/operations/database/diagnose"
+                        + "（engine/host/port/database/credentialRef），只读会话 + 单语句 + 行数/字节/耗时上限"))
+                .target("DATABASE").credential("database-readonly").params("metric"));
+        add(entries, real("mysql-slow-query", values -> List.of(
+                "# 慢 SQL 诊断 metric=SLOW_SQL 走同一端点：POST /api/operations/database/diagnose，"
+                        + "DIGEST_TEXT 脱敏后进入证据"))
+                .target("DATABASE").credential("database-readonly").params("database", "limit"));
         // ── 告警静默：外部平台写入尚未接入，如实标记不可用 ──
         add(entries, unavailable("alerts-suppress", "ALERT_SUPPRESS",
                 "告警平台静默写入（创建 silence + TTL + 撤销）尚未接入",
