@@ -125,11 +125,15 @@ public class UserAccountService {
         if (profiles.isEmpty()) return PlatformAdminGovernance.MINIMAL_READ_ONLY_CAPABILITIES.contains(capability);
         // 已撤销的管理员档案保留：不得因为缺少能力行而被重新放行。
         if (profiles.get(0).revoked()) return false;
-        // SEC-07：最小只读是未撤销管理员的保底视图（新建/提升的 deputy 默认零能力行，
-        // 但审计与团队只读仍应可见）；写能力与配置能力必须显式授予能力行。
-        if (PlatformAdminGovernance.MINIMAL_READ_ONLY_CAPABILITIES.contains(capability)) return true;
         try {
-            return jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=? AND capability=?", Integer.class, actor.id(), capability) > 0;
+            if (jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=? AND capability=?", Integer.class, actor.id(), capability) > 0) {
+                return true;
+            }
+            // SEC-07：零能力行（新建/提升的 deputy 默认状态）兜底最小只读视图；
+            // 一旦有任何显式授权，能力严格按授权行判定，最小只读不再自动叠加。
+            boolean anyExplicit = jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=?", Integer.class, actor.id()) > 0;
+            if (!anyExplicit) return PlatformAdminGovernance.MINIMAL_READ_ONLY_CAPABILITIES.contains(capability);
+            return false;
         } catch (org.springframework.dao.DataAccessException unavailable) {
             // SEC-07：治理数据不可用时拒绝判定（明确 500），绝不回退为放行或静默拒绝。
             throw new BusinessException(500, "平台治理数据不可用，请联系系统管理员");
