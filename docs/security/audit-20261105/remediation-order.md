@@ -264,6 +264,6 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 - 爬取并发上限（TM-25）、slow-drip（TM-23）未验证。
 - SEC-11 仅做应用层写库/回显脱敏：历史明文行未清洗；nginx access log / Logback 消息体未做框架级脱敏；真实爬取与 HTTP 回显未运行（TM-30/31 仅单测）。
 - SEC-12 knowledge 已以真实 uvicorn 启动验证（第一批 E2E-07，无/错 key 401、匿名 ingest 拒绝）；ai-service run token HTTP 级已验证（提交 `8f04733`）；ai-service 与 Knowledge 的部署环境变量注入（`KNOWLEDGE_API_KEY`）未在 compose 中固化。
-- SEC-13 `docker compose config` 与 `docker compose up -d --build` 均已执行：负例缺必填口令 exit 1；正例四容器 healthy、端口未发布、`--requirepass` 生效（`NOAUTH`/`PONG`）、prod 启动断言正/负例实机通过。`nginx -t` 仍未执行（本机无 nginx 镜像/二进制，且 Docker Hub 直连不可用）；历史 `.env` 中若残留 `change-me` 类口令需人工替换；`deploy/docker/mysql/conf/my.cnf` 在 Windows 宿主上因 world-writable 被 MySQL 忽略（自定义配置未生效，Linux 宿主不受影响）。
+- SEC-13 `docker compose config` 与 `docker compose up -d --build` 均已执行：负例缺必填口令 exit 1；正例四容器 healthy、端口未发布、`--requirepass` 生效（`NOAUTH`/`PONG`）、prod 启动断言正/负例实机通过。`nginx -t` 已执行（2026-11-07，daocloud 临时镜像，`syntax is ok`/`test is successful`，并实测 `/ai-api/` allow 规则与安全响应头）；历史 `.env` 中若残留 `change-me` 类口令需人工替换；`deploy/docker/mysql/conf/my.cnf` 在 Windows 宿主上因 world-writable 被 MySQL 忽略（自定义配置未生效，Linux 宿主不受影响）。
 - SEC-14 存量内网 baseUrl 行的 runtime/invoke 负例需 DB 夹具（已由单测覆盖），存量行未自动清理（调用时 400 拦截）。
 - TM-01/02/03/10/11/18-24 的 HTTP/网络级验收全部 `NOT_RUN`。
