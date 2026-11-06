@@ -25,19 +25,18 @@ public class PersonalKnowledgeService {
         requireText(name, "KNOWLEDGE_LIBRARY_NAME_REQUIRED");
         Instant now = Instant.now();
         PersonalKnowledgeStorage.StorageLocation location = null;
+        long id;
         try {
             if (storage != null) location = storage.createUserLibrary(userId, name);
-            if (storage == null) {
-                jdbc.update("INSERT INTO personal_knowledge_library(user_id,name,description,status,created_at,updated_at) VALUES(?,?,?,?,?,?)",
-                        userId, name.trim(), safe(description), "ACTIVE", Timestamp.from(now), Timestamp.from(now));
-            } else {
-                jdbc.update("INSERT INTO personal_knowledge_library(user_id,name,description,status,storage_slug,storage_status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
-                        userId, name.trim(), safe(description), "ACTIVE", location.slug(), "ACTIVE", Timestamp.from(now), Timestamp.from(now));
-            }
+            // SEC-09：取本次插入的主键，不再用 MAX(id) 反查（并发时会拿到他人的库）。
+            id = storage == null
+                    ? insertReturningId("INSERT INTO personal_knowledge_library(user_id,name,description,status,created_at,updated_at) VALUES(?,?,?,?,?,?)",
+                            userId, name.trim(), safe(description), "ACTIVE", Timestamp.from(now), Timestamp.from(now))
+                    : insertReturningId("INSERT INTO personal_knowledge_library(user_id,name,description,status,storage_slug,storage_status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
+                            userId, name.trim(), safe(description), "ACTIVE", location.slug(), "ACTIVE", Timestamp.from(now), Timestamp.from(now));
         } catch (Exception failure) {
             throw new BusinessException(500, "KNOWLEDGE_STORAGE_CREATE_FAILED");
         }
-        Long id = jdbc.queryForObject("SELECT MAX(id) FROM personal_knowledge_library WHERE user_id=?", Long.class, userId);
         return detailLibrary(userId, id);
     }
 
@@ -89,19 +88,18 @@ public class PersonalKnowledgeService {
         Instant now = Instant.now();
         String relativePath = title.trim().replaceAll("[^a-zA-Z0-9\\u4e00-\\u9fff]+", "-").replaceAll("^-|-$", "") + ".md";
         var library = detailLibrary(userId, libraryId);
+        long id;
         try {
             if (storage != null && library.storageSlug() != null) {
                 storage.writeEntryAtomically(userId, library.storageSlug(), relativePath, markdown.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             }
-            if (storage == null) {
-                jdbc.update("INSERT INTO personal_knowledge_entry(library_id,user_id,title,summary,content_markdown,source_type,source_ref,verification_status,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                        libraryId, userId, title.trim(), safe(summary), markdown, safe(sourceType).isBlank() ? "MANUAL" : sourceType.trim(), sourceRef, "UNVERIFIED", 1, Timestamp.from(now), Timestamp.from(now));
-            } else {
-                jdbc.update("INSERT INTO personal_knowledge_entry(library_id,user_id,title,summary,content_markdown,source_type,source_ref,entry_relative_path,content_hash,index_status,verification_status,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        libraryId, userId, title.trim(), safe(summary), markdown, safe(sourceType).isBlank() ? "MANUAL" : sourceType.trim(), sourceRef, relativePath, storage.sha256(markdown.getBytes(java.nio.charset.StandardCharsets.UTF_8)), "READY", "UNVERIFIED", 1, Timestamp.from(now), Timestamp.from(now));
-            }
+            // SEC-09：用本次插入主键返回，避免同用户同库并发创建时取到别人的条目。
+            id = storage == null
+                    ? insertReturningId("INSERT INTO personal_knowledge_entry(library_id,user_id,title,summary,content_markdown,source_type,source_ref,verification_status,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                            libraryId, userId, title.trim(), safe(summary), markdown, safe(sourceType).isBlank() ? "MANUAL" : sourceType.trim(), sourceRef, "UNVERIFIED", 1, Timestamp.from(now), Timestamp.from(now))
+                    : insertReturningId("INSERT INTO personal_knowledge_entry(library_id,user_id,title,summary,content_markdown,source_type,source_ref,entry_relative_path,content_hash,index_status,verification_status,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                            libraryId, userId, title.trim(), safe(summary), markdown, safe(sourceType).isBlank() ? "MANUAL" : sourceType.trim(), sourceRef, relativePath, storage.sha256(markdown.getBytes(java.nio.charset.StandardCharsets.UTF_8)), "READY", "UNVERIFIED", 1, Timestamp.from(now), Timestamp.from(now));
         } catch (Exception failure) { throw new BusinessException(500, "KNOWLEDGE_ENTRY_STORAGE_FAILED"); }
-        Long id = jdbc.queryForObject("SELECT MAX(id) FROM personal_knowledge_entry WHERE user_id=? AND library_id=?", Long.class, userId, libraryId);
         return detailEntry(userId, id);
     }
 
@@ -149,6 +147,17 @@ public class PersonalKnowledgeService {
 
     private Entry mapEntry(java.sql.ResultSet rs, int row) throws java.sql.SQLException {
         return new Entry(rs.getLong("id"), rs.getLong("library_id"), rs.getLong("user_id"), rs.getString("title"), rs.getString("summary"), rs.getString("content_markdown"), rs.getString("source_type"), rs.getString("source_ref"), rs.getString("verification_status"), rs.getInt("version"), rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+    }
+
+    /** SEC-09：插入并返回本次主键（不再用 MAX(id) 反查）。 */
+    private long insertReturningId(String sql, Object... args) {
+        var keys = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement(sql, new String[]{"id"});
+            for (int i = 0; i < args.length; i++) statement.setObject(i + 1, args[i]);
+            return statement;
+        }, keys);
+        return keys.getKey().longValue();
     }
 
     private static void requireText(String value, String code) { if (value == null || value.isBlank()) throw new BusinessException(code); }

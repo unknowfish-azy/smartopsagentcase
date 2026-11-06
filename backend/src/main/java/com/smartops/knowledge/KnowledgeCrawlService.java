@@ -79,10 +79,20 @@ public class KnowledgeCrawlService {
         String url = normalizeUrl(seedUrl);
         int pages = clamp(maxPages, 1, 50, 20);
         int level = clamp(depth, 0, 2, 1);
-        jdbc.update("INSERT INTO knowledge_crawl_source(user_id,library_id,name,seed_url,max_pages,depth,created_at) VALUES(?,?,?,?,?,?,?)",
-                actor.id(), libraryId, trimTo(name.trim(), 120), url, pages, level, Timestamp.from(Instant.now()));
-        Long id = jdbc.queryForObject("SELECT MAX(id) FROM knowledge_crawl_source WHERE user_id=?", Long.class, actor.id());
-        return detailSource(actor.id(), id);
+        // SEC-09：直接取本次插入主键，避免同用户并发创建时 MAX(id) 取到他人的 source。
+        var keys = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement("INSERT INTO knowledge_crawl_source(user_id,library_id,name,seed_url,max_pages,depth,created_at) VALUES(?,?,?,?,?,?,?)", new String[]{"id"});
+            statement.setObject(1, actor.id());
+            statement.setObject(2, libraryId);
+            statement.setObject(3, trimTo(name.trim(), 120));
+            statement.setObject(4, url);
+            statement.setObject(5, pages);
+            statement.setObject(6, level);
+            statement.setObject(7, Timestamp.from(Instant.now()));
+            return statement;
+        }, keys);
+        return detailSource(actor.id(), keys.getKey().longValue());
     }
 
     public List<CrawlSource> listSources(SessionUser actor) {
