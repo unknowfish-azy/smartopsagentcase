@@ -24,10 +24,13 @@ public class SentinelController {
 
     private final SentinelService sentinel;
     private final SentinelScriptRunner runner;
+    private final AlertLifecycleService lifecycle;
 
-    public SentinelController(SentinelService sentinel, SentinelScriptRunner runner) {
+    public SentinelController(SentinelService sentinel, SentinelScriptRunner runner,
+                              AlertLifecycleService lifecycle) {
         this.sentinel = sentinel;
         this.runner = runner;
+        this.lifecycle = lifecycle;
     }
 
     /* ── 哨兵任务 ─────────────────────────────────────────────────────── */
@@ -243,6 +246,74 @@ public class SentinelController {
         sentinel.closeAlert(actor, id, request == null ? null : request.note());
         return ApiResponse.success();
     }
+
+    /* ── 告警生命周期：分组 / 恢复 / 静默 / 转派升级 / 死信 ────────────── */
+
+    /** 按分组看告警：同一故障的多次告警归成一组，优先显示还有几条没关。 */
+    @GetMapping("/alerts/groups")
+    public ApiResponse<List<AlertLifecycleService.GroupView>> alertGroups(
+            @AuthenticationPrincipal SessionUser actor,
+            @RequestParam(defaultValue = "50") int limit) {
+        return ApiResponse.success(lifecycle.groups(actor, limit));
+    }
+
+    /** 手动触发一次恢复判定，返回本次自动进入待关闭的告警数。 */
+    @PostMapping("/alerts/reconcile")
+    public ApiResponse<Integer> reconcileAlerts(@RequestParam(defaultValue = "100") int limit) {
+        return ApiResponse.success(lifecycle.resolveRecoveredAlerts(limit));
+    }
+
+    @GetMapping("/silences")
+    public ApiResponse<List<AlertLifecycleService.SilenceView>> silences(
+            @AuthenticationPrincipal SessionUser actor) {
+        return ApiResponse.success(lifecycle.listSilences(actor));
+    }
+
+    @PostMapping("/silences")
+    public ApiResponse<AlertLifecycleService.SilenceView> createSilence(
+            @AuthenticationPrincipal SessionUser actor,
+            @RequestBody AlertLifecycleService.SilenceRequest request) {
+        return ApiResponse.success(lifecycle.createSilence(actor, request));
+    }
+
+    @DeleteMapping("/silences/{id}")
+    public ApiResponse<Void> cancelSilence(@AuthenticationPrincipal SessionUser actor, @PathVariable long id) {
+        lifecycle.cancelSilence(actor, id);
+        return ApiResponse.success();
+    }
+
+    /** 审批待生效的全局静默：仅管理员可操作，通过后才真正抑制告警。 */
+    @PostMapping("/silences/{id}/approve")
+    public ApiResponse<AlertLifecycleService.SilenceView> approveSilence(
+            @AuthenticationPrincipal SessionUser actor, @PathVariable long id) {
+        return ApiResponse.success(lifecycle.approveSilence(actor, id));
+    }
+
+    /** 转派告警负责人（不等于处置，处置仍走派单审批链）。 */
+    @PostMapping("/alerts/{id}/transfer")
+    public ApiResponse<Void> transfer(@AuthenticationPrincipal SessionUser actor, @PathVariable long id,
+                                      @RequestBody TransferRequest request) {
+        lifecycle.transfer(actor, id, request.assigneeId(), request.note());
+        return ApiResponse.success();
+    }
+
+    /** 升级告警级别，只能往上调。 */
+    @PostMapping("/alerts/{id}/escalate")
+    public ApiResponse<String> escalate(@AuthenticationPrincipal SessionUser actor, @PathVariable long id,
+                                        @RequestBody EscalateRequest request) {
+        return ApiResponse.success(lifecycle.escalate(actor, id, request.severity(), request.note()));
+    }
+
+    /** 对失败的投递按原渠道重发一次。 */
+    @PostMapping("/alerts/{id}/notifications/retry")
+    public ApiResponse<Map<String, String>> retryNotification(@AuthenticationPrincipal SessionUser actor,
+                                                              @PathVariable long id) {
+        return ApiResponse.success(lifecycle.retryNotification(actor, id));
+    }
+
+    public record TransferRequest(long assigneeId, String note) {}
+
+    public record EscalateRequest(String severity, String note) {}
 
     /**
      * AI 研判：产出**建议**（结论 + 证据 + 候选脚本），并落库供审阅。

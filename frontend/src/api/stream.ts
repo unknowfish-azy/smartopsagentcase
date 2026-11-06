@@ -60,6 +60,8 @@ export async function streamChat(message: string, {
   onError?: (error: any) => void
 } = {}, options: {
   correlation?: { request_id?: string; task_id?: string }
+  /** Java 边缘签发的短时 run 令牌；缺失时请求会 ai-service 拒绝（401）。 */
+  runToken?: string
   images?: string[]
   rag?: {
     top_k?: number
@@ -96,13 +98,15 @@ export async function streamChat(message: string, {
         'Content-Type': 'application/json',
         'X-Request-ID': requestId,
         'X-Task-ID': taskId,
+        ...(options.runToken ? { 'X-Run-Token': options.runToken } : {}),
       },
+      credentials: 'omit',
       body: JSON.stringify(body),
       signal,
     })
 
     if (!response.ok) {
-      throw new Error(`AI 服务返回 ${response.status}`)
+      throw new Error(response.status === 401 ? '聊天鉴权失败，请刷新页面后重试' : `AI 服务返回 ${response.status}`)
     }
     if (!response.body) {
       throw new Error('当前环境不支持流式读取')

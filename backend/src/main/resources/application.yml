@@ -169,3 +169,10 @@ smartops:
     api-key-encryption-key: ${SMARTOPS_API_KEY_ENCRYPTION_KEY:}
     internal-token: ${SMARTOPS_INTERNAL_TOKEN:}
     internal-bypass: ${SMARTOPS_INTERNAL_BYPASS:false}
+    chat:
+      run-token:
+        # SEC-01/SEC-02：Java 与会话绑定签发短时 HMAC 令牌，ai-service 校验后才处理聊天。
+        # 留空时签发端点返回 503（fail-closed），不会退回匿名可用。
+        # 必须与 ai-service 的 CHAT_RUN_TOKEN_SECRET 一致；至少 16 字节。
+        secret: ${SMARTOPS_CHAT_RUN_TOKEN_SECRET:}
+        ttl-seconds: ${SMARTOPS_CHAT_RUN_TOKEN_TTL_SECONDS:300}

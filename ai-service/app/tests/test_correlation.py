@@ -16,7 +16,7 @@ def _first_event(text, name):
     return None
 
 
-def test_chat_echoes_headers_and_logs_ids_without_prompt(client, caplog):
+def test_chat_echoes_headers_and_logs_ids_without_prompt(client, caplog, auth_headers):
     caplog.set_level(logging.INFO)
     secret_prompt = "private-prompt-must-not-be-logged"
     body = {
@@ -31,7 +31,11 @@ def test_chat_echoes_headers_and_logs_ids_without_prompt(client, caplog):
     response = client.post(
         "/api/chat",
         json=body,
-        headers={"X-Request-ID": "req-log-1", "X-Task-ID": "task-log-1"},
+        headers={
+            **auth_headers(),
+            "X-Request-ID": "req-log-1",
+            "X-Task-ID": "task-log-1",
+        },
     )
 
     assert response.status_code == 200
@@ -50,11 +54,13 @@ def test_chat_echoes_headers_and_logs_ids_without_prompt(client, caplog):
     assert "never-copy" not in caplog.text
 
 
-def test_header_only_correlation_is_used(client):
+def test_client_run_id_header_is_not_trusted(client, auth_headers, run_token):
+    # SEC-02：run_id 只来自签名令牌；客户端自带的 X-Run-ID 必须被忽略。
     response = client.post(
         "/api/chat",
         json={"message": "hello", "use_rag": False},
         headers={
+            **auth_headers(run_id="run-token-1"),
             "X-Request-ID": "req-header-1",
             "X-Task-ID": "task-header-1",
             "X-Run-ID": "run-header-1",
@@ -65,11 +71,11 @@ def test_header_only_correlation_is_used(client):
     event = response.json()["metadata"]["run_event"]
     assert event["request_id"] == "req-header-1"
     assert event["task_id"] == "task-header-1"
-    assert event["run_id"] == "run-header-1"
-    assert response.headers["X-Run-ID"] == "run-header-1"
+    assert event["run_id"] == "run-token-1"
+    assert response.headers["X-Run-ID"] == "run-token-1"
 
 
-def test_stream_uses_the_same_run_id_in_header_and_events(client):
+def test_stream_uses_the_same_run_id_in_header_and_events(client, auth_headers):
     response = client.post(
         "/api/chat/stream",
         json={
@@ -77,7 +83,11 @@ def test_stream_uses_the_same_run_id_in_header_and_events(client):
             "use_rag": False,
             "metadata": {"request_id": "req-stream-1", "task_id": "task-stream-1"},
         },
-        headers={"X-Request-ID": "req-stream-1", "X-Task-ID": "task-stream-1"},
+        headers={
+            **auth_headers(),
+            "X-Request-ID": "req-stream-1",
+            "X-Task-ID": "task-stream-1",
+        },
     )
 
     assert response.status_code == 200
@@ -98,11 +108,11 @@ def test_stream_uses_the_same_run_id_in_header_and_events(client):
         "",
     ],
 )
-def test_invalid_correlation_ids_are_replaced(client, header):
+def test_invalid_correlation_ids_are_replaced(client, header, auth_headers):
     response = client.post(
         "/api/chat",
         json={"message": "hello", "use_rag": False},
-        headers={"X-Request-ID": header},
+        headers={**auth_headers(), "X-Request-ID": header},
     )
 
     assert response.status_code == 200

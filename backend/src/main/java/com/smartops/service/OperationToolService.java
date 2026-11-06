@@ -170,11 +170,13 @@ public class OperationToolService {
                 "# 慢 SQL 诊断 metric=SLOW_SQL 走同一端点：POST /api/operations/database/diagnose，"
                         + "DIGEST_TEXT 脱敏后进入证据"))
                 .target("DATABASE").credential("database-readonly").params("database", "limit"));
-        // ── 告警静默：外部平台写入尚未接入，如实标记不可用 ──
-        add(entries, unavailable("alerts-suppress", "ALERT_SUPPRESS",
-                "告警平台静默写入（创建 silence + TTL + 撤销）尚未接入",
-                values -> List.of("# approval required before creating alert silence for " + safeName(values, "alert")),
-                "alert"));
+        // ── 告警静默：走真实静默 API（审批 + TTL + 撤销），不再以不可用占位 ──
+        add(entries, mutating("alerts-suppress", "ALERT_SUPPRESS", values -> List.of(
+                "# 静默走 POST /api/alerts/silences：GLOBAL 超过 24 小时需管理员审批，窗口上限 7 天，"
+                        + "外部平台同步失败如实标记 externalStatus；撤销走 DELETE /api/alerts/silences/{id}；目标告警 "
+                        + safeName(values, "alert")))
+                .params("alert")
+                .verification("静默只阻止新告警与通知，不修改已有告警状态；生效前确认告警对象、范围与窗口"));
         // 告警联动处置的受控入口：本身不渲染可执行命令，只声明"有资格提出处置"。
         add(entries, mutating("propose-remediation", "SENTINEL_REMEDIATION", values -> List.of(
                 "# 提交哨兵处置建议：告警 " + safeName(values, "alertId")

@@ -31,14 +31,14 @@ async def test_sse_terminal_error_keeps_the_same_run_as_initial_event(caplog):
     assert "provider secret" not in caplog.text
 
 
-def test_http_chat_and_sse_preserve_minimal_correlation(client):
+def test_http_chat_and_sse_preserve_minimal_correlation(client, auth_headers):
     body = {"message": "hello", "use_rag": False, "metadata": {"request_id": "request-2", "task_id": "task-2"}}
-    response = client.post("/api/chat", json=body)
+    response = client.post("/api/chat", json=body, headers=auth_headers())
     assert response.status_code == 200
     event = response.json()["metadata"]["run_event"]
     assert event["request_id"] == "request-2"
     assert event["status"] == "succeeded"
-    streamed = client.post("/api/chat/stream", json=body)
+    streamed = client.post("/api/chat/stream", json=body, headers=auth_headers())
     assert "event: run\n" in streamed.text
     assert '"task_id": "task-2"' in streamed.text
 

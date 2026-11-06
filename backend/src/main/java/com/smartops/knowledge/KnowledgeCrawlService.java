@@ -1,12 +1,17 @@
 package com.smartops.knowledge;
 
 import com.smartops.exception.BusinessException;
+import com.smartops.security.OutboundUrlPolicy;
 import com.smartops.security.SessionUser;
 import com.smartops.service.PersonalKnowledgeService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -36,6 +41,10 @@ import java.util.regex.Pattern;
 public class KnowledgeCrawlService {
     private static final String USER_AGENT = "SmartOpsAgent-KnowledgeCrawler/1.0";
     private static final int MAX_CONTENT = 20_000;
+    // SEC-06：下载侧上限。MAX_CONTENT 只截断入库，不能阻止超大响应打满内存。
+    private static final long MAX_DOWNLOAD_BYTES = 10L * 1024 * 1024;
+    // 单次 run 的总时长预算：50 页 × 多跳的 8s 单跳超时会长期占用线程。
+    private static final long RUN_DEADLINE_SECONDS = 60;
     // personal_knowledge_entry.source_ref 只有 255，超长 URL 会插不进去，也无法按 URL 稳定比对
     private static final int MAX_URL = 255;
     private static final Pattern LINK = Pattern.compile("<a\\b[^>]*?\\bhref\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))", Pattern.CASE_INSENSITIVE);
@@ -53,6 +62,8 @@ public class KnowledgeCrawlService {
     private final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(8))
             .followRedirects(HttpClient.Redirect.NEVER)
+            // SEC-06：禁止继承系统/环境代理，避免代理绕过 IP 白名单。
+            .proxy(ProxySelector.of(null))
             .build();
 
     public KnowledgeCrawlService(JdbcTemplate jdbc, PersonalKnowledgeService knowledge) {
@@ -93,6 +104,9 @@ public class KnowledgeCrawlService {
         requireActor(actor);
         CrawlSource source = detailSource(actor.id(), sourceId);
         URI seed = URI.create(source.seedUrl());
+        if (!OutboundUrlPolicy.inspect(seed).allowed()) {
+            throw new BusinessException(400, "KNOWLEDGE_CRAWL_URL_BLOCKED");
+        }
         String seedHost = seed.getHost();
         Deque<Link> queue = new ArrayDeque<>();
         Set<String> visited = new LinkedHashSet<>();
@@ -100,7 +114,12 @@ public class KnowledgeCrawlService {
         visited.add(source.seedUrl());
         int added = 0, updated = 0, unchanged = 0, failed = 0, pages = 0;
         List<String> errors = new ArrayList<>();
+        Instant deadline = Instant.now().plusSeconds(RUN_DEADLINE_SECONDS);
         while (!queue.isEmpty() && pages < source.maxPages()) {
+            if (Instant.now().isAfter(deadline)) {
+                errors.add("抓取超出总时长预算（" + RUN_DEADLINE_SECONDS + " 秒）");
+                break;
+            }
             Link link = queue.poll();
             pages++;
             try {
@@ -176,26 +195,55 @@ public class KnowledgeCrawlService {
             } catch (IllegalArgumentException invalid) {
                 throw new IOException("地址无效");
             }
+            // SEC-06：首跳与每一跳都在发起连接前重新校验，尾点域名、IPv4-mapped
+            // IPv6 与解析后落在内网/保留网段的地址一律拒绝。
+            requirePublic(uri);
             HttpRequest request = HttpRequest.newBuilder(uri)
                     .timeout(Duration.ofSeconds(8))
                     .header("User-Agent", USER_AGENT)
                     .header("Accept", "text/html,application/xhtml+xml")
                     .GET()
                     .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             int code = response.statusCode();
-            if (code >= 200 && code < 300) return response.body();
             String location = response.headers().firstValue("Location").orElse(null);
+            try (InputStream body = response.body()) {
+                if (code >= 200 && code < 300) {
+                    long declared = response.headers().firstValueAsLong("Content-Length").orElse(-1L);
+                    if (declared > MAX_DOWNLOAD_BYTES) throw new IOException("响应体超过下载上限");
+                    return readBounded(body);
+                }
+            }
             // 重定向目标同样要过内网校验，避免借跳转绕过 host 白名单
             if (code >= 300 && code < 400 && location != null) {
                 URI target = uri.resolve(location);
-                if (!publicTarget(target)) throw new IOException("重定向到不允许的地址");
+                requirePublic(target);
                 current = target.toString();
                 continue;
             }
             throw new IOException("HTTP " + code);
         }
         throw new IOException("重定向次数过多");
+    }
+
+    private static String readBounded(InputStream body) throws IOException {
+        ByteArrayOutputStream collected = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int read;
+        while ((read = body.read(buffer)) != -1) {
+            if (collected.size() + (long) read > MAX_DOWNLOAD_BYTES) {
+                throw new IOException("响应体超过下载上限");
+            }
+            collected.write(buffer, 0, read);
+        }
+        return collected.toString(StandardCharsets.UTF_8);
+    }
+
+    private static void requirePublic(URI uri) throws IOException {
+        OutboundUrlPolicy.Decision decision = OutboundUrlPolicy.inspect(uri);
+        if (!decision.allowed()) {
+            throw new IOException("目标地址不允许访问（" + decision.rule() + "）");
+        }
     }
 
     private static List<String> extractLinks(String html, URI base, String seedHost) {
@@ -214,7 +262,7 @@ public class KnowledgeCrawlService {
             } catch (IllegalArgumentException invalid) {
                 continue;
             }
-            if (!publicTarget(resolved) || seedHost == null || !seedHost.equalsIgnoreCase(resolved.getHost())) continue;
+            if (!isHttpTarget(resolved) || seedHost == null || !seedHost.equalsIgnoreCase(resolved.getHost())) continue;
             String normalized = resolved.toString();
             int fragment = normalized.indexOf('#');
             if (fragment >= 0) normalized = normalized.substring(0, fragment);
@@ -280,7 +328,7 @@ public class KnowledgeCrawlService {
         } catch (IllegalArgumentException invalid) {
             throw new BusinessException(400, "KNOWLEDGE_CRAWL_URL_INVALID");
         }
-        if (!publicTarget(uri)) throw new BusinessException(400, "KNOWLEDGE_CRAWL_URL_BLOCKED");
+        if (!OutboundUrlPolicy.inspect(uri).allowed()) throw new BusinessException(400, "KNOWLEDGE_CRAWL_URL_BLOCKED");
         String normalized = uri.toString();
         int fragment = normalized.indexOf('#');
         if (fragment >= 0) normalized = normalized.substring(0, fragment);
@@ -288,15 +336,9 @@ public class KnowledgeCrawlService {
         return normalized;
     }
 
-    private static boolean publicTarget(URI uri) {
+    private static boolean isHttpTarget(URI uri) {
         String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
-        if (!scheme.equals("http") && !scheme.equals("https")) return false;
-        String host = uri.getHost();
-        if (host == null || host.isBlank()) return false;
-        String value = host.toLowerCase(Locale.ROOT).replace("[", "").replace("]", "");
-        if (value.equals("localhost") || value.endsWith(".localhost") || value.equals("::1") || value.equals("0.0.0.0")) return false;
-        if (value.startsWith("127.") || value.startsWith("169.254.") || value.startsWith("10.") || value.startsWith("192.168.")) return false;
-        return !value.matches("172\\.(1[6-9]|2\\d|3[01])\\..*");
+        return scheme.equals("http") || scheme.equals("https");
     }
 
     private CrawlSource detailSource(Long userId, long sourceId) {

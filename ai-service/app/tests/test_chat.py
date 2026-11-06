@@ -1,7 +1,8 @@
-def test_chat(client):
+def test_chat(client, auth_headers):
 
     response = client.post(
         "/api/chat",
+        headers=auth_headers(),
         json={
             "message": "如何检查 nginx 状态？",
             "use_rag": False,
@@ -21,10 +22,11 @@ def test_chat(client):
     assert data["model"] == "mock-model"
 
 
-def test_chat_validation(client):
+def test_chat_validation(client, auth_headers):
 
     response = client.post(
         "/api/chat",
+        headers=auth_headers(),
         json={
             "message": "",
         },
@@ -33,7 +35,7 @@ def test_chat_validation(client):
     assert response.status_code == 422
 
 
-def test_chat_marks_degraded_provider(client, monkeypatch):
+def test_chat_marks_degraded_provider(client, monkeypatch, auth_headers):
     from app.core.config import settings
     from app.services.llm import LLMService
 
@@ -45,6 +47,7 @@ def test_chat_marks_degraded_provider(client, monkeypatch):
 
     response = client.post(
         "/api/chat",
+        headers=auth_headers(),
         json={"message": "降级标记", "use_rag": False},
     )
 
@@ -54,9 +57,10 @@ def test_chat_marks_degraded_provider(client, monkeypatch):
     assert metadata["effective_provider"] == "mock"
 
 
-def test_chat_runs_inspector_and_returns_rejected_false_success(client):
+def test_chat_runs_inspector_and_returns_rejected_false_success(client, auth_headers):
     response = client.post(
         "/api/chat",
+        headers=auth_headers(),
         json={
             "message": "检查任务状态",
             "use_rag": False,

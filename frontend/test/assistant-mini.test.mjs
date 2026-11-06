@@ -21,12 +21,14 @@ async function setup({ selectedKey = 'mini', options = [mini, external] } = {}) 
     saveAssistantPreference: async providerKey => { calls.preferences.push(providerKey); return { data: { selectedKey: providerKey } } },
     sendAssistantChat: async payload => { calls.chats.push(payload); return { data: { content: '检查日志', providerKey: payload.providerKey, providerName: '智维 Mini', model: 'qwen3:1.7b', citations: [{ id: '1', title: '指南', source: 'knowledge/linux/cpu.md', snippet: '查看负载' }], readOnly: true } } },
     streamChat: async () => { throw new Error('stream not configured') },
+    fetchChatRunToken: async () => ({ data: { runToken: 'test-run-token' } }),
     getModelConnections: async () => ({ data: [] }), invokeModelConnection: async () => { throw Error('legacy route') }
   }
   const key = '__assistantTest' + crypto.randomUUID().replaceAll('-', '')
   globalThis[key] = fixture
   let source = await readFile(new URL('../src/stores/aiChat.js', import.meta.url), 'utf8')
   source = source.replace("import { chatAttachmentsApi } from '../api/chatAttachments.ts'", `const chatAttachmentsApi = globalThis.${key}.chatAttachmentsApi`)
+  source = source.replace("import { fetchChatRunToken } from '../api/chatRunToken.ts'", `const fetchChatRunToken = (...args) => globalThis.${key}.fetchChatRunToken(...args)`)
   source = source.replace(/import \{([^}]+)\} from '\.\.\/(?:api\/(?:model|assistant|stream)|security\/session)\.(?:js|ts)'/g, (_, names) => names.split(',').map(name => {
     name = name.trim()
     return 'const ' + name + ' = ' + (name === 'currentSession' ? 'globalThis.' + key + '.' + name : '(...args) => globalThis.' + key + '.' + name + '(...args)')

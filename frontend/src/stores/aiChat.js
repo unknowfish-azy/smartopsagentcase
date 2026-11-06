@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { getAssistantOptions, saveAssistantPreference, sendAssistantChat } from '../api/assistant.ts'
 import { streamChat } from '../api/stream.ts'
+import { fetchChatRunToken } from '../api/chatRunToken.ts'
 import { currentSession } from '../security/session.js'
 import { chatAttachmentsApi } from '../api/chatAttachments.ts'
 import { assistantHistory, createConversation, historyStorageKey, replyMetadata, restoreHistory } from '../domain/chat/history.ts'
@@ -359,6 +360,9 @@ export const useAiChatStore = defineStore('ai-chat', () => {
       totalMs: Math.round(performance.now() - startedAt),
     })
     try {
+      // SEC-01/SEC-02：先拿 Java 签发的短时 run 令牌，ai-service 只信任令牌中的主体与 run_id。
+      const issued = unwrap(await fetchChatRunToken())
+      if (typeof issued?.runToken !== 'string' || !issued.runToken) throw new Error('聊天鉴权令牌签发失败，请刷新页面后重试。')
       await streamChat(prompt, {
         onRun: (event) => {
           if (!sameAccount(generation) || !conversations.value.includes(conversation)) return
@@ -403,7 +407,7 @@ export const useAiChatStore = defineStore('ai-chat', () => {
           pending.streaming = false
           pending.error = true
         },
-      }, { images: imageEvidence, rag, correlation: { request_id: crypto.randomUUID(), task_id: conversation.id } })
+      }, { images: imageEvidence, rag, runToken: issued.runToken, correlation: { request_id: crypto.randomUUID(), task_id: conversation.id } })
       return true
     } catch (error) {
       if (!sameAccount(generation) || !conversations.value.includes(conversation)) return false

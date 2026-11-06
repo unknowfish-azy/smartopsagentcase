@@ -957,6 +957,13 @@ public class SentinelService {
      */
     @Transactional
     public Map<String, String> notifyStakeholders(long alertId, long userId) {
+        // 静默窗口内不发通知：告警可以被静默，通知必须同步被静默，否则静默形同虚设
+        Long taskId = jdbc.queryForObject("SELECT task_id FROM sentinel_alert WHERE id=?", Long.class, alertId);
+        if (AlertSilence.isActive(jdbc, taskId, Instant.now())) {
+            recordEvent(alertId, userId, "SILENCED", "处于静默窗口，跳过本次通知");
+            return Map.of("silenced", "true");
+        }
+
         List<Map<String, Object>> rules = jdbc.queryForList(
                 "SELECT notify_channels,webhook_url,email_to FROM sentinel_alert_rule WHERE user_id=? AND enabled=1 ORDER BY id DESC LIMIT 1",
                 userId);
@@ -1177,8 +1184,12 @@ public class SentinelService {
      * <p>持续时间防抖的起点持久化在 sentinel_task.breached_since：越界且无未结告警时
      * 记下起点，持续到点后才触发；未越界时清空。重启后起点仍在，不会凭空触发也不会丢状态。
      * 同一事件已有未结告警时直接跳过，不重复写入。</p>
+     *
+     * <p>包级可见而非 private：去重与静默是"告警生命周期"里最容易被改坏的两道门，
+     * 需要在真实 schema 上直接驱动判定（与 {@link #fireAlert} 同理），
+     * 仅放宽可见性，不改变任何判定语义。</p>
      */
-    private void evaluate(TaskView task, Map<String, Double> snapshot, Instant now) {
+    void evaluate(TaskView task, Map<String, Double> snapshot, Instant now) {
         if (task.templateId() == null) return;
         Template meta = jdbc.query("SELECT rules_json,severity,debounce_sec FROM sentinel_threshold_template WHERE id=?",
                 (row, ignored) -> new Template(parseRules(row.getString("rules_json")), row.getString("severity"),
@@ -1209,6 +1220,12 @@ public class SentinelService {
         long held = now.getEpochSecond() - since;
         if (held < debounceSec) return;
 
+        // 静默 / 维护窗口内不新建告警：窗口存在的意义就是"这段时间别打扰人"
+        if (AlertSilence.isActive(jdbc, task.id(), now)) {
+            jdbc.update("UPDATE sentinel_task SET breached_since=NULL WHERE id=?", task.id());
+            return;
+        }
+
         jdbc.update("UPDATE sentinel_task SET breached_since=NULL WHERE id=?", task.id());
         String observed = describeObserved(rules, snapshot);
         fireAlert(task, rules.get(0).metric(), observed, SentinelThreshold.describe(rules), severity, snapshot, now);
@@ -1226,10 +1243,12 @@ public class SentinelService {
         KeyHolder keys = new GeneratedKeyHolder();
         final String finalSeverity = severity;
         final String finalTitle = title;
+        // 分组键：同一任务的多次告警归为一组，看的是"一件事"，不是"一堆消息"
+        final String groupKey = "task:" + task.id();
         jdbc.update(connection -> {
             PreparedStatement statement = connection.prepareStatement("""
-                    INSERT INTO sentinel_alert(rule_id,task_id,severity,status,title,metric,observed_value,threshold_value,detail_json,fired_at)
-                    VALUES(NULL,?,?,'OPEN',?,?,?,?,?,?)
+                    INSERT INTO sentinel_alert(rule_id,task_id,severity,status,title,metric,observed_value,threshold_value,detail_json,fired_at,group_key)
+                    VALUES(NULL,?,?,'OPEN',?,?,?,?,?,?,?)
                     """, Statement.RETURN_GENERATED_KEYS);
             statement.setLong(1, task.id());
             statement.setString(2, finalSeverity);
@@ -1239,6 +1258,7 @@ public class SentinelService {
             statement.setString(6, threshold);
             statement.setString(7, writeJson(snapshot));
             statement.setTimestamp(8, java.sql.Timestamp.from(now));
+            statement.setString(9, groupKey);
             return statement;
         }, keys);
         long alertId = generatedId(keys);
