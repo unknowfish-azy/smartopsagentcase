@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import threading
+import warnings
 from uuid import uuid4
 
 
@@ -61,6 +62,9 @@ class ApprovalManager:
             "request_id": context.request_id,
             "user_id": context.user_id,
             "environment": context.environment,
+            # SEC-04：同一请求跨 run 复用审批必须失效。run_id 是执行身份的一部分，
+            # 只绑定 request/step/参数会让"旧 run 的批准"在新 run 里继续生效。
+            "run_id": getattr(context, "run_id", None),
             "step_id": step.step_id,
             "tool_name": step.tool_name,
             "action": step.action,
@@ -75,6 +79,10 @@ class ApprovalManager:
             raise ValueError("Approval TTL must be between 1 and 3600 seconds")
         if not context.request_id or not context.user_id:
             raise ValueError("Approval requires request and user identity")
+        # SEC-04：没有 run 身份的审批无法与新 run 区分，直接拒绝创建（fail-closed）。
+        run_id = getattr(context, "run_id", None)
+        if not isinstance(run_id, str) or not run_id.strip():
+            raise ValueError("Approval requires run identity")
         created = self._clock()
         request = ApprovalRequest(
             request_id=context.request_id,
@@ -119,7 +127,16 @@ class ApprovalManager:
         reason: str,
         user_id: str | None,
     ) -> ApprovalRequest:
+        """已废弃（SEC-04）：仅作信息记录，不绑定执行指纹与 run，永远不能授权执行。
 
+        新代码必须使用 :meth:`create_for_step`。
+        """
+
+        warnings.warn(
+            "ApprovalManager.create_request is deprecated; use create_for_step",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = ApprovalRequest(
             request_id=request_id,
             operation=operation,
@@ -160,6 +177,9 @@ class ApprovalManager:
             if record is None or record["state"] not in ({"pending"} if approved else {"pending", "approved"}):
                 raise ValueError("Unknown or terminal approval request")
             request = record["request"]
+            # SEC-04：审批人不得是申请人；宿主须先在可信边界完成 reviewer 身份认证。
+            if approved and request.user_id is not None and reviewer.strip() == str(request.user_id):
+                raise ValueError("Approval reviewer must differ from the requester")
             if request.expires_at and self._clock() >= request.expires_at:
                 record["state"] = "expired"
                 raise ValueError("Approval expired")

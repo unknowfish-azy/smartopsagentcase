@@ -76,10 +76,11 @@ def test_grant_runs_only_the_approved_target_once():
     assert tool.calls == [{"service": "mysql"}]
 
 
-@pytest.mark.parametrize("change", ["request", "user", "environment", "step", "tool", "action", "argument", "nested_argument"])
+@pytest.mark.parametrize("change", ["request", "user", "environment", "run", "step", "tool", "action", "argument", "nested_argument"])
 def test_approval_cannot_authorize_a_different_execution(change):
     _, _, runtime, tool, planned, context = approved_setup()
     if change == "request": context.request_id = "other"
+    elif change == "run": context.run_id = "other-run"
     elif change == "user": context.user_id = "other"
     elif change == "environment": context.environment = "production"
     elif change == "step": planned.step_id = 2
@@ -89,6 +90,48 @@ def test_approval_cannot_authorize_a_different_execution(change):
     else: planned.arguments["extra"] = {"host": "other"}
     assert runtime.execute(planned, context).success is False
     assert tool.calls == []
+
+
+def test_approval_is_bound_to_run_id():
+    """SEC-04：同一 request/step/参数在不同 run 下不得复用审批。"""
+    now = [datetime(2026, 11, 4, tzinfo=timezone.utc)]
+    manager = ApprovalManager(clock=lambda: now[0])
+    planned = step()
+    first = ExecutionContext("request-1", "user-1", environment="lab")
+    request = manager.create_for_step(first, planned, ttl_seconds=30)
+    manager.approve(request.approval_id, "reviewer-1")
+    second = ExecutionContext("request-1", "user-1", environment="lab")
+    assert second.run_id != first.run_id
+    assert manager.validate(request.approval_id, second, planned) is False
+
+
+def test_approval_from_another_run_denies_execution():
+    _, _, runtime, tool, planned, context = approved_setup()
+    other_run = ExecutionContext("request-1", "user-1", environment="lab")
+    other_run.approval_id = context.approval_id
+    assert runtime.execute(planned, other_run).success is False
+    assert tool.calls == []
+
+
+def test_approval_requires_run_identity():
+    context = ExecutionContext("r", "u")
+    context.run_id = ""
+    with pytest.raises(ValueError):
+        ApprovalManager().create_for_step(context, step())
+
+
+def test_legacy_create_request_is_deprecated():
+    manager = ApprovalManager()
+    with pytest.warns(DeprecationWarning):
+        manager.create_request("r", "server.restart", "legacy", "u")
+
+
+def test_requester_cannot_approve_own_request():
+    manager = ApprovalManager()
+    context = ExecutionContext("r", "u")
+    request = manager.create_for_step(context, step())
+    with pytest.raises(ValueError):
+        manager.approve(request.approval_id, "u")
 
 
 def test_expiration_denies_execution():
