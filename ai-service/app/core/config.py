@@ -32,6 +32,21 @@ class Settings(BaseSettings):
 
     llm_api_key: str = ""
 
+    # PERF-07：按复杂度路由模型。留空表示未配置路由——此时如实回落到
+    # llm_model 并在响应元数据标注 routed=false，不假装"已路由"。
+    llm_model_simple: str = ""
+
+    llm_model_complex: str = ""
+
+    # PERF-07：RAG 证据上下文的字符预算（按分数优先装填）。
+    context_budget_chars: int = 12000
+
+    # PERF-07：检索缓存。键包含租户/权限/版本，TTL 内的重复查询不再
+    # 请求 knowledge 服务；降级与失败结果不缓存。
+    rag_cache_ttl_sec: float = 60
+
+    rag_cache_max_entries: int = 128
+
     knowledge_service_url: str = (
         "http://localhost:8002"
     )
