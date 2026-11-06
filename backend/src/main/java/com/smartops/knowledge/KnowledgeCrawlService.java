@@ -1,6 +1,7 @@
 package com.smartops.knowledge;
 
 import com.smartops.exception.BusinessException;
+import com.smartops.operations.OperationRedactor;
 import com.smartops.security.OutboundUrlPolicy;
 import com.smartops.security.SessionUser;
 import com.smartops.service.PersonalKnowledgeService;
@@ -136,8 +137,10 @@ public class KnowledgeCrawlService {
                 String html = fetch(link.url());
                 String text = trimTo(htmlToText(html), MAX_CONTENT);
                 if (text.isBlank()) throw new IOException("页面没有可提取的正文");
+                // SEC-11：正文与标题入库前脱敏，避免把页面里的凭据写成知识库内容。
+                text = OperationRedactor.redact(text);
                 String hash = sha256(text);
-                String title = trimTo(pageTitle(html, link.url()), 200);
+                String title = OperationRedactor.redact(trimTo(pageTitle(html, link.url()), 200));
                 switch (persist(actor, source, link.url(), title, text, hash)) {
                     case "ADDED" -> added++;
                     case "UPDATED" -> updated++;
@@ -150,11 +153,12 @@ public class KnowledgeCrawlService {
                 }
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
-                errors.add(link.url() + " 抓取被中断");
+                errors.add(stripQuery(link.url()) + " 抓取被中断");
                 break;
             } catch (Exception failure) {
                 failed++;
-                errors.add(link.url() + " " + messageOf(failure));
+                // SEC-11：只落我们生成的错误码，不落原始异常消息（可能带内部主机/端口）。
+                errors.add(stripQuery(link.url()) + " " + errorCode(failure));
             }
             if (!queue.isEmpty() && pages < source.maxPages()) {
                 try {
@@ -172,18 +176,20 @@ public class KnowledgeCrawlService {
     }
 
     private String persist(SessionUser actor, CrawlSource source, String url, String title, String text, String hash) {
+        // SEC-11：URL 的 query 可能携带 token，只存去 query 的地址用于稳定比对。
+        String storedUrl = stripQuery(url);
         List<Long> existing = jdbc.query("SELECT id FROM personal_knowledge_entry WHERE user_id=? AND library_id=? AND source_ref=? LIMIT 1",
-                (rs, row) -> rs.getLong(1), actor.id(), source.libraryId(), url);
+                (rs, row) -> rs.getLong(1), actor.id(), source.libraryId(), storedUrl);
         String summary = trimTo(text, 160);
         long entryId;
         String change;
         if (existing.isEmpty()) {
-            entryId = knowledge.createEntry(actor.id(), source.libraryId(), title, summary, text, "web_crawl", url).id();
+            entryId = knowledge.createEntry(actor.id(), source.libraryId(), title, summary, text, "web_crawl", storedUrl).id();
             change = "ADDED";
         } else {
             entryId = existing.get(0);
             String lastHash = jdbc.query("SELECT content_hash FROM knowledge_crawl_page WHERE source_id=? AND url=? ORDER BY id DESC LIMIT 1",
-                    (rs, row) -> rs.getString(1), source.id(), url).stream().findFirst().orElse(null);
+                    (rs, row) -> rs.getString(1), source.id(), storedUrl).stream().findFirst().orElse(null);
             if (lastHash != null && lastHash.equals(hash)) {
                 change = "UNCHANGED";
             } else {
@@ -192,7 +198,7 @@ public class KnowledgeCrawlService {
             }
         }
         jdbc.update("INSERT INTO knowledge_crawl_page(source_id,user_id,url,title,content_md,content_hash,entry_id,change_type,fetched_at) VALUES(?,?,?,?,?,?,?,?,?)",
-                source.id(), actor.id(), url, title, text, hash, entryId, change, Timestamp.from(Instant.now()));
+                source.id(), actor.id(), storedUrl, title, text, hash, entryId, change, Timestamp.from(Instant.now()));
         return change;
     }
 
@@ -380,9 +386,26 @@ public class KnowledgeCrawlService {
         return value.length() > limit ? value.substring(0, limit) : value;
     }
 
-    private static String messageOf(Exception failure) {
-        String message = failure.getMessage();
-        return message == null || message.isBlank() ? failure.getClass().getSimpleName() : message;
+    /** 去掉 query/fragment：query 里常带 token，且同一页不同 query 不应产生多条知识条目。 */
+    static String stripQuery(String url) {
+        try {
+            URI uri = URI.create(url);
+            return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null).toString();
+        } catch (Exception invalid) {
+            return url;
+        }
+    }
+
+    /** 只返回我们自己的错误码；原始异常消息可能包含内部主机/端口/IP，不落库。 */
+    static String errorCode(Exception failure) {
+        String message = failure.getMessage() == null ? "" : failure.getMessage();
+        if (message.startsWith("HTTP ")) return message;
+        if (message.contains("下载上限")) return "DOWNLOAD_LIMIT_EXCEEDED";
+        if (message.contains("不允许访问")) return "OUTBOUND_BLOCKED";
+        if (message.contains("重定向")) return "TOO_MANY_REDIRECTS";
+        if (message.equals("地址无效")) return "INVALID_URL";
+        if (message.equals("页面没有可提取的正文")) return "EMPTY_CONTENT";
+        return "NETWORK_ERROR:" + failure.getClass().getSimpleName();
     }
 
     private record Link(String url, int depth) {}
