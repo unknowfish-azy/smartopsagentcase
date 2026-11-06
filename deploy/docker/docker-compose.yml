@@ -39,6 +39,17 @@ services:
 
     restart: unless-stopped
 
+    # SEC-13/平台兼容：Windows 下 bind-mount 的 my.cnf 因 world-writable 被 MySQL 忽略，
+    # 改用命令行参数传递关键配置，确保 Linux/Windows 行为一致。
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --max-connections=200
+      - --innodb-buffer-pool-size=256M
+      - --innodb-file-per-table=1
+      - --skip-name-resolve
+
     environment:
 
       # SEC-13：不再提供 change-me 默认口令；未通过环境变量注入时 compose 直接拒绝启动。
