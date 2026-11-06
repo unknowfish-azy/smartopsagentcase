@@ -248,6 +248,7 @@ public class OperationToolService {
         // propose-remediation 是"提议"而非"执行"：必须经 SentinelScriptRunner 生成
         // MultiExec 预览后由人确认，不允许从这个通用执行入口直接跑掉。
         if ("propose-remediation".equals(toolId)) {
+            recordBlocked(userId, runtimeId, toolId, "REJECTED", "TEAM_REMEDIATION_REQUIRES_SENTINEL_PREVIEW");
             throw new BusinessException(409, "TEAM_REMEDIATION_REQUIRES_SENTINEL_PREVIEW");
         }
         return executeInternal(userId, runtimeId, toolId, parameters, true, idempotencyKey);
@@ -256,14 +257,21 @@ public class OperationToolService {
     private ToolRunResult executeInternal(Long userId, String runtimeId, String toolId, Map<String, String> parameters,
                                           boolean approvedTeamRun, String idempotencyKey) {
         ToolDefinition tool = requireTool(toolId);
-        if (!tool.readOnly() && !approvedTeamRun) throw new BusinessException(409, "TOOL_CONFIRMATION_REQUIRED");
+        if (!tool.readOnly() && !approvedTeamRun) {
+            recordBlocked(userId, runtimeId, toolId, "REJECTED", "TOOL_CONFIRMATION_REQUIRED");
+            throw new BusinessException(409, "TOOL_CONFIRMATION_REQUIRED");
+        }
         if (tool.implementationStatus() == ImplementationStatus.UNAVAILABLE) {
             log.warn("tool unavailable toolId={} reason={}", toolId, tool.unavailableReason());
+            recordBlocked(userId, runtimeId, toolId, "NOT_IMPLEMENTED",
+                    "TEAM_TOOL_NOT_IMPLEMENTED: " + tool.unavailableReason());
             throw new BusinessException(501, "TEAM_TOOL_NOT_IMPLEMENTED");
         }
         if (tool.implementationStatus() == ImplementationStatus.TEMPLATE) {
             // 有模板不等于有实现：宁可如实拒绝，也不要让退出码 127 冒充"执行失败"。
             log.warn("tool template-only toolId={} reason={}", toolId, tool.unavailableReason());
+            recordBlocked(userId, runtimeId, toolId, "NOT_IMPLEMENTED",
+                    "TOOL_IMPLEMENTATION_UNAVAILABLE: " + tool.unavailableReason());
             throw new BusinessException(501, "TOOL_IMPLEMENTATION_UNAVAILABLE");
         }
         OperationRuntime runtime = registry.requireOwned(runtimeId, userId);
@@ -336,6 +344,15 @@ public class OperationToolService {
         Instant endedAt = Instant.now();
         runRecorder.finish(run, status, endedAt);
         return new ToolRunResult(traceId, runtimeId, toolId, status, List.copyOf(results), startedAt, endedAt);
+    }
+
+    /**
+     * 拒绝/不可用调用也落一条终态记录：清单 OPS-01 要求“成功、失败、拒绝和不可用均有记录”，
+     * 只写日志无法事后审计“谁在何时试图调用哪个工具、为何被拦下”。
+     */
+    private void recordBlocked(Long userId, String runtimeId, String toolId, String status, String reason) {
+        runRecorder.recordBlockedAttempt(UUID.randomUUID().toString(), userId, runtimeId, toolId, status, reason,
+                Instant.now());
     }
 
     private ToolRunResult executeHttpQuery(Long userId, String runtimeId, String toolId, Map<String, String> parameters,

@@ -136,6 +136,29 @@ class JdbcOperationRunRecorderTest {
                 .contains("RUN_STALE");
     }
 
+    @Test
+    void blocked_attempts_are_persisted_as_terminal_records_without_a_lease() {
+        Instant at = Instant.parse("2026-11-06T10:00:00Z");
+        recorder.recordBlockedAttempt("trace-blocked", 7L, "runtime-9", "knowledge-retrieval",
+                "NOT_IMPLEMENTED", "TOOL_IMPLEMENTATION_UNAVAILABLE: 本仓库未实现", at);
+
+        var row = jdbc.queryForMap("SELECT * FROM operation_run_record WHERE trace_id='trace-blocked'");
+        assertThat(row).containsEntry("STATUS", "NOT_IMPLEMENTED")
+                .containsEntry("TOOL_ID", "knowledge-retrieval")
+                .containsEntry("USER_ID", 7L)
+                .containsEntry("RUNTIME_ID", "runtime-9");
+        // 未真正执行：没有租约、已直接终态，恢复扫描不会把它当成悬挂
+        assertThat(row.get("LEASE_EXPIRES_AT")).isNull();
+        assertThat(row.get("ENDED_AT")).isNotNull();
+        assertThat(new OperationRunRecoveryScheduler(jdbc, 90_000L).recoverOnce(at.plusSeconds(600))).isZero();
+
+        long runId = ((Number) row.get("ID")).longValue();
+        assertThat(jdbc.queryForMap("SELECT * FROM operation_run_evidence WHERE run_id=?", runId))
+                .containsEntry("EVIDENCE_TYPE", "TOOL_BLOCKED")
+                .containsEntry("SOURCE_REF", "tool:knowledge-retrieval")
+                .containsEntry("CONTENT", "TOOL_IMPLEMENTATION_UNAVAILABLE: 本仓库未实现");
+    }
+
     private record TestRuntime(String id, Long userId, Long sessionId) implements OperationRuntime {
         @Override public void write(String input) { }
         @Override public void resize(int columns, int rows) { }
