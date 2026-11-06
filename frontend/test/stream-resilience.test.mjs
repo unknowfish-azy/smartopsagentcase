@@ -97,3 +97,23 @@ test('non-success done preserves partial reply and terminal correlation without 
     t.mock.restoreAll()
   }
 })
+
+test('outbound request forwards the edge-issued run token', async t => {
+  let headers
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    headers = options.headers
+    return new Response('event: done\ndata: {}\n\n')
+  })
+  await streamChat('question', {}, { runToken: 'v1.payload.signature' })
+  assert.equal(headers['X-Run-Token'], 'v1.payload.signature')
+})
+
+test('request without a run token does not fabricate one', async t => {
+  let headers
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    headers = options.headers
+    return new Response('event: done\ndata: {}\n\n')
+  })
+  await streamChat('question')
+  assert.equal(headers['X-Run-Token'], undefined)
+})
