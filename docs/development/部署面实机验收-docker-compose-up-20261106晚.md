@@ -80,7 +80,7 @@ docker tag  docker.m.daocloud.io/library/eclipse-temurin:17-jre eclipse-temurin:
 
 - `nginx -t` 已执行（2026-11-07）：从 `docker.m.daocloud.io/library/nginx:alpine` 拉取临时镜像，挂载 `deploy/nginx/nginx.conf` 运行 `nginx -t`，输出 `syntax is ok` / `test is successful`。并启动临时容器实测：`/health` 200、`/ai-api/` 来源 172.x 网关命中 allow 规则（502 而非 403）、安全响应头 `X-Content-Type-Options: nosniff` / `X-Frame-Options: SAMEORIGIN` / `Referrer-Policy: strict-origin-when-cross-origin` 均存在。公网来源 `deny all`→403 为 nginx 标准行为，配置已通过语法校验。临时镜像与容器已清理。
 - Docker Hub 直连不可用属环境限制：本次以本机缓存 + 国内镜像重打 tag 绕过，**未修改** compose 的镜像名，也未把镜像加速器写入仓库。
-- Windows 下 bind mount 的 `deploy/docker/mysql/conf/my.cnf` 权限为 world-writable，MySQL 启动警告 `World-writable config file ... is ignored` —— 该自定义 my.cnf 实际未生效（开发环境无实际影响，Linux 宿主机不会出现）。
+- Windows 下 bind mount 的 `deploy/docker/mysql/conf/my.cnf` 权限为 world-writable，MySQL 启动警告 `World-writable config file ... is ignored` —— 该自定义 my.cnf 实际未生效（Linux 宿主机不会出现）。**2026-11-07 已通过 compose `command:` 直接传递关键参数（字符集/排序规则/时区/连接数/缓冲池/skip-name-resolve）规避，`SHOW VARIABLES` 实机确认全部生效**（提交 `aeee823`）。
 - 数据卷：首次失败的数据卷（2026-10-04 创建，仅含 2 行演示数据 `server`/`server_metric`）已被 `docker compose down --volumes` 移除后重建；当前卷内为 Flyway 全量迁移结果，无业务数据。
 - 公网出口下的真实 DNS rebinding 复验仍为 `NOT_RUN`（见 `安全整改-DNS-rebinding注入实验-20261106晚.md`）。
 
