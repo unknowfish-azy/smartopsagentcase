@@ -30,6 +30,15 @@ def chat_auth_settings(monkeypatch):
     monkeypatch.setattr(settings, "chat_allow_anonymous", False)
 
 
+@pytest.fixture(autouse=True)
+def reset_shared_rag_cache():
+    """PERF-07：检索缓存是进程级共享的，测试之间必须清空，避免跨用例串结果。"""
+    from app.services import chat as chat_module
+    chat_module._shared_rag_cache = None
+    yield
+    chat_module._shared_rag_cache = None
+
+
 @pytest.fixture
 def client():
     return TestClient(app)

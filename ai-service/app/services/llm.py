@@ -25,6 +25,7 @@ class LLMService:
         prompt: str,
         *,
         system_prompt: str | None = None,
+        model: str | None = None,
         **kwargs: Any,
     ) -> str:
 
@@ -41,6 +42,7 @@ class LLMService:
                 result = await self._ollama_generate(
                     prompt=prompt,
                     system_prompt=system_prompt,
+                    model=model,
                     **kwargs,
                 )
                 self.effective_provider = "ollama"
@@ -61,6 +63,7 @@ class LLMService:
         prompt: str,
         *,
         system_prompt: str | None = None,
+        model: str | None = None,
         **kwargs: Any,
     ):
         """流式生成：mock 分块或读取 Ollama NDJSON 响应。"""
@@ -79,6 +82,7 @@ class LLMService:
                 async for chunk in self._ollama_stream(
                     prompt=prompt,
                     system_prompt=system_prompt,
+                    model=model,
                 ):
                     self.effective_provider = "ollama"
                     emitted = True
@@ -123,9 +127,10 @@ class LLMService:
         self,
         prompt: str,
         system_prompt: str | None,
+        model: str | None = None,
     ):
 
-        payload = self._payload(prompt, system_prompt, stream=True)
+        payload = self._payload(prompt, system_prompt, stream=True, model=model)
 
         async with http_pool.acquire() as client:
             async with client.stream(
@@ -176,10 +181,11 @@ class LLMService:
         self,
         prompt: str,
         system_prompt: str | None = None,
+        model: str | None = None,
         **kwargs: Any,
     ) -> str:
 
-        payload = self._payload(prompt, system_prompt, stream=False)
+        payload = self._payload(prompt, system_prompt, stream=False, model=model)
         async with http_pool.acquire() as client:
             response = await client.post(
                 f"{settings.llm_base_url.rstrip('/')}/api/generate",
@@ -194,9 +200,11 @@ class LLMService:
         return answer
 
     @staticmethod
-    def _payload(prompt: str, system_prompt: str | None, *, stream: bool) -> dict[str, Any]:
+    def _payload(prompt: str, system_prompt: str | None, *, stream: bool,
+                 model: str | None = None) -> dict[str, Any]:
         payload: dict[str, Any] = {
-            "model": settings.llm_model,
+            # PERF-07：调用方可按复杂度路由指定模型；未指定时沿用全局配置。
+            "model": model or settings.llm_model,
             "prompt": prompt,
             "stream": stream,
         }

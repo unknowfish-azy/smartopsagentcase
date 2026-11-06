@@ -10,6 +10,11 @@ if str(repo_root) not in sys.path:
 from agent.runtime_events import RunIdentity, terminal_event
 
 from ..core.exceptions import LLMException, UpstreamSaturated
+from ..core.context_budget import (
+    ContextBudget,
+    ModelRouter,
+    RagQueryCache,
+)
 from ..schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -20,6 +25,21 @@ from .rag import RAGService
 
 
 logger = logging.getLogger(__name__)
+
+# PERF-07：检索缓存必须是进程级共享——ChatService 按请求新建实例，
+# 实例级缓存永远命中不了。这里惰性构建一次，全进程复用。
+_shared_rag_cache: "RagQueryCache | None" = None
+
+
+def _get_shared_rag_cache() -> "RagQueryCache":
+    global _shared_rag_cache
+    if _shared_rag_cache is None:
+        from ..core.config import settings
+        _shared_rag_cache = RagQueryCache(
+            ttl_sec=settings.rag_cache_ttl_sec,
+            max_entries=settings.rag_cache_max_entries,
+        )
+    return _shared_rag_cache
 
 SYSTEM_PROMPT = """
 你是智维Agent的AI运维助手。
@@ -53,6 +73,61 @@ class ChatService:
             or RAGService()
         )
 
+        # PERF-07：上下文预算与模型路由（本实例构造即读取当前配置）；
+        # 检索缓存进程级共享（见 _get_shared_rag_cache）。
+        from ..core.config import settings
+
+        self._budget = ContextBudget(
+            budget_chars=settings.context_budget_chars,
+        )
+        self._router = ModelRouter(
+            default_model=settings.llm_model,
+            simple_model=settings.llm_model_simple,
+            complex_model=settings.llm_model_complex,
+        )
+        self._rag_cache = _get_shared_rag_cache()
+
+    async def _retrieve_with_cache(
+        self,
+        request: ChatRequest,
+        identity: RunIdentity,
+    ) -> tuple[dict, dict]:
+        """RAG 检索 + PERF-07 缓存。
+
+        缓存键包含租户/用户/角色（权限）、知识版本与全部检索参数；
+        降级或失败的检索结果不进缓存。返回 (rag_data, cache_metadata)。
+        """
+        meta = request.metadata or {}
+        key = RagQueryCache.make_key(
+            request.message,
+            tenant=str(meta.get("tenant_id", "")),
+            user=str(meta.get("user_id", "")),
+            role=str(meta.get("role", "")),
+            version=request.version,
+            top_k=request.top_k,
+            source=request.source,
+            score_threshold=request.score_threshold,
+            vector_weight=request.vector_weight,
+            bm25_weight=request.bm25_weight,
+        )
+        cached = self._rag_cache.get(key)
+        if cached is not None:
+            return cached, {"rag_cache": "hit", **self._rag_cache.stats_dict()}
+        rag_data = await self.rag.retrieve(
+            query=request.message,
+            top_k=request.top_k,
+            version=request.version,
+            source=request.source,
+            score_threshold=request.score_threshold,
+            vector_weight=request.vector_weight,
+            bm25_weight=request.bm25_weight,
+            request_id=identity.request_id,
+            task_id=identity.task_id,
+            run_id=identity.run_id,
+        )
+        self._rag_cache.put(key, rag_data)
+        return rag_data, {"rag_cache": "miss", **self._rag_cache.stats_dict()}
+
     async def chat(
         self,
         request: ChatRequest,
@@ -76,26 +151,16 @@ class ChatService:
         }
 
         rag_status = "disabled"
+        cache_metadata: dict = {"rag_cache": "disabled"}
 
         if request.use_rag:
 
-            rag_data = await self.rag.retrieve(
-                query=request.message,
-                top_k=request.top_k,
-                version=request.version,
-                source=request.source,
-                score_threshold=request.score_threshold,
-                vector_weight=request.vector_weight,
-                bm25_weight=request.bm25_weight,
-                request_id=identity.request_id,
-                task_id=identity.task_id,
-                run_id=identity.run_id,
-            )
+            rag_data, cache_metadata = await self._retrieve_with_cache(request, identity)
             rag_status = self._rag_metadata(request, rag_data)["rag_status"]
             logger.info(
-                "chat.rag request_id=%s task_id=%s run_id=%s status=%s results=%s",
+                "chat.rag request_id=%s task_id=%s run_id=%s status=%s results=%s cache=%s",
                 identity.request_id, identity.task_id, identity.run_id,
-                rag_status, len(rag_data.get("results", [])),
+                rag_status, len(rag_data.get("results", [])), cache_metadata["rag_cache"],
             )
 
         results = rag_data.get(
@@ -103,8 +168,11 @@ class ChatService:
             [],
         )
 
+        # PERF-07：证据过字符预算（分数优先装填），超预算的丢弃与截断如实记账。
+        budgeted_results, budget_stats = self._budget.apply(results)
+
         context = self.rag.build_context(
-            results
+            budgeted_results
         )
 
         prompt = self._build_prompt(
@@ -113,9 +181,18 @@ class ChatService:
             images=request.images,
         )
 
+        # PERF-07：按复杂度路由模型；未配置路由模型时如实沿用全局模型。
+        routing = self._router.route(
+            request.message,
+            images=request.images,
+            evidence_count=len(budgeted_results),
+            verification_required=(request.metadata or {}).get("verification_required") is True,
+        )
+
         answer = await self.llm.generate(
             prompt,
             system_prompt=SYSTEM_PROMPT,
+            model=routing.model,
         )
 
         inspection = self._inspect_request(request, rag_data)
@@ -169,9 +246,7 @@ class ChatService:
         return ChatResponse(
             answer=answer,
             conversation_id=conversation_id,
-            model=(
-                self._get_model_name()
-            ),
+            model=routing.model,
             provider=(
                 self._get_provider()
             ),
@@ -197,6 +272,9 @@ class ChatService:
                 "degradation_reason": self.llm.degradation_reason,
                 **self._rag_metadata(request, rag_data),
                 **({"inspection": inspection} if inspection else {}),
+                "model_routing": self._router.decision_dict(routing),
+                "context_budget": self._budget.stats_dict(budget_stats),
+                **cache_metadata,
             },
         )
 
@@ -262,33 +340,35 @@ class ChatService:
             "trust_score": 0.0,
         }
 
+        cache_metadata: dict = {"rag_cache": "disabled"}
+
         if request.use_rag:
-            rag_data = await self.rag.retrieve(
-                query=request.message,
-                top_k=request.top_k,
-                version=request.version,
-                source=request.source,
-                score_threshold=request.score_threshold,
-                vector_weight=request.vector_weight,
-                bm25_weight=request.bm25_weight,
-                request_id=identity.request_id,
-                task_id=identity.task_id,
-                run_id=identity.run_id,
-            )
+            rag_data, cache_metadata = await self._retrieve_with_cache(request, identity)
             rag_meta = self._rag_metadata(request, rag_data)
             logger.info(
-                "chat.rag request_id=%s task_id=%s run_id=%s status=%s results=%s degraded=%s reason=%s",
+                "chat.rag request_id=%s task_id=%s run_id=%s status=%s results=%s cache=%s degraded=%s reason=%s",
                 identity.request_id, identity.task_id, identity.run_id,
                 rag_meta["rag_status"], len(rag_data.get("results", [])),
+                cache_metadata["rag_cache"],
                 rag_meta["rag_degraded"], rag_meta["rag_degradation_reason"] or "-",
             )
 
         results = rag_data.get("results", [])
-        context = self.rag.build_context(results)
+        # PERF-07：证据过字符预算（分数优先装填）。
+        budgeted_results, budget_stats = self._budget.apply(results)
+        context = self.rag.build_context(budgeted_results)
         prompt = self._build_prompt(
             message=request.message,
             context=context,
             images=request.images,
+        )
+
+        # PERF-07：按复杂度路由模型；未配置路由模型时如实沿用全局模型。
+        routing = self._router.route(
+            request.message,
+            images=request.images,
+            evidence_count=len(budgeted_results),
+            verification_required=(request.metadata or {}).get("verification_required") is True,
         )
 
         # Report only stages actually performed by this chat path.
@@ -312,6 +392,7 @@ class ChatService:
             async for delta in self.llm.generate_stream(
                 prompt,
                 system_prompt=SYSTEM_PROMPT,
+                model=routing.model,
             ):
                 yield {"event": "token", "data": {"delta": delta}}
         except UpstreamSaturated:
@@ -353,7 +434,7 @@ class ChatService:
             "event": "done",
             "data": {
                 "conversation_id": conversation_id,
-                "model": self._get_model_name(),
+                "model": routing.model,
                 "provider": self._get_provider(),
                 "trust_score": float(rag_data.get("trust_score", 0.0)),
                 "citations": [c.model_dump() for c in citations],
@@ -368,6 +449,9 @@ class ChatService:
                     "degradation_reason": self.llm.degradation_reason,
                     **self._rag_metadata(request, rag_data),
                     **({"inspection": inspection} if inspection else {}),
+                    "model_routing": self._router.decision_dict(routing),
+                    "context_budget": self._budget.stats_dict(budget_stats),
+                    **cache_metadata,
                 },
             },
         }
@@ -468,13 +552,6 @@ class ChatService:
 - 如果知识库没有足够证据，请明确说明。
 - 如果涉及执行操作，只给出建议，不声称已经执行。
 """
-
-    @staticmethod
-    def _get_model_name():
-
-        from ..core.config import settings
-
-        return settings.llm_model
 
     @staticmethod
     def _get_provider():
