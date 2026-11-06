@@ -217,17 +217,13 @@ public class ModelConnectionService {
                 );
 
         if (connection == null) {
-            throw new IllegalArgumentException(
-                    "模型连接不存在"
-            );
+            throw new BusinessException(404, "模型连接不存在");
         }
 
         if (!Boolean.TRUE.equals(
                 connection.getEnabled()
         )) {
-            throw new IllegalStateException(
-                    "模型连接已禁用"
-            );
+            throw new BusinessException(409, "模型连接已禁用");
         }
 
         assertOutboundTarget(
@@ -254,7 +250,7 @@ public class ModelConnectionService {
             throw new BusinessException(404, "模型连接不存在");
         }
         if (!Boolean.TRUE.equals(connection.getEnabled())) {
-            throw new IllegalStateException("模型连接已禁用");
+            throw new BusinessException(409, "模型连接已禁用");
         }
         // 存量行可能在整改前写入内网地址；出站前按当前 DNS 重新校验一次（SEC-14）。
         OutboundUrlPolicy.Decision outbound = assertOutboundTarget(connection.getBaseUrl());

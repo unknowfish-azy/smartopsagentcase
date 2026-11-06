@@ -2,6 +2,7 @@ package com.smartops.exception;
 
 import com.smartops.common.ApiResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,15 @@ public class GlobalExceptionHandler {
                 .orElse("参数校验失败");
 
         return ResponseEntity.badRequest().body(ApiResponse.error(400, message));
+    }
+
+    /**
+     * 缺必填请求头/参数/Cookie 等绑定异常（如 SEC-08 后内部 token 路径缺失 X-User-Id）。
+     * Spring 默认即 400，这里显式处理避免被 {@link #handleException(Exception)} 兜底成 500。
+     */
+    @ExceptionHandler(ServletRequestBindingException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBindingException(ServletRequestBindingException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
     }
 
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
