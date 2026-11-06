@@ -7,6 +7,7 @@ import com.smartops.dto.inspector.InspectionRecordRequest;
 import com.smartops.dto.inspector.InspectionReplanRequest;
 import com.smartops.dto.inspector.InspectionVerifyRequest;
 import com.smartops.exception.BusinessException;
+import com.smartops.operations.OperationRedactor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -116,9 +117,9 @@ public class InspectorEventService {
                         + "(id, task_id, target, status, severity, category, agent_claim, "
                         + "reason, recommendation, requires_human, metadata_json, user_id, created_at) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                id, request.getTaskId(), request.getTarget(), request.getStatus(),
-                request.getSeverity(), request.getCategory(), request.getAgentClaim(),
-                request.getReason(), request.getRecommendation(),
+                id, request.getTaskId(), OperationRedactor.redact(request.getTarget()), request.getStatus(),
+                request.getSeverity(), request.getCategory(), OperationRedactor.redact(request.getAgentClaim()),
+                OperationRedactor.redact(request.getReason()), OperationRedactor.redact(request.getRecommendation()),
                 Boolean.TRUE.equals(request.getRequiresHuman()),
                 json(request.getMetadata()), ownerId, LocalDateTime.now()
         );
@@ -129,7 +130,7 @@ public class InspectorEventService {
                             + "(event_id, category, severity, reason, recommendation) "
                             + "VALUES (?, ?, ?, ?, ?)",
                     id, issue.getCategory(), issue.getSeverity(),
-                    issue.getReason(), issue.getRecommendation()
+                    OperationRedactor.redact(issue.getReason()), OperationRedactor.redact(issue.getRecommendation())
             );
         }
 
@@ -137,7 +138,7 @@ public class InspectorEventService {
             jdbcTemplate.update(
                     "INSERT INTO inspection_evidence "
                             + "(event_id, content, source, version, score) VALUES (?, ?, ?, ?, ?)",
-                    id, evidence.getContent(), evidence.getSource(),
+                    id, OperationRedactor.redact(evidence.getContent()), evidence.getSource(),
                     evidence.getVersion(), evidence.getScore()
             );
         }
@@ -226,7 +227,8 @@ public class InspectorEventService {
 
     private String json(Object value) {
         try {
-            return objectMapper.writeValueAsString(value == null ? Map.of() : value);
+            // SEC-11：证据/元数据同样可能夹带凭据，序列化后统一脱敏再落库。
+            return OperationRedactor.redact(objectMapper.writeValueAsString(value == null ? Map.of() : value));
         } catch (JsonProcessingException ex) {
             throw new BusinessException("JSON 数据无法序列化");
         }

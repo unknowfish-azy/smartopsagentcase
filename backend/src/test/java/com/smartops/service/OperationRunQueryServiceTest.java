@@ -83,6 +83,22 @@ class OperationRunQueryServiceTest {
                 .hasMessage("OPERATION_RUN_NOT_FOUND");
     }
 
+    /** TM-30：历史行可能仍是明文，读侧必须兜底脱敏，避免旧数据继续泄漏。 */
+    @Test
+    void masks_secrets_in_historical_outputs_on_read() {
+        long run = insertRun("trace-legacy-secret", 1, "host-health", "SUCCESS", "2026-11-05T05:00:00Z");
+        insertOutput(run, 1, 0, "API_TOKEN=abc123\nauthorization: Bearer xyz-789", "DB_PASSWORD=hunter2");
+
+        var detail = service.detail(1L, run);
+
+        assertThat(detail.outputs().get(0).stdout())
+                .doesNotContain("abc123", "xyz-789")
+                .contains("[REDACTED]");
+        assertThat(detail.outputs().get(0).stderr())
+                .doesNotContain("hunter2")
+                .contains("[REDACTED]");
+    }
+
     private long insertRun(String traceId, long userId, String toolId, String status, String startedAt) {
         jdbc.update("INSERT INTO operation_run_record(trace_id,user_id,session_id,runtime_id,tool_id,status,started_at,ended_at) VALUES(?,?,?,?,?,?,?,?)",
                 traceId, userId, 10L, "runtime-1", toolId, status,

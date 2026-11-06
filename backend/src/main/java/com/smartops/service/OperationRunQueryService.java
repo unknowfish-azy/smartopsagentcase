@@ -1,6 +1,7 @@
 package com.smartops.service;
 
 import com.smartops.exception.BusinessException;
+import com.smartops.operations.OperationRedactor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -52,13 +53,17 @@ public class OperationRunQueryService {
         if (rows.isEmpty()) throw new BusinessException(404, "OPERATION_RUN_NOT_FOUND");
         List<CommandOutput> outputs = jdbc.query(
                 "SELECT id,sequence_no,command_text,exit_code,stdout_text,stderr_text,truncated,started_at,ended_at FROM operation_run_output WHERE run_id=? ORDER BY sequence_no,id",
-                (rs, row) -> new CommandOutput(rs.getLong("id"), rs.getInt("sequence_no"), rs.getString("command_text"),
-                        rs.getInt("exit_code"), text(rs.getString("stdout_text")), text(rs.getString("stderr_text")),
+                (rs, row) -> new CommandOutput(rs.getLong("id"), rs.getInt("sequence_no"),
+                        OperationRedactor.redact(rs.getString("command_text")),
+                        rs.getInt("exit_code"),
+                        OperationRedactor.redact(text(rs.getString("stdout_text"))),
+                        OperationRedactor.redact(text(rs.getString("stderr_text"))),
                         rs.getBoolean("truncated"),
                         instant(rs.getTimestamp("started_at")), instant(rs.getTimestamp("ended_at"))), id);
         List<Evidence> evidence = jdbc.query(
                 "SELECT id,evidence_type,content,source_ref,created_at FROM operation_run_evidence WHERE run_id=? ORDER BY created_at,id",
-                (rs, row) -> new Evidence(rs.getLong("id"), rs.getString("evidence_type"), rs.getString("content"),
+                (rs, row) -> new Evidence(rs.getLong("id"), rs.getString("evidence_type"),
+                        OperationRedactor.redact(rs.getString("content")),
                         rs.getString("source_ref"), instant(rs.getTimestamp("created_at"))), id);
         return new RunDetail(rows.get(0), outputs, evidence);
     }
@@ -91,7 +96,7 @@ public class OperationRunQueryService {
         }
         jdbc.update("INSERT INTO operation_run_evidence(run_id,evidence_type,content,source_ref,created_at) VALUES(?,?,?,?,?)",
                 runId, "RUN_VERIFIED",
-                "人工核验结论=" + normalized + "；依据：" + evidence + "；不自动重试写操作",
+                OperationRedactor.redact("人工核验结论=" + normalized + "；依据：" + evidence + "；不自动重试写操作"),
                 "human-verification", Timestamp.from(Instant.now()));
         return detail(userId, runId);
     }

@@ -1,6 +1,7 @@
 package com.smartops.service;
 
 import com.smartops.exception.BusinessException;
+import com.smartops.operations.OperationRedactor;
 import com.smartops.operations.OperationRuntime;
 import com.smartops.operations.OperationRuntimeRegistry;
 import org.slf4j.Logger;
@@ -302,9 +303,12 @@ public class OperationToolService {
                 Instant commandEndedAt = Instant.now();
                 Bounded bounded = bound(result.stdout(), result.stderr(), tool.outputLimitBytes());
                 boolean truncated = bounded.truncated() || result.truncated();
-                results.add(new ToolCommandResult(command, result.exitCode(), bounded.stdout(), bounded.stderr(),
+                // SEC-11：工具输出会同时进入数据库与 API 响应，两处都必须先脱敏。
+                String stdout = OperationRedactor.redact(bounded.stdout());
+                String stderr = OperationRedactor.redact(bounded.stderr());
+                results.add(new ToolCommandResult(command, result.exitCode(), stdout, stderr,
                         commandStartedAt, commandEndedAt, truncated));
-                runRecorder.recordCommand(run, sequence, command, result.exitCode(), bounded.stdout(), bounded.stderr(),
+                runRecorder.recordCommand(run, sequence, command, result.exitCode(), stdout, stderr,
                         commandStartedAt, commandEndedAt, truncated);
                 if (result.exitCode() != 0) {
                     status = "FAILED";
@@ -312,7 +316,7 @@ public class OperationToolService {
                 }
             } catch (IOException ex) {
                 Instant commandEndedAt = Instant.now();
-                String error = safeError(ex);
+                String error = OperationRedactor.redact(safeError(ex));
                 if (isTimeout(ex) && !tool.readOnly()) {
                     // 写操作在远端可能已经开始，超时后既不能报成功，也不能当成可安全重试的失败。
                     status = "UNCERTAIN";
@@ -348,7 +352,7 @@ public class OperationToolService {
         Bounded bounded = bound(response.response().toString(), "", tool.outputLimitBytes());
         return new ToolRunResult(response.traceId(), runtimeId, toolId, "SUCCEEDED", List.of(
                 new ToolCommandResult("HTTP " + response.source() + " read-only query", 0,
-                        bounded.stdout(), "", started, finished, bounded.truncated())), started, finished);
+                        OperationRedactor.redact(bounded.stdout()), "", started, finished, bounded.truncated())), started, finished);
     }
 
     private ToolDefinition requireTool(String toolId) {

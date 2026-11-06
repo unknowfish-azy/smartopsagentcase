@@ -1,6 +1,7 @@
 package com.smartops.service;
 
 import com.smartops.exception.BusinessException;
+import com.smartops.operations.OperationRedactor;
 import com.smartops.operations.OperationRuntime;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -93,13 +94,17 @@ public class JdbcOperationRunRecorder implements OperationRunRecorder {
     @Override
     public void recordCommand(RunHandle run, int sequence, String command, int exitCode,
                               String stdout, String stderr, Instant startedAt, Instant endedAt, boolean truncated) {
+        // SEC-11：命令与输出是凭据泄漏最大面（env / cat .env / docker inspect），
+        // 写库前统一遮蔽，避免 API 读回明文。
         jdbc.update("INSERT INTO operation_run_output(run_id,sequence_no,command_text,exit_code,stdout_text,stderr_text,"
                         + "started_at,ended_at,truncated,output_bytes) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                run.id(), sequence, command, exitCode, stdout, stderr,
+                run.id(), sequence, OperationRedactor.redact(command), exitCode,
+                OperationRedactor.redact(stdout), OperationRedactor.redact(stderr),
                 Timestamp.from(startedAt), Timestamp.from(endedAt), truncated,
                 byteLength(stdout) + byteLength(stderr));
         jdbc.update("INSERT INTO operation_run_evidence(run_id,evidence_type,content,source_ref,created_at) VALUES(?,?,?,?,?)",
-                run.id(), "COMMAND_RESULT", "exitCode=" + exitCode + (truncated ? ";output=TRUNCATED" : ""),
+                run.id(), "COMMAND_RESULT",
+                OperationRedactor.redact("exitCode=" + exitCode + (truncated ? ";output=TRUNCATED" : "")),
                 "command:" + sequence, Timestamp.from(endedAt));
         if (truncated) {
             jdbc.update("INSERT INTO operation_run_evidence(run_id,evidence_type,content,source_ref,created_at) VALUES(?,?,?,?,?)",
@@ -137,7 +142,7 @@ public class JdbcOperationRunRecorder implements OperationRunRecorder {
     @Override
     public void recordEvidence(RunHandle run, String type, String content) {
         jdbc.update("INSERT INTO operation_run_evidence(run_id,evidence_type,content,source_ref,created_at) VALUES(?,?,?,?,?)",
-                run.id(), type, content, null, Timestamp.from(Instant.now()));
+                run.id(), type, OperationRedactor.redact(content), null, Timestamp.from(Instant.now()));
     }
 
     private static String blankToNull(String value) {
