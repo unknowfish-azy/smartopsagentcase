@@ -46,11 +46,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # OPS-10/F12：Prometheus 通过 /actuator/prometheus 抓取 HTTP SLI（可用率/错误率/延迟）。
+        # 该端点仅应由内网 Prometheus 访问，SecurityConfig 已单独放行且部署侧需限制来源。
+        include: health,info,metrics,prometheus
 
   endpoint:
     health:
       show-details: never
+
+  metrics:
+    tags:
+      application: smartops-backend
 
 # ============================================
 # Server

@@ -1,0 +1,85 @@
+# OPS-10：HTTP 层 SLI 记录规则与错误预算燃烧率告警。
+# 数据来源：backend 的 /actuator/prometheus（Micrometer 标准 http_server_requests 指标）。
+# 平台执行成功率、采集新鲜度、恢复核验率由 /api/observability/slo 从业务事实表计算，
+# 不在 Prometheus 里重复造数。
+
+groups:
+  - name: smartops-slo-http
+    interval: 30s
+    rules:
+      # 总请求速率（分母），避免直接除零
+      - record: smartops:sli_http_requests:rate5m
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="smartops-backend"}[5m]))
+
+      # 可用率：非 5xx 占比（SLO 99.5%）
+      - record: smartops:sli_http_availability:ratio5m
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="smartops-backend",status!~"5.."}[5m]))
+            / clamp_min(sum(rate(http_server_requests_seconds_count{job="smartops-backend"}[5m])), 1e-6)
+
+      # 错误率：5xx 占比
+      - record: smartops:sli_http_error:ratio5m
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="smartops-backend",status=~"5.."}[5m]))
+            / clamp_min(sum(rate(http_server_requests_seconds_count{job="smartops-backend"}[5m])), 1e-6)
+
+      # 延迟：P95（SLO 1s）
+      - record: smartops:sli_http_latency:p95_5m
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="smartops-backend"}[5m])))
+
+      # 错误预算燃烧率 = 实际错误率 / 允许错误率（1 - 99.5% = 0.005）
+      - record: smartops:error_budget:burn_rate1h
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{job="smartops-backend",status=~"5.."}[1h]))
+              / clamp_min(sum(rate(http_server_requests_seconds_count{job="smartops-backend"}[1h])), 1e-6)
+          ) / 0.005
+
+      - record: smartops:error_budget:burn_rate6h
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{job="smartops-backend",status=~"5.."}[6h]))
+              / clamp_min(sum(rate(http_server_requests_seconds_count{job="smartops-backend"}[6h])), 1e-6)
+          ) / 0.005
+
+  - name: smartops-slo-alerts
+    rules:
+      # 多窗口燃烧率：14.4 = 1h 内烧掉 2% 月预算的经典快烧阈值
+      - alert: SmartOpsHttpFastBurn
+        expr: smartops:error_budget:burn_rate1h > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          slo: http_availability
+        annotations:
+          summary: "HTTP 可用率错误预算快速燃烧（1h 燃烧率 {{ $value | printf \"%.1f\" }}x）"
+
+      - alert: SmartOpsHttpSlowBurn
+        expr: smartops:error_budget:burn_rate6h > 6
+        for: 30m
+        labels:
+          severity: warning
+          slo: http_availability
+        annotations:
+          summary: "HTTP 可用率错误预算持续燃烧（6h 燃烧率 {{ $value | printf \"%.1f\" }}x）"
+
+      - alert: SmartOpsHttpAvailabilityLow
+        expr: smartops:sli_http_availability:ratio5m < 0.995
+        for: 5m
+        labels:
+          severity: critical
+          slo: http_availability
+        annotations:
+          summary: "HTTP 可用率 {{ $value | printf \"%.3f\" }} 低于 99.5% 目标"
+
+      - alert: SmartOpsHttpLatencyHigh
+        expr: smartops:sli_http_latency:p95_5m > 1
+        for: 10m
+        labels:
+          severity: warning
+          slo: http_latency
+        annotations:
+          summary: "HTTP P95 延迟 {{ $value | printf \"%.2f\" }}s 超过 1s 目标"

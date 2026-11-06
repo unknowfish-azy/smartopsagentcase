@@ -329,7 +329,7 @@ public class RunbookExecutionService {
                 // 既不能静默当成功，也不能当可安全重试的失败。
                 String error = "作业编排异常，远端状态需人工核验：" + safeMessage(broken);
                 finishTarget(run.id(), target.runtimeId(), TargetStatus.UNKNOWN, attempt + 1, null, null,
-                        "", error, null, null, null, null, Instant.now());
+                        "", error, null, null, null, null, Instant.now(), null, null, null, null);
                 outcome = new TargetOutcome(target.runtimeId(), TargetStatus.UNKNOWN, error, null, null,
                         "", null, null, attempt + 1);
             }
@@ -352,14 +352,14 @@ public class RunbookExecutionService {
         } catch (RuntimeException unavailable) {
             String error = "运行连接不可用：" + safeMessage(unavailable);
             finishTarget(run.id(), target.runtimeId(), TargetStatus.FAILED, attemptNo, null, null,
-                    "", error, null, null, null, null, startedAt);
+                    "", error, null, null, null, null, startedAt, "NOT_DISPATCHED", null, null, null);
             return new TargetOutcome(target.runtimeId(), TargetStatus.FAILED, error, null, null,
                     "", null, null, attemptNo);
         }
         if (!runtime.isOpen()) {
             String error = "运行连接已关闭，未派发任何命令";
             finishTarget(run.id(), target.runtimeId(), TargetStatus.FAILED, attemptNo, null, null,
-                    "", error, null, null, null, null, startedAt);
+                    "", error, null, null, null, null, startedAt, "NOT_DISPATCHED", null, null, null);
             return new TargetOutcome(target.runtimeId(), TargetStatus.FAILED, error, null, null,
                     "", null, null, attemptNo);
         }
@@ -375,18 +375,20 @@ public class RunbookExecutionService {
         } catch (RuntimeException conflict) {
             String error = "目标本次尝试已存在执行记录（幂等键冲突），不重复派发：" + safeMessage(conflict);
             finishTarget(run.id(), target.runtimeId(), TargetStatus.FAILED, attemptNo, null, null,
-                    "", error, null, null, null, null, startedAt);
+                    "", error, null, null, null, null, startedAt, "NOT_DISPATCHED", null, null, null);
             return new TargetOutcome(target.runtimeId(), TargetStatus.FAILED, error, null, null,
                     "", null, null, attemptNo);
         }
 
         ExecutionState state = new ExecutionState();
+        boolean executeRan = false;
         // 同一 Run 内的命令序号必须连续：operation_run_output 有 (run_id, sequence_no) 唯一约束。
         SequenceCounter sequence = new SequenceCounter();
         runPhase(Phase.PRE_CHECK, version.steps(), params, runtime, handle, deadline, run.id(), state, sequence);
         String preCheckStatus = phaseStatus(state);
 
         if (!state.failed && !state.cancelled && !state.timedOut && !state.uncertain) {
+            executeRan = true;
             runPhase(Phase.EXECUTE, version.steps(), params, runtime, handle, deadline, run.id(), state, sequence);
         }
         if (!state.failed && !state.cancelled && !state.timedOut && !state.uncertain) {
@@ -408,6 +410,11 @@ public class RunbookExecutionService {
 
         String postCheckStatus = Phase.POST_CHECK.name().equals(state.failedPhase)
                 ? "FAILED" : (status == TargetStatus.SUCCEEDED ? "SUCCEEDED" : null);
+        // 三个时间点分别落库：派发、执行阶段结束、后置验证通过。空值表示"未发生/未知"，
+        // 不允许用最终成功反推派发时间。
+        Instant executedAt = executeRan ? Instant.now() : null;
+        Instant verifiedAt = "SUCCEEDED".equals(postCheckStatus) ? Instant.now() : null;
+        String dispatchStatus = state.dispatched ? "SENT" : "NOT_DISPATCHED";
         String rollbackStatus = null;
         String rollbackOutput = null;
         if (state.failed && OnFailure.ROLLBACK.name().equals(state.onFailure)) {
@@ -431,7 +438,8 @@ public class RunbookExecutionService {
         runRecorder.finish(handle, recorderStatus, Instant.now());
         finishTarget(run.id(), target.runtimeId(), status, attemptNo, handle.id(),
                 state.lastExitCode, state.output, state.error, preCheckStatus, postCheckStatus,
-                rollbackStatus, rollbackOutput, startedAt);
+                rollbackStatus, rollbackOutput, startedAt, dispatchStatus, state.dispatchedAt,
+                executedAt, verifiedAt);
         return new TargetOutcome(target.runtimeId(), status, state.error, handle.id(), state.lastExitCode,
                 state.output, preCheckStatus, state.failedPhase == null && state.error == null
                 ? null : state.failedPhase, attemptNo);
@@ -479,7 +487,10 @@ public class RunbookExecutionService {
             sequence.value++;
             Instant commandStartedAt = Instant.now();
             try {
-                if (Phase.EXECUTE.name().equals(phase.name())) state.dispatched = true;
+                if (Phase.EXECUTE.name().equals(phase.name()) && !state.dispatched) {
+                    state.dispatched = true;
+                    state.dispatchedAt = commandStartedAt;
+                }
                 OperationRuntime.CommandResult result = runtime.execute(command, Math.max(1, stepTimeoutMs));
                 Instant commandEndedAt = Instant.now();
                 String stdout = bound(result.stdout());
@@ -637,7 +648,7 @@ public class RunbookExecutionService {
         List<TargetView> targets = jdbc.query("""
                 SELECT id,runtime_id,target_label,batch_no,canary,status,attempt,operation_run_id,exit_code,
                        output_excerpt,error,pre_check_status,post_check_status,rollback_status,rollback_output,
-                       started_at,finished_at
+                       started_at,finished_at,dispatch_status,dispatched_at,executed_at,verified_at
                   FROM runbook_run_target WHERE run_id=?
                  ORDER BY batch_no,canary DESC,runtime_id,id
                 """, (result, ignored) -> new TargetView(result.getLong("id"), result.getString("runtime_id"),
@@ -647,7 +658,9 @@ public class RunbookExecutionService {
                 result.getString("output_excerpt"), result.getString("error"), result.getString("pre_check_status"),
                 result.getString("post_check_status"), result.getString("rollback_status"),
                 result.getString("rollback_output"), instant(result.getTimestamp("started_at")),
-                instant(result.getTimestamp("finished_at"))), runId);
+                instant(result.getTimestamp("finished_at")), result.getString("dispatch_status"),
+                instant(result.getTimestamp("dispatched_at")), instant(result.getTimestamp("executed_at")),
+                instant(result.getTimestamp("verified_at"))), runId);
         Map<String, Object> row = rows.get(0);
         return new RunView(((Number) row.get("id")).longValue(), ((Number) row.get("runbook_id")).longValue(),
                 (String) row.get("runbook_name"), ((Number) row.get("version")).intValue(),
@@ -862,17 +875,21 @@ public class RunbookExecutionService {
 
     private void finishTarget(long runId, String runtimeId, TargetStatus status, int attempt, Long operationRunId,
                               Integer exitCode, String output, String error, String preCheckStatus,
-                              String postCheckStatus, String rollbackStatus, String rollbackOutput, Instant startedAt) {
+                              String postCheckStatus, String rollbackStatus, String rollbackOutput, Instant startedAt,
+                              String dispatchStatus, Instant dispatchedAt, Instant executedAt, Instant verifiedAt) {
         Instant finishedAt = Instant.now();
         jdbc.update("""
                 UPDATE runbook_run_target SET status=?,attempt=?,operation_run_id=?,exit_code=?,output_excerpt=?,
                        error=?,pre_check_status=?,post_check_status=?,rollback_status=?,rollback_output=?,
-                       started_at=?,finished_at=?
+                       started_at=?,finished_at=?,dispatch_status=?,dispatched_at=?,executed_at=?,verified_at=?
                  WHERE run_id=? AND runtime_id=?
                 """, status.name(), attempt, operationRunId, exitCode, RunbookSupport.truncate(output, MAX_OUTPUT_CHARS),
                 RunbookSupport.truncate(error, 500), preCheckStatus, postCheckStatus, rollbackStatus,
                 RunbookSupport.truncate(rollbackOutput, MAX_OUTPUT_CHARS), Timestamp.from(startedAt),
-                Timestamp.from(finishedAt), runId, runtimeId);
+                Timestamp.from(finishedAt), dispatchStatus,
+                dispatchedAt == null ? null : Timestamp.from(dispatchedAt),
+                executedAt == null ? null : Timestamp.from(executedAt),
+                verifiedAt == null ? null : Timestamp.from(verifiedAt), runId, runtimeId);
     }
 
     private void markSkipped(long runId, String runtimeId, String reason) {
@@ -1124,7 +1141,8 @@ public class RunbookExecutionService {
     public record TargetView(long id, String runtimeId, String targetLabel, int batchNo, boolean canary,
                              String status, int attempt, Long operationRunId, Integer exitCode, String outputExcerpt,
                              String error, String preCheckStatus, String postCheckStatus, String rollbackStatus,
-                             String rollbackOutput, Instant startedAt, Instant finishedAt) {}
+                             String rollbackOutput, Instant startedAt, Instant finishedAt,
+                             String dispatchStatus, Instant dispatchedAt, Instant executedAt, Instant verifiedAt) {}
 
     public record RunView(long id, long runbookId, String runbookName, int version, long userId, String environment,
                           String trigger, String triggerRef, String status, String riskLevel, int requiredApprovals,
@@ -1156,6 +1174,7 @@ public class RunbookExecutionService {
 
     private static final class ExecutionState {
         boolean dispatched;
+        Instant dispatchedAt;
         boolean cancelled;
         boolean timedOut;
         boolean uncertain;
