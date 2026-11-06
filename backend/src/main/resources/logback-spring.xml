@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- SEC-11 框架级日志脱敏：把消息体与异常栈中的 Bearer token / URL 密钥参数 / JSON 凭据字段掩码为 *** -->
+    <conversionRule conversionWord="maskedMsg" converterClass="com.smartops.logging.MaskingConverter"/>
+    <conversionRule conversionWord="maskedEx" converterClass="com.smartops.logging.MaskingThrowableProxyConverter"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level --- [%15.15thread] %-40.40logger{39} : %maskedMsg%n%maskedEx</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
