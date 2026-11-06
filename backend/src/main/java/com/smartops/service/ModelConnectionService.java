@@ -11,6 +11,7 @@ import com.smartops.entity.ModelConnection;
 import com.smartops.exception.BusinessException;
 import com.smartops.mapper.ModelConnectionMapper;
 import com.smartops.security.OutboundUrlPolicy;
+import com.smartops.security.PinnedDns;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -256,18 +257,25 @@ public class ModelConnectionService {
             throw new IllegalStateException("模型连接已禁用");
         }
         // 存量行可能在整改前写入内网地址；出站前按当前 DNS 重新校验一次（SEC-14）。
-        assertOutboundTarget(connection.getBaseUrl());
+        OutboundUrlPolicy.Decision outbound = assertOutboundTarget(connection.getBaseUrl());
         String apiKey = cryptoService.decrypt(connection.getApiKeyCiphertext());
         // Start the ledger before sending a billable request. Store neither prompts nor secrets.
         String invocationId = analytics.start(userId, id, connection.getModelName());
         long started = System.nanoTime();
         ModelInvocationResponse response;
+        // 连接期 pin：建连只能用刚校验过的这批地址，关闭 DNS rebinding 窗口。
+        String pinnedHost = outbound.uri().getHost();
+        PinnedDns.pin(pinnedHost, outbound.addresses());
         try {
-            response = providerClient.invoke(connection, apiKey, request);
-        } catch (RuntimeException ex) {
-            try { analytics.finish(invocationId, false, (System.nanoTime() - started) / 1_000_000, java.util.Map.of()); }
-            catch (RuntimeException recordingError) { ex.addSuppressed(recordingError); }
-            throw ex;
+            try {
+                response = providerClient.invoke(connection, apiKey, request);
+            } catch (RuntimeException ex) {
+                try { analytics.finish(invocationId, false, (System.nanoTime() - started) / 1_000_000, java.util.Map.of()); }
+                catch (RuntimeException recordingError) { ex.addSuppressed(recordingError); }
+                throw ex;
+            }
+        } finally {
+            PinnedDns.clear(pinnedHost);
         }
         // A logging outage must not turn a successful paid call into a retryable failure.
         try {
@@ -356,7 +364,7 @@ public class ModelConnectionService {
      * <p>只允许 http/https 且解析后全部地址为公网地址；拒绝回环、私网、链路本地、
      * CGNAT、保留网段与无法解析的主机。错误信息只回显规则码，不回显目标主机。</p>
      */
-    private void assertOutboundTarget(
+    private OutboundUrlPolicy.Decision assertOutboundTarget(
             String baseUrl
     ) {
 
@@ -391,6 +399,8 @@ public class ModelConnectionService {
                             + decision.rule()
             );
         }
+
+        return decision;
     }
 
 

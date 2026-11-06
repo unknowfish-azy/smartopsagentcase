@@ -42,6 +42,17 @@ class ModelInvocationAnalyticsTest {
         order.verify(provider).invoke(connection, "secret", request);
         order.verify(analytics).finish(eq("invocation"), eq(true), anyLong(), eq(response.getUsage()));
     }
+    @Test void verifiedAddressIsPinnedForOutboundAndClearedAfterward() {
+        var pinnedDuringCall = new java.util.concurrent.atomic.AtomicBoolean();
+        var response = ModelInvocationResponse.builder().content("answer").usage(Map.of()).build();
+        when(provider.invoke(connection, "secret", request)).thenAnswer(invocation -> {
+            pinnedDuringCall.set(com.smartops.security.PinnedDns.isPinned("8.8.8.8"));
+            return response;
+        });
+        assertThat(service.invoke(7L, 2L, request)).isSameAs(response);
+        assertThat(pinnedDuringCall).isTrue();
+        assertThat(com.smartops.security.PinnedDns.isPinned("8.8.8.8")).isFalse();
+    }
     @Test void recordsFailureAndRetainsProviderException() {
         var failure = new IllegalStateException("provider unavailable");
         when(provider.invoke(connection, "secret", request)).thenThrow(failure);
