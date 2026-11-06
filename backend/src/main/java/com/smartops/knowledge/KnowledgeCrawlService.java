@@ -34,6 +34,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,6 +52,10 @@ public class KnowledgeCrawlService {
     private static final long MAX_DOWNLOAD_BYTES = 10L * 1024 * 1024;
     // 单次 run 的总时长预算：50 页 × 多跳的 8s 单跳超时会长期占用线程。
     private static final long RUN_DEADLINE_SECONDS = 60;
+    // SEC-06 TM-25：全局并发爬取上限，避免多用户同时爬取耗尽 HTTP 连接池与线程。
+    private static final int MAX_CONCURRENT_CRAWLS = 4;
+    private static final Semaphore CRAWL_PERMITS = new Semaphore(MAX_CONCURRENT_CRAWLS, true);
+    private static final long PERMIT_ACQUIRE_TIMEOUT_SECONDS = 5;
     // personal_knowledge_entry.source_ref 只有 255，超长 URL 会插不进去，也无法按 URL 稳定比对
     private static final int MAX_URL = 255;
     private static final Pattern LINK = Pattern.compile("<a\\b[^>]*?\\bhref\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))", Pattern.CASE_INSENSITIVE);
@@ -146,6 +152,23 @@ public class KnowledgeCrawlService {
 
     public CrawlResult run(SessionUser actor, long sourceId) {
         requireActor(actor);
+        // SEC-06 TM-25：全局并发爬取上限，超出即 429，避免耗尽连接池与线程。
+        boolean acquired;
+        try {
+            acquired = CRAWL_PERMITS.tryAcquire(PERMIT_ACQUIRE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException(429, "KNOWLEDGE_CRAWL_BUSY");
+        }
+        if (!acquired) throw new BusinessException(429, "KNOWLEDGE_CRAWL_BUSY");
+        try {
+            return doRun(actor, sourceId);
+        } finally {
+            CRAWL_PERMITS.release();
+        }
+    }
+
+    private CrawlResult doRun(SessionUser actor, long sourceId) {
         CrawlSource source = detailSource(actor.id(), sourceId);
         URI seed = URI.create(source.seedUrl());
         if (!OutboundUrlPolicy.inspect(seed).allowed()) {
