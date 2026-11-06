@@ -2,6 +2,7 @@ package com.smartops.service;
 
 import com.smartops.exception.BusinessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +19,8 @@ public class OperatorMemoryService {
     public Memory recordConfirmed(Long userId, String incidentKey, String memoryType, String preferredAction, String sourceRefs) {
         if (incidentKey == null || incidentKey.isBlank() || preferredAction == null || preferredAction.isBlank()) throw new BusinessException("OPERATOR_MEMORY_INPUT_REQUIRED");
         Instant now = Instant.now();
-        jdbc.update("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", userId, incidentKey.trim(), memoryType == null ? "GENERAL" : memoryType.trim(), preferredAction.trim(), sourceRefs, 1, 0.5d, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
-        Long id = jdbc.queryForObject("SELECT MAX(id) FROM operator_memory WHERE user_id=?", Long.class, userId);
+        // SEC-09：直接取本次插入的主键，避免同用户并发时 MAX(id) 取到别人的记录。
+        long id = insertReturningId("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", userId, incidentKey.trim(), memoryType == null ? "GENERAL" : memoryType.trim(), preferredAction.trim(), sourceRefs, 1, 0.5d, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
         return detail(userId, id);
     }
 
@@ -44,9 +45,8 @@ public class OperatorMemoryService {
     public Memory recordLearned(Long userId, String incidentKey, String preferredAction, String sourceRefs) {
         if (incidentKey == null || incidentKey.isBlank() || preferredAction == null || preferredAction.isBlank()) return null;
         Instant now = Instant.now();
-        jdbc.update("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+        long id = insertReturningId("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
                 userId, incidentKey.trim(), "DECISION_LOOP", preferredAction.trim(), sourceRefs, 1, 0.55d, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
-        Long id = jdbc.queryForObject("SELECT MAX(id) FROM operator_memory WHERE user_id=?", Long.class, userId);
         return detail(userId, id);
     }
 
@@ -65,6 +65,16 @@ public class OperatorMemoryService {
     }
 
     public List<Memory> list(Long userId) { return jdbc.query("SELECT id,user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at FROM operator_memory WHERE user_id=? ORDER BY updated_at DESC,id DESC", this::map, userId); }
+
+    private long insertReturningId(String sql, Object... args) {
+        var keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement(sql, new String[]{"id"});
+            for (int i = 0; i < args.length; i++) statement.setObject(i + 1, args[i]);
+            return statement;
+        }, keys);
+        return keys.getKey().longValue();
+    }
 
     @Transactional public void disable(Long userId, Long id) { detail(userId, id); jdbc.update("UPDATE operator_memory SET status='DISABLED',updated_at=? WHERE id=? AND user_id=?", Timestamp.from(Instant.now()), id, userId); }
     @Transactional public void delete(Long userId, Long id) { detail(userId, id); jdbc.update("DELETE FROM operator_memory WHERE id=? AND user_id=?", id, userId); }
