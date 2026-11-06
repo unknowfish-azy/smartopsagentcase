@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartops.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -144,15 +145,14 @@ public class DecisionLoopService {
         if (!resolved && !"UNRESOLVED".equalsIgnoreCase(str(request.outcome()))) {
             throw new BusinessException("复盘结论必须为 RESOLVED 或 UNRESOLVED");
         }
-        // SEC-10：同一闭环同结论的重复 review 幂等——不再重复回写记忆置信度、不重复沉淀记忆。
-        // 结论翻转（RESOLVED ↔ UNRESOLVED）视为新信息，允许再次学习。
-        boolean alreadyLearned = LEARNED.equals(str(loop.get("stage")))
-                && str(loop.get("outcome")).equalsIgnoreCase(str(request.outcome()));
-        jdbc.update("UPDATE agent_decision_loop SET outcome=?, lesson=?, reviewed_at=?, stage=?, updated_at=? "
-                        + "WHERE id=? AND user_id=?",
-                resolved ? "RESOLVED" : "UNRESOLVED", request.lesson(), LocalDateTime.now(),
-                laterStage(str(loop.get("stage")), REVIEW), LocalDateTime.now(), id, userId);
-        if (!alreadyLearned) {
+        String outcome = resolved ? "RESOLVED" : "UNRESOLVED";
+        // SEC-10：用条件 UPDATE 原子认领本次学习——同一闭环、同一结论的第二/并发 review 认领失败直接返回，
+        // 不再重复回写记忆置信度、不重复沉淀记忆；结论翻转（RESOLVED ↔ UNRESOLVED）视为新信息仍可学习。
+        int claimed = jdbc.update("UPDATE agent_decision_loop SET outcome=?, lesson=?, reviewed_at=?, stage=?, updated_at=? "
+                        + "WHERE id=? AND user_id=? AND NOT (stage=? AND outcome=?)",
+                outcome, request.lesson(), LocalDateTime.now(), laterStage(str(loop.get("stage")), LEARNED),
+                LocalDateTime.now(), id, userId, LEARNED, outcome);
+        if (claimed > 0) {
             learn(userId, row(userId, id));
         }
         return detail(userId, id);
@@ -184,8 +184,9 @@ public class DecisionLoopService {
                         // SEC-08：只消费与当前用户关联的事件；无归属（服务间巡检）的事件不投影进任何人的闭环。
                         + "WHERE e.user_id = ? "
                         + "AND NOT EXISTS (SELECT 1 FROM agent_decision_loop d "
-                        + " WHERE d.source_type='INSPECTOR' AND d.source_ref=e.id) "
-                        + "ORDER BY e.created_at DESC LIMIT 20", userId);
+                        // SEC-10：去重按 (user_id, source_type, source_ref) 与唯一键一致。
+                        + " WHERE d.user_id = ? AND d.source_type='INSPECTOR' AND d.source_ref=e.id) "
+                        + "ORDER BY e.created_at DESC LIMIT 20", userId, userId);
         for (Map<String, Object> raw : rows) {
             Map<String, Object> event = camelize(raw);
             String category = str(event.get("category"));
@@ -199,16 +200,22 @@ public class DecisionLoopService {
             String stage = resolved != null ? REVIEW : (isBlank(str(event.get("recommendation"))) ? ANALYZE : DECIDE);
             String id = "LOOP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase(Locale.ROOT);
             LocalDateTime now = LocalDateTime.now();
-            jdbc.update("INSERT INTO agent_decision_loop "
-                            + "(id,user_id,incident_key,title,source_type,source_ref,stage,severity,symptom,analysis,"
-                            + "evidence_json,recommendation,decision,decision_basis,requires_human,created_at,updated_at) "
-                            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    id, userId, incidentKey, title, "INSPECTOR", event.get("id"), stage,
-                    normalizeSeverity(str(event.get("severity"))), event.get("agentClaim"), event.get("reason"),
-                    json(evidence), event.get("recommendation"),
-                    isBlank(str(event.get("recommendation"))) ? null : event.get("recommendation"),
-                    "Inspector 纠察结论：" + str(event.get("status")),
-                    Boolean.TRUE.equals(event.get("requiresHuman")), now, now);
+            try {
+                jdbc.update("INSERT INTO agent_decision_loop "
+                                + "(id,user_id,incident_key,title,source_type,source_ref,stage,severity,symptom,analysis,"
+                                + "evidence_json,recommendation,decision,decision_basis,requires_human,created_at,updated_at) "
+                                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        id, userId, incidentKey, title, "INSPECTOR", event.get("id"), stage,
+                        normalizeSeverity(str(event.get("severity"))), event.get("agentClaim"), event.get("reason"),
+                        json(evidence), event.get("recommendation"),
+                        isBlank(str(event.get("recommendation"))) ? null : event.get("recommendation"),
+                        "Inspector 纠察结论：" + str(event.get("status")),
+                        Boolean.TRUE.equals(event.get("requiresHuman")), now, now);
+            } catch (DuplicateKeyException concurrent) {
+                // SEC-10：并发 GET 同时同步同一事件时，唯一键 (user_id, source_type, source_ref) 兜底；
+                // 未抢到插入的请求直接跳过，既不再学也不会把 500 暴露给调用方。
+                continue;
+            }
             if (resolved != null) {
                 learn(userId, Map.of(
                         "id", id,
