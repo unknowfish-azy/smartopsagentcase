@@ -54,8 +54,9 @@
 | SEC-09 | 已修（代码级） | 创建库/条目（`PersonalKnowledgeService`）、记忆（`OperatorMemoryService.recordConfirmed/recordLearned`）、爬取 source（`KnowledgeCrawlService.createSource`）全部改为 `GeneratedKeyHolder` 返回本次插入主键，移除 `MAX(id)` 反查 | 其余服务（backup drill / artifact draft / iac apply / sentinel silence）仍有同形态 `MAX(id)`，未在本批处理；无 MySQL 级并发验证（H2 8 线程用例通过） |
 | SEC-10 | 已修（代码级） | `review` 改为条件 UPDATE 原子认领学习（`WHERE ... AND NOT(stage='LEARNED' AND outcome=?)`），同结论重复/并发 review 不再重复 `learn`、不累加 `learned_count`、不放大置信度；结论翻转仍可再学习。`syncFromInspector` 的 `NOT EXISTS` 按 `(user_id, source_type, source_ref)` 对齐，配合迁移唯一键 `uq_agent_decision_loop_user_source`，并捕获 `DuplicateKeyException` 跳过，杜绝并发 GET 重复闭环与 500 | `operator_memory` 无 `source_refs` 唯一键，跨服务重复沉淀仍可能；无 MySQL 级并发验证（H2 用例覆盖重复 review 与 8 线程同步） |
 | SEC-07 | 已修（代码级） | `hasPlatformCapability` 缺档案 → 仅 `MINIMAL_READ_ONLY_CAPABILITIES`（admin.audit/teams.view/teams.audit），其余 403；`platformLevel` 缺档案 → null；治理表故障 → 500 fail-closed（不再把全部 admin 当 root）；`createAccount`/提升为 admin 显式建档（deputy、无能力）；bootstrap 首管理员显式授 root+全能力 | 历史部署中未经迁移回填的无档案管理员将失去写能力（迁移 V20261005 已回填，需确认执行）；SEC-08 的 `X-User-Id` 收敛未做 |
+| SEC-11 | 已修（代码级） | `OperationRedactor` 扩展为统一脱敏：`key=value` / `key: value` / JSON 引号值 / `Bearer` / PEM 私钥块 / `Cookie`（键名覆盖 password/token/secret/api_key/authorization/cookie/credential/session）；工具命令与 stdout/stderr 在 `JdbcOperationRunRecorder` 写库前脱敏、`OperationRunQueryService` 读回时兜底（覆盖历史明文行）；`OperationToolService` 返回结果与错误同口径；爬取正文/标题入库前脱敏、URL 去 query、`last_error` 只落错误码（不落异常原文/内部主机）；`InspectorEventService` 对 target/claim/reason/recommendation/evidence/metadata JSON 落库前脱敏 | 历史库中已存在的明文输出/证据未做一次性清洗（需备份后按时间窗清理）；日志框架级脱敏（nginx access log、Logback 消息体）未改动；TM-30/31 仅为单测，HTTP/真实爬取未运行 |
 
-以上为单元/集成测试结论（SEC-15 断言 7 pass；SEC-03 `MultiExecServiceTest` 6 pass；SEC-04/05/09 见 `remediation-order.md` §9）。所有结论均来自本地 H2/单测，未启动 Java/ai-service/MySQL/Redis/nginx；TM-01/02/03/18-24 的 HTTP/网络级复核仍为 `NOT_RUN`。
+以上为单元/集成测试结论（SEC-15 断言 7 pass；SEC-03 `MultiExecServiceTest` 6 pass；SEC-11 定向 5 个测试类通过、后端全量 733 项 0 失败 0 错误（1 skipped）；SEC-04/05/09/10 见 `remediation-order.md` §9）。所有结论均来自本地 H2/单测，未启动 Java/ai-service/MySQL/Redis/nginx；TM-01/02/03/18-24 的 HTTP/网络级复核仍为 `NOT_RUN`。
 
 ---
 
