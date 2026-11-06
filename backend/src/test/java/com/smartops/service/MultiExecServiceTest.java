@@ -57,14 +57,33 @@ class MultiExecServiceTest {
         String id = registry.register(runtime);
         MultiExecService service = new MultiExecService(registry, runbook, 10, 120_000, 900_000, 200);
         MultiExecService.Preview preview = service.preview(1L, "rm -rf /tmp/data", List.of(id), false);
-        when(runbook.prepareAdHocBatch(eq(2L), anyString(), anyString(), anyList(), anyInt(), anyBoolean(), anyString(), anyInt(), anyInt()))
+        // SEC-03 修复：执行以预览创建者（通道归属）身份进行，第二审批人作为触发者
+        // 传入 secondApproverId——否则第二审批人永远过不了 requireOwned。
+        when(runbook.prepareAdHocBatch(eq(1L), anyString(), anyString(), anyList(), anyInt(), anyBoolean(),
+                anyString(), anyInt(), anyInt(), eq(2L)))
                 .thenReturn(7L);
-        when(runbook.execute(eq(2L), anyLong(), anyString())).thenReturn(runView());
+        when(runbook.execute(eq(1L), anyLong(), anyString())).thenReturn(runView());
 
         MultiExecService.ExecutionResult result = service.execute(2L, preview.id(), preview.confirmationNonce(), preview.confirmationNonce());
 
         assertThat(result.runId()).isEqualTo(7L);
         assertThat(result.status()).isEqualTo("SUCCEEDED");
+        org.mockito.Mockito.verify(runbook).prepareAdHocBatch(eq(1L), anyString(), anyString(), anyList(),
+                anyInt(), anyBoolean(), anyString(), anyInt(), anyInt(), eq(2L));
+    }
+
+    @Test
+    void low_risk_preview_rejects_non_owner_executor() {
+        OperationRuntimeRegistry registry = new OperationRuntimeRegistry();
+        RecordingRuntime runtime = new RecordingRuntime(1L);
+        String id = registry.register(runtime);
+        MultiExecService service = new MultiExecService(registry, runbook, 10, 120_000, 900_000, 200);
+        MultiExecService.Preview preview = service.preview(1L, "uptime", List.of(id), false);
+
+        // 低风险预览没有第二人确认环节：他人拿到 previewId+nonce 也不能执行。
+        assertThatThrownBy(() -> service.execute(2L, preview.id(), preview.confirmationNonce(), null))
+                .hasMessageContaining("PREVIEW_OWNER_REQUIRED");
+        assertThat(runtime.writes).isEmpty();
     }
 
     @Test
@@ -74,16 +93,17 @@ class MultiExecServiceTest {
         String id = registry.register(runtime);
         MultiExecService service = new MultiExecService(registry, runbook, 10, 120_000, 900_000, 200);
         MultiExecService.Preview preview = service.preview(1L, "uptime", List.of(id), false);
-        when(runbook.prepareAdHocBatch(eq(2L), anyString(), anyString(), anyList(), anyInt(), anyBoolean(), anyString(), anyInt(), anyInt()))
+        when(runbook.prepareAdHocBatch(eq(1L), anyString(), anyString(), anyList(), anyInt(), anyBoolean(),
+                anyString(), anyInt(), anyInt(), org.mockito.ArgumentMatchers.isNull()))
                 .thenReturn(7L);
-        when(runbook.execute(eq(2L), anyLong(), anyString())).thenReturn(runView());
+        when(runbook.execute(eq(1L), anyLong(), anyString())).thenReturn(runView());
 
-        service.execute(2L, preview.id(), preview.confirmationNonce(), null);
+        service.execute(1L, preview.id(), preview.confirmationNonce(), null);
 
         // 预览被成功执行后即从预览表消费掉：重放得到 404，且底层执行只发生一次。
-        assertThatThrownBy(() -> service.execute(2L, preview.id(), preview.confirmationNonce(), null))
+        assertThatThrownBy(() -> service.execute(1L, preview.id(), preview.confirmationNonce(), null))
                 .hasMessageContaining("PREVIEW_NOT_FOUND");
-        org.mockito.Mockito.verify(runbook, org.mockito.Mockito.times(1)).execute(eq(2L), anyLong(), anyString());
+        org.mockito.Mockito.verify(runbook, org.mockito.Mockito.times(1)).execute(eq(1L), anyLong(), anyString());
     }
 
     @Test

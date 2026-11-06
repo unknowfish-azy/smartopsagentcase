@@ -83,15 +83,25 @@ public class MultiExecService {
         if (preview.requiredApprovals() > 1 && preview.ownerId() != null && preview.ownerId().equals(userId)) {
             throw new BusinessException(409, "SECOND_APPROVER_REQUIRED");
         }
+        // SEC-03（修复）：目标通道归预览创建者所有，计划/派发的归属校验与 Run 记录
+        // 都以创建者身份进行——否则第二审批人永远过不了 requireOwned（单测 mock
+        // prepareAdHocBatch 掩盖了该断裂，HTTP 层正向链路不可达）。第二审批人只负责
+        // 触发执行并作为 second_approver 落库；低风险预览没有第二人确认环节，
+        // 只允许创建者本人执行。
+        Long runtimeOwner = preview.ownerId() != null ? preview.ownerId() : userId;
+        if (preview.requiredApprovals() <= 1 && !runtimeOwner.equals(userId)) {
+            throw new BusinessException(403, "PREVIEW_OWNER_REQUIRED");
+        }
+        Long secondApprover = runtimeOwner.equals(userId) ? null : userId;
         if (previews.remove(previewId) == null) {
             throw new BusinessException(409, "MULTI_EXEC_PREVIEW_ALREADY_EXECUTED");
         }
 
         long runId;
         try {
-            runId = runbookExecution.prepareAdHocBatch(userId, preview.id(), preview.rawCommand(),
+            runId = runbookExecution.prepareAdHocBatch(runtimeOwner, preview.id(), preview.rawCommand(),
                     preview.targetRuntimeIds(), preview.requiredApprovals(), preview.productionTarget(),
-                    confirmationNonce, maxParallel, timeoutMs / 1000);
+                    confirmationNonce, maxParallel, timeoutMs / 1000, secondApprover);
         } catch (RuntimeException failedBeforeRun) {
             // 计划阶段失败时尚未创建 Run，恢复预览以便修正后重试；
             // 一旦 Run 已创建，下面不再恢复预览，避免重复执行同一批命令。
@@ -101,7 +111,7 @@ public class MultiExecService {
 
         activeRuns.put(previewId, runId);
         try {
-            RunView run = runbookExecution.execute(userId, runId, confirmationNonce);
+            RunView run = runbookExecution.execute(runtimeOwner, runId, confirmationNonce);
             List<TargetResult> results = run.targets().stream()
                     .map(target -> new TargetResult(target.runtimeId(), target.status(), target.error(),
                             target.operationRunId(), target.exitCode(), target.outputExcerpt(),

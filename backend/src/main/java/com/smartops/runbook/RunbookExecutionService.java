@@ -158,6 +158,18 @@ public class RunbookExecutionService {
     public long prepareAdHocBatch(Long userId, String batchId, String command, List<String> runtimeIds,
                                   int expectedApprovals, boolean productionTarget, String confirmationNonce,
                                   int maxParallel, int timeoutSec) {
+        return prepareAdHocBatch(userId, batchId, command, runtimeIds, expectedApprovals, productionTarget,
+                confirmationNonce, maxParallel, timeoutSec, null);
+    }
+
+    /**
+     * SEC-03：{@code secondApproverId} 为触发执行的第二审批人（≠预览创建者），
+     * 落库到 {@code runbook_run.second_approver_id/approved_by} 以满足双人确认可追责。
+     */
+    @Transactional
+    public long prepareAdHocBatch(Long userId, String batchId, String command, List<String> runtimeIds,
+                                  int expectedApprovals, boolean productionTarget, String confirmationNonce,
+                                  int maxParallel, int timeoutSec, Long secondApproverId) {
         if (batchId == null || batchId.isBlank()) throw new BusinessException(400, "MULTI_EXEC_BATCH_REQUIRED");
         if (command == null || command.isBlank()) throw new BusinessException(400, "MULTI_EXEC_COMMAND_REQUIRED");
         if (confirmationNonce == null || confirmationNonce.isBlank()) {
@@ -173,11 +185,11 @@ public class RunbookExecutionService {
             throw new BusinessException(409, "MULTI_EXEC_APPROVAL_DRIFT");
         }
         int approved = jdbc.update("""
-                UPDATE runbook_run SET status='APPROVED',approval_count=?,approved_at=?,approved_by=NULL,
-                       second_approver_id=NULL,nonce_hash=?
+                UPDATE runbook_run SET status='APPROVED',approval_count=?,approved_at=?,approved_by=?,
+                       second_approver_id=?,nonce_hash=?
                  WHERE id=? AND user_id=?
-                """, expectedApprovals, Timestamp.from(Instant.now()), RunbookSupport.sha256(confirmationNonce.trim()),
-                runId, userId);
+                """, expectedApprovals, Timestamp.from(Instant.now()), secondApproverId, secondApproverId,
+                RunbookSupport.sha256(confirmationNonce.trim()), runId, userId);
         if (approved == 0) throw new BusinessException(404, "RUNBOOK_RUN_NOT_FOUND");
         return runId;
     }
@@ -826,8 +838,8 @@ public class RunbookExecutionService {
                 (String) row.get("trigger_kind"), (String) row.get("trigger_ref"), (String) row.get("status"),
                 (String) row.get("risk_level"), ((Number) row.get("required_approvals")).intValue(),
                 ((Number) row.get("approval_count")).intValue(), truthy(row.get("cancel_requested")),
-                (String) row.get("content_hash"), instant((Timestamp) row.get("created_at")),
-                instant((Timestamp) row.get("started_at")), instant((Timestamp) row.get("finished_at")),
+                (String) row.get("content_hash"), instant(row.get("created_at")),
+                instant(row.get("started_at")), instant(row.get("finished_at")),
                 (String) row.get("note"), ((Number) row.get("total_targets")).intValue(),
                 ((Number) row.get("succeeded_count")).intValue(), ((Number) row.get("failed_count")).intValue(),
                 ((Number) row.get("unknown_count")).intValue(), ((Number) row.get("cancelled_count")).intValue(),
@@ -1269,8 +1281,8 @@ public class RunbookExecutionService {
         Map<String, Object> row = rows.get(0);
         return new ScheduleView(((Number) row.get("id")).longValue(), ((Number) row.get("runbook_id")).longValue(),
                 (String) row.get("runbook_name"), (String) row.get("cron_expr"), (String) row.get("environment"),
-                truthy(row.get("enabled")), instant((Timestamp) row.get("last_fire_at")),
-                instant((Timestamp) row.get("next_fire_at")));
+                truthy(row.get("enabled")), instant(row.get("last_fire_at")),
+                instant(row.get("next_fire_at")));
     }
 
     private TriggerView triggerView(long runbookId, long userId) {
@@ -1284,6 +1296,20 @@ public class RunbookExecutionService {
     }
 
     private static Instant instant(Timestamp value) { return value == null ? null : value.toInstant(); }
+
+    /**
+     * Map 取值的时间列兼容转换：MySQL Connector/J 对 DATETIME 返回 LocalDateTime，
+     * H2 返回 Timestamp——测试环境掩盖了线上 ClassCastException（E2E 发现）。
+     */
+    private static Instant instant(Object value) {
+        if (value == null) return null;
+        if (value instanceof Timestamp timestamp) return timestamp.toInstant();
+        if (value instanceof java.time.LocalDateTime time) {
+            return time.atZone(java.time.ZoneId.systemDefault()).toInstant();
+        }
+        if (value instanceof java.util.Date date) return date.toInstant();
+        throw new IllegalArgumentException("不支持的时间列类型: " + value.getClass().getName());
+    }
 
     /** H2/MySQL 的 TINYINT(1) 经 queryForList 可能返回数字，统一按"非零即真"处理。 */
     private static boolean truthy(Object value) {
@@ -1376,8 +1402,8 @@ public class RunbookExecutionService {
                 (String) row.get("trigger_kind"), (String) row.get("trigger_ref"), (String) row.get("status"),
                 (String) row.get("risk_level"), ((Number) row.get("required_approvals")).intValue(),
                 ((Number) row.get("approval_count")).intValue(), truthy(row.get("cancel_requested")),
-                (String) row.get("content_hash"), instant((Timestamp) row.get("created_at")),
-                instant((Timestamp) row.get("started_at")), instant((Timestamp) row.get("finished_at")),
+                (String) row.get("content_hash"), instant(row.get("created_at")),
+                instant(row.get("started_at")), instant(row.get("finished_at")),
                 (String) row.get("note"), ((Number) row.get("total_targets")).intValue(),
                 ((Number) row.get("succeeded_count")).intValue(), ((Number) row.get("failed_count")).intValue(),
                 ((Number) row.get("unknown_count")).intValue(), ((Number) row.get("cancelled_count")).intValue(),
