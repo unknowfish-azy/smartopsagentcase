@@ -6,6 +6,8 @@ spring:
   datasource:
     url: ${MYSQL_URL:jdbc:mysql://localhost:3306/smartops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${MYSQL_USERNAME:root}
+    # SEC-13：生产不允许空密码/默认口令——启动断言（SecurityAssertions.verifyDeploymentSecrets）
+    # 会校验 MYSQL_PASSWORD 非空且不等于已知默认值，不满足直接拒绝启动。
     password: ${MYSQL_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
@@ -28,6 +30,7 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       database: ${REDIS_DATABASE:0}
+      # SEC-13：生产 Redis 必须启用 requirepass，空密码会被启动断言拒绝。
       password: ${REDIS_PASSWORD:}
       timeout: 3000ms
 
