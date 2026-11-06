@@ -53,7 +53,7 @@
 | 复现（前端） | `cd d:\SmartOpsAgent\frontend; node --test test\<file>.test.mjs`；或 `node --test --test-name-pattern "<name>" test\<file>.test.mjs` |
 | 复现（Java） | `cd d:\SmartOpsAgent\backend; mvn -B test -Dtest=<Class>#<method>` |
 | 复现（构建） | `cd d:\SmartOpsAgent\frontend; npm run build -- --outDir ../.runtime/hc-check/<runId>/triage/REAL_FAIL/user-dist` |
-| 日志采集点 | pytest 全量输出与 `-ra`；Node test TAP 输出；`backend/target/surefire-reports/*.txt|*.xml`；vite 构建全量日志；首个失败堆栈与输入数据 |
+| 日志采集点 | pytest 全量输出与 `-ra`；Node test TAP 输出；`backend/target/surefire-reports/` 下的 `*.txt`、`*.xml`；vite 构建全量日志；首个失败堆栈与输入数据 |
 | 判定负责人 | 模块 owner 定位；HC-05 owner 记录；独立复核人确认复现 |
 | 不得做 | 批量改测试期望、删除用例、把断言改宽、加无条件 skip、用 `-k` 排除、只保留绿色重跑结果 |
 | 出口 | 修复源码/测试期望并附变更理由 → 重跑同命令 → `PASS`；否则保持 `FAIL`，发布 `NO_GO` |
