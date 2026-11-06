@@ -107,16 +107,22 @@ python -m knowledge.evaluation --top-k 5 --json knowledge/evaluation/latest_resu
 
 ## 4. 访问控制
 
-默认情况下 `/api/documents`（写入）是**关闭**的，`/api/search` 保持开放，
-避免端口可达即可被污染知识库或拉走全部资料。
+默认（未配置 `KNOWLEDGE_API_KEY` 且未显式允许匿名）下，服务**拒绝启动**，请求层一律 503（fail-closed），
+避免"端口可达即可检索或污染知识库"。摄入接口永不接受匿名。
 
 | 环境变量 | 默认 | 作用 |
 |---|---|---|
-| `KNOWLEDGE_API_KEY` | 空 | 设置后 `/api/search` 与 `/api/documents` 都必须携带 `X-API-Key` 头，否则 401 |
-| `KNOWLEDGE_ALLOW_INGEST` | `0` | 未配置 key 时，是否允许匿名写入（仅本地演示建议设为 `1`） |
+| `KNOWLEDGE_API_KEY` | 空 | 设置后 `/api/search` 与 `/api/documents` 都必须携带 `X-API-Key` 头，否则 401；生产必须配置 |
+| `KNOWLEDGE_ALLOW_ANONYMOUS` | `false` | 未配置 key 时的显式逃生口：仅允许**回环客户端**（127.0.0.1/::1）匿名访问，非回环来源 403；与进程绑定地址无关 |
+| `KNOWLEDGE_ALLOW_INGEST` | `0` | 兼容保留：摄入永不接受匿名（即使匿名模式 + 设为 `1` 也返回 403） |
 
 ```powershell
+# 生产/内网标准形态：配置 API Key
 $env:KNOWLEDGE_API_KEY = "<随机串>"
+uvicorn knowledge.server:app --host 127.0.0.1 --port 8002
+
+# 本机临时演示：显式允许匿名（仅回环可用）
+$env:KNOWLEDGE_ALLOW_ANONYMOUS = "true"
 uvicorn knowledge.server:app --host 127.0.0.1 --port 8002
 
 # 调用方（AI Service）读取同名变量，自动附加请求头
@@ -125,6 +131,6 @@ Invoke-RestMethod http://127.0.0.1:8002/api/search `
   -ContentType "application/json" -Body '{"query":"nginx 启动失败"}'
 ```
 
-`/api/health` 暴露 `auth_required` 字段，便于启动脚本判断当前是否已开启鉴权；
-`/health` 是它的同内容别名（不进 OpenAPI 文档），方便通用探针直接使用。
+`/api/health` 暴露 `auth_required` 与 `auth_mode`（`api_key` / `anonymous_loopback_only` / `misconfigured_fail_closed`），
+便于启动脚本判断当前鉴权形态；`/health` 是它的同内容别名（不进 OpenAPI 文档），方便通用探针直接使用。
 存活与就绪要分开看：`/api/health` 只说明进程在跑，`/api/ready` 才说明索引已加载可检索。

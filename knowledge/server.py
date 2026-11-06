@@ -16,10 +16,13 @@ SmartOpsAgent Knowledge Service（HTTP）。
     KNOWLEDGE_SEED_REFERENCE=0           关闭自动加载
     KNOWLEDGE_REFERENCE_DIR=<dir>        指定其他语料目录
 
-访问控制：
+访问控制（SEC-12，默认 fail-closed）：
 
-    KNOWLEDGE_API_KEY=<key>              开启鉴权，检索/摄入需带 X-API-Key
-    KNOWLEDGE_ALLOW_INGEST=1             未配置 key 时允许匿名摄入（默认关闭）
+    KNOWLEDGE_API_KEY=<key>              开启鉴权，检索/摄入需带 X-API-Key（生产必须配置）
+    KNOWLEDGE_ALLOW_ANONYMOUS=true       未配置 key 时显式允许匿名访问（仅限本机回环客户端；
+                                          即便进程绑定 0.0.0.0，非回环来源的匿名请求也会被拒绝）
+    KNOWLEDGE_ALLOW_INGEST=1             兼容保留：摄入永不接受匿名（必须配置 API KEY），
+                                          未配置 key 时该开关不再放行任何摄入
 """
 
 from __future__ import annotations
@@ -34,7 +37,7 @@ from pathlib import Path
 from uuid import uuid4
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -69,15 +72,20 @@ class DocumentRequest(BaseModel):
 
 
 # ----------------------------------------------------------------------
-# 访问控制
+# 访问控制（SEC-12）
 #
-#   KNOWLEDGE_API_KEY      设置后，检索与摄入都必须携带 X-API-Key 头。
-#   KNOWLEDGE_ALLOW_INGEST 未设置 key 时，摄入默认关闭（仅本地演示可显式开启）。
+#   KNOWLEDGE_API_KEY       设置后，检索与摄入都必须携带 X-API-Key 头。
+#   KNOWLEDGE_ALLOW_ANONYMOUS
+#                           未设置 key 时的显式逃生口：仅允许本机回环客户端匿名访问
+#                           （应用层强制，与进程绑定地址无关）。
+#   KNOWLEDGE_ALLOW_INGEST  兼容保留：摄入永不接受匿名，未配置 key 时一律 403。
 # ----------------------------------------------------------------------
 
 _API_KEY_ENV = "KNOWLEDGE_API_KEY"
 _ALLOW_INGEST_ENV = "KNOWLEDGE_ALLOW_INGEST"
+_ALLOW_ANONYMOUS_ENV = "KNOWLEDGE_ALLOW_ANONYMOUS"
 _TRUTHY = {"1", "true", "yes", "on"}
+_LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
 
 _CORRELATION_HEADERS = ("X-Request-ID", "X-Task-ID", "X-Run-ID")
 _CORRELATION_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}\Z")
@@ -92,49 +100,77 @@ def _configured_api_key() -> str:
     return os.getenv(_API_KEY_ENV, "").strip()
 
 
-def _check_api_key(provided: str | None) -> str:
-    """校验 X-API-Key，返回服务端配置的 key（空串表示未开启鉴权）。"""
+def _anonymous_allowed() -> bool:
+    return os.getenv(_ALLOW_ANONYMOUS_ENV, "").strip().lower() in _TRUTHY
+
+
+def _is_loopback(request: Request) -> bool:
+    client = request.client
+    return bool(client and client.host in _LOOPBACK_HOSTS)
+
+
+def _check_api_key(provided: str | None, request: Request) -> str:
+    """校验 X-API-Key，返回服务端配置的 key（空串表示匿名放行）。"""
     expected = _configured_api_key()
 
-    if not expected:
-        return ""
-
-    if not provided or not secrets.compare_digest(provided.strip(), expected):
-        raise HTTPException(
-            status_code=401,
-            detail="invalid or missing X-API-Key",
-            headers={"WWW-Authenticate": "X-API-Key"},
-        )
-
-    return expected
-
-
-def require_api_key(
-    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
-) -> str:
-    return _check_api_key(x_api_key)
-
-
-def require_ingest_access(
-    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
-) -> str:
-    """摄入接口：要么通过 key 鉴权，要么显式开启本地开放摄入。"""
-    expected = _check_api_key(x_api_key)
-
     if expected:
+        if not provided or not secrets.compare_digest(provided.strip(), expected):
+            raise HTTPException(
+                status_code=401,
+                detail="invalid or missing X-API-Key",
+                headers={"WWW-Authenticate": "X-API-Key"},
+            )
         return expected
 
-    if os.getenv(_ALLOW_INGEST_ENV, "0").strip().lower() not in _TRUTHY:
+    # SEC-12：未配置 key 时默认 fail-closed。唯一的逃生口是显式开启匿名模式，
+    # 且匿名只对本机回环客户端放行（应用层强制，不依赖绑定地址）。
+    if not _anonymous_allowed():
+        logger.error(
+            "KNOWLEDGE_API_KEY is not configured and anonymous access is not "
+            "explicitly enabled; refusing unauthenticated requests (fail-closed). "
+            "Set KNOWLEDGE_API_KEY, or set KNOWLEDGE_ALLOW_ANONYMOUS=true for "
+            "loopback-only local use."
+        )
         raise HTTPException(
-            status_code=403,
+            status_code=503,
             detail=(
-                "document ingestion is disabled; "
-                f"set {_ALLOW_INGEST_ENV}=1 for local use, "
-                f"or {_API_KEY_ENV} for authenticated access"
+                "knowledge service auth is not configured; "
+                f"set {_API_KEY_ENV} (recommended) or {_ALLOW_ANONYMOUS_ENV}=true "
+                "for loopback-only local use"
             ),
         )
 
+    if not _is_loopback(request):
+        raise HTTPException(
+            status_code=403,
+            detail="anonymous access is restricted to loopback clients; configure an API key",
+        )
+
     return ""
+
+
+def require_api_key(
+    request: Request,
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> str:
+    return _check_api_key(x_api_key, request)
+
+
+def require_ingest_access(
+    request: Request,
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> str:
+    """摄入接口：SEC-12 后必须携带有效 API KEY，永不接受匿名（含 ALLOW_INGEST 兜底）。"""
+    expected = _configured_api_key()
+    if not expected:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "document ingestion requires an API key; anonymous ingestion is "
+                f"permanently disabled (set {_API_KEY_ENV})"
+            ),
+        )
+    return _check_api_key(x_api_key, request)
 
 
 app = FastAPI(
@@ -146,6 +182,24 @@ app = FastAPI(
 service = KnowledgeService(KnowledgeConfig.from_env())
 INSTANCE_ID = uuid4().hex
 STARTED_AT = datetime.now(timezone.utc).isoformat()
+
+
+@app.on_event("startup")
+async def _assert_auth_configured() -> None:
+    """SEC-12：未配置 key 且未显式允许匿名（仅回环）时拒绝启动（fail-closed）。"""
+    if not _configured_api_key() and not _anonymous_allowed():
+        raise RuntimeError(
+            "KNOWLEDGE_API_KEY is not configured and anonymous access is not "
+            "explicitly enabled; refusing to start (fail-closed). Set "
+            "KNOWLEDGE_API_KEY for authenticated deployments, or "
+            "KNOWLEDGE_ALLOW_ANONYMOUS=true for loopback-only local use."
+        )
+    if not _configured_api_key():
+        logger.warning(
+            "KNOWLEDGE_ALLOW_ANONYMOUS=true: anonymous access is restricted to "
+            "loopback clients at the application layer; do not expose this "
+            "process to other hosts without an API key."
+        )
 
 _REFERENCE_ROOT = Path(__file__).resolve().parent / "reference" / "ops-knowledge-rag"
 
@@ -256,7 +310,16 @@ async def health() -> dict:
         "corpus": SEED_SUMMARY,
         "embedding": _embedding_status(),
         "auth_required": bool(_configured_api_key()),
+        "auth_mode": _auth_mode(),
     }
+
+
+def _auth_mode() -> str:
+    if _configured_api_key():
+        return "api_key"
+    if _anonymous_allowed():
+        return "anonymous_loopback_only"
+    return "misconfigured_fail_closed"
 
 
 @app.get("/health", include_in_schema=False)

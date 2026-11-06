@@ -13,8 +13,10 @@ from knowledge.service import KnowledgeService
 def client(monkeypatch):
     monkeypatch.delenv("KNOWLEDGE_API_KEY", raising=False)
     monkeypatch.delenv("KNOWLEDGE_ALLOW_INGEST", raising=False)
+    monkeypatch.setenv("KNOWLEDGE_ALLOW_ANONYMOUS", "true")
     monkeypatch.setattr(server, "service", KnowledgeService())
-    return TestClient(server.app)
+    # SEC-12：匿名模式仅回环客户端可用，测试显式以回环来源访问。
+    return TestClient(server.app, client=("127.0.0.1", 51234))
 
 
 def test_search_echoes_and_logs_correlation_ids(client, caplog):
