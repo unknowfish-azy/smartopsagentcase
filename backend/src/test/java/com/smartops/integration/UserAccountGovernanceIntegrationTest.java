@@ -102,7 +102,7 @@ class UserAccountGovernanceIntegrationTest {
 
         String level = jdbc.queryForObject("SELECT level FROM platform_admin_profile WHERE user_id=22", String.class);
         assertThat(level).isEqualTo("deputy");
-        Integer capabilities = jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=22", Integer.class, 22L);
+        Integer capabilities = jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=22", Integer.class);
         assertThat(capabilities).isZero();
     }
 
@@ -129,7 +129,9 @@ class UserAccountGovernanceIntegrationTest {
     @Test
     @Order(6)
     void governanceListingFailsClosedWhenTablesUnavailable() {
-        SessionUser root = admin(11L);
+        // order(5) 已清库重建，root 只剩 bootstrap 的 governance-root：用真实 root 才能走到能力查询。
+        Long rootId = jdbc.queryForObject("SELECT id FROM app_user WHERE username='governance-root'", Long.class);
+        SessionUser root = admin(rootId);
         jdbc.execute("DROP TABLE platform_admin_capability");
         try {
             // 能力判定 fail-closed：治理数据不可用转为明确 500，绝不回退为放行。
