@@ -248,6 +248,10 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 | 1.2 SEC-12 Knowledge 鉴权 fail-closed | 未配置 `KNOWLEDGE_API_KEY` 且未显式 `KNOWLEDGE_ALLOW_ANONYMOUS=true` → 启动 `RuntimeError` 拒绝、请求层 503；匿名仅回环客户端（`127.0.0.1`/`::1`），非回环 403；摄入永不匿名（`ALLOW_INGEST=1` 不再放行）；`/api/health` 增加 `auth_mode`；同步更新 `.env.example` 与 `knowledge/README.md` | `tests/knowledge` 106 pass（未配 key 503、匿名非回环 403、摄入无 key 403、匿名+ALLOW_INGEST 仍 403、health 三种 auth_mode）；未启动真实 uvicorn | 2026-11-06 |
 | 5.2 SEC-13 部署默认口令与端口 | `SecurityAssertions.verifyDeploymentSecrets`：生产下数据源/Redis 空口令或已知默认口令、附件加密 key 为空 → 拒绝启动；compose 的 MySQL/Redis 口令改 `${VAR:?}` 必填（去掉 change-me），3306/6379 取消宿主机发布；Redis `--requirepass`；`application-prod.yml` 改环境变量注入；`.env.example` 补必填项 | `SecurityAssertionsTest`（生产空/默认口令拒绝、非生产放行）；`docker-compose.yml` YAML 解析通过 | 2026-11-06 |
 | 2.2 SEC-04 Agent run 绑定 | 执行指纹 payload 新增 `run_id`；`create_for_step` 要求 run 身份；`create_request` 标记 Deprecation（仅信息记录、永不授权）；`approve` 拒绝 reviewer=requester | `tests/agent/test_execution_approval.py` 42 pass；`tests/agent` 88 pass；ai-service 86 pass | 2026-11-06 |
+| DB 迁移 MySQL 8 兼容 | `V20261106.20` 去重 `DELETE` 改为物化派生表（MySQL 8 禁止 DELETE 子查询直接引用目标表，Error 1093）；回滚半成品 DDL（`inspector_event.user_id` 列 + 失败 schema history 行）后实机迁移至 `20261106.21` | 提交 `ed013a1`；真实 MySQL 启动迁移通过；H2 `SentinelSchedulerIntegrationTest` 通过 | 2026-11-06 |
+| 平台 E2E 8 项验收 | 真实 MySQL 8 + `dev` profile 启动平台服务（内部 token 写、会话读），逐条执行 `platform-integration.md` §5 的 8 项：越权 404/空列表、幂等 200/409、重启后回执持久、失效与历史、双轴并列、`passed=false` 原值、伪造 `X-Run-ID` 拒绝、`REPLAY_INCOMPLETE` 不补探 | 26/26 检查 PASS；记录见 `docs/design/recovery-contract-v1/platform-integration.md` §8.5。Python `agent/recovery_contracts` 判定器未启动（`NOT_RUN`），verdict 由写入方原文提供 | 2026-11-06 |
+
+**本次实机运行范围补充**：SEC-11/12/13 之后新增 MySQL 8 实机启动（Flyway 全量迁移）与恢复契约 E2E；Redis 未启动、ai-service/nginx 未启动，相应网络级项仍为 `NOT_RUN`。
 
 **仍未完成（不得声称已修复）**：
 - SEC-04/05 仅到代码 + 单元测试：`/api/team-agent-runs/*/execute` 的缺 token / 错误 token / 篡改参数负例未做 HTTP 级验收（`NOT_RUN`）。

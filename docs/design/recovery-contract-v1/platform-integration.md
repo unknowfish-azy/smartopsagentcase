@@ -81,7 +81,9 @@ mvn -B -DskipTests compile
 | 7 | 客户端自报 `X-Run-ID` 指向他人 run | 拒绝，不以头部授予权限 |
 | 8 | 回放缺录制探针 | `REPLAY_INCOMPLETE`，不补探 |
 
-以上 8 项目前均为 `NOT_RUN`。
+以上 8 项已于 2026-11-06 晚在真实平台服务上逐条执行，26/26 检查通过（原始记录见 §8.5）。
+口径偏差：用例 2 中"同一幂等键重复创建"按 digest 区分——同 digest 返回 200 幂等重放（不重复签发），
+同键不同 digest 才返回 409；该偏差在 §8.2 已明示，未放宽。
 
 ## 6. 回滚
 
@@ -109,14 +111,14 @@ N06 的平台侧接口已落地：契约/观测/回执/回放包四张表、按�
 
 | # | 用例 | 状态 |
 |---|---|---|
-| 1 | 越权读他人契约 | **已覆盖**：`RecoveryContractIntegrationTest#detailHidesOtherUsersContract`（404） |
-| 2 | 同一幂等键重复创建 | **已覆盖但口径细化**：同 digest 幂等重放返回 200 与原 id（不重复签发）；同键不同 digest 返回 409。与 §5 原"第二次 409"预期不同，此处明示偏差，未静默放宽 |
-| 5 | 双轴并列 | **已覆盖**：适配层保持 `inspection_passed=null`，不用契约 verdict 覆盖纠察轴 |
-| 7 | 客户端自报身份 | **已覆盖**：读接口不读 `X-User-Id`；内部写接口缺/错 token 分别 401/403 |
-| 3 | 服务重启后读回执 | `NOT_RUN`（表持久化已具备，未做实机重启验证） |
-| 4 | 回执过期/失效 | `NOT_RUN`（失效事件写入方未接入） |
-| 6 | `StateVerifier.passed=false` 原值 | `NOT_RUN`（纠察轴仍在既有 `inspection_verification`，本接口未改动） |
-| 8 | 回放缺探针 → `REPLAY_INCOMPLETE` | `NOT_RUN`（结论由 Python 回放方给出，平台只存结果） |
+| 1 | 越权读他人契约 | **已覆盖 + 实测**：`RecoveryContractIntegrationTest#detailHidesOtherUsersContract`（404）；实机 B 读 A 契约 404、按 A 的 runId 列表为空、内部写入 run 归属不一致 400（§8.5） |
+| 2 | 同一幂等键重复创建 | **已覆盖但口径细化 + 实测**：同 digest 幂等重放返回 200 与原 id（不重复签发）；同键不同 digest 返回 409。与 §5 原"第二次 409"预期不同，此处明示偏差，未静默放宽（§8.5） |
+| 5 | 双轴并列 | **已覆盖 + 实测**：适配层保持 `inspection_passed=null`，不用契约 verdict 覆盖纠察轴；实机纠察轴 HIGH=1 与契约 `VERIFIED` 同时成立（§8.5） |
+| 7 | 客户端自报身份 | **已覆盖 + 实测**：读接口不读 `X-User-Id`；内部写接口缺/错 token 分别 401/403；伪造 `X-Run-ID` 指向他人 run 时列表为空、详情 404（§8.5） |
+| 3 | 服务重启后读回执 | **已实测**：重启后 ACTIVE 回执的 `receipt_state` 与 `valid_until` 原样读回，失效契约仍为 `INVALIDATED`，列表只含本人契约（§8.5） |
+| 4 | 回执过期/失效 | **已实测**：ACTIVE → `REVISION_CHANGED`/`INVALIDATED` 后当前视图失效，两条回执历史均保留（§8.5） |
+| 6 | `StateVerifier.passed=false` 原值 | **已实测**：`passed=false` 与原始 payload 原样写入并原样读回，未被改写或补正（§8.5） |
+| 8 | 回放缺探针 → `REPLAY_INCOMPLETE` | **已实测**：`REPLAY_INCOMPLETE` 结论原样持久化，缺失探针未补（观测数前后不变）（§8.5） |
 
 ### 8.3 验证
 
@@ -135,4 +137,29 @@ npm run build      # ✓ built in 11.07s
 ### 8.4 回滚
 
 `git revert` 对应提交即可；迁移只新增表，代码回滚后遗留空表不影响运行，需要彻底清理时按 §6 删除四张新表。
+
+### 8.5 实机 E2E 记录（2026-11-06 晚）
+
+**环境**：MySQL 8.0 `127.0.0.1:3306/smartops`（Flyway 迁移至 `20261106.21`）；后端 `dev` profile + `SMARTOPS_HUMAN_VERIFICATION_ENABLED=false`（仅 dev/test 允许关闭）；内部写入口 `X-SmartOps-Internal-Token`（本地临时值）。Redis 未启动，`/actuator/health` 因 Redis DOWN 返回 503，恢复契约链路不受影响。
+
+**夹具**：新注册用户 A/B（`app_user` id 9/10），两条 `operation_run_record` 直接插入（平台没有创建 run 的 HTTP 入口，run 由 agent 运行时产生，id 8/9）；契约/观测/回执/回放包全部经内部 token 接口写入，浏览器侧读取走真实登录会话（CSRF + 会话 Cookie）。
+
+**结果：26/26 检查通过**
+
+| # | 实测断言 | 结果 |
+|---|---|---|
+| 1 | B 读 A 契约详情 → 404；B 按 A 的 `runId` 列表 → `total=0`；内部写入 `ownerUserId=A` + `runId=B` → 400「run_id 归属与 ownerUserId 不一致」 | PASS |
+| 2 | 同幂等键 + 同 digest → 200、同 id、`idempotentReplay=true`；同幂等键 + 改 digest → 409 | PASS |
+| 3 | 重启服务后登录 A：ACTIVE 回执 `receipt_state=ACTIVE`、`valid_until=2026-11-07T00:26:39.332758+00:00` 与写前一致；失效契约仍 `INVALIDATED`；列表仅本人 3 条 | PASS |
+| 4 | 追加 `REVISION_CHANGED`/`INVALIDATED` 回执后当前视图为 `INVALIDATED` 且带 `invalidation_events`；存储中 ACTIVE、INVALIDATED 两条历史均保留 | PASS |
+| 5 | 内部通道记 `VIOLATION/HIGH` 成功；用户 summary `high=1`，同一契约 `verdict=VERIFIED`、最新回执 `ACTIVE`——两轴并列、未被覆盖 | PASS |
+| 6 | 观测 payload 含 `state_verifier.passed=false` 与原始字段，读回逐字段一致 | PASS |
+| 7 | B 带 `X-Run-ID=A` 的 run 读列表 → `total=0`、不含 A 契约；读 A 详情 → 404 | PASS |
+| 8 | 回放包 `replay_result.conclusion=REPLAY_INCOMPLETE`、`missing_probes=[p-traffic,p-data]`、`fabricated_probes=[]` 原样读回；追加前后观测数 0→0（未补探） | PASS |
+
+**边界（未做 / NOT_RUN）**：
+
+- Python 侧 `agent/recovery_contracts` 判定器未启动：verdict 与回放结论仍由写入方原文提供，平台只做持久化与准入校验，本轮未跑真实 Python 判定。
+- 用例 5 的用户归属写入：`InternalTokenAuthenticationFilter` 对 `POST /api/inspector/check` 强制内网 token，浏览器会话无法写纠察事件，因此归属行以 DB 夹具（`user_id=A`）构造，系统通道写入仍走真实 HTTP。
+- 夹具用户/run/契约留在本地 dev 库（user 9/10、run 8/9、contract record 1/2/3/4），未清理。
 
