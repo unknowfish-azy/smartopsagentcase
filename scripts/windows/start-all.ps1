@@ -100,6 +100,38 @@ $frontendDir = Join-Path $ProjectRoot 'frontend'
 $backendDir = Join-Path $ProjectRoot 'backend'
 $aiServiceDir = Join-Path $ProjectRoot 'ai-service'
 
+function Import-ProjectEnvironment {
+    param([Parameter(Mandatory = $true)][string]$Root)
+
+    $envFile = Join-Path $Root '.env'
+    if (Test-Path -LiteralPath $envFile) {
+        foreach ($line in Get-Content -LiteralPath $envFile -Encoding UTF8) {
+            if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$') {
+                $name = $matches[1]
+                $value = $matches[2].Trim()
+                if ($value.Length -ge 2 -and (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'")))) {
+                    $value = $value.Substring(1, $value.Length - 2)
+                }
+                [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+            }
+        }
+        Write-Host ("[OK]   project environment loaded from {0}" -f $envFile)
+    }
+
+    $jdkCandidates = @(
+        (Join-Path $env:USERPROFILE 'scoop\apps\openjdk17\current'),
+        (Join-Path $env:ProgramFiles 'Java\jdk-17')
+    )
+    $jdk = $jdkCandidates | Where-Object { Test-Path -LiteralPath (Join-Path $_ 'bin\java.exe') } | Select-Object -First 1
+    if ($jdk) {
+        $env:JAVA_HOME = $jdk
+        $env:Path = (Join-Path $jdk 'bin') + ';' + $env:Path
+        Write-Host ("[OK]   Java 17 selected: {0}" -f $jdk)
+    }
+}
+
+Import-ProjectEnvironment -Root $ProjectRoot
+
 try {
     if (-not (Test-Path -LiteralPath $ProjectRoot -PathType Container)) {
         throw ("Project root not found: {0}" -f $ProjectRoot)
@@ -133,7 +165,7 @@ try {
     Wait-TcpPort -ServiceName 'Frontend admin' -Port 5174
 
     Start-CommandWindow -Name 'Backend (8080)' -WorkingDirectory $backendDir -Port 8080 `
-        -Command 'mvn -q -DskipTests package && java -Xms64m -Xmx512m -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=96m -XX:MaxDirectMemorySize=128m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8 -jar target\smartops-backend-0.0.1-SNAPSHOT.jar'
+        -Command 'mvn -s .mvn\smartops-settings.xml -q -DskipTests package && java -Xms64m -Xmx512m -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=96m -XX:MaxDirectMemorySize=128m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8 -jar target\smartops-backend-0.0.1-SNAPSHOT.jar'
     Wait-ServiceReadiness -ServiceName 'Backend' -Uri 'http://127.0.0.1:8080/actuator/health' -TimeoutSeconds $StartupTimeoutSeconds -PollSeconds $PollIntervalSeconds
 
     Start-CommandWindow -Name 'AI service (8001)' -WorkingDirectory $aiServiceDir -Port 8001 `
