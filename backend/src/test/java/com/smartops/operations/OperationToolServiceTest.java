@@ -74,6 +74,25 @@ class OperationToolServiceTest {
     }
 
     @Test
+    void terraform_preview_tools_are_read_only_and_reject_path_escape() {
+        OperationToolService service = new OperationToolService(new OperationRuntimeRegistry());
+        assertThat(service.preview(1L, "terraform-validate", Map.of("directory", "infra/prod")).commands())
+                .containsExactly("cd infra/prod && terraform validate -json -no-color");
+        assertThat(service.preview(1L, "terraform-plan", Map.of("directory", "infra/prod")).commands())
+                .containsExactly("cd infra/prod && terraform plan -input=false -no-color");
+        assertThat(service.preview(1L, "terraform-show",
+                Map.of("directory", "infra/prod", "planFile", "plan.tfplan")).commands())
+                .containsExactly("cd infra/prod && terraform show -json plan.tfplan");
+
+        for (String bad : List.of("../etc", "/etc/passwd", "infra/../../prod", "-rf", "infra/prod;id")) {
+            assertThatThrownBy(() -> service.preview(1L, "terraform-validate", Map.of("directory", bad)))
+                    .as("非法工作目录 %s 必须被拒绝", bad)
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("INVALID_TOOL_PARAMETER");
+        }
+    }
+
+    @Test
     void previews_a_server_defined_kubernetes_command() {
         OperationToolService service = new OperationToolService(new OperationRuntimeRegistry());
 
