@@ -251,17 +251,17 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 | 2.2 SEC-04 Agent run 绑定 | 执行指纹 payload 新增 `run_id`；`create_for_step` 要求 run 身份；`create_request` 标记 Deprecation（仅信息记录、永不授权）；`approve` 拒绝 reviewer=requester | `tests/agent/test_execution_approval.py` 42 pass；`tests/agent` 88 pass；ai-service 86 pass | 2026-11-06 |
 | DB 迁移 MySQL 8 兼容 | `V20261106.20` 去重 `DELETE` 改为物化派生表（MySQL 8 禁止 DELETE 子查询直接引用目标表，Error 1093）；回滚半成品 DDL（`inspector_event.user_id` 列 + 失败 schema history 行）后实机迁移至 `20261106.21` | 提交 `ed013a1`；真实 MySQL 启动迁移通过；H2 `SentinelSchedulerIntegrationTest` 通过 | 2026-11-06 |
 | 平台 E2E 8 项验收 | 真实 MySQL 8 + `dev` profile 启动平台服务（内部 token 写、会话读），逐条执行 `platform-integration.md` §5 的 8 项：越权 404/空列表、幂等 200/409、重启后回执持久、失效与历史、双轴并列、`passed=false` 原值、伪造 `X-Run-ID` 拒绝、`REPLAY_INCOMPLETE` 不补探 | 26/26 检查 PASS；记录见 `docs/design/recovery-contract-v1/platform-integration.md` §8.5。Python `agent/recovery_contracts` 判定器未启动（`NOT_RUN`），verdict 由写入方原文提供 | 2026-11-06 |
+| 2.2 SEC-04/05 审批-预览-grant HTTP 级 | 真实 SSH 运行通道（声明式 `mock_ssh_server.py`，仅回显命令）+ MySQL/Redis + local 后端，走完整「建团队→邀请 admin→建 Agent 发布→申请→预览→审批→执行」链路：自批 403、未批先执行 409、未预览先批 409、申请人越权执行 403、缺 token 409、错 token 403、DB 篡改参数 409 `TEAM_RUN_PREVIEW_CHANGED`、过期 grant 403、一次性 grant 二次执行 409、撤回后 409，另含合法执行、幂等键、token 仅向申请人下发等正向对照；SEC-03 `rm -rf` 双人确认 `requiredApprovals=2` 与自批 `SECOND_APPROVER_REQUIRED` | 19/19 PASS；过程中发现并修复 grantToken 从不经 API 下发（审批后执行链路线上断裂），`forRequester` 视图 + `TeamAgentRunServiceTest` 12/12；提交 `735f1f8`；记录见 `docs/development/SEC04-05审批链路HTTP级验收执行记录-20261106晚.md`；Redis 启动后总体 health 503→200 | 2026-11-06 |
 
-**本次实机运行范围补充**：SEC-11/12/13 之后新增 MySQL 8 实机启动（Flyway 全量迁移）与恢复契约 E2E；Redis 未启动、ai-service/nginx 未启动，相应网络级项仍为 `NOT_RUN`。
+**本次实机运行范围补充**：SEC-11/12/13 之后新增 MySQL 8 实机启动（Flyway 全量迁移）与恢复契约 E2E；后续批次已启动 Redis 与 local 后端做 HTTP 级验收（SEC-04/05 批次 H1 验证 Redis 指示器恢复 UP）；ai-service/nginx 部署面仍未实机验证。
 
 **仍未完成（不得声称已修复）**：
-- SEC-04/05 仅到代码 + 单元测试：`/api/team-agent-runs/*/execute` 的缺 token / 错误 token / 篡改参数负例未做 HTTP 级验收（`NOT_RUN`）。
-- Python 审批仍为进程内状态，无持久化审批审计表；宿主 reviewer 身份认证仍由调用方负责。
+- Python 审批仍为进程内状态，无持久化审批审计表；宿主 reviewer 身份认证仍由调用方负责（Python 侧无 HTTP 面，已有 42 项单测）。
 - nginx `/ai-api` 已加回环/私网 CIDR allowlist（公网 403），compose 不再发布 ai-service 8001；同源 `/ai` 仍依赖应用层 `X-Run-Token`，上层 LB 以私网回源时 allowlist 不生效（需网络 ACL）。
 - 连接期 IP pin 已实现（`PinnedDns` fail-closed 解析器，提交 `bbae40c`）：未登记 pin 的主机建连直接失败；真实 DNS rebinding 注入未执行（`NOT_RUN`），仅由 `ModelProviderClientTest` / `ModelInvocationAnalyticsTest` 单测覆盖。
 - 爬取并发上限（TM-25）、slow-drip（TM-23）未验证。
 - SEC-11 仅做应用层写库/回显脱敏：历史明文行未清洗；nginx access log / Logback 消息体未做框架级脱敏；真实爬取与 HTTP 回显未运行（TM-30/31 仅单测）。
-- SEC-12 未启动真实 uvicorn：启动失败/503/403 仅由 TestClient 覆盖；ai-service 与 Knowledge 的部署环境变量注入（`KNOWLEDGE_API_KEY`）未在 compose 中固化。
+- SEC-12 knowledge 已以真实 uvicorn 启动验证（第一批 E2E-07，无/错 key 401、匿名 ingest 拒绝）；ai-service run token HTTP 级已验证（提交 `8f04733`）；ai-service 与 Knowledge 的部署环境变量注入（`KNOWLEDGE_API_KEY`）未在 compose 中固化。
 - SEC-13 未执行 `docker compose config/up`：端口未发布与 requirepass 为静态确认；历史 `.env` 中若残留 `change-me` 类口令需人工替换。
-- SEC-14 代码 + 单测 + HTTP 级验收均已执行（E2E-09 8/8）；未做真实 DNS rebinding 注入（连接期 pin 的 fail-closed 仅单测证明），存量内网 baseUrl 行的 runtime/invoke 负例需 DB 夹具（已由单测覆盖），存量行未自动清理（调用时 400 拦截）。
+- SEC-14 存量内网 baseUrl 行的 runtime/invoke 负例需 DB 夹具（已由单测覆盖），存量行未自动清理（调用时 400 拦截）。
 - TM-01/02/03/10/11/18-24 的 HTTP/网络级验收全部 `NOT_RUN`。
