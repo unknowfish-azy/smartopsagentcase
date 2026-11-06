@@ -170,8 +170,70 @@ class NetworkPathServiceTest {
         assertThat(layer(result, "ENDPOINT_SLICE").status()).isEqualTo("NOT_APPLICABLE");
         assertThat(layer(result, "TLS").status()).isEqualTo("NOT_APPLICABLE");
         assertThat(layer(result, "DNS").summary()).contains("未提供");
+        assertThat(layer(result, "SECURITY_GROUP").status()).isEqualTo("NOT_APPLICABLE");
+        assertThat(layer(result, "ROUTE").status()).isEqualTo("NOT_APPLICABLE");
+    }
+
+    @Test
+    void host_firewall_rules_and_host_route_are_evidence_even_though_cloud_is_unverified() {
+        NetworkPathResult result = diagnose(fullPathRuntime(), fullRequest());
+
+        NetworkLayer firewall = layer(result, "SECURITY_GROUP");
+        assertThat(firewall.status()).isEqualTo("UNVERIFIED");
+        assertThat(firewall.summary()).contains("主机防火墙").contains("云安全组规则未接入");
+        assertThat(firewall.checks()).extracting(NetworkCheck::name)
+                .containsExactly("HOST_FIREWALL", "CLOUD_SECURITY_GROUP");
+        assertThat(firewall.checks().get(0).evidence()).contains("-A INPUT");
+
+        NetworkLayer route = layer(result, "ROUTE");
+        assertThat(route.status()).isEqualTo("UNVERIFIED");
+        assertThat(route.summary()).contains("主机路由可达").contains("云 VPC 路由表未接入");
+        assertThat(route.checks()).extracting(NetworkCheck::name)
+                .containsExactly("HOST_ROUTE", "CLOUD_VPC_ROUTE");
+        assertThat(route.checks().get(0).evidence()).contains("dev eth0");
+    }
+
+    @Test
+    void unreachable_host_route_is_failed_with_real_command_evidence() {
+        StubRuntime runtime = fullPathRuntime()
+                .reply("ip route get", 2, "", "RTNETLINK answers: Network is unreachable");
+
+        NetworkPathResult result = diagnose(runtime, fullRequest());
+
+        NetworkLayer route = layer(result, "ROUTE");
+        assertThat(route.status()).isEqualTo("FAILED");
+        assertThat(route.summary()).contains("没有到");
+        assertThat(route.checks()).extracting(NetworkCheck::evidence)
+                .anyMatch(evidence -> evidence.contains("Network is unreachable"));
+    }
+
+    @Test
+    void firewall_read_denied_is_no_permission_not_silent_unverified() {
+        StubRuntime runtime = fullPathRuntime()
+                .reply("iptables -S", 4, "", "iptables: Permission denied (you must be root).");
+
+        NetworkPathResult result = diagnose(runtime, fullRequest());
+
+        assertThat(layer(result, "SECURITY_GROUP").status()).isEqualTo("NO_PERMISSION");
+        assertThat(result.permissionDenied()).isTrue();
+        assertThat(layer(result, "SECURITY_GROUP").checks()).extracting(NetworkCheck::evidence)
+                .anyMatch(evidence -> evidence.contains("Permission denied"));
+    }
+
+    @Test
+    void missing_firewall_and_ip_commands_are_unverified_with_explicit_reason() {
+        StubRuntime runtime = fullPathRuntime()
+                .reply("iptables -S", 127, "", "sh: iptables: command not found")
+                .reply("nft list ruleset", 127, "", "sh: nft: command not found")
+                .reply("ip route get", 127, "", "sh: ip: command not found");
+
+        NetworkPathResult result = diagnose(runtime, fullRequest());
+
         assertThat(layer(result, "SECURITY_GROUP").status()).isEqualTo("UNVERIFIED");
+        assertThat(layer(result, "SECURITY_GROUP").summary()).contains("没有 iptables/nft");
         assertThat(layer(result, "ROUTE").status()).isEqualTo("UNVERIFIED");
+        assertThat(layer(result, "ROUTE").summary()).contains("没有 ip 命令");
+        assertThat(result.unverified()).isTrue();
     }
 
     @Test
@@ -242,7 +304,12 @@ class NetworkPathServiceTest {
                                     "conditions":[{"type":"Ready","status":"True"}]}}]}
                         """, "")
                 .reply("get networkpolicy", 0, "{\"items\":[]}", "")
-                .reply("openssl s_client", 0, "Verify return code: 0 (ok)", "");
+                .reply("openssl s_client", 0, "Verify return code: 0 (ok)", "")
+                .reply("iptables -S", 0, """
+                        -P INPUT ACCEPT
+                        -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+                        """, "")
+                .reply("ip route get", 0, "10.0.0.10 via 10.0.0.1 dev eth0 src 10.0.0.5 uid 0", "");
     }
 
     private static final class StubRuntime implements OperationRuntime {
