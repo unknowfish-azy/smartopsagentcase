@@ -297,6 +297,8 @@ class TeamWorkspaceIntegrationTest {
     private User other(String role, String portal) throws Exception {
         long id = IDS.incrementAndGet(); String name = "workspace-" + id;
         jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(?,?,?,?)", id, name, HASH, role);
+        // SEC-07：平台管理能力来自治理档案；SQL 种子的管理员按迁移回填语义显式建档。
+        if ("admin".equals(role)) com.smartops.support.TestPlatformProfiles.grantRoot(jdbc, id);
         return new User(id, name, login(name, portal));
     }
     private long invite(Client owner, long id, User user, String role) throws Exception {

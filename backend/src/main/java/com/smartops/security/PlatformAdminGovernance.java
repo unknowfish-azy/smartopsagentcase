@@ -13,6 +13,13 @@ public final class PlatformAdminGovernance {
             "admin.users", "admin.config", "admin.audit", "admin.security",
             "teams.view", "teams.manage", "teams.freeze", "teams.audit", "teams.approve");
 
+    /**
+     * SEC-07：缺档案管理员的兜底只读能力。
+     * 无档案不再等价 ROOT，只保留最小只读视图；写能力必须经显式任命授予。
+     */
+    public static final Set<String> MINIMAL_READ_ONLY_CAPABILITIES = Set.of(
+            "admin.audit", "teams.view", "teams.audit");
+
     /** 能力目录的中文说明在服务端维护：前端只消费，不在页面写死能力清单。 */
     private static final Map<String, String> LABELS = Map.of(
             "admin.users", "账号与平台管理员管理",
@@ -37,6 +44,7 @@ public final class PlatformAdminGovernance {
     }
 
     public static boolean canGrant(String actorLevel, String capability) {
+        if (actorLevel == null) return false;
         return capability != null && DELEGABLE.getOrDefault(actorLevel, Set.of()).contains(capability);
     }
 

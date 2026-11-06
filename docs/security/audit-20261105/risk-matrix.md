@@ -47,8 +47,10 @@
 | SEC-02 | 已修 | run_id 只取签名令牌；客户端 `X-Run-ID` 被忽略；同一令牌复用 409 `RUN_TOKEN_REPLAYED`；令牌绑定 subject | 令牌单进程内存去重，多副本部署需共享存储 |
 | SEC-06 | 已修（代码级） | `OutboundUrlPolicy`：尾点/IDN/大小写归一，DNS 全地址分类（IPv4 私网/CGNAT/保留、IPv6 ULA/链路本地/映射/文档网段），首跳与逐跳复检，禁系统代理，下载 10MB 上限，单 run 60s 预算 | 未做连接期 IP pin；无并发上限（审计 TM-25 未覆盖）；未见真实 DNS rebinding 注入 |
 | SEC-15 | 已修（启动断言） | `SecurityAssertions` + `SecurityAssertionConfig`：生产（profile prod/production 或显式开关）下 `internal-bypass=true`、内部 token 缺失/过短、聊天令牌机密缺失 → `SECURITY_ASSERTION_FAILED` 拒绝启动；非生产仅告警 | `X-User-Id` 直读未收敛；内部 token 仍只覆盖 5 条路径；断言需真实启动一次才能观测（当前 `NOT_RUN`） |
+| SEC-03 | 已修（代码级） | 预览绑定创建者（`ownerId`）+ TTL（默认 15min，`preview-ttl-ms`）+ 条目上限（默认 200，`preview-max-entries`，超限 429 `PREVIEW_LIMIT_EXCEEDED`）；过期预览执行 → 409 `PREVIEW_EXPIRED`；`requiredApprovals>1` 时执行者=预览者 → 409 `SECOND_APPROVER_REQUIRED`（回显同一 nonce 不构成第二人复核） | 主体仍取 `X-User-Id`（SEC-08 收敛后绑定才完全可信）；无持久化审批记录 |
+| SEC-07 | 已修（代码级） | `hasPlatformCapability` 缺档案 → 仅 `MINIMAL_READ_ONLY_CAPABILITIES`（admin.audit/teams.view/teams.audit），其余 403；`platformLevel` 缺档案 → null；治理表故障 → 500 fail-closed（不再把全部 admin 当 root）；`createAccount`/提升为 admin 显式建档（deputy、无能力）；bootstrap 首管理员显式授 root+全能力 | 历史部署中未经迁移回填的无档案管理员将失去写能力（迁移 V20261005 已回填，需确认执行）；SEC-08 的 `X-User-Id` 收敛未做 |
 
-以上为单元测试结论（SEC-15 断言 7 pass；Python 309 passed）。全量后端最近一次 697 tests / 0 failures / 6 errors：错误集中在并行任务在途的 `RunbookIntegrationTest`（HTTP connect timeout），本批安全测试均通过。TM-01/02/18-24 的 HTTP/网络级复核仍为 `NOT_RUN`。
+以上为单元测试结论（SEC-15 断言 7 pass；SEC-03 见 `MultiExecServiceTest` 6 pass；SEC-07 集成验证被并行 MyBatis 在途变更阻断待补；Python 309 passed）。全量后端复跑被并行任务在途改动反复阻断，最近一次全绿为 675 tests；TM-01/02/18-24 的 HTTP/网络级复核仍为 `NOT_RUN`。
 
 ---
 

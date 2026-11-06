@@ -40,6 +40,8 @@ class UserAuthenticationIntegrationTest {
         jdbc.update("DELETE FROM app_user");
         String hash = new BCryptPasswordEncoder().encode("AuditSecurePassword42!");
         jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(11,'audit-admin',?,'admin'),(22,'audit-operator',?,'operator')", hash, hash);
+        // SEC-07：管理能力来自治理档案；SQL 种子的管理员按迁移回填语义显式建档。
+        com.smartops.support.TestPlatformProfiles.grantRoot(jdbc, 11L);
     }
 
     private void token() throws Exception {
