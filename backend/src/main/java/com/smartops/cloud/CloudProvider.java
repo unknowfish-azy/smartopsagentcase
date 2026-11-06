@@ -10,8 +10,8 @@ package com.smartops.cloud;
 public enum CloudProvider {
 
     ALIYUN("aliyun", "阿里云", true),
-    TENCENT("tencent", "腾讯云", false),
-    HUAWEI("huawei", "华为云", false);
+    TENCENT("tencent", "腾讯云", true),
+    HUAWEI("huawei", "华为云", true);
 
     private final String wireName;
     private final String displayName;

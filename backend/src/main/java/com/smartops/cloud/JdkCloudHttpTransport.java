@@ -41,6 +41,16 @@ public class JdkCloudHttpTransport implements CloudHttpTransport {
         return new Response(response.statusCode(), response.headers().map(), response.body());
     }
 
+    @Override
+    public Response get(String uri, Map<String, String> headers) throws IOException, InterruptedException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(uri))
+                .timeout(requestTimeout)
+                .GET();
+        headers.forEach(builder::header);
+        HttpResponse<String> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        return new Response(response.statusCode(), response.headers().map(), response.body());
+    }
+
     static List<String> headerValues(Map<String, List<String>> headers, String name) {
         return headers == null ? List.of() : headers.getOrDefault(name, List.of());
     }
