@@ -239,8 +239,12 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 | SEC-03 双人确认 | 预览绑定 `ownerId`+TTL+条目上限；`requiredApprovals>1` 且执行者=预览者 → 409 `SECOND_APPROVER_REQUIRED`；过期 409 `PREVIEW_EXPIRED`、超限 429 `PREVIEW_LIMIT_EXCEEDED`、成功执行后重放 404 | `MultiExecServiceTest` 6 pass |
 | SEC-07 治理 fail-closed | 缺档案仅最小只读；`platformLevel` 缺档案=null；治理表故障 500；新建/提升 admin 显式建档（deputy 无能力）；bootstrap 首 root 显式授全能力；5 个集成测试种子改用 `TestPlatformProfiles.grantRoot` 显式建档（AdminFoundation/Registration/TeamWorkspace/UserAuthentication/AdminMfa） | `UserAccountGovernanceIntegrationTest` 6 pass；4 个受影响回归类 70 pass；`AdminMfaIntegrationTest` 17 pass |
 | 回归 | SEC-03 单测 6/6 通过；integration 包 158/158、后端全量 708 项 0 失败 0 错误（1 skipped）；首轮全量曾出现 16 项 AdminMfa 403（该测试种子管理员缺治理档案，已补显式建档后复跑全绿）；Python 309 pass | 2026-11-06 |
+| 2.2 SEC-05 grant 绑定 | `consumeGrant` 校验 `grant_token`（`MessageDigest.isEqual` 常量时间）并作为条件 UPDATE 的 WHERE 条件；只读运行也持一次性 token；审批写 `grant_digest = SHA-256(规范化参数 + toolId + 工具版本 + 审批人)` 并审计；新增 `CANCELED` 与 `cancel` 接口；`create` 支持 `idempotencyKey`（唯一索引兜并发）；预览人比较改 `Objects.equals` | `TeamAgentRunServiceTest` 11 pass（缺 token 409、错误 token 403、篡改参数 409、幂等、撤回、高 user id 审批）；`TeamAgentRunRecoveryTest` 5 pass | 2026-11-06 |
+| 2.2 SEC-04 Agent run 绑定 | 执行指纹 payload 新增 `run_id`；`create_for_step` 要求 run 身份；`create_request` 标记 Deprecation（仅信息记录、永不授权）；`approve` 拒绝 reviewer=requester | `tests/agent/test_execution_approval.py` 42 pass；`tests/agent` 88 pass；ai-service 86 pass | 2026-11-06 |
 
 **仍未完成（不得声称已修复）**：
+- SEC-04/05 仅到代码 + 单元测试：`/api/team-agent-runs/*/execute` 的缺 token / 错误 token / 篡改参数负例未做 HTTP 级验收（`NOT_RUN`）。
+- Python 审批仍为进程内状态，无持久化审批审计表；宿主 reviewer 身份认证仍由调用方负责。
 - nginx `/ai-api` 网络层隔离未实施，仅保留应用层 401（注释已标注）。
 - 连接期 IP pin 未实现，DNS rebinding 仍为残余风险。
 - 爬取并发上限（TM-25）、slow-drip（TM-23）未验证。
