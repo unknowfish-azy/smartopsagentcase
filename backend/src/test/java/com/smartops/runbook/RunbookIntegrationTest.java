@@ -42,6 +42,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:runbook_it;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+        // 运行通道注册表按用户/会话设配额（生产默认 20/4）；本测试的假连接都把 session 记为 7，
+        // 且注册表是单例不会随用例清空，因此这里放宽配额，只验证编排语义。
+        "smartops.operations.ssh.max-per-user=500",
+        "smartops.operations.ssh.max-per-session=500",
         "smartops.runbook.schedule.initial-delay-ms=86400000",
         "smartops.runbook.schedule.interval-ms=86400000",
         "smartops.runbook.alert.initial-delay-ms=86400000",

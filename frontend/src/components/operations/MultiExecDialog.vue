@@ -5,7 +5,7 @@
       <h2 id="command-preview-title">命令预览</h2>
       <label>命令<textarea v-model="multiCommand" rows="3" placeholder="uptime" required></textarea></label>
       <fieldset class="multi-targets"><legend>目标（{{ selectedRuntimeIds.length }}）</legend><label v-for="tab in onlineTabs" :key="tab.runtimeId"><input v-model="selectedRuntimeIds" type="checkbox" :value="tab.runtimeId" /> {{ tab.session.name }}</label></fieldset>
-      <p class="host-key-copy">审批后才会发送命令；服务端只返回 SENT，表示已写入终端输入流。</p>
+      <p class="host-key-copy">审批后才会执行；逐目标返回 SUCCEEDED/FAILED/UNKNOWN/CANCELLED，已发送或未派发不会被当作成功。</p>
       <div v-if="multiPreview" class="risk-preview">
         <span>风险等级</span>
         <strong :class="multiPreview.risk.toLowerCase()">{{ riskLabel(multiPreview.risk) }}</strong>

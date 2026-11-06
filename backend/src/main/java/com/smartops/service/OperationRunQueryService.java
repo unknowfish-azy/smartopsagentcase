@@ -51,9 +51,10 @@ public class OperationRunQueryService {
                         rs.getInt("command_count"), rs.getInt("failed_count")), id, userId);
         if (rows.isEmpty()) throw new BusinessException(404, "OPERATION_RUN_NOT_FOUND");
         List<CommandOutput> outputs = jdbc.query(
-                "SELECT id,sequence_no,command_text,exit_code,stdout_text,stderr_text,started_at,ended_at FROM operation_run_output WHERE run_id=? ORDER BY sequence_no,id",
+                "SELECT id,sequence_no,command_text,exit_code,stdout_text,stderr_text,truncated,started_at,ended_at FROM operation_run_output WHERE run_id=? ORDER BY sequence_no,id",
                 (rs, row) -> new CommandOutput(rs.getLong("id"), rs.getInt("sequence_no"), rs.getString("command_text"),
                         rs.getInt("exit_code"), text(rs.getString("stdout_text")), text(rs.getString("stderr_text")),
+                        rs.getBoolean("truncated"),
                         instant(rs.getTimestamp("started_at")), instant(rs.getTimestamp("ended_at"))), id);
         List<Evidence> evidence = jdbc.query(
                 "SELECT id,evidence_type,content,source_ref,created_at FROM operation_run_evidence WHERE run_id=? ORDER BY created_at,id",
@@ -138,6 +139,6 @@ public class OperationRunQueryService {
                              Instant startedAt, Instant endedAt, int commandCount, int failedCommandCount) {}
     public record RunDetail(RunSummary run, List<CommandOutput> outputs, List<Evidence> evidence) {}
     public record CommandOutput(Long id, int sequenceNo, String command, int exitCode, String stdout, String stderr,
-                                Instant startedAt, Instant endedAt) {}
+                                boolean truncated, Instant startedAt, Instant endedAt) {}
     public record Evidence(Long id, String type, String content, String sourceRef, Instant createdAt) {}
 }

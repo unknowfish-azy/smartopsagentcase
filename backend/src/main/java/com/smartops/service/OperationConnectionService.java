@@ -17,8 +17,14 @@ public class OperationConnectionService {
     private final OperationCredentialMapper credentialMapper;
     private final AesGcmCryptoService cryptoService;
     private final SshConnectionAdapter adapter;
+    private final OperationConnectionCoordinator coordinator;
 
     public ConnectionResult connect(Long userId, Long sessionId, HostKeyDecision decision) {
+        HostKeyDecision effective = decision == null ? HostKeyDecision.NONE : decision;
+        return coordinator.establish(userId, sessionId, () -> connectOnce(userId, sessionId, effective));
+    }
+
+    private ConnectionResult connectOnce(Long userId, Long sessionId, HostKeyDecision decision) {
         OperationSession session = sessionMapper.findById(sessionId, userId);
         if (session == null) throw new BusinessException(404, "SESSION_NOT_FOUND");
         String secret = null;
@@ -29,7 +35,7 @@ public class OperationConnectionService {
         }
         OperationSession jumpSession = session.getJumpSessionId() == null ? null : sessionMapper.findById(session.getJumpSessionId(), userId);
         if (session.getJumpSessionId() != null && jumpSession == null) throw new BusinessException(404, "JUMP_SESSION_NOT_FOUND");
-        return adapter.connect(userId, session, secret, decision == null ? HostKeyDecision.NONE : decision, jumpSession);
+        return adapter.connect(userId, session, secret, decision, jumpSession);
     }
 
     public void close(Long userId, String runtimeId, OperationRuntimeRegistry registry) {

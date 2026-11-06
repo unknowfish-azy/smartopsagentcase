@@ -102,6 +102,18 @@ smartops:
       recovery-stale-ms: ${SMARTOPS_RUN_RECOVERY_STALE_MS:90000}
       recovery-interval-ms: ${SMARTOPS_RUN_RECOVERY_INTERVAL_MS:60000}
       recovery-initial-delay-ms: ${SMARTOPS_RUN_RECOVERY_DELAY_MS:30000}
+    # SSH 运行通道治理：按用户/会话配额、空闲 TTL 回收、命令输出上限
+    ssh:
+      max-per-user: ${SMARTOPS_SSH_MAX_PER_USER:20}
+      max-per-session: ${SMARTOPS_SSH_MAX_PER_SESSION:4}
+      idle-ttl-ms: ${SMARTOPS_SSH_IDLE_TTL_MS:900000}
+      sweep-interval-ms: ${SMARTOPS_SSH_SWEEP_INTERVAL_MS:60000}
+      sweep-initial-delay-ms: ${SMARTOPS_SSH_SWEEP_DELAY_MS:30000}
+      output-limit-bytes: ${SMARTOPS_SSH_OUTPUT_LIMIT_BYTES:1048576}
+    # 多机批量：并发上限与整单超时（复用 Runbook 目标子任务）
+    multi-exec:
+      max-parallel: ${SMARTOPS_MULTI_EXEC_MAX_PARALLEL:10}
+      timeout-ms: ${SMARTOPS_MULTI_EXEC_TIMEOUT_MS:120000}
   cloud:
     sync:
       # 只读清单分页：单页条数与单次同步的页数上限，

@@ -77,11 +77,11 @@
           <pre class="command"><code>{{ output.command }}</code></pre>
           <div class="outputs">
             <div>
-              <h4>标准输出 stdout</h4>
+              <h4>标准输出 stdout <em v-if="output.truncated" class="truncated">已截断</em></h4>
               <pre :class="{ empty: !visibleOutput(output.stdout) }">{{ visibleOutput(output.stdout) || '无标准输出' }}</pre>
             </div>
             <div>
-              <h4>错误输出 stderr</h4>
+              <h4>错误输出 stderr <em v-if="output.truncated" class="truncated">已截断</em></h4>
               <pre :class="{ empty: !visibleOutput(output.stderr) }">{{ visibleOutput(output.stderr) || '无错误输出' }}</pre>
             </div>
           </div>
@@ -359,6 +359,14 @@ h2,h3 {
   margin: 0 0 9px;
   color: var(--smart-muted);
   font-size: 10px;
+}
+.outputs h4 .truncated {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #f59e0b;
+  font-style: normal;
 }
 .outputs pre {
   min-height: 54px;

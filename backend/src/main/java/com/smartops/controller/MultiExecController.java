@@ -30,6 +30,14 @@ public class MultiExecController {
         return ApiResponse.success(service.execute(userId, request.previewId(), request.confirmationNonce(), request.secondConfirmationNonce()));
     }
 
+    @PostMapping("/cancel")
+    public ApiResponse<MultiExecService.CancelResult> cancel(
+            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @Valid @RequestBody CancelRequest request) {
+        return ApiResponse.success(service.cancel(userId, request.previewId()));
+    }
+
     public record PreviewRequest(@NotBlank String command, @NotEmpty List<String> runtimeIds, boolean productionTarget) {}
     public record ExecuteRequest(@NotBlank String previewId, @NotBlank String confirmationNonce, String secondConfirmationNonce) {}
+    public record CancelRequest(@NotBlank String previewId) {}
 }

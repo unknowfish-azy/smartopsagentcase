@@ -242,8 +242,15 @@ export function useConnectionsWorkspace() {
     try {
       const result = await executeMultiExec({ previewId: multiPreview.value.id, confirmationNonce: multiPreview.value.confirmationNonce, secondConfirmationNonce: multiPreview.value.requiredApprovals > 1 ? multiPreview.value.confirmationNonce : undefined })
       const execution = result.data?.data || result.data
-      const failed = execution?.results?.filter(item => item.status !== 'SENT') || []
-      if (failed.length) connectionError.value = `${failed.length} 个目标未发送`
+      const results = execution?.results || []
+      const failed = results.filter(item => item.status !== 'SUCCEEDED')
+      const counts = [
+        execution?.failed ? `${execution.failed} 个失败` : '',
+        execution?.unknown ? `${execution.unknown} 个未知` : '',
+        execution?.cancelled ? `${execution.cancelled} 个取消` : '',
+        execution?.notDispatchedTargets?.length ? `${execution.notDispatchedTargets.length} 个未派发` : ''
+      ].filter(Boolean)
+      if (failed.length) connectionError.value = `逐目标结果：${counts.length ? counts.join('，') : `${failed.length} 个目标未确认成功`}`
     } catch (error) { connectionError.value = error.message || '批量命令未发送'; return }
     showMultiExec.value = false
     multiPreview.value = null
