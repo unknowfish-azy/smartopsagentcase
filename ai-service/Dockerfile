@@ -4,7 +4,7 @@
 # 修正：此前该路径下的 Dockerfile 复制并运行 app.jar（Java 产物），
 # 与实际 Python FastAPI 服务不符 —— 按它构建出来的镜像无法提供 AI 服务。
 #
-# 构建：
+# 构建（上下文必须是仓库根目录：服务运行期依赖根目录的 agent/ 包）：
 #   docker build -f ai-service/Dockerfile -t smartops-ai-service .
 # ============================================================
 
@@ -16,10 +16,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY ai-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
+COPY ai-service/app ./app
+# app/services/chat.py 运行期 `from agent...` 导入根目录的 agent 包
+COPY agent ./agent
 
 EXPOSE 8001
 

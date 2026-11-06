@@ -247,9 +247,11 @@ services:
 
     build:
 
-      context: ../../ai-service
+      # 上下文必须是仓库根目录：运行期需要根目录的 agent/ 包
+      # （app/services/chat.py 里 `from agent...`），只给 ai-service/ 目录构建会 ImportError。
+      context: ../..
 
-      dockerfile: Dockerfile
+      dockerfile: ai-service/Dockerfile
 
     image: smartops-ai-service:local
 

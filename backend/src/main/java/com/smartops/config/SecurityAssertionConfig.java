@@ -28,7 +28,9 @@ public class SecurityAssertionConfig {
             @Value("${smartops.security.chat.run-token.secret:}") String chatRunTokenSecret,
             @Value("${spring.datasource.password:}") String datasourcePassword,
             @Value("${spring.data.redis.password:}") String redisPassword,
-            @Value("${smartops.attachments.api-key-encryption-key:}") String apiKeyEncryptionKey) {
+            // 属性实际定义在 application.yml 的 smartops.security 下（AesGcmCryptoService 读取同一路径）；
+            // 写成 smartops.attachments.* 时该属性永远为空，生产启动会被误判为"密钥未配置"而拒绝。
+            @Value("${smartops.security.api-key-encryption-key:}") String apiKeyEncryptionKey) {
         return arguments -> {
             List<String> profiles = activeProfiles == null || activeProfiles.isBlank()
                     ? List.of()
