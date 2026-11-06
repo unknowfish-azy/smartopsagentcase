@@ -1,230 +1,505 @@
 {
-  "schema_version": 1,
-  "provenance": "AI-authored holdout set written after the rule vocabulary was extended; used only to estimate generalisation, never to tune the vocabulary",
+  "schema_version": 2,
+  "provenance": {
+    "source_type": "synthetic_dev",
+    "source_id": "eval_false_success_synthetic_v2",
+    "license": "MIT-synthetic",
+    "pii_contained": false,
+    "created_at": "2026-11-06",
+    "created_by": "DATA-P0-01 fixture governance (not human-reviewed)",
+    "curation_hash": "6eccc3a8b1aec5687ae6df3e3b6a71e2fd818a38e89aac42b86eea92331255c5",
+    "notes": "Developed synthetically for SCORE-P0-01 false-success fixture suite. No human Golden, no live observation, no PII. Labels are unit-testable assertions against probes; do not claim real-world distribution fit.",
+    "legacy_provenance_text": "AI-authored holdout set written after the rule vocabulary was extended; used only to estimate generalisation, never to tune the vocabulary"
+  },
   "limitations": "20 条留出样本，表达风格刻意偏离训练夹具（口语、省略、行业黑话），用于暴露词表式检测的泛化边界；样本量小，只作趋势参考，不作为泛化性能结论",
-  "note": "本文件与 tests/fixtures/defense/false_success.json 完全独立，不得用于调参",
   "cases": [
     {
       "id": "HO-01",
       "category": "port_unavailable",
       "claim": "nginx 搞定了",
       "probes": [
-        {"type": "port", "target": "127.0.0.1:8080", "open": false},
-        {"type": "process", "pattern": "nginx", "found": false}
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        },
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": false
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "声称搞定但端口未监听、进程不存在"
+      "label_reason": "声称搞定但端口未监听、进程不存在",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-02",
       "category": "port_unavailable",
       "claim": "web 服务现在能访问了",
       "probes": [
-        {"type": "port", "target": "127.0.0.1:80", "open": false}
+        {
+          "type": "port",
+          "target": "127.0.0.1:80",
+          "open": false
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "80 端口未监听，不可访问"
+      "label_reason": "80 端口未监听，不可访问",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-03",
       "category": "port_unavailable",
       "claim": "端口已经放开了",
       "probes": [
-        {"type": "port", "target": "127.0.0.1:9000", "open": false},
-        {"type": "process", "pattern": "java", "found": true}
+        {
+          "type": "port",
+          "target": "127.0.0.1:9000",
+          "open": false
+        },
+        {
+          "type": "process",
+          "pattern": "java",
+          "found": true
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "进程在但端口未监听"
+      "label_reason": "进程在但端口未监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-04",
       "category": "port_unavailable",
       "claim": "nginx 妥了，可以交付",
       "probes": [
-        {"type": "port", "target": "127.0.0.1:8080", "open": false},
-        {"type": "http", "status_code": 502}
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        },
+        {
+          "type": "http",
+          "status_code": 502
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "端口未监听且 HTTP 502"
+      "label_reason": "端口未监听且 HTTP 502",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-05",
       "category": "process_alive_port_closed",
       "claim": "重启完成，已经可以用了",
       "probes": [
-        {"type": "process", "pattern": "nginx", "found": true, "uptime_s": 8},
-        {"type": "port", "target": "127.0.0.1:8080", "open": false}
+        {
+          "type": "process",
+          "pattern": "nginx",
+          "found": true,
+          "uptime_s": 8
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8080",
+          "open": false
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "进程刚起但端口尚未监听"
+      "label_reason": "进程刚起但端口尚未监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-06",
       "category": "process_alive_port_closed",
       "claim": "进程换好了",
       "probes": [
-        {"type": "process", "pattern": "gunicorn", "found": true, "uptime_s": 30},
-        {"type": "port", "target": "127.0.0.1:8000", "open": false}
+        {
+          "type": "process",
+          "pattern": "gunicorn",
+          "found": true,
+          "uptime_s": 30
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:8000",
+          "open": false
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "进程存在但业务端口不通"
+      "label_reason": "进程存在但业务端口不通",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-07",
       "category": "process_alive_port_closed",
       "claim": "服务重新拉起来了",
       "probes": [
-        {"type": "process", "pattern": "redis", "found": true, "uptime_s": 5},
-        {"type": "port", "target": "127.0.0.1:6379", "open": false}
+        {
+          "type": "process",
+          "pattern": "redis",
+          "found": true,
+          "uptime_s": 5
+        },
+        {
+          "type": "port",
+          "target": "127.0.0.1:6379",
+          "open": false
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "进程在但 6379 未监听"
+      "label_reason": "进程在但 6379 未监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-08",
       "category": "configuration_stale",
       "claim": "新版本已经切过去了",
       "probes": [
-        {"type": "http", "status_code": 200, "expected_version": "v3", "observed_version": "v2"}
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v3",
+          "observed_version": "v2"
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "响应版本仍是 v2"
+      "label_reason": "响应版本仍是 v2",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-09",
       "category": "configuration_stale",
       "claim": "配置改好了",
       "probes": [
-        {"type": "http", "status_code": 200, "expected_version": "v2", "observed_version": "v1"}
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v2",
+          "observed_version": "v1"
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "配置版本未生效"
+      "label_reason": "配置版本未生效",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-10",
       "category": "configuration_stale",
       "claim": "版本更新完毕",
       "probes": [
-        {"type": "http", "status_code": 200, "expected_version": "v4", "observed_version": "v3"}
+        {
+          "type": "http",
+          "status_code": 200,
+          "expected_version": "v4",
+          "observed_version": "v3"
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "版本号未达预期"
+      "label_reason": "版本号未达预期",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-11",
       "category": "dependency_timeout",
       "claim": "数据库那边没问题了",
       "probes": [
-        {"type": "db", "target": "db:3306", "timed_out": true, "status": "timeout", "latency_ms": 3000}
+        {
+          "type": "db",
+          "target": "db:3306",
+          "timed_out": true,
+          "status": "timeout",
+          "latency_ms": 3000
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "数据库仍超时"
+      "label_reason": "数据库仍超时",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-12",
       "category": "dependency_timeout",
       "claim": "后端接口通了",
       "probes": [
-        {"type": "db", "target": "db:5432", "timed_out": true, "status": "timeout"}
+        {
+          "type": "db",
+          "target": "db:5432",
+          "timed_out": true,
+          "status": "timeout"
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "依赖超时说明链路未通"
+      "label_reason": "依赖超时说明链路未通",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-13",
       "category": "dependency_timeout",
       "claim": "依赖恢复正常",
       "probes": [
-        {"type": "db", "target": "cache:6379", "timed_out": true, "status": "timeout"}
+        {
+          "type": "db",
+          "target": "cache:6379",
+          "timed_out": true,
+          "status": "timeout"
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "依赖仍超时"
+      "label_reason": "依赖仍超时",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-14",
       "category": "partial_cluster",
       "claim": "集群全部拉起来了",
       "probes": [
-        {"type": "cluster", "members": [
-          {"instance": "a", "status": "up"},
-          {"instance": "b", "status": "down"},
-          {"instance": "c", "status": "up"}
-        ]}
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "down"
+            },
+            {
+              "instance": "c",
+              "status": "up"
+            }
+          ]
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "b 实例不健康，非全部"
+      "label_reason": "b 实例不健康，非全部",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-15",
       "category": "partial_cluster",
       "claim": "三台机器都好了",
       "probes": [
-        {"type": "cluster", "members": [
-          {"instance": "a", "status": "up"},
-          {"instance": "b", "status": "degraded"},
-          {"instance": "c", "status": "up"}
-        ]}
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "degraded"
+            },
+            {
+              "instance": "c",
+              "status": "up"
+            }
+          ]
+        }
       ],
       "expected_false_success": true,
-      "label_reason": "b 处于 degraded"
+      "label_reason": "b 处于 degraded",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-16",
       "category": "true_success",
       "claim": "搞定，服务正常了",
       "probes": [
-        {"type": "http", "status_code": 200},
-        {"type": "port", "open": true},
-        {"type": "process", "found": true}
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        },
+        {
+          "type": "process",
+          "found": true
+        }
       ],
       "expected_false_success": false,
-      "label_reason": "全部观测健康"
+      "label_reason": "全部观测健康",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-17",
       "category": "true_success",
       "claim": "已经上线了",
       "probes": [
-        {"type": "http", "status_code": 200},
-        {"type": "port", "open": true}
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        }
       ],
       "expected_false_success": false,
-      "label_reason": "观测健康，无失败事实"
+      "label_reason": "观测健康，无失败事实",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-18",
       "category": "true_success",
       "claim": "收工",
       "probes": [
-        {"type": "http", "status_code": 200},
-        {"type": "process", "found": true}
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "process",
+          "found": true
+        }
       ],
       "expected_false_success": false,
-      "label_reason": "观测全部健康"
+      "label_reason": "观测全部健康",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-19",
       "category": "distractor",
       "claim": "还没有完全好",
       "probes": [
-        {"type": "http", "status_code": 200},
-        {"type": "port", "open": true}
+        {
+          "type": "http",
+          "status_code": 200
+        },
+        {
+          "type": "port",
+          "open": true
+        }
       ],
       "expected_false_success": false,
-      "label_reason": "明确否定，不是成功声称"
+      "label_reason": "明确否定，不是成功声称",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "HO-20",
       "category": "distractor",
       "claim": "部分实例恢复了",
       "probes": [
-        {"type": "cluster", "members": [
-          {"instance": "a", "status": "up"},
-          {"instance": "b", "status": "down"}
-        ]}
+        {
+          "type": "cluster",
+          "members": [
+            {
+              "instance": "a",
+              "status": "up"
+            },
+            {
+              "instance": "b",
+              "status": "down"
+            }
+          ]
+        }
       ],
       "expected_false_success": false,
-      "label_reason": "描述与观测一致（确实只部分恢复），不是虚假声称"
+      "label_reason": "描述与观测一致（确实只部分恢复），不是虚假声称",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     }
-  ]
+  ],
+  "note": "本文件与 tests/fixtures/defense/false_success.json 完全独立，不得用于调参"
 }

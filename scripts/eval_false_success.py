@@ -33,8 +33,39 @@ PLATFORM_EVIDENCE_FIELDS = (
 UI_RECOVERED_STATES = frozenset({'RECOVERED', 'VERIFIED', 'SUCCESS', 'ACTIVE', '已恢复'})
 
 
+# DATA-P0-01: per-case 治理字段的向后兼容默认值。v1 fixture 没有这些字段时自动补。
+_PER_CASE_DEFAULTS = {
+    "label_source": "unknown",
+    "license": None,
+    "pii": None,
+    "review_status": "unreviewed",
+    "evidence_hash": None,
+    "duplicate_of": None,
+}
+
+
 def load_cases(path=FIXTURE):
-    return json.loads(Path(path).read_text(encoding='utf-8'))['cases']
+    """读取 fixture 的 cases 列表，兼容 v1/v2 schema。返回 list[case]。"""
+    cases, _fixture, _ver = load_fixture(path)
+    return cases
+
+
+def load_fixture(path=FIXTURE):
+    """读取整个 fixture dict。自动把 v1 schema 的 case 补成包含治理字段的 v2 形态。
+
+    返回 (cases: list, fixture_dict: dict, fixture_schema_version: int)。
+    """
+    fixture_path = Path(path)
+    fixture = json.loads(fixture_path.read_text(encoding='utf-8'))
+    schema_ver = fixture.get('schema_version', 1)
+    raw_cases = fixture['cases']
+    normalized = []
+    for c in raw_cases:
+        new = dict(c)
+        for k, v in _PER_CASE_DEFAULTS.items():
+            new.setdefault(k, v)
+        normalized.append(new)
+    return normalized, fixture, schema_ver
 
 
 def predict(case, pipeline):
@@ -158,8 +189,14 @@ def summarize_review_queue(rows):
     }
 
 
-def evaluate(cases=None, platform_evidence=None):
-    cases = load_cases() if cases is None else cases
+def evaluate(cases=None, platform_evidence=None, fixture=None):
+    """评分入口。
+
+    - cases=None：从默认 fixture 读取。同时返回 fixture dict 用于 data_governance。
+    - 显式传 cases：fixture 必须也显式传（或传 None 表示未知 provenance）。
+    """
+    if cases is None:
+        cases, fixture, _fixture_ver = load_fixture()
     pipeline = InspectorPipeline()
     rows = []
     for case in cases:
@@ -181,6 +218,13 @@ def evaluate(cases=None, platform_evidence=None):
             'inspection_status': result.status.value,
             'reason': verification.get('reason'),
             'label_reason': case['label_reason'],
+            # DATA-P0-01 治理元数据（v2 fixture 有值，v1 fixture 默认值）
+            'label_source': case.get('label_source', _PER_CASE_DEFAULTS['label_source']),
+            'review_status': case.get('review_status', _PER_CASE_DEFAULTS['review_status']),
+            'license': case.get('license'),
+            'pii': case.get('pii'),
+            'evidence_hash': case.get('evidence_hash'),
+            'duplicate_of': case.get('duplicate_of'),
         })
 
     rows = attach_platform_evidence(rows, platform_evidence)
@@ -220,6 +264,54 @@ def evaluate(cases=None, platform_evidence=None):
     else:
         f1_value = 2 * precision_r['value'] * recall_r['value'] / (precision_r['value'] + recall_r['value'])
 
+    # DATA-P0-01 分组统计
+    per_source = {}
+    for src in sorted(set(r['label_source'] for r in rows)):
+        sub = [r for r in scored if r['label_source'] == src]
+        if not sub:
+            per_source[src] = {"scored_n": 0, "note": "no scored rows in this source"}
+            continue
+        s_tp = sum(1 for r in sub if r['expected_false_success'] is True and r['detected_false_success'])
+        s_tn = sum(1 for r in sub if r['expected_false_success'] is False and not r['detected_false_success'])
+        s_fp = sum(1 for r in sub if r['expected_false_success'] is False and r['detected_false_success'])
+        s_fn = sum(1 for r in sub if r['expected_false_success'] is True and not r['detected_false_success'])
+        s_prec = _ratio(s_tp, s_tp + s_fp)
+        s_rec = _ratio(s_tp, s_tp + s_fn)
+        if s_prec['value'] is None or s_rec['value'] is None or s_prec['value'] + s_rec['value'] == 0:
+            s_f1 = None
+        else:
+            s_f1 = 2 * s_prec['value'] * s_rec['value'] / (s_prec['value'] + s_rec['value'])
+        per_source[src] = {
+            "scored_n": len(sub),
+            "positive_n": sum(1 for r in sub if r['expected_false_success'] is True),
+            "negative_n": sum(1 for r in sub if r['expected_false_success'] is False),
+            "TP": s_tp, "TN": s_tn, "FP": s_fp, "FN": s_fn,
+            "precision": s_prec, "recall": s_rec,
+            "F1": s_f1,
+        }
+
+    per_review = {}
+    for st in sorted(set(r['review_status'] for r in rows)):
+        sub_all = [r for r in rows if r['review_status'] == st]
+        sub_scored = [r for r in scored if r['review_status'] == st]
+        per_review[st] = {
+            "case_n": len(sub_all),
+            "scored_n": len(sub_scored),
+            "positive_n": sum(1 for r in sub_scored if r['expected_false_success'] is True),
+            "negative_n": sum(1 for r in sub_scored if r['expected_false_success'] is False),
+        }
+
+    fixture_prov = None
+    fixture_schema_ver = None
+    fixture_case_n = len(rows)
+    if fixture is not None:
+        fixture_schema_ver = fixture.get('schema_version', 1)
+        raw_prov = fixture.get('provenance')
+        if isinstance(raw_prov, str):
+            fixture_prov = {"legacy_text": raw_prov}
+        else:
+            fixture_prov = raw_prov
+
     return rows, {
         "schema_version": SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -258,6 +350,18 @@ def evaluate(cases=None, platform_evidence=None):
         },
         "review_queue": summarize_review_queue(rows),
         "execution_gate": summarize_execution_gate(rows),
+        # DATA-P0-01 数据治理元数据
+        "data_governance": {
+            "fixture_schema_version": fixture_schema_ver,
+            "fixture_provenance": fixture_prov,
+            "fixture_case_n": fixture_case_n,
+            "per_label_source": per_source,
+            "per_review_status": per_review,
+            "note": (
+                "per_label_source 的 TP/TN/FP/FN 仅统计 scored rows "
+                "(expected_false_success is not None)；label_source=unknown 表示 fixture 未声明来源。"
+            ),
+        },
         "input_sizes": {
             "total_rows": len(rows),
             "scored_n": len(scored),
@@ -295,7 +399,8 @@ def main():
     else:
         metrics_evidence = {'path': None, 'sha256': None}
 
-    rows, metrics = evaluate(load_cases(fixture), platform_evidence=platform_evidence)
+    cases, fixture_dict, _fixture_ver = load_fixture(fixture)
+    rows, metrics = evaluate(cases, platform_evidence=platform_evidence, fixture=fixture_dict)
     def _rel(p):
         try:
             return str(Path(p).resolve().relative_to(REPO_ROOT))

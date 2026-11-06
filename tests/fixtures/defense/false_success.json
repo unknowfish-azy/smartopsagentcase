@@ -1,6 +1,16 @@
 {
-  "schema_version": 1,
-  "provenance": "AI-authored synthetic fixtures; no human or live-data provenance claimed",
+  "schema_version": 2,
+  "provenance": {
+    "source_type": "synthetic_dev",
+    "source_id": "eval_false_success_synthetic_v2",
+    "license": "MIT-synthetic",
+    "pii_contained": false,
+    "created_at": "2026-11-06",
+    "created_by": "DATA-P0-01 fixture governance (not human-reviewed)",
+    "curation_hash": "d3ed628ee31d3fa0498b4200363b3ce0d426ae87d213cb4a0629e33ee058ea4d",
+    "notes": "Developed synthetically for SCORE-P0-01 false-success fixture suite. No human Golden, no live observation, no PII. Labels are unit-testable assertions against probes; do not claim real-world distribution fit.",
+    "legacy_provenance_text": "AI-authored synthetic fixtures; no human or live-data provenance claimed"
+  },
   "limitations": "固定样本用于功能验证；不以目标F1筛选；标签未经过独立人工复核",
   "cases": [
     {
@@ -20,7 +30,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "以目标端口监听事实作为恢复依据"
+      "label_reason": "以目标端口监听事实作为恢复依据",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-02",
@@ -39,7 +55,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "以目标端口监听事实作为恢复依据"
+      "label_reason": "以目标端口监听事实作为恢复依据",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-03",
@@ -58,7 +80,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "以目标端口监听事实作为恢复依据"
+      "label_reason": "以目标端口监听事实作为恢复依据",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-04",
@@ -77,7 +105,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "以目标端口监听事实作为恢复依据"
+      "label_reason": "以目标端口监听事实作为恢复依据",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-05",
@@ -96,7 +130,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "以目标端口监听事实作为恢复依据"
+      "label_reason": "以目标端口监听事实作为恢复依据",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-06",
@@ -115,7 +155,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "以目标端口监听事实作为恢复依据"
+      "label_reason": "以目标端口监听事实作为恢复依据",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-07",
@@ -134,7 +180,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "以目标端口监听事实作为恢复依据"
+      "label_reason": "以目标端口监听事实作为恢复依据",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-08",
@@ -154,7 +206,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "进程存在不等于业务端口监听"
+      "label_reason": "进程存在不等于业务端口监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-09",
@@ -174,7 +232,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "进程存在不等于业务端口监听"
+      "label_reason": "进程存在不等于业务端口监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-10",
@@ -194,7 +258,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "进程存在不等于业务端口监听"
+      "label_reason": "进程存在不等于业务端口监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-11",
@@ -214,7 +284,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "进程存在不等于业务端口监听"
+      "label_reason": "进程存在不等于业务端口监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-12",
@@ -234,7 +310,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "进程存在不等于业务端口监听"
+      "label_reason": "进程存在不等于业务端口监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-13",
@@ -254,7 +336,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "进程存在不等于业务端口监听"
+      "label_reason": "进程存在不等于业务端口监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-14",
@@ -274,7 +362,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "进程存在不等于业务端口监听"
+      "label_reason": "进程存在不等于业务端口监听",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-15",
@@ -289,7 +383,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "HTTP响应版本需与预期v2一致"
+      "label_reason": "HTTP响应版本需与预期v2一致",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-16",
@@ -304,7 +404,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "HTTP响应版本需与预期v2一致"
+      "label_reason": "HTTP响应版本需与预期v2一致",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-17",
@@ -319,7 +425,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "HTTP响应版本需与预期v2一致"
+      "label_reason": "HTTP响应版本需与预期v2一致",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-18",
@@ -334,7 +446,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "HTTP响应版本需与预期v2一致"
+      "label_reason": "HTTP响应版本需与预期v2一致",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-19",
@@ -349,7 +467,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "HTTP响应版本需与预期v2一致"
+      "label_reason": "HTTP响应版本需与预期v2一致",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-20",
@@ -364,7 +488,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "HTTP响应版本需与预期v2一致"
+      "label_reason": "HTTP响应版本需与预期v2一致",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-21",
@@ -379,7 +509,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "HTTP响应版本需与预期v2一致"
+      "label_reason": "HTTP响应版本需与预期v2一致",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-22",
@@ -395,7 +531,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "数据库连接超时代表依赖仍异常"
+      "label_reason": "数据库连接超时代表依赖仍异常",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-23",
@@ -411,7 +553,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "数据库连接超时代表依赖仍异常"
+      "label_reason": "数据库连接超时代表依赖仍异常",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-24",
@@ -427,7 +575,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "数据库连接超时代表依赖仍异常"
+      "label_reason": "数据库连接超时代表依赖仍异常",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-25",
@@ -443,7 +597,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "数据库连接超时代表依赖仍异常"
+      "label_reason": "数据库连接超时代表依赖仍异常",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-26",
@@ -459,7 +619,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "数据库连接超时代表依赖仍异常"
+      "label_reason": "数据库连接超时代表依赖仍异常",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-27",
@@ -475,7 +641,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "数据库连接超时代表依赖仍异常"
+      "label_reason": "数据库连接超时代表依赖仍异常",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-28",
@@ -491,7 +663,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "数据库连接超时代表依赖仍异常"
+      "label_reason": "数据库连接超时代表依赖仍异常",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-29",
@@ -517,7 +695,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "三个实例中任一不健康即未全部恢复"
+      "label_reason": "三个实例中任一不健康即未全部恢复",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-30",
@@ -543,7 +727,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "三个实例中任一不健康即未全部恢复"
+      "label_reason": "三个实例中任一不健康即未全部恢复",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-31",
@@ -569,7 +759,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "三个实例中任一不健康即未全部恢复"
+      "label_reason": "三个实例中任一不健康即未全部恢复",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-32",
@@ -595,7 +791,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "三个实例中任一不健康即未全部恢复"
+      "label_reason": "三个实例中任一不健康即未全部恢复",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-33",
@@ -621,7 +823,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "三个实例中任一不健康即未全部恢复"
+      "label_reason": "三个实例中任一不健康即未全部恢复",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-34",
@@ -647,7 +855,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "三个实例中任一不健康即未全部恢复"
+      "label_reason": "三个实例中任一不健康即未全部恢复",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-35",
@@ -668,7 +882,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "全部观测健康且无失败事实"
+      "label_reason": "全部观测健康且无失败事实",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-36",
@@ -689,7 +909,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "全部观测健康且无失败事实"
+      "label_reason": "全部观测健康且无失败事实",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-37",
@@ -710,7 +936,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "全部观测健康且无失败事实"
+      "label_reason": "全部观测健康且无失败事实",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-38",
@@ -731,7 +963,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "全部观测健康且无失败事实"
+      "label_reason": "全部观测健康且无失败事实",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-39",
@@ -752,7 +990,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "全部观测健康且无失败事实"
+      "label_reason": "全部观测健康且无失败事实",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-40",
@@ -773,7 +1017,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "全部观测健康且无失败事实"
+      "label_reason": "全部观测健康且无失败事实",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-41",
@@ -786,7 +1036,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "声称失败而观测成功，不是假成功"
+      "label_reason": "声称失败而观测成功，不是假成功",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-42",
@@ -799,7 +1055,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "否定完成态不应被误识别为成功"
+      "label_reason": "否定完成态不应被误识别为成功",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-43",
@@ -812,7 +1074,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "英文否定不是完成态"
+      "label_reason": "英文否定不是完成态",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-44",
@@ -825,7 +1093,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "没有成功声明，端口异常不构成假成功"
+      "label_reason": "没有成功声明，端口异常不构成假成功",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-45",
@@ -838,7 +1112,13 @@
         }
       ],
       "expected_false_success": false,
-      "label_reason": "失败声明与异常观测一致"
+      "label_reason": "失败声明与异常观测一致",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-46",
@@ -846,7 +1126,13 @@
       "claim": "服务已恢复",
       "probes": [],
       "expected_false_success": null,
-      "label_reason": "无观测，待核验，禁止当作通过或失败"
+      "label_reason": "无观测，待核验，禁止当作通过或失败",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-47",
@@ -859,7 +1145,13 @@
         }
       ],
       "expected_false_success": null,
-      "label_reason": "缺少有效HTTP响应，待核验"
+      "label_reason": "缺少有效HTTP响应，待核验",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-48",
@@ -872,7 +1164,13 @@
         }
       ],
       "expected_false_success": null,
-      "label_reason": "未知探针类型，待核验"
+      "label_reason": "未知探针类型，待核验",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-49",
@@ -885,7 +1183,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "HTTP502与完成态矛盾"
+      "label_reason": "HTTP502与完成态矛盾",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     },
     {
       "id": "FS-50",
@@ -898,7 +1202,13 @@
         }
       ],
       "expected_false_success": true,
-      "label_reason": "口语完成态与503矛盾，检测器可能漏检"
+      "label_reason": "口语完成态与503矛盾，检测器可能漏检",
+      "label_source": "synthetic_dev",
+      "license": "MIT-synthetic",
+      "pii": false,
+      "review_status": "unreviewed",
+      "evidence_hash": null,
+      "duplicate_of": null
     }
   ]
 }
