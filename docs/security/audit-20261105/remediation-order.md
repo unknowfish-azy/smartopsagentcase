@@ -240,6 +240,8 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 | SEC-07 治理 fail-closed | 缺档案仅最小只读；`platformLevel` 缺档案=null；治理表故障 500；新建/提升 admin 显式建档（deputy 无能力）；bootstrap 首 root 显式授全能力；5 个集成测试种子改用 `TestPlatformProfiles.grantRoot` 显式建档（AdminFoundation/Registration/TeamWorkspace/UserAuthentication/AdminMfa） | `UserAccountGovernanceIntegrationTest` 6 pass；4 个受影响回归类 70 pass；`AdminMfaIntegrationTest` 17 pass |
 | 回归 | SEC-03 单测 6/6 通过；integration 包 158/158、后端全量 708 项 0 失败 0 错误（1 skipped）；首轮全量曾出现 16 项 AdminMfa 403（该测试种子管理员缺治理档案，已补显式建档后复跑全绿）；Python 309 pass | 2026-11-06 |
 | 2.2 SEC-05 grant 绑定 | `consumeGrant` 校验 `grant_token`（`MessageDigest.isEqual` 常量时间）并作为条件 UPDATE 的 WHERE 条件；只读运行也持一次性 token；审批写 `grant_digest = SHA-256(规范化参数 + toolId + 工具版本 + 审批人)` 并审计；新增 `CANCELED` 与 `cancel` 接口；`create` 支持 `idempotencyKey`（唯一索引兜并发）；预览人比较改 `Objects.equals` | `TeamAgentRunServiceTest` 11 pass（缺 token 409、错误 token 403、篡改参数 409、幂等、撤回、高 user id 审批）；`TeamAgentRunRecoveryTest` 5 pass | 2026-11-06 |
+| 回归（SEC-04/05/09 后） | 后端全量 `mvn test` 715 项 0 失败 0 错误（1 skipped，124 个测试类）；Python `tests/agent` 88、ai-service 86 | 2026-11-06 |
+| 4.1 SEC-09 创建返回主键 | `PersonalKnowledgeService.createLibrary/createEntry`、`OperatorMemoryService.recordConfirmed/recordLearned`、`KnowledgeCrawlService.createSource` 改用 `GeneratedKeyHolder`，删除 `MAX(id)` 反查 | `OperatorMemoryServiceTest`（含 8 线程并发各返回自己那行）、`PersonalKnowledgeServiceTest`、`KnowledgeCrawlServiceTest`、`DecisionLoopServiceTest` 通过 |
 | 2.2 SEC-04 Agent run 绑定 | 执行指纹 payload 新增 `run_id`；`create_for_step` 要求 run 身份；`create_request` 标记 Deprecation（仅信息记录、永不授权）；`approve` 拒绝 reviewer=requester | `tests/agent/test_execution_approval.py` 42 pass；`tests/agent` 88 pass；ai-service 86 pass | 2026-11-06 |
 
 **仍未完成（不得声称已修复）**：
