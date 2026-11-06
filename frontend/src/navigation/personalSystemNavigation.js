@@ -94,6 +94,7 @@ export const personalSystemGroups = Object.freeze([
       { label: 'INSPECTOR CENTER', cn: '纠察中心', routeName: 'InspectorCenter', to: '/inspector' },
       { label: 'STATISTICS', cn: '统计', routeName: 'InspectorStatistics', to: '/inspector/statistics' },
       { label: 'RUN HISTORY', cn: '运行记录', routeName: 'OperationRunHistory', to: '/operations/runs' }
+      ,{ label: 'RECOVERY', cn: '恢复契约', routeName: 'RecoveryContracts', to: '/operations/recovery' }
       ,{ label: 'KNOWLEDGE REVIEW', cn: '知识审核', routeName: 'KnowledgeCandidateReview', to: '/knowledge/review' }
     ]
   })

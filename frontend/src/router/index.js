@@ -82,6 +82,7 @@ const routes = [
             { path: 'cloud-native', name: 'CloudNativeWorkbench', component: () => import('../views/cloud/CloudNativeWorkbenchView.vue'), meta: { ...routeMetaFor('CloudNativeWorkbench'), section: 'CLOUD NATIVE / 云原生工程' } },
             { path: 'tools/:tool?', name: 'Tools', component: () => import('../views/operations/ToolsView.vue'), meta: { section: 'TOOLS / 运维工具' } },
             { path: 'operations/runs', name: 'OperationRunHistory', component: () => import('../views/operations/RunHistoryView.vue'), meta: { ...routeMetaFor('OperationRunHistory'), section: 'RUN HISTORY / 运行记录' } },
+            { path: 'operations/recovery', name: 'RecoveryContracts', component: () => import('../views/operations/RecoveryContractsView.vue'), meta: { ...routeMetaFor('RecoveryContracts'), section: 'RECOVERY CONTRACTS / 恢复契约' } },
             { path: 'model-health', name: 'ModelHealth', redirect: '/model-strength' },
             { path: 'model-strength', name: 'ModelStrength', component: () => import('../views/model/ModelAnalyticsView.vue'), props: { mode: 'strength' }, meta: { ...routeMetaFor('ModelStrength'), section: 'MODEL STRENGTH / 模型强度' } },
             { path: 'token-usage', name: 'TokenUsage', component: () => import('../views/model/ModelAnalyticsView.vue'), props: { mode: 'tokens' }, meta: { ...routeMetaFor('TokenUsage'), section: 'TOKEN USAGE / 用量与额度' } },

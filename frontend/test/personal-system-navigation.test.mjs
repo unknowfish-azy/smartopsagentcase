@@ -16,6 +16,7 @@ test('maps Inspector statistics to the existing Memory parent group', () => {
     'InspectorCenter',
     'InspectorStatistics',
     'OperationRunHistory',
+    'RecoveryContracts',
     'KnowledgeCandidateReview'
   ])
 })
