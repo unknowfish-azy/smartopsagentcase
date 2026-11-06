@@ -229,7 +229,7 @@ public class RunbookCatalogService {
                 (String) selector.get("note"), ((Number) row.get("timeout_sec")).intValue(),
                 ((Number) row.get("retry_limit")).intValue(), ((Number) row.get("concurrency_limit")).intValue(),
                 ((Number) row.get("batch_size")).intValue(), ((Number) row.get("canary_size")).intValue(),
-                (String) row.get("idempotency_rule"), steps, instant((Timestamp) row.get("created_at")));
+                (String) row.get("idempotency_rule"), steps, instant(row.get("created_at")));
     }
 
     RunbookRow requireRunbook(Long userId, long id) {
@@ -415,6 +415,17 @@ public class RunbookCatalogService {
     }
 
     private static Instant instant(Timestamp value) { return value == null ? null : value.toInstant(); }
+
+    /** Map 取值时间列兼容：MySQL 返回 LocalDateTime，H2 返回 Timestamp（E2E 发现的线上断裂）。 */
+    private static Instant instant(Object value) {
+        if (value == null) return null;
+        if (value instanceof Timestamp timestamp) return timestamp.toInstant();
+        if (value instanceof java.time.LocalDateTime time) {
+            return time.atZone(java.time.ZoneId.systemDefault()).toInstant();
+        }
+        if (value instanceof java.util.Date date) return date.toInstant();
+        throw new IllegalArgumentException("不支持的时间列类型: " + value.getClass().getName());
+    }
 
     /* ── 视图 ─────────────────────────────────────────────────────────── */
 
