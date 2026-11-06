@@ -261,9 +261,12 @@ services:
 
       TZ: Asia/Shanghai
 
-    ports:
-
-      - "${AI_SERVICE_PORT:-8001}:8001"
+    # SEC-01 网络层隔离：8001 不发布到宿主机，ai-service 只能经 nginx
+    # （公网 /ai/、内网 /ai-api/）或同一 docker 网络内的服务访问。
+    # 本机直连调试需要时再临时放开：
+    # ports:
+    #
+    #   - "${AI_SERVICE_PORT:-8001}:8001"
 
     # 健康检查由镜像内 HEALTHCHECK 提供（slim 镜像不含 curl）
     networks:

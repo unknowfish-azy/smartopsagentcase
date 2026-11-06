@@ -252,7 +252,7 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 **仍未完成（不得声称已修复）**：
 - SEC-04/05 仅到代码 + 单元测试：`/api/team-agent-runs/*/execute` 的缺 token / 错误 token / 篡改参数负例未做 HTTP 级验收（`NOT_RUN`）。
 - Python 审批仍为进程内状态，无持久化审批审计表；宿主 reviewer 身份认证仍由调用方负责。
-- nginx `/ai-api` 网络层隔离未实施，仅保留应用层 401（注释已标注）。
+- nginx `/ai-api` 已加回环/私网 CIDR allowlist（公网 403），compose 不再发布 ai-service 8001；同源 `/ai` 仍依赖应用层 `X-Run-Token`，上层 LB 以私网回源时 allowlist 不生效（需网络 ACL）。
 - 连接期 IP pin 未实现，DNS rebinding 仍为残余风险。
 - 爬取并发上限（TM-25）、slow-drip（TM-23）未验证。
 - SEC-11 仅做应用层写库/回显脱敏：历史明文行未清洗；nginx access log / Logback 消息体未做框架级脱敏；真实爬取与 HTTP 回显未运行（TM-30/31 仅单测）。

@@ -43,7 +43,7 @@
 
 | ID | 状态 | 已落地 | 残余 |
 | --- | --- | --- | --- |
-| SEC-01 | 已修（应用层） | 新增 `RunTokenService` + `GET /api/chat/run-token`；ai-service 所有 `/api/chat*` 依赖校验 HMAC/过期；未配密钥 503、匿名 401 | nginx `/ai-api` 仍可网络直达，但无令牌即 401；网络层隔离未做 |
+| SEC-01 | 已修（应用层 + 网络层） | 新增 `RunTokenService` + `GET /api/chat/run-token`；ai-service 所有 `/api/chat*` 依赖校验 HMAC/过期；未配密钥 503、匿名 401；nginx `/ai-api/` 加回环+私网 CIDR allowlist（公网 403）；compose 不再发布 ai-service 8001（仅 nginx 与容器网络可达） | 同源 `/ai/` 仍是公网入口，只靠应用层令牌（无令牌 401）；上层负载均衡若以私网地址回源，`allow` 网段会被视为内网（需网络 ACL 补足）；`nginx -t` 未运行（镜像/守护进程不可用） |
 | SEC-02 | 已修 | run_id 只取签名令牌；客户端 `X-Run-ID` 被忽略；同一令牌复用 409 `RUN_TOKEN_REPLAYED`；令牌绑定 subject | 令牌单进程内存去重，多副本部署需共享存储 |
 | SEC-06 | 已修（代码级） | `OutboundUrlPolicy`：尾点/IDN/大小写归一，DNS 全地址分类（IPv4 私网/CGNAT/保留、IPv6 ULA/链路本地/映射/文档网段），首跳与逐跳复检，禁系统代理，下载 10MB 上限，单 run 60s 预算 | 未做连接期 IP pin；无并发上限（审计 TM-25 未覆盖）；未见真实 DNS rebinding 注入 |
 | SEC-15 | 已修（启动断言） | `SecurityAssertions` + `SecurityAssertionConfig`：生产（profile prod/production 或显式开关）下 `internal-bypass=true`、内部 token 缺失/过短、聊天令牌机密缺失 → `SECURITY_ASSERTION_FAILED` 拒绝启动；非生产仅告警 | `X-User-Id` 直读未收敛；内部 token 仍只覆盖 5 条路径；断言需真实启动一次才能观测（当前 `NOT_RUN`） |
