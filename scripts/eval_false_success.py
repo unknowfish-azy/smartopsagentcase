@@ -1,7 +1,8 @@
 """Evaluate frozen synthetic cases. Labels never enter the inspector context.
 
-v2 (SCORE-P0-01): 明确二分类与 uncertain 的关系；每个比率给分子/分母；
-零分母为 null；silent_pass_fn 加 caveat；执行闸/人工队列为 NOT_RUN；
+v3 (SCORE-P0-01): 明确二分类与 uncertain 的关系；每个比率给分子/分母；
+零分母为 null；silent_pass_fn 加 caveat；执行闸/人工队列在无证据时为 NOT_RUN，
+有平台证据时由 silent_release_violation 识别“uncertain 但 UI 显示已恢复/执行仍放行”；
 fixture 与脚本哈希、schema_version 绑定同一输入版本。
 """
 from __future__ import annotations
@@ -13,6 +14,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Mapping
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
@@ -21,7 +23,14 @@ from agent.inspector.models import EvidenceItem
 
 FIXTURE = REPO_ROOT / 'tests/fixtures/defense/false_success.json'
 DEFAULT_OUTPUT = REPO_ROOT / '06-工程整改/eval_false_success.csv'
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+PLATFORM_EVIDENCE_FIELDS = (
+    'ui_state',
+    'execution_permitted',
+    'review_task_created',
+    'review_task_status',
+)
+UI_RECOVERED_STATES = frozenset({'RECOVERED', 'VERIFIED', 'SUCCESS', 'ACTIVE', '已恢复'})
 
 
 def load_cases(path=FIXTURE):
@@ -45,7 +54,111 @@ def _ratio(num, den):
     return {"num": num, "den": den, "value": num / den}
 
 
-def evaluate(cases=None):
+def attach_platform_evidence(rows, evidence):
+    """把平台侧证据（UI 状态/执行许可/复核任务）逐行挂到结果上。
+
+    证据缺省时字段为 None，后续汇总据此返回 NOT_RUN，不默认记 0 或 100%。
+    """
+    normalized: dict[str, dict[str, Any]] = {}
+    for sample_id, item in (evidence or {}).items():
+        if not isinstance(sample_id, str) or not isinstance(item, Mapping):
+            raise ValueError('platform_evidence 必须是 {sample_id: object}')
+        unknown = set(item) - set(PLATFORM_EVIDENCE_FIELDS)
+        if unknown:
+            raise ValueError(f'platform_evidence[{sample_id}] 含未知字段：{sorted(unknown)}')
+        normalized[sample_id] = dict(item)
+
+    merged_rows = []
+    for row in rows:
+        merged = dict(row)
+        recorded = normalized.get(row['sample_id'], {})
+        for field in PLATFORM_EVIDENCE_FIELDS:
+            merged[field] = recorded.get(field)
+        merged_rows.append(merged)
+    return merged_rows
+
+
+def _ui_shows_recovered(value) -> bool:
+    return isinstance(value, str) and value.strip().upper() in UI_RECOVERED_STATES
+
+
+def summarize_execution_gate(rows):
+    """执行闸指标：无平台证据即 NOT_RUN；有证据时单列错放与静默放行反例。"""
+    recorded = [
+        row for row in rows
+        if row.get('execution_permitted') is not None or row.get('ui_state') is not None
+    ]
+    if not recorded:
+        return {
+            "status": "NOT_RUN",
+            "evidence_rows": 0,
+            "false_release_n": "NOT_RUN",
+            "false_release_rate": "NOT_RUN",
+            "silent_release_violation_n": "NOT_RUN",
+            "silent_release_violation_rate": "NOT_RUN",
+            "violation_sample_ids": [],
+            "definition": (
+                "未采集 UI/执行闸证据，故不放行指标为 NOT_RUN。"
+                "不得把结论降级为 0 或 100%。"
+            ),
+        }
+
+    positives = [row for row in recorded if row['expected_false_success'] is True]
+    uncertain_rows = [row for row in recorded if row['uncertain']]
+    false_release = [
+        row for row in positives
+        if row.get('execution_permitted') is True and not row['detected_false_success']
+    ]
+    # 反例识别：Inspector 已给 uncertain（未确认恢复）却仍显示已恢复或放行执行。
+    violations = [
+        row for row in uncertain_rows
+        if row.get('execution_permitted') is True or _ui_shows_recovered(row.get('ui_state'))
+    ]
+    return {
+        "status": "RAN",
+        "evidence_rows": len(recorded),
+        "false_release_n": len(false_release),
+        "false_release_rate": _ratio(len(false_release), len(positives)),
+        "silent_release_violation_n": len(violations),
+        "silent_release_violation_rate": _ratio(len(violations), len(uncertain_rows)),
+        "violation_sample_ids": [row['sample_id'] for row in violations],
+        "definition": (
+            "false_release = expected=True ∧ execution_permitted=True ∧ 未检出；"
+            "silent_release_violation = uncertain=True ∧ (UI 显示已恢复 ∨ execution_permitted=True)。"
+            "两个比率分母分别为“有证据的正例数”和“有证据的 uncertain 数”，零分母为 null。"
+        ),
+    }
+
+
+def summarize_review_queue(rows):
+    """复核队列指标：区分“标记需复核”与“任务已创建/已送达”。"""
+    needed = [row for row in rows if row['uncertain']]
+    recorded = [row for row in rows if row.get('review_task_created') is not None]
+    if not recorded:
+        return {
+            "review_needed_n": len(needed),
+            "review_task_created_n": "NOT_RUN",
+            "review_task_created": "NOT_RUN",
+            "review_task_status": "NOT_RUN",
+            "note": "无人工队列证据：只统计 uncertain=True 的“需复核数”，创建/送达记 NOT_RUN。",
+        }
+
+    created = [row for row in recorded if row.get('review_task_created') is True]
+    statuses: dict[str, int] = {}
+    for row in created:
+        key = row.get('review_task_status') or 'UNKNOWN'
+        statuses[key] = statuses.get(key, 0) + 1
+    return {
+        "review_needed_n": len(needed),
+        "review_task_created_n": len(created),
+        "review_task_created": len(created),
+        "review_task_created_rate": _ratio(len(created), len(needed)),
+        "review_task_status": statuses,
+        "note": "review_task_created 仅统计确已创建任务的行；状态按任务状态计数。",
+    }
+
+
+def evaluate(cases=None, platform_evidence=None):
     cases = load_cases() if cases is None else cases
     pipeline = InspectorPipeline()
     rows = []
@@ -69,6 +182,8 @@ def evaluate(cases=None):
             'reason': verification.get('reason'),
             'label_reason': case['label_reason'],
         })
+
+    rows = attach_platform_evidence(rows, platform_evidence)
 
     scored = [r for r in rows if r['expected_false_success'] is not None]
     unscored = [r for r in rows if r['expected_false_success'] is None]
@@ -141,22 +256,8 @@ def evaluate(cases=None):
                 "a value of 0 here does NOT prove zero real-world silent release."
             ),
         },
-        "review_queue": {
-            # Cases that need human review = uncertain=True regardless of expected label
-            "review_needed_n": uncertain_all,
-            "review_needed_positive_n": uncertain_pos,
-            "review_needed_negative_n": uncertain_neg,
-            "review_task_created": "NOT_RUN",
-            "review_task_status": "NOT_RUN",
-            "note": "No integration with real task queue; review_needed_n counts uncertain=True rows.",
-        },
-        "execution_gate": {
-            "false_release_n": "NOT_RUN",
-            "note": (
-                "No E2E/UI/execution-gate evidence collected in SCORE-P0-01. "
-                "This metric waits for E2E-OBS-P0-01 to wire real gate inspection."
-            ),
-        },
+        "review_queue": summarize_review_queue(rows),
+        "execution_gate": summarize_execution_gate(rows),
         "input_sizes": {
             "total_rows": len(rows),
             "scored_n": len(scored),
@@ -173,6 +274,8 @@ def main():
                         help='fixture 路径；留出集用 tests/fixtures/defense/false_success_holdout.json')
     parser.add_argument('--metrics-json', type=Path, default=None,
                         help='可选：将完整 metrics dict 写成 JSON（默认只打印）')
+    parser.add_argument('--platform-evidence', type=Path, default=None,
+                        help='可选：{sample_id: {ui_state, execution_permitted, review_task_created, review_task_status}} JSON')
     args = parser.parse_args()
 
     fixture = Path(args.fixture)
@@ -182,7 +285,17 @@ def main():
     script_path = Path(__file__)
     script_sha = hashlib.sha256(script_path.read_bytes()).hexdigest()
 
-    rows, metrics = evaluate(load_cases(fixture))
+    platform_evidence = None
+    if args.platform_evidence is not None:
+        platform_evidence = json.loads(args.platform_evidence.read_text(encoding='utf-8'))
+        metrics_evidence = {
+            'path': str(args.platform_evidence),
+            'sha256': hashlib.sha256(args.platform_evidence.read_bytes()).hexdigest(),
+        }
+    else:
+        metrics_evidence = {'path': None, 'sha256': None}
+
+    rows, metrics = evaluate(load_cases(fixture), platform_evidence=platform_evidence)
     def _rel(p):
         try:
             return str(Path(p).resolve().relative_to(REPO_ROOT))
@@ -196,6 +309,7 @@ def main():
         'path': _rel(script_path),
         'sha256': script_sha,
     }
+    metrics['platform_evidence'] = metrics_evidence
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('w', encoding='utf-8-sig', newline='') as handle:
@@ -220,7 +334,11 @@ def main():
     print(f"uncertain_total={ub['uncertain_total']}  uncertain_pos={ub['uncertain_positive']}  uncertain_neg={ub['uncertain_negative']}")
     print(f"explicit_coverage={ub['explicit_coverage']['value']}  false_verified_n={metrics['false_verification']['false_verified_n']}")
     print(f"FN includes uncertain-positive by design (taskbook §3.1).")
-    print(f"execution_gate=false_release_n: NOT_RUN (no E2E/UI evidence yet).")
+    gate = metrics['execution_gate']
+    print(f"execution_gate.status={gate['status']}  false_release_n={gate['false_release_n']}  "
+          f"silent_release_violation_n={gate['silent_release_violation_n']}")
+    queue = metrics['review_queue']
+    print(f"review_needed_n={queue['review_needed_n']}  review_task_created={queue['review_task_created']}")
     print(f"CSV: {args.output}")
     return 0
 

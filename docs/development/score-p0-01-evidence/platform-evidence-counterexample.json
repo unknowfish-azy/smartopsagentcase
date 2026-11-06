@@ -1,0 +1,13 @@
+{
+  "HO-01": {
+    "ui_state": "RECOVERED",
+    "execution_permitted": true,
+    "review_task_created": false
+  },
+  "HO-02": {
+    "ui_state": "NEEDS_REVIEW",
+    "execution_permitted": false,
+    "review_task_created": true,
+    "review_task_status": "OPEN"
+  }
+}
