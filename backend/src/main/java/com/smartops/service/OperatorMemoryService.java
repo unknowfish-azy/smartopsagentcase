@@ -1,6 +1,7 @@
 package com.smartops.service;
 
 import com.smartops.exception.BusinessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
@@ -19,9 +20,14 @@ public class OperatorMemoryService {
     public Memory recordConfirmed(Long userId, String incidentKey, String memoryType, String preferredAction, String sourceRefs) {
         if (incidentKey == null || incidentKey.isBlank() || preferredAction == null || preferredAction.isBlank()) throw new BusinessException("OPERATOR_MEMORY_INPUT_REQUIRED");
         Instant now = Instant.now();
-        // SEC-09：直接取本次插入的主键，避免同用户并发时 MAX(id) 取到别人的记录。
-        long id = insertReturningId("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", userId, incidentKey.trim(), memoryType == null ? "GENERAL" : memoryType.trim(), preferredAction.trim(), sourceRefs, 1, 0.5d, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
-        return detail(userId, id);
+        try {
+            // SEC-09：直接取本次插入的主键，避免同用户并发时 MAX(id) 取到别人的记录。
+            long id = insertReturningId("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", userId, incidentKey.trim(), memoryType == null ? "GENERAL" : memoryType.trim(), preferredAction.trim(), sourceRefs, 1, 0.5d, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
+            return detail(userId, id);
+        } catch (DuplicateKeyException e) {
+            // SEC-10：(user_id, source_refs) 唯一键冲突——同来源记忆已存在，拒绝重复创建。
+            throw new BusinessException(409, "OPERATOR_MEMORY_SOURCE_EXISTS");
+        }
     }
 
     /**
@@ -45,9 +51,24 @@ public class OperatorMemoryService {
     public Memory recordLearned(Long userId, String incidentKey, String preferredAction, String sourceRefs) {
         if (incidentKey == null || incidentKey.isBlank() || preferredAction == null || preferredAction.isBlank()) return null;
         Instant now = Instant.now();
-        long id = insertReturningId("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                userId, incidentKey.trim(), "DECISION_LOOP", preferredAction.trim(), sourceRefs, 1, 0.55d, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
-        return detail(userId, id);
+        try {
+            long id = insertReturningId("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    userId, incidentKey.trim(), "DECISION_LOOP", preferredAction.trim(), sourceRefs, 1, 0.55d, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
+            return detail(userId, id);
+        } catch (DuplicateKeyException e) {
+            // SEC-10：唯一键冲突说明该 loop 已沉淀过记忆（review 幂等兜底），返回已有行即可。
+            Memory existing = findBySourceRefs(userId, sourceRefs);
+            return existing != null ? existing : null;
+        }
+    }
+
+    /** 按 (user_id, source_refs) 查找已有记忆，用于唯一键冲突后的幂等回退。 */
+    private Memory findBySourceRefs(Long userId, String sourceRefs) {
+        List<Memory> rows = jdbc.query(
+                "SELECT id,user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at "
+                        + "FROM operator_memory WHERE user_id=? AND source_refs=? LIMIT 1",
+                this::map, userId, sourceRefs);
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
     public List<Memory> byIds(Long userId, List<Long> ids) {
