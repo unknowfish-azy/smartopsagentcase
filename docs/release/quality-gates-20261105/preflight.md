@@ -10,7 +10,7 @@
 | 输出根 | `d:\SmartOpsAgent\.runtime\hc-check\<runId>\preflight\` |
 | runId 格式 | `YYYYMMDD-HHMMSS-HC05` |
 
-本清单只读：不安装工具、不启动服务、不改环境变量、不输出任何 secret 值。所有命令默认在 `d:\SmartOpsAgent` 执行，除非表中另有工作目录。
+本清单只读：不安装工具、不启动服务、不改环境变量、不输出任何 secret 值。所有命令默认在 `d:\SmartOpsAgent` 执行，除非表中另有工作目录。表格单元格内的 `\|` 是 Markdown 转义，实际执行 PowerShell 时按 `|` 输入。
 
 ---
 
@@ -24,6 +24,9 @@ $items = New-Object System.Collections.Generic.List[object]
 function Add-Item([string]$id, [string]$status, [string]$detail, [string]$evidence) {
     $items.Add([pscustomobject]@{ id=$id; status=$status; detail=$detail; evidence=$evidence })
 }
+# 全部检查完成后汇总（示例，status 必须按第 1 节判定）
+# @{ run_id="$runId-HC05"; generated_at=(Get-Date).ToString('o'); mode='read-only'; items=$items; verdict='PASS|FAIL' } |
+#   ConvertTo-Json -Depth 5 | Set-Content -LiteralPath "$run\preflight\preflight.json" -Encoding UTF8
 ```
 
 判定规则：
@@ -64,11 +67,11 @@ function Add-Item([string]$id, [string]$status, [string]$detail, [string]$eviden
 | A01 | Node / npm | `node --version; npm --version`（项目根） | Node ≥ 22；npm ≥ 10；记录精确版本 | 低于 22 判 FAIL；版本漂移（本地 24 vs CI 22）记入报告但不单独阻断 | `A01-node.txt` |
 | A02 | Python / pytest | `python --version; python -c "import pytest,sys;print('pytest',pytest.__version__)"`（项目根） | Python ≥ 3.11；pytest 可导入 | 不满足判 FAIL；CI 3.11 与本地 3.14 漂移必须写明 | `A02-python.txt` |
 | A03 | PATH JDK | `java -version`（项目根） | 版本号 ≥ 17 | 当前 PATH 为 1.8 时判 FAIL；JAVA-TEST 记 `NOT_RUN/BLOCKED_ENV` | `A03-java.txt` |
-| A04 | 受管 JDK17 候选 | `Test-Path "$env:USERPROFILE\scoop\apps\openjdk17\current\bin\java.exe"; & "$env:USERPROFILE\scoop\apps\openjdk17\current\bin\java.exe" -version`（项目根） | 路径存在且输出 17.x | 不存在则仍 BLOCKED；由环境负责人提供 JDK17；本 RUN 不下载安装 | `A04-jdk17.txt` |
+| A04 | 受管 JDK17 候选 | `if (Test-Path "$env:USERPROFILE\scoop\apps\openjdk17\current\bin\java.exe") { & "$env:USERPROFILE\scoop\apps\openjdk17\current\bin\java.exe" -version } else { 'ABSENT' }`（项目根） | 路径存在且输出 17.x | 不存在则仍 BLOCKED；由环境负责人提供 JDK17；本 RUN 不下载安装 | `A04-jdk17.txt` |
 | A05 | JAVA_HOME 与 Maven 运行 JDK | `"JAVA_HOME=$env:JAVA_HOME"; mvn -v`（项目根） | `mvn -v` 的 Java version 为 17.x；Maven ≥ 3.9 | Java 非 17 判 FAIL；`.m2` 存在不作为证据 | `A05-maven.txt` |
 | A06 | 进程内切换验证 | `$env:JAVA_HOME="$env:USERPROFILE\scoop\apps\openjdk17\current"; $env:Path="$env:JAVA_HOME\bin;$env:Path"; mvn -v`（项目根） | 仅影响当前进程；输出 Java 17 | 切换失败保持 BLOCKED；不得改系统/用户级环境变量 | `A06-maven-jdk17.txt` |
 | A07 | Git 与基线 | `git rev-parse HEAD; @(git status --porcelain).Count`（项目根） | HEAD 与报告一致；dirty 条目数与开始记录一致 | 不一致时重新登记基线，不得 revert；只读命令 | `A07-git.txt` |
-| A08 | OS / PowerShell / 时区 | `$PSVersionTable.PSVersion; [Environment]::OSVersion.VersionString; Get-TimeZone | Select-Object Id` | 能读出；时区记录为 `Asia/Shanghai` | 无法读取记 `NOT_RUN`，不阻断 | `A08-os.txt` |
+| A08 | OS / PowerShell / 时区 | `$PSVersionTable.PSVersion; [Environment]::OSVersion.VersionString; (Get-TimeZone).Id`（项目根） | 能读出；时区记录为 `Asia/Shanghai` | 无法读取记 `NOT_RUN`，不阻断 | `A08-os.txt` |
 | A09 | Docker（可选） | `docker version --format '{{.Server.Version}}'`（项目根） | 命令可用且 Server 版本可读 | 不可用记 `SKIP`；仅影响需要容器的启动验收 | `A09-docker.txt` |
 | A10 | 浏览器（条件项） | `Test-Path 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'; Test-Path 'frontend\node_modules\playwright\package.json'`（项目根） | 两者均存在 | 缺失则 FE-VISUAL/FE-A11Y 记 `NOT_RUN/BLOCKED_DEP`；非 Windows 同 | `A10-browser.txt` |
 
@@ -82,9 +85,9 @@ Java 17 是 `JAVA-TEST` 的硬前置。候选路径存在只代表“可能可�
 |---|---|---|---|---|---|
 | B01 | 固定端口占用 | 见下方脚本（项目根） | 构建 preflight：端口空闲；启动 preflight：由**预期服务**占用，且 readiness 通过 | 被未知进程占用判 FAIL；**不得 kill 未知 PID** | `B01-ports.txt` |
 | B02 | 浏览器临时端口段 | 见下方脚本（项目根） | 4300–4399、4500–4579 内无监听 | 有监听判 FAIL，换段或先确认归属；不杀进程 | `B02-browser-ports.txt` |
-| B03 | HTTP readiness（仅启动阶段） | `. scripts/windows/service-readiness.ps1; Test-ServiceReadiness -Uri 'http://127.0.0.1:8080/actuator/health'`；AI 加 `-ExpectedService 'smartops-ai-service'`；Knowledge 加 `-ExpectedService 'smartops-knowledge-service' -RequireIndex`（项目根） | Backend `status=UP`；AI 服务名匹配；Knowledge `ready=true`、`chunks>0`、`status=READY` | 端口在监听但 readiness 失败 = FAIL；固定 `sleep` 不算证据 | `B03-readiness.txt` |
+| B03 | HTTP readiness（仅启动阶段） | `. (Join-Path (Get-Location) 'scripts\windows\service-readiness.ps1'); Test-ServiceReadiness -Uri 'http://127.0.0.1:8080/actuator/health'`；AI 加 `-ExpectedService 'smartops-ai-service'`；Knowledge 加 `-ExpectedService 'smartops-knowledge-service' -RequireIndex`（项目根） | Backend `status=UP`；AI 服务名匹配；Knowledge `ready=true`、`chunks>0`、`status=READY` | 端口在监听但 readiness 失败 = FAIL；固定 `sleep` 不算证据 | `B03-readiness.txt` |
 | B04 | 启动版本指纹 | 启动后请求 `/actuator/health`、`/api/health`、`/api/ready`（项目根） | 返回中的版本/commit/服务名与本次输入 hash 对应 | 缺失版本字段记 `FAIL`（无法解释本次启动的是哪个制品） | `B04-version.txt` |
-| B05 | 监听多重绑定 | `Get-NetTCPConnection -LocalPort 8080,5173,5174,8001,8002 -State Listen | Select-Object LocalPort,LocalAddress,OwningProcess`（项目根） | 同一端口只有一个预期进程；无通配地址遮蔽 | 多进程监听判 FAIL（可能命中旧实例） | `B05-multi-bind.txt` |
+| B05 | 监听多重绑定 | `Get-NetTCPConnection -LocalPort 8080,5173,5174,8001,8002 -State Listen \| Select-Object LocalPort,LocalAddress,OwningProcess`（项目根） | 同一端口只有一个预期进程；无通配地址遮蔽 | 多进程监听判 FAIL（可能命中旧实例） | `B05-multi-bind.txt` |
 
 端口检查脚本（只读）：
 
@@ -102,15 +105,27 @@ foreach ($port in $ports) {
 
 预期归属：Frontend 用户 5173、Frontend 管理 5174、Backend 8080、AI 8001、Knowledge 8002、Ollama 11434、MySQL 3306、Redis 6379。归属不符时只登记、不处理。
 
+浏览器端口段（只读）：
+
+```powershell
+$browserPorts = (4300..4399) + (4500..4579)
+$busy = $browserPorts | ForEach-Object {
+  $l = @(Get-NetTCPConnection -LocalPort $_ -State Listen -ErrorAction SilentlyContinue)
+  if ($l.Count) { "port $_ LISTEN pid=$($l[0].OwningProcess)" }
+}
+if (!$busy) { 'browser port ranges FREE' } else { $busy }
+```
+
 ---
 
 ## 4. C 组：env 存在性（不读 secret）
 
 | ID | 检查项 | 命令（项目根） | PASS 判据 | 失败/缺口后果 | 输出 |
 |---|---|---|---|---|---|
-| C01 | env 文件存在 | `Test-Path -LiteralPath '.env'; Test-Path -LiteralPath '.runtime\secrets\bootstrap.env'` | `.env` 与 bootstrap 文件存在 | 缺失判 FAIL；`restart-local-backend.ps1` 明确要求 bootstrap 文件 | `C01-env-exists.txt` |
+| C01 | env 文件存在 | `Test-Path -LiteralPath '.env'` | `.env` 存在 | 缺失判 FAIL；所有依赖 env 的测试/启动不得继续 | `C01-env-exists.txt` |
 | C02 | 必需键名存在 | 见下方脚本 | 必需键全部为 `True` | 缺任一必需键判 FAIL；只输出布尔值 | `C02-env-keys.txt` |
-| C03 | 私密值未落盘 | `Select-String -Path "$run\preflight\*.txt" -Pattern '(?i)(password|token|api_key)=.{8,}'`（项目根） | 无匹配 | 有匹配判 FAIL：删除该文件、重做检查、登记泄露事件 | `C03-secret-scan.txt` |
+| C03 | 私密值未落盘 | `Select-String -Path "$run\preflight\*.txt" -Pattern 'password=.{8,}'; Select-String -Path "$run\preflight\*.txt" -Pattern 'token=.{8,}'; Select-String -Path "$run\preflight\*.txt" -Pattern 'api_key=.{8,}'`（项目根） | 无匹配 | 有匹配判 FAIL：删除该文件、重做检查、登记泄露事件 | `C03-secret-scan.txt` |
+| C04 | bootstrap 凭据文件（条件项） | `Test-Path -LiteralPath '.runtime\secrets\bootstrap.env'` | 仅在 `restart-local-backend.ps1` / 安全启动场景要求存在 | 该场景缺失判 FAIL；纯构建/单测可不要求，但报告中注明未加载 | `C04-bootstrap.txt` |
 
 键名检查脚本（**只输出键名与布尔存在性，绝不输出值**）：
 
@@ -143,8 +158,8 @@ $required | ForEach-Object { "{0}={1}" -f $_, [bool]$present[$_] }
 | D01 | MySQL 可达 | `Test-NetConnection 127.0.0.1 -Port 3306 -InformationLevel Quiet` | 返回 `True` | 需要真实 DB 的门禁判 `NOT_RUN/BLOCKED_DEP`；不得用 H2 冒充 | `D01-mysql.txt` |
 | D02 | Redis 可达 | `Test-NetConnection 127.0.0.1 -Port 6379 -InformationLevel Quiet` | 返回 `True` | 同上；仅影响依赖 Redis 的启动/用例 | `D02-redis.txt` |
 | D03 | 容器与隔离库 | `docker ps --format '{{.Names}}  {{.Status}}'`；`docker inspect --format '{{.Name}}' $(docker ps -q)`（项目根） | 容器名能对应 MySQL/Redis；测试库与生产库分离 | 无法证明隔离时判 FAIL；不得在真实库跑测试/迁移 | `D03-containers.txt` |
-| D04 | 备份可用（迁移前） | `Test-Path -LiteralPath '.runtime\backups'`；列出最近备份文件名（不读内容） | 目录存在且有一次可读备份 | 无备份时禁止任何迁移演练 | `D04-backups.txt` |
-| D05 | Ollama（真实 Provider 条件项） | `Invoke-RestMethod 'http://127.0.0.1:11434/api/tags' | ...` 仅提取模型名 | 目标 model 存在 | 缺失则 REAL-E2E 记 `NOT_RUN/BLOCKED_DEP`；不得用 fixture 冒充 | `D05-ollama.txt` |
+| D04 | 备份可用（迁移前） | `Test-Path -LiteralPath '.runtime\backups'; Get-ChildItem '.runtime\backups' \| Sort-Object LastWriteTime -Descending \| Select-Object -First 3 -ExpandProperty Name`（项目根，只读文件名） | 目录存在且有一次可读备份 | 无备份时禁止任何迁移演练 | `D04-backups.txt` |
+| D05 | Ollama（真实 Provider 条件项） | `(Invoke-RestMethod 'http://127.0.0.1:11434/api/tags').models.name`（项目根） | 目标 model 存在 | 缺失则 REAL-E2E 记 `NOT_RUN/BLOCKED_DEP`；不得用 fixture 冒充 | `D05-ollama.txt` |
 
 D05 只读 `/api/tags`，不发起生成请求。模型名可记录，API Key 不记录。
 
@@ -176,8 +191,8 @@ d:\SmartOpsAgent\.runtime\hc-check\<runId>\
 
 | ID | 检查项 | 命令（项目根） | PASS 判据 | 失败/缺口后果 | 输出 |
 |---|---|---|---|---|---|
-| F01 | 磁盘余量 | `Get-PSDrive -PSProvider FileSystem | Select-Object Name,@{n='FreeGB';e={[math]::Round($_.Free/1GB,1)}}` | 项目所在盘 ≥ 5 GB 可用 | 低于阈值判 FAIL；不得自动清理他人目录 | `F01-disk.txt` |
-| F02 | 内存余量 | `Get-CimInstance Win32_OperatingSystem | Select-Object @{n='FreeMB';e={[int]($_.FreePhysicalMemory/1024)}}` | ≥ 2048 MB 可用 | 低于阈值记 `FAIL`（启动多服务易 OOM） | `F02-memory.txt` |
+| F01 | 磁盘余量 | `Get-PSDrive -PSProvider FileSystem \| Select-Object Name,@{n='FreeGB';e={[math]::Round($_.Free/1GB,1)}}` | 项目所在盘 ≥ 5 GB 可用 | 低于阈值判 FAIL；不得自动清理他人目录 | `F01-disk.txt` |
+| F02 | 内存余量 | `Get-CimInstance Win32_OperatingSystem \| Select-Object @{n='FreeMB';e={[int]($_.FreePhysicalMemory/1024)}}` | ≥ 2048 MB 可用 | 低于阈值记 `FAIL`（启动多服务易 OOM） | `F02-memory.txt` |
 | F03 | 前端依赖已安装 | `Test-Path 'frontend\node_modules\vite\package.json'; Test-Path 'frontend\node_modules\playwright\package.json'` | 存在 | 缺失判 FAIL；是否 `npm ci` 由 RUN 所有者决定并记录网络条件 | `F03-node-modules.txt` |
 | F04 | Python 依赖 | `python -m pip list --format=json > $run\preflight\F04-piplist.json` | 含 `pytest`、`fastapi`、`numpy`；Knowledge 用例所需依赖按 requirements 检查 | 缺失时对应门禁 `NOT_RUN/BLOCKED_DEP`，不得静默 skip | `F04-piplist.json` |
 | F05 | 构建缓存与权限 | `Test-Path 'frontend\.vite-once-cache'; (Get-Item 'frontend').Attributes` | 可写；缓存不指向他人目录 | 不可写判 FAIL | `F05-cache.txt` |
@@ -191,7 +206,7 @@ d:\SmartOpsAgent\.runtime\hc-check\<runId>\
 | ID | 检查项 | 命令（项目根） | PASS 判据 | 失败/缺口后果 | 输出 |
 |---|---|---|---|---|---|
 | G01 | lock/config hash | `Get-FileHash -Algorithm SHA256 frontend\package-lock.json,backend\pom.xml,ai-service\requirements.txt,knowledge\requirements.txt,frontend\vite.config.js,frontend\vite.config.admin.mjs,pytest.ini,docs\development\GH-P0-01-dependency-lock.json` | 全部可读且 hash 已记录 | 缺文件判 FAIL；hash 与基线不同需登记原因 | `G01-locks.json` |
-| G02 | 与基线比对 | 读取上一次 `hashes/inputs.json`，逐项比较 | 一致，或差异有明确变更说明 | 未说明差异判 FAIL（无法解释制品来源） | `G02-lock-diff.txt` |
+| G02 | 与基线比对 | `$prev = Get-ChildItem '.runtime\hc-check' -Directory \| Sort-Object Name -Descending \| Select-Object -First 1; if ($prev) { Get-Content "$($prev.FullName)\hashes\inputs.json" }`（项目根，只读） | 一致，或差异有明确变更说明 | 未说明差异判 FAIL（无法解释制品来源） | `G02-lock-diff.txt` |
 | G03 | 依赖锁合规（门禁） | `python scripts/check_dependency_lock.py`（项目根） | 退出码 0、HIGH=0 | 非 0 判 `AUX-LOCK=FAIL`；不得改脚本放宽 | `G03-dependency-lock.txt` |
 | G04 | 前端 lock 与 package.json 一致 | `npm ls --depth=0 --json`（`frontend`，仅只读；失败不修改） | 无 `missing`/`invalid` | 有不一致判 FAIL，通过 `npm ci` 修复需另行授权 | `G04-npm-ls.json` |
 
@@ -205,7 +220,7 @@ G03 会执行一个 Python 脚本并读取 `pip list`，但不安装包、不联
 |---|---|---|---|---|---|
 | H01 | 外网/GitHub | `Test-NetConnection github.com -Port 443 -InformationLevel Quiet` | `True` | `False` 时 GitHub 实时核验记 `NOT_RUN/BLOCKED_NETWORK`；不得重试到成功为止 | `H01-network.txt` |
 | H02 | 本地 provider 地址 | `Test-NetConnection 127.0.0.1 -Port 11434 -InformationLevel Quiet` | 需要真实 Provider 时为 `True` | 否则 REAL-E2E `NOT_RUN/BLOCKED_DEP` | `H02-ollama.txt` |
-| H03 | 代理/审批通道 | 仅记录 `HTTP_PROXY`/`HTTPS_PROXY` 是否存在（不打印值） | 存在性与预期一致 | 历史 WinError10013/审批 404 记 `BLOCKED_NETWORK`；不改全局审批配置 | `H03-proxy.txt` |
+| H03 | 代理/审批通道 | `"HTTP_PROXY_set={0}; HTTPS_PROXY_set={1}" -f [bool]$env:HTTP_PROXY,[bool]$env:HTTPS_PROXY`（项目根，只输出布尔） | 存在性与预期一致 | 历史 WinError10013/审批 404 记 `BLOCKED_NETWORK`；不改全局审批配置 | `H03-proxy.txt` |
 
 ---
 
@@ -219,7 +234,7 @@ G03 会执行一个 Python 脚本并读取 `pip list`，但不安装包、不联
 | npm | `11.12.1` | 同上 |
 | Python | `3.14.3` | 与 CI 的 3.11 存在漂移，需在 RUN 中记录 |
 | java（PATH） | `1.8.0_202` | 不满足 `pom.xml` 的 17 → JAVA-TEST `BLOCKED_ENV` |
-| mvn | `3.9.15`（`D:\RuanJianKaiFa\RuanJianKaiFa Package\apache-maven-3.9.15\bin\mvn.cmd`） | Maven 存在不代表 JDK 满足 |
+| mvn | 安装路径显示 `3.9.15`（`D:\RuanJianKaiFa\RuanJianKaiFa Package\apache-maven-3.9.15\bin\mvn.cmd`） | 本轮未执行 `mvn -v`；目录名不能替代 Maven 版本输出，也不代表 JDK 满足 |
 | JDK17 候选 | `C:\Users\33908\scoop\apps\openjdk17\current\bin\java.exe` 存在 | 仅路径存在；本轮未执行 `-version`，未解除阻塞 |
 | `.env` | 存在 | 仅观察到键名；未读取值 |
 | `frontend/package-lock.json` | 存在 | 未计算 hash |

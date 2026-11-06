@@ -60,7 +60,7 @@
 
 ### 2.1 统一运行目录
 
-`runId` 固定格式：`YYYYMMDD-HHMMSS-HC05`。所有输出只写入仓库内已被 `.gitignore` 忽略的 `.runtime`，不污染 `frontend/dist`、`frontend/dist-admin` 或他人文件。
+`runId` 固定格式：`YYYYMMDD-HHMMSS-HC05`。下文命令中的 `<runId>` 均指包含 `-HC05` 后缀的完整目录名。所有输出只写入仓库内已被 `.gitignore` 忽略的 `.runtime`，不污染 `frontend/dist`、`frontend/dist-admin` 或他人文件。
 
 ```text
 d:\SmartOpsAgent\.runtime\hc-check\<runId>\
@@ -169,7 +169,7 @@ gates:
     evidence_paths: []
     unresolved_issues: []
 numerator_denominator: "<passed>/<collected>"
-release_decision: RELEASE_READY|RELEASE_CONDITIONAL|NO_GO
+release_decision: CODE_EVIDENCE_READY|RELEASE_READY|RELEASE_CONDITIONAL|NO_GO
 rollback_location: .runtime/hc-check/<runId>/rollback/
 independent_reviewer: <role or PENDING>
 ```
@@ -242,10 +242,12 @@ independent_reviewer: <role or PENDING>
 | Gate ID | 目的 | 工作目录 | 命令 | PASS 阈值 | 必存输出 | fixture/real | 级别 |
 |---|---|---|---|---|---|---|---|
 | AUX-LOCK | 依赖锁合规 | `d:\SmartOpsAgent` | `python scripts/check_dependency_lock.py` | 退出码 0；HIGH=0；输出版本清单 | 全量输出 + `hashes/inputs.json` | fixture | 条件（依赖变更时必需） |
-| AUX-START | 启动 readiness 与版本 | `d:\SmartOpsAgent` | `powershell -ExecutionPolicy Bypass -File scripts/windows/preflight-readiness.ps1 -Real`；随后才允许 `scripts/windows/start-all.ps1` | 所有必需项 PASS；Backend `/actuator/health`=UP；AI `/api/health` 服务名匹配；Knowledge `/api/ready` 为 READY 且 chunks>0 | preflight 日志、各服务启动日志、端点响应（脱敏）、版本/commit | real=true（启动真实服务） | 条件（发布启动验收时必需） |
+| AUX-START | 启动 readiness 与版本 | `d:\SmartOpsAgent` | `powershell -ExecutionPolicy Bypass -File scripts/windows/start-all.ps1`（内部逐步等待 readiness）；启动后再执行 `powershell -ExecutionPolicy Bypass -File scripts/windows/preflight-readiness.ps1 -Real` 作为启动后审计 | 所有必需项 PASS；Backend `/actuator/health`=UP；AI `/api/health` 服务名匹配；Knowledge `/api/ready` 为 READY 且 chunks>0 | preflight 日志、各服务启动日志、端点响应（脱敏）、版本/commit | real=true（启动真实服务） | 条件（发布启动验收时必需） |
 | AUX-ROLLBACK | 副本回滚演练 | `d:\SmartOpsAgent` | 见 `rollback-drill.md` | 切换/回滚后 hash 与预期一致；冒烟通过；他人改动数不变 | 命令日志、hash manifest、耗时、前后状态 | 副本/隔离库 | 条件（发布前必需） |
 
 启动门禁只认 HTTP readiness，不认“端口在监听”。`scripts/windows/service-readiness.ps1` 已实现该判据；端口存活单独出现时不能判 PASS。
+
+已知限制（本轮只读核查）：`scripts/windows/preflight-readiness.ps1 -Real` 对 `corpus-manifest`、`test-account` 仍是 `SKIP` 骨架，而脚本把“任何非 PASS”计为失败并以退出码 1 结束。因此 AUX-START 必须按 item 逐项解释并记录该骨架缺口，不能只看脚本退出码；补齐这两项属于后续 IMPLEMENT，本轮不改脚本。另：`start-all.ps1` 的 Backend 步骤执行 `mvn -q -DskipTests package`，同样受 JDK17 阻塞，启动验收前必须先完成 `JAVA-TEST` 的 JDK 解除步骤。
 
 ---
 
@@ -253,24 +255,28 @@ independent_reviewer: <role or PENDING>
 
 ### 4.1 级别
 
-- **必需（required）**：PY-AGENT、PY-KNOW、PY-AI、PY-TRAIN、JAVA-TEST、FE-UNIT、FE-TC、FE-LINT、FE-BUILD、FE-ADMIN。
-- **条件（conditional）**：FE-VISUAL、FE-A11Y（涉及前端 UI 时转必需）；AUX-LOCK（依赖文件变更时）；AUX-START / AUX-ROLLBACK（发布启动与回滚时）。
+- **代码证据必需**：PY-AGENT、PY-KNOW、PY-AI、PY-TRAIN、JAVA-TEST、FE-UNIT、FE-TC、FE-LINT、FE-BUILD、FE-ADMIN。
+- **发布放行必需**：上述全部，加 AUX-START、AUX-ROLLBACK；涉及前端 UI 时 FE-VISUAL、FE-A11Y 也转必需。
+- **条件（conditional）**：AUX-LOCK（依赖文件变更时）。
 - **单独分账**：REAL-E2E、真实 Provider 效果、人工读屏、性能实验；不得用 fixture 结果替代。
 
 ### 4.2 放行算法
 
 | 组合 | 结论 |
 |---|---|
-| 所有必需项 `PASS`，条件项 `PASS` 或经批准 `SKIP` | `RELEASE_READY` |
-| 所有必需项 `PASS`，但存在条件项 `NOT_RUN/BLOCKED_DEP`（如浏览器）且发布不涉及该范围 | `RELEASE_CONDITIONAL`，必须在报告中单列缺口与影响 |
-| 任一必需项为 `FAIL` 或 `ERROR` | `NO_GO` |
-| 任一必需项为 `NOT_RUN`（含 `BLOCKED_ENV`、`NOT_AUTHORIZED`） | `NO_GO`（含 Java 17 未解除） |
+| 所有代码证据必需项 `PASS`，但 AUX-START/AUX-ROLLBACK 未执行 | `CODE_EVIDENCE_READY`；**不是** `RELEASE_READY`，对外只能称“代码证据就绪” |
+| 代码证据必需项全 `PASS`，AUX-START、AUX-ROLLBACK 均 `PASS`，无 UI 相关缺口 | `RELEASE_READY` |
+| 代码证据必需项全 `PASS`，AUX-START/AUX-ROLLBACK `PASS`，但存在经批准的非发布范围 `SKIP`（如 AUX-LOCK 不适用） | `RELEASE_CONDITIONAL`，报告中单列缺口与影响 |
+| 任一代码证据必需项为 `FAIL` 或 `ERROR` | `NO_GO` |
+| 任一代码证据必需项为 `NOT_RUN`（含 `BLOCKED_ENV`、`NOT_AUTHORIZED`） | `NO_GO`（含 Java 17 未解除） |
+| 任一发布放行必需项为 `FAIL`/`ERROR`/`NOT_RUN`（含 AUX-ROLLBACK 未演练） | `NO_GO` |
 | 必需项出现未批准的 `SKIP` | `NO_GO`；先把 skip 升级为 `NOT_RUN/BLOCKED_DEP` 并给出解除条件 |
 | 仅历史结果、无本轮输出 | `NO_GO`，对外只能描述为“上一轮记录为绿，本轮未复跑” |
 
 补充：
 
 - `fixture=true` 的 PASS 不能支持“真实平台 E2E 完成”的结论；三类声明（代码通过 / 平台 E2E / 效果提升）互不替代。
+- 若本次要声明“平台 E2E 完成”，REAL-E2E 转为必须项，且缺任何真实依赖都只能 `NOT_RUN/BLOCKED_*`。
 - 单个门禁内部有部分失败时，整项 `FAIL`；禁止用通过率百分比掩盖。
 - 静态扫描数量、历史放行、README 自报结果均不进入放行算法。
 

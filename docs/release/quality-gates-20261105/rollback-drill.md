@@ -73,12 +73,17 @@ d:\SmartOpsAgent\.runtime\hc-check\<runId>\
 
 ## 4. 制品回滚演练（未来 RUN 步骤）
 
+以下 Step 1–6 必须在**同一个 PowerShell 会话**中按顺序执行，变量（`$run`、`$live`、`$stamp`、`$A`、`$B`）跨步骤复用。
+
 ### Step 1 冻结旧制品 A
 
 ```powershell
-$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$live  = "$run\rollback\live-sim"
-$A     = "$live\artifacts\A-$stamp"
+$runId   = Get-Date -Format 'yyyyMMdd-HHmmss'
+$runName = "$runId-HC05"
+$run     = "d:\SmartOpsAgent\.runtime\hc-check\$runName"
+$stamp   = Get-Date -Format 'yyyyMMdd-HHmmss'
+$live    = "$run\rollback\live-sim"
+$A       = "$live\artifacts\A-$stamp"
 New-Item -ItemType Directory -Force -Path "$A\user-dist","$A\admin-dist" | Out-Null
 Copy-Item -Recurse -Force 'd:\SmartOpsAgent\frontend\dist\*'        "$A\user-dist\"
 Copy-Item -Recurse -Force 'd:\SmartOpsAgent\frontend\dist-admin\*'  "$A\admin-dist\"
@@ -91,8 +96,10 @@ Copy-Item -Recurse -Force 'd:\SmartOpsAgent\frontend\dist-admin\*'  "$A\admin-di
 
 ```powershell
 cd d:\SmartOpsAgent\frontend
-npm run build -- --outDir "../.runtime/hc-check/$runId/rollback/live-sim/artifacts/B-$stamp/user-dist"
-npm run build:admin -- --outDir "../.runtime/hc-check/$runId/rollback/live-sim/artifacts/B-$stamp/admin-dist"
+$B = "$live\artifacts\B-$stamp"
+New-Item -ItemType Directory -Force -Path "$B\user-dist","$B\admin-dist" | Out-Null
+npm run build -- --outDir "../.runtime/hc-check/$runName/rollback/live-sim/artifacts/B-$stamp/user-dist"
+npm run build:admin -- --outDir "../.runtime/hc-check/$runName/rollback/live-sim/artifacts/B-$stamp/admin-dist"
 ```
 
 要求：退出码 0；`user-dist/index.html`、`admin-dist/admin.html` 存在；`frontend/dist`、`frontend/dist-admin` 前后 hash 不变；失败则整项 `FAIL`，不进入切换。
@@ -112,6 +119,8 @@ npm run build:admin -- --outDir "../.runtime/hc-check/$runId/rollback/live-sim/a
   }
 }
 ```
+
+`tree_sha256` 的可复现算法：对目录内所有文件按相对路径（`/` 分隔、区分大小写）排序，逐行拼接 `relpath<TAB>sha256`，再对整段文本做 SHA256。A 与 B 的 manifest 必须使用同一算法，否则“旧制品未被修改”的比对无效。
 
 指针 `current.json`：
 
@@ -134,6 +143,8 @@ Move-Item -LiteralPath $tmp -Destination "$live\current.json" -Force
 ```
 
 说明：不使用“删除 live 目录再复制”的方式；`deploy/server/rollback.sh` 采用 `mv` + `cp -a`，存在空窗且无 DB 逆向，只可作参考，不得直接作为演练证据（`SOURCE_OBSERVED`）。
+
+**消费方约束**：本演练的原子性依赖“服务/静态服务器启动时读取 `current.json` 或通过 A/B 双槽解析制品”。若生产进程仍直接读取固定目录，指针切换不会生效；此时必须先在服务配置中接入指针解析，或使用双槽目录，否则只能称“制品牌本可切换”，不能宣称“生产已支持原子发布”。
 
 ### Step 4 切换后验证
 
@@ -176,20 +187,20 @@ Move-Item -LiteralPath $tmp -Destination "$live\current.json" -Force
 
 ### 5.1 边界
 
-- 只对 `smartops_drill_<runId>` 操作；真实库 `smartops` 只做只读导出。
-- Flyway 迁移目录 `backend/src/main/resources/db/migration/`（当前 38 个）没有 down 脚本，因此“逆向”定义为**dump 恢复**，不是 `flyway undo`，更不是 `flyway clean`。
+- 只对 `smartops_drill_<yyyymmddhhmmss>` 操作（库名做去分隔符处理，避免 MySQL 标识符中的 `-`）；真实库 `smartops` 只做只读导出。
+- Flyway 迁移目录 `backend/src/main/resources/db/migration/`（当前 39 个 SQL）没有 down 脚本，因此“逆向”定义为**dump 恢复**，不是 `flyway undo`，更不是 `flyway clean`。
 - 任何凭据从 `.env` 读入进程环境变量，不打印、不写日志；使用 `MYSQL_PWD` 临时变量并在 `finally` 还原。
 
 ### 5.2 步骤
 
 1. **只读导出真实库**（不迁移）：
    `mysqldump --single-transaction --routines --triggers --events --no-tablespaces` 导出到 `db-drill\source-<stamp>.sql`；校验文件非空、退出码 0。
-2. **建隔离库**：`CREATE DATABASE smartops_drill_<runId>`（仅演练库）；导入 dump；记录表数量与关键表行数到 `counts-before.json`。
+2. **建隔离库**：`CREATE DATABASE smartops_drill_<yyyymmddhhmmss>`（仅演练库）；导入 dump；记录表数量与关键表行数到 `counts-before.json`。
 3. **选一个迁移前向执行**：记录迁移文件 SHA256；在隔离库执行该 SQL（或用后端指向隔离库启动让 Flyway 执行）；确认 `flyway_schema_history` 记录与 checksum。
 4. **检测**：重新统计表数量、关键表行数、索引/约束数量，写入 `counts-after.json`；与 before 比对，差异必须能由该迁移解释。
-5. **逆向恢复**：删除并重建演练库（`DROP DATABASE smartops_drill_<runId>` 仅在演练库），重新导入同一 dump；再次统计到 `counts-restored.json`。
+5. **逆向恢复**：删除并重建演练库（`DROP DATABASE smartops_drill_<yyyymmddhhmmss>` 仅在演练库），重新导入同一 dump；再次统计到 `counts-restored.json`。
 6. **比对**：`counts-restored.json` 与 `counts-before.json` 的 schema/行数/关键 checksum 一致；`flyway_schema_history` 回到导入时状态。
-7. **清理**：只删除本次创建的 `smartops_drill_<runId>` 与 `.runtime/hc-check/<runId>/` 内登记文件；真实库与真实备份保留。
+7. **清理**：只删除本次创建的 `smartops_drill_<yyyymmddhhmmss>` 与 `.runtime/hc-check/<runId>/` 内登记文件；真实库与真实备份保留。
 
 ### 5.3 数据库回滚判据
 
