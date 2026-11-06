@@ -4,7 +4,8 @@ import re
 from typing import Any
 
 from ..core.config import settings
-from ..core.exceptions import LLMException
+from ..core.exceptions import LLMException, UpstreamSaturated
+from ..core.http_pool import http_pool
 
 
 class LLMService:
@@ -44,6 +45,9 @@ class LLMService:
                 )
                 self.effective_provider = "ollama"
                 return result
+            except UpstreamSaturated:
+                # 容量不足不是模型故障：向上返回明确的过载响应，不降级为 mock。
+                raise
             except Exception as exc:
                 self._mark_degraded(exc)
                 return self._mock_generate(prompt)
@@ -81,6 +85,9 @@ class LLMService:
                     yield chunk
                 if not emitted:
                     raise LLMException("Ollama 返回为空")
+            except UpstreamSaturated:
+                # 容量不足不是模型故障：保留已输出的部分，但以明确过载结束，不混入 mock。
+                raise
             except Exception as exc:
                 if emitted:
                     self._mark_degraded(exc, provider="ollama")
@@ -119,12 +126,8 @@ class LLMService:
     ):
 
         payload = self._payload(prompt, system_prompt, stream=True)
-        import httpx
 
-        async with httpx.AsyncClient(
-            timeout=settings.request_timeout,
-            trust_env=False,
-        ) as client:
+        async with http_pool.acquire() as client:
             async with client.stream(
                 "POST",
                 f"{settings.llm_base_url.rstrip('/')}/api/generate",
@@ -176,13 +179,8 @@ class LLMService:
         **kwargs: Any,
     ) -> str:
 
-        import httpx
-
         payload = self._payload(prompt, system_prompt, stream=False)
-        async with httpx.AsyncClient(
-            timeout=settings.request_timeout,
-            trust_env=False,
-        ) as client:
+        async with http_pool.acquire() as client:
             response = await client.post(
                 f"{settings.llm_base_url.rstrip('/')}/api/generate",
                 json=payload,

@@ -39,6 +39,32 @@ BUILD_INFO = Gauge(
     ["service", "version"],
 )
 
+# PERF-02：共享 HTTP transport 的容量观测。
+HTTP_POOL_CLIENT_CREATIONS = Counter(
+    "smartops_ai_http_pool_client_creations_total",
+    "共享 HTTP 客户端创建次数（握手/连接池建立次数的代理指标）",
+    ["service"],
+)
+
+HTTP_POOL_IN_FLIGHT = Gauge(
+    "smartops_ai_http_pool_in_flight",
+    "当前占用上游并发名额的请求数",
+    ["service"],
+)
+
+HTTP_POOL_SATURATED = Counter(
+    "smartops_ai_http_pool_saturated_total",
+    "并发闸门排队超时（明确过载）的次数",
+    ["service"],
+)
+
+HTTP_POOL_GATE_WAIT = Histogram(
+    "smartops_ai_http_pool_gate_wait_seconds",
+    "等待上游并发名额的排队时间",
+    ["service"],
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0),
+)
+
 
 def mark_build(version: str) -> None:
     BUILD_INFO.labels(SERVICE, version).set(1)

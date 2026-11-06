@@ -5,7 +5,8 @@ from ..schemas.chat import Citation
 
 from ..core.config import settings
 from ..core.correlation import correlation_headers
-from ..core.exceptions import RAGException
+from ..core.exceptions import RAGException, UpstreamSaturated
+from ..core.http_pool import http_pool
 
 
 class RAGService:
@@ -63,10 +64,7 @@ class RAGService:
         headers.update(correlation_headers(request_id, task_id, run_id))
 
         try:
-            async with httpx.AsyncClient(
-                timeout=settings.request_timeout,
-                trust_env=False,
-            ) as client:
+            async with http_pool.acquire() as client:
 
                 response = await client.post(
                     (
@@ -77,6 +75,9 @@ class RAGService:
                     headers=headers,
                 )
 
+        except UpstreamSaturated:
+            # 并发闸门排队超时：如实标记容量不足，不伪造检索结果。
+            return self._empty_result(query, status="unavailable", reason="knowledge_capacity_saturated")
         except httpx.HTTPError:
             return self._empty_result(query, status="unavailable", reason="knowledge_transport_error")
 
