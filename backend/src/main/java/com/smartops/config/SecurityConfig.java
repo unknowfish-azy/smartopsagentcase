@@ -28,7 +28,7 @@ import java.io.IOException;
 
 @Configuration
 public class SecurityConfig {
-    private static final String[] INTERNAL = { "/api/model-connections/*/runtime", "/api/model-connections/*/invoke", "/api/inspector/check", "/api/inspector/verify", "/api/inspector/replan" };
+    private static final String[] INTERNAL = { "/api/model-connections/*/runtime", "/api/model-connections/*/invoke", "/api/inspector/check", "/api/inspector/verify", "/api/inspector/replan", "/api/internal/recovery/**" };
     private final InternalTokenAuthenticationFilter internal;
     public SecurityConfig(InternalTokenAuthenticationFilter internal) { this.internal = internal; }
 

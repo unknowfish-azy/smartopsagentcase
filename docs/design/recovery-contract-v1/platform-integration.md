@@ -1,7 +1,7 @@
 # N06 平台接入映射与阻断条件（PLAN）
 
 - 日期：2026-11-05
-- 状态：**BLOCKED / 仅盘点与映射**。本文不含已实施代码；本会话未启动平台服务，未改 Java 文件。
+- 状态：**平台侧读写接口已实施（2026-11-06）；端到端仍 `NOT_RUN`**。§3 的映射已在 backend 落地（见 §8）；Python 写入方尚未调用，真实 E2E 未跑，对外仍只讲接口与隔离机制。
 - 依据：[原创创新任务包 §10](../development/原创创新AI任务包-20261105.md)、[交接书](../development/SmartOpsAgent-全面整改与创新升级交接书-单文件版-20261105.md)、[HC-00 基线](../audit/20261105/status-baseline.md)
 
 ## 1. 现状盘点
@@ -26,7 +26,7 @@
 3. 幂等：同一用户 + 同一 `idempotency_key` 的写请求不得重复签发回执（参考 `JdbcOperationRunRecorder.start` 的 409 语义）。
 4. `X-Run-ID` 保持“相关 ID”定位，不得作为恢复回执的签发依据。
 
-## 3. 拟议接入映射（未实施）
+## 3. 接入映射（已实施，见 §8）
 
 | 恢复对象 | 平台落点 | 规则 |
 |---|---|---|
@@ -91,4 +91,48 @@ mvn -B -DskipTests compile
 
 ## 7. 结论
 
-N06 具备明确的落点与权威来源，构建门禁已通过；剩余阻断为内部 token、鉴权修复、迁移与真实 E2E。**在八项验收全部有原始记录前，平台接入保持 BLOCKED，对外只讲隔离机制 pilot。**
+N06 的平台侧接口已落地：契约/观测/回执/回放包四张表、按主体过滤的只读接口、仅内部 token 可用的写入接口、前端 `/operations/recovery` 真实数据页。剩余阻断是 **Python 写入方接入与真实 E2E**，因此对外口径为"接口与隔离机制已就绪，闭环未验证"，不宣称已接入生产。
+
+## 8. 实施记录（2026-11-06）
+
+### 8.1 已落地
+
+| 层 | 内容 |
+|---|---|
+| 迁移 | [V20261105.11__recovery_contract.sql](file:///d:/SmartOpsAgent/backend/src/main/resources/db/migration/V20261105.11__recovery_contract.sql)：`recovery_contract_record` / `recovery_observation_record` / `recovery_receipt_record` / `recovery_replay_bundle_record`，全部新增表，不改既有 `operation_run_*` |
+| 读接口 | `GET /api/recovery/contracts`、`GET /api/recovery/contracts/{id}`、`GET /api/recovery/contracts/{id}/replay`；主体只取 `SessionUser`，越权一律 404 |
+| 写接口 | `POST /api/internal/recovery/contracts`、`/{id}/observations`、`/{id}/receipts`、`/{id}/replay-bundles`；仅 `X-SmartOps-Internal-Token`，未配置 fail-closed 503 |
+| 准入校验 | run 归属必须与 `ownerUserId` 一致；幂等键与观测 ID 唯一；非 `VERIFIED` 回执强制 `NOT_ISSUED` 且时间为 null（semantics §7）；变形回放包不得标为历史事实 |
+| 前端 | 页面 [RecoveryContractsView.vue](file:///d:/SmartOpsAgent/frontend/src/views/operations/RecoveryContractsView.vue) 默认真实数据；空表显示明确空态；演示样例独立切换并保留 fixture 横幅 |
+
+### 8.2 验收用例状态
+
+| # | 用例 | 状态 |
+|---|---|---|
+| 1 | 越权读他人契约 | **已覆盖**：`RecoveryContractIntegrationTest#detailHidesOtherUsersContract`（404） |
+| 2 | 同一幂等键重复创建 | **已覆盖但口径细化**：同 digest 幂等重放返回 200 与原 id（不重复签发）；同键不同 digest 返回 409。与 §5 原"第二次 409"预期不同，此处明示偏差，未静默放宽 |
+| 5 | 双轴并列 | **已覆盖**：适配层保持 `inspection_passed=null`，不用契约 verdict 覆盖纠察轴 |
+| 7 | 客户端自报身份 | **已覆盖**：读接口不读 `X-User-Id`；内部写接口缺/错 token 分别 401/403 |
+| 3 | 服务重启后读回执 | `NOT_RUN`（表持久化已具备，未做实机重启验证） |
+| 4 | 回执过期/失效 | `NOT_RUN`（失效事件写入方未接入） |
+| 6 | `StateVerifier.passed=false` 原值 | `NOT_RUN`（纠察轴仍在既有 `inspection_verification`，本接口未改动） |
+| 8 | 回放缺探针 → `REPLAY_INCOMPLETE` | `NOT_RUN`（结论由 Python 回放方给出，平台只存结果） |
+
+### 8.3 验证
+
+```powershell
+# backend（JAVA_HOME=openjdk17，单 Maven 进程）
+mvn test
+[WARNING] Tests run: 620, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+
+# frontend
+npm test        # tests 492 / pass 492 / fail 0
+npm run typecheck   # 通过
+npm run build      # ✓ built in 11.07s
+```
+
+### 8.4 回滚
+
+`git revert` 对应提交即可；迁移只新增表，代码回滚后遗留空表不影响运行，需要彻底清理时按 §6 删除四张新表。
+
