@@ -1,0 +1,57 @@
+{
+  "example_id": "negative-duplicate-observation-id",
+  "kind": "negative",
+  "expected_verdict": "INSUFFICIENT",
+  "expected_reason_codes": ["MISSING"],
+  "expected_rule": "EO-011（重复观测 ID 不算新增采样；采样槽仍未填满）",
+  "decision_time": "2026-11-05T02:00:06.000Z",
+  "input": {
+    "contract": {
+      "schema_version": "recovery-contract/v1",
+      "id": "RC-A-001",
+      "version": "1.0.0",
+      "scope": "service:a",
+      "target": {"target_id": "service:a", "target_kind": "SERVICE"},
+      "expected_revision": "r17",
+      "template_id": "TPL-BUSINESS-RECOVERY-V1",
+      "template_version": "1.0.0",
+      "obligations": [
+        {"obligation_id": "OB-A", "predicate_id": "PRED-A-BUSINESS-SELFCHECK", "predicate_version": "1.0.0", "required": true, "weight": 1, "collector_ids": ["COL-GATEWAY-A"], "source_groups": ["SG-GATEWAY-A"], "binding_revision": "r17", "scope": "service:a", "target": {"target_id": "service:a", "target_kind": "SERVICE"}}
+      ],
+      "source_groups": ["SG-GATEWAY-A", "SG-DIRECT-B"],
+      "window": {"sample_groups": 3, "min_first_last_gap_ms": 4000, "max_adjacent_gap_ms": 4000, "max_intra_group_skew_ms": 1250, "min_next_group_gap_ms": 2000},
+      "budgets": {"max_probe_calls": 12, "per_probe_timeout_ms": 1000, "run_deadline_ms": 30000, "evidence_ttl_ms": 15000, "receipt_ttl_ms": 60000},
+      "expires_after": 86400000,
+      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    },
+    "observations": [
+      {"id": "OBS-A-1", "run_id": "RUN-001", "verification_round": 1, "collector_id": "COL-GATEWAY-A", "collector_version": "1.0.0", "probe_id": "PRB-A-SELFCHECK", "scope": "service:a", "target": {"target_id": "service:a", "target_kind": "SERVICE"}, "binding_revision": "r17", "observed_revision": "r17", "source_group": "SG-GATEWAY-A", "sequence": 1, "observed_at": "2026-11-05T02:00:00.000Z", "elapsed_ms": 120, "payload": {"status_code": 200, "predicate_result": true}, "artifact_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"},
+      {"id": "OBS-A-2", "run_id": "RUN-001", "verification_round": 1, "collector_id": "COL-GATEWAY-A", "collector_version": "1.0.0", "probe_id": "PRB-A-SELFCHECK", "scope": "service:a", "target": {"target_id": "service:a", "target_kind": "SERVICE"}, "binding_revision": "r17", "observed_revision": "r17", "source_group": "SG-GATEWAY-A", "sequence": 2, "observed_at": "2026-11-05T02:00:02.400Z", "elapsed_ms": 140, "payload": {"status_code": 200, "predicate_result": true}, "artifact_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"},
+      {"id": "OBS-A-2", "run_id": "RUN-001", "verification_round": 1, "collector_id": "COL-GATEWAY-A", "collector_version": "1.0.0", "probe_id": "PRB-A-SELFCHECK", "scope": "service:a", "target": {"target_id": "service:a", "target_kind": "SERVICE"}, "binding_revision": "r17", "observed_revision": "r17", "source_group": "SG-GATEWAY-A", "sequence": 2, "observed_at": "2026-11-05T02:00:04.800Z", "elapsed_ms": 130, "payload": {"status_code": 200, "predicate_result": true}, "artifact_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"}
+    ],
+    "obligation_results": [
+      {"obligation_id": "OB-A", "value": "UNKNOWN", "reason_codes": ["MISSING"], "used_evidence_ids": ["OBS-A-1", "OBS-A-2"], "rejected_evidence": [{"evidence_id": "OBS-A-2", "reason_code": "MISSING"}], "checked_at": "2026-11-05T02:00:06.000Z"}
+    ],
+    "receipt": {
+      "id": "RCP-001",
+      "contract_digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "claim_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence_snapshot_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_version": "policy-v1",
+      "collector_versions": {"COL-GATEWAY-A": "1.0.0"},
+      "run_id": "RUN-001",
+      "verification_round": 1,
+      "target": {"target_id": "service:a", "target_kind": "SERVICE"},
+      "binding_revision": "r17",
+      "observed_revision": "r17",
+      "obligation_results": [
+        {"obligation_id": "OB-A", "value": "UNKNOWN", "reason_codes": ["MISSING"], "used_evidence_ids": ["OBS-A-1", "OBS-A-2"], "rejected_evidence": [{"evidence_id": "OBS-A-2", "reason_code": "MISSING"}], "checked_at": "2026-11-05T02:00:06.000Z"}
+      ],
+      "verdict": "INSUFFICIENT",
+      "receipt_state": "NOT_ISSUED",
+      "issued_at": null,
+      "valid_until": null,
+      "invalidation_event_ids": []
+    }
+  }
+}

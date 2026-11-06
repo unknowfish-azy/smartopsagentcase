@@ -1,0 +1,239 @@
+{
+  "case_id": "negative-passed-but-business-false",
+  "decision_time": "2026-11-05T02:00:06Z",
+  "defect": "StateVerifier.passed=true 但业务字段 recovery_status=false",
+  "expected_reason_codes": [],
+  "expected_verdict": "CONTRADICTED",
+  "input": {
+    "claim": {
+      "claim_type": "BUSINESS_RECOVERY",
+      "contract_digest": "sha256:07a69ae519952c7f0cb332f5086a0b988127cba235c10b3c46670aa4d36bb967",
+      "expected_revision": "r17",
+      "id": "claim-business-recovery-1",
+      "scope": "tenant:t1/workspace:w1",
+      "target": {
+        "endpoint": "http://127.0.0.1:18081/health",
+        "target_id": "service:edge-nginx",
+        "target_kind": "SERVICE"
+      }
+    },
+    "contract": {
+      "budgets": {
+        "evidence_ttl_ms": 15000,
+        "max_probe_calls": 12,
+        "per_probe_timeout_ms": 1000,
+        "receipt_ttl_ms": 8000,
+        "run_deadline_ms": 30000
+      },
+      "digest": "sha256:07a69ae519952c7f0cb332f5086a0b988127cba235c10b3c46670aa4d36bb967",
+      "expected_revision": "r17",
+      "expires_after": 3600000,
+      "id": "rc-edge-nginx-v1",
+      "obligations": [
+        {
+          "binding_revision": "r17",
+          "collector_ids": [
+            "col-a",
+            "col-b"
+          ],
+          "obligation_id": "obl-business-health",
+          "predicate_id": "business_health_flag",
+          "predicate_params": {
+            "expected": true,
+            "field": "recovery_status"
+          },
+          "predicate_version": "1",
+          "required": true,
+          "scope": "tenant:t1/workspace:w1",
+          "source_groups": [
+            "sg-a",
+            "sg-b"
+          ],
+          "target": {
+            "endpoint": "http://127.0.0.1:18081/health",
+            "target_id": "service:edge-nginx",
+            "target_kind": "SERVICE"
+          },
+          "weight": 1
+        }
+      ],
+      "schema_version": "recovery-contract/v1",
+      "scope": "tenant:t1/workspace:w1",
+      "source_groups": [
+        "sg-a",
+        "sg-b"
+      ],
+      "target": {
+        "endpoint": "http://127.0.0.1:18081/health",
+        "target_id": "service:edge-nginx",
+        "target_kind": "SERVICE"
+      },
+      "template_id": "template:nginx-health",
+      "template_version": "1",
+      "version": "1",
+      "window": {
+        "max_adjacent_gap_ms": 4000,
+        "max_intra_group_skew_ms": 1250,
+        "min_first_last_gap_ms": 4000,
+        "min_next_group_gap_ms": 2000,
+        "sample_groups": 3
+      }
+    },
+    "observations": [
+      {
+        "artifact_digest": "sha256:59048c287e7b224d9b0794b5e1e975422a19da02158c115e9016b342764f3477",
+        "binding_revision": "r17",
+        "collector_id": "col-a",
+        "collector_version": "1.0.0",
+        "elapsed_ms": 40,
+        "id": "obs-g1-sg-a",
+        "observed_at": "2026-11-05T02:00:00Z",
+        "observed_revision": "r17",
+        "payload": {
+          "recovery_status": false
+        },
+        "probe_id": "probe-a",
+        "run_id": "run-ver-p0-01",
+        "scope": "tenant:t1/workspace:w1",
+        "sequence": 0,
+        "source_group": "sg-a",
+        "target": {
+          "endpoint": "http://127.0.0.1:18081/health",
+          "target_id": "service:edge-nginx",
+          "target_kind": "SERVICE"
+        },
+        "verification_round": 1
+      },
+      {
+        "artifact_digest": "sha256:59048c287e7b224d9b0794b5e1e975422a19da02158c115e9016b342764f3477",
+        "binding_revision": "r17",
+        "collector_id": "col-b",
+        "collector_version": "1.0.0",
+        "elapsed_ms": 60,
+        "id": "obs-g1-sg-b",
+        "observed_at": "2026-11-05T02:00:00.500000Z",
+        "observed_revision": "r17",
+        "payload": {
+          "recovery_status": false
+        },
+        "probe_id": "probe-b",
+        "run_id": "run-ver-p0-01",
+        "scope": "tenant:t1/workspace:w1",
+        "sequence": 1,
+        "source_group": "sg-b",
+        "target": {
+          "endpoint": "http://127.0.0.1:18081/health",
+          "target_id": "service:edge-nginx",
+          "target_kind": "SERVICE"
+        },
+        "verification_round": 1
+      },
+      {
+        "artifact_digest": "sha256:59048c287e7b224d9b0794b5e1e975422a19da02158c115e9016b342764f3477",
+        "binding_revision": "r17",
+        "collector_id": "col-a",
+        "collector_version": "1.0.0",
+        "elapsed_ms": 40,
+        "id": "obs-g2-sg-a",
+        "observed_at": "2026-11-05T02:00:02.600000Z",
+        "observed_revision": "r17",
+        "payload": {
+          "recovery_status": false
+        },
+        "probe_id": "probe-a",
+        "run_id": "run-ver-p0-01",
+        "scope": "tenant:t1/workspace:w1",
+        "sequence": 2,
+        "source_group": "sg-a",
+        "target": {
+          "endpoint": "http://127.0.0.1:18081/health",
+          "target_id": "service:edge-nginx",
+          "target_kind": "SERVICE"
+        },
+        "verification_round": 1
+      },
+      {
+        "artifact_digest": "sha256:59048c287e7b224d9b0794b5e1e975422a19da02158c115e9016b342764f3477",
+        "binding_revision": "r17",
+        "collector_id": "col-b",
+        "collector_version": "1.0.0",
+        "elapsed_ms": 60,
+        "id": "obs-g2-sg-b",
+        "observed_at": "2026-11-05T02:00:02.900000Z",
+        "observed_revision": "r17",
+        "payload": {
+          "recovery_status": false
+        },
+        "probe_id": "probe-b",
+        "run_id": "run-ver-p0-01",
+        "scope": "tenant:t1/workspace:w1",
+        "sequence": 3,
+        "source_group": "sg-b",
+        "target": {
+          "endpoint": "http://127.0.0.1:18081/health",
+          "target_id": "service:edge-nginx",
+          "target_kind": "SERVICE"
+        },
+        "verification_round": 1
+      },
+      {
+        "artifact_digest": "sha256:59048c287e7b224d9b0794b5e1e975422a19da02158c115e9016b342764f3477",
+        "binding_revision": "r17",
+        "collector_id": "col-a",
+        "collector_version": "1.0.0",
+        "elapsed_ms": 40,
+        "id": "obs-g3-sg-a",
+        "observed_at": "2026-11-05T02:00:05.100000Z",
+        "observed_revision": "r17",
+        "payload": {
+          "recovery_status": false
+        },
+        "probe_id": "probe-a",
+        "run_id": "run-ver-p0-01",
+        "scope": "tenant:t1/workspace:w1",
+        "sequence": 4,
+        "source_group": "sg-a",
+        "target": {
+          "endpoint": "http://127.0.0.1:18081/health",
+          "target_id": "service:edge-nginx",
+          "target_kind": "SERVICE"
+        },
+        "verification_round": 1
+      },
+      {
+        "artifact_digest": "sha256:59048c287e7b224d9b0794b5e1e975422a19da02158c115e9016b342764f3477",
+        "binding_revision": "r17",
+        "collector_id": "col-b",
+        "collector_version": "1.0.0",
+        "elapsed_ms": 60,
+        "id": "obs-g3-sg-b",
+        "observed_at": "2026-11-05T02:00:05.400000Z",
+        "observed_revision": "r17",
+        "payload": {
+          "recovery_status": false
+        },
+        "probe_id": "probe-b",
+        "run_id": "run-ver-p0-01",
+        "scope": "tenant:t1/workspace:w1",
+        "sequence": 5,
+        "source_group": "sg-b",
+        "target": {
+          "endpoint": "http://127.0.0.1:18081/health",
+          "target_id": "service:edge-nginx",
+          "target_kind": "SERVICE"
+        },
+        "verification_round": 1
+      }
+    ]
+  },
+  "non_recovery_signals": {
+    "http_status": 200,
+    "state_verifier_passed": true
+  },
+  "rule_refs": [
+    "EV-002",
+    "第 8 节"
+  ],
+  "run_id": "run-ver-p0-01",
+  "verification_round": 1
+}
