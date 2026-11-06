@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "generated_at": "2026-11-05T14:17:30.519835+00:00",
+  "generated_at": "2026-11-06T09:02:20.978028+00:00",
   "binary_classification": {
     "note": "expected_false_success=True and not detected_false_success counts as FN even when uncertain=True. unscored (expected_false_success=None) excluded from denominator.",
     "TP": 5,
