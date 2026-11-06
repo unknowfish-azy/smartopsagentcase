@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch4/defense-qa.md b/docs/competition/defense-qa.md
+index 6825591..fd32f7e 100644
+--- a/docs/development/fct-p0-01-prior/batch4/defense-qa.md
++++ b/docs/competition/defense-qa.md
+@@ -91,7 +91,7 @@ A：**故意不敢**——这正是设计意图。高危动作必须人工审批
+ ## 五、工程 / 可复现（4 题）
+ 
+ **Q23：代码量 / 测试情况？**
+-A：前端双入口构建通过（暂无自动化测试套件）、`tsc --noEmit` 通过、双入口构建通过；后端 87 个 JUnit 测试类（H2 MySQL 兼容模式跑真实迁移）；MySQL 8 / 119 张表、迁移幂等、启动自动补齐。质量门禁命令全在 `project-plan.md`。
++A：前端 `npm test` 494 项全过（99 个测试文件）、`tsc --noEmit` 通过、双入口构建通过；后端 122 个 JUnit 测试类（H2 MySQL 兼容模式跑真实迁移）；MySQL 8 / 119 张表、迁移幂等、启动自动补齐。质量门禁命令全在 `project-plan.md`。
+ 
+ **Q24：前端为什么"部分 TypeScript"？**
+ A：有意的取舍。共享逻辑层（api/domain/utils/types 共 48 模块）迁 TS 拿类型收益；组件层保持 JS 控改造成本。`tsc --noEmit` 已纳入门禁，不是偷懒。

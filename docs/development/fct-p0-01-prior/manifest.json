@@ -1,0 +1,50 @@
+{
+  "reason": "FCT-P0-01 逐条改写前像（任务书 §4：保留文档前像和精确差分）",
+  "snapshot_source_digest": "sha256:5ed4b277a73b9db3eb67b80d52e672376a98862d0857c18e266e614b34c09765",
+  "files": [
+    {
+      "path": "docs/competition/答辩实战问答手册.md",
+      "prior_image": "docs/development/fct-p0-01-prior/答辩实战问答手册.md",
+      "bytes": 34151,
+      "sha256": "099d65174f3725a71f8ef8aa8088b94f95ae54c57889636d9aed02af593f1a8c"
+    },
+    {
+      "path": "docs/competition/答辩知识手册-打印版.html",
+      "prior_image": "docs/development/fct-p0-01-prior/答辩知识手册-打印版.html",
+      "bytes": 75697,
+      "sha256": "0c7d13282c4ec13899cc6d230b99cf387c4d9f60e2d893a72be3ff38f2e628d8"
+    },
+    {
+      "path": "docs/competition/项目知识要点手册.md",
+      "prior_image": "docs/development/fct-p0-01-prior/项目知识要点手册.md",
+      "bytes": 17946,
+      "sha256": "f19d53a248fbffed7935d5e338c6dc2dc614590663350bd442009f85ade36e23"
+    }
+  ],
+  "rewrite": {
+    "snapshot_source_digest": "sha256:922883250075c75b86ccb47ca502e4b1206215e784bb4b6c17af39122d4e213d",
+    "results": [
+      {
+        "path": "docs/competition/项目知识要点手册.md",
+        "after_bytes": 18017,
+        "after_sha256": "bdc6c95d89f7f3d18eb9f0695ddcd3a77c242d8bbb413cf1a45532f00dc1fa10",
+        "changed_lines": 2,
+        "diff": "docs/development/fct-p0-01-prior/diffs/项目知识要点手册.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩实战问答手册.md",
+        "after_bytes": 34178,
+        "after_sha256": "725ef234eed41bd80b2524dbece27f1e6d51839f3b143c741933fdfc6d3bf554",
+        "changed_lines": 1,
+        "diff": "docs/development/fct-p0-01-prior/diffs/答辩实战问答手册.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩知识手册-打印版.html",
+        "after_bytes": 75795,
+        "after_sha256": "7c6a7573efdd91d23e705ce7e794fbc59db1c301e19e52349a98532dcf88afa5",
+        "changed_lines": 3,
+        "diff": "docs/development/fct-p0-01-prior/diffs/答辩知识手册-打印版.html.diff"
+      }
+    ]
+  }
+}

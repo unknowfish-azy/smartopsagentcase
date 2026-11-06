@@ -1,0 +1,57 @@
+{
+  "reason": "FCT-P0-01 收尾：六批改写完成后对冻结快照做最后一次复核，记录漂移与“已发布数值 vs 当前工作树”的差额",
+  "checked_at": "2026-11-06",
+  "command": "python scripts/fact_ledger.py --verify-snapshot docs/development/fct-p0-01-evidence/sources.json",
+  "exit_code": 2,
+  "result": "DRIFTED",
+  "evidence_overwritten": false,
+  "pinned_snapshot": {
+    "source_digest": "sha256:922883250075c75b86ccb47ca502e4b1206215e784bb4b6c17af39122d4e213d",
+    "git_head": "989370556d59d873baa265a14d38d63faeb34369",
+    "source_file_n": 675,
+    "java_test_file_n": 122,
+    "java_test_test_annotation_n": 656,
+    "java_test_loc": 15649,
+    "java_main_file_n": 321,
+    "routes_actual_n": 422,
+    "vue_file_n": 175,
+    "vue_loc": 21944,
+    "create_table_n": 129,
+    "offline_distinct_table_n": 119
+  },
+  "live_tree": {
+    "source_digest": "sha256:9f9e734241590138a16a1cd479a146208131f2457d38c3e380b0ecf8c1c3ea06",
+    "collected_to": ".runtime/fct-drift",
+    "java_main_file_n": 321,
+    "routes_actual_n": 422,
+    "vue_file_n": 175,
+    "vue_loc": 21944,
+    "create_table_n": 129,
+    "java_test_file_n": 126,
+    "java_test_test_annotation_n": 671,
+    "java_test_loc": 16147,
+    "same_as_pinned": ["java_main_file_n", "routes_actual_n", "vue_file_n", "vue_loc", "create_table_n", "offline_distinct_table_n"],
+    "differs_from_pinned": {
+      "java_test_file_n": {"pinned": 122, "live": 126},
+      "java_test_test_annotation_n": {"pinned": 656, "live": 671},
+      "java_test_loc": {"pinned": 15649, "live": 16147}
+    }
+  },
+  "drift": {
+    "changed": [
+      "backend/src/main/java/com/smartops/runbook/RunbookExecutionService.java",
+      "backend/src/main/java/com/smartops/service/MultiExecService.java",
+      "backend/src/test/java/com/smartops/runbook/RunbookIntegrationTest.java",
+      "backend/src/test/java/com/smartops/service/MultiExecServiceTest.java",
+      "frontend/src/components/operations/MultiExecDialog.vue"
+    ],
+    "added": [
+      "backend/src/test/java/com/smartops/operations/BoundedOutputTest.java",
+      "backend/src/test/java/com/smartops/operations/OperationConnectionCoordinatorTest.java",
+      "backend/src/test/java/com/smartops/operations/OperationRuntimeRegistryTest.java",
+      "backend/src/test/java/com/smartops/service/MultiExecBatchIntegrationTest.java"
+    ],
+    "removed": []
+  },
+  "conclusion": "代码规模 / 路由 / Vue / 迁移四类已发布数值与当前工作树完全一致；只有 Java 测试侧因并行新增 4 个测试文件（+15 个 @Test、+498 行）发生变化。材料按 digest 9228… 引用，未追改；如需改为当前树口径，需第七批：122→126、656→671、15,649→16,147。"
+}

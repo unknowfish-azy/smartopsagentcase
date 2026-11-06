@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>智维 Agent · 答辩知识手册</title>
+<style>
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+html, body { margin:0; padding:0; }
+body {
+  font-family: "Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;
+  color:#1b1f24; font-size:10.5pt; line-height:1.92;
+  text-align: justify; text-justify: inter-ideograph;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ 封面 ============ */
+.cover { height: 257mm; display:flex; flex-direction:column; page-break-after:always;
+         padding: 6mm 0 0 0; position:relative; }
+.cover .rule-top { height:3.2pt; background:#12385c; width:100%; }
+.cover .kicker { margin-top:26mm; font-size:10.5pt; letter-spacing:4px; color:#2a6fb0; font-weight:700; }
+.cover h1 { font-size:34pt; line-height:1.24; margin:8mm 0 0; color:#0f2b46; font-weight:800; letter-spacing:1px; }
+.cover .sub { font-size:13pt; color:#3c4a5a; margin-top:5mm; line-height:1.9; }
+.cover .sub b { color:#0f2b46; }
+.cover .divider { width:64mm; height:2.2pt; background:#2a6fb0; margin:8mm 0; }
+.cover .thesis { border-left:4pt solid #2a6fb0; background:#f4f8fd; padding:6mm 7mm; margin-top:2mm; }
+.cover .thesis .lab { font-size:8.8pt; letter-spacing:2px; color:#2a6fb0; font-weight:700; }
+.cover .thesis .txt { font-size:12.5pt; font-weight:700; color:#0f2b46; line-height:1.8; margin-top:2mm; }
+.cover .metatbl { margin-top:10mm; width:100%; border-collapse:collapse; font-size:9.6pt; }
+.cover .metatbl td { padding:2.2mm 0; border-bottom:0.6pt solid #dde5ee; vertical-align:top; }
+.cover .metatbl td.k { width:26mm; color:#68788c; }
+.cover .metatbl td.v { color:#1b1f24; font-weight:600; }
+.cover .foot { margin-top:auto; padding-top:6mm; border-top:0.8pt solid #dde5ee;
+               font-size:8.6pt; color:#7b8a9c; line-height:1.8; }
+
+/* ============ 说明 + 目录 ============ */
+.front { page-break-after:always; }
+.front h2.plain { font-size:16pt; color:#0f2b46; margin:0 0 4mm; padding-bottom:2.5mm;
+                  border-bottom:2pt solid #0f2b46; font-weight:800; }
+.notice { background:#f4f8fd; border:0.8pt solid #cfe0f2; padding:5mm 6mm; font-size:9.6pt;
+          line-height:1.85; color:#2b3a4b; margin-bottom:9mm; }
+.notice b { color:#0f2b46; }
+.toc { width:100%; border-collapse:collapse; font-size:9.8pt; }
+.toc th { background:#12385c; color:#fff; font-weight:700; padding:3mm 3.4mm; text-align:left; font-size:9.4pt; letter-spacing:1px; }
+.toc td { padding:3.8mm 3.4mm; border-bottom:0.6pt solid #e2e9f1; vertical-align:top; line-height:1.8; }
+.toc tr:nth-child(even) td { background:#fafcfe; }
+.toc td.num { width:14mm; font-weight:800; color:#2a6fb0; font-size:11pt; text-align:center; }
+.toc td.name { width:52mm; font-weight:700; color:#0f2b46; }
+.toc td.desc { color:#3c4a5a; }
+
+/* ============ 正文排版 ============ */
+.body { padding-bottom: 2mm; }
+h1 { font-size:19pt; color:#0f2b46; margin:0 0 5mm; padding-bottom:2.5mm;
+     border-bottom:2pt solid #0f2b46; page-break-after:avoid; font-weight:800; }
+h2.sec { font-size:14.4pt; color:#0f2b46; margin:10mm 0 4.5mm; padding:2.6mm 0 2.6mm 5mm;
+         border-left:4pt solid #2a6fb0; background:#f7fafd; page-break-after:avoid;
+         font-weight:800; letter-spacing:.3px; }
+h3 { font-size:11.6pt; color:#12385c; margin:7mm 0 3.2mm; page-break-after:avoid; font-weight:700; }
+h4 { font-size:10.6pt; color:#1b1f24; margin:4.5mm 0 2.2mm; page-break-after:avoid; font-weight:700; }
+p { margin:3mm 0; orphans:3; widows:3; }
+ul, ol { margin:3mm 0 3.6mm; padding-left:7.5mm; }
+li { margin:1.8mm 0; line-height:1.85; }
+strong { color:#0b2e4a; font-weight:700; }
+code { font-family:Consolas,"Cascadia Mono","Courier New",monospace; background:#eef2f7;
+       padding:0.3mm 1.1mm; border-radius:2px; font-size:9pt; color:#8c2f5a; }
+
+/* 框图/代码：浅底、不折行、不跨页 */
+pre.fig { background:#f6f8fa; border:0.8pt solid #d6dee8; border-left:3pt solid #2a6fb0;
+          padding:5mm 5.5mm; margin:4.5mm 0 6mm; page-break-inside:avoid;
+          white-space:pre; overflow:hidden; font-size:8.6pt; line-height:1.7; }
+pre.fig code { background:none; color:#1b2b3a; padding:0; font-size:8.4pt; }
+
+/* 话术提示块 */
+.callout { background:#fffdf4; border:0.8pt solid #eadfc0; border-left:3pt solid #c79a2e;
+           padding:4.5mm 5.5mm; margin:4mm 0 5mm; font-size:9.8pt; line-height:1.92;
+           color:#3a3427; page-break-inside:avoid; }
+
+/* 表格 */
+table { width:100%; border-collapse:collapse; margin:4.5mm 0 6mm; font-size:9.3pt;
+        page-break-inside:avoid; }
+thead { display: table-header-group; }
+th { background:#e8f0f8; color:#0f2b46; font-weight:700; padding:2.9mm 3.2mm;
+     border:0.6pt solid #b9c8d8; text-align:left; line-height:1.62; }
+td { padding:2.8mm 3.2mm; border:0.6pt solid #cbd6e3; vertical-align:top; line-height:1.75;
+     word-break: break-word; }
+tbody tr:nth-child(even) td { background:#fafbfd; }
+
+hr.sep { border:none; border-top:0.8pt dashed #c3cfdd; margin:7mm 0; }
+
+/* 复选框 */
+ul.checklist { list-style:none; padding-left:1mm; }
+li.chk { position:relative; padding-left:7.2mm; margin:2.2mm 0; }
+li.chk:before { content:"☐"; position:absolute; left:0; font-size:12pt; color:#2a6fb0; line-height:1.35; }
+
+/* 末页说明 */
+.backnote { margin-top:6mm; border:0.8pt solid #cfe0f2; background:#f4f8fd; padding:5mm 6mm; font-size:9.3pt; line-height:1.85; }
+.backnote h3 { margin-top:0; }
+
+.part { page-break-before:always; }
+.part.first { page-break-before:auto; }
+.part-divider { border:2pt solid #12385c; border-radius:8px; padding:8mm 9mm; margin:4mm 0 9mm;
+                background:#12385c; color:#fff; page-break-after:avoid; }
+.part-divider .part-tag { font-size:12pt; font-weight:700; letter-spacing:4px; opacity:.9; }
+.part-divider .part-title { font-size:19pt; font-weight:800; margin-top:2mm; }
+.part-divider .part-src { font-size:9pt; opacity:.7; margin-top:3mm; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="rule-top"></div>
+  <div class="kicker">答辩知识手册</div>
+  <h1>把项目讲透<br/>把问题答穿</h1>
+  <div class="sub">
+    册一 · 项目知识要点　｜　册二 · 答辩实战问答（58 题）<br/>
+    <b>智维 Agent（SmartOpsAgent）</b>　可信 AI 智能运维与知识协同平台
+  </div>
+  <div class="divider"></div>
+  <div class="thesis">
+    <div class="lab">核心主张</div>
+    <div class="txt">AI 负责思考，人负责授权，系统负责留痕。</div>
+  </div>
+  <table class="metatbl">
+    <tr><td class="k">赛事</td><td class="v">2026 第八届全球校园人工智能算法精英大赛 · 河南赛区 · 算法创新赛</td></tr>
+    <tr><td class="k">本册性质</td><td class="v">可直接背诵的知识要点 + 逐题口播答案</td></tr>
+    <tr><td class="k">数字口径</td><td class="v">全部来自代码实测，可当场自证（v1.0 · 2026-11-02）</td></tr>
+    <tr><td class="k">上场前</td><td class="v">只看三样：一页数字卡 · 真相清单 · 三个为什么</td></tr>
+  </table>
+  <div class="foot">
+    打印建议：A4 双面（长边翻转）· 缩放 100% · 黑白即可，正文不使用深色底
+  </div>
+</section>
+
+<section class="front">
+  <h2 class="plain">怎么用这本册子</h2>
+  <div class="notice">
+    <b>册一回答"这个项目是什么"</b>——读完你能从业务背景讲到某一行为什么这么写。<br/>
+    <b>册二回答"老师会问什么、我该怎么答"</b>——每题给"老师想听什么 + 口播答案 + 追问链 + 千万别这么说"。<br/>
+    <b>最重要的一节是册一第 8 节「真相清单」</b>：8 个"没做完"的地方，<b>主动说出来是加分，被戳穿是事故</b>。
+  </div>
+  <h2 class="plain">目录</h2>
+  <table class="toc">
+    <thead><tr><th style="width:18mm">节</th><th style="width:56mm">内容</th><th>页</th></tr></thead>
+    <tbody><tr><td class="num">封面</td><td class="name">封面 + 打印顺序</td><td class="desc">1</td></tr><tr><td class="num">目录</td><td class="name">怎么用这本册子</td><td class="desc">2</td></tr><tr><td class="num">册一</td><td class="name">项目知识要点手册</td><td class="desc">3 起</td></tr><tr><td class="num">— 0</td><td class="name">30 秒讲清这个项目</td><td class="desc"></td></tr><tr><td class="num">— 1</td><td class="name">它到底解决什么问题（三个真痛点）</td><td class="desc"></td></tr><tr><td class="num">— 2</td><td class="name">系统全景：6 个服务与真实规模</td><td class="desc"></td></tr><tr><td class="num">— 3</td><td class="name">必须能讲的功能清单</td><td class="desc"></td></tr><tr><td class="num">— 4</td><td class="name">核心算法知识点（命根子）</td><td class="desc"></td></tr><tr><td class="num">— 5/6</td><td class="name">后端要点 / 前端要点</td><td class="desc"></td></tr><tr><td class="num">— 7</td><td class="name">数据、测试、部署的真实数字</td><td class="desc"></td></tr><tr><td class="num">— 8</td><td class="name">真相清单：哪些是真做、哪些是基线</td><td class="desc"></td></tr><tr><td class="num">— 9/10</td><td class="name">一页数字卡 / 三个必须默写的为什么</td><td class="desc"></td></tr><tr><td class="num">册二</td><td class="name">答辩实战问答手册（58 题）</td><td class="desc"></td></tr><tr><td class="num">— 开场</td><td class="name">3 分钟陈述稿</td><td class="desc"></td></tr><tr><td class="num">— 一</td><td class="name">定位与价值 5 题</td><td class="desc"></td></tr><tr><td class="num">— 二</td><td class="name">算法深挖 12 题</td><td class="desc"></td></tr><tr><td class="num">— 三</td><td class="name">架构与工程 8 题</td><td class="desc"></td></tr><tr><td class="num">— 四</td><td class="name">真实性与边界 12 题（最危险）</td><td class="desc"></td></tr><tr><td class="num">— 五</td><td class="name">安全与伦理 5 题</td><td class="desc"></td></tr><tr><td class="num">— 六</td><td class="name">产品与商业 6 题</td><td class="desc"></td></tr><tr><td class="num">— 七</td><td class="name">团队与个人 4 题</td><td class="desc"></td></tr><tr><td class="num">— 八</td><td class="name">刁钻题 6 题</td><td class="desc"></td></tr></tbody>
+  </table>
+  <div class="backnote" style="margin-top:8mm">
+    <h3>三条铁律</h3>
+    <b>一、</b>不报任何准确率 / F1 数字——实验全是 NOT RUN，硬报就是造假。<br/>
+    <b>二、</b>被问到没做到的，用「承认 → 给已知 → 划边界 → 给路径」四步接住。<br/>
+    <b>三、</b>所有数字以册一第 9 节「一页数字卡」为准，四份材料不许打架。
+  </div>
+</section>
+
+
+    <section class="part first">
+      <div class="part-divider">
+        <div class="part-tag">册一</div>
+        <div class="part-title">项目知识要点 · 把项目彻底讲透</div>
+        <div class="part-src">项目知识要点手册.md</div>
+      </div>
+      <div class="part-body"><h1>智维 Agent · 项目知识要点手册</h1>
+<div class="callout">用途：答辩前把项目彻底讲透。<strong>所有数字均来自代码实测，可当场自证。</strong><br/>版本 v1.0 · 2026-11-02　｜　代码锚点格式 <code>文件路径:行号</code></div>
+<hr class="sep"/>
+<h2 class="sec">0. 30 秒讲清这个项目（电梯版，背到脱口而出）</h2>
+<div class="callout">我们做的是<strong>智维 Agent</strong>——一个敢让它动手的运维智能体。<br/>现在企业用 AI 运维有个死结：<strong>通用大模型会"说"，但不敢让它"做"</strong>——因为它可能引错版本的文档、可能声称"已经重启成功"其实没成功、可能一条命令把生产环境干掉。<br/>我们的解法是<strong>三道锁一本账</strong>：<strong>证据锁</strong>（每句话能追溯到知识条目）、<strong>风险锁</strong>（高危操作必须人工授权）、<strong>边界锁</strong>（命令白名单 + 黑名单 + 沙箱），最后<strong>一本审计账</strong>全程留痕。<br/>技术上，检索用版本感知的混合检索，结果核查用<strong>四级纠察</strong>并能识别"假成功"，可信度用 trust_score 聚合。<br/>全栈自研：后端 SpringBoot 119 张表 422 个接口，前端 Vue3 双入口 26+ 页面，AI 侧 Python 混合检索与纠察内核。<br/>一句话：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></div>
+<hr class="sep"/>
+<h2 class="sec">1. 它到底解决什么问题</h2>
+<h3>1.1 场景</h3>
+<p>中小企业的 Linux 服务器运维：没有专职 SRE，一个人管几十台机器，出问题靠"百度 + 试命令 + 祈祷"。</p>
+<h3>1.2 三个真痛点（评委最吃这套，因为它对应三个算法设计）</h3>
+<table><thead><tr><th>痛点</th><th>具体表现</th><th>我们的对应设计</th></tr></thead><tbody><tr><td><strong>知识错配</strong></td><td>搜到 Ubuntu 22.04 的答案，但机器是 CentOS 6，<code>systemctl</code> 根本不存在</td><td><strong>版本感知检索</strong>（版本过滤 + 版本一致性核查）</td></tr><tr><td><strong>假成功</strong></td><td>AI 说"已重启 nginx"，其实服务根本没起来</td><td><strong>四级纠察 + 假成功状态核验</strong></td></tr><tr><td><strong>不敢授权</strong></td><td>一条 <code>rm -rf</code> 或 <code>iptables</code> 就能毁掉生产环境</td><td><strong>风险四档分级 + 双闸 + 命令白/黑名单</strong></td></tr></tbody></table>
+<h3>1.3 用户与角色</h3>
+<p><code>ROLE_ADMIN</code> / <code>ROLE_OPERATOR</code> / <code>ROLE_PASSWORD_CHANGE</code>（<code>backend/.../AuthController.java:134</code>）；团队空间内另有 <code>owner</code> 起的多级授权（<code>TeamWorkspaceService.java:47</code>），全项目 <strong>139 处</strong> <code>teamId</code> 引用，是真多租户。</p>
+<hr class="sep"/>
+<h2 class="sec">2. 系统全景（背下这张表，架构题不会失分）</h2>
+<table><thead><tr><th>服务</th><th>技术</th><th>端口</th><th>职责</th><th>真实规模</th></tr></thead><tbody><tr><td><strong>backend</strong></td><td>SpringBoot 3.3.5 + Java 17</td><td>8080</td><td>业务主干：权限、服务器、运维会话、哨兵、审计、模型网关、决策闭环</td><td>321 个 Java 文件 / 34,777 行 / 63 Controller / 422 接口 / 119 张表（迁移脚本定义，运行库未核验）</td></tr><tr><td><strong>ai-service</strong></td><td>FastAPI（Python）</td><td>8001</td><td>AI 对话、RAG 编排、SSE 流式</td><td>3 个端点（health / chat / chat-stream）</td></tr><tr><td><strong>knowledge-service</strong></td><td>Python</td><td>8002</td><td>知识入库、切片、嵌入、检索、证据</td><td>13 个单测全通过</td></tr><tr><td><strong>agent-service</strong></td><td>Python</td><td>8003</td><td>Agent 内核（planner/executor/inspector/policies）</td><td>库形态 + 82 用例</td></tr><tr><td><strong>frontend</strong></td><td>Vite 7 + Vue3 + Element Plus</td><td>5173 / 5174（双入口）</td><td>用户层 + 管理员层</td><td>175 个 .vue / 21,944 行</td></tr><tr><td><strong>基础设施</strong></td><td>MySQL 8.4 + Redis 7.4</td><td>3306 / 6379</td><td>存储与缓存</td><td>docker-compose 只有这两个服务</td></tr></tbody></table>
+<p><strong>一句话记住</strong>：<code>浏览器 → Nginx → backend(8080) / ai-service(8001) → knowledge(8002)</code>；Python 侧<strong>全部零密钥可跑</strong>（<code>LLM_PROVIDER=mock</code>）。</p>
+<hr class="sep"/>
+<h2 class="sec">3. 你必须能讲的功能清单（真存在的，不许讲没有的）</h2>
+<table><thead><tr><th>能力</th><th>在哪</th><th>一句话说明</th></tr></thead><tbody><tr><td>AI 对话（流式）</td><td><code>frontend/src/api/stream.ts</code></td><td>手写 SSE：fetch + ReadableStream + TextDecoder，按 <code>\n\n</code> 切帧，解析 <code>thinking/token/done</code></td></tr><tr><td>思考过程可视化</td><td><code>AiChatPanel.vue:8-16</code></td><td>6 个阶段逐步点亮，最后一步脉冲，结束全变 done</td></tr><tr><td>知识库（系统）</td><td><code>KnowledgeView.vue</code></td><td>本地静态条目，页面角标明确写"未人工核验"</td></tr><tr><td>个人知识库</td><td><code>PersonalKnowledgeView.vue</code></td><td><strong>真后端 CRUD</strong>：建库/导入/重建索引/导出/归档，条目带 version 与 verificationStatus</td></tr><tr><td>运维执行（预览→审批→执行）</td><td><code>api/operations.ts</code></td><td><code>previewMultiExec → executeMultiExec</code>，<strong>审批后才真正发送命令</strong></td></tr><tr><td>运行记录</td><td><code>RunHistoryView.vue</code>（778 行）</td><td>按 Trace ID/工具/状态/时间查，展示命令、退出码、stdout/stderr</td></tr><tr><td>SSH/SFTP/隧道终端</td><td><code>backend/operations/</code> + <code>sshd-core 2.12.1</code></td><td><strong>真实现</strong>，WebSocket <code>/ws/operations/terminal</code></td></tr><tr><td>哨兵告警与自愈脚本</td><td><code>backend/sentinel/</code>（15 个类）</td><td>任务/采样/告警/规则/脚本版本/运行/调度 + guardian 证据 + 学习画像</td></tr><tr><td>AI 决策闭环</td><td><code>DecisionLoopService</code></td><td>五阶段 <strong>ANALYZE → MEMORIZE → DECIDE → REVIEW → LEARNED</strong>，复盘回写 <code>operator_memory</code> 置信度</td></tr><tr><td>模型网关</td><td><code>ModelGatewayService</code></td><td>对外 <code>/v1/chat/completions</code>，API Key 鉴权 + 配额 + 用量统计</td></tr><tr><td>Agent 指挥中心</td><td><code>/agent</code>、<code>/agent/trace</code></td><td>Agent 编排与执行轨迹，<code>requiresHuman</code> 人工审批勾选项</td></tr><tr><td>安全治理</td><td><code>/admin/*</code> + 管理员层</td><td>用户/组织/角色/菜单/字典/通知/审计/<strong>TOTP MFA</strong></td></tr><tr><td>视觉化</td><td><code>ParticleWhale.vue</code>、<code>milky-way-scene.js</code></td><td>Three.js 粒子鲸 + <strong>GPGPU 离屏迭代</strong>星海（ShaderMaterial 模拟场）</td></tr><tr><td>数据图表</td><td>ECharts 4 个组件</td><td>折线 / 堆叠柱 / 环形饼 / 指标卡，实际用于模型分析页</td></tr><tr><td>语音输入</td><td><code>domain/chat/speechInput.ts</code></td><td>Web Speech API，<code>lang:'zh-CN'</code>，<strong>只填文本不上传音频</strong></td></tr><tr><td>截屏取证</td><td><code>domain/chat/visualCapture.ts</code> + <code>chatAttachments.ts</code></td><td><code>getDisplayMedia/getUserMedia</code> → canvas → PNG → <strong>真上传</strong>后端，返回 ocrText/confidence/privacyStatus</td></tr></tbody></table>
+<hr class="sep"/>
+<h2 class="sec">4. 核心算法知识点（算法创新赛的命根子，必须滚瓜烂熟）</h2>
+<h3>4.1 知识入库流水线</h3>
+<pre class="fig"><code>文件/文本 → 解析(.txt/.md/.pdf) → 切片 → 嵌入 → 内存存储</code></pre>
+<ul><li>切片：<code>chunk_size=800, overlap=120</code>（<code>knowledge/config.py:6-7</code>），字符滑窗 <code>start = end - overlap</code></li><li>嵌入：<strong>HashEmbedding，256 维</strong>（<code>embedding/hash_embedding.py</code>）—— 对每个 token 取 <code>sha256(token)[:4] % 256</code> 累加计数后 L2 归一化</li><li>存储：<code>InMemoryVectorStore.items</code> 列表，<strong>进程内存，重启即失</strong></li></ul>
+<h3>4.2 检索三件套</h3>
+<p><strong>① BM25</strong>（<code>retrieval/bm25.py</code>）</p>
+<ul><li><code>k1=1.5</code>、<code>b=0.75</code>；<code>idf = log(1 + (N-df+0.5)/(df+0.5))</code></li><li>分词：<code>re.findall(r"[\u4e00-\u9fff]+|[a-zA-Z0-9_]+")</code> → <strong>中文连续汉字当成一个 token，不是真分词</strong>（无 jieba 依赖）</li><li>df <strong>每次查询全量重算</strong>，无倒排索引</li></ul>
+<p><strong>② 向量路</strong>（<code>retrieval/vector_store.py:59-73</code>）</p>
+<ul><li>逐条 cosine 线性扫描；<strong>无 FAISS / HNSW / Milvus</strong></li></ul>
+<p><strong>③ 融合</strong>（<code>retrieval/hybrid.py:89-101</code>）</p>
+<pre class="fig"><code>score = 0.6 × vector_norm + 0.4 × bm25_norm</code></pre>
+<ul><li>归一化 = <strong>各自除以本路最高分</strong>（max 归一，<strong>不是 min-max，也不是 RRF</strong>）</li><li>按 <code>chunk_id</code> 合并去重，单路缺失记 0，<code>top_k=10</code></li></ul>
+<h3>4.3 版本感知（我们最独特的点）</h3>
+<ul><li>version 是 chunk 上的字符串字段，默认 <code>"latest"</code>（<code>config.py:17</code>）</li><li>过滤逻辑（<code>version_filter.py:8-15</code>）：空或 <code>latest</code> 不过滤，否则<strong>只保留 version 完全相等</strong>的</li><li><strong>举例（评委最爱听例子）</strong>：问"Ubuntu 22.04 如何重启 nginx？"，带 <code>version=ubuntu-22.04</code>，CentOS 6 的 <code>service nginx restart</code> 就不会混进答案</li><li>兜底：证据版本与环境版本不一致 → inspector 打 <code>VERSION/WARNING</code></li></ul>
+<h3>4.4 Reranker（默认启用）</h3>
+<p><code>reranker/lexical_reranker.py:43-46</code>：<code>final_score = 0.7 × result.score + 0.3 × 词元重合率</code>，取 <code>top_k=5</code></p>
+<h3>4.5 trust_score（可信度聚合，必背公式）</h3>
+<pre class="fig"><code>score = 0.5 × evidence_score      # 各证据 score 的均值
+      + 0.3 × support_score       # 是否被支持（1.0 / 0.0）
+      + 0.2 × coverage            # min(证据数/3, 1)</code></pre>
+<p>（<code>knowledge/evidence/trust_score.py:28-37</code>，裁剪到 [0,1]，保留 4 位小数，无证据返回 0.0）</p>
+<div class="callout"><strong>三个分量为什么这么定</strong>：证据质量是基础（0.5），是否被支持是硬门槛（0.3），覆盖度防止"一条证据撑起一个结论"（0.2）。</div>
+<h3>4.6 四级纠察（Inspector，核心创新）</h3>
+<p><code>agent/inspector/pipeline.py</code></p>
+<table><thead><tr><th>级</th><th>做什么</th><th>关键阈值</th></tr></thead><tbody><tr><td>L1 <strong>Rule</strong></td><td>声明风险 &lt; 期望风险 → HIGH；HIGH/CRITICAL 且未获批 → CRITICAL；同工具调用 &gt; 10 次 → HIGH（循环检测）；无证据却调用状态变更类动作 → HIGH</td><td><code>loop_threshold=10</code></td></tr><tr><td>L2 <strong>Evidence</strong></td><td>词元重合率 ≥ 0.5 → SUPPORTED；≥ 0.2 → PARTIALLY_SUPPORTED；否则 UNSUPPORTED；证据数 &lt; 1 → WARNING；版本不符 → VERSION/WARNING</td><td>4 级标签：SUPPORTED / PARTIALLY / UNSUPPORTED / CONTRADICTED</td></tr><tr><td>L3 <strong>AI Judge</strong></td><td><strong>可插拔钩子，默认 passthrough 不调模型</strong></td><td><code>judge_fn is None → return []</code></td></tr><tr><td>L4 <strong>Verifier</strong></td><td>命中"已解决/已恢复/fixed/ok"等 9 个模式，但 <code>actual_state["resolved"]==False</code> → <strong>假成功</strong></td><td><code>false_success=True</code></td></tr></tbody></table>
+<p><strong>聚合结果</strong>：无问题 → PASS；有问题 → WARN；严重度 HIGH/CRITICAL → VIOLATION；<strong>假成功 → REJECTED</strong>，并建议"触发 Re-plan"。</p>
+<h3>4.7 风险分级与安全双闸</h3>
+<ul><li>四档：<code>LOW / MEDIUM / HIGH / CRITICAL</code>（<code>policies/risk.py:4-12</code>）</li><li>映射：<code>CRITICAL = {server.delete, database.drop}</code>；<code>HIGH = {server.restart, server.stop, server.delete, shell.execute}</code>；<code>server.*</code> → MEDIUM</li><li><strong>双闸</strong>：CRITICAL 一律禁止；HIGH 且未标记 <code>requires_approval</code> → 直接拒绝（<code>policy_engine.py:27,36-46</code>）</li><li><strong>命令白名单</strong>（<code>tools/builtin/shell.py:106-132</code>）：Linux 19 个（cat df du free grep head hostname id ip ls netstat pgrep ps pwd ss tail uname uptime whoami）+ Windows 3 个</li><li><strong>黑名单</strong>：<code>rm rmdir del format shutdown reboot kill pkill killall iptables nft systemctl service mount umount chmod chown useradd userdel passwd dd mkfs docker kubectl terraform</code></li><li>还禁元字符 <code>| &amp;&amp; || ; &gt; &gt;&gt; &lt; \</code> $( ${<code> 与危险参数 </code>--force --delete --privileged --device --cap-add --pid=host --network=host`</li><li>执行护栏：<code>timeout=20s</code>、输出截断 20,000 字符、强制 <code>shell=False</code>（不给 shell 解释）</li></ul>
+<hr class="sep"/>
+<h2 class="sec">5. 后端知识要点（被问"是不是只有个壳子"时的弹药）</h2>
+<table><thead><tr><th>要点</th><th>事实</th></tr></thead><tbody><tr><td>认证</td><td><strong>不是 JWT</strong>——HttpSession + JSESSIONID（30 分钟）+ Spring Security；<code>SecurityConstants.TOKEN_PREFIX="Bearer "</code> 定义了但无签发逻辑</td></tr><tr><td>MFA</td><td><strong>TOTP 真实现</strong>（<code>TotpService</code> + <code>account_mfa</code> / <code>account_mfa_recovery</code>），人机验证支持本地图形点选与 Cloudflare Turnstile 双 Provider</td></tr><tr><td>审计</td><td>两张表：<code>security_audit_event</code>（actor/action/target/outcome）、<code>operation_audit_event</code>（含 approval_state）；<code>SecurityAuditService</code> 硬编码 <strong>62 种受控动作</strong>，结果 SUCCESS/FAILURE/DENIED</td></tr><tr><td>ORM</td><td>MyBatis（6 Mapper / 4 XML）与 <strong>JdbcTemplate（45 个文件）混用</strong></td></tr><tr><td>Redis</td><td>依赖与配置齐全，但 <strong>RedisTemplate 引用数 = 0</strong>（骨架）</td></tr><tr><td>测试</td><td><strong>122 个测试文件 / 15,649 行 / 656 个 @Test</strong>，含 13 个端到端集成测试与 3 个安全专项测试</td></tr><tr><td>质量</td><td>全量 grep `TODO</td><td>FIXME</td><td>HACK` 命中 <strong>0 处</strong></td></tr></tbody></table>
+<hr class="sep"/>
+<h2 class="sec">6. 前端知识要点（被问"界面是谁做的"时的弹药）</h2>
+<ul><li>双入口：用户层 5173 / 管理员层 5174，共用 <code>vite.shared.mjs</code>（代理 <code>/api</code> <code>/ws</code>，<code>/ai</code> 单独转发 8001）</li><li>手动分包：three / zrender / echarts / xterm / vue / axios 拆开</li><li>状态管理：Pinia 7 个 store，<code>aiChat.js</code> 就有 17.6 KB</li><li>错误处理：<code>request.ts</code>（498 行）统一拦截，覆盖 400/401/403/404/409/<strong>428 人机验证</strong>/429/422/500/502-504；401 派发 <code>smartops:unauthorized</code> 事件由路由清会话跳登录</li><li>SSE 刻意不走 axios（axios 读不了流），用原生 fetch + ReadableStream，支持 AbortSignal</li><li>设计系统：仓库根 <code>design-system/MASTER.md</code>（87 行）定义颜色/排版/栅格/动效/无障碍；深色为主 + 浅色令牌切换</li><li><strong>诚实点</strong>：<code>tsconfig.json</code> 是 <code>strict:false</code>，且 include 只覆盖 api/domain/utils/types，<strong>views 与 components 不在类型检查范围</strong></li></ul>
+<hr class="sep"/>
+<h2 class="sec">7. 数据、测试、部署（全部可当场复现）</h2>
+<table><thead><tr><th>项</th><th>真实数字</th></tr></thead><tbody><tr><td>Python 测试</td><td><strong>610 用例 = 600 通过 / 10 跳过 / 0 失败</strong></td></tr><tr><td>├ knowledge</td><td>13 个<strong>全通过</strong>（纯内存，无外部依赖）</td></tr><tr><td>├ training</td><td>36 个（数据集 schema/校验/泄漏/门禁）</td></tr><tr><td>├ inspector</td><td>20 个（规则与证据检查器、事件总线、持久化）</td></tr><tr><td>├ agent</td><td>18 个（skill 加载、shell 安全）</td></tr><tr><td>└ e2e / integration / api</td><td>5 / 6 / 15（<strong>跳过是因后端未启动或缺依赖，不是 mock 掉</strong>）</td></tr><tr><td>另</td><td>ai-service 67 个（对话 / RAG / LLM 集成，独立于上方 610）</td></tr><tr><td>后端测试</td><td>656 个 @Test + 4 个参数化</td></tr><tr><td>数据集</td><td>7 个 JSONL / <strong>共 14 条</strong> / <code>status</code> 全部 <code>DRAFT</code></td></tr><tr><td>实验文档</td><td>17 个 md，<strong>9 个显式 NOT RUN，无任何真实评测指标</strong></td></tr><tr><td>部署</td><td>compose 只有 MySQL + Redis；K8s 有 6 个 deployment + ingress + hpa，<strong>无 Helm</strong></td></tr></tbody></table>
+<p class="note">注：模块拆分（13/36/20/18/5/6/15）是上一轮 <code>tests/</code> 113 用例口径，加上当时 ai-service 22 个合计 135；与上方 610 全量收集数不是同一快照；对外只引用 610 / 600 / 10。</p>
+<p><strong>唯一真实的评测数字</strong>：<code>600 passed / 10 skipped</code>、<code>CUDA: unavailable</code>、<code>GPU count: 0</code>——文档自己注明"<strong>工程回归结果，不是模型实验结果</strong>"。</p>
+<hr class="sep"/>
+<h2 class="sec">8. 真相清单：哪些是真做、哪些是基线（<strong>这一节决定你会不会翻车</strong>）</h2>
+<p>主动说出来 = 真懂；被戳穿 = 造假。</p>
+<table><thead><tr><th>模块</th><th>真实做法</th><th>生产该怎么做</th><th>一句话答法</th></tr></thead><tbody><tr><td>Embedding</td><td>SHA256 哈希桶伪嵌入 256 维；<code>lower().split()</code> 对中文退化为单 token</td><td>bge-m3 / text-embedding-3 + 中文分词</td><td>"零依赖可复现的哈希基线，接口可替换；中文语义目前由词法路与重排兜底"</td></tr><tr><td>BM25</td><td>正则伪分词，每查全量重算 df</td><td>jieba/IK + 倒排索引</td><td>同上，且<strong>这是我们有 reranker 的原因</strong></td></tr><tr><td>融合</td><td>0.6/0.4 max 归一化加权和</td><td>RRF 或 learned-to-rank</td><td>"小语料下 max 归一比 min-max 稳，参数留了网格搜索接口"</td></tr><tr><td>向量检索</td><td>内存线性扫描</td><td>FAISS/HNSW + 持久化</td><td>"千级 chunk 内线性扫描够用，规模化换 FAISS"</td></tr><tr><td>Planner</td><td><strong>3 条 if/elif 关键词规则，最多 1 步</strong></td><td>LLM Planner（模板已写好）</td><td>"确定性基线先跑通可测；<code>PLANNER_PROMPT</code> 已就绪，替换成本是一个适配器"</td></tr><tr><td>AI Judge (L3)</td><td><strong>默认 passthrough，不调模型</strong></td><td>接 LLM 做语义判定</td><td>"<strong>真正的安全靠 L1+L2+L4，不依赖 LLM</strong>——这是设计选择，不是缺陷"</td></tr><tr><td>LLM</td><td><code>provider</code> 默认 <strong>mock</strong>；设 <code>ollama</code> 且服务可达时<strong>真实调用 Ollama（qwen3:1.7b）</strong>（Java 侧 <code>MiniAssistantEngine</code> 即默认连本地 Ollama）</td><td>真实 provider + 密钥托管</td><td>"零密钥可复现是刻意的：评委/老师没 key 也能跑通全链路；有 Ollama/Key 时切真模型只需一个环境变量"</td></tr><tr><td><strong>端到端编排</strong></td><td><strong>Python 侧 planner/executor 无调用方</strong>；真正在跑的产品闭环是后端 <code>DecisionLoopService</code>（ANALYZE→MEMORIZE→DECIDE→REVIEW→LEARNED 五阶段）</td><td>统一编排</td><td>"Agent 内核（planner/executor/inspector）是可插拔算法框架，经 82 单测验证；产品级闭环走后端决策循环。两者<strong>共享'证据锁/假成功检测'的设计理念，并非同一份代码</strong>"</td></tr><tr><td>审批流</td><td><code>ApprovalManager</code> 只有数据结构，<strong>无编排调用方</strong></td><td>接入执行前拦截</td><td>"审批在产品侧由 preview→approve→execute 三段式实现"</td></tr><tr><td>沙箱</td><td>已实现（process/filesystem/network），<strong>未被 executor 调用</strong></td><td>接入 executor</td><td>"沙箱模块已完成，接线是下一步"</td></tr><tr><td>Executor</td><td><strong>无重试 / 幂等 / 回滚</strong></td><td>补偿事务</td><td>"失败上报 inspector 触发 Re-plan；幂等回滚在路线图"</td></tr><tr><td>数据集</td><td>14 条 DRAFT，<code>schemaVersion</code> 类型不一致（4 个数字 / 10 个字符串）</td><td>千级样本 + 人工审核</td><td>"14 条种子集只用于证明链路打通，不报准确率"</td></tr><tr><td>记忆</td><td>内存 deque(50) / dict</td><td>持久化 + 检索</td><td>"轻量实现，够演示"</td></tr><tr><td>OCR</td><td><code>NoopOCR.extract_text</code> 直接 <code>raise NotImplementedError</code></td><td>PaddleOCR</td><td>"OCR 未实现，视觉走的是另一条 vision-event 链路"</td></tr></tbody></table>
+<hr class="sep"/>
+<h2 class="sec">9. 一页数字卡（<strong>打印下来，所有数字以这一页为准</strong>）</h2>
+<pre class="fig"><code>服务端口   backend 8080 | ai-service 8001 | knowledge 8002 | agent 8003 | 前端 5173/5174
+后端       321 Java 文件 / 34,777 行 / 63 Controller / 75 Service / 422 接口 / 119 张表（迁移脚本定义）
+           SpringBoot 3.3.5 + Java 17 + MySQL 8.4 + MyBatis+JdbcTemplate
+前端       175 .vue / 21,944 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)
+Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+测试       Python 610（600 通过 / 10 跳过） | 后端 656 @Test 
+算法常量   切片 800/120 | 嵌入 256 维 | BM25 k1=1.5 b=0.75 | 融合 0.6/0.4
+           Reranker 0.7/0.3 (top5) | trust 0.5/0.3/0.2 | 纠察 4 级 | 风险 4 档
+安全       白名单 22 条命令 | 黑名单 23 条 | 元字符禁用 | timeout 20s | 输出截断 20k
+           审批双闸 | 审计 62 种动作 | TOTP MFA | Session 30 分钟
+数据集     7 类 / 14 条 / 全部 DRAFT
+实验       17 个文档 / 9 个 NOT RUN / 无真实指标</code></pre>
+<hr class="sep"/>
+<h2 class="sec">10. 三个必须能默写的"为什么"</h2>
+<ol><li><strong>为什么做版本感知？</strong> —— 运维知识有强版本耦合，Ubuntu 的答案在 CentOS 上是错的，通用 RAG 不管这个。<strong>这是我们和"接个大模型就完事"的根本差别。</strong></li><li><strong>为什么做假成功检测？</strong> —— Agent 最大的风险不是不会做，是<strong>声称做成了其实没做成</strong>。L4 状态核验专门抓这个：命中"已解决"话术但实际 <code>resolved=false</code> → REJECTED。</li><li><strong>为什么安全机制不依赖 LLM？</strong> —— L1 规则、L2 证据、L4 状态核验都是确定性判定，<strong>AI Judge 默认不调模型</strong>。用不确定的模型去守确定的安全底线，是设计错误。</li></ol></div>
+    </section>
+    <section class="part">
+      <div class="part-divider">
+        <div class="part-tag">册二</div>
+        <div class="part-title">答辩实战问答 · 58 题怎么答</div>
+        <div class="part-src">答辩实战问答手册.md</div>
+      </div>
+      <div class="part-body"><h1>智维 Agent · 答辩实战问答手册</h1>
+<div class="callout">每道题四段式：<strong>老师想听什么 → 你照着说（口播稿）→ 他接着会追什么 → 千万别这么说</strong><br/>口播稿按"能直接念出来"写，不是书面语。</div>
+<hr class="sep"/>
+<h2 class="sec">开场陈述（3 分钟，背熟）</h2>
+<div class="callout">各位老师好，我们是【队名】，项目是<strong>智维 Agent</strong>。<br/><br/>我想先说一个现象：现在企业里 AI 已经被用来问问题了，但<strong>几乎没人敢让它真正动手</strong>。原因是三个不信任——<strong>它用的知识可能是错版本的</strong>（Ubuntu 的答案套到 CentOS 上），<strong>它可能说"已经重启好了"其实没好</strong>，<strong>一条命令就可能把生产环境搞挂</strong>。<br/><br/>我们的项目就是冲这三个"不信任"去的。解法是<strong>三道锁一本账</strong>：<br/><strong>证据锁</strong>——每句话能追到具体知识条目和版本号；<br/><strong>风险锁</strong>——高危操作必须人工授权，命令有白名单和黑名单；<br/><strong>边界锁</strong>——沙箱、超时、输出截断、元字符禁用。<br/>最后<strong>一本审计账</strong>全程留痕。<br/><br/>技术上，检索是<strong>版本感知的混合检索</strong>，结果核查是<strong>四级纠察</strong>，其中最关键的是能识别<strong>假成功</strong>；可信度用 <strong>trust_score</strong> 三分量聚合。<br/><br/>这不是 PPT：后端 SpringBoot <strong>119 张表 422 个接口</strong>，前端 Vue3 <strong>26 个以上页面</strong>，AI 侧自研 Python 内核，<strong>610 个 Python 用例 + 656 个后端 @Test</strong>，而且<strong>零 API Key 就能跑通全链路</strong>。<br/><br/>最后一句总结我们的主张：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></div>
+<hr class="sep"/>
+<h1>一、定位与价值（为什么做这个）</h1>
+<h3>Q1 你们和普通"接个大模型做运维问答"有什么区别？</h3>
+<ul><li><strong>想听</strong>：你是不是只是套壳。</li><li><strong>说</strong>：差别在<strong>约束</strong>，不在模型。通用问答只解决"会不会说"，我们解决"敢不敢做"。我们加了三层通用方案没有的东西：<strong>版本感知</strong>（防止知识错配）、<strong>四级纠察 + 假成功检测</strong>（防止谎报成功）、<strong>风险分级双闸</strong>（防止越权执行）。模型是同一个模型，<strong>差别在模型外面那一层约束工程</strong>。</li><li><strong>追问</strong> → Q2、Q14</li><li><strong>别这么说</strong>："我们模型更聪明"——你没训模型，一问就穿。</li></ul>
+<h3>Q2 为什么选运维这个方向？</h3>
+<ul><li><strong>想听</strong>：需求是真的还是编的。</li><li><strong>说</strong>：两个原因。一是<strong>痛点强度高</strong>：运维是少数"AI 出错就有真实损失"的场景，所以可信机制不是锦上添花而是刚需，这个方向最能验证我们的方法。二是<strong>可验证</strong>：运维操作有明确对错（服务起来没起来、端口通不通），不像写诗，这让"假成功检测"这类设计能被客观检验。</li><li><strong>追问</strong> → 你怎么验证的？→ 接 Q31</li><li><strong>别这么说</strong>："运维市场很大"——空洞。</li></ul>
+<h3>Q3 最核心的创新点，只准说一个，你说哪个？</h3>
+<ul><li><strong>想听</strong>：你有没有主次。</li><li><strong>说</strong>：<strong>假成功检测</strong>。Agent 最大的风险不是不会做，是<strong>声称做成了其实没做成</strong>——这比不做更危险，因为人会基于"已完成"去做下一步。我们的 L4 状态核验会比对"话术"和"实际状态"：命中了"已解决/已恢复/fixed"这类表述，但实际 <code>resolved=false</code>，就直接判 REJECTED 并触发重新规划。这个机制我查过，通用 Agent 框架里是缺的。</li><li><strong>追问</strong> → 怎么判定实际状态？→ Q17</li><li><strong>别这么说</strong>："我们创新点有三个……"（然后三个都讲不深）</li></ul>
+<h3>Q4 你的目标用户到底是谁？</h3>
+<ul><li><strong>想听</strong>：有没有真实用户画像。</li><li><strong>说</strong>：<strong>没有专职 SRE 的中小企业</strong>——一个人管几十台 Linux 机器，出问题靠搜索加试命令。他们有三个特征：付得起小钱、买不起整套 AIOps、最怕误操作。我们在系统里也对应做了设计：团队空间支持协作、审批流降低误操作风险、SSH 终端真实现可以直接上手。</li><li><strong>追问</strong> → 那大厂呢？→ "大厂有自研 AIOps 和专职团队，我们的差异化恰恰在<strong>轻量可自部署</strong>"</li><li><strong>别这么说</strong>："所有人都需要"。</li></ul>
+<h3>Q5 做这个最难的地方在哪？</h3>
+<ul><li><strong>想听</strong>：你真做过还是拼凑的。</li><li><strong>说</strong>：最难的不是让 AI 说话，是<strong>让 AI 的每一句话都可追责、每一个动作都可回滚</strong>。具体来说，<strong>把"可信"做成可执行的工程约束</strong>：怎么定义证据充分、怎么定义风险等级、怎么在没接大模型的情况下也能判定安全。我们最后的答案是——<strong>安全判定不依赖 LLM</strong>，规则和证据核验是确定性的，AI 只作为可选增强。</li><li><strong>追问</strong> → 不依赖 LLM 怎么保证覆盖率？→ Q21</li></ul>
+<hr class="sep"/>
+<h1>二、算法深挖（这块是算法创新赛的主战场）</h1>
+<h3>Q6 混合检索为什么是 0.6 / 0.4，不是 0.5 / 0.5？</h3>
+<ul><li><strong>想听</strong>：参数是你调的还是随手写的。</li><li><strong>说</strong>：这组合是<strong>设计取向</strong>而不是网格搜索出来的：向量路承担语义泛化（用户问法和文档说法不一样时靠它），词法路承担<strong>精确术语命中</strong>（<code>nginx</code>、<code>iptables</code>、<code>ss</code> 这类专有名词，向量路容易糊）。所以给语义路更高权重 0.6，词法路 0.4 兜底。同时我们的<strong>词法路本身做了强化</strong>——加了词法重排 <code>0.7×原分 + 0.3×重合率</code>，等于把词法信号用两次。参数在配置里是可调项，网格搜索在我们的评测计划里。</li><li><strong>追问</strong> → 有对比实验吗？→ <strong>诚实答</strong>：没有（见 Q31）</li><li><strong>别这么说</strong>："我们实验得出 0.6 最优"——没实验就是没实验。</li></ul>
+<h3>Q7 归一化为什么用 max 归一，不用 min-max 或 RRF？</h3>
+<ul><li><strong>想听</strong>：你懂不懂归一化。</li><li><strong>说</strong>：min-max 对小样本<strong>极不稳定</strong>——两路分数的绝对量纲不同（BM25 可以到十几，余弦在 0~1），min-max 会让最低分那条直接变 0、最高分变 1，少量样本时容易被单个离群值拉偏。max 归一（各路除以本路最高分）保证<strong>两路都落在 0~1 且最高分恒为 1</strong>，量纲可比又不受离群值放大。RRF 确实是更鲁棒的排名融合方案，我们把它列为下一步——<strong>但 RRF 丢弃了分数信息，而我们的 trust_score 要用到分数</strong>，所以当前设计保留了分数。</li><li><strong>追问</strong> → 那 trust_score 怎么用这个分数？→ Q10</li><li><strong>别这么说</strong>："大家都这么用"。</li></ul>
+<h3>Q8 版本感知具体怎么做？举个工作例子。</h3>
+<ul><li><strong>想听</strong>：独特卖点是不是真的。</li><li><strong>说</strong>：每个知识切片带一个 <code>version</code> 字段，默认 <code>latest</code>。检索时如果指定了版本，就<strong>只保留版本完全相等的切片</strong>。举个例子：用户问"Ubuntu 22.04 怎么重启 nginx"，系统带上 <code>ubuntu-22.04</code>，那么 CentOS 6 的 <code>service nginx restart</code> 就不会进上下文——而这在通用 RAG 里是最常见的错误。还有第二道保险：如果证据版本和环境版本不一致，inspector 会打 <code>VERSION/WARNING</code>，即使漏过了检索也会被纠察抓出来。</li><li><strong>追问</strong> → 版本不匹配怎么办？→ "回退到 <code>latest</code> 并对答案标注版本不确认，绝不静默用错版本"</li><li><strong>别这么说</strong>："我们做了语义版本比较"——目前是字符串相等匹配，别吹。</li></ul>
+<h3>Q9 BM25 的中文分词怎么处理的？</h3>
+<ul><li><strong>想听</strong>：中文场景必问，最容易翻车。</li><li><strong>说</strong>：<strong>坦白说，目前是规则伪分词</strong>：用正则把连续汉字当一个 token、英文数字当一个 token，没有接 jieba。这是<strong>零依赖可复现</strong>的取舍——我们不希望评委或老师跑项目时还要装分词模型。代价是中文长 query 的召回会下降，我们的补偿手段是<strong>两条</strong>：一是向量路承担语义泛化，二是<strong>词法重排会用 query 与内容的 token 重合率再打一次分</strong>。生产环境换 jieba 或 IK 只需要替换 <code>tokenize</code> 一个函数。</li><li><strong>追问</strong> → 那中文效果怎么保证？→ 接上面"两条补偿"</li><li><strong>别这么说</strong>："我们做了中文分词优化"——没有，会被拆穿。</li></ul>
+<h3>Q10 trust_score 三个权重 0.5 / 0.3 / 0.2 怎么定出来的？</h3>
+<ul><li><strong>想听</strong>：公式是不是拍脑袋。</li><li><strong>说</strong>：三个分量对应三种失败模式。<strong>0.5 证据质量</strong>（各证据分的均值）——基础质量，权重最高；<strong>0.3 是否被支持</strong>——这是个硬门槛式的二值信号，防止"有证据但答非所问"；<strong>0.2 覆盖度</strong> <code>min(证据数/3, 1)</code>——防止"一条证据撑起一个结论"，三条以上就饱和。这个权重是<strong>先验设计</strong>，不是拟合出来的，我们也把它列为待标定项。</li><li><strong>追问</strong> → support_score 怎么算？→ <strong>诚实答</strong>：当前传的是"有没有检索到结果"，不是真的答案-证据蕴含判定，<strong>这是明确的待改进项</strong>（见 Q37）</li><li><strong>别这么说</strong>："通过大量实验标定"——没有。</li></ul>
+<h3>Q11 四级纠察为什么需要四级，一级不够吗？</h3>
+<ul><li><strong>想听</strong>：复杂度有没有必要。</li><li><strong>说</strong>：四级对应四类不同的失败，<strong>互相不可替代</strong>：L1 规则管<strong>流程与权限</strong>（该不该做、有没有授权、有没有死循环）；L2 证据管<strong>依据</strong>（结论有没有证据撑、版本对不对）；L3 AI 管<strong>语义</strong>（规则覆盖不到的语义矛盾）；L4 状态核验管<strong>结果</strong>（声称的完成是不是真的）。少了任何一级就有一类风险漏掉——<strong>尤其 L4，几乎所有 Agent 框架都没有</strong>。</li><li><strong>追问</strong> → 四级会不会太慢？→ "都是确定性判定，无模型调用，开销在毫秒级"</li><li><strong>别这么说</strong>："越多越安全"。</li></ul>
+<h3>Q12 假成功检测具体怎么判定？</h3>
+<ul><li><strong>想听</strong>：核心创新是不是真实现了。</li><li><strong>说</strong>：两层比对。第一层看<strong>话术</strong>：结果文本里有没有命中"已解决、已恢复、fixed、resolved、ok"这类 9 个完成态模式；第二层看<strong>实际状态</strong>：传入的 <code>actual_state["resolved"]</code> 是不是真的为 true。<strong>话术说完成但实际没完成 → <code>false_success=True</code> → 直接 REJECTED</strong>，并建议触发重新规划。这就是"声称做成了其实没做成"的机器判定。</li><li><strong>追问</strong> → 实际状态从哪来？→ <strong>诚实答</strong>：当前由调用方传入，关键词匹配而非真实探活；<strong>真实探活（如查端口、查进程）是明确的下一步</strong></li><li><strong>别这么说</strong>："我们会真实探测服务状态"——目前不是。</li></ul>
+<h3>Q13 Reranker 是什么方案？</h3>
+<ul><li><strong>说</strong>：词法重排，<code>final_score = 0.7×检索分 + 0.3×词元重合率</code>，取 Top-5。它是<strong>对混合检索结果的二次校正</strong>，也是我们对中文伪分词的一种补偿。没有用 cross-encoder 或 BGE-reranker，因为那会引入模型依赖，破坏"零密钥可复现"。</li><li><strong>追问</strong> → 为什么 0.7/0.3？→ "以检索分为主、重合率做微调校正，重合率只是辅助信号不该喧宾夺主"</li></ul>
+<h3>Q14 你的算法和主流 RAG 相比，创新的"增量"在哪？</h3>
+<ul><li><strong>说</strong>：主流 RAG 的优化目标是"<strong>找得更准</strong>"，我们的增量是"<strong>找得准之外，还要可追责、可判定、可拦截</strong>"。具体三个增量：<strong>版本感知</strong>（运维领域特有，通用 RAG 不管版本）、<strong>证据分级与可信度聚合</strong>（把检索分变成可解释的可信度）、<strong>执行后核验</strong>（把 RAG 从"检索环节"延伸到"执行结果环节"）。<strong>增量在环节延伸，不在单点精度。</strong></li><li><strong>追问</strong> → 那精度呢？→ 接 Q31 诚实答</li></ul>
+<h3>Q15 切片 800 / 120 怎么定的？</h3>
+<ul><li><strong>说</strong>：运维文档多是操作步骤，800 字符大约能容纳一个完整步骤加上下文，120 的重叠保证跨切片的命令不被切断。这是<strong>针对运维文档形态的经验值</strong>，不是网格搜索结果；切分策略本身是可配的。</li></ul>
+<h3>Q16 为什么用哈希嵌入？效果能行吗？</h3>
+<ul><li><strong>想听</strong>：是不是偷懒。</li><li><strong>说</strong>：<strong>是刻意的取舍</strong>，不是偷懒。哈希嵌入（<code>sha256</code> 分桶到 256 维）的价值是<strong>零依赖、零密钥、可复现</strong>——任何人克隆仓库就能跑通全链路，不需要下载模型、不需要 GPU（我们实测环境是 <code>CUDA: unavailable</code>、<code>GPU count: 0</code>）。代价是<strong>它没有语义</strong>，中文还会因为 <code>lower().split()</code> 退化成单 token。所以我们的语义能力实际由<strong>向量路的近义匹配 + 词法重排 + BM25</strong> 共同承担。生产环境换真 embedding 只需替换一个适配器类。</li><li><strong>追问</strong> → 那你承认语义检索现在基本没用？→ <strong>诚实答</strong>："在中文场景下语义贡献确实有限，所以我不会说我们的检索准确率有多高；我们强调的是<strong>链路完整 + 机制可验证</strong>。"</li><li><strong>别这么说</strong>："哈希嵌入效果很好"——必翻车。</li></ul>
+<h3>Q17 四级纠察的输入输出是什么，能画一下吗？</h3>
+<ul><li><strong>说</strong>：输入是四样：执行计划步骤、工具执行结果、检索到的证据列表、实际状态。输出是 <code>InspectorResult</code>：status（PASS/WARN/VIOLATION/REJECTED）、issues 列表（每条带 severity/category/reason/recommendation）、<code>requires_human</code> 布尔、以及 verification 记录。判定规则：无问题 PASS；有问题 WARN；严重度 HIGH/CRITICAL 转 VIOLATION；假成功直接 REJECTED。<strong>任何 REJECTED/VIOLATION 或 HIGH/CRITICAL 都会置 <code>requires_human=true</code>。</strong></li></ul>
+<hr class="sep"/>
+<h1>三、架构与工程</h1>
+<h3>Q18 系统有几个服务，怎么通信？</h3>
+<ul><li><strong>说</strong>：前端 Vite（用户层 5173、管理员层 5174）经 Nginx 代理到后端 SpringBoot（8080）和 AI 服务 FastAPI（8001）；AI 服务再通过 HTTP 调知识服务（8002）做检索。Agent 内核（8003）是库形态。基础设施是 MySQL 8.4 和 Redis 7.4。后端与 AI 侧之间还有内部 Token 鉴权。</li></ul>
+<h3>Q19 后端为什么用 Java、AI 侧用 Python？</h3>
+<ul><li><strong>说</strong>：<strong>按优势分工</strong>：Java/SpringBoot 承担事务、权限、审计、会话这类"强一致、强安全"的企业级能力，生态成熟；Python 承担检索、Agent、模型交互这类"算法密集、迭代快"的部分。两者通过 HTTP + 内部 Token 解耦，各自独立部署、独立伸缩。这不是历史包袱，是<strong>刻意的分层</strong>。</li></ul>
+<h3>Q20 数据库 119 张表，会不会过度设计？</h3>
+<ul><li><strong>说</strong>：119 张是按领域拆分的：账号权限、运维连接、哨兵告警、知识协同、模型网关、AI 决策闭环、团队协作七大域。拆得细是因为<strong>审计和权限要求</strong>——比如运行记录就拆成 <code>operation_run_record</code> / <code>_output</code> / <code>_evidence</code> 三张，用 <code>trace_id</code> 串起来，为的是<strong>证据可独立追溯</strong>。这不算过度设计，是合规需要的数据结构。</li></ul>
+<h3>Q21 为什么安全判定不依赖大模型？</h3>
+<ul><li><strong>说</strong>：这是<strong>刻意的设计选择</strong>。用不确定的模型去守确定的安全底线，是设计错误——模型会漂移、会幻觉、会被提示注入。所以我们的 L1 规则、L2 证据、L4 状态核验<strong>全是确定性判定</strong>，AI Judge 只是<strong>可选增强</strong>，默认还是关闭的（passthrough）。<strong>换句话说：把模型拿掉，我们的安全机制照样工作。</strong></li><li><strong>追问</strong> → 那覆盖率够吗？→ "规则覆盖'已知的危险'，AI 增强覆盖'没见过的语义矛盾'，两者是互补而不是替代"</li></ul>
+<h3>Q22 前端最复杂的技术点是什么？</h3>
+<ul><li><strong>说</strong>：两个。<strong>一是手写 SSE</strong>：axios 读不了流，所以我们用原生 fetch + ReadableStream + TextDecoder，按 <code>\n\n</code> 切帧解析 <code>thinking/token/done</code> 三类事件，还要支持中断。二是 <strong>GPGPU 粒子星海</strong>：用 ShaderMaterial 做模拟场，离屏 render 迭代后再驱动 Points，这是 GPU 上跑计算而不是单纯渲染。</li><li><strong>追问</strong> → 为什么用 Three.js？→ "产品调性需要，同时证明前端工程能力；但我不夸大——它是氛围层，不是业务数据可视化"</li></ul>
+<h3>Q23 执行一条命令的完整流程是什么？（演示题）</h3>
+<ul><li><strong>说</strong>：五步。<strong>① 预览</strong> <code>previewMultiExec</code> —— 先看要执行什么；<strong>② 风险评估</strong> —— 后端按动作映射风险档（CRITICAL/HIGH/MEDIUM/LOW），命令还要过白名单和黑名单；<strong>③ 审批</strong> —— 高危必须人工点确认，CRITICAL 直接拒绝；<strong>④ 执行</strong> —— 沙箱/子进程，<code>timeout=20s</code>、强制 <code>shell=False</code>、输出截断 20,000 字符、禁元字符；<strong>⑤ 留痕与核验</strong> —— 写入运行记录与审计，再由 inspector 判断是否假成功。</li><li><strong>追问</strong> → 失败了怎么办？→ <strong>诚实答</strong>：当前上报 inspector 触发重新规划，<strong>重试/幂等/回滚还没实现</strong></li></ul>
+<h3>Q24 为什么不用 LangChain / AutoGPT 这类框架？</h3>
+<ul><li><strong>说</strong>：三个原因。一是<strong>可控性</strong>——框架把规划和执行黑盒化了，而我们的核心恰恰是"每一步都可检查、可拦截"；二是<strong>依赖</strong>——我们要保证零密钥可跑，框架会引入大量模型和依赖；三是<strong>课程价值</strong>——这个项目是要讲清楚机制的，自己实现才讲得清。<strong>代价是我们要自己实现更多东西，这个代价我们认。</strong></li></ul>
+<h3>Q25 端到端闭环到底跑通了没？（<strong>高危题</strong>）</h3>
+<ul><li><strong>说</strong>：分两条线说清楚。<strong>产品级闭环跑通了</strong>：后端 <code>DecisionLoopService</code> 实现了 ANALYZE → MEMORIZE → DECIDE → REVIEW → LEARNED 五阶段，有 <code>/api/agent/loops/{id}/{recall,decide,review}</code> 接口，复盘会回写 <code>operator_memory</code> 的置信度，前端有 Agent 指挥中心和执行轨迹页。<strong>Python 侧的 planner/executor 目前是库形态</strong>，有完整的单元测试覆盖（inspector 20 个、agent 18 个），但还没有接入 ai-service 的对话链路。<strong>这是我们的下一步工作，我不藏着。</strong></li><li><strong>追问</strong> → 那你演示什么？→ "演示知识检索与对话链路（13 个单测全通过、零密钥可跑）、运维执行的预览审批执行三段式、以及决策闭环的接口"</li><li><strong>别这么说</strong>："全跑通了"——评委一看 <code>git grep</code> 就知道 planner 没调用方。</li></ul>
+<hr class="sep"/>
+<h1>四、真实性与边界（<strong>最危险的一组，答好了反而加分</strong>）</h1>
+<h3>Q26 你说有 AI，但模型是不是根本没接？</h3>
+<ul><li><strong>说</strong>：<strong>对，默认是 mock，这是刻意的。</strong>配置里 <code>LLM_PROVIDER=mock</code>，Ollama 的真实调用是被注释掉的。原因很实在：<strong>我要保证任何人拿到代码、没有任何 API Key，都能把知识检索、证据生成、可信度计算、流式输出这条链路完整跑通</strong>。如果默认依赖真实模型，评委和老师根本跑不起来。真实模型接入是配置切换的事——<code>openai_compatible.py</code> 已经实现了完整的 <code>/chat/completions</code> 调用。</li><li><strong>追问</strong> → 那你怎么证明 AI 部分有效？→ "我证明的是<strong>AI 之外的那一层</strong>：检索、证据、纠察、可信度、安全拦截，这些不依赖模型且都有测试"</li><li><strong>别这么说</strong>："我们接了 GPT-4"——一眼假。</li></ul>
+<h3>Q27 Planner 是不是就是几条 if-else？</h3>
+<ul><li><strong>说</strong>：<strong>是，现在是 3 条规则，最多产出 1 个步骤。</strong>这是<strong>确定性基线</strong>，目的是先把链路跑通、让行为可测可复现。LLM Planner 的 prompt 模板（<code>PLANNER_PROMPT</code>）已经写好了，包括"高风险操作标记 requires_approval"和"最后必须有验证步骤"这类约束，替换只需要一个适配器。<strong>我选择先做能测的，再做聪明的。</strong></li><li><strong>追问</strong> → 那算什么 Agent？→ "Agent 的核心是<strong>规划—执行—核验—修正</strong>的闭环结构，规划器用规则还是模型是实现选择；而且核验（四级纠察）和修正（Re-plan 建议）我们已经实现了"</li></ul>
+<h3>Q28 你说有沙箱，用上了吗？</h3>
+<ul><li><strong>说</strong>：<strong>实现了，但还没接进执行器。</strong><code>sandbox/</code> 下有进程、文件系统、网络三个模块。当前执行走的是子进程 + <code>shell=False</code> + 超时 + 白名单这套护栏，已经能防住绝大多数风险；沙箱接线是明确的下一步。<strong>我不把"已实现"说成"已启用"。</strong></li></ul>
+<h3>Q29 审批流真的会拦住操作吗？</h3>
+<ul><li><strong>说</strong>：<strong>在产品链路里会拦</strong>：<code>previewMultiExec</code> 预览之后必须走审批，审批通过才 <code>executeMultiExec</code>，前端也明确写了"审批后才会发送命令"。Python 侧的 <code>ApprovalManager</code> 目前只有数据结构、没有编排调用方——<strong>这是两回事，我不会混着说</strong>。另外策略引擎是硬拦截：CRITICAL 直接禁止，HIGH 且未标记需审批就拒绝执行。</li></ul>
+<h3>Q30 Redis 你配了但没用？</h3>
+<ul><li><strong>说</strong>：<strong>对，依赖和配置都齐了，但代码里 RedisTemplate 引用数为 0。</strong>这是骨架，还没落地。规划用途是会话缓存和限流。我不掩饰——<strong>我们更愿意把"没做完"标出来，而不是让它看起来做完了。</strong></li></ul>
+<h3>Q31 有没有做过实验？指标呢？（<strong>必问题</strong>）</h3>
+<ul><li><strong>说</strong>：<strong>没有跑过真实评测，我不会编数字。</strong>实验文档有 17 个，其中 9 个明确标了 NOT RUN，原因写在里面：仓库没有配置真实模型、没有审核通过的数据集、没有评测器。<strong>我能给出的真实数字是工程回归：Python 610 个用例 600 通过 10 跳过 0 失败（后端服务运行时），后端 656 个 @Test。</strong>我们文档里自己注明这是"工程回归结果，不是模型实验结果"。</li><li><strong>追问</strong> → 那你怎么证明效果？→ 接 Q32</li><li><strong>别这么说</strong>：任何形式的准确率/F1 数字。</li></ul>
+<h3>Q32 没指标，凭什么说你的方法有效？</h3>
+<ul><li><strong>说</strong>：三个层次。<strong>第一，机制可验证</strong>：假成功检测、风险拦截、版本过滤都是确定性逻辑，有单元测试直接断言（inspector 20 个用例）。<strong>第二，链路可复现</strong>：零密钥、13 个 knowledge 用例全通过，任何人能自己跑。<strong>第三，边界我划得很清楚</strong>：我只声称"链路打通、机制生效"，不声称"检索准确率提升 X%"。<strong>我认为，在 14 条样本上硬报准确率，才是真正的不科学。</strong></li></ul>
+<h3>Q33 数据集只有 14 条，还好意思叫数据集？</h3>
+<ul><li><strong>说</strong>：<strong>它是种子集，不是评测集</strong>，我叫它种子集就是为了不误导。14 条覆盖 7 类运维场景，<code>status</code> 全是 <code>DRAFT</code>（未审核），<code>schemaVersion</code> 还有类型不一致的问题（4 个数字、10 个字符串）。它的唯一作用是<strong>证明数据—检索—纠察—执行链路能打通</strong>。要支撑性能结论，需要千级样本加人工审核，那是我们下一步明确要做的事。</li><li><strong>追问</strong> → 那你打算怎么做？→ "按场景扩样到千级、双人标注一致性检验、固定 split 防泄漏（我们的 training 测试里已经有切分泄漏检查）"</li></ul>
+<h3>Q34 前端有些页面是假数据吧？</h3>
+<ul><li><strong>说</strong>：<strong>有，而且我们自己标出来了。</strong>Dashboard 首页是纯文案轮播零 API；系统知识库走本地静态条目，页面角标写着"未人工核验"；6 台 demo 服务器标注了"（模拟）"；运行记录在后端 <code>guideMode=true</code> 时会显示演示数据，前端会挂横幅声明"当前显示演示数据"；3 条 demo 成就被硬性隔离不参与统计；还有几个未注册路由的死页面（插件市场、技能市场）。<strong>真后端的是</strong>：个人知识库、运维执行、运行记录、模型分析、团队协作、认证与审计。</li></ul>
+<h3>Q35 代码里有抄袭或大量 AI 生成吗？</h3>
+<ul><li><strong>说</strong>：我们用了 AI 辅助，但<strong>每一行都过过手</strong>，并且有证据：全项目 grep <code>TODO|FIXME|HACK</code> <strong>命中 0 处</strong>；610 个 Python 用例 + 656 个后端 @Test覆盖核心逻辑；审计、MFA、SSH 终端、哨兵这些都是真依赖真实现（比如 SSH 用的是 <code>sshd-core 2.12.1</code>）。如果要验证，我可以当场讲任何一个模块的调用链。</li></ul>
+<h3>Q36 你们的前端 TypeScript 是不是没开严格模式？</h3>
+<ul><li><strong>说</strong>：<strong>是，<code>strict:false</code>，而且类型检查只覆盖 api/domain/utils/types 四个目录，views 和 components 不在范围内。</strong>这是历史原因——项目从 JS 起步，全量改造成本大。<strong>这是明确的欠账</strong>，迁移到全量 strict 在我们的技术债清单里。</li></ul>
+<h3>Q37 trust_score 的 support_score 是不是有 bug？</h3>
+<ul><li><strong>说</strong>：<strong>不是 bug，是简化。</strong>当前传的是 <code>bool(results)</code>——有检索结果就算"支持"，这不是真的"答案—证据蕴含判定"。<strong>真正的做法应该用 NLI 或证据蕴含模型来判定答案是否真的被证据支持</strong>。我把它列为待改进项，并且主动标出来了。<strong>如果老师认为这个分量当前不可靠，我完全接受——这也正是我不拿它去报指标的原因。</strong></li></ul>
+<hr class="sep"/>
+<h1>五、安全与伦理</h1>
+<h3>Q38 如果 AI 误操作删库怎么办？</h3>
+<ul><li><strong>说</strong>：四层防护。<strong>① 分级</strong>：<code>database.drop</code>、<code>server.delete</code> 判 CRITICAL，<strong>一律禁止</strong>，不是"需审批"而是直接拒绝。<strong>② 命令层</strong>：<code>rm</code>、<code>dd</code>、<code>mkfs</code>、<code>drop</code> 全在黑名单，元字符 <code>| &amp;&amp; ; &gt;</code> 也禁。<strong>③ 执行层</strong>：<code>shell=False</code> 不给 shell 解释、20 秒超时、输出截断。<strong>④ 事后</strong>：审计记录写入 <code>operation_audit_event</code>，含审批状态。另外我们还有备份与回滚的规划——<strong>但我要诚实：回滚目前还没实现</strong>。</li></ul>
+<h3>Q39 谁来对 AI 的决定负责？</h3>
+<ul><li><strong>说</strong>：<strong>人。</strong>我们的主张就是"AI 负责思考，人负责授权，系统负责留痕"。任何 HIGH 以上风险都必须人工点确认，审计表里记录 actor、action、target、outcome 和 approval_state，<strong>责任链是完整可追溯的</strong>。AI 不承担责任，它只是建议方。</li></ul>
+<h3>Q40 会不会被用来做坏事？</h3>
+<ul><li><strong>说</strong>：这是我们要防的。我们的机制本身就是<strong>收窄能力</strong>而不是放大能力——白名单只有 22 条只读类命令，黑名单覆盖 23 条破坏性命令，还有元字符和危险参数禁用。<strong>一个只能读、不能删、不能装包、不能起容器的 Agent，攻击面是很小的。</strong>另外内部接口有 Token 鉴权，哨兵 webhook 有 SSRF 防护（默认禁内网）。</li></ul>
+<h3>Q41 用户数据（服务器凭证）怎么保护？</h3>
+<ul><li><strong>说</strong>：凭证存在 <code>operation_credential</code> 表，走加密存储；SSH 连接用 <code>operation_known_host</code> 做主机校验；会话用 HttpSession + CSRF Token；管理员还有 TOTP 双因素。截图取证链路里也有 <code>privacyStatus</code> 字段做隐私状态标记。</li></ul>
+<h3>Q42 有没有考虑提示词注入？</h3>
+<ul><li><strong>说</strong>：<strong>有意识但没做完。</strong>我们的防线主要在<strong>输出侧和执行侧</strong>：即使模型被注入，命令也过不了白黑名单、过不了风险分级、过不了审批。这是"<strong>不信任模型输出</strong>"的架构。输入侧的注入检测（比如用户让 Agent 忽略规则）目前没有专门模块——<strong>这是待补的</strong>。</li></ul>
+<hr class="sep"/>
+<h1>六、产品与商业</h1>
+<h3>Q43 谁来付钱？怎么收？</h3>
+<ul><li><strong>说</strong>：付钱的是<strong>中小企业 IT 负责人</strong>，收法是<strong>私有化部署 + 年费订阅</strong>。理由：运维数据敏感，他们不接受 SaaS；同时我们支持"零密钥本地跑"，部署成本极低。另有一条按次计费的路子给模型网关。</li></ul>
+<h3>Q44 市场规模多大？</h3>
+<ul><li><strong>说</strong>：<strong>不给万亿级数字，只给自下而上的测算。</strong>逻辑是：目标客户数 × 可承受客单价。我们瞄准"有专职运维但不足 3 人的企业"，这类企业在国内是百万量级；客单价按私有化部署 3–8 万/年测算。<strong>宁可把数说小说实，也不用行业总规模去套。</strong></li></ul>
+<h3>Q45 竞品是谁？你怎么活？</h3>
+<ul><li><strong>说</strong>：三类。<strong>通用大模型</strong>（会说不会做、不敢授权）、<strong>低代码 Agent 平台</strong>（Coze/Dify 类，缺领域约束和运维能力）、<strong>传统 AIOps</strong>（重、贵、要专职团队）。我们活在中间：<strong>比通用方案可信、比 AIOps 轻量</strong>。我们的壁垒不是模型——<strong>模型谁都能调</strong>——而是<strong>约束工程 + 领域知识资产 + 审计合规适配</strong>，这些是要靠时间和场景堆的。</li></ul>
+<h3>Q46 大厂明天抄你怎么办？</h3>
+<ul><li><strong>说</strong>：抄功能容易，抄<strong>约束工程的细节</strong>难——白名单怎么定、风险怎么分级、什么样的证据算充分、假成功怎么判定，这些都是踩坑踩出来的。更重要的是<strong>切换成本</strong>：一旦企业的审计记录和权限体系接进来，换系统的代价很高。而且我们聚焦的是大厂看不上的中小企业长尾。</li></ul>
+<h3>Q47 只准留一个功能，你留哪个？</h3>
+<ul><li><strong>说</strong>：<strong>假成功检测。</strong>因为它是唯一一个"别人没有、且直接对应真实损失"的能力。检索大家都有，审批大家都能加，但<strong>"AI 说做成了其实没做成"这个问题，市面上几乎没人做机器判定</strong>。</li></ul>
+<h3>Q48 三个月内能做到什么程度？</h3>
+<ul><li><strong>说</strong>：三件事。<strong>① 接真实 embedding 与 LLM</strong>，把中文检索和规划做实；<strong>② 把 Agent 内核接进对话链路</strong>，形成完整的 Python 侧闭环；<strong>③ 建评测集</strong>，千级样本 + 人工标注 + 固定 split，把 Recall@K、假成功检出率、风险分级准确率这几个指标真正跑出来。</li></ul>
+<hr class="sep"/>
+<h1>七、团队与个人</h1>
+<h3>Q49 你个人做了哪些？</h3>
+<ul><li><strong>说</strong>：<strong>按模块说，别按百分比说。</strong>例："我负责 AI 侧：混合检索、版本过滤、可信度聚合、四级纠察的设计与实现，以及对应的单元测试。"——这样说是可验证的。<strong>如果老师追问，我能直接翻到文件和行号。</strong></li><li><strong>别这么说</strong>："我做了 70%"——不可验证。</li></ul>
+<h3>Q50 团队几个人，怎么分工？</h3>
+<ul><li><strong>说</strong>：按层分工——后端与数据、AI 与算法、前端与交互、文档与答辩。每个人的产出都能对应到具体目录和提交记录。</li></ul>
+<h3>Q51 遇到最大的技术困难是什么，怎么解决的？</h3>
+<ul><li><strong>说</strong>：<strong>挑一个真困难讲完整。</strong>推荐讲"假成功怎么判定"：最初的困惑是"AI 说完成了，怎么知道是不是真的完成"，试过只看返回文本（会被话术骗）、只看退出码（命令成功≠问题解决），最后确定<strong>必须引入外部实际状态做比对</strong>，才有了 L4。这个故事的结尾要落到"<strong>我们把不可验证的话术变成了可验证的状态比对</strong>"。</li></ul>
+<h3>Q52 有指导老师吗？老师给了什么帮助？</h3>
+<ul><li><strong>说</strong>：<strong>如实说</strong>，并具体化（方向把关、评测方法建议、真实场景反馈）。<strong>不要说"老师全程指导"</strong>——那会让人怀疑你的工作量。</li></ul>
+<hr class="sep"/>
+<h1>八、刁钻题（<strong>答好了直接加分</strong>）</h1>
+<h3>Q53 给你 100 万，你怎么花？</h3>
+<ul><li><strong>说</strong>：<strong>别撒胡椒面。</strong>我的分法：40 万建评测集与真实场景试点（这是当前最大短板）、30 万接真实模型与算力（embedding + 推理）、20 万做合规适配（等保、审计导出）、10 万留作安全储备。<strong>理由一句话：我们现在最缺的不是功能，是"能证明效果的数据"。</strong></li></ul>
+<h3>Q54 你这个项目最大的失败风险是什么？</h3>
+<ul><li><strong>说</strong>：<strong>说一个真的。</strong>"最大的风险是<strong>评测跟不上</strong>——机制设计得再好，没有可信指标就无法说服用户，也无法迭代。这也是我把 100 万的最大一块投在评测上的原因。第二个风险是<strong>中文检索效果</strong>，在哈希嵌入下它是有上限的，必须换真 embedding。"</li></ul>
+<h3>Q55 给自己打几分？</h3>
+<ul><li><strong>说</strong>：<strong>给分必给理由。</strong>"工程完整度我给 8 分——全栈真实现、610 个 Python 用例 + 656 个后端 @Test、零密钥可复现；算法深度我给 6 分——机制设计是我最满意的部分，但多个组件还是确定性基线；评测严谨度我给 4 分——这是我承认的最大短板。<strong>综合我给 6.5 分，扣分主要扣在没有真实指标上。</strong>"</li><li><strong>别这么说</strong>："我给 9 分"——显得没自知之明。</li></ul>
+<h3>Q56 如果评委说你的项目"没有算法创新"，你怎么回应？</h3>
+<ul><li><strong>说</strong>："我理解这个质疑，因为我们的创新<strong>不在模型结构，而在约束机制</strong>。如果算法的评判标准是'提出了新的网络结构或损失函数'，我们确实不符合。但如果看'<strong>为特定领域的失败模式设计可判定的算法机制</strong>'——版本感知过滤、四级纠察、假成功状态核验、三分量可信度聚合——这些是有明确输入输出和判定逻辑的算法。<strong>我想请老师看的是第 4 节那张算法表。</strong>"</li><li><strong>要点</strong>：<strong>不卑不亢，把评判标准重新定义到你的地盘上。</strong></li></ul>
+<h3>Q57 你刚才那个回答是不是在回避问题？</h3>
+<ul><li><strong>说</strong>：<strong>直接认，然后给已知、划边界。</strong>"您说得对，这一点我确实没有做到。我目前做到的是 X，没有做到的是 Y，Y 的实现路径是 Z，难点在 W。"</li><li><strong>万能句式</strong>：<strong>承认 → 给已知 → 划边界 → 给路径。</strong> 评委要的不是完美，是诚实。</li></ul>
+<h3>Q58 你们和队友的决策层（多智能体）是什么关系？</h3>
+<ul><li><strong>说</strong>：<strong>按真实架构答</strong>——"我们的 Agent 内核是按角色拆分的：planner 规划、executor 执行、inspector 核验、policies 定风险、kernel 管运行时、tools 管工具体系。当前是<strong>流水线式的角色分工</strong>，不是多个 Agent 互相协商。多智能体协商是我们的演进方向，但当前我们更看重<strong>可判定性</strong>——协商会让行为不可预测，而安全场景需要确定性。"</li><li><strong>别这么说</strong>："我们是多智能体协同系统"（当前不是协商式）。</li></ul>
+<hr class="sep"/>
+<h1>九、收尾与通用救场</h1>
+<h3>结尾（30 秒，必须有记忆点）</h3>
+<div class="callout">最后我想说：<strong>这个项目的价值不在于我们让 AI 多会说话，而在于我们让它在说错、做错的时候，能被发现、被拦住、被追责。</strong> 我们承认还有很多没做完的地方——评测、真实模型、中文分词——我们没有把它们藏起来。<strong>但正因为我们清楚哪里没做完，我们才敢说：剩下的部分我们知道怎么做。</strong> 谢谢各位老师。</div>
+<h3>万能救场句式（任何答不上来的题）</h3>
+<ol><li><strong>接住</strong>："这个问题问得很关键。"</li><li><strong>给已知</strong>："我目前做到的是……"（说真实的部分）</li><li><strong>划边界</strong>："……这一点我确实还没做到。"</li><li><strong>给路径</strong>："我的解决思路是……，难点在……"</li><li><strong>反邀请</strong>（加分）："如果老师有更成熟的做法，我非常想请教。"</li></ol>
+<h3>上场前最后 5 分钟看这三样</h3>
+<ol><li><strong>一页数字卡</strong>（知识要点手册第 9 节）</li><li><strong>真相清单</strong>（知识要点手册第 8 节）—— 8 个"没做完"，主动认</li><li><strong>三个为什么</strong>（知识要点手册第 10 节）—— 版本感知 / 假成功 / 不依赖 LLM</li></ol></div>
+    </section>
+
+</body>
+</html>

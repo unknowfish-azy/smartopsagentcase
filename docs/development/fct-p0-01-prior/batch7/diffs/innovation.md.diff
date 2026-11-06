@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch7/innovation.md b/docs/competition/innovation.md
+index b2ae27b..8bfe717 100644
+--- a/docs/development/fct-p0-01-prior/batch7/innovation.md
++++ b/docs/competition/innovation.md
+@@ -125,7 +125,7 @@
+ | --- | --- | --- |
+ | AI 技术深度 | 35% | Agent 五模块、混合检索 + 证据验证、版本感知、SSE 阶段事件、多模态输入 |
+ | 创新性 | 25% | 七个创新点，均有可运行代码与可演示路径，非概念包装 |
+-| 前端工程质量 | 10% | 共享逻辑层 TS、双入口同源不变量、分包优化、610 个 Python 用例 + 656 个后端 @Test |
++| 前端工程质量 | 10% | 共享逻辑层 TS、双入口同源不变量、分包优化、610 个 Python 用例 + 671 个后端 @Test |
+ | 实用性 | 10% | 真实运维闭环，默认 mock 可复现，模型可切换 |
+ | 用户体验 | 10% | 思考过程可视化、渐进增强、隐私提示 |
+ | 社会价值与商业潜力 | 10% | 降低中小企业运维门槛，SaaS / 私有化双形态 |

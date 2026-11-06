@@ -821,6 +821,17 @@ def write_outputs(metrics: dict, unavailable: list, sources: dict, findings: lis
         json.dumps(meta, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
 
 
+def _print_summary(metrics: dict, findings: list, problems: list, snapshot_state: str) -> None:
+    print(f"metrics_digest={metrics['snapshot']['source_digest']}")
+    print(f"java_main_files={metrics['java']['main'].get('file_n')} "
+          f"routes={metrics['java']['main'].get('routes', {}).get('actual_route_n')}")
+    print(f"vue_files={metrics['vue'].get('file_n')} create_table={metrics['migrations'].get('create_table_n')}")
+    print(f"pytest_collected={metrics['tests']['pytest'].get('collected_n')} "
+          f"needs_correction={sum(1 for f in findings if f['classification'] == 'needs_correction')}")
+    print(f"self_check={'PASS' if not problems else 'FAIL: ' + '; '.join(problems)}")
+    print(f'snapshot={snapshot_state}')
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir', type=Path, default=EVIDENCE_DIR)
@@ -829,7 +840,7 @@ def main() -> int:
                         help='运行 pytest --collect-only 获取收集数（约 35 秒）')
     parser.add_argument('--claims-json', type=Path, default=None)
     parser.add_argument('--verify-snapshot', type=Path, default=None,
-                        help='对照已生成的 sources.json 校验快照是否仍冻结；不一致时退出码 2')
+                        help='对照已生成的 sources.json 校验快照是否仍冻结；只读，不写证据目录；不一致时退出码 2')
     args = parser.parse_args()
 
     # 证据目录与 .runtime/ 是本流程的产物，不能影响“同一快照”的判定。
@@ -845,6 +856,10 @@ def main() -> int:
         print('检测到快照变动：不覆盖已有证据，退出码 2。')
         return 2
     findings = scan_claims(metrics, exclude_prefixes={'docs/development/fct-p0-01-evidence', '.runtime/'})
+    if args.verify_snapshot:
+        _print_summary(metrics, findings, problems, 'FROZEN')
+        print('校验模式：只读，未写入证据目录。')
+        return 0 if not problems else 1
     write_outputs(metrics, unavailable, sources, findings, problems, args.output_dir,
                   provenance, args)
     if args.claims_json:
@@ -852,14 +867,7 @@ def main() -> int:
         args.claims_json.write_text(
             json.dumps(findings, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
-    print(f"metrics_digest={metrics['snapshot']['source_digest']}")
-    print(f"java_main_files={metrics['java']['main'].get('file_n')} "
-          f"routes={metrics['java']['main'].get('routes', {}).get('actual_route_n')}")
-    print(f"vue_files={metrics['vue'].get('file_n')} create_table={metrics['migrations'].get('create_table_n')}")
-    print(f"pytest_collected={metrics['tests']['pytest'].get('collected_n')} "
-          f"needs_correction={sum(1 for f in findings if f['classification'] == 'needs_correction')}")
-    print(f"self_check={'PASS' if not problems else 'FAIL: ' + '; '.join(problems)}")
-    print(f"snapshot={'FROZEN' if args.verify_snapshot else 'NOT_VERIFIED'}")
+    _print_summary(metrics, findings, problems, 'NOT_VERIFIED')
     print(f"output_dir={rel_posix(args.output_dir)}")
     return 0 if not problems else 1
 

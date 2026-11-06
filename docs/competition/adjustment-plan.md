@@ -52,7 +52,7 @@
 
 ```powershell
 cd frontend
-npm test            # node --test（563 项）
+npm test            # node --test（494 项）
 npm run typecheck   # tsc --noEmit
 npm run build       # 用户层构建
 npm run build:admin # 管理员层构建

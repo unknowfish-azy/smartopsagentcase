@@ -1,0 +1,70 @@
+{
+  "reason": "FCT-P0-01 第三批补采：台账口径之外的三套测试（前端 node --test / tests/agent / ai-service/app/tests）的原始日志与计数",
+  "collected_at": "2026-11-06",
+  "note": "以下计数是执行结果，不入 metrics.json（metrics.json 的 pytest 口径仅覆盖仓库根 tests/ 的 610）。三套与 610 互不包含，不可相加。",
+  "suites": [
+    {
+      "name": "frontend",
+      "command": "cd frontend && npm test  (即 node --test test/**/*.test.mjs)",
+      "cwd": "frontend",
+      "exit_code": 0,
+      "tests": 494,
+      "pass": 494,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0,
+      "duration_ms": 5178.2677,
+      "test_files": 99,
+      "test_files_command": "Get-ChildItem frontend/test -Recurse -Filter *.test.mjs | Measure-Object",
+      "log": "docs/development/fct-p0-01-evidence/frontend-tests.log",
+      "log_sha256": "sha256:99734587c1dd435ab23c6c7344f4281af90944007b686151e88e36abfd0527b3"
+    },
+    {
+      "name": "agent",
+      "command": "python -m pytest tests/agent -q",
+      "cwd": "repo root",
+      "exit_code": 0,
+      "collected": 82,
+      "passed": 82,
+      "failed": 0,
+      "duration_s": 0.16,
+      "log": "docs/development/fct-p0-01-evidence/agent-tests.log",
+      "log_sha256": "sha256:35e28f25703346818b32ed660193d43eeadc12d4d42ba93695928d51d11e5c70",
+      "subset_of": "tests/ (610)"
+    },
+    {
+      "name": "ai-service",
+      "command": "python -m pytest ai-service/app/tests -q",
+      "cwd": "repo root",
+      "exit_code": 0,
+      "collected": 67,
+      "passed": 67,
+      "failed": 0,
+      "duration_s": 4.99,
+      "log": "docs/development/fct-p0-01-evidence/ai-service-tests.log",
+      "log_sha256": "sha256:c3187a491a24b4cb0065d2fe928c1963d675363e8cec8b5c54ac044dffcbb78a",
+      "subset_of": "none (independent of tests/)"
+    }
+  ],
+  "not_a_source": [
+    {
+      "name": "frontend visual",
+      "command": "cd frontend && npm run test:visual",
+      "exit_code": 1,
+      "status": "FAIL",
+      "reason": "4 个浏览器用例失败：`.ai-run-diagnostics` 等待超时（依赖运行中的后端）。失败日志不能作为 494 的拆分来源，也不代表前端单测失败。",
+      "log": "docs/development/fct-p0-01-evidence/frontend-visual-failed.log",
+      "log_sha256": "sha256:4dad1c14acea27dcd113a9cd57c4a5aed6c2a2d48bbb865b52368fba366d7093"
+    },
+    {
+      "name": "frontend a11y",
+      "command": "cd frontend && npm run test:a11y",
+      "exit_code": 1,
+      "status": "FAIL",
+      "reason": "1 个 pageError，运行环境问题；不用于统计口径。",
+      "log": "docs/development/fct-p0-01-evidence/frontend-a11y-failed.log",
+      "log_sha256": "sha256:040dc7a0caf85af8eb4cd031c31326218220e4b28ba58aa554e8fccfab4da523"
+    }
+  ]
+}

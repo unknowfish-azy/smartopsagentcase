@@ -1,0 +1,29 @@
+{
+  "reason": "改写前冻结快照 v1（java main 316 文件）作为对照，避免覆盖后丢失",
+  "files": [
+    {
+      "file": "metrics.json",
+      "bytes": 103286
+    },
+    {
+      "file": "sources.json",
+      "bytes": 127894
+    },
+    {
+      "file": "fact-sheet.md",
+      "bytes": 9067
+    },
+    {
+      "file": "stale-claims.md",
+      "bytes": 22294
+    },
+    {
+      "file": "pytest.xml",
+      "bytes": 84491
+    },
+    {
+      "file": "run-meta.json",
+      "bytes": 957
+    }
+  ]
+}

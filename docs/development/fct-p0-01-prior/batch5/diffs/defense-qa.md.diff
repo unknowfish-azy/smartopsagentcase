@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch5/defense-qa.md b/docs/competition/defense-qa.md
+index fd32f7e..19abd96 100644
+--- a/docs/development/fct-p0-01-prior/batch5/defense-qa.md
++++ b/docs/competition/defense-qa.md
+@@ -21,7 +21,7 @@ A：10–200 人规模企业的运维负责人/驻场工程师、技术负责人
+ A：知识库只解决"查得到"，我们解决"查得对版本 + 答得有证据 + 做得有边界 + 过程能复盘"。知识库是零件，我们是整机闭环。
+ 
+ **Q5：项目做到什么完成度？**
+-A：四端全栈可运行（Vue 前端 / Spring Boot 后端 / FastAPI AI 服务 / Python Agent 框架）；前端双入口构建通过（暂无自动化测试套件）、后端 87 测试类；默认 mock 零密钥跑通全链路。模型训练与真实基准评测尚未接入（见第六类诚实题）。
++A：四端全栈可运行（Vue 前端 / Spring Boot 后端 / FastAPI AI 服务 / Python Agent 框架）；前端 `npm test` 494 项全过、后端 122 测试类；默认 mock 零密钥跑通全链路。模型训练与真实基准评测尚未接入（见第六类诚实题）。
+ 
+ ---
+ 

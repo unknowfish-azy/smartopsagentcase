@@ -1,0 +1,22 @@
+diff --git "a/docs/development/fct-p0-01-prior/batch6/\347\255\224\350\276\251\347\237\245\350\257\206\346\211\213\345\206\214-\346\211\223\345\215\260\347\211\210.html" "b/docs/competition/\347\255\224\350\276\251\347\237\245\350\257\206\346\211\213\345\206\214-\346\211\223\345\215\260\347\211\210.html"
+index a21e348..11f47b0 100644
+--- "a/docs/development/fct-p0-01-prior/batch6/\347\255\224\350\276\251\347\237\245\350\257\206\346\211\213\345\206\214-\346\211\223\345\215\260\347\211\210.html"
++++ "b/docs/competition/\347\255\224\350\276\251\347\237\245\350\257\206\346\211\213\345\206\214-\346\211\223\345\215\260\347\211\210.html"
+@@ -173,7 +173,7 @@ li.chk:before { content:"☐"; position:absolute; left:0; font-size:12pt; color:
+ <p><code>ROLE_ADMIN</code> / <code>ROLE_OPERATOR</code> / <code>ROLE_PASSWORD_CHANGE</code>（<code>backend/.../AuthController.java:134</code>）；团队空间内另有 <code>owner</code> 起的多级授权（<code>TeamWorkspaceService.java:47</code>），全项目 <strong>139 处</strong> <code>teamId</code> 引用，是真多租户。</p>
+ <hr class="sep"/>
+ <h2 class="sec">2. 系统全景（背下这张表，架构题不会失分）</h2>
+-<table><thead><tr><th>服务</th><th>技术</th><th>端口</th><th>职责</th><th>真实规模</th></tr></thead><tbody><tr><td><strong>backend</strong></td><td>SpringBoot 3.3.5 + Java 17</td><td>8080</td><td>业务主干：权限、服务器、运维会话、哨兵、审计、模型网关、决策闭环</td><td>321 个 Java 文件 / 34,777 行 / 63 Controller / 422 接口 / 119 张表（迁移脚本定义，运行库未核验）</td></tr><tr><td><strong>ai-service</strong></td><td>FastAPI（Python）</td><td>8001</td><td>AI 对话、RAG 编排、SSE 流式</td><td>3 个端点（health / chat / chat-stream）</td></tr><tr><td><strong>knowledge-service</strong></td><td>Python</td><td>8002</td><td>知识入库、切片、嵌入、检索、证据</td><td>13 个单测全通过</td></tr><tr><td><strong>agent-service</strong></td><td>Python</td><td>8003</td><td>Agent 内核（planner/executor/inspector/policies）</td><td>库形态 + 82 用例</td></tr><tr><td><strong>frontend</strong></td><td>Vite 7 + Vue3 + Element Plus</td><td>5173 / 5174（双入口）</td><td>用户层 + 管理员层</td><td>146 个 .vue / 27,983 行</td></tr><tr><td><strong>基础设施</strong></td><td>MySQL 8.4 + Redis 7.4</td><td>3306 / 6379</td><td>存储与缓存</td><td>docker-compose 只有这两个服务</td></tr></tbody></table>
++<table><thead><tr><th>服务</th><th>技术</th><th>端口</th><th>职责</th><th>真实规模</th></tr></thead><tbody><tr><td><strong>backend</strong></td><td>SpringBoot 3.3.5 + Java 17</td><td>8080</td><td>业务主干：权限、服务器、运维会话、哨兵、审计、模型网关、决策闭环</td><td>321 个 Java 文件 / 34,777 行 / 63 Controller / 422 接口 / 119 张表（迁移脚本定义，运行库未核验）</td></tr><tr><td><strong>ai-service</strong></td><td>FastAPI（Python）</td><td>8001</td><td>AI 对话、RAG 编排、SSE 流式</td><td>3 个端点（health / chat / chat-stream）</td></tr><tr><td><strong>knowledge-service</strong></td><td>Python</td><td>8002</td><td>知识入库、切片、嵌入、检索、证据</td><td>13 个单测全通过</td></tr><tr><td><strong>agent-service</strong></td><td>Python</td><td>8003</td><td>Agent 内核（planner/executor/inspector/policies）</td><td>库形态 + 82 用例</td></tr><tr><td><strong>frontend</strong></td><td>Vite 7 + Vue3 + Element Plus</td><td>5173 / 5174（双入口）</td><td>用户层 + 管理员层</td><td>175 个 .vue / 21,944 行</td></tr><tr><td><strong>基础设施</strong></td><td>MySQL 8.4 + Redis 7.4</td><td>3306 / 6379</td><td>存储与缓存</td><td>docker-compose 只有这两个服务</td></tr></tbody></table>
+ <p><strong>一句话记住</strong>：<code>浏览器 → Nginx → backend(8080) / ai-service(8001) → knowledge(8002)</code>；Python 侧<strong>全部零密钥可跑</strong>（<code>LLM_PROVIDER=mock</code>）。</p>
+ <hr class="sep"/>
+ <h2 class="sec">3. 你必须能讲的功能清单（真存在的，不许讲没有的）</h2>
+@@ -227,7 +227,7 @@ li.chk:before { content:"☐"; position:absolute; left:0; font-size:12pt; color:
+ <pre class="fig"><code>服务端口   backend 8080 | ai-service 8001 | knowledge 8002 | agent 8003 | 前端 5173/5174
+ 后端       321 Java 文件 / 34,777 行 / 63 Controller / 75 Service / 422 接口 / 119 张表（迁移脚本定义）
+            SpringBoot 3.3.5 + Java 17 + MySQL 8.4 + MyBatis+JdbcTemplate
+-前端       146 .vue / 27,983 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)
++前端       175 .vue / 21,944 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)
+ Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+ 测试       Python 610（600 通过 / 10 跳过） | 后端 656 @Test 
+ 算法常量   切片 800/120 | 嵌入 256 维 | BM25 k1=1.5 b=0.75 | 融合 0.6/0.4

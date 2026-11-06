@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch3/defense.md b/docs/competition/defense.md
+index bae4447..f5ce247 100644
+--- a/docs/development/fct-p0-01-prior/batch3/defense.md
++++ b/docs/competition/defense.md
+@@ -50,7 +50,7 @@
+ - **前端** Vue 3 + Vite，用户层 / 管理员层双入口；
+ - **后端** Spring Boot，管账户、权限、审计、附件会话；
+ - **AI 服务** FastAPI，管模型网关、对话编排、RAG；
+-- **Python Agent 框架（可插拔算法内核）**，五个核心模块：planner（规划）/ executor（执行）/ inspector（核查）/ memory（记忆）/ policies（策略），经 **113 个单测**验证；产品级运行闭环由后端 `DecisionLoopService` 承载。
++- **Python Agent 框架（可插拔算法内核）**，五个核心模块：planner（规划）/ executor（执行）/ inspector（核查）/ memory（记忆）/ policies（策略），经 **82 个单测**验证；产品级运行闭环由后端 `DecisionLoopService` 承载。
+ 
+ 但比"能跑起来"更重要的是——我们给这套系统装了**三道锁和一本账**：
+ 

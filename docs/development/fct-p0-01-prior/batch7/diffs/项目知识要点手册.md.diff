@@ -1,0 +1,31 @@
+diff --git "a/docs/development/fct-p0-01-prior/batch7/\351\241\271\347\233\256\347\237\245\350\257\206\350\246\201\347\202\271\346\211\213\345\206\214.md" "b/docs/competition/\351\241\271\347\233\256\347\237\245\350\257\206\350\246\201\347\202\271\346\211\213\345\206\214.md"
+index e2b83d1..8c25aee 100644
+--- "a/docs/development/fct-p0-01-prior/batch7/\351\241\271\347\233\256\347\237\245\350\257\206\350\246\201\347\202\271\346\211\213\345\206\214.md"
++++ "b/docs/competition/\351\241\271\347\233\256\347\237\245\350\257\206\350\246\201\347\202\271\346\211\213\345\206\214.md"
+@@ -150,7 +150,7 @@ score = 0.5 × evidence_score      # 各证据 score 的均值
+ | 审计 | 两张表：`security_audit_event`（actor/action/target/outcome）、`operation_audit_event`（含 approval_state）；`SecurityAuditService` 硬编码 **62 种受控动作**，结果 SUCCESS/FAILURE/DENIED |
+ | ORM | MyBatis（6 Mapper / 4 XML）与 **JdbcTemplate（45 个文件）混用** |
+ | Redis | 依赖与配置齐全，但 **RedisTemplate 引用数 = 0**（骨架） |
+-| 测试 | **122 个测试文件 / 15,649 行 / 656 个 @Test**，含 13 个端到端集成测试与 3 个安全专项测试 |
++| 测试 | **126 个测试文件 / 16,147 行 / 671 个 @Test**，含 13 个端到端集成测试与 3 个安全专项测试 |
+ | 质量 | 全量 grep `TODO|FIXME|HACK` 命中 **0 处** |
+ 
+ ---
+@@ -178,7 +178,7 @@ score = 0.5 × evidence_score      # 各证据 score 的均值
+ | ├ agent | 18 个（skill 加载、shell 安全） |
+ | └ e2e / integration / api | 5 / 6 / 15（**跳过是因后端未启动或缺依赖，不是 mock 掉**） |
+ | 另 | ai-service 67 个（对话 / RAG / LLM 集成，独立于上方 610） |
+-| 后端测试 | 656 个 @Test + 4 个参数化 |
++| 后端测试 | 671 个 @Test + 4 个参数化 |
+ | 数据集 | 7 个 JSONL / **共 14 条** / `status` 全部 `DRAFT` |
+ | 实验文档 | 17 个 md，**9 个显式 NOT RUN，无任何真实评测指标** |
+ | 部署 | compose 只有 MySQL + Redis；K8s 有 6 个 deployment + ingress + hpa，**无 Helm** |
+@@ -220,7 +220,7 @@ score = 0.5 × evidence_score      # 各证据 score 的均值
+            SpringBoot 3.3.5 + Java 17 + MySQL 8.4 + MyBatis+JdbcTemplate
+ 前端       175 .vue / 21,944 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)
+ Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+-测试       Python 610（600 通过 / 10 跳过） | 后端 656 @Test 
++测试       Python 610（600 通过 / 10 跳过） | 后端 671 @Test 
+ 算法常量   切片 800/120 | 嵌入 256 维 | BM25 k1=1.5 b=0.75 | 融合 0.6/0.4
+            Reranker 0.7/0.3 (top5) | trust 0.5/0.3/0.2 | 纠察 4 级 | 风险 4 档
+ 安全       白名单 22 条命令 | 黑名单 23 条 | 元字符禁用 | timeout 20s | 输出截断 20k

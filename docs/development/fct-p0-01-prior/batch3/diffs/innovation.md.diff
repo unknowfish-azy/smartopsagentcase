@@ -1,0 +1,22 @@
+diff --git a/docs/development/fct-p0-01-prior/batch3/innovation.md b/docs/competition/innovation.md
+index 07ca046..b2ae27b 100644
+--- a/docs/development/fct-p0-01-prior/batch3/innovation.md
++++ b/docs/competition/innovation.md
+@@ -103,7 +103,7 @@
+ - 用户层（:5173）与管理层（:5174）共用一个代理工厂 `vite.shared.mjs`，避免两端口各写一份代理导致会话与 CSRF 分裂。
+ - 共享逻辑层 TypeScript（48 个模块）承载 `api / domain / utils / types`，`tsc --noEmit` 纳入门禁。
+ - 分包策略统一：`vendor-echarts` 510 kB → 346 kB（zrender 独立拆分），Three.js 保持懒加载。
+-- 563 项前端测试覆盖契约、安全不变量与领域逻辑。
++- 494 项前端测试覆盖契约、安全不变量与领域逻辑。
+ 
+ **为什么是创新**：双入口是很多团队工程化的第一道裂缝。本项目用共享工厂 + 契约测试把"两个入口必须同源"变成可执行的不变量。
+ 
+@@ -117,7 +117,7 @@
+ | 多模态边界 | `domain/chat/speechInput.ts`、`ChatAttachmentComposer.vue` | 语音输入 + 图像证据 + 附件隔离 |
+ | 插件生态 | `agent/plugins/installed/`、`agent/sdk/plugin.py` | 插件列表与工具调用 |
+ | 模型网关 | `ai-service/app/services/llm.py`、`model_gateway.py` | mock / Ollama 切换 |
+-| 前端工程化 | `frontend/vite.shared.mjs`、`test/*.test.mjs` | `npm test` 563 项通过 |
++| 前端工程化 | `frontend/vite.shared.mjs`、`test/*.test.mjs` | `npm test` 494 项通过 |
+ 
+ ## 5. 创新性与评分维度对齐
+ 

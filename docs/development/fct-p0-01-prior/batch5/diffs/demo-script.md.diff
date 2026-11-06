@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch5/demo-script.md b/docs/competition/demo-script.md
+index 7386e25..3f0bb7e 100644
+--- a/docs/development/fct-p0-01-prior/batch5/demo-script.md
++++ b/docs/competition/demo-script.md
+@@ -103,7 +103,7 @@ npm run dev
+ | --- | --- |
+ | 画面 | 终端执行 `npm test` / `npm run typecheck` / `npm run build` → 切到管理端（`/admin`）展示审计、模型网关、安全设置 |
+ | 操作 | 终端三条命令滚动，展示 610 个 Python 用例 + 656 个后端 @Test通过；管理端快速展示审计页与模型网关页 |
+-| 旁白 | "工程上，前端双入口构建通过（暂无自动化测试套件）、类型检查、双入口构建都是门禁；管理端提供审计、模型网关与安全治理。默认 mock 模型零密钥即可复现，也能一键切到 Ollama 或 OpenAI 兼容模型。" |
++| 旁白 | "工程上，前端 `npm test` 494 项全过、类型检查、双入口构建都是门禁；管理端提供审计、模型网关与安全治理。默认 mock 模型零密钥即可复现，也能一键切到 Ollama 或 OpenAI 兼容模型。" |
+ | 字幕 | 610 个 Python 用例 + 656 个后端 @Test · tsc --noEmit · 双入口构建 · 模型网关 |
+ | 收尾旁白 | "智维Agent 让 AI 从'会回答运维问题'，走到'可信地完成运维任务'。谢谢观看。" |
+ 

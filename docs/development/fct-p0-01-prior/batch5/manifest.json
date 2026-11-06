@@ -1,0 +1,138 @@
+{
+  "reason": "FCT-P0-01 第五批：同源句子的其余 7 处（\"暂无自动化测试套件\"与\"87 测试类\"）",
+  "mode": "APPLY",
+  "files": [
+    {
+      "path": "docs/competition/defense-master.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch5/defense-master.md",
+      "bytes": 27990,
+      "sha256": "2357f33665489b0cd483b1c942ab495ac4b3f917140d5b2447384f7b922068fd",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/defense-qa.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch5/defense-qa.md",
+      "bytes": 13564,
+      "sha256": "ad1e61d99ea88ad4e23a002242f4dffa08a30978ddb1555b6191b699815789dc",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/demo-script.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch5/demo-script.md",
+      "bytes": 8248,
+      "sha256": "8fa4cea3e4ca1c5b08f18847488df68b0a2ee5b1eefb258552703a064d6791f0",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-合订本.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch5/答辩材料-合订本.md",
+      "bytes": 80339,
+      "sha256": "27aef2159721ee3b8e4a1fc7589dd4e1f6411b3409018eb70ed9c48afb57b3ec",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-打印合订本.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch5/答辩材料-打印合订本.html",
+      "bytes": 103189,
+      "sha256": "c007fdf9d388255aa3790f1c93afa006a0aa21a30280773b25c77f37ec31ba4e",
+      "matches_prior": true
+    }
+  ],
+  "rewrite_batch5": {
+    "bound_metrics": {
+      "java.test.test_class_n": 122,
+      "frontend_npm_test.tests": 494
+    },
+    "changed_files": 5,
+    "changed_lines": 7,
+    "results": [
+      {
+        "path": "docs/competition/defense-master.md",
+        "before_sha256": "2357f33665489b0cd483b1c942ab495ac4b3f917140d5b2447384f7b922068fd",
+        "after_sha256": "8e3c823a8965d68a46d09e60953d2c93508e252a3764b0c163555c13c470a0e2",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 136,
+            "old": "前端双入口构建（暂无自动化测试套件）、后端 87 测试类",
+            "new": "前端 `npm test` 494 项全过、后端 122 测试类",
+            "note": "完成度 A4"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch5/diffs/defense-master.md.diff"
+      },
+      {
+        "path": "docs/competition/defense-qa.md",
+        "before_sha256": "ad1e61d99ea88ad4e23a002242f4dffa08a30978ddb1555b6191b699815789dc",
+        "after_sha256": "3b610dce349611e7e1463314e39271a66281ec9b81f4315df1aeb541a4e59e56",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 24,
+            "old": "前端双入口构建通过（暂无自动化测试套件）、后端 87 测试类",
+            "new": "前端 `npm test` 494 项全过、后端 122 测试类",
+            "note": "完成度 Q5"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch5/diffs/defense-qa.md.diff"
+      },
+      {
+        "path": "docs/competition/demo-script.md",
+        "before_sha256": "8fa4cea3e4ca1c5b08f18847488df68b0a2ee5b1eefb258552703a064d6791f0",
+        "after_sha256": "0b14cf42e7c4ce91bec377a8585c8b884aa6589ddf2ee19a65308574c1f4e7ed",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 106,
+            "old": "前端双入口构建通过（暂无自动化测试套件）、类型检查、双入口构建都是门禁",
+            "new": "前端 `npm test` 494 项全过、类型检查、双入口构建都是门禁",
+            "note": "演示旁白"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch5/diffs/demo-script.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-合订本.md",
+        "before_sha256": "27aef2159721ee3b8e4a1fc7589dd4e1f6411b3409018eb70ed9c48afb57b3ec",
+        "after_sha256": "bbbbe1159d3282d5538eca0d0e9dde8ba3634c4e82d5e5128a14cf5d4c7e5793",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 342,
+            "old": "前端双入口构建（暂无自动化测试套件）、后端 87 测试类",
+            "new": "前端 `npm test` 494 项全过、后端 122 测试类",
+            "note": "完成度 A4"
+          },
+          {
+            "line": 686,
+            "old": "前端双入口构建通过（暂无自动化测试套件）、后端 87 测试类",
+            "new": "前端 `npm test` 494 项全过、后端 122 测试类",
+            "note": "完成度 Q5"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch5/diffs/答辩材料-合订本.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-打印合订本.html",
+        "before_sha256": "c007fdf9d388255aa3790f1c93afa006a0aa21a30280773b25c77f37ec31ba4e",
+        "after_sha256": "59891bf3200fa9e3e847403fca66abbcc5ac2a3bedaa007e1553416297372112",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 246,
+            "old": "前端双入口构建（暂无自动化测试套件）、后端 87 测试类",
+            "new": "前端 <code>npm test</code> 494 项全过、后端 122 测试类",
+            "note": "完成度 A4"
+          },
+          {
+            "line": 376,
+            "old": "前端双入口构建通过（暂无自动化测试套件）、后端 87 测试类",
+            "new": "前端 <code>npm test</code> 494 项全过、后端 122 测试类",
+            "note": "完成度 Q5"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch5/diffs/答辩材料-打印合订本.html.diff"
+      }
+    ]
+  }
+}

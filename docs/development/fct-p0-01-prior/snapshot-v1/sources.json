@@ -1,0 +1,2682 @@
+{
+  "files": {
+    "backend/src/main/java/com/smartops/SmartOpsApplication.java": {
+      "bytes": 319,
+      "sha256": "5bf0188d328492ebb810845e181aef28ab58505e20b2b8278476f5df644dd0a0"
+    },
+    "backend/src/main/java/com/smartops/admin/SysDictService.java": {
+      "bytes": 8816,
+      "sha256": "4dd87c38100b3702f45cce0334fe921a0d9970da36110f15d0f355966aaca192"
+    },
+    "backend/src/main/java/com/smartops/admin/SysKeys.java": {
+      "bytes": 930,
+      "sha256": "8d03acdce0c38e258b145dbcbac6e6ecdc3e60ba7197249df9d853f71a327ef1"
+    },
+    "backend/src/main/java/com/smartops/admin/SysLoginLogService.java": {
+      "bytes": 2758,
+      "sha256": "beaad548f5f7aa9b387e84694a7544c3285c7eb04692974b19645eb78e95047d"
+    },
+    "backend/src/main/java/com/smartops/admin/SysNoticeService.java": {
+      "bytes": 4678,
+      "sha256": "7a2492cb313b39ed929f6666343fd7e755b139062f4fdf6bb4053ac546806589"
+    },
+    "backend/src/main/java/com/smartops/admin/SysOrgService.java": {
+      "bytes": 10911,
+      "sha256": "97ebb7d7259f1ba3f1c1f40fd851fccb2e03a3b870acf774e92ea2ce5b6ddd1a"
+    },
+    "backend/src/main/java/com/smartops/admin/SysRbacService.java": {
+      "bytes": 13647,
+      "sha256": "3acd780a07ea43198e48a22df17133d682287cebcb0165cc2c39694836723f52"
+    },
+    "backend/src/main/java/com/smartops/assistant/BuiltinKnowledgeCatalog.java": {
+      "bytes": 3109,
+      "sha256": "6051e2468e75afea91773bb2a275d501f7975645ed967898bbf18542b61600d0"
+    },
+    "backend/src/main/java/com/smartops/assistant/LocalKnowledgeIndex.java": {
+      "bytes": 10459,
+      "sha256": "d81c2366bbdabe0878f673ef861896e78704af6c5b53b08e3683f54255412550"
+    },
+    "backend/src/main/java/com/smartops/assistant/MiniAssistantEngine.java": {
+      "bytes": 15438,
+      "sha256": "240c0c7957f69d3e5d884e8cd1b36dc412989fe90eb936797b1f9a4aa89cd301"
+    },
+    "backend/src/main/java/com/smartops/assistant/OllamaTransport.java": {
+      "bytes": 4504,
+      "sha256": "3f19d869b63f58e92acf16c6ed1728f70629e01c7ffa72c6e411a99f1118d2a2"
+    },
+    "backend/src/main/java/com/smartops/backup/BackupController.java": {
+      "bytes": 4798,
+      "sha256": "012b3ada70dabee493994f1265502473fbed5bcd43ca725404e29101a5e9df16"
+    },
+    "backend/src/main/java/com/smartops/backup/BackupService.java": {
+      "bytes": 25680,
+      "sha256": "903dd75bfea97a05caa703d0497b7b93543e52fc025007d11a14ea1988ccb744"
+    },
+    "backend/src/main/java/com/smartops/cloud/AliyunEcsInventoryProvider.java": {
+      "bytes": 14060,
+      "sha256": "4256ad2c77b84df664243fea96453ead848917469db2b6ea1a237d08f0719cd9"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudAccount.java": {
+      "bytes": 1107,
+      "sha256": "f57183e1b489292a64437f5f4f8f2013ebe75731754bb2fa0c93546ca3892a81"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudAssetController.java": {
+      "bytes": 6038,
+      "sha256": "3d7c025a0a82d0f31ad84f1b8f1d7e9bd51469a11655c7e57132568c407bee02"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudAssetRepository.java": {
+      "bytes": 30348,
+      "sha256": "baa8b3e71b81c0225d4cecfbb91e03224050ebadb9b47457471b271885a6497b"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudAssetService.java": {
+      "bytes": 39695,
+      "sha256": "7619cb463f344110c9940e4d3740a22e5099efeff65989202f6b3fdf32a61ef7"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudCredentialResolver.java": {
+      "bytes": 3723,
+      "sha256": "23997eb02d5dad7065ae85844cf08c3c6f5148cc758dd60728fc9f2b17693b04"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudCredentials.java": {
+      "bytes": 675,
+      "sha256": "eefc6a97275d8530f01fdf33854d1129ebfc0e585a98e7f817f5f7c9724af581"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudHttpTransport.java": {
+      "bytes": 1047,
+      "sha256": "203e9db1fcebfe289a4f82e2a9ebf8e6916fa937f43da3ed0bd0a107b0607913"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudInventoryProvider.java": {
+      "bytes": 627,
+      "sha256": "4dd0cc14c2927e75f9fabca9731544dcd38247bbcf60bc73c7bec1328132c861"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudPage.java": {
+      "bytes": 473,
+      "sha256": "bdc09ac9595cfee199fb1d03c4fbfd050a0789239c29e1628bf1eeaef058c2b0"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudProvider.java": {
+      "bytes": 1476,
+      "sha256": "9d9e7e5da464371dbb1052051308483d15afbe4b17a3a2d8bb21956b6b3f910d"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudProviderException.java": {
+      "bytes": 868,
+      "sha256": "c054dcce8ae1ca0af46e90a068ee89ce15475b0476f588ddb2842b4512f4383a"
+    },
+    "backend/src/main/java/com/smartops/cloud/CloudResourceSnapshot.java": {
+      "bytes": 859,
+      "sha256": "bb29bfb3a45ff09389e7be10b922be8fac4595abca001cd72cd3457f2f510b78"
+    },
+    "backend/src/main/java/com/smartops/cloud/JdkCloudHttpTransport.java": {
+      "bytes": 1842,
+      "sha256": "81afddc432ec5b65642b1df76275c70c298f6cd6d786a24863d40a7b22e1b435"
+    },
+    "backend/src/main/java/com/smartops/common/ApiResponse.java": {
+      "bytes": 628,
+      "sha256": "786853684f595305f196e8737d8bd66597746a75052ddd24343910075583d3ac"
+    },
+    "backend/src/main/java/com/smartops/common/PageResponse.java": {
+      "bytes": 944,
+      "sha256": "9bad0cd9ed6450d955593ec05e36f364173d93db4984f4f6bc1d2e1af0a69218"
+    },
+    "backend/src/main/java/com/smartops/common/crypto/AesGcmCryptoService.java": {
+      "bytes": 6136,
+      "sha256": "6784c28bbcf5ad3381de31c4015224f88ea3d362d9a92e31cf03fb47e9010f06"
+    },
+    "backend/src/main/java/com/smartops/config/AdminMfaConfig.java": {
+      "bytes": 272,
+      "sha256": "09ea0cce970cd964287ffe9fe166528a1fd177d6a7371e9f5200f34da2efb15b"
+    },
+    "backend/src/main/java/com/smartops/config/BusinessSchemaHealthIndicator.java": {
+      "bytes": 1395,
+      "sha256": "11f31857a3059c5487bb141e13092135ecc0752a944e6bd94570e0b754f892cc"
+    },
+    "backend/src/main/java/com/smartops/config/CorsConfig.java": {
+      "bytes": 1482,
+      "sha256": "67cc5686758fc3e8986702ab08ab4448ca9c9d69ee1df8796507e185a1dca15b"
+    },
+    "backend/src/main/java/com/smartops/config/OperationsWebSocketConfig.java": {
+      "bytes": 1026,
+      "sha256": "b1710761f929ac714518dcd60eedbb8230d50652a70773d7234e60c99cdafb07"
+    },
+    "backend/src/main/java/com/smartops/config/PersonalKnowledgeStorageConfig.java": {
+      "bytes": 737,
+      "sha256": "3422692a7ebe15cec1c76914528a409609413eb5b88f0cc8b68af2108ee70b5f"
+    },
+    "backend/src/main/java/com/smartops/config/SecurityConfig.java": {
+      "bytes": 6415,
+      "sha256": "533c625d278236cb5fd70d8cd81e189499e4c00bd45e1c0b470f4d3127731bb2"
+    },
+    "backend/src/main/java/com/smartops/config/UserAccountConfig.java": {
+      "bytes": 660,
+      "sha256": "c275689e2494e81187033169be34d648751c4ec4a4cfb2ef797704734ec00b45"
+    },
+    "backend/src/main/java/com/smartops/controller/AdminAccountsController.java": {
+      "bytes": 7211,
+      "sha256": "3ab261639cae011fe9fec0bfef7907e54f57a7841817cec6d3ffde4c646cde6b"
+    },
+    "backend/src/main/java/com/smartops/controller/AdminMfaController.java": {
+      "bytes": 3954,
+      "sha256": "5a5ca7aa8ef12c59c2368f7b571bda4e9212a748fbf6cf80844a292ad2612d04"
+    },
+    "backend/src/main/java/com/smartops/controller/AdminModelGovernanceController.java": {
+      "bytes": 1137,
+      "sha256": "0d1baf33bfd224e3b2412f250e502a5fcb86ab211f54620d268ee7d6357ff0fd"
+    },
+    "backend/src/main/java/com/smartops/controller/AdminReadinessController.java": {
+      "bytes": 2009,
+      "sha256": "fbc16161f363ba937308c57f99906f813474ffe74f22dd96f6d4a186eb3e59bf"
+    },
+    "backend/src/main/java/com/smartops/controller/AdminTeamsController.java": {
+      "bytes": 1443,
+      "sha256": "c2f204e5a7159468f2440ca65feea0bf4b06ba79d7f62cc4124756b96df8a41e"
+    },
+    "backend/src/main/java/com/smartops/controller/AdminWorkbenchController.java": {
+      "bytes": 900,
+      "sha256": "4b6aa3426405701307bb49f9ebf542f938c081fb50b78d3458c27b1d01a6f50b"
+    },
+    "backend/src/main/java/com/smartops/controller/ArtifactDraftController.java": {
+      "bytes": 1189,
+      "sha256": "181a065cceae02b1ca329cd9802122e70ca1dfa3b61bcc0a2150392007186add"
+    },
+    "backend/src/main/java/com/smartops/controller/AssistantController.java": {
+      "bytes": 2065,
+      "sha256": "c0860f482dc6253080ae3143ee906fa1c4b7c788553829875db96421f04f25fc"
+    },
+    "backend/src/main/java/com/smartops/controller/AuthController.java": {
+      "bytes": 12273,
+      "sha256": "da39fe87a96018acf34015eb83eed2ce970c3e853588483a6009852c8a2f07e4"
+    },
+    "backend/src/main/java/com/smartops/controller/ChatAttachmentController.java": {
+      "bytes": 4748,
+      "sha256": "509f2203234237a76f4860c399fe941ff64d71e8e4dc6971c904ad7b17176b70"
+    },
+    "backend/src/main/java/com/smartops/controller/ChatRunTokenController.java": {
+      "bytes": 1815,
+      "sha256": "4b60619a7f6e239a0740c922478c9364bce786dec8b80abbbc482102d876fb45"
+    },
+    "backend/src/main/java/com/smartops/controller/DatabaseDiagnosisController.java": {
+      "bytes": 1528,
+      "sha256": "6b920d897884da884d0200dbc7ad25f99747b09cb1e286459a5ea178aa92a4dc"
+    },
+    "backend/src/main/java/com/smartops/controller/DecisionLoopController.java": {
+      "bytes": 2391,
+      "sha256": "62e4aed984893fa8a482b321e3c40abf4b5ba37789bcfcc094a0116e0c02351c"
+    },
+    "backend/src/main/java/com/smartops/controller/DiagnosticToolController.java": {
+      "bytes": 1992,
+      "sha256": "b17fe534638b36e913ef023227fd349663441f36148c4702923be7efcdbdd8d7"
+    },
+    "backend/src/main/java/com/smartops/controller/HarborCatalogController.java": {
+      "bytes": 2009,
+      "sha256": "4034edfaef9b1a145339a5e2de0161ea4ea4e87d6a8a2355fc5c975d96a578a9"
+    },
+    "backend/src/main/java/com/smartops/controller/HealthDiagnosticController.java": {
+      "bytes": 1074,
+      "sha256": "1c0d669372430f7c0a94362a30195b9d99f6a8350b2651a4ec4a85b3ab76dd10"
+    },
+    "backend/src/main/java/com/smartops/controller/HomeController.java": {
+      "bytes": 921,
+      "sha256": "6f5b9f6e22377700599650a0d0e011edce8617d8ba398aedb5fbea6a701bc6ae"
+    },
+    "backend/src/main/java/com/smartops/controller/HostDiagnosisController.java": {
+      "bytes": 1166,
+      "sha256": "bc2340f66997d9f7fe01c4ba0744077f9fa7341101f99c1b402ad1f432a561d5"
+    },
+    "backend/src/main/java/com/smartops/controller/IncidentController.java": {
+      "bytes": 6542,
+      "sha256": "e1c666c8019ad49abff7b321fd9a128b79d674fd22e52f4370878db8f37364e2"
+    },
+    "backend/src/main/java/com/smartops/controller/IncidentRecommendationController.java": {
+      "bytes": 826,
+      "sha256": "26a6f60e57b94abbe847fa098df9344cd30624149b017607748c4cabf2fae730"
+    },
+    "backend/src/main/java/com/smartops/controller/InspectorController.java": {
+      "bytes": 1959,
+      "sha256": "41d654e86d0d6e30a27afee983bd3723f232566449bee835288f5ed44431bb7f"
+    },
+    "backend/src/main/java/com/smartops/controller/InternalRecoveryController.java": {
+      "bytes": 1976,
+      "sha256": "a106f142155be4f289730ea8a01117d662eb990dd43e8d061bc4a27219054243"
+    },
+    "backend/src/main/java/com/smartops/controller/KnowledgeCandidateController.java": {
+      "bytes": 2878,
+      "sha256": "5604b3b85dc07ddaa3075110db6bac64a8db94704e09596108be913024642f64"
+    },
+    "backend/src/main/java/com/smartops/controller/KnowledgeCrawlController.java": {
+      "bytes": 1766,
+      "sha256": "a6f4a0db12ea9b4ac85a7af744b63d525ffc587b9853ef189e55fb2640222194"
+    },
+    "backend/src/main/java/com/smartops/controller/KubernetesDiagnosisController.java": {
+      "bytes": 1773,
+      "sha256": "c66fedfd518a961531fe7a83af7c71b7799fdb194cba0604222e03ae67708948"
+    },
+    "backend/src/main/java/com/smartops/controller/ModelAnalyticsController.java": {
+      "bytes": 2152,
+      "sha256": "4315423744c15555cbe0cc3ed3651b8ac3825c32241079e4f7eb99390bd817ff"
+    },
+    "backend/src/main/java/com/smartops/controller/ModelConnectionController.java": {
+      "bytes": 3571,
+      "sha256": "e699af46034c2775baa10738e405b2d8506661a7504ec7f761fe70c0a6891030"
+    },
+    "backend/src/main/java/com/smartops/controller/ModelGatewayController.java": {
+      "bytes": 13960,
+      "sha256": "99809f72ed0d88b877e5288160d5da4f8dd4766e499e42831517c455bc0215c1"
+    },
+    "backend/src/main/java/com/smartops/controller/MultiExecController.java": {
+      "bytes": 1537,
+      "sha256": "5ef702317637f7e6279744aec7e88fe5308186943b336868ee46d8c3f9f5193d"
+    },
+    "backend/src/main/java/com/smartops/controller/NetworkPathDiagnosisController.java": {
+      "bytes": 1773,
+      "sha256": "da9e309670b1eb6b43f2a8a606c305ad21f674067f1a663fd23c86ff2bac6254"
+    },
+    "backend/src/main/java/com/smartops/controller/ObservabilityController.java": {
+      "bytes": 1030,
+      "sha256": "fe05613aae85cf4e2dbe302d5804074c8b22f922a61c160f50c406b837422e74"
+    },
+    "backend/src/main/java/com/smartops/controller/OperationAgentContextController.java": {
+      "bytes": 722,
+      "sha256": "8be9585eab1e87ff89dca9795db328fb2120e7b3fe45b53a0419ad3f0de4129d"
+    },
+    "backend/src/main/java/com/smartops/controller/OperationConnectionController.java": {
+      "bytes": 1302,
+      "sha256": "b943cbdf0dd56d733b45820f46ddf1f25405e41c92f34d2efbc5e8f1ffeddc0b"
+    },
+    "backend/src/main/java/com/smartops/controller/OperationFileController.java": {
+      "bytes": 3258,
+      "sha256": "0b61d384b95fbd04254d0e73a909b0a01f758f44f99ebf7ceb6953550c6daa1c"
+    },
+    "backend/src/main/java/com/smartops/controller/OperationRunController.java": {
+      "bytes": 3195,
+      "sha256": "5a2ea53e9cfa346e1c42b2e85021c1cf4613aedcedcbde43d95c68b5e94b43a0"
+    },
+    "backend/src/main/java/com/smartops/controller/OperationSessionController.java": {
+      "bytes": 1267,
+      "sha256": "fd3c22b7c62d566a8eb81e4e9552ff39289a9b5c797f5d4915c2296ae212bd1a"
+    },
+    "backend/src/main/java/com/smartops/controller/OperationToolController.java": {
+      "bytes": 2026,
+      "sha256": "25af8e56c9543e8e7eb43124df1fb6887055110a92f98a950ec9a6e89b138b2e"
+    },
+    "backend/src/main/java/com/smartops/controller/OperationTunnelController.java": {
+      "bytes": 1471,
+      "sha256": "b6da71fd5219a06c223e409ac9c8cc8923929325498958eff1c783700376cd6f"
+    },
+    "backend/src/main/java/com/smartops/controller/OperationsCapabilityController.java": {
+      "bytes": 896,
+      "sha256": "d9a28f57480a957e56a430a4bc6af5836b54b026f77ca8ef06ad8beeaa0a1b6e"
+    },
+    "backend/src/main/java/com/smartops/controller/OperatorMemoryController.java": {
+      "bytes": 1644,
+      "sha256": "77a660ecf2ed00290e01cd5eade10230fa6ae74eaf27cd231d2344f5587ab266"
+    },
+    "backend/src/main/java/com/smartops/controller/PersonalKnowledgeController.java": {
+      "bytes": 4527,
+      "sha256": "35269880e9212386e1dfe91b593e861c0ae0c94bc72dd529eedf670914227a4b"
+    },
+    "backend/src/main/java/com/smartops/controller/PersonalKnowledgeFileController.java": {
+      "bytes": 3060,
+      "sha256": "bf78d848e5ac306ca72b3c7c3a4d852d02aa5f01b0017c389d6e5f44190de97c"
+    },
+    "backend/src/main/java/com/smartops/controller/RecoveryContractController.java": {
+      "bytes": 2121,
+      "sha256": "d71a76f842e06efab6a00dbddf1f18f11ee17c30875638ebdc3cea4dbe9aace7"
+    },
+    "backend/src/main/java/com/smartops/controller/SentinelGuardianController.java": {
+      "bytes": 2447,
+      "sha256": "0403b0ee9ac5a26f335a8f5d4c1175e89230c2485a3c9ed8e8fee3b076342652"
+    },
+    "backend/src/main/java/com/smartops/controller/ServerController.java": {
+      "bytes": 1468,
+      "sha256": "74add8daefd6d1e385ce7c4424bd5608ef3969756352cceaa8d1d3b1e6d25298"
+    },
+    "backend/src/main/java/com/smartops/controller/ServerMetricController.java": {
+      "bytes": 1253,
+      "sha256": "13e24ba8caa15a2ee8b33907bd8ed88eadf3066164ef8fa147820fd73b0823b8"
+    },
+    "backend/src/main/java/com/smartops/controller/SysAdminController.java": {
+      "bytes": 15966,
+      "sha256": "8b5dfb81520ebbe4eedae7afdc067676370a150b6ae907f2aa00ed33f96efa77"
+    },
+    "backend/src/main/java/com/smartops/controller/TeamAgentController.java": {
+      "bytes": 3522,
+      "sha256": "39696d09f1b8d1817abb5b724caa8b71db9181126ff14169c8cd213b7ca758c7"
+    },
+    "backend/src/main/java/com/smartops/controller/TeamAgentRunController.java": {
+      "bytes": 6335,
+      "sha256": "415cfb3f868cf257779aa723294f8e7c0924d922717d454aedd19f2d6d50a819"
+    },
+    "backend/src/main/java/com/smartops/controller/TeamNotificationController.java": {
+      "bytes": 993,
+      "sha256": "8a4b31dcb349520dae572742c6ad8fc6c100095136266341c4c2d564940e095e"
+    },
+    "backend/src/main/java/com/smartops/controller/TeamWorkspaceController.java": {
+      "bytes": 8279,
+      "sha256": "0297ff88d236b8d59a4fdaac4421a9a651bb25d35504ac77397645e592c4e3e3"
+    },
+    "backend/src/main/java/com/smartops/controller/UserChatController.java": {
+      "bytes": 895,
+      "sha256": "bcf971c9071ba417ab99983c41eb674b0858d06635f55c9df011451c83ce6676"
+    },
+    "backend/src/main/java/com/smartops/controller/VisionEventController.java": {
+      "bytes": 1859,
+      "sha256": "2bcd8f4e885bd7ca0a81a58d10ffba845d0835b092bacc6ba0d62d7d567cdcac"
+    },
+    "backend/src/main/java/com/smartops/controller/VisionHandoffController.java": {
+      "bytes": 1205,
+      "sha256": "787a4fbb57c6f6662f6c4507967d8383c9c1491e04ce048657aa5ee08ab63ad3"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/CertificateProbeService.java": {
+      "bytes": 2425,
+      "sha256": "9f2d3b2b9f1062102ebeab35b3260f2e324d704b74aafac632d5a45c1437afbd"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/DiagnosticProbeLimiter.java": {
+      "bytes": 1310,
+      "sha256": "02ccc7cc949de75b05f1a35554569548f664e698a0c2c14ec1515d63dab9189f"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/DiagnosticTargetPolicy.java": {
+      "bytes": 5462,
+      "sha256": "e29d85a556e27fa62258114ecdedfaf9172b6e3cd78d6703908fed033aa2cdb5"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/DiagnosticTargetProperties.java": {
+      "bytes": 744,
+      "sha256": "3ec06a45af51b064dd77215776b19c6403454610c581209af6b670def0bf9641"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/DiagnosticTransport.java": {
+      "bytes": 6555,
+      "sha256": "cf7a3a1c1347658a103fe85f3e717faf6b711dba64286a6b1843bb8daeeadd22"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/HealthDiagnosticService.java": {
+      "bytes": 7054,
+      "sha256": "90e069062951abe8d30702ae24a47b6cd2afd695fe36d582b8f3ec82739665b7"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/HttpProbeService.java": {
+      "bytes": 5431,
+      "sha256": "49d01a1e3e80a05a8a78b8977f086a91cd915996d82efe051aae17eec0694dbf"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseCheck.java": {
+      "bytes": 595,
+      "sha256": "5237eb9fd5df94802548e4bdb5f8f01611b2615193f36bbedcb29a6c3fc39655"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseConnectionProvider.java": {
+      "bytes": 430,
+      "sha256": "53f614c09fae94ea77399216b8327e80af7c7f97fdc0d93ace398be45cfd906f"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseCredentialResolver.java": {
+      "bytes": 4502,
+      "sha256": "385bdabc56b8eab7acc27db66af1c7f12c557734d1fcd29f6d02cdabd6a4e520"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseDiagnosisRequest.java": {
+      "bytes": 1085,
+      "sha256": "b43350377f6d6562ba5fcf17e23ac21585ef410b992b9f8b7ccfd958a1d3b5ff"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseDiagnosisService.java": {
+      "bytes": 11209,
+      "sha256": "7a215bfa3e77ed681e38eeed35449d87d6ee7ead6d2d8253544ae7b52b2e3717"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseDiagnosticAdapter.java": {
+      "bytes": 469,
+      "sha256": "e009085b54b2299352ac845f394aba2ed151275c5f2d80067258b5c0818a9a47"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseEngine.java": {
+      "bytes": 1638,
+      "sha256": "4fae6fee3c3e0f769c2a977802d1a8d58efe8239a53a958ea0c2ef97da978722"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseQueryLimits.java": {
+      "bytes": 227,
+      "sha256": "58ab0eaa968cc500a3ce7b60d6af80cf965b2b358ad510d51c9023f76ee4b114"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DatabaseTarget.java": {
+      "bytes": 228,
+      "sha256": "6f477fddb95936f34d0bb4e8a4da660e5bbfdb522a78ed92b47dbef615ff8fc6"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/DriverManagerConnectionProvider.java": {
+      "bytes": 1346,
+      "sha256": "ef1c49a4ccbe5af64ef0c1ba43dc7e30f3417a3a84af078baa26f7858588d42a"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/MysqlDiagnosticAdapter.java": {
+      "bytes": 17391,
+      "sha256": "30373c2b6cc2b50f3852d8424a656447355637ef9da764b47029a41c3a77410e"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/ReadOnlySqlGuard.java": {
+      "bytes": 3407,
+      "sha256": "651ad9ffecd88ef73f1ee1bdd139d611c082b41dcbc6b018bc419c5184e7d8cb"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/database/SqlSanitizer.java": {
+      "bytes": 1589,
+      "sha256": "df7147707f34711e77bd63e75875e359e91fce68858e77261450fd6c8878adc6"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/host/HostDiagnosisRequest.java": {
+      "bytes": 848,
+      "sha256": "21b87f28b79774531af31fb2d52549399897e1e93748510ed97dc9da07e0fb24"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/host/HostDiagnosisService.java": {
+      "bytes": 48028,
+      "sha256": "149993706e988a6037cf18d9f9aaad0ea97c9836b64c00a405e5c04bcf5006eb"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/kubernetes/KubernetesDiagnosisRequest.java": {
+      "bytes": 1296,
+      "sha256": "1a4327caf9d64f6dad2518a532a003835a16b06aaf0a6545d367936b2b29f0ac"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/kubernetes/KubernetesDiagnosisService.java": {
+      "bytes": 34269,
+      "sha256": "1acccf10f440fbd196bae1961aee21eda7e57a7a9c5109feaf8418ed7478f177"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/network/NetworkPathRequest.java": {
+      "bytes": 1652,
+      "sha256": "fb8f00f7e05ae31e40989c294408ece60bec725ba4352a960a69e6d8af9fac63"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/network/NetworkPathService.java": {
+      "bytes": 36160,
+      "sha256": "105a9b0d94cd63f83a2f17020f95df131cfef76b6b5224265efb37fc7ac35a82"
+    },
+    "backend/src/main/java/com/smartops/dto/IncidentAssignRequest.java": {
+      "bytes": 292,
+      "sha256": "35cdd0cec0755aefae864fb0273aa372f703ca80483d7480e667338b1931b0f6"
+    },
+    "backend/src/main/java/com/smartops/dto/IncidentCloseRequest.java": {
+      "bytes": 504,
+      "sha256": "daeed13f07945a044695abad4c66051feea4a742590eadd785d54198ee470602"
+    },
+    "backend/src/main/java/com/smartops/dto/IncidentCommentRequest.java": {
+      "bytes": 279,
+      "sha256": "070ed6f65a2362eb859b219a58da4aa7a962d5508937bda976f684c144e855fb"
+    },
+    "backend/src/main/java/com/smartops/dto/IncidentCreateRequest.java": {
+      "bytes": 909,
+      "sha256": "f478bc727b4683194fb894d1f4e228b7384793bb408e614c6fee3d879345a5ae"
+    },
+    "backend/src/main/java/com/smartops/dto/IncidentRelationRequest.java": {
+      "bytes": 449,
+      "sha256": "669ac17b0cf743b5f67f3e762ae6231ad482928cc196042272ddf6b95be04e8a"
+    },
+    "backend/src/main/java/com/smartops/dto/IncidentUpdateRequest.java": {
+      "bytes": 631,
+      "sha256": "a279dfe73797c8f85f40b7cd59e9357b566b6616d3925d8a418dfa649d3b7ba6"
+    },
+    "backend/src/main/java/com/smartops/dto/MetricCreateRequest.java": {
+      "bytes": 530,
+      "sha256": "8c0334a5f7fe233c58379fb0bee64dc7cae6e121288f4f77c7b4b3713641f2f3"
+    },
+    "backend/src/main/java/com/smartops/dto/ServerCreateRequest.java": {
+      "bytes": 589,
+      "sha256": "7e03159d29fb3c1a1ccdd28ed2ff96237e9bdc0d002144b562171dda945d8dde"
+    },
+    "backend/src/main/java/com/smartops/dto/ServerUpdateRequest.java": {
+      "bytes": 584,
+      "sha256": "eb04f121adfe1bf3558ca98628a2a029e04ba63f74609ff3a15a104f01676ba6"
+    },
+    "backend/src/main/java/com/smartops/dto/inspector/InspectionRecordRequest.java": {
+      "bytes": 1554,
+      "sha256": "26c046430bec9eb450e953530390224e233eae1bb1d34a70dd6c8e095125d202"
+    },
+    "backend/src/main/java/com/smartops/dto/inspector/InspectionReplanRequest.java": {
+      "bytes": 228,
+      "sha256": "b59876bebd1d9caf7e9d303850106c57423dfc9cf95c5963c024dc8e3c6899d1"
+    },
+    "backend/src/main/java/com/smartops/dto/inspector/InspectionVerifyRequest.java": {
+      "bytes": 378,
+      "sha256": "71369ee3674897ab35e7523c03a5c2d5f14405ebfc6fa556e594f63b7a061641"
+    },
+    "backend/src/main/java/com/smartops/dto/model/GatewayChatRequest.java": {
+      "bytes": 518,
+      "sha256": "e75e82d87d4a8db4d6cdd1d0a3cc99267ef213f24d2fe98a9f9bee99fd5e77dc"
+    },
+    "backend/src/main/java/com/smartops/dto/model/ModelConnectionCreateRequest.java": {
+      "bytes": 618,
+      "sha256": "51bb32c195a42786832d6020c565e25e90dc42c9b9fedc2e91de8de15ded40e3"
+    },
+    "backend/src/main/java/com/smartops/dto/model/ModelConnectionResponse.java": {
+      "bytes": 550,
+      "sha256": "81854071db7ef0325e286b093be8c286f3d3751ab9540a4625752f7f9d49cc04"
+    },
+    "backend/src/main/java/com/smartops/dto/model/ModelConnectionUpdateRequest.java": {
+      "bytes": 489,
+      "sha256": "ef2394087806571cf92ec81624fa7e117e3f10ccef2fc24aceb54656ff8f23f8"
+    },
+    "backend/src/main/java/com/smartops/dto/model/ModelInvocationRequest.java": {
+      "bytes": 408,
+      "sha256": "fac84eb597b6c7690541f985536c5c427b9601cf8af860231e416e405a93b445"
+    },
+    "backend/src/main/java/com/smartops/dto/model/ModelInvocationResponse.java": {
+      "bytes": 309,
+      "sha256": "928ab25317aa429a46cfc53e08fec7c351763397f429a4b2990ddd3074936add"
+    },
+    "backend/src/main/java/com/smartops/dto/model/RuntimeModelConnectionResponse.java": {
+      "bytes": 400,
+      "sha256": "72df641c5a3e001e047640376665862439581df1c5a6dea5e421b19e8d76574e"
+    },
+    "backend/src/main/java/com/smartops/dto/operations/CreateOperationSessionRequest.java": {
+      "bytes": 683,
+      "sha256": "3c4bd243f14a4d22fbc291436536eaae311f00c62aa094f999ee3dd9d3f33a46"
+    },
+    "backend/src/main/java/com/smartops/dto/operations/OperationSessionResponse.java": {
+      "bytes": 966,
+      "sha256": "7b350453ab8780c3f167383cfaa1bc66ded39a14c4903f37c0c3c7c01eaff860"
+    },
+    "backend/src/main/java/com/smartops/entity/Incident.java": {
+      "bytes": 1356,
+      "sha256": "b09a46f65e1fadd02a3519f2bcaa72590692e8e284cff202cbc285f180dab790"
+    },
+    "backend/src/main/java/com/smartops/entity/IncidentEvent.java": {
+      "bytes": 435,
+      "sha256": "10802fab1a35d4ccffbfdf07ca58a67a67d623934bcabbd32e1f0d34244bd4d8"
+    },
+    "backend/src/main/java/com/smartops/entity/IncidentRelation.java": {
+      "bytes": 461,
+      "sha256": "81d269b27cc1090dec23ef6ae79c24eb2ee16abf4d2d228bca602284f179726e"
+    },
+    "backend/src/main/java/com/smartops/entity/ModelConnection.java": {
+      "bytes": 700,
+      "sha256": "d8cc7745ce5c95cd376530337a5f6d1c32bed8ac4d67e7c17e396c452d3bc5ce"
+    },
+    "backend/src/main/java/com/smartops/entity/OperationCredential.java": {
+      "bytes": 360,
+      "sha256": "10da510f435c6a4a38d80e607507b9a83d8d531b7c4f463d2f51a5c197c3df44"
+    },
+    "backend/src/main/java/com/smartops/entity/OperationKnownHost.java": {
+      "bytes": 355,
+      "sha256": "a049052664248b5b4d23717c37b6403d1c0109acf76d88f658c1bad254b86c19"
+    },
+    "backend/src/main/java/com/smartops/entity/OperationSession.java": {
+      "bytes": 688,
+      "sha256": "da0f5f2efdca399cb1a63d89c84f52ee692495a125031410ef6b504d864bf0e6"
+    },
+    "backend/src/main/java/com/smartops/entity/RecoveryContractRecord.java": {
+      "bytes": 970,
+      "sha256": "8b2ae7cdc02c73c811784dcbe5b8c14dea7cde58d0e32bd723935c9058175711"
+    },
+    "backend/src/main/java/com/smartops/entity/RecoveryObservationRecord.java": {
+      "bytes": 967,
+      "sha256": "1ad41759c91907378d2cda8cb7ca7cd63ac0a2b866fd905ccb012817d7f5b2a8"
+    },
+    "backend/src/main/java/com/smartops/entity/RecoveryReceiptRecord.java": {
+      "bytes": 945,
+      "sha256": "d268e4d3324c80cfe641583a78abb1300a5e0808009fb67b45d091f8e4150233"
+    },
+    "backend/src/main/java/com/smartops/entity/RecoveryReplayBundleRecord.java": {
+      "bytes": 621,
+      "sha256": "04b47a220013e811070acad5292e71051159814325970640699219a1ae4d6d0e"
+    },
+    "backend/src/main/java/com/smartops/entity/SentinelAlertRef.java": {
+      "bytes": 677,
+      "sha256": "913da865f7833ebaff977aec32473bbccbcb26fabceb96eaf767aa11d46dc1d3"
+    },
+    "backend/src/main/java/com/smartops/entity/ServerEntity.java": {
+      "bytes": 573,
+      "sha256": "6b3013dfbcf970362c6fd2a0c116b6c298f537263dab679a6148bb05b3528a93"
+    },
+    "backend/src/main/java/com/smartops/entity/ServerMetricEntity.java": {
+      "bytes": 625,
+      "sha256": "bc141b77191a4e997c0ce1da0978d1b97bb225cd8f54e0a31f2d5430d052d708"
+    },
+    "backend/src/main/java/com/smartops/exception/BusinessException.java": {
+      "bytes": 369,
+      "sha256": "a576d96071f95ab80643832095918d9c8f07f8161a81635110a163ab30d6d145"
+    },
+    "backend/src/main/java/com/smartops/exception/GlobalExceptionHandler.java": {
+      "bytes": 2039,
+      "sha256": "4f0c8de7085286c1071b8ad96cf418add1bf31acdcd2e49989a81a5217e058e5"
+    },
+    "backend/src/main/java/com/smartops/experiment/ExperimentController.java": {
+      "bytes": 4077,
+      "sha256": "2a61e3384639fe898abdbdfa1441d2b4d9cbb91ae1b1c7e9c3462ff9145f6973"
+    },
+    "backend/src/main/java/com/smartops/experiment/ExperimentService.java": {
+      "bytes": 16953,
+      "sha256": "9a1ed73dcd79a187bb2d46bb07a272795865bcea920be4bb5c68bd082961ec57"
+    },
+    "backend/src/main/java/com/smartops/finops/FinOpsController.java": {
+      "bytes": 4109,
+      "sha256": "b895b3abedd8688ee10900fa6d6815b7cdf2e74b8a437b69dae9d2c04c103add"
+    },
+    "backend/src/main/java/com/smartops/finops/FinOpsService.java": {
+      "bytes": 32442,
+      "sha256": "f647d46e9b2ec522a90d3f382a64c27b7312ef6a3f574ae82b3f69836d8381a1"
+    },
+    "backend/src/main/java/com/smartops/iac/IacController.java": {
+      "bytes": 4488,
+      "sha256": "acd7c05dfba3ba271350bb753a756f77a115e0908c83e8f4cc34dc542c9cb470"
+    },
+    "backend/src/main/java/com/smartops/iac/IacService.java": {
+      "bytes": 26614,
+      "sha256": "5a30a9eef6d03424381663dd55d53330c3448d84d8a5132146e1c598a33b5760"
+    },
+    "backend/src/main/java/com/smartops/iac/TerraformPlanAnalyzer.java": {
+      "bytes": 6377,
+      "sha256": "d452c9e79e0d05e2efa225363bd8bf7e6995f0124b338b95768d45904086d09e"
+    },
+    "backend/src/main/java/com/smartops/incident/IncidentBridgePoller.java": {
+      "bytes": 2679,
+      "sha256": "fcec661f8c4b8d2be946a6af332984a894d21001800cf83547b6a6b28a21dc6e"
+    },
+    "backend/src/main/java/com/smartops/knowledge/KnowledgeCrawlService.java": {
+      "bytes": 19550,
+      "sha256": "7af3c9df2fd7e9f0e5368c6a0bd133f41d46685dfae7e110c1d4903f976ddaaf"
+    },
+    "backend/src/main/java/com/smartops/knowledge/KnowledgePathPolicy.java": {
+      "bytes": 935,
+      "sha256": "70384519890448aa47e0f9a18f6b0d309070ef15c2649a72bc5b1b0507293b99"
+    },
+    "backend/src/main/java/com/smartops/knowledge/PersonalKnowledgeIndexService.java": {
+      "bytes": 2217,
+      "sha256": "a21b3a3c05116a5c881d315ba756b66ff95afbd017dd31db46daa84f8a5a7ab1"
+    },
+    "backend/src/main/java/com/smartops/knowledge/PersonalKnowledgeStorage.java": {
+      "bytes": 5070,
+      "sha256": "a8d2fa1c8a517c31f904095334ce76fd4bfb8074762a03f646ecdc40c8a481b9"
+    },
+    "backend/src/main/java/com/smartops/mapper/IncidentEventMapper.java": {
+      "bytes": 1495,
+      "sha256": "cf8186fd817c0c1ed24bd28e133a3248c33d3e935a6cf7b9baafc956f2439ee2"
+    },
+    "backend/src/main/java/com/smartops/mapper/IncidentMapper.java": {
+      "bytes": 5233,
+      "sha256": "7f4749c4edb27c4462d4f37cd323df291d7fac72c62913f6301008206c9451d5"
+    },
+    "backend/src/main/java/com/smartops/mapper/IncidentRelationMapper.java": {
+      "bytes": 1509,
+      "sha256": "aa7ee60a56e9a34f3b86643ee656ab940b6479ef5d8b2eb00bbee39c493e27c1"
+    },
+    "backend/src/main/java/com/smartops/mapper/ModelConnectionMapper.java": {
+      "bytes": 633,
+      "sha256": "d38d12f7c16f9b4f6412e45749497e34e5d4278ab12e1eacd48f6716db8b4514"
+    },
+    "backend/src/main/java/com/smartops/mapper/OperationCredentialMapper.java": {
+      "bytes": 858,
+      "sha256": "2ec52e0fa0d90dce411814f31c4c6e75ea325c1229d91f318e7ae7fd77a7ca15"
+    },
+    "backend/src/main/java/com/smartops/mapper/OperationKnownHostMapper.java": {
+      "bytes": 549,
+      "sha256": "59941a7452a4ad6e0ea6edf077c46edfd83b924c3c1a8c1aa677ce76fdd13154"
+    },
+    "backend/src/main/java/com/smartops/mapper/OperationSessionMapper.java": {
+      "bytes": 1536,
+      "sha256": "1a6126f9d89546db61cf5aa52cb7de73d1b537549ea922b15a95f542d26cfd2b"
+    },
+    "backend/src/main/java/com/smartops/mapper/RecoveryContractMapper.java": {
+      "bytes": 3208,
+      "sha256": "0d3edf5daa1e0936685cca4e2126b21a640e835e391cf771d8d18c2f54da0d3c"
+    },
+    "backend/src/main/java/com/smartops/mapper/RecoveryObservationMapper.java": {
+      "bytes": 1764,
+      "sha256": "3ad4974d7d98ef1cdce4541a5d26fac5baef3afa1a17da8017ca9fe67093e062"
+    },
+    "backend/src/main/java/com/smartops/mapper/RecoveryReceiptMapper.java": {
+      "bytes": 2487,
+      "sha256": "e8f1df343794e0308dc627c8b1f2012cf8afe2bdca8cb3b674247eed19af3a5a"
+    },
+    "backend/src/main/java/com/smartops/mapper/RecoveryReplayBundleMapper.java": {
+      "bytes": 1980,
+      "sha256": "be417d585883e8c1c1c0c79446503048f079d279d38b57e9d4bc31928da5a3bc"
+    },
+    "backend/src/main/java/com/smartops/mapper/SentinelAlertRefMapper.java": {
+      "bytes": 1921,
+      "sha256": "2e7fd31112e00a7a42fba22078e63bf6989a0f2ce657b47606ea3dd47a7ec1d9"
+    },
+    "backend/src/main/java/com/smartops/mapper/ServerMapper.java": {
+      "bytes": 927,
+      "sha256": "d69cc5700cb4b75867712ec80c7901a1b4c80a64a07812fe750b18e22108a7b1"
+    },
+    "backend/src/main/java/com/smartops/mapper/ServerMetricMapper.java": {
+      "bytes": 979,
+      "sha256": "086af8d6d7f48993554ad97a1eae93b128900514e748cb2c97faf774d4f78d9f"
+    },
+    "backend/src/main/java/com/smartops/module/incident/IncidentEventKind.java": {
+      "bytes": 485,
+      "sha256": "50030ad20e90a2d62b9a04568ab67f13ebd58c84122b95f61cfc0e4fc49bc44d"
+    },
+    "backend/src/main/java/com/smartops/module/incident/IncidentRelationType.java": {
+      "bytes": 444,
+      "sha256": "6d00153bd942547069fd78f8251084e160c8889db06441cac9c3e561bb45a319"
+    },
+    "backend/src/main/java/com/smartops/module/incident/IncidentSeverity.java": {
+      "bytes": 176,
+      "sha256": "c1852be381280cd61d3b8d356e87bfdd823b61cb1c769ac4c1d4fd1f2f9e944e"
+    },
+    "backend/src/main/java/com/smartops/module/incident/IncidentSource.java": {
+      "bytes": 276,
+      "sha256": "1fdfb033724315f0df6f109e1cb67ef5909ed493b4321132c9389cbd73a11624"
+    },
+    "backend/src/main/java/com/smartops/module/incident/IncidentStatus.java": {
+      "bytes": 1254,
+      "sha256": "1bb0637f5cab302e8643a8c2c9fd5e922737d79945b97ed880191ff3264e01b4"
+    },
+    "backend/src/main/java/com/smartops/module/server/MetricStatus.java": {
+      "bytes": 104,
+      "sha256": "3959732c241a0d3f2622c52f142ad64809cdba2438fcdb7b665d73594f43c5e4"
+    },
+    "backend/src/main/java/com/smartops/module/server/ServerStatus.java": {
+      "bytes": 116,
+      "sha256": "942313ce2cae2ea774130ac9a8b1702003c4830dbb5d93d206e2cf12f0d5bb61"
+    },
+    "backend/src/main/java/com/smartops/observability/SloController.java": {
+      "bytes": 1312,
+      "sha256": "465b12dbd260136130cf77c2d35b932303f988feeac2c0671c202447c4470dec"
+    },
+    "backend/src/main/java/com/smartops/observability/SloService.java": {
+      "bytes": 13471,
+      "sha256": "c3fb05d8286991520ab54e360044a308f32464018dd8972836a62384592d532b"
+    },
+    "backend/src/main/java/com/smartops/operations/ConnectionAdapter.java": {
+      "bytes": 229,
+      "sha256": "d3813a8132f331ce85301592a5c07fdbe9be132c8ce57c4f6d7384a0c7ab3b5c"
+    },
+    "backend/src/main/java/com/smartops/operations/ConnectionResult.java": {
+      "bytes": 826,
+      "sha256": "a6d53e4e69a0b9221b6aa9ae49049fdcf6a8b74b1c7703decbb70c128eb3e977"
+    },
+    "backend/src/main/java/com/smartops/operations/HostKeyDecision.java": {
+      "bytes": 103,
+      "sha256": "4c7718f0001143583f1f2af8f6006b18eae0f342d86f3dcd50c497340acd65fc"
+    },
+    "backend/src/main/java/com/smartops/operations/HostKeyTrustPolicy.java": {
+      "bytes": 1531,
+      "sha256": "1f5656837b941fc35b86d9354b78a75e96ad32cdd4fd7c10bc5b3477280a2b98"
+    },
+    "backend/src/main/java/com/smartops/operations/KnownHostStore.java": {
+      "bytes": 270,
+      "sha256": "3667031d399353a7410162adcf587bfeab96353059569676d9bd46c789bb5f72"
+    },
+    "backend/src/main/java/com/smartops/operations/MyBatisKnownHostStore.java": {
+      "bytes": 810,
+      "sha256": "5fd3c5c5378bf4f4fb6af8b9d1ef52378bbc585c8dd55036c33fac54f5bb7546"
+    },
+    "backend/src/main/java/com/smartops/operations/OperationRedactor.java": {
+      "bytes": 466,
+      "sha256": "0a0fa9d15fe2d9c84789e0c126449ca819087a40fb72c076ce4ece9498e842eb"
+    },
+    "backend/src/main/java/com/smartops/operations/OperationRiskPolicy.java": {
+      "bytes": 1591,
+      "sha256": "f6f878a471f37867b3cc06427f9558b9d2a9035ca490eba1f99caaf7403c8ad4"
+    },
+    "backend/src/main/java/com/smartops/operations/OperationRuntime.java": {
+      "bytes": 741,
+      "sha256": "bced80113cb4023c4f1ec4ff861e286e43230bc4843abfde4d5af0e532aa69d6"
+    },
+    "backend/src/main/java/com/smartops/operations/OperationRuntimeRegistry.java": {
+      "bytes": 1870,
+      "sha256": "ce9a3ace4a9089abd63a3657705a21f2970a361f8fa0bd92f82d5fe8de2eab68"
+    },
+    "backend/src/main/java/com/smartops/operations/OperationsCapabilityService.java": {
+      "bytes": 1458,
+      "sha256": "c1ef506ceaa8e30a3c8d69874c4daaf22d14a006330ef9980e08936feace893f"
+    },
+    "backend/src/main/java/com/smartops/operations/OperationsProtocol.java": {
+      "bytes": 182,
+      "sha256": "dc7b977af71c4a48246f22c6f8062e0ac9f66adb56a3450cb602f062acf16840"
+    },
+    "backend/src/main/java/com/smartops/operations/OperationsTerminalWebSocketHandler.java": {
+      "bytes": 7795,
+      "sha256": "b2393bc996740db4801b38c205a726b144e20f86604b8599464863d0f2c8251c"
+    },
+    "backend/src/main/java/com/smartops/operations/PresentedHostKey.java": {
+      "bytes": 148,
+      "sha256": "914755d3e30d6ae932c2bf3d3c90c81fe887b24c1b3da2d01d746f25d2ca7b99"
+    },
+    "backend/src/main/java/com/smartops/operations/ProtocolCapability.java": {
+      "bytes": 156,
+      "sha256": "052717e5ee0f13d09eb572ce58551cf46eeb8e89c3d08401e6252c452b06ea1b"
+    },
+    "backend/src/main/java/com/smartops/operations/RunCorrelationFilter.java": {
+      "bytes": 2220,
+      "sha256": "92eee2b4842ba7e0abda8b126971819ea15d5a536fca3abb46558fd0dbafd3df"
+    },
+    "backend/src/main/java/com/smartops/operations/SftpAccess.java": {
+      "bytes": 612,
+      "sha256": "b712e5ca7cebba2d09b9559411e19c9c979395fa60c23fcbc9be44d422ef6434"
+    },
+    "backend/src/main/java/com/smartops/operations/SshConnectionAdapter.java": {
+      "bytes": 14466,
+      "sha256": "d2bfd94ccd24c5e486c1b952fe61d3f26723556bfad0142ccdf4924ac15b295e"
+    },
+    "backend/src/main/java/com/smartops/operations/TerminalMessage.java": {
+      "bytes": 284,
+      "sha256": "225945d326f994b34178a883cabca389ed19c60a27e2971f0c127a5661bbd133"
+    },
+    "backend/src/main/java/com/smartops/operations/TunnelAccess.java": {
+      "bytes": 295,
+      "sha256": "35c89689f9155ebf0b565699374ee840562ffd81ef87788868a19f21d0a14591"
+    },
+    "backend/src/main/java/com/smartops/posture/SecurityPostureController.java": {
+      "bytes": 3730,
+      "sha256": "4a6f0ed1af5bc17abc2d487288ab4401e50822711c84e244cffd9cbbbc35962e"
+    },
+    "backend/src/main/java/com/smartops/posture/SecurityPostureService.java": {
+      "bytes": 26073,
+      "sha256": "b56ba32de89d2b7633d75e248f0f386bd15998b09e4f147c6b8497133ad0c862"
+    },
+    "backend/src/main/java/com/smartops/recovery/RecoveryContractService.java": {
+      "bytes": 24312,
+      "sha256": "4695f7eee3bc14542f09411a01034d3151872801bf3008b029dd4b1964006f7c"
+    },
+    "backend/src/main/java/com/smartops/runbook/RunbookCatalogService.java": {
+      "bytes": 25008,
+      "sha256": "ba41d15eec5a79010ef13da5b9d74906c213ace40d5507faa78ef595e8c23589"
+    },
+    "backend/src/main/java/com/smartops/runbook/RunbookController.java": {
+      "bytes": 12426,
+      "sha256": "2e1e028a52b3a99ac594512128d9e1946c6473e2f1fc462caa09bb890581b013"
+    },
+    "backend/src/main/java/com/smartops/runbook/RunbookEnums.java": {
+      "bytes": 4371,
+      "sha256": "890d8fdf768bd2e3a7e3d205aa09eb27fc673bdcd513c39951edcc0735d63e08"
+    },
+    "backend/src/main/java/com/smartops/runbook/RunbookExecutionService.java": {
+      "bytes": 70756,
+      "sha256": "eaf21fe34f52c52e9e57e8b46d9c31eda35cdbc514b271d9fa90582102a06666"
+    },
+    "backend/src/main/java/com/smartops/runbook/RunbookPoller.java": {
+      "bytes": 1737,
+      "sha256": "94bc0534707aaf3b8271524cdf32399f782106eb047f266d07a8378323827036"
+    },
+    "backend/src/main/java/com/smartops/runbook/RunbookSupport.java": {
+      "bytes": 5308,
+      "sha256": "eaafe6fb6df8d3705c1b931b095df7621a8bf2d5b237872cd12f656bae6c0103"
+    },
+    "backend/src/main/java/com/smartops/security/AccountAttemptLimiter.java": {
+      "bytes": 934,
+      "sha256": "2b5a51631a1e1962512de7a1eff42bcfa701fe26eb2e764d9aaf5ac69923cdfe"
+    },
+    "backend/src/main/java/com/smartops/security/AccountSessionRegistry.java": {
+      "bytes": 3936,
+      "sha256": "fa67457197ff8ebd24e9c2eab7f3b700523c38a203595d1afb2c08818f82ee9a"
+    },
+    "backend/src/main/java/com/smartops/security/AccountStateFilter.java": {
+      "bytes": 2335,
+      "sha256": "9485863d213fcb7bf8984eed4db44ac6d19764a1452f8c054bbcfbdd948e1329"
+    },
+    "backend/src/main/java/com/smartops/security/AdminConfirmationFilter.java": {
+      "bytes": 1924,
+      "sha256": "15b365edc5a1a1a4c786828f2f6e174e08e421e5b355ec53572be8d3ccb803ac"
+    },
+    "backend/src/main/java/com/smartops/security/AdminMfaService.java": {
+      "bytes": 11778,
+      "sha256": "5bc5954ce48f08839485419786b7d9af023fd74b41f1ab1b93e4875bed5fee74"
+    },
+    "backend/src/main/java/com/smartops/security/AuthenticatedSessionHandshakeInterceptor.java": {
+      "bytes": 1405,
+      "sha256": "74a5ed1dc82bd7a074314ca36a1d978e90f8a61f21fd8b67ca97e0465ae31ff5"
+    },
+    "backend/src/main/java/com/smartops/security/HumanVerificationChallenge.java": {
+      "bytes": 481,
+      "sha256": "0074073965f0c063fa544f8e87e9f9493e16709b50e1e88990d1fad0c5dfbeb3"
+    },
+    "backend/src/main/java/com/smartops/security/HumanVerificationProvider.java": {
+      "bytes": 1062,
+      "sha256": "2e8f7f7d1f5046e24cc7c7e0f472805ef4888867e82949a068c610ac4d97c4ed"
+    },
+    "backend/src/main/java/com/smartops/security/HumanVerificationProviderConfig.java": {
+      "bytes": 1009,
+      "sha256": "ff7e4330f73af3caafeab433edbda432bc708e01ee82438e95116a08b2c6c15b"
+    },
+    "backend/src/main/java/com/smartops/security/HumanVerificationService.java": {
+      "bytes": 14023,
+      "sha256": "bc6dbb1f901eea6734acf7439b555c472f4295cc50181f19a95ecdf7d73bfbe4"
+    },
+    "backend/src/main/java/com/smartops/security/HumanVerificationSettings.java": {
+      "bytes": 3284,
+      "sha256": "4b278b8005687e6c189368258231bf9b76b6876fc82108524233b62700044d68"
+    },
+    "backend/src/main/java/com/smartops/security/InternalTokenAuthenticationFilter.java": {
+      "bytes": 3584,
+      "sha256": "8452f799077ad45209f0434ae68e446a2e43a7fc4af28b8045205cd3e46ec3bb"
+    },
+    "backend/src/main/java/com/smartops/security/LocalGraphicalVerificationProvider.java": {
+      "bytes": 15976,
+      "sha256": "f25d7aa7718b186913942544be53f97d10525097eddd092c7dc6d7083e2d199e"
+    },
+    "backend/src/main/java/com/smartops/security/MfaLoginService.java": {
+      "bytes": 3077,
+      "sha256": "4432dc79232ad9e44aca4bc14cce777f86c54aed79b8637faefbca6316220b99"
+    },
+    "backend/src/main/java/com/smartops/security/OutboundUrlPolicy.java": {
+      "bytes": 6266,
+      "sha256": "a7a1b6ce7a6f04aa4697401d512f7e3f4e46527e164e1ec45846e3f82a02fbed"
+    },
+    "backend/src/main/java/com/smartops/security/PlatformAdminGovernance.java": {
+      "bytes": 2154,
+      "sha256": "74e0a4a182b69321203e06468ba23ca9959468249766bb3b0077787b09622e0d"
+    },
+    "backend/src/main/java/com/smartops/security/RunTokenService.java": {
+      "bytes": 6084,
+      "sha256": "b8693f28e30d455073cfb54f2431d115e88a98f706ebac8bdd79ecf0e20f369d"
+    },
+    "backend/src/main/java/com/smartops/security/SecurityAuditService.java": {
+      "bytes": 7966,
+      "sha256": "363117f18f46bf83806c6cab6004bddbc26e2b87d46929f0a6eb38ea4c08dac5"
+    },
+    "backend/src/main/java/com/smartops/security/SecurityConstants.java": {
+      "bytes": 288,
+      "sha256": "7c07fea65c0ad2b5122096e0035f2dfb9adea8299731abbe8b68e9351979db26"
+    },
+    "backend/src/main/java/com/smartops/security/SecurityNoticeService.java": {
+      "bytes": 2077,
+      "sha256": "17cd8281e9813a7da1d31645e08c07f94af98674aaaa2c532f7f63f5bcb7bdfd"
+    },
+    "backend/src/main/java/com/smartops/security/SessionRevocationService.java": {
+      "bytes": 1235,
+      "sha256": "2c7591a57686357a62addcd3efb3c1407362fdae4751fb8f8ee68ad60ff0a785"
+    },
+    "backend/src/main/java/com/smartops/security/SessionUser.java": {
+      "bytes": 473,
+      "sha256": "2f06a697c7a1632ec03499ba44a7f4939985887fb6d60567f9446ef330d6cb43"
+    },
+    "backend/src/main/java/com/smartops/security/TeamResourceAuthorizer.java": {
+      "bytes": 4460,
+      "sha256": "4d00351d1500e249d74eb29fa446f65f30331145d26e2b9ab00a2832cace1db8"
+    },
+    "backend/src/main/java/com/smartops/security/TotpService.java": {
+      "bytes": 2939,
+      "sha256": "502a6f43e4cba7d85a59d5db429bfa52d9e671958905e33ab065028b65360432"
+    },
+    "backend/src/main/java/com/smartops/security/TrustedUserIdFilter.java": {
+      "bytes": 1498,
+      "sha256": "fadf2772ec989234731f701e7038a082e540dc36dbd68488fb93a099caef9dd9"
+    },
+    "backend/src/main/java/com/smartops/security/TurnstileVerificationProvider.java": {
+      "bytes": 2565,
+      "sha256": "ecbafd2b80c277eeff5412b7f36d30d70878c6d910c87f294f310b839faab01c"
+    },
+    "backend/src/main/java/com/smartops/security/UserAccountService.java": {
+      "bytes": 35628,
+      "sha256": "74ba214e753a4eac1f567b7c2e1ebb12e2a4ecb76e4e0378d660db7661f8bdae"
+    },
+    "backend/src/main/java/com/smartops/sentinel/AlertLifecyclePoller.java": {
+      "bytes": 2025,
+      "sha256": "b8973f70edbbc9c117b2e20179654f162761bb9922409a723b26cb3670510b2f"
+    },
+    "backend/src/main/java/com/smartops/sentinel/AlertLifecycleService.java": {
+      "bytes": 22612,
+      "sha256": "eb7ef649972b08111ab28db97f7810c4b229e4b5a4fb1813fb96afaed6717e8b"
+    },
+    "backend/src/main/java/com/smartops/sentinel/AlertSilence.java": {
+      "bytes": 1181,
+      "sha256": "3f378c253519e3c59cf72436900445c8fd4fd632eee7e0fdbb5dc4380e8eed47"
+    },
+    "backend/src/main/java/com/smartops/sentinel/AlertmanagerSilenceClient.java": {
+      "bytes": 3519,
+      "sha256": "770c7797c2c16de1e729066c644231fbd6f61c6ea2952dcde2611b9ede39dffe"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelAdvisor.java": {
+      "bytes": 7991,
+      "sha256": "864fba98c2fc6eb4dd12c5cab56d76063a964b42b0f011d8fe1c00303e75a3bd"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelAlertLimits.java": {
+      "bytes": 484,
+      "sha256": "eefaee7b9f1f0011cafc3a2925a6f8f409b74e1924042e83916e8adbc7be2017"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelConfig.java": {
+      "bytes": 810,
+      "sha256": "9b3da94ccaeb8d6ca37e3d03e1caeee11e607ffcc412019d7cd71e04bd7a22b9"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelController.java": {
+      "bytes": 25354,
+      "sha256": "62910e058ae424034ff309e37969fb8d37e45973a3350f9291d286dc68ed2541"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelGuardianPoller.java": {
+      "bytes": 1818,
+      "sha256": "07dda5bbc4031378263e9dafe8ccb1ba3bc7e19caacfc0532369a960507344b3"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelGuardianService.java": {
+      "bytes": 19357,
+      "sha256": "545df473dc091035c878df62cce4f0467fbd028c4f00f41d8eea6fe91c5f9111"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelMailSetting.java": {
+      "bytes": 3983,
+      "sha256": "d5a57d7d50722b3b2e6860222d53347ccdf2936b1477cef33d131de94b2db85b"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelNotifier.java": {
+      "bytes": 11888,
+      "sha256": "62116cb3a720465675a8c99aa8d7556320f2b7d9a96b65b2ec9e38a7e8cf6ee6"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelPoller.java": {
+      "bytes": 2319,
+      "sha256": "eea45a9eaee38b7a56f8a9a3c4df61e8e0fd83c3f222406e7222db607051dc28"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelScriptLint.java": {
+      "bytes": 5616,
+      "sha256": "51ef0403b22917cff259a8420f6c6b52adbb2e62ede440ea385871ca1b3467f0"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelScriptRunner.java": {
+      "bytes": 25854,
+      "sha256": "10a2aaa86fc6a774179322acbb3f0f75479b1d9f6adc11fd595b5ec4f7aacb02"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelService.java": {
+      "bytes": 89133,
+      "sha256": "ba0264bee6d223ed0b4f39b63d7e332f9b3214c3e1916d620c414e17e52a7cc1"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelThreshold.java": {
+      "bytes": 4449,
+      "sha256": "6e8119f41fecf44c1ae5545cd9a14ce02f4deb3b47b6b39781c41070a5ba7dfa"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelVariables.java": {
+      "bytes": 4627,
+      "sha256": "f384ecc8254fad151ec6a507738fba0baed2081639268c360b538961f5a71b11"
+    },
+    "backend/src/main/java/com/smartops/sentinel/SentinelWebhookPolicy.java": {
+      "bytes": 4510,
+      "sha256": "6f403434d25b8e0608657c65a0fcc3cb47dccd6efba594ceedaa85e30541f006"
+    },
+    "backend/src/main/java/com/smartops/service/AdminWorkbenchService.java": {
+      "bytes": 7557,
+      "sha256": "7eaff79aa1774de46d4a9c39503d2abb786e015c88e977f5163b577194d94873"
+    },
+    "backend/src/main/java/com/smartops/service/ArtifactDraftService.java": {
+      "bytes": 2994,
+      "sha256": "a83e80cf21c77ce81bb877877e7cd32a24590798239833f48413fd82fff51705"
+    },
+    "backend/src/main/java/com/smartops/service/AssistantService.java": {
+      "bytes": 6399,
+      "sha256": "d6424553023767340eeb096e0b627ac1b55a9dccc7f3d01ff7bf64dc11870284"
+    },
+    "backend/src/main/java/com/smartops/service/ChatAttachmentRetention.java": {
+      "bytes": 2756,
+      "sha256": "718112897e7606960b5177cf60353d0e86127849df8bec33cd7ec05ac506d99e"
+    },
+    "backend/src/main/java/com/smartops/service/ChatAttachmentService.java": {
+      "bytes": 15186,
+      "sha256": "52c0c505aad4751cb4bbcd71ccc11c46488cfa88a956b15801be6798bd9c4610"
+    },
+    "backend/src/main/java/com/smartops/service/ChatAttachmentValidator.java": {
+      "bytes": 5028,
+      "sha256": "24a1ad457a4eb89e2de8cd63757b20083b745e246c81b075ecfc618cfbf56df5"
+    },
+    "backend/src/main/java/com/smartops/service/DecisionLoopService.java": {
+      "bytes": 18257,
+      "sha256": "98ac9434382c20b57cf64fbf28f9c3bee6dfb2b0b7eca1fd3750245fbb58d466"
+    },
+    "backend/src/main/java/com/smartops/service/HarborCatalogService.java": {
+      "bytes": 11549,
+      "sha256": "804656d5f69ffa816f264f3b99dea894011f12ca517525da1180407364de6547"
+    },
+    "backend/src/main/java/com/smartops/service/IncidentRecommendationService.java": {
+      "bytes": 1528,
+      "sha256": "2aef960b7e7f5b021ed0df7d467b68fcbb0b256b84354a2d802a60d9aa230663"
+    },
+    "backend/src/main/java/com/smartops/service/IncidentService.java": {
+      "bytes": 2839,
+      "sha256": "1adeaddeb8180487cc256ff724cce5044a46e7415b52a2f21f5bc198abf81edf"
+    },
+    "backend/src/main/java/com/smartops/service/InspectorEventService.java": {
+      "bytes": 9052,
+      "sha256": "406c6f8e42267091d2dfbd94436a9ee4ea93cd5a2fbdabbacbd474e8461d4d17"
+    },
+    "backend/src/main/java/com/smartops/service/JdbcOperationRunRecorder.java": {
+      "bytes": 8079,
+      "sha256": "54b43533513de5e0087bc10d94a27c20f03f1ffa5f86dbd5fc6dac8353157bdc"
+    },
+    "backend/src/main/java/com/smartops/service/KnowledgeCandidateService.java": {
+      "bytes": 10599,
+      "sha256": "d538052a34bbb851baf672f209835693a704a16b6c159194f125e9bbf5bf3422"
+    },
+    "backend/src/main/java/com/smartops/service/ModelAnalyticsService.java": {
+      "bytes": 7805,
+      "sha256": "1a8caa90338483fb33f84a4bae0f64b7f5ae9a2e5f9db77781359c5a039fc7b6"
+    },
+    "backend/src/main/java/com/smartops/service/ModelConnectionService.java": {
+      "bytes": 9724,
+      "sha256": "ebe0dbab2cedae3b45b7ae804f857151318e50182244edd1d67b7eaccfa67549"
+    },
+    "backend/src/main/java/com/smartops/service/ModelGatewayService.java": {
+      "bytes": 23683,
+      "sha256": "6941937c4b5a7956559aa2cc5f66fd92849d8998e56d18ea6bcd45fa47536cfa"
+    },
+    "backend/src/main/java/com/smartops/service/ModelGovernanceService.java": {
+      "bytes": 11191,
+      "sha256": "bada0d24ee8f2f0ec4483a7807d690d65e54fedcc848c019ae0ce0e32893eac9"
+    },
+    "backend/src/main/java/com/smartops/service/ModelProviderClient.java": {
+      "bytes": 4789,
+      "sha256": "6fa722f440fa691d7fb556166c58d3d19f1ed8eaf5aa89d1003d9d99ba5e86a1"
+    },
+    "backend/src/main/java/com/smartops/service/MultiExecService.java": {
+      "bytes": 3544,
+      "sha256": "d7ba850313b839daa7675dc67e94bf6976e43230cef364c27e23c41195b424ba"
+    },
+    "backend/src/main/java/com/smartops/service/ObservabilityService.java": {
+      "bytes": 7216,
+      "sha256": "ad1c068d384bfc4095ef2ce2485bdf23c98b5b5cc8ecd799cb0b115fe5b8957e"
+    },
+    "backend/src/main/java/com/smartops/service/OperationAgentContextService.java": {
+      "bytes": 1536,
+      "sha256": "03661b72e3d9f7d57079bee151d58f239aff863ca11d737f995f2eb4160d1c40"
+    },
+    "backend/src/main/java/com/smartops/service/OperationConnectionService.java": {
+      "bytes": 1931,
+      "sha256": "bdd75928ad200c7d3c778f3296e81bc60aa733162cb6ba6bbe68c4f73c72e4ca"
+    },
+    "backend/src/main/java/com/smartops/service/OperationFileService.java": {
+      "bytes": 2248,
+      "sha256": "059fa1fd86184bf210f6dd2c997d13057539733a3d0796d786f9ebc19669a3aa"
+    },
+    "backend/src/main/java/com/smartops/service/OperationRunQueryService.java": {
+      "bytes": 9394,
+      "sha256": "82714df21c251afd040f484435f03c320b9977dd6007f59c9c71149c0f9b53b2"
+    },
+    "backend/src/main/java/com/smartops/service/OperationRunRecorder.java": {
+      "bytes": 2922,
+      "sha256": "1006da9cd062dd2556952296c1c47c6fa2e9a32f22a494a3bc4034777c3e6e8f"
+    },
+    "backend/src/main/java/com/smartops/service/OperationRunRecoveryScheduler.java": {
+      "bytes": 3222,
+      "sha256": "94d42cca11f4731685044eb33ec0e2105b9f01af888324494bb47463f4f7c343"
+    },
+    "backend/src/main/java/com/smartops/service/OperationSessionService.java": {
+      "bytes": 3332,
+      "sha256": "d8a77af42ade00f9493969a76e28c61664ef03b3ae7ce3d8849e630db46e75e8"
+    },
+    "backend/src/main/java/com/smartops/service/OperationToolService.java": {
+      "bytes": 39021,
+      "sha256": "a21e8239608c5db6b8dcd839f2577800d5cde66eace9709f2d267cf95f48bdcd"
+    },
+    "backend/src/main/java/com/smartops/service/OperationTunnelService.java": {
+      "bytes": 1462,
+      "sha256": "f85c3a3a93ce115c693c27ab6b02af37934b87f234e91babbab0a32ac1b4a691"
+    },
+    "backend/src/main/java/com/smartops/service/OperatorMemoryService.java": {
+      "bytes": 6019,
+      "sha256": "d474cb6dea6f6b9f011c53220efb214f5c3c3ec91ffdd75fc0bb586ec5b508a8"
+    },
+    "backend/src/main/java/com/smartops/service/PersonalKnowledgeService.java": {
+      "bytes": 11902,
+      "sha256": "67a76b84bfb09a905ebb9b65ca6a946807e30635bc026b60d95b0f60e8900f0f"
+    },
+    "backend/src/main/java/com/smartops/service/ServerMetricService.java": {
+      "bytes": 348,
+      "sha256": "e879082029a7d44d8cd2413eee076066742590481fddda0171cee4ba62e8b72c"
+    },
+    "backend/src/main/java/com/smartops/service/ServerService.java": {
+      "bytes": 411,
+      "sha256": "ffc4f29447138813c65320cfba91b87c01b9d9d7a005ec34a52ce942853fca34"
+    },
+    "backend/src/main/java/com/smartops/service/TeamActivityService.java": {
+      "bytes": 1437,
+      "sha256": "7187b59b7c134b241d5357a3378410305d8ac08aed0750d648dd29f884343133"
+    },
+    "backend/src/main/java/com/smartops/service/TeamAgentRunRecoveryScheduler.java": {
+      "bytes": 4175,
+      "sha256": "346972896eec6ecea31f6c1779632326cc6f281b69374a845546b4cfb51ed21b"
+    },
+    "backend/src/main/java/com/smartops/service/TeamAgentRunService.java": {
+      "bytes": 14469,
+      "sha256": "d5fe964b8def587890ddb2496e0a48f29da22c1b3c9c9350340a3efc0058bf36"
+    },
+    "backend/src/main/java/com/smartops/service/TeamAgentService.java": {
+      "bytes": 14858,
+      "sha256": "bd62b4b18896e85015c2a29c9cbac868eb8bb87338838da6eaa0524d003e33a7"
+    },
+    "backend/src/main/java/com/smartops/service/TeamNotificationService.java": {
+      "bytes": 1735,
+      "sha256": "1468be8f071ab1fefa16001ed5a3e5ee155749d7253e89641552702aae7d02ab"
+    },
+    "backend/src/main/java/com/smartops/service/TeamResourceGrantService.java": {
+      "bytes": 3139,
+      "sha256": "e982cf446f1ef3bb3d7cf88cc5506ed1f5bd0e0846d3269d67c4630c603e2992"
+    },
+    "backend/src/main/java/com/smartops/service/TeamResourceShareService.java": {
+      "bytes": 8278,
+      "sha256": "728653c989b51a393ca3d0a73a6eb6bdf7ca8f289bcdbb65a25e0aa1236bfe0f"
+    },
+    "backend/src/main/java/com/smartops/service/TeamWorkspaceService.java": {
+      "bytes": 25307,
+      "sha256": "004d2e96dda7e452ab9bcaaf37491bbd3fc33385df58ca17ffc979e7257c5553"
+    },
+    "backend/src/main/java/com/smartops/service/VisionAnalysisService.java": {
+      "bytes": 1933,
+      "sha256": "14ed2e2674a487519df0030ce4b309a80e98f33fea20236a1ef6b41d2ffc408d"
+    },
+    "backend/src/main/java/com/smartops/service/VisionEventService.java": {
+      "bytes": 3817,
+      "sha256": "be7c381ab90201fd9698940578bf7bc024194324ecebeebfbda27fde13a78c50"
+    },
+    "backend/src/main/java/com/smartops/service/VisionHandoffService.java": {
+      "bytes": 2154,
+      "sha256": "658538b6d5249bd9c966da43f00780a7ea3e29adc94f84619744a99395e732a7"
+    },
+    "backend/src/main/java/com/smartops/service/impl/IncidentServiceImpl.java": {
+      "bytes": 18069,
+      "sha256": "9e6da56951f3962bc78eeecf293970a44318aa00d4cd449605640bac8e98541c"
+    },
+    "backend/src/main/java/com/smartops/service/impl/ServerMetricServiceImpl.java": {
+      "bytes": 4209,
+      "sha256": "0c5a9c74ae71619d2e5108d1de8483580c2d4f7c884e62abc736c2fb827dd79c"
+    },
+    "backend/src/main/java/com/smartops/service/impl/ServerServiceImpl.java": {
+      "bytes": 3320,
+      "sha256": "0ead9474334700dcd3e08f3db2f83a20176069517d5e13e7bdc67821b39e7987"
+    },
+    "backend/src/main/java/com/smartops/vo/IncidentEventVO.java": {
+      "bytes": 414,
+      "sha256": "0eb3d860ab8c55eabfe18a5ad44f4b0c0fba482c353c4c7eb752c22a00a55cbb"
+    },
+    "backend/src/main/java/com/smartops/vo/IncidentRelationVO.java": {
+      "bytes": 434,
+      "sha256": "50d407fa8813c9a22a08d2b373f17047c7a191c9bced2ac3c25b62db4d236021"
+    },
+    "backend/src/main/java/com/smartops/vo/IncidentVO.java": {
+      "bytes": 1185,
+      "sha256": "3b67fd5a8cf11b004d8c854a3c5c5cb443152ca03c561dbe23c4ee3155eebaed"
+    },
+    "backend/src/main/java/com/smartops/vo/ServerMetricVO.java": {
+      "bytes": 511,
+      "sha256": "0d4043ecc9e5d5b264d208532cbe7841e8288d57553a524779b80341f54769c9"
+    },
+    "backend/src/main/java/com/smartops/vo/ServerVO.java": {
+      "bytes": 459,
+      "sha256": "7b8a204261bb95e104e81f816031ca7a773b5b7479693aa1d340af80001297f2"
+    },
+    "backend/src/main/resources/db/migration/V001__account_schema.sql": {
+      "bytes": 1291,
+      "sha256": "ccf1cc66d1e235bace9a79192acfaffbf7a2d3bfa8fa53117be524573fc0a683"
+    },
+    "backend/src/main/resources/db/migration/V002__admin_foundation.sql": {
+      "bytes": 547,
+      "sha256": "26773f51066bf8be581de2d4cf14c9ab92ea2cc326dd315936bb7ff67e7efca3"
+    },
+    "backend/src/main/resources/db/migration/V003__registration_policy.sql": {
+      "bytes": 242,
+      "sha256": "7583d042523039bc1acff8b2f75cb13e8f8a8218b78f1cb55178e7ac0e326243"
+    },
+    "backend/src/main/resources/db/migration/V004__assistant_preference.sql": {
+      "bytes": 199,
+      "sha256": "021aea97f0144a980d1822b1537f1a65ff74f36a29b1a0392f6d10b78e619767"
+    },
+    "backend/src/main/resources/db/migration/V005__admin_mfa.sql": {
+      "bytes": 726,
+      "sha256": "0e544075d8ebc80670109de7fd79faa45fa2421d8e876e77b46f0922bf2f466c"
+    },
+    "backend/src/main/resources/db/migration/V006__team_workspace.sql": {
+      "bytes": 1092,
+      "sha256": "65c5f1fad67dc79e95b39bab51ec32a632c3abc464f708631bea04f8f5816844"
+    },
+    "backend/src/main/resources/db/migration/V007__chat_attachments.sql": {
+      "bytes": 1358,
+      "sha256": "5ad94cf478888d94ef1b6ac7bd84aa297722ba593cf807776780d4d0d1d173a3"
+    },
+    "backend/src/main/resources/db/migration/V20260927__operation_run_tables.sql": {
+      "bytes": 1744,
+      "sha256": "35c0f04ac8cc5c5d1343110ecb395ae726d4eaeb74649ae8675f6129984e4d9e"
+    },
+    "backend/src/main/resources/db/migration/V20261001__model_analytics.sql": {
+      "bytes": 596,
+      "sha256": "52ac17538f427a532b961d2a0031d316f85b51929528990cd294096b9fb8b08d"
+    },
+    "backend/src/main/resources/db/migration/V20261002__operations_and_accounts.sql": {
+      "bytes": 10322,
+      "sha256": "506085a980a9f412a9d7099c1fa6314fe7069e65a64f5552ea5faaa3f31730a7"
+    },
+    "backend/src/main/resources/db/migration/V20261003.1__team_agents.sql": {
+      "bytes": 953,
+      "sha256": "be36424f354dbf96d76cbae1c44d36700655c9ed008caafe3cf3abc6a62f1ad7"
+    },
+    "backend/src/main/resources/db/migration/V20261003.2__team_agent_runs.sql": {
+      "bytes": 752,
+      "sha256": "6b0a96ba3d9e170caf8bc0cea933eaf2073a30e2eda90c5937fc39f7646ab6b3"
+    },
+    "backend/src/main/resources/db/migration/V20261004.1__model_gateway.sql": {
+      "bytes": 1998,
+      "sha256": "19eeb8002f05e3def2dbf6e071d167ecce0c90257244ea2906063d1c50ca4d04"
+    },
+    "backend/src/main/resources/db/migration/V20261004.2__vision_events.sql": {
+      "bytes": 786,
+      "sha256": "80b6051bcb1c4a248cf2c900c6056d13caa820ad83d1e2c58b48c915d601785b"
+    },
+    "backend/src/main/resources/db/migration/V20261004.3__operator_memory.sql": {
+      "bytes": 614,
+      "sha256": "5a2dd32c030c5fd2c62877b9ab8ddccd769c3dd8aa109f164ae1b8f5274ccad9"
+    },
+    "backend/src/main/resources/db/migration/V20261004.4__personal_knowledge.sql": {
+      "bytes": 1269,
+      "sha256": "7a4d189949ce3b483949e4b03a36c4c725eba432d4837a58b348d2dd7ca7fc87"
+    },
+    "backend/src/main/resources/db/migration/V20261004.5__personal_knowledge_storage.sql": {
+      "bytes": 600,
+      "sha256": "677b998e6f5dab8504f41aece27f1bf4a430f76f73d3f2463707a99823b69add"
+    },
+    "backend/src/main/resources/db/migration/V20261004.6__artifact_drafts.sql": {
+      "bytes": 572,
+      "sha256": "fb97d8cbf084d0a54a87800a548b14e03ce12473cb1cb38b0e7a9bc59b67d33e"
+    },
+    "backend/src/main/resources/db/migration/V20261005__platform_admin_governance.sql": {
+      "bytes": 1743,
+      "sha256": "7b67d386fa6d7cfd1ad10a617d7fdbfae943f9f99e6efd9ed709e77b53ee6099"
+    },
+    "backend/src/main/resources/db/migration/V20261006__team_governance.sql": {
+      "bytes": 928,
+      "sha256": "cf57b78be712e65f6bf38badabda4bce8438c5051ff19c9ec2287c539d8b7cf2"
+    },
+    "backend/src/main/resources/db/migration/V20261008__team_activity_and_notifications.sql": {
+      "bytes": 370,
+      "sha256": "b83aaf21f279eacf85cef85978f849ab22d0050c618ec81d0406aeeaf398f3bb"
+    },
+    "backend/src/main/resources/db/migration/V20261009__team_resource_grants.sql": {
+      "bytes": 467,
+      "sha256": "b7369f5760387d41b34e7e97abe9266ba6f3a4fd405e4f4300e4055e50566649"
+    },
+    "backend/src/main/resources/db/migration/V20261010__team_notifications.sql": {
+      "bytes": 460,
+      "sha256": "41748e8c47c85314e6dfe5b800bf31ed2787cc2521962953e1c1d3d0eb5d9ad5"
+    },
+    "backend/src/main/resources/db/migration/V20261011__sentinel.sql": {
+      "bytes": 8797,
+      "sha256": "a3e2f5af9164d7b5c73a330850c0898988771f0f257fa2ee1b442c973c663302"
+    },
+    "backend/src/main/resources/db/migration/V20261012__sentinel_knowledge.sql": {
+      "bytes": 1017,
+      "sha256": "e140be0b9e6b8a0586be9196cfd2beabd9090b48c0cc1c74255f80be8ff16432"
+    },
+    "backend/src/main/resources/db/migration/V20261013__sentinel_script_schedule.sql": {
+      "bytes": 1226,
+      "sha256": "ab0c553b0a33e4fd9cd869aabc38aeea2c8a8a9954fce16daaee7b61c098305a"
+    },
+    "backend/src/main/resources/db/migration/V20261014__team_run_decision_basis.sql": {
+      "bytes": 606,
+      "sha256": "4977ab5f2bacded1e5d45b7fe3b50681504642a4474864d14f62e1a22a91004a"
+    },
+    "backend/src/main/resources/db/migration/V20261015__team_draft_revision.sql": {
+      "bytes": 586,
+      "sha256": "c69eb82d722b9228cfdde9aab8f0b55eb0c39a217e8e87c9481181cd8a89f601"
+    },
+    "backend/src/main/resources/db/migration/V20261016__sentinel_task_group.sql": {
+      "bytes": 831,
+      "sha256": "f18f6c4e22ef01fa35ad2ac85261265adcd9889b00e7906fb40ed0d44436cb07"
+    },
+    "backend/src/main/resources/db/migration/V20261017__sentinel_rule_email.sql": {
+      "bytes": 499,
+      "sha256": "c1babf6f4e627e6a21032fd874825f9db02a48d7e6ae0b6e889d9faa460ec848"
+    },
+    "backend/src/main/resources/db/migration/V20261018__sys_management.sql": {
+      "bytes": 5477,
+      "sha256": "d57027e8ea0586e99d8076fb0e3284b42cb1662335b17368e378daf796dbf80f"
+    },
+    "backend/src/main/resources/db/migration/V20261019__sys_extend_accounts.sql": {
+      "bytes": 699,
+      "sha256": "57b2b929cd629dea0ef0a07394413e2b747c2d45d0b6ff0de0dbd8cc06814974"
+    },
+    "backend/src/main/resources/db/migration/V20261024__agent_decision_loop.sql": {
+      "bytes": 1127,
+      "sha256": "b67c7119eed6eb3f44d610a3016eb71748272330b476f96ab860e6c7d16e1dc4"
+    },
+    "backend/src/main/resources/db/migration/V20261025.1__sentinel_guardian.sql": {
+      "bytes": 1612,
+      "sha256": "ffb1ee21f0d0df73836e6777732131d626b46875973f626b6149f0409290c455"
+    },
+    "backend/src/main/resources/db/migration/V20261025.2__sentinel_task_breach_since.sql": {
+      "bytes": 753,
+      "sha256": "d91cd7f99f5808c8e002cdb8b1bf46734d691c1d71523a96dec6cc92f3024c8a"
+    },
+    "backend/src/main/resources/db/migration/V20261026__knowledge_crawl.sql": {
+      "bytes": 1012,
+      "sha256": "b0cd6da455f92b9bf7f1552adc13699b2c6e847a640fdc828dc6b3de616ae94a"
+    },
+    "backend/src/main/resources/db/migration/V20261103__team_sharing.sql": {
+      "bytes": 968,
+      "sha256": "005eb069e59e19dd08f633b45e5b52dd405a254b0fee2dc9917b4165b043006f"
+    },
+    "backend/src/main/resources/db/migration/V20261104__platform_admin_catchup.sql": {
+      "bytes": 2086,
+      "sha256": "e8aa274ed72e8c1c6e9bd0c024fb975830a1f98aae9999db91cfa68b904cd066"
+    },
+    "backend/src/main/resources/db/migration/V20261105.10__alert_silence_governance.sql": {
+      "bytes": 1000,
+      "sha256": "8a28e73054f9c4aaeb903e63f571e2c36c0b9a210e1b5e2e693ff59ac1ff4b28"
+    },
+    "backend/src/main/resources/db/migration/V20261105.11__recovery_contract.sql": {
+      "bytes": 5524,
+      "sha256": "6c9deccf3f03ca6cf4eb995220e1059361b201c862b8f9d72a1737ab9cd4bb29"
+    },
+    "backend/src/main/resources/db/migration/V20261105.1__incident_center.sql": {
+      "bytes": 3795,
+      "sha256": "d16071027b9dfa5ac16127c081f296c859337c415c189faf0a5cca9fef714426"
+    },
+    "backend/src/main/resources/db/migration/V20261105.2__operation_run_governance.sql": {
+      "bytes": 1879,
+      "sha256": "bb8f7cf401e93e3b476997c55935560f3e298fea134a8e72863b9ba7a285ab44"
+    },
+    "backend/src/main/resources/db/migration/V20261105.3__sentinel_scheduler.sql": {
+      "bytes": 1332,
+      "sha256": "34331eb4db18e59cdcce3c7c87fa7f95a63a4f6cc3215c965db4e4e0df446d66"
+    },
+    "backend/src/main/resources/db/migration/V20261105.4__cloud_assets.sql": {
+      "bytes": 4241,
+      "sha256": "325a58ed33254dff103b7e7dbd76304ff716c0e8ee534a13450ccc054bbeea15"
+    },
+    "backend/src/main/resources/db/migration/V20261105.5__asset_governance.sql": {
+      "bytes": 1358,
+      "sha256": "cc28c6522095a18f59e0aef97e3008d1ce9fb8d246b58db7897f106e95a038b9"
+    },
+    "backend/src/main/resources/db/migration/V20261105.6__manual_assets.sql": {
+      "bytes": 943,
+      "sha256": "857dc60a6850403438dc7e7188c3ece5cd49108c87512e6a050ec14355f6fcb4"
+    },
+    "backend/src/main/resources/db/migration/V20261105.7__alert_lifecycle.sql": {
+      "bytes": 1446,
+      "sha256": "c3ffea97a7c552f559ee6b8196df52e656bea2441cdb363706114f284c5917f1"
+    },
+    "backend/src/main/resources/db/migration/V20261105.8__runbook.sql": {
+      "bytes": 8889,
+      "sha256": "48ce609aaf3a7dda738220806ae51900c0b26ac4c61294b162dcbe24904b6bf1"
+    },
+    "backend/src/main/resources/db/migration/V20261105.9__database_diagnosis_audit.sql": {
+      "bytes": 1031,
+      "sha256": "0f908bae12126ae353eef301d276e7aff747780f45982b589516aa7b628982fa"
+    },
+    "backend/src/main/resources/db/migration/V20261105__platform_admin_revoke.sql": {
+      "bytes": 285,
+      "sha256": "b9c6ad63fc689ce9885c21c63617458792ea7a2caec32fd5f35ee588da1a4b0d"
+    },
+    "backend/src/main/resources/db/migration/V20261106.12__runbook_target_evidence.sql": {
+      "bytes": 578,
+      "sha256": "2385248b6b2ec623fabd13ffc4357771b0a9e737e4d3e619e9891a67b221dc25"
+    },
+    "backend/src/main/resources/db/migration/V20261106.13__iac_gitops.sql": {
+      "bytes": 3983,
+      "sha256": "660ad5cc50e20cf094c31e9d6dda18874d0919ebf80a3d2797178eaf9b326075"
+    },
+    "backend/src/main/resources/db/migration/V20261106.14__backup_recovery.sql": {
+      "bytes": 3250,
+      "sha256": "ea41106fee24b10d3726277c93c650bbb6ea6ab14dd1ed8c0b32edebd84972ac"
+    },
+    "backend/src/main/resources/db/migration/V20261106.15__finops.sql": {
+      "bytes": 2761,
+      "sha256": "72ffa8f56f5ad094a52f4bf60456880951d7230f46e25a4a812e1c30adc61cfe"
+    },
+    "backend/src/main/resources/db/migration/V20261106.16__security_posture.sql": {
+      "bytes": 3292,
+      "sha256": "ff2669965cd21ed851976595e2af7f1e6b544f74e41a2397ff3244eaf5432acf"
+    },
+    "backend/src/main/resources/db/migration/V20261106.17__platform_experiments.sql": {
+      "bytes": 2480,
+      "sha256": "540474c426fe2ae3d7e1de8faba64dd5c471caf4533d31542b26a198d0319eb8"
+    },
+    "backend/src/main/resources/db/migration/V20261106.18__sentinel_scheduler_metrics.sql": {
+      "bytes": 592,
+      "sha256": "5c3b8be35845860d7f64ca2bfab02779334eebf8c71c80a9199bbfd85154568d"
+    },
+    "backend/src/test/java/com/smartops/admin/SysRbacServiceTest.java": {
+      "bytes": 7514,
+      "sha256": "152dc55830ffaf7ab26c2d89584f9c58d15afb6f02691f669fd6a679c50e12c8"
+    },
+    "backend/src/test/java/com/smartops/assistant/BuiltinKnowledgeCatalogTest.java": {
+      "bytes": 989,
+      "sha256": "d5b6ba41210b1e4ffc23fd0be4fefe7df1a72c3ca680468873aaf00463908ae8"
+    },
+    "backend/src/test/java/com/smartops/assistant/MiniAssistantEngineTest.java": {
+      "bytes": 22430,
+      "sha256": "3073e87e8f740a43d41b368befcf4c0bd1aeb98a4b56a5c0cefc03354e2a2e8d"
+    },
+    "backend/src/test/java/com/smartops/backup/BackupServiceIntegrationTest.java": {
+      "bytes": 12965,
+      "sha256": "ec61ef606ef98c583a8feda35e0589b0b62c2b077ce65ce71203d8363355c00f"
+    },
+    "backend/src/test/java/com/smartops/cloud/AliyunEcsInventoryProviderTest.java": {
+      "bytes": 7880,
+      "sha256": "3e3ae23fa28769d30d659746022286283563bce1a52209a49a5380fa08a8d89d"
+    },
+    "backend/src/test/java/com/smartops/cloud/CloudAssetGovernanceTest.java": {
+      "bytes": 17021,
+      "sha256": "e6629ed90aaf1811489f6bdd51d84c169d47d85e5d793e569959f2649b40e2f6"
+    },
+    "backend/src/test/java/com/smartops/cloud/CloudAssetServiceTest.java": {
+      "bytes": 13727,
+      "sha256": "031447812e6eae4520b76b3129403ed21e47ad7b883aa2be74cee85b2d399c24"
+    },
+    "backend/src/test/java/com/smartops/common/ApiResponseTest.java": {
+      "bytes": 1038,
+      "sha256": "24059cbd3ce0ebe3c9b840b5c26cf91e2cdcb2c05369b54059536deef3e2088e"
+    },
+    "backend/src/test/java/com/smartops/controller/DiagnosticToolControllerTest.java": {
+      "bytes": 2448,
+      "sha256": "8ed798162597e77bcfc4fab09bfe92979e7c15ae1fa1ed2452fa993c16db20af"
+    },
+    "backend/src/test/java/com/smartops/controller/IncidentControllerTest.java": {
+      "bytes": 5136,
+      "sha256": "505ca513ed07c74352968495235bc5cbe737d12dc32de9c55dec7e0acc642514"
+    },
+    "backend/src/test/java/com/smartops/controller/InspectorControllerTest.java": {
+      "bytes": 3068,
+      "sha256": "e0f04daac3fb94b6e84ffb30efdef1d612d385cde908afc0ba2b1824a4cf9505"
+    },
+    "backend/src/test/java/com/smartops/controller/InspectorWriteSecurityTest.java": {
+      "bytes": 2325,
+      "sha256": "8ca09573e2138327ec2ae61f48f2272f771807d90bca154c1d92e00a34e4b974"
+    },
+    "backend/src/test/java/com/smartops/controller/KnowledgeCandidateControllerTest.java": {
+      "bytes": 1858,
+      "sha256": "3460c26adccd8791457a5ca1438c84659626d944f835382ba64619b75f638ca5"
+    },
+    "backend/src/test/java/com/smartops/controller/ModelAnalyticsControllerTest.java": {
+      "bytes": 2641,
+      "sha256": "70edf9fa94a9781df92c520f656b3408aef3e0be76161cafb3357266b4771e04"
+    },
+    "backend/src/test/java/com/smartops/controller/ModelGatewayControllerTest.java": {
+      "bytes": 4672,
+      "sha256": "c4f5774ce8187868c0df2cae85d85a58c7b4d68d210b096fc091df8b290c65c5"
+    },
+    "backend/src/test/java/com/smartops/controller/ModelRuntimeSecurityTest.java": {
+      "bytes": 8379,
+      "sha256": "ea59923e88f5765af1110d91bcc6ad45eb71458f25b97d4b2410eb7a476e3576"
+    },
+    "backend/src/test/java/com/smartops/controller/OperationRunControllerTest.java": {
+      "bytes": 1712,
+      "sha256": "7d7233b13ad70280f7e81bd9118de449270329efc277ad68abade84421e56305"
+    },
+    "backend/src/test/java/com/smartops/controller/OperationToolControllerTest.java": {
+      "bytes": 3543,
+      "sha256": "72ccca102e08e93ff3afb99d9c5f7750e8817731176f59227f4f43580d87f281"
+    },
+    "backend/src/test/java/com/smartops/controller/OperationsCapabilityControllerTest.java": {
+      "bytes": 1885,
+      "sha256": "3f5e15debd60a844f1401089370fae9d9f3b585bb908e9d800146638cffdcef3"
+    },
+    "backend/src/test/java/com/smartops/controller/RecoveryContractSecurityTest.java": {
+      "bytes": 2977,
+      "sha256": "c96a511ae24a0cd9862564d8d01bec7b7bad3fe5b984b18d83df338b3f205aa1"
+    },
+    "backend/src/test/java/com/smartops/controller/ServerControllerTest.java": {
+      "bytes": 3351,
+      "sha256": "82334f737dcaf15c4e103d19c6f174ba9459c4ca2e04b55ce8d8ca2c178fa0c7"
+    },
+    "backend/src/test/java/com/smartops/controller/ServerMetricControllerTest.java": {
+      "bytes": 1976,
+      "sha256": "bfa4ab1cc1b2cfd7874312ae5a6c121cc2ac424aaa5cf9a7af0535aa5517072f"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/CertificateProbeServiceTest.java": {
+      "bytes": 2621,
+      "sha256": "0fd408f8a295ec2fb9cc133e58a38241ec8a8fccd8edcbc484c46bf0316649c2"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/DiagnosticProbeLimiterTest.java": {
+      "bytes": 1154,
+      "sha256": "80430fe910d65f7011fa23d575ba94679a6005fecee0fc6e2ee173a2560dcef3"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/DiagnosticTargetPolicyTest.java": {
+      "bytes": 2865,
+      "sha256": "7a89adf6561f74cd804a38ef88fda601bd1cf463d084ceafdf113a5628f70a8d"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/HealthDiagnosticServiceTest.java": {
+      "bytes": 6235,
+      "sha256": "2bad6d250d097cea06429cc4e5ea980c8a5349ff49469b14ed52e64bf8461a6d"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/HttpProbeServiceTest.java": {
+      "bytes": 6715,
+      "sha256": "a5da639645a6324e56a54113d20ed6b3f68929637a99f154c0df4d40348fd41f"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/database/DatabaseDiagnosisServiceTest.java": {
+      "bytes": 9690,
+      "sha256": "29f0a760ebce3bace42222ab02c1b717b968f56596afc9c7c003b77449cc6268"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/database/ReadOnlySqlGuardTest.java": {
+      "bytes": 2508,
+      "sha256": "8c52b6d9345c31cfff0fb7c79701a079b80cf6a8da348d7fa3ae820e8a66a4d6"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/database/SqlSanitizerTest.java": {
+      "bytes": 1922,
+      "sha256": "7acf2491b311f9b6a5575ddf2d66e1751ce746164b0937facd8391e9c1f6d9e6"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/host/HostDiagnosisServiceTest.java": {
+      "bytes": 14142,
+      "sha256": "11778dc72077673e11a1dc015a179a3d7c616c6fa2d18d9b8f4d05e1db161e9d"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/kubernetes/KubernetesDiagnosisServiceTest.java": {
+      "bytes": 13172,
+      "sha256": "d9ef67ac38a9a3eca649ecb1c5a23e728928fce536e333b1c2c5453e6f2cad83"
+    },
+    "backend/src/test/java/com/smartops/diagnostics/network/NetworkPathServiceTest.java": {
+      "bytes": 13922,
+      "sha256": "3ed1b0211d9b42e6c19b188a901130227350bcc4991de776b6cd4da72322de53"
+    },
+    "backend/src/test/java/com/smartops/experiment/ExperimentServiceIntegrationTest.java": {
+      "bytes": 12056,
+      "sha256": "5667ecdc50674033d84031cb61404ee07b0478f61bc2e1ccf83f290e84247ebc"
+    },
+    "backend/src/test/java/com/smartops/finops/FinOpsServiceIntegrationTest.java": {
+      "bytes": 16036,
+      "sha256": "6ac9c16a44181a868be2862a19ab1ec3752c2eaa5de0c13bff624921dea20692"
+    },
+    "backend/src/test/java/com/smartops/iac/IacServiceIntegrationTest.java": {
+      "bytes": 14982,
+      "sha256": "6910a206fff46007fdca6e2bd6614605f5b9d844e2a75e1d89919017cc33efe4"
+    },
+    "backend/src/test/java/com/smartops/integration/AdminFoundationIntegrationTest.java": {
+      "bytes": 29015,
+      "sha256": "6e7c33b9031819cec64bdb45614fd2d4c81fd45e564f9d4278a613149aca9e06"
+    },
+    "backend/src/test/java/com/smartops/integration/AdminMfaIntegrationTest.java": {
+      "bytes": 21071,
+      "sha256": "0d2f714b4ad9832f0526cd537ff34758cd42e3507ffff4b0e6562e9abc22e2b7"
+    },
+    "backend/src/test/java/com/smartops/integration/AssistantIntegrationTest.java": {
+      "bytes": 13085,
+      "sha256": "aa822e076ff1f47920b88e1658d1d1ba898152ef1fa2569212cf6a2a9e7beb02"
+    },
+    "backend/src/test/java/com/smartops/integration/ChatAttachmentIntegrationTest.java": {
+      "bytes": 18047,
+      "sha256": "e812d1c1387a68971ed8c33c96126a74ae169bd1db710d5648dfa4bb34b5e860"
+    },
+    "backend/src/test/java/com/smartops/integration/HumanVerificationIntegrationTest.java": {
+      "bytes": 5272,
+      "sha256": "c69e8786491e3f76860ba599346e711ac82efa6f32249729ffb985cec7b9a9b5"
+    },
+    "backend/src/test/java/com/smartops/integration/IncidentCenterIntegrationTest.java": {
+      "bytes": 8819,
+      "sha256": "f76853b254f610dddc72d74d8f4ab267e0591ac7ce314d96ba044180d8158a9b"
+    },
+    "backend/src/test/java/com/smartops/integration/InspectorPersistenceIntegrationTest.java": {
+      "bytes": 2737,
+      "sha256": "bac2d4ed507d327a0750f244773b750ac43982effd5146c502c6727be09ce4e2"
+    },
+    "backend/src/test/java/com/smartops/integration/LocalHumanVerificationIntegrationTest.java": {
+      "bytes": 10284,
+      "sha256": "717ba77c912c77a705036ec7372bbe6cb583c7d9c52ba7fcd89bcf65eade5144"
+    },
+    "backend/src/test/java/com/smartops/integration/RecoveryContractIntegrationTest.java": {
+      "bytes": 10582,
+      "sha256": "874b8dfa5a31d1331a9dfb2f601fb45c0c68ac07d944545e55c1434c4ca6de4a"
+    },
+    "backend/src/test/java/com/smartops/integration/RegistrationSecurityIntegrationTest.java": {
+      "bytes": 20774,
+      "sha256": "095999b4dafc15f6e1e36dae21c941f38d96242c68b675173ea440e897d353bb"
+    },
+    "backend/src/test/java/com/smartops/integration/SentinelAlertWorkflowIntegrationTest.java": {
+      "bytes": 22865,
+      "sha256": "cd29b59f5d1faeb5e892e1460be17df2df91069bd6f1b33da0f84778995f63ad"
+    },
+    "backend/src/test/java/com/smartops/integration/ServerAuthenticationContractIntegrationTest.java": {
+      "bytes": 6623,
+      "sha256": "a9531daf70580641cf203fd9a1e60a60ec3de4ed70ddfd8499128b5c2b60b662"
+    },
+    "backend/src/test/java/com/smartops/integration/SmartOpsApplicationIntegrationTest.java": {
+      "bytes": 393,
+      "sha256": "235538d389ca24f89e89bd36a84f6ba17cd682de3dd98b43a425feda40de3113"
+    },
+    "backend/src/test/java/com/smartops/integration/TeamWorkspaceIntegrationTest.java": {
+      "bytes": 25506,
+      "sha256": "9c9f8a7521e19725520aa1e0272415f1ce28224f832eb7924a9237989fb57bcb"
+    },
+    "backend/src/test/java/com/smartops/integration/UserAuthenticationIntegrationTest.java": {
+      "bytes": 6195,
+      "sha256": "4d6d3061aa39b6c955da21f96d5a5f96c43f24a2242901a01607b27e06293c56"
+    },
+    "backend/src/test/java/com/smartops/knowledge/KnowledgeCrawlServiceTest.java": {
+      "bytes": 2522,
+      "sha256": "06ab3eadf6595687d90cff5c2816a92367ddc8d0b174f6abde5bb2b590806ff6"
+    },
+    "backend/src/test/java/com/smartops/knowledge/PersonalKnowledgeStorageTest.java": {
+      "bytes": 1497,
+      "sha256": "03f2de30fdeadd3f2800bd2cf1448c899a80970542b3421df9297eed08208bb9"
+    },
+    "backend/src/test/java/com/smartops/mapper/OperationKnownHostMapperTest.java": {
+      "bytes": 1573,
+      "sha256": "64c6dead28924b5deadb0d49e3a29322c764b22e5f89379cb6c0cee2d4c44cef"
+    },
+    "backend/src/test/java/com/smartops/mapper/ServerMapperTest.java": {
+      "bytes": 1126,
+      "sha256": "5d264db1dbe53de613e9654fe95d52570dc8e259b32f6166ab59fb4dda5cd7a1"
+    },
+    "backend/src/test/java/com/smartops/mapper/ServerMetricMapperTest.java": {
+      "bytes": 1065,
+      "sha256": "ba9d848e3559c0c3ed4e9a3e5e9202d1f9f45b4d70a7d523ca350fb13b73bff6"
+    },
+    "backend/src/test/java/com/smartops/observability/SloServiceIntegrationTest.java": {
+      "bytes": 12046,
+      "sha256": "447d78338e33e77ab0739a35c2380035eb5d2f116c24bd06af77202644485a7e"
+    },
+    "backend/src/test/java/com/smartops/operations/HostKeyTrustPolicyTest.java": {
+      "bytes": 3034,
+      "sha256": "b5059ecfa2a3d9549b05c2f9453a5651f8142d5bfa0070908de0e32c6effd250"
+    },
+    "backend/src/test/java/com/smartops/operations/MyBatisKnownHostStoreTest.java": {
+      "bytes": 2083,
+      "sha256": "f207a0d2eb56161bf888816476f223e7161746a80e0afdd394f4274569855438"
+    },
+    "backend/src/test/java/com/smartops/operations/OperationRedactorTest.java": {
+      "bytes": 412,
+      "sha256": "8d140294a93e31db19d9d85910894e8ce37316dea8acd7398476998b0f022237"
+    },
+    "backend/src/test/java/com/smartops/operations/OperationRiskPolicyTest.java": {
+      "bytes": 871,
+      "sha256": "3e6715a84fe1a37477f4efb105b1521d7832bcdd7486a5dd1b0b2b0541e08787"
+    },
+    "backend/src/test/java/com/smartops/operations/OperationToolServiceTest.java": {
+      "bytes": 13210,
+      "sha256": "df1301e63bc24aaa1414d237da27cca2266d295686bd83c1da029e2c20156456"
+    },
+    "backend/src/test/java/com/smartops/operations/OperationsCapabilityServiceTest.java": {
+      "bytes": 833,
+      "sha256": "b18123f85b5d302543c8966cfc94ae4016e27027dad744184ca7bd9b2ea626b5"
+    },
+    "backend/src/test/java/com/smartops/operations/OperationsTerminalSecurityTest.java": {
+      "bytes": 6971,
+      "sha256": "bce31544fa7a50bf660645b2d92a01ba40ef5454f5517d5006922e8eeee97591"
+    },
+    "backend/src/test/java/com/smartops/operations/RunCorrelationFilterTest.java": {
+      "bytes": 4077,
+      "sha256": "255f643dd953b82ffe724743c4118412ac5e1273042cf819d5531897e234c02f"
+    },
+    "backend/src/test/java/com/smartops/posture/SecurityPostureServiceIntegrationTest.java": {
+      "bytes": 15404,
+      "sha256": "feb349d3164fab60e6cc3edc8134c0bb5bceb71aae06fd5b417470896bdfae10"
+    },
+    "backend/src/test/java/com/smartops/runbook/RunbookIntegrationTest.java": {
+      "bytes": 22683,
+      "sha256": "71eb546fffe2c0a1b9750a352c82e48fc8a9bd6d58defefaef8fce96e0f08fd9"
+    },
+    "backend/src/test/java/com/smartops/security/HumanVerificationServiceTest.java": {
+      "bytes": 17476,
+      "sha256": "a70f3c6acf52878f1b448e041be2702595674f45b07bd360d3d5e578b8c083b4"
+    },
+    "backend/src/test/java/com/smartops/security/HumanVerificationSettingsTest.java": {
+      "bytes": 2721,
+      "sha256": "53ab10cdf3d2c2f31281bc09a04134b34f60c71981342dfa39cee3f0edea4438"
+    },
+    "backend/src/test/java/com/smartops/security/LocalGraphicalVerificationProviderTest.java": {
+      "bytes": 17578,
+      "sha256": "97ec6cc63b237ffa649c1c99567aa75ee1211c62fdaeb6879d2a8dda366610e6"
+    },
+    "backend/src/test/java/com/smartops/security/LocalScene.java": {
+      "bytes": 6623,
+      "sha256": "f7067c5c38dad11b27c7f7d5b877811f377d063383064b00bef28be56097ae3d"
+    },
+    "backend/src/test/java/com/smartops/security/OutboundUrlPolicyTest.java": {
+      "bytes": 3868,
+      "sha256": "e6631a669bbea8ef4d2b13434370393ec6a66300f8a7d3c6d23f9b767e2d2c8d"
+    },
+    "backend/src/test/java/com/smartops/security/PlatformAdminGovernanceTest.java": {
+      "bytes": 968,
+      "sha256": "b238628c701d2d0b112ad9f1306def43e3416ce1fe41bce89e37854035ed8312"
+    },
+    "backend/src/test/java/com/smartops/security/RunTokenServiceTest.java": {
+      "bytes": 3306,
+      "sha256": "0b77cd48a636b4f287962cc2d94bcf36bb4d8869bf6677538a0f5e157c69dd3a"
+    },
+    "backend/src/test/java/com/smartops/security/TeamResourceAuthorizerTest.java": {
+      "bytes": 4103,
+      "sha256": "10bf451a063ce8b9c538cb34b1b064e95b172d27f957f976867f51815dc48193"
+    },
+    "backend/src/test/java/com/smartops/security/TestClock.java": {
+      "bytes": 782,
+      "sha256": "bb6860aa7869fb5a75d684d1305220938d1a626d37dd7e48a9e1a0312fda4815"
+    },
+    "backend/src/test/java/com/smartops/security/TotpServiceTest.java": {
+      "bytes": 1686,
+      "sha256": "abbb670155955792d6323d688e572268380a5b79a1df6c70df74b8504060ffda"
+    },
+    "backend/src/test/java/com/smartops/security/TurnstileVerificationProviderTest.java": {
+      "bytes": 3282,
+      "sha256": "1ca06d9aef2727bfefb87f12631b36134e8375e4f7063ee5af1c3c5bbfb0e5d7"
+    },
+    "backend/src/test/java/com/smartops/sentinel/AlertLifecycleIntegrationTest.java": {
+      "bytes": 20505,
+      "sha256": "02210a69c72749fed7bbcdb4ae0979a18f93124978923dc23303a0b618211e47"
+    },
+    "backend/src/test/java/com/smartops/sentinel/AlertSilenceGovernanceIntegrationTest.java": {
+      "bytes": 11949,
+      "sha256": "419bb61a238d3ae959a60d1bdf5f6d339e3b271752bd603e477ae680d1128390"
+    },
+    "backend/src/test/java/com/smartops/sentinel/AlertmanagerSilenceClientTest.java": {
+      "bytes": 7865,
+      "sha256": "c1bd4fc4cfb5ef3cffd88e8fc62ffdfe6f850682477ac3e717d32838bcde77b4"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelAdvisorTest.java": {
+      "bytes": 7318,
+      "sha256": "4d288407f4edab47c57bf6e857619407b2e348e9c7bf35730e80634e78c34f71"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelExecutionPolicy.java": {
+      "bytes": 1307,
+      "sha256": "18d9bb18eb6e944a7b6cfa3c92a9434cbde9a3b7da04707f5a46e639236ba401"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelGuardianServiceTest.java": {
+      "bytes": 6574,
+      "sha256": "e7f021aac48835c02faa7fc9ed1eb20317ede119ee45d68645b911fdeccb252c"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelMailSettingTest.java": {
+      "bytes": 3638,
+      "sha256": "24863b8fd8f9f99f8bfde38d952adc5d6a75f94696c9722c802ce571f82aed16"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelProposeRemediationPolicyTest.java": {
+      "bytes": 3595,
+      "sha256": "2452d03e2dd57156e6d0ff7ca5af028369c8fbc72f61a9727196a37fe2dfde68"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelSchedulerIntegrationTest.java": {
+      "bytes": 12032,
+      "sha256": "b6f6162949ba6a35a41749c333c61356b2630b378e830c154a3805fe6f72a1d0"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelScriptLintTest.java": {
+      "bytes": 4889,
+      "sha256": "6e26511b9b3e70e24bb77bb30f366f1121f0c2a6c5656102be551443abb6e413"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelScriptRunnerPolicyTest.java": {
+      "bytes": 3559,
+      "sha256": "7c7c6177bdf1cd4743af07c9943c1e812301ba908e4f8886e66ec4cabe4c2b15"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelScriptUploadTest.java": {
+      "bytes": 1869,
+      "sha256": "fbfc6cf87e2ddde35cc7d46a311b799912e976018ad61da551329d65b9836f5f"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelTargetValidationTest.java": {
+      "bytes": 5916,
+      "sha256": "92d235b944ee006cb4f866ae34518122e8bfe47614ae32a8eb3a44d9f0ad0514"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelThresholdTest.java": {
+      "bytes": 4608,
+      "sha256": "670c1a9d0c6879cf7f3f6457ba5b5267b77dc735c3c17366bd52078476bc6bcb"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelVariablesTest.java": {
+      "bytes": 3866,
+      "sha256": "e65d20a2311469cedd58ee7c2469f078ab501add55cf52b34d5bf751a1982db6"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelWebhookPolicyTest.java": {
+      "bytes": 4195,
+      "sha256": "4e6a8e6531f239fb0b47f67d5bc02cbb9abbcc5094f0319e59ba58dd2fc11fce"
+    },
+    "backend/src/test/java/com/smartops/service/ArtifactDraftServiceTest.java": {
+      "bytes": 1360,
+      "sha256": "90ff5ad50c4b7eb183791163a0abd7d5b5eaa7b34c0f2d0757d4c2cc2c5be02b"
+    },
+    "backend/src/test/java/com/smartops/service/DecisionLoopServiceTest.java": {
+      "bytes": 6221,
+      "sha256": "cafd4ebeb41a58edb6cffc0ac091759f525efb53b7f2f022171cbd85b1b3f157"
+    },
+    "backend/src/test/java/com/smartops/service/HarborCatalogServiceTest.java": {
+      "bytes": 4871,
+      "sha256": "61f50b77dbe241a51f314a5fb5324cc15479cee392974c77c6d5508a09425fc0"
+    },
+    "backend/src/test/java/com/smartops/service/HarborFoundationTest.java": {
+      "bytes": 4671,
+      "sha256": "8d315c32732e57ba1feefb91d9eb7be78cc4d0a436d4c3c85fd4930978580614"
+    },
+    "backend/src/test/java/com/smartops/service/IncidentRecommendationServiceTest.java": {
+      "bytes": 886,
+      "sha256": "4a92e31d5b49c310a4aa2333a5dfa9d0ceec1e7d854d7974e4d5aeaad09e4ce9"
+    },
+    "backend/src/test/java/com/smartops/service/IncidentServiceTest.java": {
+      "bytes": 9139,
+      "sha256": "bc1f58636186982ed0c87cb9f7ed9424861a3eb5549c070133543f835b6d502a"
+    },
+    "backend/src/test/java/com/smartops/service/JdbcOperationRunRecorderTest.java": {
+      "bytes": 6836,
+      "sha256": "092715312e272f5deb8c04e6afa838bcdf7dc84b7c625df0d5ab3f590ffdca56"
+    },
+    "backend/src/test/java/com/smartops/service/KnowledgeCandidateServiceTest.java": {
+      "bytes": 6909,
+      "sha256": "29d2d4c0e4e27934797b0a3edc54f82f1b1c502506ec715e15ea040e1e6a93f4"
+    },
+    "backend/src/test/java/com/smartops/service/ModelAnalyticsServiceTest.java": {
+      "bytes": 6137,
+      "sha256": "2d2d6ee80da544a8e5418e7208a91a94de1031ebf9c3a3f1badae4097ceaf098"
+    },
+    "backend/src/test/java/com/smartops/service/ModelGatewayServiceTest.java": {
+      "bytes": 3920,
+      "sha256": "2e75ecb87c56d1fb7984b23e6d1a527f0be3303ee25e17dfead87bd5ee435695"
+    },
+    "backend/src/test/java/com/smartops/service/ModelInvocationAnalyticsTest.java": {
+      "bytes": 4325,
+      "sha256": "334856f84b2c09701b995da506006776586dc0ca9190caab72a4e3755aa9518b"
+    },
+    "backend/src/test/java/com/smartops/service/ModelProviderClientTest.java": {
+      "bytes": 2378,
+      "sha256": "c6a85cd8b4b71ee2209bab5e821762b007ac4e349fc432a32567026cc4e22eb0"
+    },
+    "backend/src/test/java/com/smartops/service/MultiExecServiceTest.java": {
+      "bytes": 1708,
+      "sha256": "6a6bd859933f233faeb12e5d2bfb34d684c5f45b77400ecb538fceb459e6abad"
+    },
+    "backend/src/test/java/com/smartops/service/ObservabilityServiceTest.java": {
+      "bytes": 4603,
+      "sha256": "6c02a5d6d1dcc8be5532e7f9b0757fc8d4ff5aef427b3d49739a51a581bf65b2"
+    },
+    "backend/src/test/java/com/smartops/service/OperationRunQueryServiceTest.java": {
+      "bytes": 6137,
+      "sha256": "35e40442f3b786df2994f24fee2314958971ae9ca88861a51fbb9138616c5061"
+    },
+    "backend/src/test/java/com/smartops/service/OperationRunVerificationTest.java": {
+      "bytes": 6778,
+      "sha256": "523ea0706d9d3500e83b3109a0eeffe532ad5e5608093f8965675e9727c7b8b5"
+    },
+    "backend/src/test/java/com/smartops/service/OperatorMemoryServiceTest.java": {
+      "bytes": 1553,
+      "sha256": "909b4abdd4290cf6d2039a54a3350b23402e8d48d370674c5cba423073eeaa52"
+    },
+    "backend/src/test/java/com/smartops/service/PersonalKnowledgeServiceTest.java": {
+      "bytes": 3264,
+      "sha256": "5958df29b7db92deb27035e8c2ccfbeedec16bb3d80ec7e3b4a0b82626e7d33b"
+    },
+    "backend/src/test/java/com/smartops/service/ServerMetricServiceTest.java": {
+      "bytes": 3604,
+      "sha256": "23bead88527399c93f7c0135271b3377d518089e1b67bdf87d2954132f46af59"
+    },
+    "backend/src/test/java/com/smartops/service/ServerServiceTest.java": {
+      "bytes": 2420,
+      "sha256": "94de2be952b86d5924e4327eda97999935bf5c3d8b89d66de8c3701faa6387ce"
+    },
+    "backend/src/test/java/com/smartops/service/TeamAgentRunRecoveryTest.java": {
+      "bytes": 5996,
+      "sha256": "2cf6ff6add09e1cf07f21e4ece18102af4a5eb91066e14e014fc50c5f07d2d0b"
+    },
+    "backend/src/test/java/com/smartops/service/TeamAgentRunServiceTest.java": {
+      "bytes": 9791,
+      "sha256": "2228cc2917fa0b98f7a53e1d12ec8238463981210459fbb9fc1ac202b711b4e3"
+    },
+    "backend/src/test/java/com/smartops/service/TeamAgentServiceTest.java": {
+      "bytes": 8634,
+      "sha256": "a27fae2960a886a73cc6db41da01ba2fc6640cc2443df14e548f1918c797e78e"
+    },
+    "backend/src/test/java/com/smartops/service/VisionAnalysisServiceTest.java": {
+      "bytes": 1521,
+      "sha256": "301338dc42ab0fa135268c70038d320412044032ebe96d321e00c9272072fbdb"
+    },
+    "backend/src/test/java/com/smartops/service/VisionEventServiceTest.java": {
+      "bytes": 2364,
+      "sha256": "f04c551ac62b4ae7697fc6384e7818dcc0705c33b88aa0e9d743f2696b448bc4"
+    },
+    "backend/src/test/java/com/smartops/service/VisionHandoffServiceTest.java": {
+      "bytes": 2933,
+      "sha256": "b3557e8878f5f0f818859b841d40ca498955a305935ddb7f17153ad5b24cf981"
+    },
+    "backend/src/test/java/com/smartops/service/VisionKnowledgeHandoffTest.java": {
+      "bytes": 1475,
+      "sha256": "139e77af1f7087d46c105628e59744a90e4606e2e2531e83882fde9b15a47e61"
+    },
+    "frontend/src/App.vue": {
+      "bytes": 66,
+      "sha256": "0ec017e4765d353e8876d82eaa0ef0b6fb285b772db182c902a4bf081e6899f3"
+    },
+    "frontend/src/components/admin/AdminConfirmAction.vue": {
+      "bytes": 1452,
+      "sha256": "1cf9156f5f3818cebb131ade728268132e07b316e01526ad8d13b1361565c9bd"
+    },
+    "frontend/src/components/admin/AdminDialog.vue": {
+      "bytes": 1336,
+      "sha256": "d562309b2932d8e04ceed72829f3ae43b1686446a7a282a5f167a52612858703"
+    },
+    "frontend/src/components/admin/AdminErrorState.vue": {
+      "bytes": 704,
+      "sha256": "d806adc9e7ae47ce0924c3977fbaeee5798bed178734db4cf1ccae649553e0ad"
+    },
+    "frontend/src/components/admin/AdminFilterBar.vue": {
+      "bytes": 469,
+      "sha256": "67492317bc05f726d868de0f6ff80f35631b7f3ae0397ae96aedeacb2d3ea3ec"
+    },
+    "frontend/src/components/admin/AdminPagination.vue": {
+      "bytes": 898,
+      "sha256": "84c31c2b7a2db8c0adc2372e3d3d95821cb44da24cdb2fc4de7b65b924a73a2a"
+    },
+    "frontend/src/components/admin/AdminRegistrationPolicy.vue": {
+      "bytes": 3239,
+      "sha256": "db3949beb70feb0cd045a8b41e9dcd888c9204c4f92747f893d05dab0000c017"
+    },
+    "frontend/src/components/admin/AdminTabs.vue": {
+      "bytes": 3521,
+      "sha256": "732d102bb2faf14272257fffc53db92f4527f2c4795a5269fbdae8896da81e6d"
+    },
+    "frontend/src/components/agent/AgentSkillGuidance.vue": {
+      "bytes": 2016,
+      "sha256": "d6a8619082f3d70815b3d63555048bb4e1c1f18c013ddd4b0e66d879027023cb"
+    },
+    "frontend/src/components/ai/AdminAccounts.vue": {
+      "bytes": 216,
+      "sha256": "f1b5b21d308efa46c7d7fd9594d6cadcf20386bb3011d409f8d3cc4b43a6a036"
+    },
+    "frontend/src/components/ai/AdminReadiness.vue": {
+      "bytes": 5502,
+      "sha256": "6328cea90077a41f9e10e863dc70ab5e6de05062020b258c0c7d1e4911e1923e"
+    },
+    "frontend/src/components/ai/AiChatPanel.vue": {
+      "bytes": 34709,
+      "sha256": "e21c057b4a72bfc371d463d5ea668a623730965377f0cf2bf2b309f85bcdcf7d"
+    },
+    "frontend/src/components/ai/AssistantEvidence.vue": {
+      "bytes": 2387,
+      "sha256": "836efd1baa9abb8843b9df35a0ddbdf27796256b3d0d48db4589c8b65a077940"
+    },
+    "frontend/src/components/ai/AssistantSelector.vue": {
+      "bytes": 7820,
+      "sha256": "587ec3980b132468f337c06bd8e9fcaf7ce8d4c92cc0cf90977bfe0ecb1336c6"
+    },
+    "frontend/src/components/ai/ChatAttachmentComposer.vue": {
+      "bytes": 11916,
+      "sha256": "a6c98cd17366cc4d63d9d222ef7fa06079051abc892e8f19ecab440fc5092840"
+    },
+    "frontend/src/components/ai/ChatHistory.vue": {
+      "bytes": 8279,
+      "sha256": "e1cfb6a3521f7ba2db111a1427dd70af78f63230c2c120525ccdf58aedf972ea"
+    },
+    "frontend/src/components/ai/ChatMessageAttachments.vue": {
+      "bytes": 2912,
+      "sha256": "a107306c8282bb4b0514e0c906c11a8a9bba03a7d30e4e7d7a8cb69f2de53fce"
+    },
+    "frontend/src/components/ai/VisionEventCard.vue": {
+      "bytes": 1990,
+      "sha256": "6d6292e0394278d95de16fc9bde9f8fee1779bee8d704aefd91aea4ede06bf7a"
+    },
+    "frontend/src/components/auth/HumanVerification.vue": {
+      "bytes": 11984,
+      "sha256": "c4f36eebb2172bf19cf92d2d06c9b75fe6bad65712cde5a88e919dbefc0386af"
+    },
+    "frontend/src/components/auth/MfaChallenge.vue": {
+      "bytes": 3916,
+      "sha256": "a413f765679f0ac0ef8cea6750974f783f962cf7a60cad40ddb88a30481acaa1"
+    },
+    "frontend/src/components/common/AppCard.vue": {
+      "bytes": 7493,
+      "sha256": "41d1a18c43e2706ce3abcb0b0ecce3a702ad622afe56bdcf971545172ceb3a10"
+    },
+    "frontend/src/components/common/AppEmpty.vue": {
+      "bytes": 634,
+      "sha256": "efeb62b69c30d3b382377bb409a0a9724c296e959f694aca7df70a1d9ec7b1cd"
+    },
+    "frontend/src/components/common/AtcShaderBackground.vue": {
+      "bytes": 6980,
+      "sha256": "e6a27f82de525f11173b1895c857949ba2725905109817c5fe254dfdcef5eee7"
+    },
+    "frontend/src/components/common/BlackHoleBackground.vue": {
+      "bytes": 4924,
+      "sha256": "e5f8ac323968f6c21ff83b5810222209131c49d259154d70a6b6a4f83ba742f5"
+    },
+    "frontend/src/components/common/CanvasAmbientField.vue": {
+      "bytes": 3986,
+      "sha256": "69ed7f24ae3535152f9a9dff92a9dfa4855efca1c1ed3240425891d55e22f089"
+    },
+    "frontend/src/components/common/CanvasParticleWhale.vue": {
+      "bytes": 7280,
+      "sha256": "771fcd3cbc28ed3394c61ed9c35602b617c1e396ac86783918d11450d51c4890"
+    },
+    "frontend/src/components/common/DecodeText.vue": {
+      "bytes": 2446,
+      "sha256": "424239fae7417f618678eb11ea95b59f42237dde20288bbbcf81500c01c86c90"
+    },
+    "frontend/src/components/common/GalaxyBackground.vue": {
+      "bytes": 3734,
+      "sha256": "9d1029e6a85c389655c7ed5ad4defbf13711e7ae2e07e5b43bb4309291d3e22c"
+    },
+    "frontend/src/components/common/KubernetesSpider.vue": {
+      "bytes": 5818,
+      "sha256": "5a2a299fd7b62a3ddc2082cb6a88cc3381d775de086b6a5f483af2cf0eb48601"
+    },
+    "frontend/src/components/common/LivingJellyfish.vue": {
+      "bytes": 13370,
+      "sha256": "5d052aaf84c3f7ac2adda1c6540071c2300bbb30e4ee810fc04cbb621c13a517"
+    },
+    "frontend/src/components/common/MeteorShower.vue": {
+      "bytes": 2828,
+      "sha256": "20786201fcd633b9e52c56cef01121a24199af21a66673939d8029b8dfb81ba1"
+    },
+    "frontend/src/components/common/OpsSpiderPet.vue": {
+      "bytes": 25439,
+      "sha256": "51947d426047df9fb3728c59d02978ef6f2a634a6d1a2a8d130701992f7d57cb"
+    },
+    "frontend/src/components/common/ParticleBackground.vue": {
+      "bytes": 3849,
+      "sha256": "6ca6d5f4fb2ce7b594ee4885148d9243e70731e44110b2738e756a130428a084"
+    },
+    "frontend/src/components/common/ParticleWhale.vue": {
+      "bytes": 19512,
+      "sha256": "db8f8bb7e332dfdbdfe64eeb043b29a8cc0800801a8891b943f8b11b132bbcb0"
+    },
+    "frontend/src/components/common/StellarOceanProvider.vue": {
+      "bytes": 335,
+      "sha256": "c19dcc927c165be099ab2469c1ed4765c5f4bbe2d9c31c140e481bc1ba6a761a"
+    },
+    "frontend/src/components/companion/CompanionStatus.vue": {
+      "bytes": 2289,
+      "sha256": "87dfb7a3b10ab6f51edff52413d4202bee0872a5f84484aa97b0b48a7b1203b0"
+    },
+    "frontend/src/components/dashboard/MetricChart.vue": {
+      "bytes": 1431,
+      "sha256": "6fcdd2cd68ac1f6305175dc3e9e5e7f9712b7b9b3f7c13cb140c2985e2bb4c73"
+    },
+    "frontend/src/components/dashboard/StatCard.vue": {
+      "bytes": 6144,
+      "sha256": "50e0c75be5af575651a1582a021b5db28bf77e0fbddff51e6b992bf79176438b"
+    },
+    "frontend/src/components/diagnostics/ConfigDiffTool.vue": {
+      "bytes": 4227,
+      "sha256": "588bcea7d215d7b02a2e137fb44ba5457f6f6881700d60375827146e882d05cc"
+    },
+    "frontend/src/components/diagnostics/HealthCheckList.vue": {
+      "bytes": 4678,
+      "sha256": "79b6a89d8b04f8a903632f6f63f7ca11379dcc792a7f1b4ca43c87dc1e9d649f"
+    },
+    "frontend/src/components/diagnostics/NetworkDiagnosticTool.vue": {
+      "bytes": 6521,
+      "sha256": "964dc7b838231361a208876127c6d43300eb54414e3325f2a411fc1ba323f4f3"
+    },
+    "frontend/src/components/effects/MilestoneRain.vue": {
+      "bytes": 16479,
+      "sha256": "72586cf88ce24884e7e4e1a9b46590d3d745ea67b706a85782f7770f26cc7b03"
+    },
+    "frontend/src/components/effects/SpiderCrawler.vue": {
+      "bytes": 12818,
+      "sha256": "543807ffcc333f68d1df99f83b8bbe6cb1ef89852680c2a906372626fcb1a293"
+    },
+    "frontend/src/components/inspector/InspectorDecision.vue": {
+      "bytes": 507,
+      "sha256": "8bc4e0b93861073a8caea9b9ddf536f924f6da3b66c306c771c638a5c685dff5"
+    },
+    "frontend/src/components/inspector/InspectorEvidence.vue": {
+      "bytes": 652,
+      "sha256": "31d98f89f24df1685d0db129a35e7ae88306fa48323d924307f8f112f57567e7"
+    },
+    "frontend/src/components/inspector/InspectorIssueList.vue": {
+      "bytes": 744,
+      "sha256": "8b234806046004b71331d9d3ba94997142547ab6f2a82bfeb1b472c38684b5b3"
+    },
+    "frontend/src/components/inspector/InspectorRisk.vue": {
+      "bytes": 539,
+      "sha256": "2b1670fa6a3019beb3498809a286b7ecd0b7ee3c205234305f9df1e3c9a072b5"
+    },
+    "frontend/src/components/inspector/InspectorSeverityTag.vue": {
+      "bytes": 623,
+      "sha256": "6f527ac7756a6bca92a7a6dbb92fd4794d8a6153e0fe80da09376b9e08f93568"
+    },
+    "frontend/src/components/inspector/InspectorSummary.vue": {
+      "bytes": 1035,
+      "sha256": "6b2ac4a9480cabab48cdc189f90c78e239b887dfb85a09465c390e2b8e39df4c"
+    },
+    "frontend/src/components/inspector/InspectorTimeline.vue": {
+      "bytes": 1094,
+      "sha256": "32030569b638e3719bea9b4749570bcc2353ad79d23f1f4dab8c08840bc0843f"
+    },
+    "frontend/src/components/inspector/InspectorTrace.vue": {
+      "bytes": 2182,
+      "sha256": "3b1067d43380677de66ed50a3857db5b3685f0cfc9e98d78a8da062fe6767762"
+    },
+    "frontend/src/components/inspector/InspectorVerification.vue": {
+      "bytes": 520,
+      "sha256": "a2bb77d82664425eb0011bee9f90f22ddadcd4f2ccea0d2cccf5fc7c4e18c190"
+    },
+    "frontend/src/components/investigation/SmartInquiryDrawer.vue": {
+      "bytes": 9443,
+      "sha256": "804799cd9eeb75eda541faf3cd8ab15d124ef3b4b92005a18db244ba931e65a7"
+    },
+    "frontend/src/components/knowledge/KnowledgeCrawlPanel.vue": {
+      "bytes": 8423,
+      "sha256": "ca795d30ee2be0848a701fe5ae191ac9c8fdd57979869a8f16aacffd57ef7c1b"
+    },
+    "frontend/src/components/model/GatewayGroupForm.vue": {
+      "bytes": 1791,
+      "sha256": "322008735e120857cfcd61630c2fec3e8dab5842f2086dd147ddbc165e68e8f0"
+    },
+    "frontend/src/components/model/GatewayQuotaEditor.vue": {
+      "bytes": 2557,
+      "sha256": "6c819b7dca1d895240ade9083b37de2ed5166bd74931873a3512da8264998078"
+    },
+    "frontend/src/components/model/MetricSparkline.vue": {
+      "bytes": 1872,
+      "sha256": "bc3af96f3bc197073530f362821dae2983f930843a369a9abbf51ffbcbb991ec"
+    },
+    "frontend/src/components/model/ModelConnectionCard.vue": {
+      "bytes": 3040,
+      "sha256": "ed681600839f9301d867a1afd5ddddbb5791d28fb92cf5ba1f1aa4084cade78e"
+    },
+    "frontend/src/components/model/ModelLeaderboard.vue": {
+      "bytes": 3509,
+      "sha256": "15f60a008ed2b7bc2fd5565cd05035f505db5a65b5003630533247fc07bb1b36"
+    },
+    "frontend/src/components/model/ModelShareDonut.vue": {
+      "bytes": 7251,
+      "sha256": "ad8d21ebb8b8c2fde58f34b7a6afc9b632c48a7968928d5dc58be84a040468eb"
+    },
+    "frontend/src/components/model/QuotaRing.vue": {
+      "bytes": 3006,
+      "sha256": "8cd2823b14de439e808ae876a3bc9e474b1bb8669467352799d6e44597a0c27b"
+    },
+    "frontend/src/components/model/UsageQualityPanel.vue": {
+      "bytes": 5789,
+      "sha256": "3deebd0405fe088dc6e87897ae1294b98df5137e3d1169cb947320a3c984e68d"
+    },
+    "frontend/src/components/navigation/CommandPalette.vue": {
+      "bytes": 8777,
+      "sha256": "abc7d019844a6c11079f9807d7ed7cd5cb7f9df4ebca5b82ba87265570ffd521"
+    },
+    "frontend/src/components/navigation/NavHealthBadge.vue": {
+      "bytes": 1817,
+      "sha256": "66e04540111b4e56273aa5df823434b13b270240b6eb5222334cad46a76ff662"
+    },
+    "frontend/src/components/navigation/PageStepper.vue": {
+      "bytes": 3702,
+      "sha256": "084a09455ffb56426d1c19334059a8fada63cc6ee6abfa715089108ea4e72854"
+    },
+    "frontend/src/components/navigation/PersonalSystemNavigation.vue": {
+      "bytes": 13418,
+      "sha256": "d440bdb453f9bb79884d6cc74f752e6d3c65ab4aeae56bf842db87c33a37cf2c"
+    },
+    "frontend/src/components/navigation/SpaceSwitcher.vue": {
+      "bytes": 1185,
+      "sha256": "d952c8690ba1bf79c31da2af67835c6f722a497808e6a6ae55fcc85d3a40fb63"
+    },
+    "frontend/src/components/operations/ConnectionInspector.vue": {
+      "bytes": 5734,
+      "sha256": "e5261eb3c6e4c0e70cfe621bd29b55b93651263099a0e779309513c9be8a2133"
+    },
+    "frontend/src/components/operations/ConnectionSessionTree.vue": {
+      "bytes": 4160,
+      "sha256": "9c6fa6f9d82c3ec56f4d7ddc19d883de135ae3205c5b776051bf007f6ead4d37"
+    },
+    "frontend/src/components/operations/ConnectionTerminalWorkspace.vue": {
+      "bytes": 11374,
+      "sha256": "4cbd4fc1e5f5b127f6c0d2a277f1d8c511991330b131707126d9bc89d2e2de62"
+    },
+    "frontend/src/components/operations/ConnectionsHeaderBar.vue": {
+      "bytes": 1916,
+      "sha256": "d67dc08970f3f16c4480ef0b07f46bd4f5216819ee32b03913f571bb3e7263f0"
+    },
+    "frontend/src/components/operations/CreateSessionDialog.vue": {
+      "bytes": 3135,
+      "sha256": "f086bfc42c3cea32e9b4985cd5a7f22ad7d9f1a98b992e13283cc30763bd607f"
+    },
+    "frontend/src/components/operations/HarborBrowser.vue": {
+      "bytes": 15377,
+      "sha256": "741620fd8ef84ad37c5aebad0994d3b8799031589c8e82ed78020e9dcbb42710"
+    },
+    "frontend/src/components/operations/HostKeyDialog.vue": {
+      "bytes": 2240,
+      "sha256": "caac3287281698d84809b1b59a82de272e30cd36312e0b3caa9deadd7b1e0325"
+    },
+    "frontend/src/components/operations/MultiExecDialog.vue": {
+      "bytes": 3642,
+      "sha256": "b1d064fbc77b17a3b80e7dee548972b8698a09a1233860f4533d1da3160b2613"
+    },
+    "frontend/src/components/operations/ObservabilityQuery.vue": {
+      "bytes": 8514,
+      "sha256": "a627493e3b3a837ecc85110d63272e8434a49f1f67986f0c368f4ae6d627661f"
+    },
+    "frontend/src/components/operations/OperationsTerminal.vue": {
+      "bytes": 3237,
+      "sha256": "c6df06e5f829784f043ea906905002d97c0254b8b26e7b2736f923132feeca2c"
+    },
+    "frontend/src/components/operations/RemoteFiles.vue": {
+      "bytes": 4173,
+      "sha256": "97614d27da32e46965bbdf1b80adc9c0bffffdb534a61532d7614cff36dcd7d0"
+    },
+    "frontend/src/components/operations/RemoteMenuBar.vue": {
+      "bytes": 1421,
+      "sha256": "ff9a3e73ae54e2b55786fe0abba0b5d18fed4cb4cae298efd6f636d044e1f22d"
+    },
+    "frontend/src/components/operations/RemoteToolDialog.vue": {
+      "bytes": 17370,
+      "sha256": "a73eff0123ccd23a21ec10b3f25c1df90848fce21564a2b765e78486bff2a164"
+    },
+    "frontend/src/components/operations/RemoteToolbar.vue": {
+      "bytes": 2607,
+      "sha256": "0aed909d515c9203fc553f1f2043e5ce4589a021dc2eb896ad886841e30d6e3d"
+    },
+    "frontend/src/components/operations/RunHistoryDetailPanel.vue": {
+      "bytes": 12316,
+      "sha256": "62d3bcd0dafb6e72b9d960e622123322b7fae0da9d0814cd6e11af073569d313"
+    },
+    "frontend/src/components/operations/RunHistoryFilters.vue": {
+      "bytes": 3048,
+      "sha256": "1ae531e5e394540f3dd9d27e99b4737f5d4c4cf199268fc74c7f752d1ab28d10"
+    },
+    "frontend/src/components/operations/RunHistoryListPanel.vue": {
+      "bytes": 6141,
+      "sha256": "1347c37e2fd64039a06517969b369fd64be2ea36c8f57de0a822f80117d7ef32"
+    },
+    "frontend/src/components/operations/TunnelWorkspace.vue": {
+      "bytes": 5938,
+      "sha256": "4a6ca71b7ccb29f2296180851c3f5b84dd57d4845d9ca7c0f8622023e48a51cc"
+    },
+    "frontend/src/components/operations/recovery/ContractCard.vue": {
+      "bytes": 8549,
+      "sha256": "d6a8156fab3ef8787122d4046ee109591df24ddaf55b9dbd0954c682a197a343"
+    },
+    "frontend/src/components/operations/recovery/GapCard.vue": {
+      "bytes": 6336,
+      "sha256": "c351a8dcbb75a30f23990d5f6e4eb60f742cccee7e7c792992c25aca0091bbb7"
+    },
+    "frontend/src/components/operations/recovery/ReplayCard.vue": {
+      "bytes": 7587,
+      "sha256": "da4dd404da65c4db906557489a8b7acde94db5b3749baa55a73fea7f85c64661"
+    },
+    "frontend/src/components/server/ServerDemoDetails.vue": {
+      "bytes": 2749,
+      "sha256": "179bef700b6850e1fb9c37b477b3cb042437dcb18d49710a551ad49e79c5eeb3"
+    },
+    "frontend/src/components/server/ServerDetailView.vue": {
+      "bytes": 3590,
+      "sha256": "a81ecad7dcc668f1563f8c22bfc274ae988dba34f9d45fbe4d4f1f9c8103ecd3"
+    },
+    "frontend/src/components/server/ServerListView.vue": {
+      "bytes": 2508,
+      "sha256": "8e5ccc2835b3466194053c30777b4e92c0e07f34773651afa154e80f8d7a87be"
+    },
+    "frontend/src/components/server/ServerStatusTag.vue": {
+      "bytes": 689,
+      "sha256": "e080f55e7a78a98440bac3d175ad202362594ebdb445ce6d7df550c6a77df9d6"
+    },
+    "frontend/src/components/server/ServerTable.vue": {
+      "bytes": 7402,
+      "sha256": "6f310de5a5d0e933848cbb297ee79bac1f858c72795df227ed1cd5e68c3fa689"
+    },
+    "frontend/src/components/server/detail/ServerDetailHeader.vue": {
+      "bytes": 1564,
+      "sha256": "496eef5f638f3bd8512859730e07fe647048c5b07892da8f07132a4b5a98b0a2"
+    },
+    "frontend/src/components/server/detail/ServerInfoCard.vue": {
+      "bytes": 1560,
+      "sha256": "59e02fb9552b783adf5b98b55bce8ae283d88620a05482bde919d3338d9163b2"
+    },
+    "frontend/src/components/server/detail/ServerMetricHistory.vue": {
+      "bytes": 2994,
+      "sha256": "3820b0b026909c99f0b41de27b86101dea6006d4fe3b533375f1cbabd7c35756"
+    },
+    "frontend/src/components/server/detail/ServerMetricOverview.vue": {
+      "bytes": 4268,
+      "sha256": "7b4259c3851b2265bb97f808e55b61db819d182fe428f4ae46a0752f860ab793"
+    },
+    "frontend/src/components/server/detail/ServerNetworkCard.vue": {
+      "bytes": 1520,
+      "sha256": "9d3a768b5f68c9569c862a23c933a7279fa292c9cf179e4457afa9e44ef17a0d"
+    },
+    "frontend/src/components/ui/extension-demo.vue": {
+      "bytes": 6821,
+      "sha256": "ea1ee415897246103255a0050ca1ca9067bddda94a57d27da3922c762418a50e"
+    },
+    "frontend/src/components/ui/home-orbit-carousel.vue": {
+      "bytes": 10767,
+      "sha256": "30e0cfbda529b41af50dcd80d7219dc2e88fad3cc538667ce604ca35165232dc"
+    },
+    "frontend/src/components/ui/integration-card.vue": {
+      "bytes": 7200,
+      "sha256": "849f9d4aedcccce20499ba869136b4978310d1fe7da6bcef475568f9361ae5b5"
+    },
+    "frontend/src/components/ui/milky-way.vue": {
+      "bytes": 5384,
+      "sha256": "178fc5404317984959d827febe300e7b114fa48ce900a97c402fc0d417270c47"
+    },
+    "frontend/src/components/ui/radial-orbital-timeline.vue": {
+      "bytes": 6804,
+      "sha256": "5ac86913e850070537427b5627db577beadd97d4d854c462831d0131cf7ccee6"
+    },
+    "frontend/src/components/ui/source-link-reader.vue": {
+      "bytes": 2461,
+      "sha256": "ead518ddf51d380ac39febd1a66cd9f6b34e273d2911a586cb0cad0cb9ffae64"
+    },
+    "frontend/src/components/ui/v-chart-4.vue": {
+      "bytes": 5477,
+      "sha256": "41707a439879d2241f2d5e762a2244e623e1e07d46deda02402355c0d45a87c8"
+    },
+    "frontend/src/components/ui/v-chart-bar.vue": {
+      "bytes": 4837,
+      "sha256": "8a60aed0f5dab7311cf07659ddf540507f130934af9c7d9f80412ed23878e0bc"
+    },
+    "frontend/src/layouts/AdminLayout.vue": {
+      "bytes": 7735,
+      "sha256": "ddb24addb67dd16736d8e1728693dbe9ee965d435edb3b71aaaf7f43636877f4"
+    },
+    "frontend/src/layouts/MainLayout.vue": {
+      "bytes": 32057,
+      "sha256": "ea5aeffe3973b710f24f53a9dd1ceaf353558fa68e2986299ecf8adb835ce0e0"
+    },
+    "frontend/src/views/account/AccountSecurityView.vue": {
+      "bytes": 5687,
+      "sha256": "175f7fa6500bd43c10b7ca88513e5b58329783ac076db889365eb8057d08b818"
+    },
+    "frontend/src/views/admin/AdminApprovalsView.vue": {
+      "bytes": 12917,
+      "sha256": "e1d566ad9819cef8db2c8c479a5ba1fea8154ff25eb2bc12aea4b416b0d24014"
+    },
+    "frontend/src/views/admin/AdminAuditView.vue": {
+      "bytes": 8381,
+      "sha256": "fe465ea6849cfc7507d97528f3de8c4a4e450942733cb370a1e0ffa56c54cc52"
+    },
+    "frontend/src/views/admin/AdminControlCenterView.vue": {
+      "bytes": 5407,
+      "sha256": "e9ec9bd8253d449d428be7d35a21c9105a7436233a171f0d76a676a1aeba98ba"
+    },
+    "frontend/src/views/admin/AdminGovernanceView.vue": {
+      "bytes": 7691,
+      "sha256": "62bd8ee41895e31ebf8cf844f74bf600714320637bbc5434d333f1acd1d08d80"
+    },
+    "frontend/src/views/admin/AdminMfaView.vue": {
+      "bytes": 9978,
+      "sha256": "76bac5452ff8f682b2f96c14d5b92a4df53b89e9db3209c5f5e15a9e11d906df"
+    },
+    "frontend/src/views/admin/AdminModelGovernanceView.vue": {
+      "bytes": 10465,
+      "sha256": "695842e65b745baadf0eea41f2bd9a0f36ae0c68c51e18b6bd6e2b65f05f3d58"
+    },
+    "frontend/src/views/admin/AdminNotFoundView.vue": {
+      "bytes": 2196,
+      "sha256": "567221cbf207c7bad942c5e046535d7a6b02f4472a05359a81308662c40c2be8"
+    },
+    "frontend/src/views/admin/AdminOverviewView.vue": {
+      "bytes": 6461,
+      "sha256": "8fa99ab2e762add497fd7c54e465102bff2358bbb09559c117c91886e34efd89"
+    },
+    "frontend/src/views/admin/AdminReadinessView.vue": {
+      "bytes": 4161,
+      "sha256": "7339ffce95d3c147ee5cc991e807f2d159dd7b37c3b7b1955484241bcfee3006"
+    },
+    "frontend/src/views/admin/AdminSessionsView.vue": {
+      "bytes": 4073,
+      "sha256": "783db248f0762bd4bed6bb2e5241b18f0b9d244997c169536b8d01fd12be39c4"
+    },
+    "frontend/src/views/admin/AdminTeamsView.vue": {
+      "bytes": 8234,
+      "sha256": "ae6801af22011c0dad2d80150dd4265117eeb961e032c51025b1ea9aa4767dc1"
+    },
+    "frontend/src/views/admin/AdminUsersView.vue": {
+      "bytes": 20769,
+      "sha256": "e0ab836a79bf42f3f1f86a4fc80705b96afe4c1ae80d7a06746d4ebaf1f993e0"
+    },
+    "frontend/src/views/admin/system/DeptView.vue": {
+      "bytes": 7194,
+      "sha256": "04fb61f72689006a2681f81dc1f6ec27ce6b6018c25475c563abf2b12a34918f"
+    },
+    "frontend/src/views/admin/system/DictView.vue": {
+      "bytes": 10387,
+      "sha256": "c6feb9f38860f5c3dbfd86445a5dbb983ade02ffc49d3ec3d8ba11ffe53331e7"
+    },
+    "frontend/src/views/admin/system/LoginLogView.vue": {
+      "bytes": 2346,
+      "sha256": "b7da8179f4ba0a68934f8fd93e760e9e54f552ae5d6a80af33509ff59f28b3c0"
+    },
+    "frontend/src/views/admin/system/MenuView.vue": {
+      "bytes": 8173,
+      "sha256": "5921393997a39ac2b99e619defeb31fcd3590ed453eebb2ccccf579eccad7162"
+    },
+    "frontend/src/views/admin/system/NoticeView.vue": {
+      "bytes": 6054,
+      "sha256": "c4b0eee7f935e0e7cc2102d0098b9878f3c9f274800fe876223a2e6af44a1a12"
+    },
+    "frontend/src/views/admin/system/PostView.vue": {
+      "bytes": 6294,
+      "sha256": "1fda47f981b305b123f126aec1923951ee1392ace6abbab17843632a8ac08933"
+    },
+    "frontend/src/views/admin/system/RoleView.vue": {
+      "bytes": 9368,
+      "sha256": "af6fa8da0a8943f17dd46868500bce2f6ac98f89451240b24518e824d6d361f2"
+    },
+    "frontend/src/views/agent/AgentCommandCenterView.vue": {
+      "bytes": 18135,
+      "sha256": "6798b358a90b3452470af95b83786468742fceafbf58e7b33031a42d780e5d78"
+    },
+    "frontend/src/views/agent/ExecutionTraceView.vue": {
+      "bytes": 4446,
+      "sha256": "6ea1d2afd7c55d9f47309801f6130641e5027f084b92732c36563bc3b629ae4a"
+    },
+    "frontend/src/views/architecture/ArchitectureMapView.vue": {
+      "bytes": 2934,
+      "sha256": "f2e9221ff9cc1645e13b1a470930a2c5712f081b418d55292528938218da5ddf"
+    },
+    "frontend/src/views/auth/LoginView.vue": {
+      "bytes": 35370,
+      "sha256": "f9e3d334e2cd58bfaccf5573665ed7c9beffeb09970e5c716c178411a2eaad19"
+    },
+    "frontend/src/views/celebrate/AchievementsView.vue": {
+      "bytes": 16177,
+      "sha256": "e923595b16e99c79d5662157858537d38c4c85f606bf4495be1560d7f4d75ad7"
+    },
+    "frontend/src/views/chat/ChatView.vue": {
+      "bytes": 5524,
+      "sha256": "bf05cc52e04634dd79e6933b159b588032f846135e8baf5002902693cf1db312"
+    },
+    "frontend/src/views/cloud/CloudNativeWorkbenchView.vue": {
+      "bytes": 9614,
+      "sha256": "0a1139fb011f8e54b248542a2d2f23f000afd0cb31c5c1359d6343ef0d97a3a8"
+    },
+    "frontend/src/views/dashboard/DashboardView.vue": {
+      "bytes": 5135,
+      "sha256": "9ab8b99e8472c08ed47b8155e4dac16066ce6dbe3a1226acb5db44a0aa8876c9"
+    },
+    "frontend/src/views/diagnostics/HealthCenterView.vue": {
+      "bytes": 1428,
+      "sha256": "45d31c50893fbd56bf6c855d50eb10dad771fbcfdeae5e554bf10b1d243f8224"
+    },
+    "frontend/src/views/error/NotFoundView.vue": {
+      "bytes": 711,
+      "sha256": "0cd0f1920e5de9b20d4bf62b8c1bd2123870f7f1bac5f392e58d9adcc7120b95"
+    },
+    "frontend/src/views/harbor/HarborWorkbenchView.vue": {
+      "bytes": 8028,
+      "sha256": "8f146b75c431a5c027789316d09be4c492f50bbbfffbd505302edb8a0b928e54"
+    },
+    "frontend/src/views/inspector/InspectorCenterView.vue": {
+      "bytes": 2659,
+      "sha256": "028e822bcbb304196e7d040385c9239b846aef1116f10f0b24d4d28dad11c208"
+    },
+    "frontend/src/views/inspector/InspectorDetailView.vue": {
+      "bytes": 2207,
+      "sha256": "40e706571195e408e9a97d8aa6196c5ea6c3e7d91f4214771dcf7afa1fe0f12d"
+    },
+    "frontend/src/views/inspector/InspectorStatisticsView.vue": {
+      "bytes": 3284,
+      "sha256": "f1cdc248a49a5dc6af9fcee195f0e3516bb0eb6432217cbc0288624e077571d3"
+    },
+    "frontend/src/views/knowledge/GenerationCenterView.vue": {
+      "bytes": 3144,
+      "sha256": "0857d101a237907da77abff6b6070fec7d4fc7a7a85def3e86914e21b78c5d8c"
+    },
+    "frontend/src/views/knowledge/KnowledgeCandidateReviewView.vue": {
+      "bytes": 12102,
+      "sha256": "acdaa772084e49f10bf95eb6ae47bc1bea91959004d60a2abd1aab4646ec2b22"
+    },
+    "frontend/src/views/knowledge/KnowledgeTreeNode.vue": {
+      "bytes": 2484,
+      "sha256": "21fceb203e4788a1f804ab93621a0b21d86035e395a5bc9862986a2a0d541ceb"
+    },
+    "frontend/src/views/knowledge/KnowledgeView.vue": {
+      "bytes": 32604,
+      "sha256": "c49af345aec4a0e1957b77fdf084545312b3783042bfd2e4d45ab8ed3818e476"
+    },
+    "frontend/src/views/knowledge/PersonalKnowledgeView.vue": {
+      "bytes": 13727,
+      "sha256": "b03c845a20b0dfdee98815f9fff8c0d1ee6d1dee22508eb5ce77bec6fcd1e234"
+    },
+    "frontend/src/views/knowledge/QuizView.vue": {
+      "bytes": 12444,
+      "sha256": "74aa2ac7c2ab9438519d29a2a9d54a2bdf8dfd98da78fe27951de5889341d660"
+    },
+    "frontend/src/views/marketplace/InstalledSkills.vue": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "frontend/src/views/marketplace/PluginMarketplace.vue": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "frontend/src/views/marketplace/SkillDetail.vue": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "frontend/src/views/marketplace/SkillMarketplace.vue": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "frontend/src/views/model/ModelAnalyticsView.vue": {
+      "bytes": 38485,
+      "sha256": "ae4028e2d996d0ce963770a1f480eb6a2338982990f81caa3cf73d69c398bfe7"
+    },
+    "frontend/src/views/model/ModelGatewayView.vue": {
+      "bytes": 18667,
+      "sha256": "baf601c9a0021923d76c860245cb5cc0a88e1f1fa9890daf591c2da54fba34ad"
+    },
+    "frontend/src/views/model/ModelHealthView.vue": {
+      "bytes": 1561,
+      "sha256": "35333771806dbe91a250c7bc70ac118351d64b749081d6c407885fade40389e6"
+    },
+    "frontend/src/views/model/ModelSettingsView.vue": {
+      "bytes": 17146,
+      "sha256": "c7ed86be7259fc4d8c4a28ca75d7ed4cf1f197d21bb7ca47682e9e8369d09100"
+    },
+    "frontend/src/views/operations/ConnectionsView.vue": {
+      "bytes": 4928,
+      "sha256": "b41f994d7e48248b64328e6a5805936f94be54c4621d7c392b4c6ff0043b3231"
+    },
+    "frontend/src/views/operations/RecoveryContractsView.vue": {
+      "bytes": 12396,
+      "sha256": "257e8c22c9dbf0e6e9fc0567d06c1cac8f111899b39ec5070379392b6b6e69ce"
+    },
+    "frontend/src/views/operations/RunHistoryView.vue": {
+      "bytes": 4395,
+      "sha256": "a17c1df6b7b1d7ab40d95d65675f005119e2df03c158a9e4505e221570a5623c"
+    },
+    "frontend/src/views/operations/ToolsView.vue": {
+      "bytes": 23371,
+      "sha256": "b4d6098b5ff6b4bc6e09ba107b60ff9215fd7d9958b6a8e089acb6ab7cc8b9ac"
+    },
+    "frontend/src/views/plugins/PluginCenterView.vue": {
+      "bytes": 21058,
+      "sha256": "3cd093c1c50db67c868a92ec0dad6dbbf5488d1f87f644e7535efc401aad856e"
+    },
+    "frontend/src/views/portfolio/WorkInProgressView.vue": {
+      "bytes": 6094,
+      "sha256": "7662b689b41c15a5386398032be2f746a90810789be7fa2b76367595933e7b6f"
+    },
+    "frontend/src/views/sentinel/AlertCenterView.vue": {
+      "bytes": 20276,
+      "sha256": "18270e354ba2f7900f04aac86e9cf2d04802eb60b0e356f77d1e25b620ac4976"
+    },
+    "frontend/src/views/sentinel/ScriptLibraryView.vue": {
+      "bytes": 23073,
+      "sha256": "0d841c13ca74918e9ef296647e2ca35267c5baf4d6605541a424b96af87f0b97"
+    },
+    "frontend/src/views/sentinel/SentinelDashboardView.vue": {
+      "bytes": 22875,
+      "sha256": "0da1ae3a19cbd278d3545a2979bc5d5eca651ad160696a11efd1b8d645d63178"
+    },
+    "frontend/src/views/sentinel/SentinelEmpty.vue": {
+      "bytes": 288,
+      "sha256": "0bc5d114f1c7d79c1620d4425aa3d69228535eb15811084d51ff488c40219984"
+    },
+    "frontend/src/views/sentinel/SentinelGuardianView.vue": {
+      "bytes": 8679,
+      "sha256": "4e87df41692670a96618e7f4961a44bb1b5255e63ffd97011770ab0e1698971f"
+    },
+    "frontend/src/views/sentinel/SentinelNotice.vue": {
+      "bytes": 380,
+      "sha256": "264f6e0fac7b349d4127c583d32b7a0860a91d824f6a454e308f4dc74191fc77"
+    },
+    "frontend/src/views/server/ServerDetailView.vue": {
+      "bytes": 1340,
+      "sha256": "ef7264a2dc30bd5b7da1118f6032acff413069e702d06f7a63df85dc3bfe778d"
+    },
+    "frontend/src/views/server/ServerListView.vue": {
+      "bytes": 19189,
+      "sha256": "ed0e10e8af15e0c8f060c31d2bb80dc1a505ec0cc256fa8201b72659ab793e45"
+    },
+    "frontend/src/views/skills/SkillCenterView.vue": {
+      "bytes": 9693,
+      "sha256": "bdbd09a3ca8140ca12af61b26f363e0bb956f842c1ae958c997de949970df72c"
+    },
+    "frontend/src/views/team/TeamCollaborationView.vue": {
+      "bytes": 21637,
+      "sha256": "a35cdf738ceb11845d5acec794ee3d111eb76301be456ac850169546d2c5e468"
+    },
+    "frontend/src/views/team/TeamDetailView.vue": {
+      "bytes": 14166,
+      "sha256": "f43811b968724dc85e6383a550943a428d43df87d1a85ce846637efb20ba1800"
+    },
+    "frontend/src/views/team/TeamJoinView.vue": {
+      "bytes": 2535,
+      "sha256": "be9f8f85cf5e803f7d2d6e51b77d9325ef5078a23737a640d4ef294f3ff82e24"
+    },
+    "frontend/src/views/team/TeamSpacesView.vue": {
+      "bytes": 6596,
+      "sha256": "c5eb045cebbb0c03f992eee855b361d1f681c41886f2caef7dfebba7f7671437"
+    }
+  },
+  "schema_version": 1,
+  "source_digest": "sha256:5ed4b277a73b9db3eb67b80d52e672376a98862d0857c18e266e614b34c09765"
+}

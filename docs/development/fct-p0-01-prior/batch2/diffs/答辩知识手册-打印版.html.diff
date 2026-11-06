@@ -1,0 +1,65 @@
+diff --git "a/docs\\development\\fct-p0-01-prior\\batch2\\\347\255\224\350\276\251\347\237\245\350\257\206\346\211\213\345\206\214-\346\211\223\345\215\260\347\211\210.html" "b/docs/competition/\347\255\224\350\276\251\347\237\245\350\257\206\346\211\213\345\206\214-\346\211\223\345\215\260\347\211\210.html"
+index 9b55e1e..00b6472 100644
+--- "a/docs\\development\\fct-p0-01-prior\\batch2\\\347\255\224\350\276\251\347\237\245\350\257\206\346\211\213\345\206\214-\346\211\223\345\215\260\347\211\210.html"
++++ "b/docs/competition/\347\255\224\350\276\251\347\237\245\350\257\206\346\211\213\345\206\214-\346\211\223\345\215\260\347\211\210.html"
+@@ -163,5 +163,5 @@ li.chk:before { content:"☐"; position:absolute; left:0; font-size:12pt; color:
+ <hr class="sep"/>
+ <h2 class="sec">0. 30 秒讲清这个项目（电梯版，背到脱口而出）</h2>
+-<div class="callout">我们做的是<strong>智维 Agent</strong>——一个敢让它动手的运维智能体。<br/>现在企业用 AI 运维有个死结：<strong>通用大模型会"说"，但不敢让它"做"</strong>——因为它可能引错版本的文档、可能声称"已经重启成功"其实没成功、可能一条命令把生产环境干掉。<br/>我们的解法是<strong>三道锁一本账</strong>：<strong>证据锁</strong>（每句话能追溯到知识条目）、<strong>风险锁</strong>（高危操作必须人工授权）、<strong>边界锁</strong>（命令白名单 + 黑名单 + 沙箱），最后<strong>一本审计账</strong>全程留痕。<br/>技术上，检索用版本感知的混合检索，结果核查用<strong>四级纠察</strong>并能识别"假成功"，可信度用 trust_score 聚合。<br/>全栈自研：后端 SpringBoot 80 张表 296 个接口，前端 Vue3 双入口 26+ 页面，AI 侧 Python 混合检索与纠察内核。<br/>一句话：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></div>
++<div class="callout">我们做的是<strong>智维 Agent</strong>——一个敢让它动手的运维智能体。<br/>现在企业用 AI 运维有个死结：<strong>通用大模型会"说"，但不敢让它"做"</strong>——因为它可能引错版本的文档、可能声称"已经重启成功"其实没成功、可能一条命令把生产环境干掉。<br/>我们的解法是<strong>三道锁一本账</strong>：<strong>证据锁</strong>（每句话能追溯到知识条目）、<strong>风险锁</strong>（高危操作必须人工授权）、<strong>边界锁</strong>（命令白名单 + 黑名单 + 沙箱），最后<strong>一本审计账</strong>全程留痕。<br/>技术上，检索用版本感知的混合检索，结果核查用<strong>四级纠察</strong>并能识别"假成功"，可信度用 trust_score 聚合。<br/>全栈自研：后端 SpringBoot 119 张表 422 个接口，前端 Vue3 双入口 26+ 页面，AI 侧 Python 混合检索与纠察内核。<br/>一句话：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></div>
+ <hr class="sep"/>
+ <h2 class="sec">1. 它到底解决什么问题</h2>
+@@ -210,5 +210,5 @@ li.chk:before { content:"☐"; position:absolute; left:0; font-size:12pt; color:
+ <hr class="sep"/>
+ <h2 class="sec">5. 后端知识要点（被问"是不是只有个壳子"时的弹药）</h2>
+-<table><thead><tr><th>要点</th><th>事实</th></tr></thead><tbody><tr><td>认证</td><td><strong>不是 JWT</strong>——HttpSession + JSESSIONID（30 分钟）+ Spring Security；<code>SecurityConstants.TOKEN_PREFIX="Bearer "</code> 定义了但无签发逻辑</td></tr><tr><td>MFA</td><td><strong>TOTP 真实现</strong>（<code>TotpService</code> + <code>account_mfa</code> / <code>account_mfa_recovery</code>），人机验证支持本地图形点选与 Cloudflare Turnstile 双 Provider</td></tr><tr><td>审计</td><td>两张表：<code>security_audit_event</code>（actor/action/target/outcome）、<code>operation_audit_event</code>（含 approval_state）；<code>SecurityAuditService</code> 硬编码 <strong>62 种受控动作</strong>，结果 SUCCESS/FAILURE/DENIED</td></tr><tr><td>ORM</td><td>MyBatis（6 Mapper / 4 XML）与 <strong>JdbcTemplate（45 个文件）混用</strong></td></tr><tr><td>Redis</td><td>依赖与配置齐全，但 <strong>RedisTemplate 引用数 = 0</strong>（骨架）</td></tr><tr><td>测试</td><td><strong>89 个测试文件 / 8,761 行 / 428 个 @Test</strong>，含 13 个端到端集成测试与 3 个安全专项测试</td></tr><tr><td>质量</td><td>全量 grep `TODO</td><td>FIXME</td><td>HACK` 命中 <strong>0 处</strong></td></tr></tbody></table>
++<table><thead><tr><th>要点</th><th>事实</th></tr></thead><tbody><tr><td>认证</td><td><strong>不是 JWT</strong>——HttpSession + JSESSIONID（30 分钟）+ Spring Security；<code>SecurityConstants.TOKEN_PREFIX="Bearer "</code> 定义了但无签发逻辑</td></tr><tr><td>MFA</td><td><strong>TOTP 真实现</strong>（<code>TotpService</code> + <code>account_mfa</code> / <code>account_mfa_recovery</code>），人机验证支持本地图形点选与 Cloudflare Turnstile 双 Provider</td></tr><tr><td>审计</td><td>两张表：<code>security_audit_event</code>（actor/action/target/outcome）、<code>operation_audit_event</code>（含 approval_state）；<code>SecurityAuditService</code> 硬编码 <strong>62 种受控动作</strong>，结果 SUCCESS/FAILURE/DENIED</td></tr><tr><td>ORM</td><td>MyBatis（6 Mapper / 4 XML）与 <strong>JdbcTemplate（45 个文件）混用</strong></td></tr><tr><td>Redis</td><td>依赖与配置齐全，但 <strong>RedisTemplate 引用数 = 0</strong>（骨架）</td></tr><tr><td>测试</td><td><strong>122 个测试文件 / 15,649 行 / 656 个 @Test</strong>，含 13 个端到端集成测试与 3 个安全专项测试</td></tr><tr><td>质量</td><td>全量 grep `TODO</td><td>FIXME</td><td>HACK` 命中 <strong>0 处</strong></td></tr></tbody></table>
+ <hr class="sep"/>
+ <h2 class="sec">6. 前端知识要点（被问"界面是谁做的"时的弹药）</h2>
+@@ -216,6 +216,7 @@ li.chk:before { content:"☐"; position:absolute; left:0; font-size:12pt; color:
+ <hr class="sep"/>
+ <h2 class="sec">7. 数据、测试、部署（全部可当场复现）</h2>
+-<table><thead><tr><th>项</th><th>真实数字</th></tr></thead><tbody><tr><td>Python 测试</td><td><strong>135 用例 = 111 通过 / 24 跳过 / 0 失败</strong>（54.43s）</td></tr><tr><td>├ knowledge</td><td>13 个<strong>全通过</strong>（纯内存，无外部依赖）</td></tr><tr><td>├ training</td><td>36 个（数据集 schema/校验/泄漏/门禁）</td></tr><tr><td>├ inspector</td><td>20 个（规则与证据检查器、事件总线、持久化）</td></tr><tr><td>├ agent</td><td>18 个（skill 加载、shell 安全）</td></tr><tr><td>└ e2e / integration / api</td><td>5 / 6 / 15（<strong>跳过是因后端未启动或缺依赖，不是 mock 掉</strong>）</td></tr><tr><td>另</td><td>ai-service 约 22 个（对话 / RAG / LLM 集成，计入总 135）</td></tr><tr><td>后端测试</td><td>428 个 @Test + 4 个参数化</td></tr><tr><td>数据集</td><td>7 个 JSONL / <strong>共 14 条</strong> / <code>status</code> 全部 <code>DRAFT</code></td></tr><tr><td>实验文档</td><td>17 个 md，<strong>9 个显式 NOT RUN，无任何真实评测指标</strong></td></tr><tr><td>部署</td><td>compose 只有 MySQL + Redis；K8s 有 6 个 deployment + ingress + hpa，<strong>无 Helm</strong></td></tr></tbody></table>
+-<p><strong>唯一真实的评测数字</strong>：<code>111 passed / 24 skipped</code>、<code>CUDA: unavailable</code>、<code>GPU count: 0</code>——文档自己注明"<strong>工程回归结果，不是模型实验结果</strong>"。</p>
++<table><thead><tr><th>项</th><th>真实数字</th></tr></thead><tbody><tr><td>Python 测试</td><td><strong>610 用例 = 600 通过 / 10 跳过 / 0 失败</strong></td></tr><tr><td>├ knowledge</td><td>13 个<strong>全通过</strong>（纯内存，无外部依赖）</td></tr><tr><td>├ training</td><td>36 个（数据集 schema/校验/泄漏/门禁）</td></tr><tr><td>├ inspector</td><td>20 个（规则与证据检查器、事件总线、持久化）</td></tr><tr><td>├ agent</td><td>18 个（skill 加载、shell 安全）</td></tr><tr><td>└ e2e / integration / api</td><td>5 / 6 / 15（<strong>跳过是因后端未启动或缺依赖，不是 mock 掉</strong>）</td></tr><tr><td>另</td><td>ai-service 约 22 个（对话 / RAG / LLM 集成，计入 Python 总用例）</td></tr><tr><td>后端测试</td><td>656 个 @Test + 4 个参数化</td></tr><tr><td>数据集</td><td>7 个 JSONL / <strong>共 14 条</strong> / <code>status</code> 全部 <code>DRAFT</code></td></tr><tr><td>实验文档</td><td>17 个 md，<strong>9 个显式 NOT RUN，无任何真实评测指标</strong></td></tr><tr><td>部署</td><td>compose 只有 MySQL + Redis；K8s 有 6 个 deployment + ingress + hpa，<strong>无 Helm</strong></td></tr></tbody></table>
++<p class="note">注：模块拆分（13/36/20/18/5/6/15/22）是上一轮 135 用例口径，与上方 610 全量收集数不是同一快照；对外只引用 610 / 600 / 10。</p>
++<p><strong>唯一真实的评测数字</strong>：<code>600 passed / 10 skipped</code>、<code>CUDA: unavailable</code>、<code>GPU count: 0</code>——文档自己注明"<strong>工程回归结果，不是模型实验结果</strong>"。</p>
+ <hr class="sep"/>
+ <h2 class="sec">8. 真相清单：哪些是真做、哪些是基线（<strong>这一节决定你会不会翻车</strong>）</h2>
+@@ -229,5 +230,5 @@ li.chk:before { content:"☐"; position:absolute; left:0; font-size:12pt; color:
+ 前端       146 .vue / 27,983 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)
+ Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+-测试       Python 135（111 通过 / 24 跳过） | 后端 428 @Test | 共 563
++测试       Python 610（600 通过 / 10 跳过） | 后端 656 @Test 
+ 算法常量   切片 800/120 | 嵌入 256 维 | BM25 k1=1.5 b=0.75 | 融合 0.6/0.4
+            Reranker 0.7/0.3 (top5) | trust 0.5/0.3/0.2 | 纠察 4 级 | 风险 4 档
+@@ -250,5 +251,5 @@ Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+ <hr class="sep"/>
+ <h2 class="sec">开场陈述（3 分钟，背熟）</h2>
+-<div class="callout">各位老师好，我们是【队名】，项目是<strong>智维 Agent</strong>。<br/><br/>我想先说一个现象：现在企业里 AI 已经被用来问问题了，但<strong>几乎没人敢让它真正动手</strong>。原因是三个不信任——<strong>它用的知识可能是错版本的</strong>（Ubuntu 的答案套到 CentOS 上），<strong>它可能说"已经重启好了"其实没好</strong>，<strong>一条命令就可能把生产环境搞挂</strong>。<br/><br/>我们的项目就是冲这三个"不信任"去的。解法是<strong>三道锁一本账</strong>：<br/><strong>证据锁</strong>——每句话能追到具体知识条目和版本号；<br/><strong>风险锁</strong>——高危操作必须人工授权，命令有白名单和黑名单；<br/><strong>边界锁</strong>——沙箱、超时、输出截断、元字符禁用。<br/>最后<strong>一本审计账</strong>全程留痕。<br/><br/>技术上，检索是<strong>版本感知的混合检索</strong>，结果核查是<strong>四级纠察</strong>，其中最关键的是能识别<strong>假成功</strong>；可信度用 <strong>trust_score</strong> 三分量聚合。<br/><br/>这不是 PPT：后端 SpringBoot <strong>80 张表 296 个接口</strong>，前端 Vue3 <strong>26 个以上页面</strong>，AI 侧自研 Python 内核，<strong>563 个测试用例</strong>，而且<strong>零 API Key 就能跑通全链路</strong>。<br/><br/>最后一句总结我们的主张：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></div>
++<div class="callout">各位老师好，我们是【队名】，项目是<strong>智维 Agent</strong>。<br/><br/>我想先说一个现象：现在企业里 AI 已经被用来问问题了，但<strong>几乎没人敢让它真正动手</strong>。原因是三个不信任——<strong>它用的知识可能是错版本的</strong>（Ubuntu 的答案套到 CentOS 上），<strong>它可能说"已经重启好了"其实没好</strong>，<strong>一条命令就可能把生产环境搞挂</strong>。<br/><br/>我们的项目就是冲这三个"不信任"去的。解法是<strong>三道锁一本账</strong>：<br/><strong>证据锁</strong>——每句话能追到具体知识条目和版本号；<br/><strong>风险锁</strong>——高危操作必须人工授权，命令有白名单和黑名单；<br/><strong>边界锁</strong>——沙箱、超时、输出截断、元字符禁用。<br/>最后<strong>一本审计账</strong>全程留痕。<br/><br/>技术上，检索是<strong>版本感知的混合检索</strong>，结果核查是<strong>四级纠察</strong>，其中最关键的是能识别<strong>假成功</strong>；可信度用 <strong>trust_score</strong> 三分量聚合。<br/><br/>这不是 PPT：后端 SpringBoot <strong>119 张表 422 个接口</strong>，前端 Vue3 <strong>26 个以上页面</strong>，AI 侧自研 Python 内核，<strong>610 个 Python 用例 + 656 个后端 @Test</strong>，而且<strong>零 API Key 就能跑通全链路</strong>。<br/><br/>最后一句总结我们的主张：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></div>
+ <hr class="sep"/>
+ <h1>一、定位与价值（为什么做这个）</h1>
+@@ -295,6 +296,6 @@ Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+ <h3>Q19 后端为什么用 Java、AI 侧用 Python？</h3>
+ <ul><li><strong>说</strong>：<strong>按优势分工</strong>：Java/SpringBoot 承担事务、权限、审计、会话这类"强一致、强安全"的企业级能力，生态成熟；Python 承担检索、Agent、模型交互这类"算法密集、迭代快"的部分。两者通过 HTTP + 内部 Token 解耦，各自独立部署、独立伸缩。这不是历史包袱，是<strong>刻意的分层</strong>。</li></ul>
+-<h3>Q20 数据库 80 张表，会不会过度设计？</h3>
+-<ul><li><strong>说</strong>：81 张是按领域拆分的：账号权限、运维连接、哨兵告警、知识协同、模型网关、AI 决策闭环、团队协作七大域。拆得细是因为<strong>审计和权限要求</strong>——比如运行记录就拆成 <code>operation_run_record</code> / <code>_output</code> / <code>_evidence</code> 三张，用 <code>trace_id</code> 串起来，为的是<strong>证据可独立追溯</strong>。这不算过度设计，是合规需要的数据结构。</li></ul>
++<h3>Q20 数据库 119 张表，会不会过度设计？</h3>
++<ul><li><strong>说</strong>：119 张是按领域拆分的：账号权限、运维连接、哨兵告警、知识协同、模型网关、AI 决策闭环、团队协作七大域。拆得细是因为<strong>审计和权限要求</strong>——比如运行记录就拆成 <code>operation_run_record</code> / <code>_output</code> / <code>_evidence</code> 三张，用 <code>trace_id</code> 串起来，为的是<strong>证据可独立追溯</strong>。这不算过度设计，是合规需要的数据结构。</li></ul>
+ <h3>Q21 为什么安全判定不依赖大模型？</h3>
+ <ul><li><strong>说</strong>：这是<strong>刻意的设计选择</strong>。用不确定的模型去守确定的安全底线，是设计错误——模型会漂移、会幻觉、会被提示注入。所以我们的 L1 规则、L2 证据、L4 状态核验<strong>全是确定性判定</strong>，AI Judge 只是<strong>可选增强</strong>，默认还是关闭的（passthrough）。<strong>换句话说：把模型拿掉，我们的安全机制照样工作。</strong></li><li><strong>追问</strong> → 那覆盖率够吗？→ "规则覆盖'已知的危险'，AI 增强覆盖'没见过的语义矛盾'，两者是互补而不是替代"</li></ul>
+@@ -328,5 +329,5 @@ Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+ <ul><li><strong>说</strong>：<strong>有，而且我们自己标出来了。</strong>Dashboard 首页是纯文案轮播零 API；系统知识库走本地静态条目，页面角标写着"未人工核验"；6 台 demo 服务器标注了"（模拟）"；运行记录在后端 <code>guideMode=true</code> 时会显示演示数据，前端会挂横幅声明"当前显示演示数据"；3 条 demo 成就被硬性隔离不参与统计；还有几个未注册路由的死页面（插件市场、技能市场）。<strong>真后端的是</strong>：个人知识库、运维执行、运行记录、模型分析、团队协作、认证与审计。</li></ul>
+ <h3>Q35 代码里有抄袭或大量 AI 生成吗？</h3>
+-<ul><li><strong>说</strong>：我们用了 AI 辅助，但<strong>每一行都过过手</strong>，并且有证据：全项目 grep <code>TODO|FIXME|HACK</code> <strong>命中 0 处</strong>；563 个测试用例覆盖核心逻辑；审计、MFA、SSH 终端、哨兵这些都是真依赖真实现（比如 SSH 用的是 <code>sshd-core 2.12.1</code>）。如果要验证，我可以当场讲任何一个模块的调用链。</li></ul>
++<ul><li><strong>说</strong>：我们用了 AI 辅助，但<strong>每一行都过过手</strong>，并且有证据：全项目 grep <code>TODO|FIXME|HACK</code> <strong>命中 0 处</strong>；610 个 Python 用例 + 656 个后端 @Test覆盖核心逻辑；审计、MFA、SSH 终端、哨兵这些都是真依赖真实现（比如 SSH 用的是 <code>sshd-core 2.12.1</code>）。如果要验证，我可以当场讲任何一个模块的调用链。</li></ul>
+ <h3>Q36 你们的前端 TypeScript 是不是没开严格模式？</h3>
+ <ul><li><strong>说</strong>：<strong>是，<code>strict:false</code>，而且类型检查只覆盖 api/domain/utils/types 四个目录，views 和 components 不在范围内。</strong>这是历史原因——项目从 JS 起步，全量改造成本大。<strong>这是明确的欠账</strong>，迁移到全量 strict 在我们的技术债清单里。</li></ul>
+@@ -376,5 +377,5 @@ Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+ <ul><li><strong>说</strong>：<strong>说一个真的。</strong>"最大的风险是<strong>评测跟不上</strong>——机制设计得再好，没有可信指标就无法说服用户，也无法迭代。这也是我把 100 万的最大一块投在评测上的原因。第二个风险是<strong>中文检索效果</strong>，在哈希嵌入下它是有上限的，必须换真 embedding。"</li></ul>
+ <h3>Q55 给自己打几分？</h3>
+-<ul><li><strong>说</strong>：<strong>给分必给理由。</strong>"工程完整度我给 8 分——全栈真实现、563 个测试、零密钥可复现；算法深度我给 6 分——机制设计是我最满意的部分，但多个组件还是确定性基线；评测严谨度我给 4 分——这是我承认的最大短板。<strong>综合我给 6.5 分，扣分主要扣在没有真实指标上。</strong>"</li><li><strong>别这么说</strong>："我给 9 分"——显得没自知之明。</li></ul>
++<ul><li><strong>说</strong>：<strong>给分必给理由。</strong>"工程完整度我给 8 分——全栈真实现、610 个 Python 用例 + 656 个后端 @Test、零密钥可复现；算法深度我给 6 分——机制设计是我最满意的部分，但多个组件还是确定性基线；评测严谨度我给 4 分——这是我承认的最大短板。<strong>综合我给 6.5 分，扣分主要扣在没有真实指标上。</strong>"</li><li><strong>别这么说</strong>："我给 9 分"——显得没自知之明。</li></ul>
+ <h3>Q56 如果评委说你的项目"没有算法创新"，你怎么回应？</h3>
+ <ul><li><strong>说</strong>："我理解这个质疑，因为我们的创新<strong>不在模型结构，而在约束机制</strong>。如果算法的评判标准是'提出了新的网络结构或损失函数'，我们确实不符合。但如果看'<strong>为特定领域的失败模式设计可判定的算法机制</strong>'——版本感知过滤、四级纠察、假成功状态核验、三分量可信度聚合——这些是有明确输入输出和判定逻辑的算法。<strong>我想请老师看的是第 4 节那张算法表。</strong>"</li><li><strong>要点</strong>：<strong>不卑不亢，把评判标准重新定义到你的地盘上。</strong></li></ul>

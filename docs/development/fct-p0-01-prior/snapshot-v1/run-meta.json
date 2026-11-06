@@ -1,0 +1,21 @@
+{
+  "collect_only_mode": true,
+  "command": "scripts/fact_ledger.py --verify-snapshot docs/development/fct-p0-01-evidence/sources.json",
+  "generated_at": "2026-11-06T05:29:06.137901+00:00",
+  "git_dirty_digest": "sha256:17779ecec13e083b0ffe05d15299dc2b52e3e7a74e19d06cc0605c7fad583d22",
+  "git_dirty_files_n": 9,
+  "git_dirty_paths": [
+    ".env.example",
+    ".trae/",
+    "deploy/nginx/nginx.conf",
+    "docs/development/FCT-P0-01-事实台账与材料门禁.md",
+    "docs/development/Trae服务与项目健康优化建议-20261106.md",
+    "docs/development/整改执行清单与计划-20261105.md",
+    "docs/security/audit-20261105/remediation-order.md",
+    "docs/security/audit-20261105/risk-matrix.md",
+    "frontend/test/stream-resilience.test.mjs"
+  ],
+  "junitxml": null,
+  "metrics_digest": "sha256:4ce519fb490273b0629392a2fdf319a40ecd368081de0892650c9d2834ac7b87",
+  "output_dir": "docs/development/fct-p0-01-evidence"
+}

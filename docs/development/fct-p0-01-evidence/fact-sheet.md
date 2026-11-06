@@ -7,52 +7,51 @@
 
 | 项 | 值 |
 |---|---|
-| git HEAD | `3f41c2c94d15439d019dcb129b685f78c7412cf6` |
-| 工作树改动文件数（已排除本次输出目录） | 87 |
-| 改动路径摘要 | `sha256:d1d8a5d8996baf8a6c14ec3cb76694e0c0d0f81c101bcbf6de5c88c5414a7d30` |
-| 纳入统计源文件数 | 616 |
-| 统计源内容摘要 | `sha256:436647f13909dd043c373514d1b2d41826316289e64c65d54c3e8113bc47d7c6` |
+| git HEAD | `65f0c086dcbea9455c0855af844fe3c79bb38726` |
+| 纳入统计源文件数 | 679 |
+| 统计源内容摘要 | `sha256:9f9e734241590138a16a1cd479a146208131f2457d38c3e380b0ecf8c1c3ea06` |
 
+工作树改动清单（可能被其他进程实时改动）记录在 `run-meta.json`，不参与内容确定性比较。
 冻结校验：`python scripts/fact_ledger.py --verify-snapshot docs/development/fct-p0-01-evidence/sources.json`。来源被改动/增删时退出码 2，不覆盖证据。
 
 ## 2. 代码规模（Java / Vue）
 
 | 范围 | 总行 | 空行 | 注释行 | 代码行 |
 |---|---:|---:|---:|---:|
-| Java main（287 文件） | 28492 | 3444 | 1836 | 23212 |
-| Java test（107 文件） | 12589 | 1666 | 375 | 10548 |
-| Vue（174 文件） | 21553 | 1919 | 548 | 19086 |
+| Java main（321 文件） | 34786 | 4107 | 2236 | 28443 |
+| Java test（126 文件） | 16147 | 2144 | 478 | 13525 |
+| Vue（175 文件） | 21944 | 1940 | 551 | 19453 |
 
-- Java main 中 Controller 文件 54 个、文件名以 Service 结尾 67 个（按文件命名统计，不是接口数）。
+- Java main 中 Controller 文件 63 个、文件名以 Service 结尾 75 个（按文件命名统计，不是接口数）。
 
 ## 3. 路由：注解数与实际路由数（口径分开）
 
 | 指标 | 值 | 说明 |
 |---|---:|---|
-| 路由注解数（含类级） | 423 | 注解出现次数，不等于接口数 |
-| 实际路由数（方法+路径去重） | 378 | 类级基路径已拼接 |
+| 路由注解数（含类级） | 476 | 注解出现次数，不等于接口数 |
+| 实际路由数（方法+路径去重） | 422 | 类级基路径已拼接 |
 | 无法静态解析的路径注解 | 0 | 常量拼接等，未静默丢弃 |
 
 ## 4. 数据库表
 
 | 指标 | 值 | 说明 |
 |---|---:|---|
-| migration 文件数 | 48 | 仅 `src/main/resources/db/migration` |
-| migration 中 CREATE TABLE 数 | 111 | 含 IF NOT EXISTS |
-| 离线定义表名去重数 | 101 | 仅离线定义口径 |
+| migration 文件数 | 57 | 仅 `src/main/resources/db/migration` |
+| migration 中 CREATE TABLE 数 | 129 | 含 IF NOT EXISTS |
+| 离线定义表名去重数 | 119 | 仅离线定义口径 |
 | 运行库实际表数 | null | 未连接数据库，见“缺失统计源” |
 
 ## 5. 测试：收集 / 执行 分开
 
 | 指标 | 值 |
 |---|---:|
-| pytest 收集数 | 586 |
-| 执行数 | 585 |
-| 通过 | 562 |
-| 失败 | 0 |
-| 错误 | 0 |
-| 跳过 | 23 |
-| Java @Test 注解数 | 559 |
+| pytest 收集数 | null |
+| 执行数 | null |
+| 通过 | null |
+| 失败 | null |
+| 错误 | null |
+| 跳过 | null |
+| Java @Test 注解数 | 671 |
 
 注解数不等于执行数；未提供 junitxml 时执行类指标为 null。
 
@@ -61,6 +60,7 @@
 | 指标 | 原因 |
 |---|---|
 | `migrations.runtime_tables_n` | 未找到 mysql CLI，且未提供连接参数；不猜测运行库表数。 |
+| `tests.pytest.executed_n` | 未提供 junitxml 或本轮仅收集；执行/通过/失败/跳过为 null，不记 0。 |
 
 ## 7. 自检
 
@@ -94,12 +94,18 @@
 | `tests.pytest.junitxml_sha256` | junitxml 原始日志的 sha256，用于把执行/通过/跳过数追回到原始日志 |
 | `sources.*` | 被统计文件的 sha256 与字节数，用于追溯单个数字 |
 | `snapshot.source_digest` | 按路径排序的 "path<TAB>sha256" 拼接后再 sha256，用于“同一快照重复生成一致”的比较 |
-| `snapshot.git_dirty_files_n` | git status --porcelain 行数，已排除本次输出目录 |
 
 ## 9. 实际路由明细（节选）
 
 | HTTP | 路径 | 控制器 |
 |---|---|---|
+| GET | `/api/backups/sets` | BackupController |
+| POST | `/api/backups/sets` | BackupController |
+| GET | `/api/backups/sets/{setId}/status` | BackupController |
+| POST | `/api/backups/sets/{setId}/manifests` | BackupController |
+| POST | `/api/backups/sets/{setId}/artifacts/verify` | BackupController |
+| POST | `/api/backups/sets/{setId}/artifacts/offsite` | BackupController |
+| POST | `/api/backups/sets/{setId}/drills` | BackupController |
 | POST | `/api/cloud/accounts` | CloudAssetController |
 | GET | `/api/cloud/accounts` | CloudAssetController |
 | POST | `/api/cloud/accounts/{id}/sync` | CloudAssetController |
@@ -153,12 +159,5 @@
 | POST | `/api/auth/human-verification/verify` | AuthController |
 | GET | `/api/auth/session` | AuthController |
 | POST | `/api/auth/login` | AuthController |
-| POST | `/api/auth/mfa/complete` | AuthController |
-| POST | `/api/auth/mfa/cancel` | AuthController |
-| GET | `/api/auth/registration` | AuthController |
-| POST | `/api/auth/register` | AuthController |
-| POST | `/api/auth/password` | AuthController |
-| GET | `/api/auth/profile` | AuthController |
-| PUT | `/api/auth/profile` | AuthController |
 
-> 其余 318 条见 `metrics.json` → `java.main.routes.routes`。
+> 其余 362 条见 `metrics.json` → `java.main.routes.routes`。

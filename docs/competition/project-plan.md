@@ -63,7 +63,7 @@
 | 目标 | 落地方式 |
 | --- | --- |
 | AI 技术深度 | Agent 规划/执行/核查/记忆/策略五模块；混合检索 + 证据验证 + 可信度评分；SSE 流式与思考阶段事件 |
-| 前端工程质量 | Vue 3 + Vite 7；共享逻辑层 TypeScript；构建分包；563 项前端测试 + 类型检查 + 双入口构建门禁 |
+| 前端工程质量 | Vue 3 + Vite 7；共享逻辑层 TypeScript；构建分包；494 项前端测试 + 类型检查 + 双入口构建门禁 |
 | 可运行性 | 默认 mock 模型零密钥跑通；一键切换 Ollama / OpenAI 兼容模型 |
 | 安全可信 | BCrypt(12)、人机校验、CSRF、MFA、风险策略引擎、人工审批、审计留痕 |
 | 可扩展性 | 插件化工具（Docker / Kubernetes / MySQL / Nginx / Redis）、MCP 适配器、多会话存储后端 |
@@ -129,7 +129,7 @@
                 │                              │ 证据引用 + 可信度评分 + 评测  │
                 │                              └────────────────────────────┘
                 ▼
-        MySQL 8（80 张表） + Redis（会话/限流）
+        MySQL 8（119 张表） + Redis（会话/限流）
 ```
 
 数据流（一次对话）：
@@ -198,18 +198,18 @@
 
 | 项 | 现状 |
 | --- | --- |
-| 前端测试 | Node test runner，**563 项**断言全部通过（96 个测试文件） |
+| 前端测试 | Node test runner，**494 项**断言全部通过（99 个测试文件） |
 | 类型检查 | `tsc --noEmit` 通过 |
 | 构建 | 用户层与管理层双构建通过 |
-| 后端测试 | JUnit 5 + H2（MySQL 兼容模式）集成测试，87 个测试类 |
-| 数据库 | MySQL 8，80 张表；迁移脚本幂等，启动自动补齐 schema |
+| 后端测试 | JUnit 5 + H2（MySQL 兼容模式）集成测试，126 个测试类 |
+| 数据库 | MySQL 8，119 张表；迁移脚本幂等，启动自动补齐 schema |
 | 仓库卫生 | 缓存与运行时数据不跟踪；`README` / `CHANGELOG` / `LICENSE` / `.env.example` 齐备 |
 
 质量门禁命令：
 
 ```powershell
 cd frontend
-npm test            # 563 项
+npm test            # 494 项
 npm run typecheck   # tsc --noEmit
 npm run build       # 用户层
 npm run build:admin # 管理员层

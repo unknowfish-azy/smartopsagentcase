@@ -1,0 +1,22 @@
+diff --git "a/docs/development/fct-p0-01-prior/batch6/\351\241\271\347\233\256\347\237\245\350\257\206\350\246\201\347\202\271\346\211\213\345\206\214.md" "b/docs/competition/\351\241\271\347\233\256\347\237\245\350\257\206\350\246\201\347\202\271\346\211\213\345\206\214.md"
+index 49d091f..e2b83d1 100644
+--- "a/docs/development/fct-p0-01-prior/batch6/\351\241\271\347\233\256\347\237\245\350\257\206\350\246\201\347\202\271\346\211\213\345\206\214.md"
++++ "b/docs/competition/\351\241\271\347\233\256\347\237\245\350\257\206\350\246\201\347\202\271\346\211\213\345\206\214.md"
+@@ -42,7 +42,7 @@
+ | **ai-service** | FastAPI（Python） | 8001 | AI 对话、RAG 编排、SSE 流式 | 3 个端点（health / chat / chat-stream） |
+ | **knowledge-service** | Python | 8002 | 知识入库、切片、嵌入、检索、证据 | 13 个单测全通过 |
+ | **agent-service** | Python | 8003 | Agent 内核（planner/executor/inspector/policies） | 库形态 + 82 用例 |
+-| **frontend** | Vite 7 + Vue3 + Element Plus | 5173 / 5174（双入口） | 用户层 + 管理员层 | 146 个 .vue / 27,983 行 |
++| **frontend** | Vite 7 + Vue3 + Element Plus | 5173 / 5174（双入口） | 用户层 + 管理员层 | 175 个 .vue / 21,944 行 |
+ | **基础设施** | MySQL 8.4 + Redis 7.4 | 3306 / 6379 | 存储与缓存 | docker-compose 只有这两个服务 |
+ 
+ **一句话记住**：`浏览器 → Nginx → backend(8080) / ai-service(8001) → knowledge(8002)`；Python 侧**全部零密钥可跑**（`LLM_PROVIDER=mock`）。
+@@ -218,7 +218,7 @@ score = 0.5 × evidence_score      # 各证据 score 的均值
+ 服务端口   backend 8080 | ai-service 8001 | knowledge 8002 | agent 8003 | 前端 5173/5174
+ 后端       321 Java 文件 / 34,777 行 / 63 Controller / 75 Service / 422 接口 / 119 张表（迁移脚本定义）
+            SpringBoot 3.3.5 + Java 17 + MySQL 8.4 + MyBatis+JdbcTemplate
+-前端       146 .vue / 27,983 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)
++前端       175 .vue / 21,944 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)
+ Python     16,536 行 / 244 文件 / FastAPI + 自研 Agent 内核
+ 测试       Python 610（600 通过 / 10 跳过） | 后端 656 @Test 
+ 算法常量   切片 800/120 | 嵌入 256 维 | BM25 k1=1.5 b=0.75 | 融合 0.6/0.4

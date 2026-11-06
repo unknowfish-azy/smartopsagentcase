@@ -151,7 +151,7 @@ CHEAT = """
     <p><b>四级纠察</b>：Rule(规则) → Evidence(证据) → AI(可插拔) → Verifier(状态核验)</p>
     <p><b>假成功</b>：声称已解决 但 实际 resolved=false → REJECTED</p>
     <p><b>风险</b>：CRITICAL 禁自动 / HIGH 必审批（server.restart·stop·delete·shell.execute）</p>
-    <p><b>数字</b>：563 项测试（Python 135 + 后端 428）· 80 张表 · 5 模块 · 6 思考阶段 · 零密钥可复现</p>
+    <p><b>数字</b>：610 个 Python 用例 + 671 个后端 @Test · 119 张表 · 5 模块 · 6 思考阶段 · 零密钥可复现</p>
     <hr/>
     <p><b>被问数据</b>：先认 NOT RUN → 亮"诚实评测框架" → 转"系统能力可演示可验证"</p>
     <p><b>被问边界</b>：先承认 → 给路线图（OCR / 端侧 / 多节点 / 语义版本）</p>

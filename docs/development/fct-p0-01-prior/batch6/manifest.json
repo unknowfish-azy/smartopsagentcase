@@ -1,0 +1,183 @@
+{
+  "reason": "FCT-P0-01 第六批：把\"146 个页面组件 / 27,983 行\"对齐台账 Vue 口径（175 文件 / 21,944 行）；删除与 494 项冲突的\"尚未建自动化测试套件\"",
+  "mode": "APPLY",
+  "files": [
+    {
+      "path": "docs/competition/defense.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch6/defense.md",
+      "bytes": 13446,
+      "sha256": "e7e97a4201a467cc1238803f1d530e2044808ab7ce492f47ec863d5eafca303f",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-合订本.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch6/答辩材料-合订本.md",
+      "bytes": 80289,
+      "sha256": "bbbbe1159d3282d5538eca0d0e9dde8ba3634c4e82d5e5128a14cf5d4c7e5793",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-打印合订本.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch6/答辩材料-打印合订本.html",
+      "bytes": 103161,
+      "sha256": "59891bf3200fa9e3e847403fca66abbcc5ac2a3bedaa007e1553416297372112",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩知识手册-打印版.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch6/答辩知识手册-打印版.html",
+      "bytes": 76495,
+      "sha256": "b9b1055b135be245d1d52b8d39e2bc46e4bf2f8d63480bb252d5acc6369e7000",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/项目知识要点手册.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch6/项目知识要点手册.md",
+      "bytes": 18450,
+      "sha256": "8ee0dd1140e2910e0e5fc14dde3e0e9be91bdbfffdc30b3979843b09f0a76189",
+      "matches_prior": true
+    }
+  ],
+  "rewrite_batch6": {
+    "bound_metrics": {
+      "vue.file_n": 175,
+      "vue.loc.total": 21944,
+      "frontend_npm_test.tests": 494
+    },
+    "caliber_note": "175 = frontend/src 下全部 *.vue（views 67 / components 105 / layouts 2 / App.vue 1），与 metrics.json 同一 source_digest",
+    "changed_files": 5,
+    "changed_lines": 7,
+    "results": [
+      {
+        "path": "docs/competition/defense.md",
+        "before_sha256": "e7e97a4201a467cc1238803f1d530e2044808ab7ce492f47ec863d5eafca303f",
+        "after_sha256": "d675f3a1c30c1d316a30b562e325093410a239b663acce1004beef9d669ad59a",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 120,
+            "ops": [
+              {
+                "old": "146 个页面组件",
+                "new": "175 个 .vue 文件",
+                "note": "工程完成度"
+              },
+              {
+                "old": "（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）",
+                "new": "（注：`npm test` 494 项全过，另经 `tsc --noEmit` 与双入口构建验证）",
+                "note": "删除未建测试套件的表述"
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch6/diffs/defense.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-合订本.md",
+        "before_sha256": "bbbbe1159d3282d5538eca0d0e9dde8ba3634c4e82d5e5128a14cf5d4c7e5793",
+        "after_sha256": "8c657a19c7c4547710a4ff2197fd2d24b7c782eed8ec62d5b3b33b8ffd2f7733",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 125,
+            "ops": [
+              {
+                "old": "146 个页面组件",
+                "new": "175 个 .vue 文件",
+                "note": "工程完成度"
+              },
+              {
+                "old": "（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）",
+                "new": "（注：`npm test` 494 项全过，另经 `tsc --noEmit` 与双入口构建验证）",
+                "note": "删除未建测试套件的表述"
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch6/diffs/答辩材料-合订本.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-打印合订本.html",
+        "before_sha256": "59891bf3200fa9e3e847403fca66abbcc5ac2a3bedaa007e1553416297372112",
+        "after_sha256": "649d0307392935473aa4403b8e9d9f9c7db5935e4cbfaed66ec1568527809738",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 159,
+            "ops": [
+              {
+                "old": "146 个页面组件",
+                "new": "175 个 .vue 文件",
+                "note": "工程完成度"
+              },
+              {
+                "old": "（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）",
+                "new": "（注：<code>npm test</code> 494 项全过，另经 <code>tsc --noEmit</code> 与双入口构建验证）",
+                "note": "删除未建测试套件的表述"
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch6/diffs/答辩材料-打印合订本.html.diff"
+      },
+      {
+        "path": "docs/competition/答辩知识手册-打印版.html",
+        "before_sha256": "b9b1055b135be245d1d52b8d39e2bc46e4bf2f8d63480bb252d5acc6369e7000",
+        "after_sha256": "713abc7824c30247b6d3abef71018795600eeb476086cad5966816e0fe1be23b",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 176,
+            "ops": [
+              {
+                "old": "146 个 .vue / 27,983 行",
+                "new": "175 个 .vue / 21,944 行",
+                "note": "服务表 frontend 行"
+              }
+            ]
+          },
+          {
+            "line": 230,
+            "ops": [
+              {
+                "old": "146 .vue / 27,983 行",
+                "new": "175 .vue / 21,944 行",
+                "note": "代码规模一节"
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch6/diffs/答辩知识手册-打印版.html.diff"
+      },
+      {
+        "path": "docs/competition/项目知识要点手册.md",
+        "before_sha256": "8ee0dd1140e2910e0e5fc14dde3e0e9be91bdbfffdc30b3979843b09f0a76189",
+        "after_sha256": "b3d7c7181b35046ab810f8398e6df88555d33960e6f8ede2d5657769d0c7d395",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 45,
+            "ops": [
+              {
+                "old": "146 个 .vue / 27,983 行",
+                "new": "175 个 .vue / 21,944 行",
+                "note": "服务表 frontend 行"
+              }
+            ]
+          },
+          {
+            "line": 221,
+            "ops": [
+              {
+                "old": "146 .vue / 27,983 行",
+                "new": "175 .vue / 21,944 行",
+                "note": "代码规模一节"
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch6/diffs/项目知识要点手册.md.diff"
+      }
+    ]
+  }
+}

@@ -1,0 +1,134 @@
+diff --git "a/docs\\development\\fct-p0-01-prior\\batch2\\\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html" "b/docs/competition/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
+index 0edda43..05c5b93 100644
+--- "a/docs\\development\\fct-p0-01-prior\\batch2\\\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
++++ "b/docs/competition/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
+@@ -157,5 +157,5 @@ a { color:#1f6feb; text-decoration:none; }
+ <h2>6. 工程质量与可复现性（约 40 秒）</h2>
+ <p>一个能拿奖的作品，必须经得起"能不能跑起来"的检验：</p>
+-<ul><li><strong>前端</strong>：146 个页面组件，用户层 / 管理员层<strong>双入口构建通过</strong>（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）；</li><li><strong>后端</strong>：<strong>428 个 @Test（87 个测试类）</strong>，基于 H2（MySQL 兼容模式）跑真实迁移脚本；</li><li><strong>数据库</strong>：MySQL 8，<strong>80 张表</strong>，迁移脚本幂等，启动自动补齐；</li><li><strong>可复现</strong>：<code>mock</code> 模型<strong>零密钥</strong>即可跑通全链路，一键切换到 Ollama / OpenAI 兼容模型。评委老师可以自己拉下来跑。</li></ul>
++<ul><li><strong>前端</strong>：146 个页面组件，用户层 / 管理员层<strong>双入口构建通过</strong>（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）；</li><li><strong>后端</strong>：<strong>656 个 @Test（87 个测试类）</strong>，基于 H2（MySQL 兼容模式）跑真实迁移脚本；</li><li><strong>数据库</strong>：MySQL 8，<strong>119 张表</strong>，迁移脚本幂等，启动自动补齐；</li><li><strong>可复现</strong>：<code>mock</code> 模型<strong>零密钥</strong>即可跑通全链路，一键切换到 Ollama / OpenAI 兼容模型。评委老师可以自己拉下来跑。</li></ul>
+ <hr/>
+ <h2>7. 诚实边界：我们如何对待"还没跑出来的指标"（约 30 秒）—— *防坑必讲*</h2>
+@@ -173,8 +173,8 @@ a { color:#1f6feb; text-decoration:none; }
+ <hr/>
+ <h2>附录 A：评分维度映射（每讲一段，就在评委心里"打卡"）</h2>
+-<table><thead><tr><th>评分维度</th><th>权重（参考）</th><th>本稿对应段落</th><th>你要在台上"亮"的点</th></tr></thead><tbody><tr><td>AI 技术深度 / 算法</td><td>35%</td><td>第 4 节</td><td>版本感知混合检索、trust_score、四级证据核查（规则→证据→AI→状态核验）、风险引擎</td></tr><tr><td>创新性</td><td>25%</td><td>第 2、5 节</td><td>三道锁+一本账、可信闭环工程化、透明推理</td></tr><tr><td>前端工程质量</td><td>10%</td><td>第 6 节</td><td>563 项测试（Python 135 + 后端 428）、双入口同源、分包优化</td></tr><tr><td>实用性</td><td>10%</td><td>第 3、8 节</td><td>真实运维闭环、mock 可复现、模型可切换</td></tr><tr><td>用户体验</td><td>10%</td><td>第 3 节</td><td>思考可视化、渐进增强、隐私提示</td></tr><tr><td>社会价值与商业潜力</td><td>10%</td><td>第 8 节</td><td>中小企业普惠、SaaS+私有化</td></tr></tbody></table>
++<table><thead><tr><th>评分维度</th><th>权重（参考）</th><th>本稿对应段落</th><th>你要在台上"亮"的点</th></tr></thead><tbody><tr><td>AI 技术深度 / 算法</td><td>35%</td><td>第 4 节</td><td>版本感知混合检索、trust_score、四级证据核查（规则→证据→AI→状态核验）、风险引擎</td></tr><tr><td>创新性</td><td>25%</td><td>第 2、5 节</td><td>三道锁+一本账、可信闭环工程化、透明推理</td></tr><tr><td>前端工程质量</td><td>10%</td><td>第 6 节</td><td>610 个 Python 用例 + 656 个后端 @Test、双入口同源、分包优化</td></tr><tr><td>实用性</td><td>10%</td><td>第 3、8 节</td><td>真实运维闭环、mock 可复现、模型可切换</td></tr><tr><td>用户体验</td><td>10%</td><td>第 3 节</td><td>思考可视化、渐进增强、隐私提示</td></tr><tr><td>社会价值与商业潜力</td><td>10%</td><td>第 8 节</td><td>中小企业普惠、SaaS+私有化</td></tr></tbody></table>
+ <blockquote>提示：若秩序册公布的权重与上述不同，<strong>第 4 节（算法）与第 5 节（创新）是无论如何都要讲满、讲透的两段</strong>。</blockquote>
+ <h2>附录 B：30 秒电梯演讲（候场/被临时打断时用）</h2>
+-<blockquote>智维Agent 是一个可信 AI 智能运维平台。它用"版本感知混合检索 + 证据可信度评分 + 四级证据核查（规则→证据→AI→状态核验） + 风险策略 + 人工审批 + 全程审计"，把大模型从"会回答问题"变成"可信地完成运维任务"。四端全栈、563 项测试（Python 135 + 后端 428）、零密钥可复现。一句话：AI 负责思考，人负责授权，系统负责留痕。</blockquote>
++<blockquote>智维Agent 是一个可信 AI 智能运维平台。它用"版本感知混合检索 + 证据可信度评分 + 四级证据核查（规则→证据→AI→状态核验） + 风险策略 + 人工审批 + 全程审计"，把大模型从"会回答问题"变成"可信地完成运维任务"。四端全栈、610 个 Python 用例 + 656 个后端 @Test、零密钥可复现。一句话：AI 负责思考，人负责授权，系统负责留痕。</blockquote>
+ <h2>附录 C：演示时间盒（建议）</h2>
+ <table><thead><tr><th>时间</th><th>内容</th></tr></thead><tbody><tr><td>0:00–0:20</td><td>开场钩子 + 痛点</td></tr><tr><td>0:20–1:30</td><td>解决方案（三道锁+一本账）</td></tr><tr><td>1:30–3:30</td><td>Demo 主线一（带证据问答）</td></tr><tr><td>3:30–5:30</td><td>Demo 主线二（高危动作被拦截→审批→执行→审计）</td></tr><tr><td>5:30–7:00</td><td>算法深度 + 创新点</td></tr><tr><td>7:00–8:00</td><td>工程/诚实边界/价值/收尾</td></tr></tbody></table>
+@@ -200,5 +200,5 @@ a { color:#1f6feb; text-decoration:none; }
+ <h2>1. 项目一页通（四个时长版本，按需取用）</h2>
+ <p><strong>30 秒（电梯稿）</strong></p>
+-<blockquote>智维Agent 是一个可信 AI 智能运维平台。它用"版本感知混合检索 + 证据可信度评分 + 四级纠察 + 风险策略 + 人工审批 + 全程审计"，把大模型从"会回答问题"变成"可信地完成运维任务"。四端全栈、563 项测试（Python 135 + 后端 428）、零密钥可复现。一句话：AI 负责思考，人负责授权，系统负责留痕。</blockquote>
++<blockquote>智维Agent 是一个可信 AI 智能运维平台。它用"版本感知混合检索 + 证据可信度评分 + 四级纠察 + 风险策略 + 人工审批 + 全程审计"，把大模型从"会回答问题"变成"可信地完成运维任务"。四端全栈、610 个 Python 用例 + 656 个后端 @Test、零密钥可复现。一句话：AI 负责思考，人负责授权，系统负责留痕。</blockquote>
+ <p><strong>1 分钟</strong></p>
+ <blockquote>中小企业运维"人手少、系统杂、知识散"，最怕两件事：AI 给错建议没人发现，AI 做错动作没人拦得住。通用聊天机器人解决不了"可信"。我们做了智维Agent：一次运维任务被拆成"监测→分析→检索→证据验证→规划→风险判断→人工审批→安全执行→结果验证→审计→沉淀"的闭环。检索带版本过滤和可信度评分，执行带风险分级和人工审批，全程审计留痕。它有四端：Vue 前端、Spring Boot 后端、FastAPI AI 服务、Python Agent 框架。默认 mock 零密钥就能跑通。</blockquote>
+@@ -244,5 +244,5 @@ a { color:#1f6feb; text-decoration:none; }
+ <p><strong>A2 为什么做"可信运维"？</strong><br/>中小企业"人手少、系统杂、知识散"，最怕"AI 给错建议没人发现、AI 做错动作没人拦得住"。这是真实且未被满足的需求。</p>
+ <p><strong>A3 你的用户和典型场景？</strong><br/>10–200 人企业运维负责人/驻场工程师；故障问答定位、版本感知检索、受控执行、核查沉淀、团队协同。</p>
+-<p><strong>A4 完成度到哪？</strong><br/>四端全栈可运行；前端双入口构建（暂无自动化测试套件）、后端 87 测试类、80 张表；mock 零密钥跑通。模型基准评测尚未接入（见 E 类）。</p>
++<p><strong>A4 完成度到哪？</strong><br/>四端全栈可运行；前端双入口构建（暂无自动化测试套件）、后端 87 测试类、119 张表；mock 零密钥跑通。模型基准评测尚未接入（见 E 类）。</p>
+ <p><strong>A5 和"运维知识库"差在哪？</strong><br/>知识库只解决"查得到"，我们解决"查得对版本 + 答得有证据 + 做得有边界 + 过程能复盘"。</p>
+ <p><strong>A6 项目最大的技术难点？</strong><br/>把"可信"从口号变成<strong>可运行、可拦截、可追溯</strong>的代码路径——尤其是"假成功检测"和"风险执行前闸门"。</p>
+@@ -269,5 +269,5 @@ a { color:#1f6feb; text-decoration:none; }
+ <p><strong>C5 多智能体体现在哪？</strong><br/>后端 <code>TeamAgentRunService</code> + <code>DecisionLoopService</code> 支撑团队级运行与决策循环；单机闭环 + 团队协同两层。</p>
+ <p><strong>C6 memory 怎么设计？</strong><br/>短期上下文 + 长期 <code>operator_memory</code> 双层；处置结论回流，形成"越用越懂"的经验。</p>
+-<p><strong>C7 🔥 80 张表是不是过度设计？</strong><br/>覆盖账户权限/审计/团队/知识/模型网关/哨兵/远程运维完整域；迁移幂等，局部缺失只影响对应模块。<strong>承认"偏重"，给"模块化裁剪"路线。</strong></p>
++<p><strong>C7 🔥 119 张表是不是过度设计？</strong><br/>覆盖账户权限/审计/团队/知识/模型网关/哨兵/远程运维完整域；迁移幂等，局部缺失只影响对应模块。<strong>承认"偏重"，给"模块化裁剪"路线。</strong></p>
+ <p><strong>C8 性能/大屏卡不卡？</strong><br/>zrender 从 echarts 拆出（510→346kB），Three.js 懒加载，图表面板按需加载，管理员层独立产物。</p>
+ <p><strong>C9 后端为什么用 Spring Boot，AI 用 FastAPI？</strong><br/>后端要成熟的权限/审计/事务；AI 侧要 Python 生态与异步流式。<strong>职责分层</strong>，不是堆技术。</p>
+@@ -292,7 +292,7 @@ a { color:#1f6feb; text-decoration:none; }
+ <p><strong>E8 如果现在就让你跑一个真实评测，缺什么？</strong><br/>真实模型提供方 + 已标注且通过泄漏检查的分组测试集 + evaluator 适配器。三者到位即可出数。</p>
+ <h3>F. 工程与可复现（7 题）</h3>
+-<p><strong>F1 ⭐ 测试情况？</strong><br/>前端 563 项全过 + <code>tsc --noEmit</code> + 双构建；后端 87 个 JUnit 类（H2 MySQL 兼容跑真实迁移）；75 表迁移幂等。</p>
++<p><strong>F1 ⭐ 测试情况？</strong><br/>前端 563 项全过 + <code>tsc --noEmit</code> + 双构建；后端 87 个 JUnit 类（H2 MySQL 兼容跑真实迁移）；119 表迁移幂等。</p>
+ <p><strong>F2 前端为什么"部分 TS"？</strong><br/>共享逻辑层（48 模块）迁 TS 拿类型收益，组件层留 JS 控成本；<code>tsc --noEmit</code> 已进门禁。<strong>有意取舍，不是偷懒。</strong></p>
+-<p><strong>F3 🔥 563 项测试（Python 135 + 后端 428）是不是凑数？</strong><br/>覆盖契约、安全不变量、领域逻辑，不是纯断言堆砌；核心是"防单人阻塞"的交接保证。</p>
++<p><strong>F3 🔥 610 个 Python 用例 + 656 个后端 @Test是不是凑数？</strong><br/>覆盖契约、安全不变量、领域逻辑，不是纯断言堆砌；核心是"防单人阻塞"的交接保证。</p>
+ <p><strong>F4 怎么保证可复现？</strong><br/>mock 零密钥跑通全链路；一键切 Ollama/OpenAI；docker-compose；迁移自动补表。</p>
+ <p><strong>F5 CI/质量门禁？</strong><br/><code>npm test / typecheck / build / build:admin</code> + <code>mvn test</code> + <code>pytest</code>，命令都在 <code>project-plan.md</code>。</p>
+@@ -316,5 +316,5 @@ a { color:#1f6feb; text-decoration:none; }
+ <p><strong>I1 团队几人怎么分工？</strong><br/>前端交互 / 后端数据 / AI 算法三块切分；测试与构建门禁防单人阻塞。</p>
+ <p><strong>I2 你个人负责哪块？</strong><br/>（据实回答，落到具体模块与代码，别泛泛。）</p>
+-<p><strong>I3 🔥 1–3 人做得完吗？</strong><br/>按模块切 + 门禁保交接 + 文档脚本保可复现；563 项测试（Python 135 + 后端 428）就是"某人请假也不崩"的保证。</p>
++<p><strong>I3 🔥 1–3 人做得完吗？</strong><br/>按模块切 + 门禁保交接 + 文档脚本保可复现；610 个 Python 用例 + 656 个后端 @Test就是"某人请假也不崩"的保证。</p>
+ <p><strong>I4 最大的坑？</strong><br/>（讲真实的一个：如迁移漏表、双入口配置分裂，说清怎么发现、怎么修。）</p>
+ <p><strong>I5 用了 AI 辅助写代码吗？</strong><br/>如实：用了 AI 辅助提效，但架构、算法、验收由人把关；关键路径有人审。<strong>诚实反而加分。</strong></p>
+@@ -322,5 +322,5 @@ a { color:#1f6feb; text-decoration:none; }
+ <p><strong>J1 🔥 "我觉得你这项目没什么技术含量。"</strong><br/>理解您的视角。技术含量不在"训了个大模型"，而在<strong>把可信约束工程化</strong>：版本感知检索融合、trust_score 公式、四级纠察+假成功状态机、风险执行前闸门、可复现评测框架——每处都是针对"AI 运维可信"这个真问题的算法与系统设计。欢迎就任一模块深入切磋。</p>
+ <p><strong>J2 🔥 "创新点别人都能做，凭什么获奖？"</strong><br/>单点别人或可做，但把"版本过滤+证据聚合+风险审批+透明推理+全程审计"<strong>串成可运行、可演示、可复现的闭环</strong>，每点都有代码与演示路径——<strong>系统性整合与工程纪律本身就是壁垒</strong>。</p>
+-<p><strong>J3 🔥 "你这就是套壳吧？"</strong><br/>套壳是"换个皮调 API"。我们有自研 Agent 内核、检索/证据/纠察/风险四套算法、75 表域模型、563 项测试（Python 135 + 后端 428）。<strong>壳下面是自己的骨架。</strong></p>
++<p><strong>J3 🔥 "你这就是套壳吧？"</strong><br/>套壳是"换个皮调 API"。我们有自研 Agent 内核、检索/证据/纠察/风险四套算法、119 表域模型、610 个 Python 用例 + 656 个后端 @Test。<strong>壳下面是自己的骨架。</strong></p>
+ <p><strong>J4 🔥 "你连真实数据都没有，凭什么谈算法？"</strong><br/>算法价值在设计与可证伪性：公式可拆、状态机可测、消融可跑。我们<strong>刻意不编数字</strong>，这是对"可信"二字的自洽——一个敢说"我还不能下结论"的系统，才配谈可信。</p>
+ <p><strong>J5 🔥 "现场能跑吗？跑挂了怎么办？"</strong><br/>能跑（mock 零密钥）。预案：60 秒备用录屏 → 技术文档链路图 → 口述主线+点代码位置。<strong>不慌、不重来、不长停顿。</strong></p>
+@@ -350,5 +350,5 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+ 假成功：声称已解决 但 实际resolved=false → REJECTED
+ 风险：CRITICAL禁自动 / HIGH必审批(server.restart·stop·delete·shell.execute)
+-数字：563测试 · 87后端类 · 80表 · 5模块 · 6思考阶段 · 零密钥可复现
++数字：610 Python 用例 + 656 后端 @Test · 87后端类 · 119表 · 5模块 · 6思考阶段 · 零密钥可复现
+ 
+ 被问数据：先认NOT RUN → 亮"诚实评测框架" → 转"系统能力可演示可验证"
+@@ -400,7 +400,7 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+ <hr/>
+ <h2>五、工程 / 可复现（4 题）</h2>
+-<p><strong>Q23：代码量 / 测试情况？</strong><br/>A：前端双入口构建通过（暂无自动化测试套件）、<code>tsc --noEmit</code> 通过、双入口构建通过；后端 87 个 JUnit 测试类（H2 MySQL 兼容模式跑真实迁移）；MySQL 8 / 80 张表、迁移幂等、启动自动补齐。质量门禁命令全在 <code>project-plan.md</code>。</p>
++<p><strong>Q23：代码量 / 测试情况？</strong><br/>A：前端双入口构建通过（暂无自动化测试套件）、<code>tsc --noEmit</code> 通过、双入口构建通过；后端 87 个 JUnit 测试类（H2 MySQL 兼容模式跑真实迁移）；MySQL 8 / 119 张表、迁移幂等、启动自动补齐。质量门禁命令全在 <code>project-plan.md</code>。</p>
+ <p><strong>Q24：前端为什么"部分 TypeScript"？</strong><br/>A：有意的取舍。共享逻辑层（api/domain/utils/types 共 48 模块）迁 TS 拿类型收益；组件层保持 JS 控改造成本。<code>tsc --noEmit</code> 已纳入门禁，不是偷懒。</p>
+-<p><strong>Q25：80 张表是不是过度设计？</strong><br/>A：覆盖账户权限、审计、团队协作、知识、模型网关、哨兵监控、远程运维等<strong>完整域模型</strong>。迁移脚本幂等，局部缺失只影响对应模块，不影响整体。</p>
++<p><strong>Q25：119 张表是不是过度设计？</strong><br/>A：覆盖账户权限、审计、团队协作、知识、模型网关、哨兵监控、远程运维等<strong>完整域模型</strong>。迁移脚本幂等，局部缺失只影响对应模块，不影响整体。</p>
+ <p><strong>Q26：性能如何？大屏/3D 会不会卡？</strong><br/>A：分包针对性优化：zrender 从 echarts 拆出（510kB→346kB），Three.js 懒加载，管理员层独立产物，图表面板按需加载。渲染侧做了按需加载。</p>
+ <hr/>
+@@ -424,9 +424,9 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+ <p><strong>Q37："你的创新点别人都能做，凭什么获奖？"</strong><br/>A：单点别人或许能做，但把"版本过滤 + 证据聚合 + 风险审批 + 透明推理 + 全程审计"<strong>串成一个可运行、可演示、可复现的闭环</strong>，且每个点都有代码与演示路径，这种<strong>系统性整合与工程纪律</strong>本身即是壁垒。</p>
+ <p><strong>Q38：现场演示失败怎么办？</strong><br/>A：预案——① 60 秒备用录屏；② 直接展示 <code>technical-document.html</code> 链路图；③ 口述 Demo 主线并点开对应代码位置。不慌、不重来、不长时间停顿。</p>
+-<p><strong>Q39：团队只有 1–3 人怎么保证完成度？</strong><br/>A：按模块切分（前端交互 / 后端数据 / AI 算法），用测试与构建门禁防单人阻塞，文档与脚本保证可交接。563 项测试（Python 135 + 后端 428）就是"不会因为某个人请假而崩"的保证。</p>
++<p><strong>Q39：团队只有 1–3 人怎么保证完成度？</strong><br/>A：按模块切分（前端交互 / 后端数据 / AI 算法），用测试与构建门禁防单人阻塞，文档与脚本保证可交接。610 个 Python 用例 + 656 个后端 @Test就是"不会因为某个人请假而崩"的保证。</p>
+ <p><strong>Q40：如果模型答错了怎么办？</strong><br/>A：三层兜底——提示词约束"无证据不下确定结论"；证据链让用户可核对；高风险动作必须人工审批。答错不会直接变成生产事故。</p>
+ <hr/>
+ <h2>速记卡（候场最后看一眼）</h2>
+-<ul><li>一句话：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></li><li>三道锁：证据锁 / 风险锁 / 边界锁；一本账：审计账。</li><li>算法三板斧：版本感知混合检索 → trust_score；四级证据核查（规则→证据→AI→状态核验）；风险策略引擎。</li><li>数字武器：563 项测试（Python 135 + 后端 428） / 87 后端类 / 75 表 / 5 模块 / 6 思考阶段 / 零密钥可复现。</li><li>被问数据：先承认 NOT RUN，再亮"诚实评测框架"，转回"系统能力可演示可验证"。</li><li>被问边界：先承认，再给路线图（OCR/端侧/多节点）。</li></ul></div>
++<ul><li>一句话：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></li><li>三道锁：证据锁 / 风险锁 / 边界锁；一本账：审计账。</li><li>算法三板斧：版本感知混合检索 → trust_score；四级证据核查（规则→证据→AI→状态核验）；风险策略引擎。</li><li>数字武器：610 个 Python 用例 + 656 个后端 @Test / 87 后端类 / 119 表 / 5 模块 / 6 思考阶段 / 零密钥可复现。</li><li>被问数据：先承认 NOT RUN，再亮"诚实评测框架"，转回"系统能力可演示可验证"。</li><li>被问边界：先承认，再给路线图（OCR/端侧/多节点）。</li></ul></div>
+     </section>
+     <section class="part">
+@@ -441,5 +441,5 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+ <h2>0. 先用 30 秒记住"12 张技术底牌"（自曝边界，反而最稳）</h2>
+ <p>评委只要真读代码，这 12 个点一定藏不住。<strong>提前知道、敢承认、给路线</strong>，你就从"被问倒"变成"显得通透"。</p>
+-<table><thead><tr><th>#</th><th>真实情况（别硬吹）</th><th>一句话应对</th></tr></thead><tbody><tr><td>1</td><td>BM25 中文<strong>没分词</strong>，连续中文当一个整词（正则 <code>[\u4e00-\u9fff]+</code>）</td><td>"规则分词基线，零依赖可复现；生产接 jieba/字符 n-gram，中文语义交给向量路。"</td></tr><tr><td>2</td><td>向量库是<strong>内存线性扫描 + 余弦</strong>，非 FAISS</td><td>"小语料足够；规模化换 FAISS / pgvector，接口已抽象。"</td></tr><tr><td>3</td><td>默认嵌入是 <strong>hash_embedding</strong>，不是语义模型</td><td>"演示默认，可切 Sentence Transformers；它不代表能力上限。"</td></tr><tr><td>4</td><td>Planner 是<strong>规则基线</strong>（关键词），不是 LLM</td><td>"确定性基线先跑通、可测；LLM Planner 是插件化替换项。"</td></tr><tr><td>5</td><td>Executor <strong>没有自动重试/幂等键/回滚</strong></td><td>"失败即上报 inspector 触发 Re-plan；幂等与回滚在路线图。"</td></tr><tr><td>6</td><td>AI Judge <strong>默认 passthrough</strong>（不绑模型）</td><td>"可插拔钩子，默认不阻塞；生产注入评审模型。"</td></tr><tr><td>7</td><td>证据一致性是<strong>词面重合</strong>启发式</td><td>"确定性、不被'自信错误'骗；语义升级走 NLI/模型。"</td></tr><tr><td>8</td><td>版本过滤是<strong>精确匹配</strong></td><td>"精度换召回，宁缺毋滥；升级语义化版本区间。"</td></tr><tr><td>9</td><td><strong>没有真实 benchmark</strong>，全部 <code>NOT RUN</code></td><td>"搭了诚实评测框架，无数据不造数。"</td></tr><tr><td>10</td><td>图像<strong>只传文件名</strong>，内容不出端</td><td>"刻意隐私取舍；OCR/多模态是授权后路线。"</td></tr><tr><td>11</td><td>80 张表<strong>偏重</strong></td><td>"完整域模型 + 幂等迁移；可模块化裁剪核心子集。"</td></tr><tr><td>12</td><td><strong>未做系统压测</strong>、单机部署</td><td>"分包与懒加载做过优化；压测与水平扩展在计划内。"</td></tr></tbody></table>
++<table><thead><tr><th>#</th><th>真实情况（别硬吹）</th><th>一句话应对</th></tr></thead><tbody><tr><td>1</td><td>BM25 中文<strong>没分词</strong>，连续中文当一个整词（正则 <code>[\u4e00-\u9fff]+</code>）</td><td>"规则分词基线，零依赖可复现；生产接 jieba/字符 n-gram，中文语义交给向量路。"</td></tr><tr><td>2</td><td>向量库是<strong>内存线性扫描 + 余弦</strong>，非 FAISS</td><td>"小语料足够；规模化换 FAISS / pgvector，接口已抽象。"</td></tr><tr><td>3</td><td>默认嵌入是 <strong>hash_embedding</strong>，不是语义模型</td><td>"演示默认，可切 Sentence Transformers；它不代表能力上限。"</td></tr><tr><td>4</td><td>Planner 是<strong>规则基线</strong>（关键词），不是 LLM</td><td>"确定性基线先跑通、可测；LLM Planner 是插件化替换项。"</td></tr><tr><td>5</td><td>Executor <strong>没有自动重试/幂等键/回滚</strong></td><td>"失败即上报 inspector 触发 Re-plan；幂等与回滚在路线图。"</td></tr><tr><td>6</td><td>AI Judge <strong>默认 passthrough</strong>（不绑模型）</td><td>"可插拔钩子，默认不阻塞；生产注入评审模型。"</td></tr><tr><td>7</td><td>证据一致性是<strong>词面重合</strong>启发式</td><td>"确定性、不被'自信错误'骗；语义升级走 NLI/模型。"</td></tr><tr><td>8</td><td>版本过滤是<strong>精确匹配</strong></td><td>"精度换召回，宁缺毋滥；升级语义化版本区间。"</td></tr><tr><td>9</td><td><strong>没有真实 benchmark</strong>，全部 <code>NOT RUN</code></td><td>"搭了诚实评测框架，无数据不造数。"</td></tr><tr><td>10</td><td>图像<strong>只传文件名</strong>，内容不出端</td><td>"刻意隐私取舍；OCR/多模态是授权后路线。"</td></tr><tr><td>11</td><td>119 张表<strong>偏重</strong></td><td>"完整域模型 + 幂等迁移；可模块化裁剪核心子集。"</td></tr><tr><td>12</td><td><strong>未做系统压测</strong>、单机部署</td><td>"分包与懒加载做过优化；压测与水平扩展在计划内。"</td></tr></tbody></table>
+ <blockquote>记住：<strong>能主动说出第 1、3、4、5、6 条的人，评委会觉得你是真懂，而不是背稿。</strong></blockquote>
+ <hr/>
+@@ -495,7 +495,7 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+ <p><strong>D8 如果审批人点错了批准？</strong><br/>答：执行前有 dry_run/风险提示；执行后有 inspector 核查 + 审计可回溯；<strong>误批仍是风险</strong>，靠流程+审计兜底。</p>
+ <h3>E. 工程与性能（8 题）</h3>
+-<p><strong>E1 563 项测试（Python 135 + 后端 428）是不是凑数？</strong><br/>答：覆盖契约、安全不变量、领域逻辑，是"防单人阻塞"的交接保证，不是纯断言堆砌。</p>
++<p><strong>E1 610 个 Python 用例 + 656 个后端 @Test是不是凑数？</strong><br/>答：覆盖契约、安全不变量、领域逻辑，是"防单人阻塞"的交接保证，不是纯断言堆砌。</p>
+ <p><strong>E2 有压测/QPS 吗？</strong><br/>答：<strong>没有</strong>。分包做过优化（echarts 510→346kB、Three 懒加载），但<strong>未做系统压测</strong>；水平扩展在计划内。诚实。</p>
+-<p><strong>E3 80 张表会不会太重？</strong><br/>答：完整域模型（账户/审计/团队/知识/模型/哨兵/远程运维）；迁移幂等；<strong>可模块化裁剪核心子集</strong>。</p>
++<p><strong>E3 119 张表会不会太重？</strong><br/>答：完整域模型（账户/审计/团队/知识/模型/哨兵/远程运维）；迁移幂等；<strong>可模块化裁剪核心子集</strong>。</p>
+ <p><strong>E4 服务间一致性（AI/知识/后端）？</strong><br/>答：AI→知识走 HTTP，知识不可用时<strong>优雅降级为空结果</strong>（<code>rag.py</code> 的 <code>_empty_result</code>），不阻塞对话；<strong>无分布式事务</strong>，因为场景不强依赖。</p>
+ <p><strong>E5 单点故障？</strong><br/>答：单机部署，<strong>无高可用</strong>；生产可多实例 + 网关。诚实。</p>
+@@ -533,5 +533,5 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+ <blockquote><strong>不是模型，是"约束工程 + 领域知识资产 + 插件生态 + 评测框架"的系统性整合。</strong><br/>模型谁都能换；把"可信"做成可拦截、可追溯、可复现的闭环，才是壁垒。</blockquote>
+ <h3>2.4 成本 / 部署优势</h3>
+-<ul><li><strong>演示零成本</strong>：mock 零密钥跑通全链路。</li><li><strong>落地可控</strong>：私有化自托管数据；核心子集可裁剪，降低 75 表的部署门槛。</li><li><strong>模型可换</strong>：Ollama 本地省成本，OpenAI 兼容按需用。</li></ul>
++<ul><li><strong>演示零成本</strong>：mock 零密钥跑通全链路。</li><li><strong>落地可控</strong>：私有化自托管数据；核心子集可裁剪，降低 119 表的部署门槛。</li><li><strong>模型可换</strong>：Ollama 本地省成本，OpenAI 兼容按需用。</li></ul>
+ <hr/>
+ <h2>3. 未来前景（评委问"能走多远"时用）</h2>
+@@ -572,5 +572,5 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+ <pre><code>【12底牌·敢承认】
+ 中文未分词 / 向量内存线性 / hash嵌入 / Planner规则 / 无重试回滚 / AIJudge可插拔
+-证据=词重叠 / 版本精确匹配 / 无benchmark / 图像仅文件名 / 80表偏重 / 未压测
++证据=词重叠 / 版本精确匹配 / 无benchmark / 图像仅文件名 / 119表偏重 / 未压测
+ 
+ 【三张公式】
+@@ -605,5 +605,5 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+     <p><b>假成功</b>：声称已解决 但 实际 resolved=false → REJECTED</p>
+     <p><b>风险</b>：CRITICAL 禁自动 / HIGH 必审批（server.restart·stop·delete·shell.execute）</p>
+-    <p><b>数字</b>：563 项测试（Python 135 + 后端 428）· 80 张表 · 5 模块 · 6 思考阶段 · 零密钥可复现</p>
++    <p><b>数字</b>：610 个 Python 用例 + 656 个后端 @Test · 119 张表 · 5 模块 · 6 思考阶段 · 零密钥可复现</p>
+     <hr/>
+     <p><b>被问数据</b>：先认 NOT RUN → 亮"诚实评测框架" → 转"系统能力可演示可验证"</p>

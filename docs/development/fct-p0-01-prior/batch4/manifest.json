@@ -1,0 +1,118 @@
+{
+  "reason": "FCT-P0-01 第四批：把\"后端 87 个 JUnit 类\"对齐台账 test_class_n=122；删除与实测 494 项冲突的\"暂无自动化测试套件\"",
+  "mode": "APPLY",
+  "files": [
+    {
+      "path": "docs/competition/defense-master.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch4/defense-master.md",
+      "bytes": 27989,
+      "sha256": "86fba80013e6585eb36649f49a3d4a75930b4153bb0ab55c344bf16326da8f19",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/defense-qa.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch4/defense-qa.md",
+      "bytes": 13568,
+      "sha256": "89742166c3bbc29619bdbbb9f55b2bf4d74392d4431d04040db4bb09a4f23df4",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-合订本.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch4/答辩材料-合订本.md",
+      "bytes": 80342,
+      "sha256": "13d664dfbd97e197d8b135d7a90ae20bf2eef98c29071c8ebbdf7a4b8d549b27",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-打印合订本.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch4/答辩材料-打印合订本.html",
+      "bytes": 103181,
+      "sha256": "eda4069424332dfeec1eed95edd31e6bb9ef162dcbc0863128132742befec337",
+      "matches_prior": true
+    }
+  ],
+  "rewrite_batch4": {
+    "snapshot_source_digest": "sha256:922883250075c75b86ccb47ca502e4b1206215e784bb4b6c17af39122d4e213d",
+    "bound_metrics": {
+      "java.test.test_class_n": 122,
+      "frontend_npm_test.tests": 494,
+      "frontend_npm_test.test_files": 99
+    },
+    "changed_files": 4,
+    "changed_lines": 6,
+    "results": [
+      {
+        "path": "docs/competition/defense-master.md",
+        "before_sha256": "86fba80013e6585eb36649f49a3d4a75930b4153bb0ab55c344bf16326da8f19",
+        "after_sha256": "2357f33665489b0cd483b1c942ab495ac4b3f917140d5b2447384f7b922068fd",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 275,
+            "old": "后端 87 个 JUnit 类",
+            "new": "后端 122 个 JUnit 类",
+            "note": "JUnit 类数"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch4/diffs/defense-master.md.diff"
+      },
+      {
+        "path": "docs/competition/defense-qa.md",
+        "before_sha256": "89742166c3bbc29619bdbbb9f55b2bf4d74392d4431d04040db4bb09a4f23df4",
+        "after_sha256": "ad1e61d99ea88ad4e23a002242f4dffa08a30978ddb1555b6191b699815789dc",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 94,
+            "old": "A：前端双入口构建通过（暂无自动化测试套件）、`tsc --noEmit` 通过、双入口构建通过；后端 87 个 JUnit 测试类",
+            "new": "A：前端 `npm test` 494 项全过（99 个测试文件）、`tsc --noEmit` 通过、双入口构建通过；后端 122 个 JUnit 测试类",
+            "note": "Q23：去掉\"暂无自动化测试套件\""
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch4/diffs/defense-qa.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-合订本.md",
+        "before_sha256": "13d664dfbd97e197d8b135d7a90ae20bf2eef98c29071c8ebbdf7a4b8d549b27",
+        "after_sha256": "27aef2159721ee3b8e4a1fc7589dd4e1f6411b3409018eb70ed9c48afb57b3ec",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 756,
+            "old": "A：前端双入口构建通过（暂无自动化测试套件）、`tsc --noEmit` 通过、双入口构建通过；后端 87 个 JUnit 测试类",
+            "new": "A：前端 `npm test` 494 项全过（99 个测试文件）、`tsc --noEmit` 通过、双入口构建通过；后端 122 个 JUnit 测试类",
+            "note": "Q23：去掉\"暂无自动化测试套件\""
+          },
+          {
+            "line": 481,
+            "old": "后端 87 个 JUnit 类",
+            "new": "后端 122 个 JUnit 类",
+            "note": "JUnit 类数"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch4/diffs/答辩材料-合订本.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-打印合订本.html",
+        "before_sha256": "eda4069424332dfeec1eed95edd31e6bb9ef162dcbc0863128132742befec337",
+        "after_sha256": "c007fdf9d388255aa3790f1c93afa006a0aa21a30280773b25c77f37ec31ba4e",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 402,
+            "old": "A：前端双入口构建通过（暂无自动化测试套件）、<code>tsc --noEmit</code> 通过、双入口构建通过；后端 87 个 JUnit 测试类",
+            "new": "A：前端 <code>npm test</code> 494 项全过（99 个测试文件）、<code>tsc --noEmit</code> 通过、双入口构建通过；后端 122 个 JUnit 测试类",
+            "note": "Q23：去掉\"暂无自动化测试套件\""
+          },
+          {
+            "line": 294,
+            "old": "后端 87 个 JUnit 类",
+            "new": "后端 122 个 JUnit 类",
+            "note": "JUnit 类数"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch4/diffs/答辩材料-打印合订本.html.diff"
+      }
+    ]
+  }
+}

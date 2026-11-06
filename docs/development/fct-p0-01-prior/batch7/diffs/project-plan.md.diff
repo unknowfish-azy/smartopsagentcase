@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch7/project-plan.md b/docs/competition/project-plan.md
+index bb18a37..8f3f4c6 100644
+--- a/docs/development/fct-p0-01-prior/batch7/project-plan.md
++++ b/docs/competition/project-plan.md
+@@ -201,7 +201,7 @@
+ | 前端测试 | Node test runner，**494 项**断言全部通过（99 个测试文件） |
+ | 类型检查 | `tsc --noEmit` 通过 |
+ | 构建 | 用户层与管理层双构建通过 |
+-| 后端测试 | JUnit 5 + H2（MySQL 兼容模式）集成测试，87 个测试类 |
++| 后端测试 | JUnit 5 + H2（MySQL 兼容模式）集成测试，126 个测试类 |
+ | 数据库 | MySQL 8，119 张表；迁移脚本幂等，启动自动补齐 schema |
+ | 仓库卫生 | 缓存与运行时数据不跟踪；`README` / `CHANGELOG` / `LICENSE` / `.env.example` 齐备 |
+ 

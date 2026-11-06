@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch7/defense-advanced.md b/docs/competition/defense-advanced.md
+index b0acfbf..bacc630 100644
+--- a/docs/development/fct-p0-01-prior/batch7/defense-advanced.md
++++ b/docs/competition/defense-advanced.md
+@@ -175,7 +175,7 @@
+ 
+ ### E. 工程与性能（8 题）
+ 
+-**E1 610 个 Python 用例 + 656 个后端 @Test是不是凑数？**
++**E1 610 个 Python 用例 + 671 个后端 @Test是不是凑数？**
+ 答：覆盖契约、安全不变量、领域逻辑，是"防单人阻塞"的交接保证，不是纯断言堆砌。
+ 
+ **E2 有压测/QPS 吗？**
