@@ -153,7 +153,8 @@ class OperationToolServiceTest {
     void blocks_mutating_tools_from_the_read_only_execution_endpoint() {
         OperationRuntimeRegistry registry = new OperationRuntimeRegistry();
         String runtimeId = registry.register(new RecordingRuntime(1L));
-        OperationToolService service = new OperationToolService(registry);
+        RecordingRunRecorder recorder = new RecordingRunRecorder();
+        OperationToolService service = new OperationToolService(registry, recorder);
 
         assertThatThrownBy(() -> service.execute(
                 1L,
@@ -162,6 +163,31 @@ class OperationToolServiceTest {
                 Map.of("service", "nginx")
         )).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("TOOL_CONFIRMATION_REQUIRED");
+        // 拒绝也必须留痕，不能只打日志
+        assertThat(recorder.blocked).singleElement().satisfies(attempt -> {
+            assertThat(attempt.toolId()).isEqualTo("service-restart");
+            assertThat(attempt.status()).isEqualTo("REJECTED");
+            assertThat(attempt.reason()).isEqualTo("TOOL_CONFIRMATION_REQUIRED");
+        });
+    }
+
+    @Test
+    void template_tools_are_recorded_as_not_implemented_instead_of_silently_failing() {
+        OperationRuntimeRegistry registry = new OperationRuntimeRegistry();
+        RecordingRuntime runtime = new RecordingRuntime(1L);
+        String runtimeId = registry.register(runtime);
+        RecordingRunRecorder recorder = new RecordingRunRecorder();
+        OperationToolService service = new OperationToolService(registry, recorder);
+
+        assertThatThrownBy(() -> service.execute(1L, runtimeId, "knowledge-retrieval", Map.of("keyword", "oom")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("TOOL_IMPLEMENTATION_UNAVAILABLE");
+        assertThat(recorder.blocked).singleElement().satisfies(attempt -> {
+            assertThat(attempt.toolId()).isEqualTo("knowledge-retrieval");
+            assertThat(attempt.status()).isEqualTo("NOT_IMPLEMENTED");
+            assertThat(attempt.reason()).contains("TOOL_IMPLEMENTATION_UNAVAILABLE").contains("本仓库未实现");
+        });
+        assertThat(runtime.commands).isEmpty();
     }
 
     @Test
@@ -235,6 +261,7 @@ class OperationToolServiceTest {
     private static final class RecordingRunRecorder implements OperationRunRecorder {
         private String startedTraceId;
         private final List<CommandOutput> outputs = new ArrayList<>();
+        private final List<BlockedAttempt> blocked = new ArrayList<>();
         private String finishedStatus;
 
         @Override
@@ -256,6 +283,13 @@ class OperationToolServiceTest {
             finishedStatus = status;
         }
 
+        @Override
+        public void recordBlockedAttempt(String traceId, Long userId, String runtimeId, String toolId,
+                                         String status, String reason, java.time.Instant at) {
+            blocked.add(new BlockedAttempt(toolId, status, reason));
+        }
+
         private record CommandOutput(String command, int exitCode, String stdout, String stderr) {}
+        private record BlockedAttempt(String toolId, String status, String reason) {}
     }
 }

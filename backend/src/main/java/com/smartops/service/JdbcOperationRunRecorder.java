@@ -126,6 +126,31 @@ public class JdbcOperationRunRecorder implements OperationRunRecorder {
     }
 
     @Override
+    public void recordBlockedAttempt(String traceId, Long userId, String runtimeId, String toolId,
+                                     String status, String reason, Instant at) {
+        // 未真正执行的调用直接以终态落库：不建 RUNNING、不占租约，恢复扫描不会误判为悬挂。
+        KeyHolder keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO operation_run_record(trace_id,user_id,session_id,runtime_id,tool_id,status,"
+                            + "started_at,ended_at) VALUES(?,?,NULL,?,?,?,?,?)",
+                    new String[]{"id"});
+            statement.setString(1, traceId);
+            statement.setLong(2, userId);
+            statement.setString(3, runtimeId == null ? "" : runtimeId);
+            statement.setString(4, toolId);
+            statement.setString(5, status);
+            statement.setTimestamp(6, Timestamp.from(at));
+            statement.setTimestamp(7, Timestamp.from(at));
+            return statement;
+        }, keys);
+        Number id = keys.getKey();
+        if (id == null) throw new IllegalStateException("RUN_RECORD_ID_MISSING");
+        jdbc.update("INSERT INTO operation_run_evidence(run_id,evidence_type,content,source_ref,created_at) VALUES(?,?,?,?,?)",
+                id.longValue(), "TOOL_BLOCKED", reason, "tool:" + toolId, Timestamp.from(at));
+    }
+
+    @Override
     public void heartbeat(RunHandle run) {
         Instant now = Instant.now();
         jdbc.update("UPDATE operation_run_record SET heartbeat_at=?, lease_expires_at=? WHERE id=? AND status='RUNNING'",

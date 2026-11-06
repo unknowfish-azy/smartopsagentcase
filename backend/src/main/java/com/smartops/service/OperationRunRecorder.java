@@ -47,6 +47,18 @@ public interface OperationRunRecorder {
     default void recordEvidence(RunHandle run, String type, String content) {}
 
     /**
+     * 记录一次未真正执行的调用（未审批拒绝 / 模板 / 不可用）。
+     *
+     * <p>这类调用不进入 RUNNING，也不占用租约；但“拒绝和不可用”同样必须可追溯，
+     * 不能只留应用日志。默认空实现保证既有测试替身无需改动。</p>
+     *
+     * @param status REJECTED（拒绝）或 NOT_IMPLEMENTED（模板/不可用）
+     * @param reason 稳定错误码 + 原因，写入证据供审计核对
+     */
+    default void recordBlockedAttempt(String traceId, Long userId, String runtimeId, String toolId,
+                                      String status, String reason, Instant at) {}
+
+    /**
      * 一次运行的治理参数。
      *
      * @param idempotencyKey 非空时同一用户同一键只允许启动一次；重复启动必须拒绝而不是重跑
