@@ -155,3 +155,86 @@ def test_false_verification_is_distinct_from_legacy_silent_pass_fn_concept():
     assert 'legacy_silent_pass_fn' in fv
     # They are the same number (definition preserved) but the NEW name is explicit
     assert fv['false_verified_n'] == fv['legacy_silent_pass_fn']
+
+
+# ================================================================
+# DATA-P0-01 fixtures：schema v2 兼容 + 分组统计
+# ================================================================
+
+
+def test_v1_fixture_auto_upgrades_to_v2_defaults(tmp_path):
+    """DATA-P0-01：v1 fixture（无治理字段，provenance 是 string）读入后自动补默认治理值。
+
+    关键：label 本身不变，所以 BC 数值应该和 v2 fixture 完全一致。
+    """
+    import json
+    import pathlib
+
+    # 把当前 v2 fixture 降回 v1 形态
+    fixture_v2_path = pathlib.Path(evaluator.FIXTURE)
+    v2 = json.loads(fixture_v2_path.read_text(encoding='utf-8'))
+    v1_cases = []
+    for c in v2['cases']:
+        v1_case = {k: c[k] for k in ('id', 'category', 'claim', 'probes',
+                                     'expected_false_success', 'label_reason')}
+        v1_cases.append(v1_case)
+    v1 = {"schema_version": 1, "provenance": "legacy text provenance",
+          "limitations": v2.get('limitations', ''), "cases": v1_cases}
+
+    # 写临时 v1 fixture，用 load_fixture 读入
+    tmp_path.joinpath('v1_test.json').write_text(
+        json.dumps(v1, ensure_ascii=False), encoding='utf-8')
+    cases_auto, fixture_dict, schema_ver = evaluator.load_fixture(
+        tmp_path / 'v1_test.json')
+
+    assert schema_ver == 1
+    # 每个 case 应该被补治理字段
+    assert all(c.get('label_source') == 'unknown' for c in cases_auto)
+    assert all(c.get('review_status') == 'unreviewed' for c in cases_auto)
+    assert fixture_dict.get('provenance') == 'legacy text provenance'
+
+    # 跑 evaluate，BC 数值应和默认 v2 fixture 一致（因为 label 没变）
+    rows_v1, metrics_v1 = evaluator.evaluate(cases_auto, fixture=fixture_dict)
+    rows_v2, metrics_v2 = evaluator.evaluate()
+
+    bc1 = metrics_v1['binary_classification']
+    bc2 = metrics_v2['binary_classification']
+    assert bc1['TP'] == bc2['TP']
+    assert bc1['TN'] == bc2['TN']
+    assert bc1['FP'] == bc2['FP']
+    assert bc1['FN'] == bc2['FN']
+    assert bc1['F1']['value'] == bc2['F1']['value']
+
+    # data_governance 节存在，fixture_schema_version 应是 1（v1 升级）
+    dg = metrics_v1['data_governance']
+    assert dg['fixture_schema_version'] == 1
+    # provenance 是字符串 → 被包装成 {"legacy_text": ...}
+    assert dg['fixture_provenance'] == {"legacy_text": "legacy text provenance"}
+
+
+def test_data_governance_groups_by_label_source_and_review_status():
+    """DATA-P0-01：当前 v2 fixture 全部 synthetic_dev / unreviewed，分组统计应覆盖到 BC 数值。"""
+    rows, metrics = evaluator.evaluate()
+    dg = metrics['data_governance']
+    bc = metrics['binary_classification']
+
+    assert dg['fixture_schema_version'] == 2
+    assert dg['fixture_case_n'] == len(rows)
+
+    # per_label_source 分组：只有 synthetic_dev，覆盖 BC 数值
+    assert 'synthetic_dev' in dg['per_label_source']
+    src = dg['per_label_source']['synthetic_dev']
+    assert src['TP'] == bc['TP']
+    assert src['TN'] == bc['TN']
+    assert src['FP'] == bc['FP']
+    assert src['FN'] == bc['FN']
+    assert src['scored_n'] == bc['TP'] + bc['TN'] + bc['FP'] + bc['FN']
+    assert src['F1'] is not None  # synthetic_dev 有正有负，F1 应可计算
+
+    # per_review_status 分组：只有 unreviewed
+    assert dg['per_review_status'] == {'unreviewed': {
+        'case_n': dg['fixture_case_n'],
+        'scored_n': src['scored_n'],
+        'positive_n': src['positive_n'],
+        'negative_n': src['negative_n'],
+    }}

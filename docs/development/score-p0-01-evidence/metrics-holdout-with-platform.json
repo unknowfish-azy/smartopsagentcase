@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "generated_at": "2026-11-06T09:02:22.725981+00:00",
+  "generated_at": "2026-11-06T09:27:01.245766+00:00",
   "binary_classification": {
     "note": "expected_false_success=True and not detected_false_success counts as FN even when uncertain=True. unscored (expected_false_success=None) excluded from denominator.",
     "TP": 5,
@@ -84,6 +84,52 @@
     ],
     "definition": "false_release = expected=True ∧ execution_permitted=True ∧ 未检出；silent_release_violation = uncertain=True ∧ (UI 显示已恢复 ∨ execution_permitted=True)。两个比率分母分别为“有证据的正例数”和“有证据的 uncertain 数”，零分母为 null。"
   },
+  "data_governance": {
+    "fixture_schema_version": 2,
+    "fixture_provenance": {
+      "source_type": "synthetic_dev",
+      "source_id": "eval_false_success_synthetic_v2",
+      "license": "MIT-synthetic",
+      "pii_contained": false,
+      "created_at": "2026-11-06",
+      "created_by": "DATA-P0-01 fixture governance (not human-reviewed)",
+      "curation_hash": "6eccc3a8b1aec5687ae6df3e3b6a71e2fd818a38e89aac42b86eea92331255c5",
+      "notes": "Developed synthetically for SCORE-P0-01 false-success fixture suite. No human Golden, no live observation, no PII. Labels are unit-testable assertions against probes; do not claim real-world distribution fit.",
+      "legacy_provenance_text": "AI-authored holdout set written after the rule vocabulary was extended; used only to estimate generalisation, never to tune the vocabulary"
+    },
+    "fixture_case_n": 20,
+    "per_label_source": {
+      "synthetic_dev": {
+        "scored_n": 20,
+        "positive_n": 15,
+        "negative_n": 5,
+        "TP": 5,
+        "TN": 4,
+        "FP": 1,
+        "FN": 10,
+        "precision": {
+          "num": 5,
+          "den": 6,
+          "value": 0.8333333333333334
+        },
+        "recall": {
+          "num": 5,
+          "den": 15,
+          "value": 0.3333333333333333
+        },
+        "F1": 0.47619047619047616
+      }
+    },
+    "per_review_status": {
+      "unreviewed": {
+        "case_n": 20,
+        "scored_n": 20,
+        "positive_n": 15,
+        "negative_n": 5
+      }
+    },
+    "note": "per_label_source 的 TP/TN/FP/FN 仅统计 scored rows (expected_false_success is not None)；label_source=unknown 表示 fixture 未声明来源。"
+  },
   "input_sizes": {
     "total_rows": 20,
     "scored_n": 20,
@@ -102,6 +148,12 @@
     "inspection_status",
     "reason",
     "label_reason",
+    "label_source",
+    "review_status",
+    "license",
+    "pii",
+    "evidence_hash",
+    "duplicate_of",
     "ui_state",
     "execution_permitted",
     "review_task_created",
@@ -109,11 +161,11 @@
   ],
   "fixture": {
     "path": "tests\\fixtures\\defense\\false_success_holdout.json",
-    "sha256": "424a636a2c6d0d02e329247138953478aa4e467d6505de1ce87e9ffa1094a304"
+    "sha256": "f62f03403c98392b4f1d5fa1333ebba9e2536130165bef68c8d273af0a65ee7b"
   },
   "script": {
     "path": "scripts\\eval_false_success.py",
-    "sha256": "51eda696ab14e71d2e338030aa07dc4e1da0cf6238c7808fedb33f54b636689f"
+    "sha256": "450c60a8f0b1609ec4436f7637a95859c2daeb01de789435fdd97fceec779e5a"
   },
   "platform_evidence": {
     "path": "docs\\development\\score-p0-01-evidence\\platform-evidence-counterexample.json",
