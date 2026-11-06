@@ -353,9 +353,7 @@ function Test-Docker {
     }
 
 
-    if (
-        Test-CommandExists "docker"
-    ) {
+    if (Test-CommandExists "docker") {
 
         try {
 
@@ -363,11 +361,7 @@ function Test-Docker {
                 docker compose version 2>&1
             )
 
-            if (
-                $LASTEXITCODE -eq 0
-                -and
-                $composeVersion
-            ) {
+            if (($LASTEXITCODE -eq 0) -and $composeVersion) {
 
                 Write-CheckOk `
                     "Docker Compose" `

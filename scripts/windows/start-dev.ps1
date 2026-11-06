@@ -18,6 +18,27 @@ $AIServiceDir = Join-Path $ProjectRoot "ai-service"
 
 $DockerDir = Join-Path $ProjectRoot "deploy\docker"
 
+# 本地启动必须与项目的 Maven 设置和 .env 保持一致：默认 Maven 用户目录
+# 在当前机器上解析为 C:\.m2，既不可写又缺少依赖；项目提供了可写的专用仓库设置。
+$envFile = Join-Path $ProjectRoot '.env'
+if (Test-Path -LiteralPath $envFile) {
+    foreach ($line in Get-Content -LiteralPath $envFile -Encoding UTF8) {
+        if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$') {
+            $name = $matches[1]
+            $value = $matches[2].Trim()
+            if ($value.Length -ge 2 -and (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'")))) {
+                $value = $value.Substring(1, $value.Length - 2)
+            }
+            [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+        }
+    }
+}
+$jdk17 = Join-Path $env:USERPROFILE 'scoop\apps\openjdk17\current'
+if (Test-Path -LiteralPath (Join-Path $jdk17 'bin\java.exe')) {
+    $env:JAVA_HOME = $jdk17
+    $env:Path = (Join-Path $jdk17 'bin') + ';' + $env:Path
+}
+
 
 Write-Host ""
 Write-Host "============================================"
@@ -108,7 +129,7 @@ if (Test-Path $BackendDir) {
 
     Start-Process `
         -FilePath "cmd.exe" `
-        -ArgumentList "/k", "cd /d `"$BackendDir`" && mvn -q -DskipTests package && java $BackendJvmOptions -Dfile.encoding=UTF-8 -jar target\smartops-backend-0.0.1-SNAPSHOT.jar"
+        -ArgumentList "/k", "cd /d `"$BackendDir`" && mvn -s .mvn\smartops-settings.xml -q -DskipTests package && java $BackendJvmOptions -Dfile.encoding=UTF-8 -jar target\smartops-backend-0.0.1-SNAPSHOT.jar"
 
 }
 else {
