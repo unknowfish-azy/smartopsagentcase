@@ -263,6 +263,21 @@ services:
 
       TZ: Asia/Shanghai
 
+      # SEC-01：聊天 run 令牌校验密钥，必须与 backend 的
+      # SMARTOPS_CHAT_RUN_TOKEN_SECRET 完全一致。留空时 ai-service
+      # 拒绝所有聊天请求（503 CHAT_RUN_TOKEN_NOT_CONFIGURED）。
+      CHAT_RUN_TOKEN_SECRET: "${SMARTOPS_CHAT_RUN_TOKEN_SECRET:?...}"
+
+      # SEC-12：Knowledge 服务开启鉴权时的 API Key；留空表示 Knowledge
+      # 未开启鉴权。Knowledge 未部署时 RAG 检索会 503，属预期降级。
+      KNOWLEDGE_API_KEY: "${KNOWLEDGE_API_KEY:-}"
+
+      # LLM 接入（按需配置；mock 模式下留空即可）。
+      LLM_PROVIDER: "${LLM_PROVIDER:-mock}"
+      LLM_BASE_URL: "${LLM_BASE_URL:-}"
+      LLM_API_KEY: "${LLM_API_KEY:-}"
+      LLM_MODEL: "${LLM_MODEL:-mock-model}"
+
     # SEC-01 网络层隔离：8001 不发布到宿主机，ai-service 只能经 nginx
     # （公网 /ai/、内网 /ai-api/）或同一 docker 网络内的服务访问。
     # 本机直连调试需要时再临时放开：
