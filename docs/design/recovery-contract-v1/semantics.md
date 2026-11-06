@@ -79,10 +79,11 @@ Eligible(e) =
 补充规则：
 
 - `collector_registered` 由服务端身份、来源组登记和人工审阅确认；不由 URL 不同、LLM 文本或操作者自述推断。
-- `scope_authorized` 使用服务端主体身份与可见范围，不使用客户端提交的标签。
+- `scope_authorized` 使用服务端主体身份与可见范围，不使用客户端提交的标签。签发路径 `verify()` 必须显式传入 `authorized_scopes`；不提供“缺省即信任契约 scope”的默认值。
+- 调用方未声明 `run_id` 或 `verification_round` 时，自述该字段的观测视为归属不可确认：`run_id` 缺失记 `STALE`，`verification_round` 缺失记 `MISSING`。不得因为调用方省略参数而跳过绑定过滤。
 - `target_equal` 只比较 `target_id`；`endpoint`、显示名不参与相等性。
 - 同一 `target_id` 的 `/health` 与 `/ready` 若只是同一内部缓存的两个别名，视为同一来源组。
-- 重复 ID 不算新增采样；重复记录保留审计但不填补采样槽。
+- 重复 ID 不算新增采样；重复记录保留审计但不填补采样槽。同一 ID 出现多份副本时，**所有副本**都不填补采样槽，判定不得依赖输入顺序。
 - 乱序以 `sequence` + `observed_at` 重建，不按数组下标；不得用滑动窗口抹掉失败。
 
 ### 3.2 观测到义务值的映射
@@ -265,6 +266,13 @@ valid_until = min(
 | 旧任务或别轮次的健康记录 | 历史信息 | 本轮合格证据 |
 | `CONFLICT` 原因码 | 矛盾尚未定性 | 自动 `FALSE` 或多数投票结论 |
 
+### 8.1 谓词输入契约（N03 探针必须遵守）
+
+1. `endpoint_reachable` 的 `SUPPORT` 只表示"端点有响应"，不表示业务恢复。观测必须 `error is null`；若观测携带状态码，只有 2xx/3xx 可为 `SUPPORT`，4xx/5xx 必须写入 `error`（例如 `HTTP_502`），否则判 `UNDETERMINED`。
+2. 非 2xx/3xx 的响应不得塞进 `payload` 当作"可达证据"；探针须把传输错误与业务失败分别写入 `error` 与 `payload`。
+3. 业务恢复必须由 `business_health_flag` / `all_instances_recovered` 等业务谓词判定，不得用 `endpoint_reachable` 代替。
+4. 违反本契约的观测在资格判定阶段按 `MALFORMED`/`MISSING` 拒绝，不得进入采样槽。
+
 ---
 
 ## 9. 逻辑接口（冻结为类型约定，不是已存在 API）
@@ -272,9 +280,9 @@ valid_until = min(
 ```text
 evaluate(contract, claim, observations, decision_time) -> ObligationResult[]
 choose_next(contract, results, registry, budget, decision_time) -> ProbeDecision
-verify(contract, claim, observations, decision_time) -> VerificationReceipt
+verify(contract, claim, observations, decision_time, *, authorized_scopes) -> VerificationReceipt
 current_receipt(result_record, invalidation_events, decision_time) -> NOT_ISSUED|ACTIVE|INVALIDATED|EXPIRED
-replay(bundle, policy_version) -> COMPLETE|REPLAY_INCOMPLETE + structured_decision
+replay(bundle, policy_version, *, authorized_scopes) -> COMPLETE|REPLAY_INCOMPLETE + structured_decision
 ```
 
 - `evaluate` 是纯函数：不联网、不读墙钟、不写存储。

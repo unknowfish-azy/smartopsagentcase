@@ -1,0 +1,28 @@
+{
+  "example_id": "negative-empty-obligations",
+  "kind": "negative",
+  "expected_verdict": "INSUFFICIENT",
+  "expected_reason_codes": ["MISSING"],
+  "expected_rule": "EO-001（contract.obligations 必须 minItems=1；空义务集必须被拒绝）",
+  "input_schema_valid": false,
+  "invalid_object": "RecoveryContract.obligations",
+  "decision_time": "2026-11-05T02:00:06.000Z",
+  "input": {
+    "contract": {
+      "schema_version": "recovery-contract/v1",
+      "id": "RC-A-001",
+      "version": "1.0.0",
+      "scope": "service:a",
+      "target": {"target_id": "service:a", "target_kind": "SERVICE"},
+      "expected_revision": "r17",
+      "template_id": "TPL-BUSINESS-RECOVERY-V1",
+      "template_version": "1.0.0",
+      "obligations": [],
+      "source_groups": ["SG-GATEWAY-A", "SG-DIRECT-B"],
+      "window": {"sample_groups": 3, "min_first_last_gap_ms": 4000, "max_adjacent_gap_ms": 4000, "max_intra_group_skew_ms": 1250, "min_next_group_gap_ms": 2000},
+      "budgets": {"max_probe_calls": 12, "per_probe_timeout_ms": 1000, "run_deadline_ms": 30000, "evidence_ttl_ms": 15000, "receipt_ttl_ms": 60000},
+      "expires_after": 86400000,
+      "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  }
+}

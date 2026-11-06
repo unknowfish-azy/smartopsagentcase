@@ -1,0 +1,1130 @@
+{
+  "budget_constants": {
+    "evidence_ttl_ms": 15000,
+    "max_probe_calls": 12,
+    "per_probe_timeout_ms": 1000,
+    "run_deadline_ms": 30000
+  },
+  "comparison_notes": "同一登记表、同一契约、同预算常量与同停止规则；唯一差异是合格候选排序。S1 加权策略 1 次调用完成覆盖，固定顺序 3 次；S2 加权策略先选无信息探针，反而比固定顺序多用 1 次调用。两组结果仅说明可解释的对照差异，不构成“贪心更省调用”的全局主张。",
+  "contract_digest": "sha256:01571a7bf7e053eccacf3a69dd16c0959a4a846b00032f73c56d88c277650a21",
+  "experiment_id": "probe-p1-01-weighted-vs-fixed-order",
+  "generated_at": "2026-11-05T13:50:22.252614Z",
+  "registry": [
+    {
+      "collector_id": "col-a",
+      "cost": 1,
+      "obligation_ids": [
+        "obl-a"
+      ],
+      "probe_id": "probe-cheap-a",
+      "source_group": "sg-a"
+    },
+    {
+      "collector_id": "col-b",
+      "cost": 1,
+      "obligation_ids": [
+        "obl-b"
+      ],
+      "probe_id": "probe-cheap-b",
+      "source_group": "sg-b"
+    },
+    {
+      "collector_id": "col-b",
+      "cost": 1,
+      "obligation_ids": [
+        "obl-c"
+      ],
+      "probe_id": "probe-cheap-c",
+      "source_group": "sg-b"
+    },
+    {
+      "collector_id": "col-a",
+      "cost": 1,
+      "obligation_ids": [
+        "obl-a",
+        "obl-b",
+        "obl-c"
+      ],
+      "probe_id": "probe-wide",
+      "source_group": "sg-a"
+    }
+  ],
+  "scenarios": [
+    {
+      "description": "所有探针调用都产生新增有效信息",
+      "fixed_order_by_probe_id": {
+        "calls_used": 3,
+        "final_decision": "STOP",
+        "final_stop_reason": "NO_NEW_INFORMATION",
+        "trace": [
+          {
+            "budget_after": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 12,
+              "calls_used": 0,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 1.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 2.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 6.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "FIXED_ORDER_BY_PROBE_ID"
+            },
+            "score": 1.0,
+            "selected_probe_id": "probe-cheap-a",
+            "step": 0,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 10,
+              "calls_used": 2,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 2.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 5.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "FIXED_ORDER_BY_PROBE_ID"
+            },
+            "score": 2.0,
+            "selected_probe_id": "probe-cheap-b",
+            "step": 1,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 9,
+              "calls_used": 3,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 10,
+              "calls_used": 2,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 3.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "FIXED_ORDER_BY_PROBE_ID"
+            },
+            "score": 3.0,
+            "selected_probe_id": "probe-cheap-c",
+            "step": 2,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 9,
+              "calls_used": 3,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 9,
+              "calls_used": 3,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 0.0
+              }
+            ],
+            "decision": "STOP",
+            "extensions": {
+              "selection_policy": "FIXED_ORDER_BY_PROBE_ID"
+            },
+            "score": 0.0,
+            "selected_probe_id": null,
+            "step": 3,
+            "stop_reason": "NO_NEW_INFORMATION"
+          }
+        ],
+        "true_obligations": [
+          "obl-a",
+          "obl-b",
+          "obl-c"
+        ]
+      },
+      "outcomes": "全部 success",
+      "scenario_id": "S1-uniform-success",
+      "weighted_coverage_per_cost": {
+        "calls_used": 1,
+        "final_decision": "STOP",
+        "final_stop_reason": "NO_NEW_INFORMATION",
+        "trace": [
+          {
+            "budget_after": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 12,
+              "calls_used": 0,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 1.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 2.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 6.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "WEIGHTED_COVERAGE_PER_COST"
+            },
+            "score": 6.0,
+            "selected_probe_id": "probe-wide",
+            "step": 0,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 0.0
+              }
+            ],
+            "decision": "STOP",
+            "extensions": {
+              "selection_policy": "WEIGHTED_COVERAGE_PER_COST"
+            },
+            "score": 0.0,
+            "selected_probe_id": null,
+            "step": 1,
+            "stop_reason": "NO_NEW_INFORMATION"
+          }
+        ],
+        "true_obligations": [
+          "obl-a",
+          "obl-b",
+          "obl-c"
+        ]
+      }
+    },
+    {
+      "description": "probe-wide 高覆盖但不产生新增有效信息（贪心非全局最优的反例）",
+      "fixed_order_by_probe_id": {
+        "calls_used": 3,
+        "final_decision": "STOP",
+        "final_stop_reason": "NO_NEW_INFORMATION",
+        "trace": [
+          {
+            "budget_after": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 12,
+              "calls_used": 0,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 1.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 2.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 6.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "FIXED_ORDER_BY_PROBE_ID"
+            },
+            "score": 1.0,
+            "selected_probe_id": "probe-cheap-a",
+            "step": 0,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 10,
+              "calls_used": 2,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 2.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 5.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "FIXED_ORDER_BY_PROBE_ID"
+            },
+            "score": 2.0,
+            "selected_probe_id": "probe-cheap-b",
+            "step": 1,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 9,
+              "calls_used": 3,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 10,
+              "calls_used": 2,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 3.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "FIXED_ORDER_BY_PROBE_ID"
+            },
+            "score": 3.0,
+            "selected_probe_id": "probe-cheap-c",
+            "step": 2,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 9,
+              "calls_used": 3,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 9,
+              "calls_used": 3,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 0.0
+              }
+            ],
+            "decision": "STOP",
+            "extensions": {
+              "selection_policy": "FIXED_ORDER_BY_PROBE_ID"
+            },
+            "score": 0.0,
+            "selected_probe_id": null,
+            "step": 3,
+            "stop_reason": "NO_NEW_INFORMATION"
+          }
+        ],
+        "true_obligations": [
+          "obl-a",
+          "obl-b",
+          "obl-c"
+        ]
+      },
+      "outcomes": {
+        "probe-wide": "no_progress"
+      },
+      "scenario_id": "S2-wide-no-progress",
+      "weighted_coverage_per_cost": {
+        "calls_used": 4,
+        "final_decision": "STOP",
+        "final_stop_reason": "NO_NEW_INFORMATION",
+        "trace": [
+          {
+            "budget_after": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 12,
+              "calls_used": 0,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 1.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 2.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 6.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "WEIGHTED_COVERAGE_PER_COST"
+            },
+            "score": 6.0,
+            "selected_probe_id": "probe-wide",
+            "step": 0,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 10,
+              "calls_used": 2,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 11,
+              "calls_used": 1,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 1.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 2.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 3.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "QUOTA"
+                ],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 6.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "WEIGHTED_COVERAGE_PER_COST"
+            },
+            "score": 3.0,
+            "selected_probe_id": "probe-cheap-c",
+            "step": 1,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 9,
+              "calls_used": 3,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 10,
+              "calls_used": 2,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 1.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 2.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "QUOTA"
+                ],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 3.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "WEIGHTED_COVERAGE_PER_COST"
+            },
+            "score": 2.0,
+            "selected_probe_id": "probe-cheap-b",
+            "step": 2,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 8,
+              "calls_used": 4,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 9,
+              "calls_used": 3,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": true,
+                "filter_reasons": [],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 1.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "QUOTA"
+                ],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 1.0
+              }
+            ],
+            "decision": "SELECTED",
+            "extensions": {
+              "selection_policy": "WEIGHTED_COVERAGE_PER_COST"
+            },
+            "score": 1.0,
+            "selected_probe_id": "probe-cheap-a",
+            "step": 3,
+            "stop_reason": null
+          },
+          {
+            "budget_after": {
+              "calls_remaining": 8,
+              "calls_used": 4,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "budget_before": {
+              "calls_remaining": 8,
+              "calls_used": 4,
+              "deadline_at": "2026-11-05T02:00:36Z"
+            },
+            "candidates": [
+              {
+                "covered_obligation_ids": [
+                  "obl-a"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-a",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-b"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-b",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "DUPLICATE"
+                ],
+                "probe_id": "probe-cheap-c",
+                "registered_cost": 1.0,
+                "score": 0.0
+              },
+              {
+                "covered_obligation_ids": [
+                  "obl-a",
+                  "obl-b",
+                  "obl-c"
+                ],
+                "eligible": false,
+                "filter_reasons": [
+                  "QUOTA"
+                ],
+                "probe_id": "probe-wide",
+                "registered_cost": 1.0,
+                "score": 0.0
+              }
+            ],
+            "decision": "STOP",
+            "extensions": {
+              "selection_policy": "WEIGHTED_COVERAGE_PER_COST"
+            },
+            "score": 0.0,
+            "selected_probe_id": null,
+            "step": 4,
+            "stop_reason": "NO_NEW_INFORMATION"
+          }
+        ],
+        "true_obligations": [
+          "obl-a",
+          "obl-b",
+          "obl-c"
+        ]
+      }
+    }
+  ]
+}
