@@ -9,8 +9,8 @@ from knowledge.service import KnowledgeService
 def empty_service(monkeypatch):
     instance = KnowledgeService()
     monkeypatch.setattr(server, "service", instance)
-    # 摄入默认关闭，本地测试显式开启。
-    monkeypatch.setenv("KNOWLEDGE_ALLOW_INGEST", "1")
+    # SEC-12：摄入永不匿名，本地测试统一走 API key。
+    monkeypatch.setenv("KNOWLEDGE_API_KEY", "test-key")
     return instance
 
 
@@ -45,7 +45,11 @@ def test_health_exposes_embedding_backend(empty_service):
 def test_ingestion_changes_readiness_without_restart(empty_service):
     client = TestClient(server.app)
     assert client.get("/api/ready").status_code == 503
-    response = client.post("/api/documents", json={"content": "nginx 检查 systemctl status nginx", "source": "test.md"})
+    response = client.post(
+        "/api/documents",
+        json={"content": "nginx 检查 systemctl status nginx", "source": "test.md"},
+        headers={"X-API-Key": "test-key"},
+    )
     assert response.status_code == 200
     ready = client.get("/api/ready")
     assert ready.status_code == 200
