@@ -10,10 +10,12 @@ import com.smartops.dto.model.RuntimeModelConnectionResponse;
 import com.smartops.entity.ModelConnection;
 import com.smartops.exception.BusinessException;
 import com.smartops.mapper.ModelConnectionMapper;
+import com.smartops.security.OutboundUrlPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
 import java.util.List;
 
 @Service
@@ -227,6 +229,10 @@ public class ModelConnectionService {
             );
         }
 
+        assertOutboundTarget(
+                connection.getBaseUrl()
+        );
+
         return RuntimeModelConnectionResponse.builder()
                 .provider(connection.getProvider())
                 .baseUrl(connection.getBaseUrl())
@@ -249,6 +255,8 @@ public class ModelConnectionService {
         if (!Boolean.TRUE.equals(connection.getEnabled())) {
             throw new IllegalStateException("模型连接已禁用");
         }
+        // 存量行可能在整改前写入内网地址；出站前按当前 DNS 重新校验一次（SEC-14）。
+        assertOutboundTarget(connection.getBaseUrl());
         String apiKey = cryptoService.decrypt(connection.getApiKeyCiphertext());
         // Start the ledger before sending a billable request. Store neither prompts nor secrets.
         String invocationId = analytics.start(userId, id, connection.getModelName());
@@ -336,7 +344,53 @@ public class ModelConnectionService {
                     );
         }
 
+        assertOutboundTarget(value);
+
         return value;
+    }
+
+
+    /**
+     * 模型连接的服务端出站目标校验（SEC-14）：与爬取共用同一套 IP 分类。
+     *
+     * <p>只允许 http/https 且解析后全部地址为公网地址；拒绝回环、私网、链路本地、
+     * CGNAT、保留网段与无法解析的主机。错误信息只回显规则码，不回显目标主机。</p>
+     */
+    private void assertOutboundTarget(
+            String baseUrl
+    ) {
+
+        if (baseUrl == null || baseUrl.isBlank()) {
+            throw new BusinessException(
+                    400,
+                    "模型 Base URL 无效"
+            );
+        }
+
+        URI uri;
+
+        try {
+            uri =
+                    URI.create(
+                            baseUrl.trim()
+                    );
+        } catch (IllegalArgumentException invalid) {
+            throw new BusinessException(
+                    400,
+                    "模型 Base URL 无效"
+            );
+        }
+
+        OutboundUrlPolicy.Decision decision =
+                OutboundUrlPolicy.inspect(uri);
+
+        if (!decision.allowed()) {
+            throw new BusinessException(
+                    400,
+                    "模型 Base URL 被拒绝："
+                            + decision.rule()
+            );
+        }
     }
 
 
