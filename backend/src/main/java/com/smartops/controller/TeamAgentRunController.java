@@ -35,7 +35,8 @@ public class TeamAgentRunController {
     public ApiResponse<?> create(@AuthenticationPrincipal SessionUser actor, @PathVariable long teamId, @PathVariable long agentId,
                                  @Valid @RequestBody CreateInput input) {
         runtimes.requireOwned(input.runtimeId(), actor.id());
-        return ApiResponse.success(runs.create(actor, teamId, agentId, input.versionId(), input.runtimeId(), input.toolId(), input.parameters()));
+        return ApiResponse.success(runs.create(actor, teamId, agentId, input.versionId(), input.runtimeId(), input.toolId(),
+                input.parameters(), input.idempotencyKey()));
     }
 
     @GetMapping("/api/team-agent-runs/{runId}")
@@ -82,8 +83,24 @@ public class TeamAgentRunController {
         return ApiResponse.success(result);
     }
 
+    /**
+     * 撤回审批（SEC-05）。申请人可撤回自己的请求；其他成员需具备审批权。
+     */
+    @PostMapping("/api/team-agent-runs/{runId}/cancel")
+    public ApiResponse<?> cancel(@AuthenticationPrincipal SessionUser actor, @PathVariable long runId,
+                                 @RequestBody(required = false) CancelRequest request) {
+        return ApiResponse.success(runs.cancel(actor, runId, request == null ? null : request.reason()));
+    }
+
+    public record CancelRequest(String reason) {}
+
+    /**
+     * 执行已批准的运行。SEC-05 起必须携带审批时签发的 `grantToken`（详情/创建响应里可见），
+     * 缺失返回 409 `TEAM_RUN_GRANT_TOKEN_REQUIRED`，不匹配返回 403 `TEAM_RUN_GRANT_TOKEN_MISMATCH`。
+     */
     @PostMapping("/api/team-agent-runs/{runId}/execute")
-    public ApiResponse<?> execute(@AuthenticationPrincipal SessionUser actor, @PathVariable long runId) {
+    public ApiResponse<?> execute(@AuthenticationPrincipal SessionUser actor, @PathVariable long runId,
+                                  @RequestBody(required = false) ExecuteRequest request) {
         var pending = runs.require(actor, runId);
         runtimes.requireOwned(pending.runtimeId(), actor.id());
         String commandDigest = null;
@@ -95,7 +112,7 @@ public class TeamAgentRunController {
                 throw new BusinessException(400, "TEAM_TOOL_PARAMETERS_INVALID");
             }
         }
-        var run = runs.consumeGrant(actor, runId, commandDigest);
+        var run = runs.consumeGrant(actor, runId, commandDigest, request == null ? null : request.grantToken());
         try {
             Map<String, String> parameters;
             try { parameters = mapper.readValue(run.parametersJson(), new TypeReference<>() {}); }
@@ -113,7 +130,9 @@ public class TeamAgentRunController {
     }
 
     public record CreateInput(@NotNull Long versionId, @NotBlank String runtimeId, @NotBlank String toolId,
-                              Map<String, String> parameters) {}
+                              Map<String, String> parameters, String idempotencyKey) {}
+
+    public record ExecuteRequest(String grantToken) {}
 
     private static String digest(java.util.List<String> commands) {
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")

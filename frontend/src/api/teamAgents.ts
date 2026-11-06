@@ -34,5 +34,7 @@ export const teamRunsApi = {
   preview: runId => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/preview`)),
   // 决策依据可选；服务端只在提供时写入审计，且要求审批人先完成预览。
   approve: (runId, decisionBasis) => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/approve`, decisionBasis ? { decisionBasis } : {})),
-  execute: runId => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/execute`))
+  // SEC-05：执行必须携带审批签发的 grantToken；缺失时服务端返回 409 TEAM_RUN_GRANT_TOKEN_REQUIRED。
+  execute: (runId, grantToken) => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/execute`, grantToken ? { grantToken } : {})),
+  cancel: (runId, reason) => value(request.post(`/api/team-agent-runs/${encodeURIComponent(runId)}/cancel`, reason ? { reason } : {}))
 }

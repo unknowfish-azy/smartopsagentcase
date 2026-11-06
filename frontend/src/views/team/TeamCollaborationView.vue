@@ -173,16 +173,19 @@ async function createRun() {
   let parameters
   try { parameters = JSON.parse(runDraft.parameters); if (!parameters || Array.isArray(parameters) || typeof parameters !== 'object') throw new Error() }
   catch { error.value = '参数必须是 JSON 对象'; return }
+  // 幂等键在提交前固定：双击/重试不会堆出多条待审运行（SEC-05）。
+  const idempotencyKey = crypto.randomUUID()
   await mutate(async () => {
     const agent = await teamAgentsApi.detail(state.teamId, state.agentId)
-    await teamRunsApi.create(state.teamId, state.agentId, { versionId: agent.currentVersion?.id, runtimeId: runDraft.runtimeId, toolId: runDraft.toolId, parameters })
+    await teamRunsApi.create(state.teamId, state.agentId, { versionId: agent.currentVersion?.id, runtimeId: runDraft.runtimeId, toolId: runDraft.toolId, parameters, idempotencyKey })
   })
   activeView.value = 'runs'
 }
 async function approveRun(run) { await mutate(() => teamRunsApi.approve(run.id)); runPreview.value = null }
 async function executeRun(run) {
   if (!window.confirm(`确认执行 ${run.toolId}？`)) return
-  await mutate(() => teamRunsApi.execute(run.id))
+  // SEC-05：审批时签发的 grantToken 是一次性凭据，必须随执行请求回传。
+  await mutate(() => teamRunsApi.execute(run.id, run.grantToken))
 }
 function scrollTranscriptToEnd() { if (transcriptEl.value) transcriptEl.value.scrollTop = transcriptEl.value.scrollHeight }
 async function createConversation() {
