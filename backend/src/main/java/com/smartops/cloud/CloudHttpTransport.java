@@ -14,6 +14,14 @@ public interface CloudHttpTransport {
 
     Response post(String uri, Map<String, String> headers, String body) throws IOException, InterruptedException;
 
+    /**
+     * 只读 GET（华为云 ECS 清单使用）。默认实现显式失败，
+     * 避免测试替身未实现时静默返回空页而被误判为"同步成功"。
+     */
+    default Response get(String uri, Map<String, String> headers) throws IOException, InterruptedException {
+        throw new UnsupportedOperationException("GET 传输未实现");
+    }
+
     record Response(int status, Map<String, List<String>> headers, String body) {
 
         public String header(String name) {
