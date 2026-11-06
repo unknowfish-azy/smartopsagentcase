@@ -2,6 +2,7 @@ package com.smartops.service;
 
 import com.smartops.exception.BusinessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +19,24 @@ public class ArtifactDraftService {
     public Draft createDraft(Long userId, String type, String title, String content, String sourceRef, String risk) {
         if (type == null || title == null || title.isBlank() || content == null || content.isBlank()) throw new BusinessException("ARTIFACT_DRAFT_INPUT_REQUIRED");
         Instant now = Instant.now();
-        jdbc.update("INSERT INTO artifact_draft(user_id,artifact_type,title,content,status,risk,source_ref,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)", userId, type.trim().toUpperCase(), title.trim(), content, "DRAFT", risk == null ? "READ_ONLY" : risk.trim().toUpperCase(), sourceRef, Timestamp.from(now), Timestamp.from(now));
-        Long id = jdbc.queryForObject("SELECT MAX(id) FROM artifact_draft WHERE user_id=?", Long.class, userId);
+        // SEC-09：直接取本次插入主键，避免同用户并发时 MAX(id) 取到他人的草稿。
+        var keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement(
+                    "INSERT INTO artifact_draft(user_id,artifact_type,title,content,status,risk,source_ref,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                    new String[]{"id"});
+            statement.setObject(1, userId);
+            statement.setObject(2, type.trim().toUpperCase());
+            statement.setObject(3, title.trim());
+            statement.setObject(4, content);
+            statement.setObject(5, "DRAFT");
+            statement.setObject(6, risk == null ? "READ_ONLY" : risk.trim().toUpperCase());
+            statement.setObject(7, sourceRef);
+            statement.setObject(8, Timestamp.from(now));
+            statement.setObject(9, Timestamp.from(now));
+            return statement;
+        }, keys);
+        Long id = keys.getKey().longValue();
         return detail(userId, id);
     }
 
