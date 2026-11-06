@@ -15,6 +15,9 @@
         <id property="id"
             column="id"/>
 
+        <result property="ownerId"
+                column="owner_id"/>
+
         <result property="name"
                 column="name"/>
 
@@ -43,13 +46,14 @@
 
 
     <!-- =========================================================
-         查询全部服务器
+         查询全部服务器（仅平台审计管理员的全局视图）
          ========================================================= -->
     <select id="selectAll"
             resultMap="ServerResultMap">
 
         SELECT
         id,
+        owner_id,
         name,
         host,
         port,
@@ -65,6 +69,31 @@
 
 
     <!-- =========================================================
+         按属主查询服务器（SEC-08：普通用户只看自己的资产）
+         ========================================================= -->
+    <select id="selectByOwner"
+            parameterType="long"
+            resultMap="ServerResultMap">
+
+        SELECT
+        id,
+        owner_id,
+        name,
+        host,
+        port,
+        os,
+        status,
+        description,
+        created_at,
+        updated_at
+        FROM server
+        WHERE owner_id = #{ownerId}
+        ORDER BY id DESC
+
+    </select>
+
+
+    <!-- =========================================================
          根据ID查询
          ========================================================= -->
     <select id="selectById"
@@ -73,6 +102,7 @@
 
         SELECT
         id,
+        owner_id,
         name,
         host,
         port,
@@ -96,6 +126,7 @@
 
         SELECT
         id,
+        owner_id,
         name,
         host,
         port,
@@ -136,6 +167,7 @@
 
         INSERT INTO server
         (
+        owner_id,
         name,
         host,
         port,
@@ -147,6 +179,7 @@
         )
         VALUES
         (
+        #{ownerId},
         #{name},
         #{host},
         #{port},

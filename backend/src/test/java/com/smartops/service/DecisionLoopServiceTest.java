@@ -25,7 +25,7 @@ class DecisionLoopServiceTest {
         jdbc = new JdbcTemplate(ds);
         jdbc.execute("CREATE TABLE operator_memory (id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL, incident_key VARCHAR(255) NOT NULL, memory_type VARCHAR(32) NOT NULL, preferred_action TEXT NOT NULL, source_refs TEXT, evidence_count INT NOT NULL, confidence DOUBLE NOT NULL, status VARCHAR(32) NOT NULL, created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL)");
         jdbc.execute("CREATE TABLE agent_decision_loop (id VARCHAR(32) PRIMARY KEY, user_id BIGINT NOT NULL, incident_key VARCHAR(255) NOT NULL, title VARCHAR(255) NOT NULL, source_type VARCHAR(32) NOT NULL DEFAULT 'MANUAL', source_ref VARCHAR(128), stage VARCHAR(32) NOT NULL DEFAULT 'ANALYZE', severity VARCHAR(32) NOT NULL DEFAULT 'MEDIUM', symptom TEXT, analysis TEXT, evidence_json TEXT, memory_refs TEXT, recommendation TEXT, decision TEXT, decision_basis TEXT, requires_human BOOLEAN NOT NULL DEFAULT FALSE, outcome VARCHAR(32), lesson TEXT, learned_memory_ids TEXT, learned_count INT NOT NULL DEFAULT 0, confidence DOUBLE NOT NULL DEFAULT 0.5, reviewed_at TIMESTAMP NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
-        jdbc.execute("CREATE TABLE inspector_event (id VARCHAR(32) PRIMARY KEY, task_id VARCHAR(128) NOT NULL, target VARCHAR(32) NOT NULL, status VARCHAR(32) NOT NULL, severity VARCHAR(32) NOT NULL, category VARCHAR(64), agent_claim TEXT, reason TEXT NOT NULL, recommendation TEXT, requires_human BOOLEAN NOT NULL, metadata_json TEXT, created_at TIMESTAMP NOT NULL)");
+        jdbc.execute("CREATE TABLE inspector_event (id VARCHAR(32) PRIMARY KEY, task_id VARCHAR(128) NOT NULL, target VARCHAR(32) NOT NULL, status VARCHAR(32) NOT NULL, severity VARCHAR(32) NOT NULL, category VARCHAR(64), agent_claim TEXT, reason TEXT NOT NULL, recommendation TEXT, requires_human BOOLEAN NOT NULL, metadata_json TEXT, user_id BIGINT NULL, created_at TIMESTAMP NOT NULL)");
         jdbc.execute("CREATE TABLE inspection_evidence (id BIGINT AUTO_INCREMENT PRIMARY KEY, event_id VARCHAR(32) NOT NULL, content TEXT NOT NULL, source VARCHAR(500), version VARCHAR(100), score DOUBLE)");
         jdbc.execute("CREATE TABLE inspection_verification (id BIGINT AUTO_INCREMENT PRIMARY KEY, event_id VARCHAR(32) NOT NULL, resolved BOOLEAN, status VARCHAR(100), details_json TEXT, verified_at TIMESTAMP NOT NULL)");
         memories = new OperatorMemoryService(jdbc);
@@ -72,7 +72,7 @@ class DecisionLoopServiceTest {
     @Test
     @DisplayName("自动通道：Inspector 已验证事件会派生闭环并沉淀记忆")
     void inspectorEventIsDerivedAutomatically() {
-        jdbc.update("INSERT INTO inspector_event(id,task_id,target,status,severity,category,agent_claim,reason,recommendation,requires_human,created_at) VALUES('INS-1','TASK-1','AGENT','PASS','HIGH','redis','redis 连接超时','内存使用率过高','扩容并重启 redis',FALSE,CURRENT_TIMESTAMP)");
+        jdbc.update("INSERT INTO inspector_event(id,task_id,target,status,severity,category,agent_claim,reason,recommendation,requires_human,user_id,created_at) VALUES('INS-1','TASK-1','AGENT','PASS','HIGH','redis','redis 连接超时','内存使用率过高','扩容并重启 redis',FALSE,1,CURRENT_TIMESTAMP)");
         jdbc.update("INSERT INTO inspection_evidence(event_id,content,source,score) VALUES('INS-1','redis info 显示 maxmemory 打满','redis-cli',0.92)");
         jdbc.update("INSERT INTO inspection_verification(event_id,resolved,status,verified_at) VALUES('INS-1',TRUE,'PASS',CURRENT_TIMESTAMP)");
 
@@ -82,5 +82,17 @@ class DecisionLoopServiceTest {
         assertThat(detail.get("stage")).isEqualTo("LEARNED");
         assertThat(detail.get("sourceType")).isEqualTo("INSPECTOR");
         assertThat((List<?>) detail.get("learnedMemories")).hasSize(1);
+    }
+
+    /** SEC-08：无归属或属于他人的 Inspector 事件不得投影进当前用户闭环。 */
+    @Test
+    @DisplayName("权限 scope：全局/他人 Inspector 事件不投影")
+    void unownedOrOtherUsersInspectorEventsAreNotProjected() {
+        jdbc.update("INSERT INTO inspector_event(id,task_id,target,status,severity,category,agent_claim,reason,recommendation,requires_human,user_id,created_at) VALUES('INS-GLOBAL','TASK-G','AGENT','PASS','HIGH','redis','x','全局巡检','y',FALSE,NULL,CURRENT_TIMESTAMP)");
+        jdbc.update("INSERT INTO inspector_event(id,task_id,target,status,severity,category,agent_claim,reason,recommendation,requires_human,user_id,created_at) VALUES('INS-OTHER','TASK-O','AGENT','PASS','HIGH','redis','x','他人巡检','y',FALSE,2,CURRENT_TIMESTAMP)");
+
+        assertThat(service.list(1L, 10)).isEmpty();
+        assertThat(service.list(2L, 10)).hasSize(1);
+        assertThat(service.list(2L, 10).get(0).get("sourceRef")).isEqualTo("INS-OTHER");
     }
 }

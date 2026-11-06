@@ -18,6 +18,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * 纠察事件服务。
+ *
+ * <p>SEC-08：事件带归属（user_id）。普通用户只能读自己产生的事件；
+ * 内部/系统通道（agent 经内部 token 上报）的事件 user_id 为 NULL，
+ * 全局视图仅平台审计管理员可用（由 controller 判定并留审计）。</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class InspectorEventService {
@@ -25,33 +32,37 @@ public class InspectorEventService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
-    public Map<String, Object> summary() {
+    public Map<String, Object> summary(Long viewerId, boolean globalView) {
+        String where = userScope(viewerId, globalView);
+        String and = andScope(viewerId, globalView);
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("total", count("SELECT COUNT(*) FROM inspector_event"));
-        result.put("pass", count("SELECT COUNT(*) FROM inspector_event WHERE status = 'PASS'"));
-        result.put("warning", count("SELECT COUNT(*) FROM inspector_event WHERE status IN ('WARN', 'WARNING')"));
-        result.put("high", count("SELECT COUNT(*) FROM inspector_event WHERE severity = 'HIGH'"));
-        result.put("critical", count("SELECT COUNT(*) FROM inspector_event WHERE severity = 'CRITICAL'"));
+        result.put("total", count("SELECT COUNT(*) FROM inspector_event" + where));
+        result.put("pass", count("SELECT COUNT(*) FROM inspector_event WHERE status = 'PASS'" + and));
+        result.put("warning", count("SELECT COUNT(*) FROM inspector_event WHERE status IN ('WARN', 'WARNING')" + and));
+        result.put("high", count("SELECT COUNT(*) FROM inspector_event WHERE severity = 'HIGH'" + and));
+        result.put("critical", count("SELECT COUNT(*) FROM inspector_event WHERE severity = 'CRITICAL'" + and));
         return result;
     }
 
-    public List<Map<String, Object>> events(int limit) {
+    public List<Map<String, Object>> events(int limit, Long viewerId, boolean globalView) {
         int safeLimit = Math.max(1, Math.min(limit, 200));
+        String scope = scopeClause(globalView, viewerId);
         return jdbcTemplate.queryForList(
                 "SELECT id, task_id AS taskId, target, status, severity, category, "
                         + "agent_claim AS agentClaim, reason, recommendation, "
                         + "requires_human AS requiresHuman, created_at AS createdAt "
-                        + "FROM inspector_event ORDER BY created_at DESC LIMIT ?",
+                        + "FROM inspector_event" + scope + " ORDER BY created_at DESC LIMIT ?",
                 safeLimit
         );
     }
 
-    public Map<String, Object> event(String id) {
+    public Map<String, Object> event(String id, Long viewerId, boolean globalView) {
+        String scope = scopeClause(globalView, viewerId);
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
                 "SELECT id, task_id AS taskId, target, status, severity, category, "
                         + "agent_claim AS agentClaim, reason, recommendation, "
                         + "requires_human AS requiresHuman, metadata_json AS metadata, "
-                        + "created_at AS createdAt FROM inspector_event WHERE id = ?",
+                        + "created_at AS createdAt FROM inspector_event" + scope + " AND id = ?",
                 id
         );
         if (rows.isEmpty()) {
@@ -81,8 +92,19 @@ public class InspectorEventService {
         return result;
     }
 
+    /** 内部/系统通道上报：事件无归属用户（NULL），普通用户读侧不可见。 */
     @Transactional
     public Map<String, Object> record(InspectionRecordRequest request) {
+        return insert(request, null);
+    }
+
+    /** 登录用户主动巡检上报：事件归属当前用户。 */
+    @Transactional
+    public Map<String, Object> record(InspectionRecordRequest request, Long ownerId) {
+        return insert(request, ownerId);
+    }
+
+    private Map<String, Object> insert(InspectionRecordRequest request, Long ownerId) {
         String id = request.getInspectionId();
         if (id == null || id.isBlank()) {
             id = "INS-" + UUID.randomUUID().toString().replace("-", "")
@@ -92,13 +114,13 @@ public class InspectorEventService {
         jdbcTemplate.update(
                 "INSERT INTO inspector_event "
                         + "(id, task_id, target, status, severity, category, agent_claim, "
-                        + "reason, recommendation, requires_human, metadata_json, created_at) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        + "reason, recommendation, requires_human, metadata_json, user_id, created_at) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 id, request.getTaskId(), request.getTarget(), request.getStatus(),
                 request.getSeverity(), request.getCategory(), request.getAgentClaim(),
                 request.getReason(), request.getRecommendation(),
                 Boolean.TRUE.equals(request.getRequiresHuman()),
-                json(request.getMetadata()), LocalDateTime.now()
+                json(request.getMetadata()), ownerId, LocalDateTime.now()
         );
 
         for (InspectionRecordRequest.Issue issue : request.getIssues()) {
@@ -125,7 +147,7 @@ public class InspectorEventService {
                     request.getVerification().getStatus(),
                     request.getVerification().getDetails());
         }
-        return event(id);
+        return event(id, ownerId, ownerId == null);
     }
 
     @Transactional
@@ -133,11 +155,11 @@ public class InspectorEventService {
         ensureEvent(request.getInspectionId());
         saveVerification(request.getInspectionId(), request.getResolved(),
                 request.getStatus(), request.getDetails());
-        return event(request.getInspectionId());
+        return event(request.getInspectionId(), null, true);
     }
 
     public Map<String, Object> replan(InspectionReplanRequest request) {
-        Map<String, Object> current = event(request.getInspectionId());
+        Map<String, Object> current = event(request.getInspectionId(), null, true);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("inspectionId", request.getInspectionId());
         result.put("status", "REPLANNING");
@@ -146,16 +168,33 @@ public class InspectorEventService {
         return result;
     }
 
-    public Map<String, Object> statistics() {
+    public Map<String, Object> statistics(Long viewerId, boolean globalView) {
+        String scope = scopeClause(globalView, viewerId);
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("summary", summary());
+        result.put("summary", summary(viewerId, globalView));
         result.put("byCategory", jdbcTemplate.queryForList(
-                "SELECT category, COUNT(*) AS count FROM inspector_issue "
-                        + "GROUP BY category ORDER BY count DESC"));
+                "SELECT issue.category, COUNT(*) AS count FROM inspector_issue issue "
+                        + "JOIN inspector_event event ON event.id = issue.event_id" + scope + " "
+                        + "GROUP BY issue.category ORDER BY count DESC"));
         result.put("byTarget", jdbcTemplate.queryForList(
-                "SELECT target, COUNT(*) AS count FROM inspector_event "
+                "SELECT target, COUNT(*) AS count FROM inspector_event" + scope + " "
                         + "GROUP BY target ORDER BY count DESC"));
         return result;
+    }
+
+    /** 独立 WHERE 子句：全局/系统视图返回空串，用户视图返回完整 WHERE。 */
+    private String userScope(Long viewerId, boolean globalView) {
+        return globalView || viewerId == null ? "" : " WHERE user_id = " + viewerId;
+    }
+
+    /** 追加在既有 WHERE 之后的归属过滤：全局/系统视图返回空串。 */
+    private String andScope(Long viewerId, boolean globalView) {
+        return globalView || viewerId == null ? "" : " AND user_id = " + viewerId;
+    }
+
+    /** 查询骨架用的 WHERE 前缀（保证后续恒可拼 AND 条件）。 */
+    private String scopeClause(boolean globalView, Long viewerId) {
+        return globalView || viewerId == null ? " WHERE 1=1" : " WHERE user_id = " + viewerId;
     }
 
     private long count(String sql) {

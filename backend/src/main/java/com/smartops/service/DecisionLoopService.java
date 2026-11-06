@@ -144,11 +144,17 @@ public class DecisionLoopService {
         if (!resolved && !"UNRESOLVED".equalsIgnoreCase(str(request.outcome()))) {
             throw new BusinessException("复盘结论必须为 RESOLVED 或 UNRESOLVED");
         }
+        // SEC-10：同一闭环同结论的重复 review 幂等——不再重复回写记忆置信度、不重复沉淀记忆。
+        // 结论翻转（RESOLVED ↔ UNRESOLVED）视为新信息，允许再次学习。
+        boolean alreadyLearned = LEARNED.equals(str(loop.get("stage")))
+                && str(loop.get("outcome")).equalsIgnoreCase(str(request.outcome()));
         jdbc.update("UPDATE agent_decision_loop SET outcome=?, lesson=?, reviewed_at=?, stage=?, updated_at=? "
                         + "WHERE id=? AND user_id=?",
                 resolved ? "RESOLVED" : "UNRESOLVED", request.lesson(), LocalDateTime.now(),
                 laterStage(str(loop.get("stage")), REVIEW), LocalDateTime.now(), id, userId);
-        learn(userId, row(userId, id));
+        if (!alreadyLearned) {
+            learn(userId, row(userId, id));
+        }
         return detail(userId, id);
     }
 
@@ -175,9 +181,11 @@ public class DecisionLoopService {
                         + "(SELECT v.resolved FROM inspection_verification v WHERE v.event_id = e.id "
                         + " ORDER BY v.id DESC LIMIT 1) AS resolved "
                         + "FROM inspector_event e "
-                        + "WHERE NOT EXISTS (SELECT 1 FROM agent_decision_loop d "
+                        // SEC-08：只消费与当前用户关联的事件；无归属（服务间巡检）的事件不投影进任何人的闭环。
+                        + "WHERE e.user_id = ? "
+                        + "AND NOT EXISTS (SELECT 1 FROM agent_decision_loop d "
                         + " WHERE d.source_type='INSPECTOR' AND d.source_ref=e.id) "
-                        + "ORDER BY e.created_at DESC LIMIT 20");
+                        + "ORDER BY e.created_at DESC LIMIT 20", userId);
         for (Map<String, Object> raw : rows) {
             Map<String, Object> event = camelize(raw);
             String category = str(event.get("category"));

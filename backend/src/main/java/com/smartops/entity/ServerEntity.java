@@ -16,6 +16,9 @@ public class ServerEntity {
 
     private Long id;
 
+    /** SEC-08：资产属主；历史数据为 NULL，仅平台审计管理员可见。 */
+    private Long ownerId;
+
     private String name;
 
     private String host;

@@ -15,6 +15,11 @@ public interface ServerMapper {
     List<ServerEntity> selectAll();
 
     /**
+     * 按属主查询服务器（SEC-08）
+     */
+    List<ServerEntity> selectByOwner(long ownerId);
+
+    /**
      * 根据ID查询服务器
      */
     ServerEntity selectById(Long id);
