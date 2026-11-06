@@ -118,7 +118,14 @@ class RunbookIntegrationTest {
         assertThat(done.status()).isEqualTo("SUCCEEDED");
         assertThat(done.totalTargets()).isEqualTo(2);
         assertThat(done.succeeded()).isEqualTo(2);
-        assertThat(done.targets()).allSatisfy(target -> assertThat(target.status()).isEqualTo("SUCCEEDED"));
+        assertThat(done.targets()).allSatisfy(target -> {
+            assertThat(target.status()).isEqualTo("SUCCEEDED");
+            // SENT / 执行阶段结束 / 后置验证通过各留独立证据，不只靠最终状态反推。
+            assertThat(target.dispatchStatus()).isEqualTo("SENT");
+            assertThat(target.dispatchedAt()).isNotNull();
+            assertThat(target.executedAt()).isNotNull();
+            assertThat(target.verifiedAt()).isNotNull();
+        });
 
         Integer runs = jdbc.queryForObject("SELECT COUNT(*) FROM operation_run_record WHERE tool_id=?",
                 Integer.class, "runbook:" + runbookId);
@@ -182,6 +189,13 @@ class RunbookIntegrationTest {
         assertThat(statusOf(done, canary)).isEqualTo("FAILED");
         assertThat(statusOf(done, nextOne)).isEqualTo("SKIPPED");
         assertThat(statusOf(done, nextTwo)).isEqualTo("SKIPPED");
+        assertThat(done.targets()).filteredOn(target -> target.status().equals("SKIPPED"))
+                .allSatisfy(target -> {
+                    assertThat(target.dispatchStatus()).isNull();
+                    assertThat(target.dispatchedAt()).isNull();
+                    assertThat(target.executedAt()).isNull();
+                    assertThat(target.verifiedAt()).isNull();
+                });
         assertThat(runtimes.get(nextOne).commands).isEmpty();
         assertThat(runtimes.get(nextTwo).commands).isEmpty();
     }
