@@ -63,6 +63,9 @@ class AdminMfaIntegrationTest {
         jdbc.update("DELETE FROM app_user");
         String hash = new BCryptPasswordEncoder().encode(PASSWORD);
         jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(?,'mfa-admin',?,'admin'),(?,'mfa-user',?,'operator')", userId, hash, userId + 10000, hash);
+        // SEC-07：SQL 种子的管理员没有治理档案，按迁移回填语义显式建档，
+        // 避免依赖“缺档案=ROOT”的旧漏洞语义被能力门禁 403。
+        com.smartops.support.TestPlatformProfiles.grantRoot(jdbc, userId);
     }
 
     @Test
