@@ -1,0 +1,965 @@
+{
+  "reason": "FCT-P0-01 第七批：材料对齐到当前冻结快照 9f9e7342（126 文件 / 671 @Test / 16,147 行）；顺带清掉残留的旧 JUnit 类数 87",
+  "mode": "APPLY",
+  "files": [
+    {
+      "path": "docs/competition/demo-script.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/demo-script.md",
+      "bytes": 8219,
+      "sha256": "0b14cf42e7c4ce91bec377a8585c8b884aa6589ddf2ee19a65308574c1f4e7ed",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/innovation.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/innovation.md",
+      "bytes": 9668,
+      "sha256": "ba437f22f91a95ee3c7731f1ae7823b9fe735a2b4b801e1a983d279708e5d7df",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/defense.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/defense.md",
+      "bytes": 13444,
+      "sha256": "d675f3a1c30c1d316a30b562e325093410a239b663acce1004beef9d669ad59a",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/defense-advanced.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/defense-advanced.md",
+      "bytes": 24868,
+      "sha256": "76eb725fc87d46a958c7184aab0ca993fbc6f66b3ee83d5d2a99d5dbdfeba8b5",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/defense-master.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/defense-master.md",
+      "bytes": 27968,
+      "sha256": "8e3c823a8965d68a46d09e60953d2c93508e252a3764b0c163555c13c470a0e2",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/defense-qa.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/defense-qa.md",
+      "bytes": 13536,
+      "sha256": "3b610dce349611e7e1463314e39271a66281ec9b81f4315df1aeb541a4e59e56",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩实战问答手册.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/答辩实战问答手册.md",
+      "bytes": 34564,
+      "sha256": "4d24491d873fbc44faaf70ce4b4adc976b97a7a5afee98ce8989d8890c26504d",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-合订本.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/答辩材料-合订本.md",
+      "bytes": 80287,
+      "sha256": "8c657a19c7c4547710a4ff2197fd2d24b7c782eed8ec62d5b3b33b8ffd2f7733",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-打印合订本.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/答辩材料-打印合订本.html",
+      "bytes": 103181,
+      "sha256": "649d0307392935473aa4403b8e9d9f9c7db5935e4cbfaed66ec1568527809738",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩知识手册-打印版.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/答辩知识手册-打印版.html",
+      "bytes": 76495,
+      "sha256": "713abc7824c30247b6d3abef71018795600eeb476086cad5966816e0fe1be23b",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/项目知识要点手册.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch7/项目知识要点手册.md",
+      "bytes": 18450,
+      "sha256": "b3d7c7181b35046ab810f8398e6df88555d33960e6f8ede2d5657769d0c7d395",
+      "matches_prior": true
+    }
+  ],
+  "rewrite_batch7": {
+    "snapshot_source_digest": "sha256:9f9e734241590138a16a1cd479a146208131f2457d38c3e380b0ecf8c1c3ea06",
+    "bound_metrics": {
+      "java.test.file_n": 126,
+      "java.test.test_annotation_n": 671,
+      "java.test.loc.total": 16147,
+      "java.test.test_class_n": 126
+    },
+    "rules": [
+      {
+        "old": "656 个后端 @Test",
+        "new": "671 个后端 @Test",
+        "hits": 37
+      },
+      {
+        "old": "656 后端 @Test",
+        "new": "671 后端 @Test",
+        "hits": 3
+      },
+      {
+        "old": "656 个 @Test",
+        "new": "671 个 @Test",
+        "hits": 9
+      },
+      {
+        "old": "656 @Test",
+        "new": "671 @Test",
+        "hits": 2
+      },
+      {
+        "old": "122 个测试文件",
+        "new": "126 个测试文件",
+        "hits": 2
+      },
+      {
+        "old": "15,649 行",
+        "new": "16,147 行",
+        "hits": 2
+      },
+      {
+        "old": "122 个 JUnit",
+        "new": "126 个 JUnit",
+        "hits": 6
+      },
+      {
+        "old": "122 测试类",
+        "new": "126 测试类",
+        "hits": 6
+      },
+      {
+        "old": "87 个测试类",
+        "new": "126 个测试类",
+        "hits": 3
+      },
+      {
+        "old": "87后端类",
+        "new": "126后端类",
+        "hits": 3
+      },
+      {
+        "old": "87 后端类",
+        "new": "126 后端类",
+        "hits": 3
+      }
+    ],
+    "changed_files": 12,
+    "changed_lines": 64,
+    "results": [
+      {
+        "path": "docs/competition/demo-script.md",
+        "before_sha256": "0b14cf42e7c4ce91bec377a8585c8b884aa6589ddf2ee19a65308574c1f4e7ed",
+        "after_sha256": "d7a4cbeb06ee31f9a29cefcbd0eba8c48a6d69cd512632153eb0c1f269df1bc8",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 105,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 107,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/demo-script.md.diff"
+      },
+      {
+        "path": "docs/competition/innovation.md",
+        "before_sha256": "ba437f22f91a95ee3c7731f1ae7823b9fe735a2b4b801e1a983d279708e5d7df",
+        "after_sha256": "3b57d1cee9f3f77aeecdbf5a81f8b841f063322e45f9b59dacadb5f08a832300",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 128,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/innovation.md.diff"
+      },
+      {
+        "path": "docs/competition/defense.md",
+        "before_sha256": "d675f3a1c30c1d316a30b562e325093410a239b663acce1004beef9d669ad59a",
+        "after_sha256": "bd82aeba9e19dd129ee29f574a45fa6e4e375f62e8c5a2b9082f223175a4ccc2",
+        "changed_lines": 3,
+        "edits": [
+          {
+            "line": 121,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              },
+              {
+                "old": "87 个测试类",
+                "new": "126 个测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 162,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 171,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/defense.md.diff"
+      },
+      {
+        "path": "docs/competition/defense-advanced.md",
+        "before_sha256": "76eb725fc87d46a958c7184aab0ca993fbc6f66b3ee83d5d2a99d5dbdfeba8b5",
+        "after_sha256": "308b096bf83fc440a74074721da8bda230ed93d2e9e317a97ce50682f4bbf88f",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 178,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/defense-advanced.md.diff"
+      },
+      {
+        "path": "docs/competition/defense-master.md",
+        "before_sha256": "8e3c823a8965d68a46d09e60953d2c93508e252a3764b0c163555c13c470a0e2",
+        "after_sha256": "19b6169ab2dd3a4e0efbed520d4de52a04173522900d781a2c47d1ef6cfc3834",
+        "changed_lines": 7,
+        "edits": [
+          {
+            "line": 25,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 136,
+            "ops": [
+              {
+                "old": "122 测试类",
+                "new": "126 测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 275,
+            "ops": [
+              {
+                "old": "122 个 JUnit",
+                "new": "126 个 JUnit",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 280,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 344,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 361,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 423,
+            "ops": [
+              {
+                "old": "656 后端 @Test",
+                "new": "671 后端 @Test",
+                "n": 1
+              },
+              {
+                "old": "87后端类",
+                "new": "126后端类",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/defense-master.md.diff"
+      },
+      {
+        "path": "docs/competition/defense-qa.md",
+        "before_sha256": "3b610dce349611e7e1463314e39271a66281ec9b81f4315df1aeb541a4e59e56",
+        "after_sha256": "e8d599291a80ee57e7c3c2093df8686556cbf1c47f9deee928d390bbda8d010c",
+        "changed_lines": 4,
+        "edits": [
+          {
+            "line": 24,
+            "ops": [
+              {
+                "old": "122 测试类",
+                "new": "126 测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 94,
+            "ops": [
+              {
+                "old": "122 个 JUnit",
+                "new": "126 个 JUnit",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 158,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 170,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              },
+              {
+                "old": "87 后端类",
+                "new": "126 后端类",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/defense-qa.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩实战问答手册.md",
+        "before_sha256": "4d24491d873fbc44faaf70ce4b4adc976b97a7a5afee98ce8989d8890c26504d",
+        "after_sha256": "b400c9dc465867d75ae3d1a8c0f2849e8cf6b2e91e758af13c4e5bc3ec827505",
+        "changed_lines": 4,
+        "edits": [
+          {
+            "line": 22,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 181,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 196,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 273,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/答辩实战问答手册.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-合订本.md",
+        "before_sha256": "8c657a19c7c4547710a4ff2197fd2d24b7c782eed8ec62d5b3b33b8ffd2f7733",
+        "after_sha256": "a5210323c9e06d9bf9afcf80037b7e0bca60f14194f170f2dfdaca8c341ffed9",
+        "changed_lines": 15,
+        "edits": [
+          {
+            "line": 126,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              },
+              {
+                "old": "87 个测试类",
+                "new": "126 个测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 167,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 176,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 231,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 342,
+            "ops": [
+              {
+                "old": "122 测试类",
+                "new": "126 测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 481,
+            "ops": [
+              {
+                "old": "122 个 JUnit",
+                "new": "126 个 JUnit",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 486,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 550,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 567,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 629,
+            "ops": [
+              {
+                "old": "656 后端 @Test",
+                "new": "671 后端 @Test",
+                "n": 1
+              },
+              {
+                "old": "87后端类",
+                "new": "126后端类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 686,
+            "ops": [
+              {
+                "old": "122 测试类",
+                "new": "126 测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 756,
+            "ops": [
+              {
+                "old": "122 个 JUnit",
+                "new": "126 个 JUnit",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 820,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 832,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              },
+              {
+                "old": "87 后端类",
+                "new": "126 后端类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 1016,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/答辩材料-合订本.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-打印合订本.html",
+        "before_sha256": "649d0307392935473aa4403b8e9d9f9c7db5935e4cbfaed66ec1568527809738",
+        "after_sha256": "ca468a04cea40fd62bcdf1f61ac8896849b75a9e097f4a32dfb9379e523ca8e9",
+        "changed_lines": 16,
+        "edits": [
+          {
+            "line": 159,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              },
+              {
+                "old": "87 个测试类",
+                "new": "126 个测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 175,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 178,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 202,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 246,
+            "ops": [
+              {
+                "old": "122 测试类",
+                "new": "126 测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 294,
+            "ops": [
+              {
+                "old": "122 个 JUnit",
+                "new": "126 个 JUnit",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 296,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 318,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 324,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 352,
+            "ops": [
+              {
+                "old": "656 后端 @Test",
+                "new": "671 后端 @Test",
+                "n": 1
+              },
+              {
+                "old": "87后端类",
+                "new": "126后端类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 376,
+            "ops": [
+              {
+                "old": "122 测试类",
+                "new": "126 测试类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 402,
+            "ops": [
+              {
+                "old": "122 个 JUnit",
+                "new": "126 个 JUnit",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 426,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 430,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              },
+              {
+                "old": "87 后端类",
+                "new": "126 后端类",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 497,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 607,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/答辩材料-打印合订本.html.diff"
+      },
+      {
+        "path": "docs/competition/答辩知识手册-打印版.html",
+        "before_sha256": "713abc7824c30247b6d3abef71018795600eeb476086cad5966816e0fe1be23b",
+        "after_sha256": "59ad0eb1d64261a1999134d3d5000401547fc9718aa01e78929299fff0c231f5",
+        "changed_lines": 7,
+        "edits": [
+          {
+            "line": 212,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              },
+              {
+                "old": "122 个测试文件",
+                "new": "126 个测试文件",
+                "n": 1
+              },
+              {
+                "old": "15,649 行",
+                "new": "16,147 行",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 218,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 232,
+            "ops": [
+              {
+                "old": "656 @Test",
+                "new": "671 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 253,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 323,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 331,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 379,
+            "ops": [
+              {
+                "old": "656 个后端 @Test",
+                "new": "671 个后端 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/答辩知识手册-打印版.html.diff"
+      },
+      {
+        "path": "docs/competition/项目知识要点手册.md",
+        "before_sha256": "b3d7c7181b35046ab810f8398e6df88555d33960e6f8ede2d5657769d0c7d395",
+        "after_sha256": "83afd8cf70cbd3fae39093226503be9b2cde19c6bd4f2fe4c4e13008906428a9",
+        "changed_lines": 3,
+        "edits": [
+          {
+            "line": 153,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              },
+              {
+                "old": "122 个测试文件",
+                "new": "126 个测试文件",
+                "n": 1
+              },
+              {
+                "old": "15,649 行",
+                "new": "16,147 行",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 181,
+            "ops": [
+              {
+                "old": "656 个 @Test",
+                "new": "671 个 @Test",
+                "n": 1
+              }
+            ]
+          },
+          {
+            "line": 223,
+            "ops": [
+              {
+                "old": "656 @Test",
+                "new": "671 @Test",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/项目知识要点手册.md.diff"
+      },
+      {
+        "path": "docs/competition/project-plan.md",
+        "prior_image": "docs/development/fct-p0-01-prior/batch7/project-plan.md",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 204,
+            "ops": [
+              {
+                "old": "87 个测试类",
+                "new": "126 个测试类",
+                "n": 1
+              }
+            ]
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch7/diffs/project-plan.md.diff"
+      }
+    ]
+  }
+}

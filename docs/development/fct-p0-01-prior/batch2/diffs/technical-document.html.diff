@@ -1,0 +1,32 @@
+diff --git "a/docs\\development\\fct-p0-01-prior\\batch2\\technical-document.html" b/docs/competition/technical-document.html
+index d63fb73..a6bd32c 100644
+--- "a/docs\\development\\fct-p0-01-prior\\batch2\\technical-document.html"
++++ b/docs/competition/technical-document.html
+@@ -90,5 +90,5 @@
+     <tr><th>分层</th><th>技术选型</th></tr>
+     <tr><td>前端</td><td>Vue 3 + Vite 7 + TypeScript，共享逻辑层 TS（48 个模块）；Element Plus + Pinia + Vue Router + ECharts + Three.js</td></tr>
+-    <tr><td>后端</td><td>Spring Boot 3.3.5 / Java 17，MyBatis，MySQL 8（80 张表），Redis 7；账户/权限/审计</td></tr>
++    <tr><td>后端</td><td>Spring Boot 3.3.5 / Java 17，MyBatis，MySQL 8（119 张表），Redis 7；账户/权限/审计</td></tr>
+     <tr><td>AI 服务</td><td>FastAPI（:8001）：LLM 网关、对话编排、SSE 流式、RAG 检索与提示词组装</td></tr>
+     <tr><td>知识服务</td><td>FastAPI（:8002）：文档解析 → 分块 → 嵌入 → 混合检索 → 重排 → 证据与可信度评分 → 评测</td></tr>
+@@ -168,5 +168,5 @@
+            └────────────────────────►└─────────────────────────────┘
+            ▼
+-   MySQL 8（80 张表） + Redis（会话/限流）</pre>
++   MySQL 8（119 张表） + Redis（会话/限流）</pre>
+ 
+   <h3>3.2 分层设计</h3>
+@@ -178,5 +178,5 @@
+     <tr><td>知识服务（FastAPI :8002）</td><td>文档解析、分块、嵌入、混合检索、词法重排、证据与可信度评分、回归评测</td></tr>
+     <tr><td>Agent 框架（Python）</td><td>planner / executor / inspector / memory / policies + kernel + 插件与工具（MCP）</td></tr>
+-    <tr><td>存储</td><td>MySQL 8（75 表）持久化业务与审计；Redis 承载会话与限流</td></tr>
++    <tr><td>存储</td><td>MySQL 8（119 表）持久化业务与审计；Redis 承载会话与限流</td></tr>
+   </table>
+ 
+@@ -319,5 +319,5 @@
+   <ul>
+     <li><b>容器化</b>：<code>deploy/</code> 提供 docker-compose、MySQL 初始化 SQL，一键拉起多服务。</li>
+-    <li><b>存储</b>：MySQL 8（业务与审计，80 张表）+ Redis 7（会话/限流）。</li>
++    <li><b>存储</b>：MySQL 8（业务与审计，119 张表）+ Redis 7（会话/限流）。</li>
+     <li><b>可观测性</b>：<code>infrastructure/</code> 集成 Prometheus / Grafana / Loki / Promtail，覆盖指标、日志与告警。</li>
+     <li><b>跨平台</b>：Windows 提供 <code>scripts/windows/*.ps1</code>，Linux/macOS 提供等效 shell 脚本；<code>.env.example</code> 模板化所有密钥，密钥一律留空不入库。</li>

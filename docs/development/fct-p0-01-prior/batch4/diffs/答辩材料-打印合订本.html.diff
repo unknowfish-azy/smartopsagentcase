@@ -1,0 +1,22 @@
+diff --git "a/docs/development/fct-p0-01-prior/batch4/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html" "b/docs/competition/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
+index 06c603e..9ab0a90 100644
+--- "a/docs/development/fct-p0-01-prior/batch4/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
++++ "b/docs/competition/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
+@@ -291,7 +291,7 @@ a { color:#1f6feb; text-decoration:none; }
+ <p><strong>E7 🔥 你怎么保证不是"自评自嗨"？</strong><br/>评测契约要求：统一分组测试集、留 artifact hash、缺失值记 <code>null</code> 而非 0、零分母不报 0。<strong>这是防自嗨的机制。</strong></p>
+ <p><strong>E8 如果现在就让你跑一个真实评测，缺什么？</strong><br/>真实模型提供方 + 已标注且通过泄漏检查的分组测试集 + evaluator 适配器。三者到位即可出数。</p>
+ <h3>F. 工程与可复现（7 题）</h3>
+-<p><strong>F1 ⭐ 测试情况？</strong><br/>前端 494 项全过 + <code>tsc --noEmit</code> + 双构建；后端 87 个 JUnit 类（H2 MySQL 兼容跑真实迁移）；119 表迁移幂等。</p>
++<p><strong>F1 ⭐ 测试情况？</strong><br/>前端 494 项全过 + <code>tsc --noEmit</code> + 双构建；后端 122 个 JUnit 类（H2 MySQL 兼容跑真实迁移）；119 表迁移幂等。</p>
+ <p><strong>F2 前端为什么"部分 TS"？</strong><br/>共享逻辑层（48 模块）迁 TS 拿类型收益，组件层留 JS 控成本；<code>tsc --noEmit</code> 已进门禁。<strong>有意取舍，不是偷懒。</strong></p>
+ <p><strong>F3 🔥 610 个 Python 用例 + 656 个后端 @Test是不是凑数？</strong><br/>覆盖契约、安全不变量、领域逻辑，不是纯断言堆砌；核心是"防单人阻塞"的交接保证。</p>
+ <p><strong>F4 怎么保证可复现？</strong><br/>mock 零密钥跑通全链路；一键切 Ollama/OpenAI；docker-compose；迁移自动补表。</p>
+@@ -399,7 +399,7 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
+ <p><strong>Q22：你说"可信"，敢不敢现场把高危动作真执行？</strong><br/>A：<strong>故意不敢</strong>——这正是设计意图。高危动作必须人工审批，批准后才在沙箱执行。现场演示我<strong>会</strong>展示一次"被拦截→审批→执行→审计"的完整链路，但绝不会绕过审批直接动生产。安全不是演示出来的，是架构逼出来的。</p>
+ <hr/>
+ <h2>五、工程 / 可复现（4 题）</h2>
+-<p><strong>Q23：代码量 / 测试情况？</strong><br/>A：前端双入口构建通过（暂无自动化测试套件）、<code>tsc --noEmit</code> 通过、双入口构建通过；后端 87 个 JUnit 测试类（H2 MySQL 兼容模式跑真实迁移）；MySQL 8 / 119 张表、迁移幂等、启动自动补齐。质量门禁命令全在 <code>project-plan.md</code>。</p>
++<p><strong>Q23：代码量 / 测试情况？</strong><br/>A：前端 <code>npm test</code> 494 项全过（99 个测试文件）、<code>tsc --noEmit</code> 通过、双入口构建通过；后端 122 个 JUnit 测试类（H2 MySQL 兼容模式跑真实迁移）；MySQL 8 / 119 张表、迁移幂等、启动自动补齐。质量门禁命令全在 <code>project-plan.md</code>。</p>
+ <p><strong>Q24：前端为什么"部分 TypeScript"？</strong><br/>A：有意的取舍。共享逻辑层（api/domain/utils/types 共 48 模块）迁 TS 拿类型收益；组件层保持 JS 控改造成本。<code>tsc --noEmit</code> 已纳入门禁，不是偷懒。</p>
+ <p><strong>Q25：119 张表是不是过度设计？</strong><br/>A：覆盖账户权限、审计、团队协作、知识、模型网关、哨兵监控、远程运维等<strong>完整域模型</strong>。迁移脚本幂等，局部缺失只影响对应模块，不影响整体。</p>
+ <p><strong>Q26：性能如何？大屏/3D 会不会卡？</strong><br/>A：分包针对性优化：zrender 从 echarts 拆出（510kB→346kB），Three.js 懒加载，管理员层独立产物，图表面板按需加载。渲染侧做了按需加载。</p>

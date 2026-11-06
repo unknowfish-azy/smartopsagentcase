@@ -1,4 +1,13 @@
 import os
+import sys
+
+# 【已废弃】第二轮校正脚本：会把材料写回 2026-11-05 的旧口径
+#   （Python 135 用例 / 后端 428 @Test / 563 项 / 80 张表），与当前冻结快照不符。
+# 现行口径见 docs/development/FCT-P0-01-事实台账与材料门禁.md
+#   与 docs/development/fct-p0-01-evidence/metrics.json（快照 9f9e7342…）。
+# 确需复现历史口径时设置 ALLOW_LEGACY_FIX=1 再运行。
+if os.environ.get("ALLOW_LEGACY_FIX") != "1":
+    sys.exit("refusing to run: 旧口径替换脚本已废弃，见 FCT-P0-01 报告；确需复现请设 ALLOW_LEGACY_FIX=1")
 
 # 第二轮校正：对齐今日既定权威口径
 #   测试：Python 135 用例（111 通过 / 24 跳过）+ 后端 428 @Test = 563

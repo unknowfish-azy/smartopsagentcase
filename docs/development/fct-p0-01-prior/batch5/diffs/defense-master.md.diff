@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch5/defense-master.md b/docs/competition/defense-master.md
+index 701d066..ef48293 100644
+--- a/docs/development/fct-p0-01-prior/batch5/defense-master.md
++++ b/docs/competition/defense-master.md
+@@ -133,7 +133,7 @@ trust_score = clamp( 0.5 × mean(证据分) + 0.3 × [结论被支持] + 0.2 ×
+ 10–200 人企业运维负责人/驻场工程师；故障问答定位、版本感知检索、受控执行、核查沉淀、团队协同。
+ 
+ **A4 完成度到哪？**
+-四端全栈可运行；前端双入口构建（暂无自动化测试套件）、后端 87 测试类、119 张表；mock 零密钥跑通。模型基准评测尚未接入（见 E 类）。
++四端全栈可运行；前端 `npm test` 494 项全过、后端 122 测试类、119 张表；mock 零密钥跑通。模型基准评测尚未接入（见 E 类）。
+ 
+ **A5 和"运维知识库"差在哪？**
+ 知识库只解决"查得到"，我们解决"查得对版本 + 答得有证据 + 做得有边界 + 过程能复盘"。

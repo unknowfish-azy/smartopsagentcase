@@ -230,6 +230,43 @@ def test_verify_snapshot_lists_changed_added_and_removed(tmp_path):
     assert ledger.verify_snapshot(lock, same) == []
 
 
+def _run_main(monkeypatch, argv, metrics):
+    written = []
+    monkeypatch.setattr(ledger, 'build_metrics',
+                        lambda **kwargs: (metrics, [], {'files': {}}, {}))
+    monkeypatch.setattr(ledger, 'verify_snapshot', lambda path, sources: [])
+    monkeypatch.setattr(ledger, 'scan_claims', lambda *a, **k: [])
+    monkeypatch.setattr(ledger, '_self_check', lambda m, n: [])
+    monkeypatch.setattr(ledger, 'write_outputs', lambda *a, **k: written.append(1))
+    monkeypatch.setattr(ledger.sys, 'argv', ['fact_ledger.py'] + argv)
+    return ledger.main(), written
+
+
+_MINIMAL_METRICS = {
+    'snapshot': {'source_digest': 'sha256:x'},
+    'java': {'main': {'file_n': 1, 'routes': {'actual_route_n': 1}}},
+    'vue': {'file_n': 1},
+    'migrations': {'create_table_n': 1},
+    'tests': {'pytest': {'collected_n': None}},
+}
+
+
+def test_verify_mode_is_read_only_and_never_writes_evidence(monkeypatch, tmp_path):
+    # 校验模式只读：曾经在 FROZEN 分支写回证据目录，导致已钉住的快照被覆盖。
+    code, written = _run_main(
+        monkeypatch, ['--verify-snapshot', str(tmp_path / 'lock.json'),
+                      '--output-dir', str(tmp_path)], _MINIMAL_METRICS)
+    assert code == 0
+    assert written == []
+
+
+def test_collect_mode_still_writes_evidence(monkeypatch, tmp_path):
+    code, written = _run_main(
+        monkeypatch, ['--output-dir', str(tmp_path)], _MINIMAL_METRICS)
+    assert code == 0
+    assert written == [1]
+
+
 def test_claims_scan_is_read_only(tmp_path):
     target = ledger.REPO_ROOT / 'docs/competition/defense.md'
     before = target.read_bytes()

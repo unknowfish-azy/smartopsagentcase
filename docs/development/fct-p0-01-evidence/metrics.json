@@ -17,7 +17,6 @@
     "migrations.file_n": "backend/src/main/resources/db/migration 下 *.sql 文件数（不含 target/ 副本）",
     "migrations.offline_distinct_table_n": "上述 CREATE TABLE 的目标表名去重数（离线定义口径，不是运行库事实）",
     "migrations.runtime_tables_n": "运行库实际表数；未连接数据库时为 null，原因见 unavailable",
-    "snapshot.git_dirty_files_n": "git status --porcelain 行数，已排除本次输出目录",
     "snapshot.source_digest": "按路径排序的 \"path<TAB>sha256\" 拼接后再 sha256，用于“同一快照重复生成一致”的比较",
     "sources.*": "被统计文件的 sha256 与字节数，用于追溯单个数字",
     "tests.pytest.collected_n": "pytest --collect-only 收集到的用例数（本快照、本解释器）",
@@ -33,18 +32,60 @@
   },
   "java": {
     "main": {
-      "controller_file_n": 54,
-      "file_n": 287,
+      "controller_file_n": 63,
+      "file_n": 321,
       "loc": {
-        "blank": 3444,
-        "code": 23212,
-        "comment": 1836,
-        "total": 28492
+        "blank": 4107,
+        "code": 28443,
+        "comment": 2236,
+        "total": 34786
       },
       "routes": {
-        "actual_route_n": 378,
-        "route_annotation_n": 423,
+        "actual_route_n": 422,
+        "route_annotation_n": 476,
         "routes": [
+          {
+            "controller": "BackupController",
+            "http": "GET",
+            "line": 35,
+            "path": "/api/backups/sets"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 41,
+            "path": "/api/backups/sets"
+          },
+          {
+            "controller": "BackupController",
+            "http": "GET",
+            "line": 49,
+            "path": "/api/backups/sets/{setId}/status"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 57,
+            "path": "/api/backups/sets/{setId}/manifests"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 65,
+            "path": "/api/backups/sets/{setId}/artifacts/verify"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 74,
+            "path": "/api/backups/sets/{setId}/artifacts/offsite"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 83,
+            "path": "/api/backups/sets/{setId}/drills"
+          },
           {
             "controller": "CloudAssetController",
             "http": "POST",
@@ -592,6 +633,12 @@
             "path": "/"
           },
           {
+            "controller": "HostDiagnosisController",
+            "http": "POST",
+            "line": 24,
+            "path": "/api/operations/host/diagnose"
+          },
+          {
             "controller": "IncidentController",
             "http": "POST",
             "line": 34,
@@ -740,6 +787,30 @@
             "http": "GET",
             "line": 56,
             "path": "/api/inspector/statistics"
+          },
+          {
+            "controller": "InternalRecoveryController",
+            "http": "POST",
+            "line": 31,
+            "path": "/api/internal/recovery/contracts"
+          },
+          {
+            "controller": "InternalRecoveryController",
+            "http": "POST",
+            "line": 36,
+            "path": "/api/internal/recovery/contracts/{id}/observations"
+          },
+          {
+            "controller": "InternalRecoveryController",
+            "http": "POST",
+            "line": 41,
+            "path": "/api/internal/recovery/contracts/{id}/receipts"
+          },
+          {
+            "controller": "InternalRecoveryController",
+            "http": "POST",
+            "line": 46,
+            "path": "/api/internal/recovery/contracts/{id}/replay-bundles"
           },
           {
             "controller": "KnowledgeCandidateController",
@@ -998,6 +1069,12 @@
             "http": "POST",
             "line": 26,
             "path": "/api/operations/multi-exec/execute"
+          },
+          {
+            "controller": "MultiExecController",
+            "http": "POST",
+            "line": 33,
+            "path": "/api/operations/multi-exec/cancel"
           },
           {
             "controller": "NetworkPathDiagnosisController",
@@ -1262,6 +1339,24 @@
             "http": "GET",
             "line": 39,
             "path": "/api/knowledge/personal/libraries/{libraryId}/export"
+          },
+          {
+            "controller": "RecoveryContractController",
+            "http": "GET",
+            "line": 31,
+            "path": "/api/recovery/contracts"
+          },
+          {
+            "controller": "RecoveryContractController",
+            "http": "GET",
+            "line": 39,
+            "path": "/api/recovery/contracts/{id}"
+          },
+          {
+            "controller": "RecoveryContractController",
+            "http": "GET",
+            "line": 45,
+            "path": "/api/recovery/contracts/{id}/replay"
           },
           {
             "controller": "SentinelGuardianController",
@@ -1876,6 +1971,162 @@
             "path": "/api/assistant/conversations/{conversationId}/vision-events/{eventId}/handoff/memory"
           },
           {
+            "controller": "ExperimentController",
+            "http": "GET",
+            "line": 37,
+            "path": "/api/experiments/evaluations"
+          },
+          {
+            "controller": "ExperimentController",
+            "http": "POST",
+            "line": 43,
+            "path": "/api/experiments/evaluations"
+          },
+          {
+            "controller": "ExperimentController",
+            "http": "POST",
+            "line": 53,
+            "path": "/api/experiments/evaluations/{evaluationId}/drills"
+          },
+          {
+            "controller": "ExperimentController",
+            "http": "POST",
+            "line": 64,
+            "path": "/api/experiments/evaluations/{evaluationId}/exit"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "POST",
+            "line": 38,
+            "path": "/api/finops/costs"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "GET",
+            "line": 46,
+            "path": "/api/finops/summary"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "GET",
+            "line": 53,
+            "path": "/api/finops/trend"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "POST",
+            "line": 60,
+            "path": "/api/finops/usage"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "GET",
+            "line": 67,
+            "path": "/api/finops/recommendations"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "POST",
+            "line": 76,
+            "path": "/api/finops/budgets"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "GET",
+            "line": 84,
+            "path": "/api/finops/budgets/status"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 38,
+            "path": "/api/iac/plans/analyze"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 43,
+            "path": "/api/iac/plans"
+          },
+          {
+            "controller": "IacController",
+            "http": "GET",
+            "line": 50,
+            "path": "/api/iac/plans/{planId}"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 57,
+            "path": "/api/iac/plans/{planId}/approve"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 65,
+            "path": "/api/iac/plans/{planId}/dispatch"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 73,
+            "path": "/api/iac/applies/{applyId}/complete"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 82,
+            "path": "/api/iac/applies/{applyId}/verify"
+          },
+          {
+            "controller": "IacController",
+            "http": "GET",
+            "line": 90,
+            "path": "/api/iac/releases"
+          },
+          {
+            "controller": "IacController",
+            "http": "GET",
+            "line": 97,
+            "path": "/api/iac/drift"
+          },
+          {
+            "controller": "SloController",
+            "http": "GET",
+            "line": 26,
+            "path": "/api/observability/slo"
+          },
+          {
+            "controller": "SloController",
+            "http": "GET",
+            "line": 32,
+            "path": "/api/observability/recovery/{contractRecordId}"
+          },
+          {
+            "controller": "SecurityPostureController",
+            "http": "POST",
+            "line": 40,
+            "path": "/api/security/reports"
+          },
+          {
+            "controller": "SecurityPostureController",
+            "http": "POST",
+            "line": 50,
+            "path": "/api/security/findings/{findingId}/verify-fix"
+          },
+          {
+            "controller": "SecurityPostureController",
+            "http": "POST",
+            "line": 58,
+            "path": "/api/security/findings/{findingId}/exception"
+          },
+          {
+            "controller": "SecurityPostureController",
+            "http": "GET",
+            "line": 66,
+            "path": "/api/security/summary"
+          },
+          {
             "controller": "RunbookController",
             "http": "GET",
             "line": 48,
@@ -2021,319 +2272,331 @@
           },
           {
             "controller": "SentinelController",
+            "http": "GET",
+            "line": 44,
+            "path": "/api/sentinel/scheduler-stats"
+          },
+          {
+            "controller": "SentinelController",
             "http": "POST",
-            "line": 43,
+            "line": 49,
             "path": "/api/sentinel/tasks"
           },
           {
             "controller": "SentinelController",
             "http": "PATCH",
-            "line": 51,
+            "line": 57,
             "path": "/api/sentinel/tasks/{id}/enabled"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 64,
+            "line": 70,
             "path": "/api/sentinel/tasks/{id}/runtime"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 72,
+            "line": 78,
             "path": "/api/sentinel/task-groups"
           },
           {
             "controller": "SentinelController",
             "http": "PATCH",
-            "line": 78,
+            "line": 84,
             "path": "/api/sentinel/task-groups/{label}/enabled"
           },
           {
             "controller": "SentinelController",
             "http": "PATCH",
-            "line": 87,
+            "line": 93,
             "path": "/api/sentinel/tasks/{id}/group"
           },
           {
             "controller": "SentinelController",
             "http": "DELETE",
-            "line": 94,
+            "line": 100,
             "path": "/api/sentinel/tasks/{id}"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 100,
+            "line": 106,
             "path": "/api/sentinel/tasks/{id}/samples"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 109,
+            "line": 115,
             "path": "/api/sentinel/threshold-templates"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 114,
+            "line": 120,
             "path": "/api/sentinel/threshold-templates"
           },
           {
             "controller": "SentinelController",
             "http": "DELETE",
-            "line": 121,
+            "line": 127,
             "path": "/api/sentinel/threshold-templates/{id}"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 129,
+            "line": 135,
             "path": "/api/sentinel/scripts"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 134,
+            "line": 140,
             "path": "/api/sentinel/scripts"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 148,
+            "line": 154,
             "path": "/api/sentinel/scripts/upload"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 155,
+            "line": 161,
             "path": "/api/sentinel/scripts/{id}/versions"
           },
           {
             "controller": "SentinelController",
             "http": "DELETE",
-            "line": 161,
+            "line": 167,
             "path": "/api/sentinel/scripts/{id}"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 167,
+            "line": 173,
             "path": "/api/sentinel/scripts/{id}/versions"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 174,
+            "line": 180,
             "path": "/api/sentinel/scripts/{id}/runs"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 180,
+            "line": 186,
             "path": "/api/sentinel/runs"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 191,
+            "line": 197,
             "path": "/api/sentinel/scripts/lint"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 198,
+            "line": 204,
             "path": "/api/sentinel/alert-rules"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 203,
+            "line": 209,
             "path": "/api/sentinel/alert-rules"
           },
           {
             "controller": "SentinelController",
             "http": "DELETE",
-            "line": 211,
+            "line": 217,
             "path": "/api/sentinel/alert-rules/{id}"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 217,
+            "line": 223,
             "path": "/api/sentinel/alerts"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 222,
+            "line": 228,
             "path": "/api/sentinel/alerts/{id}/acknowledge"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 229,
+            "line": 235,
             "path": "/api/sentinel/alerts/{id}/dispatch"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 236,
+            "line": 242,
             "path": "/api/sentinel/alerts/{id}/result"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 243,
+            "line": 249,
             "path": "/api/sentinel/alerts/{id}/close"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 253,
+            "line": 259,
             "path": "/api/sentinel/alerts/groups"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 261,
+            "line": 267,
             "path": "/api/sentinel/alerts/reconcile"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 266,
-            "path": "/api/sentinel/silences"
-          },
-          {
-            "controller": "SentinelController",
-            "http": "POST",
             "line": 272,
             "path": "/api/sentinel/silences"
           },
           {
             "controller": "SentinelController",
+            "http": "POST",
+            "line": 278,
+            "path": "/api/sentinel/silences"
+          },
+          {
+            "controller": "SentinelController",
             "http": "DELETE",
-            "line": 279,
+            "line": 285,
             "path": "/api/sentinel/silences/{id}"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 286,
+            "line": 292,
+            "path": "/api/sentinel/silences/{id}/approve"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 299,
             "path": "/api/sentinel/alerts/{id}/transfer"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 294,
+            "line": 307,
             "path": "/api/sentinel/alerts/{id}/escalate"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 301,
+            "line": 314,
             "path": "/api/sentinel/alerts/{id}/notifications/retry"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 315,
+            "line": 328,
             "path": "/api/sentinel/alerts/{id}/analyze"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 326,
+            "line": 339,
             "path": "/api/sentinel/alerts/{id}/notify"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 332,
+            "line": 345,
             "path": "/api/sentinel/alerts/{id}/knowledge"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 337,
+            "line": 350,
             "path": "/api/sentinel/knowledge-candidates"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 343,
+            "line": 356,
             "path": "/api/sentinel/runtime-boundary"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 357,
+            "line": 370,
             "path": "/api/sentinel/scripts/{id}/prepare-run"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 366,
+            "line": 379,
             "path": "/api/sentinel/runs/{runId}/result"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 378,
+            "line": 391,
             "path": "/api/sentinel/runs/{runId}"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 384,
+            "line": 397,
             "path": "/api/sentinel/variables"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 398,
+            "line": 411,
             "path": "/api/sentinel/alerts/{id}/propose-remediation"
           },
           {
             "controller": "SentinelController",
             "http": "GET",
-            "line": 408,
+            "line": 421,
             "path": "/api/sentinel/schedules"
           },
           {
             "controller": "SentinelController",
             "http": "POST",
-            "line": 417,
+            "line": 430,
             "path": "/api/sentinel/schedules"
           },
           {
             "controller": "SentinelController",
             "http": "DELETE",
-            "line": 425,
+            "line": 438,
             "path": "/api/sentinel/schedules/{id}"
           }
         ],
         "unresolved_annotation_n": 0
       },
-      "service_file_n": 67
+      "service_file_n": 75
     },
     "test": {
-      "file_n": 107,
+      "file_n": 126,
       "loc": {
-        "blank": 1666,
-        "code": 10548,
-        "comment": 375,
-        "total": 12589
+        "blank": 2144,
+        "code": 13525,
+        "comment": 478,
+        "total": 16147
       },
-      "test_annotation_n": 559,
-      "test_class_n": 107
+      "test_annotation_n": 671,
+      "test_class_n": 126
     }
   },
   "migrations": {
-    "create_table_n": 111,
-    "file_n": 48,
-    "offline_distinct_table_n": 101,
+    "create_table_n": 129,
+    "file_n": 57,
+    "offline_distinct_table_n": 119,
     "offline_tables": [
       "account_mfa",
       "account_mfa_recovery",
@@ -2346,12 +2609,21 @@
       "asset_relation",
       "asset_resource",
       "assistant_preference",
+      "backup_artifact_record",
+      "backup_drill_record",
+      "backup_recovery_set",
       "chat_attachment",
       "chat_conversation",
       "chat_message",
       "cloud_account",
       "cloud_sync_run",
       "database_diagnosis_audit",
+      "finops_budget",
+      "finops_cost_record",
+      "finops_usage_sample",
+      "iac_apply_record",
+      "iac_plan_record",
+      "iac_release_record",
       "if",
       "incident",
       "incident_event",
@@ -2387,6 +2659,12 @@
       "personal_knowledge_library",
       "platform_admin_capability",
       "platform_admin_profile",
+      "platform_experiment_drill",
+      "platform_experiment_evaluation",
+      "recovery_contract_record",
+      "recovery_observation_record",
+      "recovery_receipt_record",
+      "recovery_replay_bundle_record",
       "registration_policy",
       "runbook",
       "runbook_run",
@@ -2396,6 +2674,9 @@
       "runbook_trigger",
       "runbook_version",
       "security_audit_event",
+      "security_finding",
+      "security_report_finding",
+      "security_scan_report",
       "sentinel_alert",
       "sentinel_alert_event",
       "sentinel_alert_rule",
@@ -2910,6 +3191,26 @@
         "table": "platform_admin_capability"
       },
       {
+        "file": "V20261105.11__recovery_contract.sql",
+        "line": 20,
+        "table": "recovery_contract_record"
+      },
+      {
+        "file": "V20261105.11__recovery_contract.sql",
+        "line": 46,
+        "table": "recovery_observation_record"
+      },
+      {
+        "file": "V20261105.11__recovery_contract.sql",
+        "line": 71,
+        "table": "recovery_receipt_record"
+      },
+      {
+        "file": "V20261105.11__recovery_contract.sql",
+        "line": 94,
+        "table": "recovery_replay_bundle_record"
+      },
+      {
         "file": "V20261105.1__incident_center.sql",
         "line": 21,
         "table": "incident"
@@ -2993,127 +3294,104 @@
         "file": "V20261105.9__database_diagnosis_audit.sql",
         "line": 9,
         "table": "database_diagnosis_audit"
+      },
+      {
+        "file": "V20261106.13__iac_gitops.sql",
+        "line": 12,
+        "table": "iac_plan_record"
+      },
+      {
+        "file": "V20261106.13__iac_gitops.sql",
+        "line": 43,
+        "table": "iac_apply_record"
+      },
+      {
+        "file": "V20261106.13__iac_gitops.sql",
+        "line": 63,
+        "table": "iac_release_record"
+      },
+      {
+        "file": "V20261106.14__backup_recovery.sql",
+        "line": 11,
+        "table": "backup_recovery_set"
+      },
+      {
+        "file": "V20261106.14__backup_recovery.sql",
+        "line": 25,
+        "table": "backup_artifact_record"
+      },
+      {
+        "file": "V20261106.14__backup_recovery.sql",
+        "line": 47,
+        "table": "backup_drill_record"
+      },
+      {
+        "file": "V20261106.15__finops.sql",
+        "line": 11,
+        "table": "finops_cost_record"
+      },
+      {
+        "file": "V20261106.15__finops.sql",
+        "line": 31,
+        "table": "finops_usage_sample"
+      },
+      {
+        "file": "V20261106.15__finops.sql",
+        "line": 45,
+        "table": "finops_budget"
+      },
+      {
+        "file": "V20261106.16__security_posture.sql",
+        "line": 12,
+        "table": "security_scan_report"
+      },
+      {
+        "file": "V20261106.16__security_posture.sql",
+        "line": 31,
+        "table": "security_finding"
+      },
+      {
+        "file": "V20261106.16__security_posture.sql",
+        "line": 60,
+        "table": "security_report_finding"
+      },
+      {
+        "file": "V20261106.17__platform_experiments.sql",
+        "line": 12,
+        "table": "platform_experiment_evaluation"
+      },
+      {
+        "file": "V20261106.17__platform_experiments.sql",
+        "line": 32,
+        "table": "platform_experiment_drill"
       }
     ]
   },
   "schema_version": 1,
   "snapshot": {
-    "git_dirty_digest": "sha256:d1d8a5d8996baf8a6c14ec3cb76694e0c0d0f81c101bcbf6de5c88c5414a7d30",
-    "git_dirty_files_n": 87,
-    "git_dirty_paths": [
-      "06-/345/267/245/347/250/213/346/225/264/346/224/271/C-R9-/347/272/240/345/257/237/346/266/210/350/236/215/344/270/216/347/225/231/345/207/272/351/252/214/350/257/201/346/212/245/345/221/212.md",
-      "06-/345/267/245/347/250/213/346/225/264/346/224/271/eval_false_success.csv",
-      "06-/345/267/245/347/250/213/346/225/264/346/224/271/eval_false_success_holdout.csv",
-      "agent/recovery_contracts/",
-      "ai-service/app/api/chat.py",
-      "ai-service/app/core/config.py",
-      "ai-service/app/core/run_token.py",
-      "ai-service/app/tests/conftest.py",
-      "backend/src/main/java/com/smartops/controller/ChatRunTokenController.java",
-      "backend/src/main/java/com/smartops/controller/IncidentController.java",
-      "backend/src/main/java/com/smartops/dto/IncidentAssignRequest.java",
-      "backend/src/main/java/com/smartops/dto/IncidentCloseRequest.java",
-      "backend/src/main/java/com/smartops/dto/IncidentCommentRequest.java",
-      "backend/src/main/java/com/smartops/dto/IncidentCreateRequest.java",
-      "backend/src/main/java/com/smartops/dto/IncidentRelationRequest.java",
-      "backend/src/main/java/com/smartops/dto/IncidentUpdateRequest.java",
-      "backend/src/main/java/com/smartops/entity/Incident.java",
-      "backend/src/main/java/com/smartops/entity/IncidentEvent.java",
-      "backend/src/main/java/com/smartops/entity/IncidentRelation.java",
-      "backend/src/main/java/com/smartops/entity/SentinelAlertRef.java",
-      "backend/src/main/java/com/smartops/incident/",
-      "backend/src/main/java/com/smartops/mapper/IncidentEventMapper.java",
-      "backend/src/main/java/com/smartops/mapper/IncidentMapper.java",
-      "backend/src/main/java/com/smartops/mapper/IncidentRelationMapper.java",
-      "backend/src/main/java/com/smartops/mapper/SentinelAlertRefMapper.java",
-      "backend/src/main/java/com/smartops/module/incident/",
-      "backend/src/main/java/com/smartops/runbook/",
-      "backend/src/main/java/com/smartops/security/RunTokenService.java",
-      "backend/src/main/java/com/smartops/sentinel/AlertLifecyclePoller.java",
-      "backend/src/main/java/com/smartops/sentinel/AlertLifecycleService.java",
-      "backend/src/main/java/com/smartops/sentinel/AlertSilence.java",
-      "backend/src/main/java/com/smartops/sentinel/SentinelController.java",
-      "backend/src/main/java/com/smartops/sentinel/SentinelService.java",
-      "backend/src/main/java/com/smartops/service/IncidentService.java",
-      "backend/src/main/java/com/smartops/service/impl/IncidentServiceImpl.java",
-      "backend/src/main/java/com/smartops/vo/IncidentEventVO.java",
-      "backend/src/main/java/com/smartops/vo/IncidentRelationVO.java",
-      "backend/src/main/java/com/smartops/vo/IncidentVO.java",
-      "backend/src/main/resources/application.yml",
-      "backend/src/main/resources/db/migration/V20261105.1__incident_center.sql",
-      "backend/src/main/resources/db/migration/V20261105.7__alert_lifecycle.sql",
-      "backend/src/main/resources/db/migration/V20261105.8__runbook.sql",
-      "backend/src/test/java/com/smartops/controller/IncidentControllerTest.java",
-      "backend/src/test/java/com/smartops/integration/IncidentCenterIntegrationTest.java",
-      "backend/src/test/java/com/smartops/runbook/",
-      "backend/src/test/java/com/smartops/security/RunTokenServiceTest.java",
-      "backend/src/test/java/com/smartops/sentinel/AlertLifecycleIntegrationTest.java",
-      "backend/src/test/java/com/smartops/service/IncidentServiceTest.java",
-      "docs/competition/recovery-contracts/",
-      "docs/design/recovery-contract-v1/examples/",
-      "docs/design/recovery-contract-v1/implementation-review.md",
-      "docs/design/recovery-contract-v1/platform-integration.md",
-      "docs/design/recovery-contract-v1/routing-evidence.md",
-      "docs/design/recovery-contract-v1/semantics.md",
-      "docs/development//345/216/237/345/210/233/345/210/233/346/226/260/345/256/236/346/226/275/350/256/260/345/275/225.md",
-      "docs/development//346/225/264/346/224/271/346/211/247/350/241/214/346/270/205/345/215/225/344/270/216/350/256/241/345/210/222-20261105.md",
-      "docs/development/PROBE-P1-01-/350/241/245/350/257/201/350/260/203/345/272/246/344/270/216/345/217/252/350/257/273/346/216/242/351/222/210.md",
-      "docs/development/REPLAY-P1-01-/345/220/214/350/257/201/346/215/256/347/255/226/347/225/245/345/267/256/345/210/206/345/233/236/346/224/276.md",
-      "docs/development/SCORE-P0-01-/350/256/241/345/210/206/345/231/250/344/270/216/351/235/231/351/273/230/346/224/276/350/241/214/350/257/255/344/271/211.md",
-      "docs/development/SmartOpsAgent-/345/205/250/351/235/242/344/275/223/346/243/200/344/270/216/345/244/247/346/250/241/345/236/213/344/273/273/345/212/241/346/200/273/346/270/205/345/215/225-20261105.md",
-      "docs/development/VER-P0-01-/350/257/201/346/215/256/344/271/211/345/212/241/344/270/216/345/233/236/346/211/247.md",
-      "docs/development/probe-p1-01-evidence/",
-      "docs/development/score-p0-01-evidence/",
-      "docs/evaluation/",
-      "docs/release/quality-gates-20261105/ci-gaps.md",
-      "docs/release/quality-gates-20261105/failure-triage.md",
-      "docs/release/quality-gates-20261105/preflight.md",
-      "docs/release/quality-gates-20261105/quality-gate.md",
-      "docs/release/quality-gates-20261105/rollback-drill.md",
-      "docs/security/audit-20261105/attack-surface.md",
-      "docs/security/audit-20261105/license-privacy.md",
-      "docs/security/audit-20261105/remediation-order.md",
-      "docs/security/audit-20261105/risk-matrix.md",
-      "docs/security/audit-20261105/test-matrix.md",
-      "frontend/src/api/chatRunToken.ts",
-      "frontend/src/api/stream.ts",
-      "frontend/src/components/operations/recovery/",
-      "frontend/src/stores/aiChat.js",
-      "frontend/test/recovery/",
-      "scripts/compare_probe_strategies.py",
-      "scripts/eval_false_success.py",
-      "scripts/fact_ledger.py",
-      "scripts/research/recovery_contract_demo.py",
-      "scripts/research/recovery_contracts/",
-      "tests/recovery_contracts/",
-      "tests/scripts/test_eval_false_success.py",
-      "tests/scripts/test_fact_ledger.py"
-    ],
-    "git_head": "3f41c2c94d15439d019dcb129b685f78c7412cf6",
-    "source_count": 616,
-    "source_digest": "sha256:436647f13909dd043c373514d1b2d41826316289e64c65d54c3e8113bc47d7c6"
+    "git_head": "65f0c086dcbea9455c0855af844fe3c79bb38726",
+    "source_count": 679,
+    "source_digest": "sha256:9f9e734241590138a16a1cd479a146208131f2457d38c3e380b0ecf8c1c3ea06"
   },
   "task": "FCT-P0-01",
   "tests": {
     "pytest": {
-      "collected_n": 586,
-      "error_n": 0,
-      "executed_n": 585,
-      "failed_n": 0,
-      "junitxml_sha256": "sha256:662fca4f9691d56caf789f762737c0d804839a4e9f9023dd80b6acd4cc8e20d0",
-      "passed_n": 562,
-      "reason": null,
-      "skipped_n": 23,
-      "source": "docs/development/fct-p0-01-evidence/pytest.xml"
+      "collected_n": null,
+      "error_n": null,
+      "executed_n": null,
+      "failed_n": null,
+      "passed_n": null,
+      "reason": "本轮以 --no-pytest-collect 运行：收集数为 null",
+      "skipped_n": null
     }
   },
   "vue": {
-    "file_n": 174,
+    "file_n": 175,
     "loc": {
-      "blank": 1919,
-      "code": 19086,
-      "comment": 548,
-      "total": 21553
+      "blank": 1940,
+      "code": 19453,
+      "comment": 551,
+      "total": 21944
     }
   }
 }

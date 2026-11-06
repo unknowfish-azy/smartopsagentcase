@@ -1,0 +1,3391 @@
+{
+  "definitions": {
+    "java.main => code + comment + blank = total": "恒等式，用于自检",
+    "java.main.controller_file_n": "文件名含 Controller 的 Java 文件数",
+    "java.main.file_n": "backend/src/main/java 下 *.java 文件数（递归，不含 target/）",
+    "java.main.loc.blank": "去掉首尾空白后为空的行数",
+    "java.main.loc.code": "非空且含至少一个代码字符的行数",
+    "java.main.loc.comment": "整行仅注释（//、/* */），无代码字符的行数",
+    "java.main.loc.total": "总行数，含空行与注释行",
+    "java.main.service_file_n": "文件名以 Service 结尾的 Java 文件数",
+    "java.routes.actual_route_n": "类级 @RequestMapping 基路径 + 方法级注解路径组合后的 (HTTP方法, 路径) 去重数",
+    "java.routes.route_annotation_n": "GetMapping/PostMapping/PutMapping/DeleteMapping/PatchMapping/RequestMapping 注解出现次数（含类级）",
+    "java.routes.unresolved_annotation_n": "路径不是字符串字面量（常量/变量拼接）而无法静态解析的方法级注解数，不静默丢弃",
+    "java.test.file_n": "backend/src/test/java 下 *.java 文件数",
+    "java.test.test_annotation_n": "@Test 注解出现次数（一个类可有多个；不等于用例执行数）",
+    "migrations.create_table_n": "上述 migration 文件中 CREATE TABLE 语句数（含 IF NOT EXISTS）",
+    "migrations.file_n": "backend/src/main/resources/db/migration 下 *.sql 文件数（不含 target/ 副本）",
+    "migrations.offline_distinct_table_n": "上述 CREATE TABLE 的目标表名去重数（离线定义口径，不是运行库事实）",
+    "migrations.runtime_tables_n": "运行库实际表数；未连接数据库时为 null，原因见 unavailable",
+    "snapshot.source_digest": "按路径排序的 \"path<TAB>sha256\" 拼接后再 sha256，用于“同一快照重复生成一致”的比较",
+    "sources.*": "被统计文件的 sha256 与字节数，用于追溯单个数字",
+    "tests.pytest.collected_n": "pytest --collect-only 收集到的用例数（本快照、本解释器）",
+    "tests.pytest.executed_n": "解析 junitxml 得到的执行数；未提供 junitxml 时为 null",
+    "tests.pytest.junitxml_sha256": "junitxml 原始日志的 sha256，用于把执行/通过/跳过数追回到原始日志",
+    "vue.file_n": "frontend/src 下 *.vue 文件数",
+    "vue.loc.*": "同上 LOC 口径（Vue 单文件按整文件计，识别 <!-- --> 注释）"
+  },
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "pytest": "9.1.1",
+    "python": "3.14.3"
+  },
+  "java": {
+    "main": {
+      "controller_file_n": 63,
+      "file_n": 316,
+      "loc": {
+        "blank": 4051,
+        "code": 27932,
+        "comment": 2171,
+        "total": 34154
+      },
+      "routes": {
+        "actual_route_n": 421,
+        "route_annotation_n": 475,
+        "routes": [
+          {
+            "controller": "BackupController",
+            "http": "GET",
+            "line": 35,
+            "path": "/api/backups/sets"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 41,
+            "path": "/api/backups/sets"
+          },
+          {
+            "controller": "BackupController",
+            "http": "GET",
+            "line": 49,
+            "path": "/api/backups/sets/{setId}/status"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 57,
+            "path": "/api/backups/sets/{setId}/manifests"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 65,
+            "path": "/api/backups/sets/{setId}/artifacts/verify"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 74,
+            "path": "/api/backups/sets/{setId}/artifacts/offsite"
+          },
+          {
+            "controller": "BackupController",
+            "http": "POST",
+            "line": 83,
+            "path": "/api/backups/sets/{setId}/drills"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "POST",
+            "line": 33,
+            "path": "/api/cloud/accounts"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "GET",
+            "line": 40,
+            "path": "/api/cloud/accounts"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "POST",
+            "line": 45,
+            "path": "/api/cloud/accounts/{id}/sync"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "GET",
+            "line": 52,
+            "path": "/api/cloud/accounts/{id}/sync-runs"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "GET",
+            "line": 60,
+            "path": "/api/cloud/resources"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "GET",
+            "line": 73,
+            "path": "/api/cloud/resources/{uid}"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "POST",
+            "line": 80,
+            "path": "/api/cloud/resources/{uid}/status"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "GET",
+            "line": 88,
+            "path": "/api/cloud/business/{business}/impact"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "POST",
+            "line": 96,
+            "path": "/api/cloud/relations"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "POST",
+            "line": 104,
+            "path": "/api/cloud/resources"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "GET",
+            "line": 112,
+            "path": "/api/cloud/resources/{uid}/history"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "POST",
+            "line": 121,
+            "path": "/api/cloud/resources/{uid}/confirm"
+          },
+          {
+            "controller": "CloudAssetController",
+            "http": "POST",
+            "line": 130,
+            "path": "/api/cloud/targets/resolve"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 32,
+            "path": "/api/admin/overview"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 38,
+            "path": "/api/admin/registration"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "PUT",
+            "line": 44,
+            "path": "/api/admin/registration"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 49,
+            "path": "/api/admin/users"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 56,
+            "path": "/api/admin/users/{id}/context"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 61,
+            "path": "/api/admin/governance"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "POST",
+            "line": 66,
+            "path": "/api/admin/governance/{id}"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "DELETE",
+            "line": 71,
+            "path": "/api/admin/governance/{id}"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "POST",
+            "line": 76,
+            "path": "/api/admin/governance/transfer/{id}"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "POST",
+            "line": 82,
+            "path": "/api/admin/users"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "PUT",
+            "line": 87,
+            "path": "/api/admin/users/{id}"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "POST",
+            "line": 92,
+            "path": "/api/admin/users/{id}/reset-password"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 98,
+            "path": "/api/admin/sessions"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "DELETE",
+            "line": 104,
+            "path": "/api/admin/sessions/{id}"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 110,
+            "path": "/api/admin/audit"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 118,
+            "path": "/api/admin/audit/{id}"
+          },
+          {
+            "controller": "AdminAccountsController",
+            "http": "GET",
+            "line": 124,
+            "path": "/api/admin/governance/capabilities"
+          },
+          {
+            "controller": "AdminMfaController",
+            "http": "GET",
+            "line": 22,
+            "path": "/api/admin/mfa"
+          },
+          {
+            "controller": "AdminMfaController",
+            "http": "POST",
+            "line": 28,
+            "path": "/api/admin/mfa/setup"
+          },
+          {
+            "controller": "AdminMfaController",
+            "http": "POST",
+            "line": 34,
+            "path": "/api/admin/mfa/enable"
+          },
+          {
+            "controller": "AdminMfaController",
+            "http": "POST",
+            "line": 41,
+            "path": "/api/admin/mfa/recovery"
+          },
+          {
+            "controller": "AdminMfaController",
+            "http": "POST",
+            "line": 48,
+            "path": "/api/admin/mfa/disable"
+          },
+          {
+            "controller": "AdminMfaController",
+            "http": "GET",
+            "line": 55,
+            "path": "/api/admin/mfa/notices"
+          },
+          {
+            "controller": "AdminMfaController",
+            "http": "POST",
+            "line": 61,
+            "path": "/api/auth/mfa/notices/{id}/read"
+          },
+          {
+            "controller": "AdminModelGovernanceController",
+            "http": "GET",
+            "line": 22,
+            "path": "/api/admin/model-governance"
+          },
+          {
+            "controller": "AdminReadinessController",
+            "http": "GET",
+            "line": 30,
+            "path": "/api/admin/readiness"
+          },
+          {
+            "controller": "AdminTeamsController",
+            "http": "GET",
+            "line": 16,
+            "path": "/api/admin/teams"
+          },
+          {
+            "controller": "AdminTeamsController",
+            "http": "GET",
+            "line": 17,
+            "path": "/api/admin/teams/{id}/members"
+          },
+          {
+            "controller": "AdminTeamsController",
+            "http": "PUT",
+            "line": 18,
+            "path": "/api/admin/teams/{id}/status"
+          },
+          {
+            "controller": "AdminWorkbenchController",
+            "http": "GET",
+            "line": 19,
+            "path": "/api/admin/workbench"
+          },
+          {
+            "controller": "ArtifactDraftController",
+            "http": "GET",
+            "line": 13,
+            "path": "/api/knowledge/artifacts"
+          },
+          {
+            "controller": "ArtifactDraftController",
+            "http": "POST",
+            "line": 14,
+            "path": "/api/knowledge/artifacts"
+          },
+          {
+            "controller": "ArtifactDraftController",
+            "http": "POST",
+            "line": 15,
+            "path": "/api/knowledge/artifacts/{id}/submit-review"
+          },
+          {
+            "controller": "AssistantController",
+            "http": "GET",
+            "line": 23,
+            "path": "/api/assistant/options"
+          },
+          {
+            "controller": "AssistantController",
+            "http": "PUT",
+            "line": 28,
+            "path": "/api/assistant/preference"
+          },
+          {
+            "controller": "AssistantController",
+            "http": "POST",
+            "line": 33,
+            "path": "/api/assistant/chat"
+          },
+          {
+            "controller": "AuthController",
+            "http": "GET",
+            "line": 54,
+            "path": "/api/auth/human-verification"
+          },
+          {
+            "controller": "AuthController",
+            "http": "POST",
+            "line": 64,
+            "path": "/api/auth/human-verification/verify"
+          },
+          {
+            "controller": "AuthController",
+            "http": "GET",
+            "line": 81,
+            "path": "/api/auth/session"
+          },
+          {
+            "controller": "AuthController",
+            "http": "POST",
+            "line": 87,
+            "path": "/api/auth/login"
+          },
+          {
+            "controller": "AuthController",
+            "http": "POST",
+            "line": 112,
+            "path": "/api/auth/mfa/complete"
+          },
+          {
+            "controller": "AuthController",
+            "http": "POST",
+            "line": 119,
+            "path": "/api/auth/mfa/cancel"
+          },
+          {
+            "controller": "AuthController",
+            "http": "GET",
+            "line": 147,
+            "path": "/api/auth/registration"
+          },
+          {
+            "controller": "AuthController",
+            "http": "POST",
+            "line": 152,
+            "path": "/api/auth/register"
+          },
+          {
+            "controller": "AuthController",
+            "http": "POST",
+            "line": 163,
+            "path": "/api/auth/password"
+          },
+          {
+            "controller": "AuthController",
+            "http": "GET",
+            "line": 169,
+            "path": "/api/auth/profile"
+          },
+          {
+            "controller": "AuthController",
+            "http": "PUT",
+            "line": 174,
+            "path": "/api/auth/profile"
+          },
+          {
+            "controller": "AuthController",
+            "http": "GET",
+            "line": 179,
+            "path": "/api/auth/sessions"
+          },
+          {
+            "controller": "AuthController",
+            "http": "DELETE",
+            "line": 184,
+            "path": "/api/auth/sessions/{id}"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "GET",
+            "line": 30,
+            "path": "/api/assistant/conversations"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "POST",
+            "line": 32,
+            "path": "/api/assistant/conversations"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "GET",
+            "line": 34,
+            "path": "/api/assistant/conversations/{id}"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "PUT",
+            "line": 36,
+            "path": "/api/assistant/conversations/{id}"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "DELETE",
+            "line": 38,
+            "path": "/api/assistant/conversations/{id}"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "POST",
+            "line": 40,
+            "path": "/api/assistant/conversations/{id}/attachments"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "GET",
+            "line": 42,
+            "path": "/api/assistant/conversations/{id}/attachments/{attachmentId}/content"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "DELETE",
+            "line": 51,
+            "path": "/api/assistant/conversations/{id}/attachments/{attachmentId}"
+          },
+          {
+            "controller": "ChatAttachmentController",
+            "http": "POST",
+            "line": 53,
+            "path": "/api/assistant/conversations/{id}/messages"
+          },
+          {
+            "controller": "ChatRunTokenController",
+            "http": "GET",
+            "line": 33,
+            "path": "/api/chat/run-token"
+          },
+          {
+            "controller": "DatabaseDiagnosisController",
+            "http": "POST",
+            "line": 30,
+            "path": "/api/operations/database/diagnose"
+          },
+          {
+            "controller": "DecisionLoopController",
+            "http": "GET",
+            "line": 18,
+            "path": "/api/agent/loops"
+          },
+          {
+            "controller": "DecisionLoopController",
+            "http": "GET",
+            "line": 25,
+            "path": "/api/agent/loops/stats"
+          },
+          {
+            "controller": "DecisionLoopController",
+            "http": "GET",
+            "line": 30,
+            "path": "/api/agent/loops/{id}"
+          },
+          {
+            "controller": "DecisionLoopController",
+            "http": "POST",
+            "line": 37,
+            "path": "/api/agent/loops"
+          },
+          {
+            "controller": "DecisionLoopController",
+            "http": "POST",
+            "line": 44,
+            "path": "/api/agent/loops/{id}/recall"
+          },
+          {
+            "controller": "DecisionLoopController",
+            "http": "POST",
+            "line": 51,
+            "path": "/api/agent/loops/{id}/decide"
+          },
+          {
+            "controller": "DecisionLoopController",
+            "http": "POST",
+            "line": 59,
+            "path": "/api/agent/loops/{id}/review"
+          },
+          {
+            "controller": "DiagnosticToolController",
+            "http": "GET",
+            "line": 21,
+            "path": "/api/diagnostics/targets"
+          },
+          {
+            "controller": "DiagnosticToolController",
+            "http": "POST",
+            "line": 23,
+            "path": "/api/diagnostics/http"
+          },
+          {
+            "controller": "DiagnosticToolController",
+            "http": "POST",
+            "line": 27,
+            "path": "/api/diagnostics/certificate"
+          },
+          {
+            "controller": "HarborCatalogController",
+            "http": "GET",
+            "line": 14,
+            "path": "/api/harbor/status"
+          },
+          {
+            "controller": "HarborCatalogController",
+            "http": "GET",
+            "line": 19,
+            "path": "/api/harbor/connection-check"
+          },
+          {
+            "controller": "HarborCatalogController",
+            "http": "GET",
+            "line": 25,
+            "path": "/api/harbor/projects/{project}/artifacts"
+          },
+          {
+            "controller": "HarborCatalogController",
+            "http": "GET",
+            "line": 33,
+            "path": "/api/harbor/projects"
+          },
+          {
+            "controller": "HarborCatalogController",
+            "http": "GET",
+            "line": 40,
+            "path": "/api/harbor/projects/{project}/repositories"
+          },
+          {
+            "controller": "HealthDiagnosticController",
+            "http": "GET",
+            "line": 16,
+            "path": "/api/diagnostics/health"
+          },
+          {
+            "controller": "HealthDiagnosticController",
+            "http": "GET",
+            "line": 18,
+            "path": "/api/diagnostics/admin/health"
+          },
+          {
+            "controller": "HomeController",
+            "http": "GET",
+            "line": 17,
+            "path": "/"
+          },
+          {
+            "controller": "HostDiagnosisController",
+            "http": "POST",
+            "line": 24,
+            "path": "/api/operations/host/diagnose"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 34,
+            "path": "/api/incidents"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "PUT",
+            "line": 39,
+            "path": "/api/incidents/{id}"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "GET",
+            "line": 45,
+            "path": "/api/incidents/{id}"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "GET",
+            "line": 50,
+            "path": "/api/incidents"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 61,
+            "path": "/api/incidents/{id}/acknowledge"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 68,
+            "path": "/api/incidents/{id}/mitigate"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 75,
+            "path": "/api/incidents/{id}/resolve"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 83,
+            "path": "/api/incidents/{id}/close"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 91,
+            "path": "/api/incidents/{id}/reopen"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 98,
+            "path": "/api/incidents/{id}/assign"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 105,
+            "path": "/api/incidents/{id}/comments"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "GET",
+            "line": 112,
+            "path": "/api/incidents/{id}/events"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 118,
+            "path": "/api/incidents/{id}/relations"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "DELETE",
+            "line": 125,
+            "path": "/api/incidents/{id}/relations/{relationId}"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "GET",
+            "line": 133,
+            "path": "/api/incidents/{id}/relations"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 143,
+            "path": "/api/incidents/from-alert/{alertId}"
+          },
+          {
+            "controller": "IncidentController",
+            "http": "POST",
+            "line": 150,
+            "path": "/api/incidents/sla/scan"
+          },
+          {
+            "controller": "IncidentRecommendationController",
+            "http": "POST",
+            "line": 16,
+            "path": "/api/knowledge/recommendations"
+          },
+          {
+            "controller": "InspectorController",
+            "http": "GET",
+            "line": 22,
+            "path": "/api/inspector/summary"
+          },
+          {
+            "controller": "InspectorController",
+            "http": "GET",
+            "line": 27,
+            "path": "/api/inspector/events"
+          },
+          {
+            "controller": "InspectorController",
+            "http": "GET",
+            "line": 33,
+            "path": "/api/inspector/events/{id}"
+          },
+          {
+            "controller": "InspectorController",
+            "http": "POST",
+            "line": 38,
+            "path": "/api/inspector/check"
+          },
+          {
+            "controller": "InspectorController",
+            "http": "POST",
+            "line": 44,
+            "path": "/api/inspector/verify"
+          },
+          {
+            "controller": "InspectorController",
+            "http": "POST",
+            "line": 50,
+            "path": "/api/inspector/replan"
+          },
+          {
+            "controller": "InspectorController",
+            "http": "GET",
+            "line": 56,
+            "path": "/api/inspector/statistics"
+          },
+          {
+            "controller": "InternalRecoveryController",
+            "http": "POST",
+            "line": 31,
+            "path": "/api/internal/recovery/contracts"
+          },
+          {
+            "controller": "InternalRecoveryController",
+            "http": "POST",
+            "line": 36,
+            "path": "/api/internal/recovery/contracts/{id}/observations"
+          },
+          {
+            "controller": "InternalRecoveryController",
+            "http": "POST",
+            "line": 41,
+            "path": "/api/internal/recovery/contracts/{id}/receipts"
+          },
+          {
+            "controller": "InternalRecoveryController",
+            "http": "POST",
+            "line": 46,
+            "path": "/api/internal/recovery/contracts/{id}/replay-bundles"
+          },
+          {
+            "controller": "KnowledgeCandidateController",
+            "http": "POST",
+            "line": 19,
+            "path": "/api/knowledge/candidates/from-operation-run/{runId}"
+          },
+          {
+            "controller": "KnowledgeCandidateController",
+            "http": "GET",
+            "line": 26,
+            "path": "/api/knowledge/candidates"
+          },
+          {
+            "controller": "KnowledgeCandidateController",
+            "http": "GET",
+            "line": 35,
+            "path": "/api/knowledge/candidates/{id}"
+          },
+          {
+            "controller": "KnowledgeCandidateController",
+            "http": "POST",
+            "line": 42,
+            "path": "/api/knowledge/candidates/{id}/promote"
+          },
+          {
+            "controller": "KnowledgeCandidateController",
+            "http": "POST",
+            "line": 50,
+            "path": "/api/knowledge/candidates/{id}/reject"
+          },
+          {
+            "controller": "KnowledgeCrawlController",
+            "http": "GET",
+            "line": 16,
+            "path": "/api/knowledge/crawl/sources"
+          },
+          {
+            "controller": "KnowledgeCrawlController",
+            "http": "POST",
+            "line": 21,
+            "path": "/api/knowledge/crawl/sources"
+          },
+          {
+            "controller": "KnowledgeCrawlController",
+            "http": "POST",
+            "line": 26,
+            "path": "/api/knowledge/crawl/sources/{sourceId}/run"
+          },
+          {
+            "controller": "KnowledgeCrawlController",
+            "http": "GET",
+            "line": 31,
+            "path": "/api/knowledge/crawl/sources/{sourceId}/pages"
+          },
+          {
+            "controller": "KubernetesDiagnosisController",
+            "http": "POST",
+            "line": 25,
+            "path": "/api/operations/kubernetes/diagnose"
+          },
+          {
+            "controller": "ModelAnalyticsController",
+            "http": "GET",
+            "line": 17,
+            "path": "/api/model-analytics"
+          },
+          {
+            "controller": "ModelAnalyticsController",
+            "http": "PUT",
+            "line": 23,
+            "path": "/api/model-analytics/budget"
+          },
+          {
+            "controller": "ModelConnectionController",
+            "http": "GET",
+            "line": 25,
+            "path": "/api/model-connections"
+          },
+          {
+            "controller": "ModelConnectionController",
+            "http": "POST",
+            "line": 40,
+            "path": "/api/model-connections"
+          },
+          {
+            "controller": "ModelConnectionController",
+            "http": "PUT",
+            "line": 62,
+            "path": "/api/model-connections/{id}"
+          },
+          {
+            "controller": "ModelConnectionController",
+            "http": "DELETE",
+            "line": 88,
+            "path": "/api/model-connections/{id}"
+          },
+          {
+            "controller": "ModelConnectionController",
+            "http": "GET",
+            "line": 115,
+            "path": "/api/model-connections/{id}/runtime"
+          },
+          {
+            "controller": "ModelConnectionController",
+            "http": "POST",
+            "line": 135,
+            "path": "/api/model-connections/{id}/invoke"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 27,
+            "path": "/api/admin/model-gateway/keys"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 34,
+            "path": "/api/admin/model-gateway/keys/{id}/revoke"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "GET",
+            "line": 37,
+            "path": "/api/model-gateway/keys"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 43,
+            "path": "/api/model-gateway/keys"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 50,
+            "path": "/api/model-gateway/keys/{id}/revoke"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "PUT",
+            "line": 55,
+            "path": "/api/model-gateway/keys/{id}/quota"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 64,
+            "path": "/api/admin/model-gateway/groups"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "GET",
+            "line": 71,
+            "path": "/api/model-gateway/groups"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 77,
+            "path": "/api/model-gateway/groups"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "PUT",
+            "line": 84,
+            "path": "/api/model-gateway/groups/{slug}"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "DELETE",
+            "line": 91,
+            "path": "/api/model-gateway/groups/{slug}"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 98,
+            "path": "/api/admin/model-gateway/groups/{slug}/routes"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 105,
+            "path": "/api/model-gateway/groups/{slug}/routes"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "PUT",
+            "line": 112,
+            "path": "/api/model-gateway/groups/{slug}/routes/{id}"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "PUT",
+            "line": 119,
+            "path": "/api/model-gateway/groups/{slug}/routes/{id}/status"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "DELETE",
+            "line": 126,
+            "path": "/api/model-gateway/groups/{slug}/routes/{id}"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "PUT",
+            "line": 133,
+            "path": "/api/admin/model-gateway/routes/{id}/status"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "DELETE",
+            "line": 140,
+            "path": "/api/admin/model-gateway/routes/{id}"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "GET",
+            "line": 147,
+            "path": "/api/model-gateway/groups/{slug}/routes"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "PUT",
+            "line": 153,
+            "path": "/api/model-gateway/groups/{slug}/quota"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "GET",
+            "line": 162,
+            "path": "/api/model-gateway/analytics"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "GET",
+            "line": 168,
+            "path": "/v1/models"
+          },
+          {
+            "controller": "ModelGatewayController",
+            "http": "POST",
+            "line": 173,
+            "path": "/v1/chat/completions"
+          },
+          {
+            "controller": "MultiExecController",
+            "http": "POST",
+            "line": 19,
+            "path": "/api/operations/multi-exec/preview"
+          },
+          {
+            "controller": "MultiExecController",
+            "http": "POST",
+            "line": 26,
+            "path": "/api/operations/multi-exec/execute"
+          },
+          {
+            "controller": "NetworkPathDiagnosisController",
+            "http": "POST",
+            "line": 25,
+            "path": "/api/operations/network/diagnose"
+          },
+          {
+            "controller": "ObservabilityController",
+            "http": "GET",
+            "line": 15,
+            "path": "/api/observability/sources"
+          },
+          {
+            "controller": "ObservabilityController",
+            "http": "POST",
+            "line": 20,
+            "path": "/api/observability/{source}/query"
+          },
+          {
+            "controller": "OperationAgentContextController",
+            "http": "GET",
+            "line": 14,
+            "path": "/api/operations/runtimes/{runtimeId}/agent-context"
+          },
+          {
+            "controller": "OperationConnectionController",
+            "http": "POST",
+            "line": 18,
+            "path": "/api/operations/sessions/{sessionId}/connect"
+          },
+          {
+            "controller": "OperationConnectionController",
+            "http": "DELETE",
+            "line": 26,
+            "path": "/api/operations/runtimes/{runtimeId}"
+          },
+          {
+            "controller": "OperationFileController",
+            "http": "GET",
+            "line": 22,
+            "path": "/api/operations/runtimes/{runtimeId}/files"
+          },
+          {
+            "controller": "OperationFileController",
+            "http": "GET",
+            "line": 29,
+            "path": "/api/operations/runtimes/{runtimeId}/files/content"
+          },
+          {
+            "controller": "OperationFileController",
+            "http": "POST",
+            "line": 37,
+            "path": "/api/operations/runtimes/{runtimeId}/files/directory"
+          },
+          {
+            "controller": "OperationFileController",
+            "http": "POST",
+            "line": 45,
+            "path": "/api/operations/runtimes/{runtimeId}/files/content"
+          },
+          {
+            "controller": "OperationFileController",
+            "http": "DELETE",
+            "line": 58,
+            "path": "/api/operations/runtimes/{runtimeId}/files/content"
+          },
+          {
+            "controller": "OperationRunController",
+            "http": "GET",
+            "line": 26,
+            "path": "/api/operations/runs"
+          },
+          {
+            "controller": "OperationRunController",
+            "http": "GET",
+            "line": 39,
+            "path": "/api/operations/runs/{id}"
+          },
+          {
+            "controller": "OperationRunController",
+            "http": "POST",
+            "line": 49,
+            "path": "/api/operations/runs/{id}/verify"
+          },
+          {
+            "controller": "OperationRunController",
+            "http": "POST",
+            "line": 65,
+            "path": "/api/operations/runs/{id}/cancel"
+          },
+          {
+            "controller": "OperationsCapabilityController",
+            "http": "GET",
+            "line": 21,
+            "path": "/api/operations/capabilities"
+          },
+          {
+            "controller": "OperationSessionController",
+            "http": "GET",
+            "line": 19,
+            "path": "/api/operations/sessions"
+          },
+          {
+            "controller": "OperationSessionController",
+            "http": "POST",
+            "line": 22,
+            "path": "/api/operations/sessions"
+          },
+          {
+            "controller": "OperationSessionController",
+            "http": "DELETE",
+            "line": 25,
+            "path": "/api/operations/sessions/{id}"
+          },
+          {
+            "controller": "OperationToolController",
+            "http": "GET",
+            "line": 25,
+            "path": "/api/operations/tools"
+          },
+          {
+            "controller": "OperationToolController",
+            "http": "POST",
+            "line": 30,
+            "path": "/api/operations/tools/preview"
+          },
+          {
+            "controller": "OperationToolController",
+            "http": "POST",
+            "line": 37,
+            "path": "/api/operations/runtimes/{runtimeId}/tools/{toolId}/execute"
+          },
+          {
+            "controller": "OperationTunnelController",
+            "http": "POST",
+            "line": 14,
+            "path": "/api/operations/runtimes/{runtimeId}/tunnels"
+          },
+          {
+            "controller": "OperationTunnelController",
+            "http": "DELETE",
+            "line": 25,
+            "path": "/api/operations/runtimes/{runtimeId}/tunnels/{tunnelId}"
+          },
+          {
+            "controller": "OperatorMemoryController",
+            "http": "GET",
+            "line": 13,
+            "path": "/api/knowledge/memories"
+          },
+          {
+            "controller": "OperatorMemoryController",
+            "http": "GET",
+            "line": 14,
+            "path": "/api/knowledge/memories/match"
+          },
+          {
+            "controller": "OperatorMemoryController",
+            "http": "POST",
+            "line": 15,
+            "path": "/api/knowledge/memories"
+          },
+          {
+            "controller": "OperatorMemoryController",
+            "http": "POST",
+            "line": 16,
+            "path": "/api/knowledge/memories/{id}/disable"
+          },
+          {
+            "controller": "OperatorMemoryController",
+            "http": "DELETE",
+            "line": 17,
+            "path": "/api/knowledge/memories/{id}"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "POST",
+            "line": 16,
+            "path": "/api/knowledge/personal/libraries"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "GET",
+            "line": 21,
+            "path": "/api/knowledge/personal/libraries"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "GET",
+            "line": 26,
+            "path": "/api/knowledge/personal/libraries/{libraryId}"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "PATCH",
+            "line": 31,
+            "path": "/api/knowledge/personal/libraries/{libraryId}"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "POST",
+            "line": 36,
+            "path": "/api/knowledge/personal/libraries/{libraryId}/archive"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "POST",
+            "line": 41,
+            "path": "/api/knowledge/personal/libraries/{libraryId}/restore"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "POST",
+            "line": 46,
+            "path": "/api/knowledge/personal/libraries/{libraryId}/entries"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "GET",
+            "line": 51,
+            "path": "/api/knowledge/personal/libraries/{libraryId}/entries"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "GET",
+            "line": 56,
+            "path": "/api/knowledge/personal/entries/{entryId}"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "PATCH",
+            "line": 61,
+            "path": "/api/knowledge/personal/entries/{entryId}"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "POST",
+            "line": 66,
+            "path": "/api/knowledge/personal/entries/{entryId}/archive"
+          },
+          {
+            "controller": "PersonalKnowledgeController",
+            "http": "DELETE",
+            "line": 72,
+            "path": "/api/knowledge/personal/entries/{entryId}"
+          },
+          {
+            "controller": "PersonalKnowledgeFileController",
+            "http": "POST",
+            "line": 22,
+            "path": "/api/knowledge/personal/libraries/{libraryId}/reindex"
+          },
+          {
+            "controller": "PersonalKnowledgeFileController",
+            "http": "POST",
+            "line": 27,
+            "path": "/api/knowledge/personal/libraries/{libraryId}/import"
+          },
+          {
+            "controller": "PersonalKnowledgeFileController",
+            "http": "GET",
+            "line": 39,
+            "path": "/api/knowledge/personal/libraries/{libraryId}/export"
+          },
+          {
+            "controller": "RecoveryContractController",
+            "http": "GET",
+            "line": 31,
+            "path": "/api/recovery/contracts"
+          },
+          {
+            "controller": "RecoveryContractController",
+            "http": "GET",
+            "line": 39,
+            "path": "/api/recovery/contracts/{id}"
+          },
+          {
+            "controller": "RecoveryContractController",
+            "http": "GET",
+            "line": 45,
+            "path": "/api/recovery/contracts/{id}/replay"
+          },
+          {
+            "controller": "SentinelGuardianController",
+            "http": "GET",
+            "line": 22,
+            "path": "/api/sentinel/guardian/profiles"
+          },
+          {
+            "controller": "SentinelGuardianController",
+            "http": "GET",
+            "line": 27,
+            "path": "/api/sentinel/guardian/evidence"
+          },
+          {
+            "controller": "SentinelGuardianController",
+            "http": "GET",
+            "line": 33,
+            "path": "/api/sentinel/guardian/stats"
+          },
+          {
+            "controller": "SentinelGuardianController",
+            "http": "POST",
+            "line": 38,
+            "path": "/api/sentinel/guardian/learn"
+          },
+          {
+            "controller": "SentinelGuardianController",
+            "http": "POST",
+            "line": 44,
+            "path": "/api/sentinel/guardian/profiles/{id}/apply"
+          },
+          {
+            "controller": "SentinelGuardianController",
+            "http": "POST",
+            "line": 49,
+            "path": "/api/sentinel/guardian/profiles/{id}/dismiss"
+          },
+          {
+            "controller": "SentinelGuardianController",
+            "http": "POST",
+            "line": 55,
+            "path": "/api/sentinel/guardian/alerts/{alertId}/collect"
+          },
+          {
+            "controller": "ServerController",
+            "http": "POST",
+            "line": 21,
+            "path": "/api/servers"
+          },
+          {
+            "controller": "ServerController",
+            "http": "PUT",
+            "line": 28,
+            "path": "/api/servers/{id}"
+          },
+          {
+            "controller": "ServerController",
+            "http": "GET",
+            "line": 36,
+            "path": "/api/servers/{id}"
+          },
+          {
+            "controller": "ServerController",
+            "http": "GET",
+            "line": 43,
+            "path": "/api/servers"
+          },
+          {
+            "controller": "ServerController",
+            "http": "DELETE",
+            "line": 49,
+            "path": "/api/servers/{id}"
+          },
+          {
+            "controller": "ServerMetricController",
+            "http": "POST",
+            "line": 20,
+            "path": "/api/servers/{serverId}/metrics"
+          },
+          {
+            "controller": "ServerMetricController",
+            "http": "GET",
+            "line": 30,
+            "path": "/api/servers/{serverId}/metrics/latest"
+          },
+          {
+            "controller": "ServerMetricController",
+            "http": "GET",
+            "line": 39,
+            "path": "/api/servers/{serverId}/metrics"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 53,
+            "path": "/api/admin/system/depts"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "POST",
+            "line": 59,
+            "path": "/api/admin/system/depts"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 65,
+            "path": "/api/admin/system/depts/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "DELETE",
+            "line": 71,
+            "path": "/api/admin/system/depts/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 77,
+            "path": "/api/admin/system/depts/{id}/status"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 85,
+            "path": "/api/admin/system/posts"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "POST",
+            "line": 91,
+            "path": "/api/admin/system/posts"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 97,
+            "path": "/api/admin/system/posts/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "DELETE",
+            "line": 103,
+            "path": "/api/admin/system/posts/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 109,
+            "path": "/api/admin/system/posts/{id}/status"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 117,
+            "path": "/api/admin/system/roles"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "POST",
+            "line": 123,
+            "path": "/api/admin/system/roles"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 129,
+            "path": "/api/admin/system/roles/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "DELETE",
+            "line": 135,
+            "path": "/api/admin/system/roles/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 141,
+            "path": "/api/admin/system/roles/{id}/status"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 147,
+            "path": "/api/admin/system/roles/{id}/menus"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 153,
+            "path": "/api/admin/system/roles/{id}/menus"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 161,
+            "path": "/api/admin/system/menus"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "POST",
+            "line": 167,
+            "path": "/api/admin/system/menus"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 173,
+            "path": "/api/admin/system/menus/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "DELETE",
+            "line": 179,
+            "path": "/api/admin/system/menus/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 185,
+            "path": "/api/admin/system/menus/{id}/status"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 193,
+            "path": "/api/admin/system/dicts/types"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "POST",
+            "line": 199,
+            "path": "/api/admin/system/dicts/types"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 205,
+            "path": "/api/admin/system/dicts/types/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "DELETE",
+            "line": 211,
+            "path": "/api/admin/system/dicts/types/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 217,
+            "path": "/api/admin/system/dicts/types/{id}/status"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 223,
+            "path": "/api/admin/system/dicts/{type}/data"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 229,
+            "path": "/api/admin/system/dicts/{type}/enabled"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "POST",
+            "line": 235,
+            "path": "/api/admin/system/dicts/data"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 241,
+            "path": "/api/admin/system/dicts/data/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "DELETE",
+            "line": 247,
+            "path": "/api/admin/system/dicts/data/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 253,
+            "path": "/api/admin/system/dicts/data/{id}/status"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 261,
+            "path": "/api/admin/system/notices"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "POST",
+            "line": 267,
+            "path": "/api/admin/system/notices"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "PUT",
+            "line": 273,
+            "path": "/api/admin/system/notices/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "POST",
+            "line": 279,
+            "path": "/api/admin/system/notices/{id}/publish"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "DELETE",
+            "line": 285,
+            "path": "/api/admin/system/notices/{id}"
+          },
+          {
+            "controller": "SysAdminController",
+            "http": "GET",
+            "line": 293,
+            "path": "/api/admin/system/login-logs"
+          },
+          {
+            "controller": "TeamAgentController",
+            "http": "GET",
+            "line": 27,
+            "path": "/api/teams/{teamId}/agents"
+          },
+          {
+            "controller": "TeamAgentController",
+            "http": "GET",
+            "line": 32,
+            "path": "/api/teams/{teamId}/agents/catalog"
+          },
+          {
+            "controller": "TeamAgentController",
+            "http": "POST",
+            "line": 37,
+            "path": "/api/teams/{teamId}/agents"
+          },
+          {
+            "controller": "TeamAgentController",
+            "http": "GET",
+            "line": 43,
+            "path": "/api/teams/{teamId}/agents/{agentId}"
+          },
+          {
+            "controller": "TeamAgentController",
+            "http": "GET",
+            "line": 49,
+            "path": "/api/teams/{teamId}/agents/{agentId}/tools"
+          },
+          {
+            "controller": "TeamAgentController",
+            "http": "PUT",
+            "line": 55,
+            "path": "/api/teams/{teamId}/agents/{agentId}/draft"
+          },
+          {
+            "controller": "TeamAgentController",
+            "http": "POST",
+            "line": 62,
+            "path": "/api/teams/{teamId}/agents/{agentId}/publish"
+          },
+          {
+            "controller": "TeamAgentRunController",
+            "http": "POST",
+            "line": 34,
+            "path": "/api/teams/{teamId}/agents/{agentId}/runs"
+          },
+          {
+            "controller": "TeamAgentRunController",
+            "http": "GET",
+            "line": 41,
+            "path": "/api/team-agent-runs/{runId}"
+          },
+          {
+            "controller": "TeamAgentRunController",
+            "http": "GET",
+            "line": 46,
+            "path": "/api/teams/{teamId}/runs"
+          },
+          {
+            "controller": "TeamAgentRunController",
+            "http": "GET",
+            "line": 51,
+            "path": "/api/teams/{teamId}/approvals"
+          },
+          {
+            "controller": "TeamAgentRunController",
+            "http": "POST",
+            "line": 63,
+            "path": "/api/team-agent-runs/{runId}/approve"
+          },
+          {
+            "controller": "TeamAgentRunController",
+            "http": "POST",
+            "line": 71,
+            "path": "/api/team-agent-runs/{runId}/preview"
+          },
+          {
+            "controller": "TeamAgentRunController",
+            "http": "POST",
+            "line": 85,
+            "path": "/api/team-agent-runs/{runId}/execute"
+          },
+          {
+            "controller": "TeamNotificationController",
+            "http": "GET",
+            "line": 11,
+            "path": "/api/team-notifications"
+          },
+          {
+            "controller": "TeamNotificationController",
+            "http": "POST",
+            "line": 12,
+            "path": "/api/team-notifications/{id}/read"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 21,
+            "path": "/api/teams"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "POST",
+            "line": 22,
+            "path": "/api/teams"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 23,
+            "path": "/api/teams/{id}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "PUT",
+            "line": 24,
+            "path": "/api/teams/{id}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 25,
+            "path": "/api/teams/invitations"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "POST",
+            "line": 26,
+            "path": "/api/teams/{id}/invitations"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "POST",
+            "line": 27,
+            "path": "/api/teams/invitations/{invitationId}/respond"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "DELETE",
+            "line": 28,
+            "path": "/api/teams/{id}/invitations/{invitationId}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "PUT",
+            "line": 29,
+            "path": "/api/teams/{id}/members/{userId}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "DELETE",
+            "line": 30,
+            "path": "/api/teams/{id}/members/{userId}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "POST",
+            "line": 31,
+            "path": "/api/teams/{id}/invite-links"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 32,
+            "path": "/api/teams/{id}/invite-links"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 33,
+            "path": "/api/teams/invite-links/{token}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "POST",
+            "line": 34,
+            "path": "/api/teams/invite-links/{token}/accept"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "DELETE",
+            "line": 35,
+            "path": "/api/teams/{id}/invite-links/{linkId}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 36,
+            "path": "/api/teams/{id}/shares"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "POST",
+            "line": 37,
+            "path": "/api/teams/{id}/shares"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "DELETE",
+            "line": 38,
+            "path": "/api/teams/{id}/shares/{resourceType}/{resourceId}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 39,
+            "path": "/api/teams/{id}/shares/knowledge/{libraryId}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 40,
+            "path": "/api/teams/{id}/shares/knowledge/{libraryId}/entries"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 41,
+            "path": "/api/teams/{id}/activity"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "GET",
+            "line": 42,
+            "path": "/api/teams/{id}/resources/{resourceType}/{resourceId}"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "POST",
+            "line": 43,
+            "path": "/api/teams/{id}/resources/{resourceType}/{resourceId}/grants"
+          },
+          {
+            "controller": "TeamWorkspaceController",
+            "http": "DELETE",
+            "line": 44,
+            "path": "/api/teams/{id}/resources/{resourceType}/{resourceId}/grants/{userId}/{capability}"
+          },
+          {
+            "controller": "UserChatController",
+            "http": "POST",
+            "line": 17,
+            "path": "/api/chat/connections/{id}/invoke"
+          },
+          {
+            "controller": "VisionEventController",
+            "http": "POST",
+            "line": 13,
+            "path": "/api/assistant/conversations/{conversationId}/vision-events/from-attachment/{attachmentId}"
+          },
+          {
+            "controller": "VisionEventController",
+            "http": "GET",
+            "line": 14,
+            "path": "/api/assistant/conversations/{conversationId}/vision-events"
+          },
+          {
+            "controller": "VisionEventController",
+            "http": "GET",
+            "line": 15,
+            "path": "/api/assistant/conversations/{conversationId}/vision-events/{id}"
+          },
+          {
+            "controller": "VisionEventController",
+            "http": "POST",
+            "line": 16,
+            "path": "/api/assistant/conversations/{conversationId}/vision-events/{id}/ocr"
+          },
+          {
+            "controller": "VisionEventController",
+            "http": "POST",
+            "line": 17,
+            "path": "/api/assistant/conversations/{conversationId}/vision-events/{id}/confirm"
+          },
+          {
+            "controller": "VisionHandoffController",
+            "http": "POST",
+            "line": 13,
+            "path": "/api/assistant/conversations/{conversationId}/vision-events/{eventId}/handoff/personal-knowledge"
+          },
+          {
+            "controller": "VisionHandoffController",
+            "http": "POST",
+            "line": 14,
+            "path": "/api/assistant/conversations/{conversationId}/vision-events/{eventId}/handoff/memory"
+          },
+          {
+            "controller": "ExperimentController",
+            "http": "GET",
+            "line": 37,
+            "path": "/api/experiments/evaluations"
+          },
+          {
+            "controller": "ExperimentController",
+            "http": "POST",
+            "line": 43,
+            "path": "/api/experiments/evaluations"
+          },
+          {
+            "controller": "ExperimentController",
+            "http": "POST",
+            "line": 53,
+            "path": "/api/experiments/evaluations/{evaluationId}/drills"
+          },
+          {
+            "controller": "ExperimentController",
+            "http": "POST",
+            "line": 64,
+            "path": "/api/experiments/evaluations/{evaluationId}/exit"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "POST",
+            "line": 38,
+            "path": "/api/finops/costs"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "GET",
+            "line": 46,
+            "path": "/api/finops/summary"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "GET",
+            "line": 53,
+            "path": "/api/finops/trend"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "POST",
+            "line": 60,
+            "path": "/api/finops/usage"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "GET",
+            "line": 67,
+            "path": "/api/finops/recommendations"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "POST",
+            "line": 76,
+            "path": "/api/finops/budgets"
+          },
+          {
+            "controller": "FinOpsController",
+            "http": "GET",
+            "line": 84,
+            "path": "/api/finops/budgets/status"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 38,
+            "path": "/api/iac/plans/analyze"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 43,
+            "path": "/api/iac/plans"
+          },
+          {
+            "controller": "IacController",
+            "http": "GET",
+            "line": 50,
+            "path": "/api/iac/plans/{planId}"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 57,
+            "path": "/api/iac/plans/{planId}/approve"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 65,
+            "path": "/api/iac/plans/{planId}/dispatch"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 73,
+            "path": "/api/iac/applies/{applyId}/complete"
+          },
+          {
+            "controller": "IacController",
+            "http": "POST",
+            "line": 82,
+            "path": "/api/iac/applies/{applyId}/verify"
+          },
+          {
+            "controller": "IacController",
+            "http": "GET",
+            "line": 90,
+            "path": "/api/iac/releases"
+          },
+          {
+            "controller": "IacController",
+            "http": "GET",
+            "line": 97,
+            "path": "/api/iac/drift"
+          },
+          {
+            "controller": "SloController",
+            "http": "GET",
+            "line": 26,
+            "path": "/api/observability/slo"
+          },
+          {
+            "controller": "SloController",
+            "http": "GET",
+            "line": 32,
+            "path": "/api/observability/recovery/{contractRecordId}"
+          },
+          {
+            "controller": "SecurityPostureController",
+            "http": "POST",
+            "line": 40,
+            "path": "/api/security/reports"
+          },
+          {
+            "controller": "SecurityPostureController",
+            "http": "POST",
+            "line": 50,
+            "path": "/api/security/findings/{findingId}/verify-fix"
+          },
+          {
+            "controller": "SecurityPostureController",
+            "http": "POST",
+            "line": 58,
+            "path": "/api/security/findings/{findingId}/exception"
+          },
+          {
+            "controller": "SecurityPostureController",
+            "http": "GET",
+            "line": 66,
+            "path": "/api/security/summary"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "GET",
+            "line": 48,
+            "path": "/api/runbooks"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 54,
+            "path": "/api/runbooks"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "GET",
+            "line": 62,
+            "path": "/api/runbooks/{id}"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "PUT",
+            "line": 69,
+            "path": "/api/runbooks/{id}"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 78,
+            "path": "/api/runbooks/{id}/versions"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "GET",
+            "line": 89,
+            "path": "/api/runbooks/{id}/versions"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 96,
+            "path": "/api/runbooks/{id}/publish"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 105,
+            "path": "/api/runbooks/{id}/plan"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 114,
+            "path": "/api/runbooks/runs/{runId}/targets"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "GET",
+            "line": 123,
+            "path": "/api/runbooks/runs"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "GET",
+            "line": 131,
+            "path": "/api/runbooks/runs/{runId}"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 138,
+            "path": "/api/runbooks/runs/{runId}/approve"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 146,
+            "path": "/api/runbooks/runs/{runId}/execute"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 154,
+            "path": "/api/runbooks/runs/{runId}/cancel"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 161,
+            "path": "/api/runbooks/runs/{runId}/rollback"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 170,
+            "path": "/api/runbooks/{id}/schedules"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "GET",
+            "line": 179,
+            "path": "/api/runbooks/schedules"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 185,
+            "path": "/api/runbooks/schedules/{scheduleId}/rearm"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "DELETE",
+            "line": 193,
+            "path": "/api/runbooks/schedules/{scheduleId}"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 201,
+            "path": "/api/runbooks/{id}/triggers"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "GET",
+            "line": 210,
+            "path": "/api/runbooks/triggers"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "DELETE",
+            "line": 216,
+            "path": "/api/runbooks/{id}/triggers/{eventType}"
+          },
+          {
+            "controller": "RunbookController",
+            "http": "POST",
+            "line": 226,
+            "path": "/api/runbooks/automation/fire"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 38,
+            "path": "/api/sentinel/tasks"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 44,
+            "path": "/api/sentinel/scheduler-stats"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 49,
+            "path": "/api/sentinel/tasks"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "PATCH",
+            "line": 57,
+            "path": "/api/sentinel/tasks/{id}/enabled"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 70,
+            "path": "/api/sentinel/tasks/{id}/runtime"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 78,
+            "path": "/api/sentinel/task-groups"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "PATCH",
+            "line": 84,
+            "path": "/api/sentinel/task-groups/{label}/enabled"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "PATCH",
+            "line": 93,
+            "path": "/api/sentinel/tasks/{id}/group"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "DELETE",
+            "line": 100,
+            "path": "/api/sentinel/tasks/{id}"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 106,
+            "path": "/api/sentinel/tasks/{id}/samples"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 115,
+            "path": "/api/sentinel/threshold-templates"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 120,
+            "path": "/api/sentinel/threshold-templates"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "DELETE",
+            "line": 127,
+            "path": "/api/sentinel/threshold-templates/{id}"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 135,
+            "path": "/api/sentinel/scripts"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 140,
+            "path": "/api/sentinel/scripts"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 154,
+            "path": "/api/sentinel/scripts/upload"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 161,
+            "path": "/api/sentinel/scripts/{id}/versions"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "DELETE",
+            "line": 167,
+            "path": "/api/sentinel/scripts/{id}"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 173,
+            "path": "/api/sentinel/scripts/{id}/versions"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 180,
+            "path": "/api/sentinel/scripts/{id}/runs"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 186,
+            "path": "/api/sentinel/runs"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 197,
+            "path": "/api/sentinel/scripts/lint"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 204,
+            "path": "/api/sentinel/alert-rules"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 209,
+            "path": "/api/sentinel/alert-rules"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "DELETE",
+            "line": 217,
+            "path": "/api/sentinel/alert-rules/{id}"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 223,
+            "path": "/api/sentinel/alerts"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 228,
+            "path": "/api/sentinel/alerts/{id}/acknowledge"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 235,
+            "path": "/api/sentinel/alerts/{id}/dispatch"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 242,
+            "path": "/api/sentinel/alerts/{id}/result"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 249,
+            "path": "/api/sentinel/alerts/{id}/close"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 259,
+            "path": "/api/sentinel/alerts/groups"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 267,
+            "path": "/api/sentinel/alerts/reconcile"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 272,
+            "path": "/api/sentinel/silences"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 278,
+            "path": "/api/sentinel/silences"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "DELETE",
+            "line": 285,
+            "path": "/api/sentinel/silences/{id}"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 292,
+            "path": "/api/sentinel/silences/{id}/approve"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 299,
+            "path": "/api/sentinel/alerts/{id}/transfer"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 307,
+            "path": "/api/sentinel/alerts/{id}/escalate"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 314,
+            "path": "/api/sentinel/alerts/{id}/notifications/retry"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 328,
+            "path": "/api/sentinel/alerts/{id}/analyze"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 339,
+            "path": "/api/sentinel/alerts/{id}/notify"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 345,
+            "path": "/api/sentinel/alerts/{id}/knowledge"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 350,
+            "path": "/api/sentinel/knowledge-candidates"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 356,
+            "path": "/api/sentinel/runtime-boundary"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 370,
+            "path": "/api/sentinel/scripts/{id}/prepare-run"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 379,
+            "path": "/api/sentinel/runs/{runId}/result"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 391,
+            "path": "/api/sentinel/runs/{runId}"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 397,
+            "path": "/api/sentinel/variables"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 411,
+            "path": "/api/sentinel/alerts/{id}/propose-remediation"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "GET",
+            "line": 421,
+            "path": "/api/sentinel/schedules"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "POST",
+            "line": 430,
+            "path": "/api/sentinel/schedules"
+          },
+          {
+            "controller": "SentinelController",
+            "http": "DELETE",
+            "line": 438,
+            "path": "/api/sentinel/schedules/{id}"
+          }
+        ],
+        "unresolved_annotation_n": 0
+      },
+      "service_file_n": 75
+    },
+    "test": {
+      "file_n": 121,
+      "loc": {
+        "blank": 2062,
+        "code": 13049,
+        "comment": 466,
+        "total": 15577
+      },
+      "test_annotation_n": 649,
+      "test_class_n": 121
+    }
+  },
+  "migrations": {
+    "create_table_n": 129,
+    "file_n": 57,
+    "offline_distinct_table_n": 119,
+    "offline_tables": [
+      "account_mfa",
+      "account_mfa_recovery",
+      "account_security",
+      "account_security_notice",
+      "agent_decision_loop",
+      "app_user",
+      "artifact_draft",
+      "asset_change_event",
+      "asset_relation",
+      "asset_resource",
+      "assistant_preference",
+      "backup_artifact_record",
+      "backup_drill_record",
+      "backup_recovery_set",
+      "chat_attachment",
+      "chat_conversation",
+      "chat_message",
+      "cloud_account",
+      "cloud_sync_run",
+      "database_diagnosis_audit",
+      "finops_budget",
+      "finops_cost_record",
+      "finops_usage_sample",
+      "iac_apply_record",
+      "iac_plan_record",
+      "iac_release_record",
+      "if",
+      "incident",
+      "incident_event",
+      "incident_relation",
+      "inspection_evidence",
+      "inspection_verification",
+      "inspector_event",
+      "inspector_issue",
+      "knowledge_candidate",
+      "knowledge_crawl_page",
+      "knowledge_crawl_source",
+      "model_connections",
+      "model_gateway_group",
+      "model_gateway_invocation",
+      "model_gateway_key",
+      "model_gateway_route",
+      "model_invocation_usage",
+      "model_token_budget",
+      "operation_audit_event",
+      "operation_command",
+      "operation_credential",
+      "operation_known_host",
+      "operation_run_evidence",
+      "operation_run_output",
+      "operation_run_record",
+      "operation_session",
+      "operation_session_group",
+      "operation_transfer",
+      "operation_tunnel",
+      "operation_workspace",
+      "operator_memory",
+      "personal_knowledge_entry",
+      "personal_knowledge_library",
+      "platform_admin_capability",
+      "platform_admin_profile",
+      "platform_experiment_drill",
+      "platform_experiment_evaluation",
+      "recovery_contract_record",
+      "recovery_observation_record",
+      "recovery_receipt_record",
+      "recovery_replay_bundle_record",
+      "registration_policy",
+      "runbook",
+      "runbook_run",
+      "runbook_run_target",
+      "runbook_schedule",
+      "runbook_step",
+      "runbook_trigger",
+      "runbook_version",
+      "security_audit_event",
+      "security_finding",
+      "security_report_finding",
+      "security_scan_report",
+      "sentinel_alert",
+      "sentinel_alert_event",
+      "sentinel_alert_rule",
+      "sentinel_guardian_evidence",
+      "sentinel_knowledge_candidate",
+      "sentinel_learning_profile",
+      "sentinel_metric_sample",
+      "sentinel_notification",
+      "sentinel_script",
+      "sentinel_script_run",
+      "sentinel_script_schedule",
+      "sentinel_script_version",
+      "sentinel_silence",
+      "sentinel_task",
+      "sentinel_threshold_template",
+      "server",
+      "server_metric",
+      "sys_dept",
+      "sys_dict_data",
+      "sys_dict_type",
+      "sys_login_log",
+      "sys_menu",
+      "sys_notice",
+      "sys_post",
+      "sys_role",
+      "sys_role_menu",
+      "sys_user_role",
+      "team_activity_event",
+      "team_agent",
+      "team_agent_run",
+      "team_agent_version",
+      "team_invitation",
+      "team_invite_link",
+      "team_member",
+      "team_member_capability",
+      "team_notification",
+      "team_resource_grant",
+      "team_resource_share",
+      "team_workspace",
+      "vision_event"
+    ],
+    "runtime_tables_n": null,
+    "tables": [
+      {
+        "file": "V001__account_schema.sql",
+        "line": 1,
+        "table": "app_user"
+      },
+      {
+        "file": "V001__account_schema.sql",
+        "line": 10,
+        "table": "account_security"
+      },
+      {
+        "file": "V001__account_schema.sql",
+        "line": 16,
+        "table": "security_audit_event"
+      },
+      {
+        "file": "V001__account_schema.sql",
+        "line": 27,
+        "table": "registration_policy"
+      },
+      {
+        "file": "V001__account_schema.sql",
+        "line": 34,
+        "table": "assistant_preference"
+      },
+      {
+        "file": "V002__admin_foundation.sql",
+        "line": 1,
+        "table": "account_security"
+      },
+      {
+        "file": "V002__admin_foundation.sql",
+        "line": 7,
+        "table": "security_audit_event"
+      },
+      {
+        "file": "V003__registration_policy.sql",
+        "line": 1,
+        "table": "registration_policy"
+      },
+      {
+        "file": "V004__assistant_preference.sql",
+        "line": 1,
+        "table": "assistant_preference"
+      },
+      {
+        "file": "V005__admin_mfa.sql",
+        "line": 1,
+        "table": "account_mfa"
+      },
+      {
+        "file": "V005__admin_mfa.sql",
+        "line": 9,
+        "table": "account_mfa_recovery"
+      },
+      {
+        "file": "V005__admin_mfa.sql",
+        "line": 15,
+        "table": "account_security_notice"
+      },
+      {
+        "file": "V006__team_workspace.sql",
+        "line": 1,
+        "table": "team_workspace"
+      },
+      {
+        "file": "V006__team_workspace.sql",
+        "line": 11,
+        "table": "team_member"
+      },
+      {
+        "file": "V006__team_workspace.sql",
+        "line": 20,
+        "table": "team_invitation"
+      },
+      {
+        "file": "V007__chat_attachments.sql",
+        "line": 1,
+        "table": "chat_conversation"
+      },
+      {
+        "file": "V007__chat_attachments.sql",
+        "line": 11,
+        "table": "chat_message"
+      },
+      {
+        "file": "V007__chat_attachments.sql",
+        "line": 24,
+        "table": "chat_attachment"
+      },
+      {
+        "file": "V20260927__operation_run_tables.sql",
+        "line": 3,
+        "table": "operation_run_record"
+      },
+      {
+        "file": "V20260927__operation_run_tables.sql",
+        "line": 19,
+        "table": "operation_run_output"
+      },
+      {
+        "file": "V20260927__operation_run_tables.sql",
+        "line": 34,
+        "table": "operation_run_evidence"
+      },
+      {
+        "file": "V20261001__model_analytics.sql",
+        "line": 1,
+        "table": "model_invocation_usage"
+      },
+      {
+        "file": "V20261001__model_analytics.sql",
+        "line": 14,
+        "table": "model_token_budget"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 1,
+        "table": "server"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 2,
+        "table": "server_metric"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 3,
+        "table": "inspector_event"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 4,
+        "table": "inspector_issue"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 5,
+        "table": "inspection_evidence"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 6,
+        "table": "inspection_verification"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 7,
+        "table": "model_connections"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 8,
+        "table": "operation_session_group"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 9,
+        "table": "operation_credential"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 10,
+        "table": "operation_session"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 11,
+        "table": "operation_known_host"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 12,
+        "table": "operation_tunnel"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 13,
+        "table": "operation_transfer"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 14,
+        "table": "operation_command"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 15,
+        "table": "operation_audit_event"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 16,
+        "table": "operation_workspace"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 17,
+        "table": "operation_run_record"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 18,
+        "table": "operation_run_output"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 19,
+        "table": "operation_run_evidence"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 20,
+        "table": "knowledge_candidate"
+      },
+      {
+        "file": "V20261002__operations_and_accounts.sql",
+        "line": 21,
+        "table": "app_user"
+      },
+      {
+        "file": "V20261003.1__team_agents.sql",
+        "line": 1,
+        "table": "team_agent"
+      },
+      {
+        "file": "V20261003.1__team_agents.sql",
+        "line": 14,
+        "table": "team_agent_version"
+      },
+      {
+        "file": "V20261003.2__team_agent_runs.sql",
+        "line": 1,
+        "table": "team_agent_run"
+      },
+      {
+        "file": "V20261004.1__model_gateway.sql",
+        "line": 1,
+        "table": "model_gateway_key"
+      },
+      {
+        "file": "V20261004.1__model_gateway.sql",
+        "line": 16,
+        "table": "model_gateway_group"
+      },
+      {
+        "file": "V20261004.1__model_gateway.sql",
+        "line": 28,
+        "table": "model_gateway_route"
+      },
+      {
+        "file": "V20261004.1__model_gateway.sql",
+        "line": 42,
+        "table": "model_gateway_invocation"
+      },
+      {
+        "file": "V20261004.2__vision_events.sql",
+        "line": 1,
+        "table": "vision_event"
+      },
+      {
+        "file": "V20261004.3__operator_memory.sql",
+        "line": 1,
+        "table": "operator_memory"
+      },
+      {
+        "file": "V20261004.4__personal_knowledge.sql",
+        "line": 1,
+        "table": "personal_knowledge_library"
+      },
+      {
+        "file": "V20261004.4__personal_knowledge.sql",
+        "line": 12,
+        "table": "personal_knowledge_entry"
+      },
+      {
+        "file": "V20261004.6__artifact_drafts.sql",
+        "line": 1,
+        "table": "artifact_draft"
+      },
+      {
+        "file": "V20261005__platform_admin_governance.sql",
+        "line": 1,
+        "table": "platform_admin_profile"
+      },
+      {
+        "file": "V20261005__platform_admin_governance.sql",
+        "line": 9,
+        "table": "platform_admin_capability"
+      },
+      {
+        "file": "V20261006__team_governance.sql",
+        "line": 1,
+        "table": "team_member_capability"
+      },
+      {
+        "file": "V20261008__team_activity_and_notifications.sql",
+        "line": 1,
+        "table": "team_activity_event"
+      },
+      {
+        "file": "V20261009__team_resource_grants.sql",
+        "line": 1,
+        "table": "team_resource_grant"
+      },
+      {
+        "file": "V20261010__team_notifications.sql",
+        "line": 1,
+        "table": "team_notification"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 14,
+        "table": "sentinel_task"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 38,
+        "table": "sentinel_threshold_template"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 53,
+        "table": "sentinel_metric_sample"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 67,
+        "table": "sentinel_script"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 86,
+        "table": "sentinel_script_version"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 102,
+        "table": "sentinel_script_run"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 125,
+        "table": "sentinel_alert_rule"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 144,
+        "table": "sentinel_alert"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 170,
+        "table": "sentinel_notification"
+      },
+      {
+        "file": "V20261011__sentinel.sql",
+        "line": 185,
+        "table": "sentinel_alert_event"
+      },
+      {
+        "file": "V20261012__sentinel_knowledge.sql",
+        "line": 8,
+        "table": "sentinel_knowledge_candidate"
+      },
+      {
+        "file": "V20261013__sentinel_script_schedule.sql",
+        "line": 10,
+        "table": "sentinel_script_schedule"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 10,
+        "table": "IF"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 14,
+        "table": "sys_dept"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 28,
+        "table": "sys_post"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 40,
+        "table": "sys_role"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 53,
+        "table": "sys_menu"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 72,
+        "table": "sys_user_role"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 80,
+        "table": "sys_role_menu"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 89,
+        "table": "sys_dict_type"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 100,
+        "table": "sys_dict_data"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 114,
+        "table": "sys_notice"
+      },
+      {
+        "file": "V20261018__sys_management.sql",
+        "line": 129,
+        "table": "sys_login_log"
+      },
+      {
+        "file": "V20261024__agent_decision_loop.sql",
+        "line": 2,
+        "table": "agent_decision_loop"
+      },
+      {
+        "file": "V20261025.1__sentinel_guardian.sql",
+        "line": 2,
+        "table": "sentinel_guardian_evidence"
+      },
+      {
+        "file": "V20261025.1__sentinel_guardian.sql",
+        "line": 15,
+        "table": "sentinel_learning_profile"
+      },
+      {
+        "file": "V20261026__knowledge_crawl.sql",
+        "line": 1,
+        "table": "knowledge_crawl_source"
+      },
+      {
+        "file": "V20261026__knowledge_crawl.sql",
+        "line": 16,
+        "table": "knowledge_crawl_page"
+      },
+      {
+        "file": "V20261103__team_sharing.sql",
+        "line": 1,
+        "table": "team_invite_link"
+      },
+      {
+        "file": "V20261103__team_sharing.sql",
+        "line": 16,
+        "table": "team_resource_share"
+      },
+      {
+        "file": "V20261104__platform_admin_catchup.sql",
+        "line": 5,
+        "table": "platform_admin_profile"
+      },
+      {
+        "file": "V20261104__platform_admin_catchup.sql",
+        "line": 13,
+        "table": "platform_admin_capability"
+      },
+      {
+        "file": "V20261105.11__recovery_contract.sql",
+        "line": 20,
+        "table": "recovery_contract_record"
+      },
+      {
+        "file": "V20261105.11__recovery_contract.sql",
+        "line": 46,
+        "table": "recovery_observation_record"
+      },
+      {
+        "file": "V20261105.11__recovery_contract.sql",
+        "line": 71,
+        "table": "recovery_receipt_record"
+      },
+      {
+        "file": "V20261105.11__recovery_contract.sql",
+        "line": 94,
+        "table": "recovery_replay_bundle_record"
+      },
+      {
+        "file": "V20261105.1__incident_center.sql",
+        "line": 21,
+        "table": "incident"
+      },
+      {
+        "file": "V20261105.1__incident_center.sql",
+        "line": 55,
+        "table": "incident_event"
+      },
+      {
+        "file": "V20261105.1__incident_center.sql",
+        "line": 68,
+        "table": "incident_relation"
+      },
+      {
+        "file": "V20261105.4__cloud_assets.sql",
+        "line": 14,
+        "table": "cloud_account"
+      },
+      {
+        "file": "V20261105.4__cloud_assets.sql",
+        "line": 37,
+        "table": "cloud_sync_run"
+      },
+      {
+        "file": "V20261105.4__cloud_assets.sql",
+        "line": 56,
+        "table": "asset_resource"
+      },
+      {
+        "file": "V20261105.4__cloud_assets.sql",
+        "line": 87,
+        "table": "asset_relation"
+      },
+      {
+        "file": "V20261105.5__asset_governance.sql",
+        "line": 10,
+        "table": "asset_change_event"
+      },
+      {
+        "file": "V20261105.7__alert_lifecycle.sql",
+        "line": 16,
+        "table": "sentinel_silence"
+      },
+      {
+        "file": "V20261105.8__runbook.sql",
+        "line": 25,
+        "table": "runbook"
+      },
+      {
+        "file": "V20261105.8__runbook.sql",
+        "line": 43,
+        "table": "runbook_version"
+      },
+      {
+        "file": "V20261105.8__runbook.sql",
+        "line": 65,
+        "table": "runbook_step"
+      },
+      {
+        "file": "V20261105.8__runbook.sql",
+        "line": 81,
+        "table": "runbook_run"
+      },
+      {
+        "file": "V20261105.8__runbook.sql",
+        "line": 122,
+        "table": "runbook_run_target"
+      },
+      {
+        "file": "V20261105.8__runbook.sql",
+        "line": 148,
+        "table": "runbook_schedule"
+      },
+      {
+        "file": "V20261105.8__runbook.sql",
+        "line": 164,
+        "table": "runbook_trigger"
+      },
+      {
+        "file": "V20261105.9__database_diagnosis_audit.sql",
+        "line": 9,
+        "table": "database_diagnosis_audit"
+      },
+      {
+        "file": "V20261106.13__iac_gitops.sql",
+        "line": 12,
+        "table": "iac_plan_record"
+      },
+      {
+        "file": "V20261106.13__iac_gitops.sql",
+        "line": 43,
+        "table": "iac_apply_record"
+      },
+      {
+        "file": "V20261106.13__iac_gitops.sql",
+        "line": 63,
+        "table": "iac_release_record"
+      },
+      {
+        "file": "V20261106.14__backup_recovery.sql",
+        "line": 11,
+        "table": "backup_recovery_set"
+      },
+      {
+        "file": "V20261106.14__backup_recovery.sql",
+        "line": 25,
+        "table": "backup_artifact_record"
+      },
+      {
+        "file": "V20261106.14__backup_recovery.sql",
+        "line": 47,
+        "table": "backup_drill_record"
+      },
+      {
+        "file": "V20261106.15__finops.sql",
+        "line": 11,
+        "table": "finops_cost_record"
+      },
+      {
+        "file": "V20261106.15__finops.sql",
+        "line": 31,
+        "table": "finops_usage_sample"
+      },
+      {
+        "file": "V20261106.15__finops.sql",
+        "line": 45,
+        "table": "finops_budget"
+      },
+      {
+        "file": "V20261106.16__security_posture.sql",
+        "line": 12,
+        "table": "security_scan_report"
+      },
+      {
+        "file": "V20261106.16__security_posture.sql",
+        "line": 31,
+        "table": "security_finding"
+      },
+      {
+        "file": "V20261106.16__security_posture.sql",
+        "line": 60,
+        "table": "security_report_finding"
+      },
+      {
+        "file": "V20261106.17__platform_experiments.sql",
+        "line": 12,
+        "table": "platform_experiment_evaluation"
+      },
+      {
+        "file": "V20261106.17__platform_experiments.sql",
+        "line": 32,
+        "table": "platform_experiment_drill"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "snapshot": {
+    "git_head": "989370556d59d873baa265a14d38d63faeb34369",
+    "source_count": 669,
+    "source_digest": "sha256:5ed4b277a73b9db3eb67b80d52e672376a98862d0857c18e266e614b34c09765"
+  },
+  "task": "FCT-P0-01",
+  "tests": {
+    "pytest": {
+      "collected_n": null,
+      "error_n": null,
+      "executed_n": null,
+      "failed_n": null,
+      "passed_n": null,
+      "reason": "本轮以 --no-pytest-collect 运行：收集数为 null",
+      "skipped_n": null
+    }
+  },
+  "vue": {
+    "file_n": 175,
+    "loc": {
+      "blank": 1940,
+      "code": 19445,
+      "comment": 551,
+      "total": 21936
+    }
+  }
+}

@@ -103,7 +103,7 @@
 - 用户层（:5173）与管理层（:5174）共用一个代理工厂 `vite.shared.mjs`，避免两端口各写一份代理导致会话与 CSRF 分裂。
 - 共享逻辑层 TypeScript（48 个模块）承载 `api / domain / utils / types`，`tsc --noEmit` 纳入门禁。
 - 分包策略统一：`vendor-echarts` 510 kB → 346 kB（zrender 独立拆分），Three.js 保持懒加载。
-- 563 项前端测试覆盖契约、安全不变量与领域逻辑。
+- 494 项前端测试覆盖契约、安全不变量与领域逻辑。
 
 **为什么是创新**：双入口是很多团队工程化的第一道裂缝。本项目用共享工厂 + 契约测试把"两个入口必须同源"变成可执行的不变量。
 
@@ -117,7 +117,7 @@
 | 多模态边界 | `domain/chat/speechInput.ts`、`ChatAttachmentComposer.vue` | 语音输入 + 图像证据 + 附件隔离 |
 | 插件生态 | `agent/plugins/installed/`、`agent/sdk/plugin.py` | 插件列表与工具调用 |
 | 模型网关 | `ai-service/app/services/llm.py`、`model_gateway.py` | mock / Ollama 切换 |
-| 前端工程化 | `frontend/vite.shared.mjs`、`test/*.test.mjs` | `npm test` 563 项通过 |
+| 前端工程化 | `frontend/vite.shared.mjs`、`test/*.test.mjs` | `npm test` 494 项通过 |
 
 ## 5. 创新性与评分维度对齐
 
@@ -125,7 +125,7 @@
 | --- | --- | --- |
 | AI 技术深度 | 35% | Agent 五模块、混合检索 + 证据验证、版本感知、SSE 阶段事件、多模态输入 |
 | 创新性 | 25% | 七个创新点，均有可运行代码与可演示路径，非概念包装 |
-| 前端工程质量 | 10% | 共享逻辑层 TS、双入口同源不变量、分包优化、563 项测试（Python 135 + 后端 428） |
+| 前端工程质量 | 10% | 共享逻辑层 TS、双入口同源不变量、分包优化、610 个 Python 用例 + 671 个后端 @Test |
 | 实用性 | 10% | 真实运维闭环，默认 mock 可复现，模型可切换 |
 | 用户体验 | 10% | 思考过程可视化、渐进增强、隐私提示 |
 | 社会价值与商业潜力 | 10% | 降低中小企业运维门槛，SaaS / 私有化双形态 |

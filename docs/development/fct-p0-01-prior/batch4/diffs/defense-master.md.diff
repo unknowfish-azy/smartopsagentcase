@@ -1,0 +1,13 @@
+diff --git a/docs/development/fct-p0-01-prior/batch4/defense-master.md b/docs/competition/defense-master.md
+index 923a376..701d066 100644
+--- a/docs/development/fct-p0-01-prior/batch4/defense-master.md
++++ b/docs/competition/defense-master.md
+@@ -272,7 +272,7 @@ Agent 声称"已解决/已恢复"，而实际状态 `resolved=false`（如仍 50
+ ### F. 工程与可复现（7 题）
+ 
+ **F1 ⭐ 测试情况？**
+-前端 494 项全过 + `tsc --noEmit` + 双构建；后端 87 个 JUnit 类（H2 MySQL 兼容跑真实迁移）；119 表迁移幂等。
++前端 494 项全过 + `tsc --noEmit` + 双构建；后端 122 个 JUnit 类（H2 MySQL 兼容跑真实迁移）；119 表迁移幂等。
+ 
+ **F2 前端为什么"部分 TS"？**
+ 共享逻辑层（48 模块）迁 TS 拿类型收益，组件层留 JS 控成本；`tsc --noEmit` 已进门禁。**有意取舍，不是偷懒。**

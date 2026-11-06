@@ -1,0 +1,40 @@
+diff --git a/docs/development/fct-p0-01-prior/batch3/technical-document.html b/docs/competition/technical-document.html
+index a6bd32c..4e03fc7 100644
+--- a/docs/development/fct-p0-01-prior/batch3/technical-document.html
++++ b/docs/competition/technical-document.html
+@@ -138,7 +138,7 @@
+   <table>
+     <tr><th>目标</th><th>落地方式</th></tr>
+     <tr><td>AI 技术深度</td><td>Agent 五模块；混合检索 + 证据验证 + 可信度评分；SSE 流式与思考阶段事件</td></tr>
+-    <tr><td>前端工程质量</td><td>Vue 3 + Vite 7；共享逻辑层 TS；构建分包；563 项前端测试 + 类型检查 + 双入口构建门禁</td></tr>
++    <tr><td>前端工程质量</td><td>Vue 3 + Vite 7；共享逻辑层 TS；构建分包；494 项前端测试 + 类型检查 + 双入口构建门禁</td></tr>
+     <tr><td>可运行性</td><td>默认 mock 模型零密钥跑通；一键切换 Ollama / OpenAI 兼容模型</td></tr>
+     <tr><td>安全可信</td><td>BCrypt(12)、人机校验、CSRF、MFA、风险策略引擎、人工审批、审计留痕</td></tr>
+     <tr><td>可扩展性</td><td>插件化工具（Docker/Kubernetes/MySQL/Nginx/Redis）、MCP 适配器、多会话存储后端</td></tr>
+@@ -309,7 +309,7 @@
+ 
+   <h3>6.1 测试策略</h3>
+   <ul>
+-    <li><b>前端质量门禁</b>：563 项前端测试覆盖契约、安全不变量与领域逻辑；<code>tsc --noEmit</code> 类型检查纳入门禁；双入口（用户层/管理层）构建门禁保证同源。</li>
++    <li><b>前端质量门禁</b>：494 项前端测试覆盖契约、安全不变量与领域逻辑；<code>tsc --noEmit</code> 类型检查纳入门禁；双入口（用户层/管理层）构建门禁保证同源。</li>
+     <li><b>分层测试</b>：单元测试、集成测试、E2E 测试覆盖 Agent 与 API；<code>pytest.ini</code> 统一编排。</li>
+     <li><b>算法评测</b>：<code>docs/experiments/</code> 提供评测计划、消融实验、检索评测、可信度评测，配合 OpsBench 样例数据集进行回归。</li>
+     <li><b>可信度验证</b>：对检索召回、证据命中、<code>trust_score</code> 分布做量化评估，确保"可解释"可被度量。</li>
+@@ -373,7 +373,7 @@
+   <p>默认 mock 提供方零密钥演示全链路；支持 Ollama 与 OpenAI 兼容接口运行期切换；后端 AES-GCM 加密托管密钥并做 Token 预算。兼顾"可演示"与"可生产"。</p>
+ 
+   <h4>⑥ 前端工程化创新（双入口同源架构）</h4>
+-  <p>用户层/管理层共用代理工厂 <code>vite.shared.mjs</code>，避免两端口各写代理导致会话与 CSRF 分裂；共享逻辑层 TS（48 模块）承载 api/domain/utils/types，<code>tsc --noEmit</code> 纳入门禁；563 项前端测试守护契约与安全不变量。</p>
++  <p>用户层/管理层共用代理工厂 <code>vite.shared.mjs</code>，避免两端口各写代理导致会话与 CSRF 分裂；共享逻辑层 TS（48 模块）承载 api/domain/utils/types，<code>tsc --noEmit</code> 纳入门禁；494 项前端测试守护契约与安全不变量。</p>
+ 
+   <h3>8.2 应用创新点</h3>
+   <h4>① 选题创新：聚焦中小企业"可信运维"</h4>
+@@ -391,7 +391,7 @@
+   <h4>⑤ 治理创新：运维治理闭环</h4>
+   <p>用户层与管理层双入口覆盖账户、权限、审计、系统治理，配合团队工作区与审批流，形成"人 + AI + 流程"协同的运维治理体系，支撑 SaaS / 私有化双形态。</p>
+ 
+-  <div class="note avoid-break"><b>可验证证据对照</b>：可信闭环 → 管理端审批与审计页面；版本感知检索 → 同一主题多版本检索对比；透明推理 → 对话面板思考阶段逐条点亮；多模态边界 → 语音输入 + 图像证据 + 附件隔离；插件生态 → 插件列表与工具调用；模型网关 → mock/Ollama 切换；前端工程化 → <code>npm test</code> 563 项通过。</div>
++  <div class="note avoid-break"><b>可验证证据对照</b>：可信闭环 → 管理端审批与审计页面；版本感知检索 → 同一主题多版本检索对比；透明推理 → 对话面板思考阶段逐条点亮；多模态边界 → 语音输入 + 图像证据 + 附件隔离；插件生态 → 插件列表与工具调用；模型网关 → mock/Ollama 切换；前端工程化 → <code>npm test</code> 494 项通过。</div>
+ 
+   <div class="footer-note">文档基于 SmartOpsAgent 仓库（README.md、docs/SMARTOPS_ARCHITECTURE.md、docs/architecture/overall.md、docs/competition/innovation.md、docs/competition/project-plan.md）整理生成，内容均对应仓库内真实模块与路径。许可证：MIT。</div>
+ </section>

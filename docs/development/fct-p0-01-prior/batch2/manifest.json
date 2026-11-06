@@ -1,0 +1,211 @@
+{
+  "reason": "FCT-P0-01 第二批 needs_review 处理前像",
+  "files": [
+    {
+      "path": "docs/competition/adjustment-plan.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/adjustment-plan.md",
+      "bytes": 5460,
+      "sha256": "78eb5f6fefb789578e1ed27db3329b4c8b07a1db59131bd720f099d6812a080e"
+    },
+    {
+      "path": "docs/competition/defense-advanced.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/defense-advanced.md",
+      "bytes": 24441,
+      "sha256": "bb76ddb03cff260facf9d56e01fcb768682563d2f7e5fb63d3bbac2a438a7811"
+    },
+    {
+      "path": "docs/competition/defense-master.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/defense-master.md",
+      "bytes": 27501,
+      "sha256": "341c354d3b4c6d821940dfde249527a5afedb9269b6cccae45a33a3daa552c68"
+    },
+    {
+      "path": "docs/competition/defense-qa.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/defense-qa.md",
+      "bytes": 13391,
+      "sha256": "62b0d9ee175168fab5090c91aebb599074db7cfe4a78f1d3bdc7ed8ffd1cb95c"
+    },
+    {
+      "path": "docs/competition/defense.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/defense.md",
+      "bytes": 13247,
+      "sha256": "2772cb1d03c977d0de207c655ed5fcbe757862632b5f597241e9ef942f0b272e"
+    },
+    {
+      "path": "docs/competition/demo-script.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/demo-script.md",
+      "bytes": 8113,
+      "sha256": "a7fb27f04443780340bcaa12327c0ce401e23ae277ee324f1d0e882571123a20"
+    },
+    {
+      "path": "docs/competition/innovation.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/innovation.md",
+      "bytes": 9529,
+      "sha256": "75ff2214a31c1b763f8ccdffa013c3d10adac2a44504a0f65bd13e870fe49dc9"
+    },
+    {
+      "path": "docs/competition/project-plan.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/project-plan.md",
+      "bytes": 15528,
+      "sha256": "28d20f7614dd322590a644fd4d0e6332501b318a386e7596e808b22a73d8f5fa"
+    },
+    {
+      "path": "docs/competition/recovery-contracts/evidence-index.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/evidence-index.md",
+      "bytes": 2560,
+      "sha256": "447b3a2ff8726fda9ff559d9b0d1644e8dc85815a03b3289d589c8db4c5f15b2"
+    },
+    {
+      "path": "docs/competition/technical-document.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/technical-document.html",
+      "bytes": 31274,
+      "sha256": "4bd67df4aa2f3bc6b61ebae09fb2369266d150b1e0e48a252a1fb3f50393b92f"
+    },
+    {
+      "path": "docs/competition/四件套万全之策-打印版.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/四件套万全之策-打印版.html",
+      "bytes": 44303,
+      "sha256": "268a3e4bc300d3aff3ac3787302c2419177cc467aacec40c87115e24cefb2a02"
+    },
+    {
+      "path": "docs/competition/答辩实战问答手册.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/答辩实战问答手册.md",
+      "bytes": 34178,
+      "sha256": "725ef234eed41bd80b2524dbece27f1e6d51839f3b143c741933fdfc6d3bf554"
+    },
+    {
+      "path": "docs/competition/答辩材料-合订本.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/答辩材料-合订本.md",
+      "bytes": 79030,
+      "sha256": "f2dc695d0e28b174f6607f064c88d6978802533200d0dc060dee68e5788c1e8a"
+    },
+    {
+      "path": "docs/competition/答辩材料-打印合订本.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/答辩材料-打印合订本.html",
+      "bytes": 102513,
+      "sha256": "35b1233101a616ed78509d9c3884f8f15db2bff1f4cd4daee519099139a18f2a"
+    },
+    {
+      "path": "docs/competition/答辩知识手册-打印版.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/答辩知识手册-打印版.html",
+      "bytes": 75795,
+      "sha256": "7c6a7573efdd91d23e705ce7e794fbc59db1c301e19e52349a98532dcf88afa5"
+    },
+    {
+      "path": "docs/competition/项目知识要点手册.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch2/项目知识要点手册.md",
+      "bytes": 18017,
+      "sha256": "bdc6c95d89f7f3d18eb9f0695ddcd3a77c242d8bbb413cf1a45532f00dc1fa10"
+    }
+  ],
+  "rewrite_batch2": {
+    "snapshot_source_digest": "sha256:922883250075c75b86ccb47ca502e4b1206215e784bb4b6c17af39122d4e213d",
+    "changed_files": 13,
+    "results": [
+      {
+        "path": "docs/competition/defense-advanced.md",
+        "before_sha256": "bb76ddb03cff260facf9d56e01fcb768682563d2f7e5fb63d3bbac2a438a7811",
+        "after_sha256": "76eb725fc87d46a958c7184aab0ca993fbc6f66b3ee83d5d2a99d5dbdfeba8b5",
+        "changed_lines": 5,
+        "added": 5,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/defense-advanced.md.diff"
+      },
+      {
+        "path": "docs/competition/defense-master.md",
+        "before_sha256": "341c354d3b4c6d821940dfde249527a5afedb9269b6cccae45a33a3daa552c68",
+        "after_sha256": "b51c5f88c56aad9fb4e0e5572611e601d7944625736649adafe5eb4c22eb2638",
+        "changed_lines": 8,
+        "added": 8,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/defense-master.md.diff"
+      },
+      {
+        "path": "docs/competition/defense-qa.md",
+        "before_sha256": "62b0d9ee175168fab5090c91aebb599074db7cfe4a78f1d3bdc7ed8ffd1cb95c",
+        "after_sha256": "89742166c3bbc29619bdbbb9f55b2bf4d74392d4431d04040db4bb09a4f23df4",
+        "changed_lines": 4,
+        "added": 4,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/defense-qa.md.diff"
+      },
+      {
+        "path": "docs/competition/defense.md",
+        "before_sha256": "2772cb1d03c977d0de207c655ed5fcbe757862632b5f597241e9ef942f0b272e",
+        "after_sha256": "15cb3b3698b417e65fed93f7b740c8486de3bfbd7e9ab218c060ce104b571156",
+        "changed_lines": 4,
+        "added": 4,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/defense.md.diff"
+      },
+      {
+        "path": "docs/competition/demo-script.md",
+        "before_sha256": "a7fb27f04443780340bcaa12327c0ce401e23ae277ee324f1d0e882571123a20",
+        "after_sha256": "8fa4cea3e4ca1c5b08f18847488df68b0a2ee5b1eefb258552703a064d6791f0",
+        "changed_lines": 2,
+        "added": 2,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/demo-script.md.diff"
+      },
+      {
+        "path": "docs/competition/innovation.md",
+        "before_sha256": "75ff2214a31c1b763f8ccdffa013c3d10adac2a44504a0f65bd13e870fe49dc9",
+        "after_sha256": "3ecbf6eb5bbfb4ac7dc96900f48b241a9ed3bbfa739b47cb23ef10e021601b17",
+        "changed_lines": 1,
+        "added": 1,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/innovation.md.diff"
+      },
+      {
+        "path": "docs/competition/project-plan.md",
+        "before_sha256": "28d20f7614dd322590a644fd4d0e6332501b318a386e7596e808b22a73d8f5fa",
+        "after_sha256": "98a40ef393070e1744aec9991945330e2228b85f1e2b950780f6ccdbefb1d2fd",
+        "changed_lines": 2,
+        "added": 2,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/project-plan.md.diff"
+      },
+      {
+        "path": "docs/competition/technical-document.html",
+        "before_sha256": "4bd67df4aa2f3bc6b61ebae09fb2369266d150b1e0e48a252a1fb3f50393b92f",
+        "after_sha256": "8f3714c74aa9c35ac5266f4645af849146e9acba3dd9abcb839267d34c6ff821",
+        "changed_lines": 4,
+        "added": 4,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/technical-document.html.diff"
+      },
+      {
+        "path": "docs/competition/答辩实战问答手册.md",
+        "before_sha256": "725ef234eed41bd80b2524dbece27f1e6d51839f3b143c741933fdfc6d3bf554",
+        "after_sha256": "4d24491d873fbc44faaf70ce4b4adc976b97a7a5afee98ce8989d8890c26504d",
+        "changed_lines": 5,
+        "added": 5,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/答辩实战问答手册.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-合订本.md",
+        "before_sha256": "f2dc695d0e28b174f6607f064c88d6978802533200d0dc060dee68e5788c1e8a",
+        "after_sha256": "b1b2eac9a3994be91c8ae06b1e5406d38c00fd9dcce4b1df6c2eb37870e52a14",
+        "changed_lines": 21,
+        "added": 21,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/答辩材料-合订本.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-打印合订本.html",
+        "before_sha256": "35b1233101a616ed78509d9c3884f8f15db2bff1f4cd4daee519099139a18f2a",
+        "after_sha256": "a9dabdd8fbdd16687e2adf4810e63e11a9db2942385b35540e1627122a214a42",
+        "changed_lines": 21,
+        "added": 21,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/答辩材料-打印合订本.html.diff"
+      },
+      {
+        "path": "docs/competition/答辩知识手册-打印版.html",
+        "before_sha256": "7c6a7573efdd91d23e705ce7e794fbc59db1c301e19e52349a98532dcf88afa5",
+        "after_sha256": "ab50f6f4f4cb0b5f0999ffac611251f1352810a235e3dabc741ed677ce768136",
+        "changed_lines": 10,
+        "added": 11,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/答辩知识手册-打印版.html.diff"
+      },
+      {
+        "path": "docs/competition/项目知识要点手册.md",
+        "before_sha256": "bdc6c95d89f7f3d18eb9f0695ddcd3a77c242d8bbb413cf1a45532f00dc1fa10",
+        "after_sha256": "8d299b9be6e16d0877c6209c653b1fc95933c5ad61ab6241bc0240209edb7e95",
+        "changed_lines": 7,
+        "added": 9,
+        "diff": "docs/development/fct-p0-01-prior/batch2/diffs/项目知识要点手册.md.diff"
+      }
+    ]
+  }
+}

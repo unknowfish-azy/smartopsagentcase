@@ -1,0 +1,308 @@
+[
+ {
+  "file": "docs/audit/20261105/status-baseline.md",
+  "line": 9,
+  "numbers": [
+   "81"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "| HEAD | `48b8af47603e3d7e2b04b7bae81c667c588328dc` | `git rev-parse HEAD` |"
+ },
+ {
+  "file": "docs/audit/20261105/status-baseline.md",
+  "line": 20,
+  "numbers": [
+   "83"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "| SCORE-01 尚未修复 | CONFIRMED | `training/evaluator.py` hash = `83a0d44c…`、`benchmark_runner.py` hash = `f1a9b97b…`，与交接书第 6.1 节记录的\"当时源码 hash\"完全一致 |"
+ },
+ {
+  "file": "docs/audit/20261105/test-matrix.md",
+  "line": 19,
+  "numbers": [
+   "80"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "| Agent pytest | `pytest tests/agent -v --tb=no` | — | 80 passed | NOT_RUN | 覆盖 Inspector/Executor 定向回归 |"
+ },
+ {
+  "file": "docs/competition/adjustment-plan.md",
+  "line": 44,
+  "numbers": [
+   "80"
+  ],
+  "classification": "needs_review",
+  "bound_metric": "migrations.offline_distinct_table_n",
+  "context": "- [x] **D1 数据库 schema 自愈**：新增 `AssistantWorkspaceConfig`，启动时幂等补齐 `chat_conversation` / `chat_message` / `chat_attachment` / `vision_event` / `operator_memory` / `personal_knowledge"
+ },
+ {
+  "file": "docs/competition/defense.md",
+  "line": 120,
+  "numbers": [
+   "146"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "- **前端**：146 个页面组件，用户层 / 管理员层**双入口构建通过**（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）；"
+ },
+ {
+  "file": "docs/competition/recovery-contracts/evidence-index.md",
+  "line": 35,
+  "numbers": [
+   "219"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "| 后端测试 | `tests/recovery_contracts/` | 219 passed / 1 skipped |"
+ },
+ {
+  "file": "docs/competition/四件套万全之策-打印版.html",
+  "line": 74,
+  "numbers": [
+   "79"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": ".callout { background:#fffdf4; border:0.8pt solid #eadfc0; border-left:3pt solid #c79a2e;"
+ },
+ {
+  "file": "docs/competition/答辩材料-合订本.md",
+  "line": 125,
+  "numbers": [
+   "146"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "- **前端**：146 个页面组件，用户层 / 管理员层**双入口构建通过**（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）；"
+ },
+ {
+  "file": "docs/competition/答辩材料-打印合订本.html",
+  "line": 59,
+  "numbers": [
+   "135"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "margin:6mm 0 10mm; background:linear-gradient(135deg,#0f2b46,#1f6feb); color:#fff; }"
+ },
+ {
+  "file": "docs/competition/答辩材料-打印合订本.html",
+  "line": 159,
+  "numbers": [
+   "146"
+  ],
+  "classification": "needs_review",
+  "bound_metric": "migrations.offline_distinct_table_n",
+  "context": "<ul><li><strong>前端</strong>：146 个页面组件，用户层 / 管理员层<strong>双入口构建通过</strong>（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）；</li><li><strong>后端</strong>：<strong>656 个 @Test（87 个测试类）</strong>，基于 H2（MySQL"
+ },
+ {
+  "file": "docs/competition/答辩知识手册-打印版.html",
+  "line": 74,
+  "numbers": [
+   "79"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": ".callout { background:#fffdf4; border:0.8pt solid #eadfc0; border-left:3pt solid #c79a2e;"
+ },
+ {
+  "file": "docs/competition/答辩知识手册-打印版.html",
+  "line": 176,
+  "numbers": [
+   "146"
+  ],
+  "classification": "current_claim",
+  "bound_metric": "java.main.file_n",
+  "context": "<table><thead><tr><th>服务</th><th>技术</th><th>端口</th><th>职责</th><th>真实规模</th></tr></thead><tbody><tr><td><strong>backend</strong></td><td>SpringBoot 3.3.5 + Java 17</td><td>8080</td>"
+ },
+ {
+  "file": "docs/competition/答辩知识手册-打印版.html",
+  "line": 191,
+  "numbers": [
+   "89"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "<p><strong>③ 融合</strong>（<code>retrieval/hybrid.py:89-101</code>）</p>"
+ },
+ {
+  "file": "docs/competition/答辩知识手册-打印版.html",
+  "line": 215,
+  "numbers": [
+   "428"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "<ul><li>双入口：用户层 5173 / 管理员层 5174，共用 <code>vite.shared.mjs</code>（代理 <code>/api</code> <code>/ws</code>，<code>/ai</code> 单独转发 8001）</li><li>手动分包：three / zrender / echarts / xterm / "
+ },
+ {
+  "file": "docs/competition/答辩知识手册-打印版.html",
+  "line": 219,
+  "numbers": [
+   "113",
+   "135"
+  ],
+  "classification": "historical_reference",
+  "bound_metric": null,
+  "context": "<p class=\"note\">注：模块拆分（13/36/20/18/5/6/15）是上一轮 <code>tests/</code> 113 用例口径，加上当时 ai-service 22 个合计 135；与上方 610 全量收集数不是同一快照；对外只引用 610 / 600 / 10。</p>"
+ },
+ {
+  "file": "docs/competition/答辩知识手册-打印版.html",
+  "line": 230,
+  "numbers": [
+   "146"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "前端       146 .vue / 27,983 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)"
+ },
+ {
+  "file": "docs/competition/项目知识要点手册.md",
+  "line": 45,
+  "numbers": [
+   "146"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "| **frontend** | Vite 7 + Vue3 + Element Plus | 5173 / 5174（双入口） | 用户层 + 管理员层 | 146 个 .vue / 27,983 行 |"
+ },
+ {
+  "file": "docs/competition/项目知识要点手册.md",
+  "line": 95,
+  "numbers": [
+   "89"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "**③ 融合**（`retrieval/hybrid.py:89-101`）"
+ },
+ {
+  "file": "docs/competition/项目知识要点手册.md",
+  "line": 163,
+  "numbers": [
+   "428"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "- 错误处理：`request.ts`（498 行）统一拦截，覆盖 400/401/403/404/409/**428 人机验证**/429/422/500/502-504；401 派发 `smartops:unauthorized` 事件由路由清会话跳登录"
+ },
+ {
+  "file": "docs/competition/项目知识要点手册.md",
+  "line": 186,
+  "numbers": [
+   "113",
+   "135"
+  ],
+  "classification": "historical_reference",
+  "bound_metric": null,
+  "context": "> 注：模块拆分（13/36/20/18/5/6/15）是上一轮 `tests/` 113 用例口径，加上当时 ai-service 22 个合计 135；与上方 610 全量收集数不是同一快照；对外只引用 610 / 600 / 10。"
+ },
+ {
+  "file": "docs/competition/项目知识要点手册.md",
+  "line": 221,
+  "numbers": [
+   "146"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "前端       146 .vue / 27,983 行 / Vite 7 + Vue3 + Element Plus + Pinia(7)"
+ },
+ {
+  "file": "docs/human-verification-deployment.md",
+  "line": 34,
+  "numbers": [
+   "428",
+   "428",
+   "428"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "实测结果：`provider=local`、`targets∈{1,2}`、`tolerance=18`；`scene` 无 `data-*`/注释/脚本/外部引用；点选后状态变为「已通过」并成功登录 `portal=admin`；同一挑战二次兑换返回 **428**；点错返回 **428「没有点中正确图形，请重试（本次挑战还剩 2 次机会）」**；非法坐标"
+ },
+ {
+  "file": "docs/human-verification-deployment.md",
+  "line": 95,
+  "numbers": [
+   "428"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "- HTTP 428：缺少、过期、重放、跨用途或跨会话验证；客户端重新取得策略和挑战。"
+ },
+ {
+  "file": "docs/OBSERVABILITY_SETUP.md",
+  "line": 27,
+  "numbers": [
+   "80",
+   "80",
+   "00111"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "发布地址分别是 `https://github.com/prometheus/prometheus/releases/tag/v3.5.0`、`https://github.com/grafana/loki/releases/tag/v3.5.0` 和 `https://github.com/prometheus-community/windows_expo"
+ },
+ {
+  "file": "docs/OPTIMIZATION-CHANGES.md",
+  "line": 344,
+  "numbers": [
+   "89"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "| `python -m pytest -q` | PASS：89 passed，24 skipped，1 个 pytest cache warning |"
+ },
+ {
+  "file": "docs/OPTIMIZATION-CHANGES.md",
+  "line": 397,
+  "numbers": [
+   "89"
+  ],
+  "classification": "historical_reference",
+  "bound_metric": null,
+  "context": "| `python -m pytest -q` | 上一轮真实结果：89 passed / 24 skipped |"
+ },
+ {
+  "file": "docs/PROJECT-AUDIT-2026-11-04.md",
+  "line": 55,
+  "numbers": [
+   "79"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "**现象**：[hash_embedding.py](file:///d:/SmartOpsAgent/knowledge/embedding/hash_embedding.py#L29-L79) 用 sha256 把 token 映射到 256 维做计数，本质是**词袋哈希**。中文还做了单字 + bigram 展开，所以能工作，但与 BM25 高度同源。"
+ },
+ {
+  "file": "docs/PROJECT-AUDIT-2026-11-04.md",
+  "line": 214,
+  "numbers": [
+   "79"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "| P1-PERF-02 大块拆分和长会话治理 | 已完成 | ECharts/Knowledge 懒加载核验：ECharts 四组件均为 `echarts/core` 模块导入且仅被懒加载路由视图引用（ModelAnalyticsView/Dashboard），knowledgeCatalog 30+ 领域模块仅被 KnowledgeView/QuizVi"
+ },
+ {
+  "file": "docs/PROJECT-AUDIT-2026-11-04.md",
+  "line": 215,
+  "numbers": [
+   "80"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "| P1-PERF-01 前端性能基线 | 已完成（fixture 边界） | 新增 [performance-baseline.browser.mjs](file:///d:/SmartOpsAgent/frontend/test/performance-baseline.browser.mjs) + `npm run perf:baseline`；本机 "
+ },
+ {
+  "file": "docs/smartops-companion-phase1.md",
+  "line": 19,
+  "numbers": [
+   "80"
+  ],
+  "classification": "needs_review",
+  "bound_metric": null,
+  "context": "- `npm test`: 80 tests passed."
+ }
+]

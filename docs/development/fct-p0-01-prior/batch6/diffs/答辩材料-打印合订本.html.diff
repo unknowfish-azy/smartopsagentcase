@@ -1,0 +1,13 @@
+diff --git "a/docs/development/fct-p0-01-prior/batch6/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html" "b/docs/competition/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
+index 98f9c65..7d2b71a 100644
+--- "a/docs/development/fct-p0-01-prior/batch6/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
++++ "b/docs/competition/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
+@@ -156,7 +156,7 @@ a { color:#1f6feb; text-decoration:none; }
+ <hr/>
+ <h2>6. 工程质量与可复现性（约 40 秒）</h2>
+ <p>一个能拿奖的作品，必须经得起"能不能跑起来"的检验：</p>
+-<ul><li><strong>前端</strong>：146 个页面组件，用户层 / 管理员层<strong>双入口构建通过</strong>（注：前端尚未建自动化测试套件，已通过构建与类型检查验证）；</li><li><strong>后端</strong>：<strong>656 个 @Test（87 个测试类）</strong>，基于 H2（MySQL 兼容模式）跑真实迁移脚本；</li><li><strong>数据库</strong>：MySQL 8，<strong>119 张表</strong>，迁移脚本幂等，启动自动补齐；</li><li><strong>可复现</strong>：<code>mock</code> 模型<strong>零密钥</strong>即可跑通全链路，一键切换到 Ollama / OpenAI 兼容模型。评委老师可以自己拉下来跑。</li></ul>
++<ul><li><strong>前端</strong>：175 个 .vue 文件，用户层 / 管理员层<strong>双入口构建通过</strong>（注：<code>npm test</code> 494 项全过，另经 <code>tsc --noEmit</code> 与双入口构建验证）；</li><li><strong>后端</strong>：<strong>656 个 @Test（87 个测试类）</strong>，基于 H2（MySQL 兼容模式）跑真实迁移脚本；</li><li><strong>数据库</strong>：MySQL 8，<strong>119 张表</strong>，迁移脚本幂等，启动自动补齐；</li><li><strong>可复现</strong>：<code>mock</code> 模型<strong>零密钥</strong>即可跑通全链路，一键切换到 Ollama / OpenAI 兼容模型。评委老师可以自己拉下来跑。</li></ul>
+ <hr/>
+ <h2>7. 诚实边界：我们如何对待"还没跑出来的指标"（约 30 秒）—— *防坑必讲*</h2>
+ <p>我必须坦诚一件事：当前仓库里<strong>模型训练与基准评测尚未接入真实模型与标注数据集</strong>，所以我没有拿"准确率 99%"这样的数字来包装自己。</p>

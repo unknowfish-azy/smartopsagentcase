@@ -1,0 +1,336 @@
+{
+  "reason": "FCT-P0-01 第三批（补采后改写：前端 494 / Agent 82 / ai-service 67）前像与逐行改写",
+  "mode": "APPLY",
+  "files": [
+    {
+      "path": "docs/competition/adjustment-plan.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/adjustment-plan.md",
+      "bytes": 5460,
+      "sha256": "78eb5f6fefb789578e1ed27db3329b4c8b07a1db59131bd720f099d6812a080e",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/defense-master.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/defense-master.md",
+      "bytes": 27989,
+      "sha256": "b51c5f88c56aad9fb4e0e5572611e601d7944625736649adafe5eb4c22eb2638",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/defense.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/defense.md",
+      "bytes": 13447,
+      "sha256": "15cb3b3698b417e65fed93f7b740c8486de3bfbd7e9ab218c060ce104b571156",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/innovation.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/innovation.md",
+      "bytes": 9668,
+      "sha256": "3ecbf6eb5bbfb4ac7dc96900f48b241a9ed3bbfa739b47cb23ef10e021601b17",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/project-plan.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/project-plan.md",
+      "bytes": 15793,
+      "sha256": "98a40ef393070e1744aec9991945330e2228b85f1e2b950780f6ccdbefb1d2fd",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/technical-document.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/technical-document.html",
+      "bytes": 31678,
+      "sha256": "8f3714c74aa9c35ac5266f4645af849146e9acba3dd9abcb839267d34c6ff821",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-合订本.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/答辩材料-合订本.md",
+      "bytes": 80343,
+      "sha256": "b1b2eac9a3994be91c8ae06b1e5406d38c00fd9dcce4b1df6c2eb37870e52a14",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩材料-打印合订本.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/答辩材料-打印合订本.html",
+      "bytes": 103182,
+      "sha256": "a9dabdd8fbdd16687e2adf4810e63e11a9db2942385b35540e1627122a214a42",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/答辩知识手册-打印版.html",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/答辩知识手册-打印版.html",
+      "bytes": 76444,
+      "sha256": "ab50f6f4f4cb0b5f0999ffac611251f1352810a235e3dabc741ed677ce768136",
+      "matches_prior": true
+    },
+    {
+      "path": "docs/competition/项目知识要点手册.md",
+      "prior_image": "docs/development/fct-p0-01-prior/batch3/项目知识要点手册.md",
+      "bytes": 18411,
+      "sha256": "8d299b9be6e16d0877c6209c653b1fc95933c5ad61ab6241bc0240209edb7e95",
+      "matches_prior": true
+    }
+  ],
+  "rewrite_batch3": {
+    "measurements": {
+      "frontend_npm_test": {
+        "tests": 494,
+        "pass": 494,
+        "fail": 0,
+        "skipped": 0,
+        "test_files": 99,
+        "log": ".runtime/frontend-test.log"
+      },
+      "agent_pytest": {
+        "collected": 82,
+        "passed": 82,
+        "log": ".runtime/agent-test.log"
+      },
+      "ai_service_pytest": {
+        "collected": 67,
+        "passed": 67,
+        "log": ".runtime/ai-service-test.log"
+      }
+    },
+    "changed_files": 10,
+    "changed_lines": 24,
+    "results": [
+      {
+        "path": "docs/competition/adjustment-plan.md",
+        "before_sha256": "78eb5f6fefb789578e1ed27db3329b4c8b07a1db59131bd720f099d6812a080e",
+        "after_sha256": "b69dd722a073da2b7912e7da34758fe2540f1a40bc7715c2c93ac34d9e4e2751",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 55,
+            "old": "（563 项）",
+            "new": "（494 项）",
+            "note": "前端测试"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/adjustment-plan.md.diff"
+      },
+      {
+        "path": "docs/competition/defense-master.md",
+        "before_sha256": "b51c5f88c56aad9fb4e0e5572611e601d7944625736649adafe5eb4c22eb2638",
+        "after_sha256": "86fba80013e6585eb36649f49a3d4a75930b4153bb0ab55c344bf16326da8f19",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 275,
+            "old": "前端 563 项全过",
+            "new": "前端 494 项全过",
+            "note": "前端测试"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/defense-master.md.diff"
+      },
+      {
+        "path": "docs/competition/defense.md",
+        "before_sha256": "15cb3b3698b417e65fed93f7b740c8486de3bfbd7e9ab218c060ce104b571156",
+        "after_sha256": "e7e97a4201a467cc1238803f1d530e2044808ab7ce492f47ec863d5eafca303f",
+        "changed_lines": 1,
+        "edits": [
+          {
+            "line": 53,
+            "old": "经 **113 个单测**验证",
+            "new": "经 **82 个单测**验证",
+            "note": "Agent 单测"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/defense.md.diff"
+      },
+      {
+        "path": "docs/competition/innovation.md",
+        "before_sha256": "3ecbf6eb5bbfb4ac7dc96900f48b241a9ed3bbfa739b47cb23ef10e021601b17",
+        "after_sha256": "ba437f22f91a95ee3c7731f1ae7823b9fe735a2b4b801e1a983d279708e5d7df",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 106,
+            "old": "563 项前端测试",
+            "new": "494 项前端测试",
+            "note": "前端测试"
+          },
+          {
+            "line": 120,
+            "old": "563 项通过",
+            "new": "494 项通过",
+            "note": "前端测试"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/innovation.md.diff"
+      },
+      {
+        "path": "docs/competition/project-plan.md",
+        "before_sha256": "98a40ef393070e1744aec9991945330e2228b85f1e2b950780f6ccdbefb1d2fd",
+        "after_sha256": "c32404a9f3178f3935045981e2cf7f43e96e907abf58f70719bfcfdc743cf808",
+        "changed_lines": 3,
+        "edits": [
+          {
+            "line": 66,
+            "old": "563 项前端测试",
+            "new": "494 项前端测试",
+            "note": "前端测试"
+          },
+          {
+            "line": 201,
+            "old": "**563 项**断言全部通过（96 个测试文件）",
+            "new": "**494 项**断言全部通过（99 个测试文件）",
+            "note": "前端测试 + 测试文件数"
+          },
+          {
+            "line": 212,
+            "old": "# 563 项",
+            "new": "# 494 项",
+            "note": "前端测试"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/project-plan.md.diff"
+      },
+      {
+        "path": "docs/competition/technical-document.html",
+        "before_sha256": "8f3714c74aa9c35ac5266f4645af849146e9acba3dd9abcb839267d34c6ff821",
+        "after_sha256": "f8c4d6047664cdae4b0da1e6343edb1a7d2a706f7bc07a704ee86aa155b5832b",
+        "changed_lines": 4,
+        "edits": [
+          {
+            "line": 141,
+            "old": "563 项前端测试",
+            "new": "494 项前端测试",
+            "note": "前端测试"
+          },
+          {
+            "line": 312,
+            "old": "563 项前端测试",
+            "new": "494 项前端测试",
+            "note": "前端测试"
+          },
+          {
+            "line": 376,
+            "old": "563 项前端测试",
+            "new": "494 项前端测试",
+            "note": "前端测试"
+          },
+          {
+            "line": 394,
+            "old": "563 项通过",
+            "new": "494 项通过",
+            "note": "前端测试"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/technical-document.html.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-合订本.md",
+        "before_sha256": "b1b2eac9a3994be91c8ae06b1e5406d38c00fd9dcce4b1df6c2eb37870e52a14",
+        "after_sha256": "13d664dfbd97e197d8b135d7a90ae20bf2eef98c29071c8ebbdf7a4b8d549b27",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 58,
+            "old": "经 **113 个单测**验证",
+            "new": "经 **82 个单测**验证",
+            "note": "Agent 单测"
+          },
+          {
+            "line": 481,
+            "old": "前端 563 项全过",
+            "new": "前端 494 项全过",
+            "note": "前端测试"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/答辩材料-合订本.md.diff"
+      },
+      {
+        "path": "docs/competition/答辩材料-打印合订本.html",
+        "before_sha256": "a9dabdd8fbdd16687e2adf4810e63e11a9db2942385b35540e1627122a214a42",
+        "after_sha256": "eda4069424332dfeec1eed95edd31e6bb9ef162dcbc0863128132742befec337",
+        "changed_lines": 2,
+        "edits": [
+          {
+            "line": 294,
+            "old": "前端 563 项全过",
+            "new": "前端 494 项全过",
+            "note": "前端测试"
+          },
+          {
+            "line": 132,
+            "old": "经 <strong>113 个单测</strong>验证",
+            "new": "经 <strong>82 个单测</strong>验证",
+            "note": "Agent 单测"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/答辩材料-打印合订本.html.diff"
+      },
+      {
+        "path": "docs/competition/答辩知识手册-打印版.html",
+        "before_sha256": "ab50f6f4f4cb0b5f0999ffac611251f1352810a235e3dabc741ed677ce768136",
+        "after_sha256": "b9b1055b135be245d1d52b8d39e2bc46e4bf2f8d63480bb252d5acc6369e7000",
+        "changed_lines": 4,
+        "edits": [
+          {
+            "line": 176,
+            "old": "库形态 + 135 用例",
+            "new": "库形态 + 82 用例",
+            "note": "agent-service 行"
+          },
+          {
+            "line": 218,
+            "old": "ai-service 约 22 个（对话 / RAG / LLM 集成，计入 Python 总用例）",
+            "new": "ai-service 67 个（对话 / RAG / LLM 集成，独立于上方 610）",
+            "note": "ai-service 行"
+          },
+          {
+            "line": 219,
+            "old": "注：模块拆分（13/36/20/18/5/6/15/22）是上一轮 135 用例口径，",
+            "new": "注：模块拆分（13/36/20/18/5/6/15）是上一轮 <code>tests/</code> 113 用例口径，加上当时 ai-service 22 个合计 135；",
+            "note": "口径注释"
+          },
+          {
+            "line": 224,
+            "old": "经 113 单测验证",
+            "new": "经 82 单测验证",
+            "note": "Agent 单测"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/答辩知识手册-打印版.html.diff"
+      },
+      {
+        "path": "docs/competition/项目知识要点手册.md",
+        "before_sha256": "8d299b9be6e16d0877c6209c653b1fc95933c5ad61ab6241bc0240209edb7e95",
+        "after_sha256": "8ee0dd1140e2910e0e5fc14dde3e0e9be91bdbfffdc30b3979843b09f0a76189",
+        "changed_lines": 4,
+        "edits": [
+          {
+            "line": 44,
+            "old": "库形态 + 135 用例",
+            "new": "库形态 + 82 用例",
+            "note": "agent-service 行"
+          },
+          {
+            "line": 180,
+            "old": "ai-service 约 22 个（对话 / RAG / LLM 集成，计入 Python 总用例）",
+            "new": "ai-service 67 个（对话 / RAG / LLM 集成，独立于上方 610）",
+            "note": "ai-service 行"
+          },
+          {
+            "line": 186,
+            "old": "注：模块拆分（13/36/20/18/5/6/15/22）是上一轮 135 用例口径，",
+            "new": "注：模块拆分（13/36/20/18/5/6/15）是上一轮 `tests/` 113 用例口径，加上当时 ai-service 22 个合计 135；",
+            "note": "口径注释"
+          },
+          {
+            "line": 205,
+            "old": "经 113 单测验证",
+            "new": "经 82 单测验证",
+            "note": "Agent 单测"
+          }
+        ],
+        "diff": "docs/development/fct-p0-01-prior/batch3/diffs/项目知识要点手册.md.diff"
+      }
+    ]
+  }
+}

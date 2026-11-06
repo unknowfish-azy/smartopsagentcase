@@ -44,6 +44,14 @@
       "bytes": 4504,
       "sha256": "3f19d869b63f58e92acf16c6ed1728f70629e01c7ffa72c6e411a99f1118d2a2"
     },
+    "backend/src/main/java/com/smartops/backup/BackupController.java": {
+      "bytes": 4798,
+      "sha256": "012b3ada70dabee493994f1265502473fbed5bcd43ca725404e29101a5e9df16"
+    },
+    "backend/src/main/java/com/smartops/backup/BackupService.java": {
+      "bytes": 25680,
+      "sha256": "903dd75bfea97a05caa703d0497b7b93543e52fc025007d11a14ea1988ccb744"
+    },
     "backend/src/main/java/com/smartops/cloud/AliyunEcsInventoryProvider.java": {
       "bytes": 14060,
       "sha256": "4256ad2c77b84df664243fea96453ead848917469db2b6ea1a237d08f0719cd9"
@@ -132,9 +140,13 @@
       "bytes": 737,
       "sha256": "3422692a7ebe15cec1c76914528a409609413eb5b88f0cc8b68af2108ee70b5f"
     },
+    "backend/src/main/java/com/smartops/config/SecurityAssertionConfig.java": {
+      "bytes": 1855,
+      "sha256": "3d402f15a7c6d2f3ed8827a6ae3061c2613010fadf31ace3acfb70eea6a4c577"
+    },
     "backend/src/main/java/com/smartops/config/SecurityConfig.java": {
-      "bytes": 6386,
-      "sha256": "d4fbb8fec91c39a75756075f6f964ae7fb9c7bb99e66a4b8ef6412751e372a30"
+      "bytes": 6415,
+      "sha256": "533c625d278236cb5fd70d8cd81e189499e4c00bd45e1c0b470f4d3127731bb2"
     },
     "backend/src/main/java/com/smartops/config/UserAccountConfig.java": {
       "bytes": 660,
@@ -208,6 +220,10 @@
       "bytes": 921,
       "sha256": "6f5b9f6e22377700599650a0d0e011edce8617d8ba398aedb5fbea6a701bc6ae"
     },
+    "backend/src/main/java/com/smartops/controller/HostDiagnosisController.java": {
+      "bytes": 1166,
+      "sha256": "bc2340f66997d9f7fe01c4ba0744077f9fa7341101f99c1b402ad1f432a561d5"
+    },
     "backend/src/main/java/com/smartops/controller/IncidentController.java": {
       "bytes": 6542,
       "sha256": "e1c666c8019ad49abff7b321fd9a128b79d674fd22e52f4370878db8f37364e2"
@@ -219,6 +235,10 @@
     "backend/src/main/java/com/smartops/controller/InspectorController.java": {
       "bytes": 1959,
       "sha256": "41d654e86d0d6e30a27afee983bd3723f232566449bee835288f5ed44431bb7f"
+    },
+    "backend/src/main/java/com/smartops/controller/InternalRecoveryController.java": {
+      "bytes": 1976,
+      "sha256": "a106f142155be4f289730ea8a01117d662eb990dd43e8d061bc4a27219054243"
     },
     "backend/src/main/java/com/smartops/controller/KnowledgeCandidateController.java": {
       "bytes": 2878,
@@ -245,8 +265,8 @@
       "sha256": "99809f72ed0d88b877e5288160d5da4f8dd4766e499e42831517c455bc0215c1"
     },
     "backend/src/main/java/com/smartops/controller/MultiExecController.java": {
-      "bytes": 1537,
-      "sha256": "5ef702317637f7e6279744aec7e88fe5308186943b336868ee46d8c3f9f5193d"
+      "bytes": 1916,
+      "sha256": "3dbc814615237a41fe9f096d1478def5d8dd4b6488e846691737838fc366dc72"
     },
     "backend/src/main/java/com/smartops/controller/NetworkPathDiagnosisController.java": {
       "bytes": 1773,
@@ -299,6 +319,10 @@
     "backend/src/main/java/com/smartops/controller/PersonalKnowledgeFileController.java": {
       "bytes": 3060,
       "sha256": "bf78d848e5ac306ca72b3c7c3a4d852d02aa5f01b0017c389d6e5f44190de97c"
+    },
+    "backend/src/main/java/com/smartops/controller/RecoveryContractController.java": {
+      "bytes": 2121,
+      "sha256": "d71a76f842e06efab6a00dbddf1f18f11ee17c30875638ebdc3cea4dbe9aace7"
     },
     "backend/src/main/java/com/smartops/controller/SentinelGuardianController.java": {
       "bytes": 2447,
@@ -423,6 +447,14 @@
     "backend/src/main/java/com/smartops/diagnostics/database/SqlSanitizer.java": {
       "bytes": 1589,
       "sha256": "df7147707f34711e77bd63e75875e359e91fce68858e77261450fd6c8878adc6"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/host/HostDiagnosisRequest.java": {
+      "bytes": 848,
+      "sha256": "21b87f28b79774531af31fb2d52549399897e1e93748510ed97dc9da07e0fb24"
+    },
+    "backend/src/main/java/com/smartops/diagnostics/host/HostDiagnosisService.java": {
+      "bytes": 48028,
+      "sha256": "149993706e988a6037cf18d9f9aaad0ea97c9836b64c00a405e5c04bcf5006eb"
     },
     "backend/src/main/java/com/smartops/diagnostics/kubernetes/KubernetesDiagnosisRequest.java": {
       "bytes": 1296,
@@ -552,6 +584,22 @@
       "bytes": 688,
       "sha256": "da0f5f2efdca399cb1a63d89c84f52ee692495a125031410ef6b504d864bf0e6"
     },
+    "backend/src/main/java/com/smartops/entity/RecoveryContractRecord.java": {
+      "bytes": 970,
+      "sha256": "8b2ae7cdc02c73c811784dcbe5b8c14dea7cde58d0e32bd723935c9058175711"
+    },
+    "backend/src/main/java/com/smartops/entity/RecoveryObservationRecord.java": {
+      "bytes": 967,
+      "sha256": "1ad41759c91907378d2cda8cb7ca7cd63ac0a2b866fd905ccb012817d7f5b2a8"
+    },
+    "backend/src/main/java/com/smartops/entity/RecoveryReceiptRecord.java": {
+      "bytes": 945,
+      "sha256": "d268e4d3324c80cfe641583a78abb1300a5e0808009fb67b45d091f8e4150233"
+    },
+    "backend/src/main/java/com/smartops/entity/RecoveryReplayBundleRecord.java": {
+      "bytes": 621,
+      "sha256": "04b47a220013e811070acad5292e71051159814325970640699219a1ae4d6d0e"
+    },
     "backend/src/main/java/com/smartops/entity/SentinelAlertRef.java": {
       "bytes": 677,
       "sha256": "913da865f7833ebaff977aec32473bbccbcb26fabceb96eaf767aa11d46dc1d3"
@@ -572,13 +620,41 @@
       "bytes": 2039,
       "sha256": "4f0c8de7085286c1071b8ad96cf418add1bf31acdcd2e49989a81a5217e058e5"
     },
+    "backend/src/main/java/com/smartops/experiment/ExperimentController.java": {
+      "bytes": 4077,
+      "sha256": "2a61e3384639fe898abdbdfa1441d2b4d9cbb91ae1b1c7e9c3462ff9145f6973"
+    },
+    "backend/src/main/java/com/smartops/experiment/ExperimentService.java": {
+      "bytes": 16953,
+      "sha256": "9a1ed73dcd79a187bb2d46bb07a272795865bcea920be4bb5c68bd082961ec57"
+    },
+    "backend/src/main/java/com/smartops/finops/FinOpsController.java": {
+      "bytes": 4109,
+      "sha256": "b895b3abedd8688ee10900fa6d6815b7cdf2e74b8a437b69dae9d2c04c103add"
+    },
+    "backend/src/main/java/com/smartops/finops/FinOpsService.java": {
+      "bytes": 32442,
+      "sha256": "f647d46e9b2ec522a90d3f382a64c27b7312ef6a3f574ae82b3f69836d8381a1"
+    },
+    "backend/src/main/java/com/smartops/iac/IacController.java": {
+      "bytes": 4488,
+      "sha256": "acd7c05dfba3ba271350bb753a756f77a115e0908c83e8f4cc34dc542c9cb470"
+    },
+    "backend/src/main/java/com/smartops/iac/IacService.java": {
+      "bytes": 26614,
+      "sha256": "5a30a9eef6d03424381663dd55d53330c3448d84d8a5132146e1c598a33b5760"
+    },
+    "backend/src/main/java/com/smartops/iac/TerraformPlanAnalyzer.java": {
+      "bytes": 6377,
+      "sha256": "d452c9e79e0d05e2efa225363bd8bf7e6995f0124b338b95768d45904086d09e"
+    },
     "backend/src/main/java/com/smartops/incident/IncidentBridgePoller.java": {
       "bytes": 2679,
       "sha256": "fcec661f8c4b8d2be946a6af332984a894d21001800cf83547b6a6b28a21dc6e"
     },
     "backend/src/main/java/com/smartops/knowledge/KnowledgeCrawlService.java": {
-      "bytes": 17720,
-      "sha256": "ebc2fdd931c7dbfc970bd8e3514e957f33f3b55afa9d5268c39a54fe5a58c595"
+      "bytes": 19550,
+      "sha256": "7af3c9df2fd7e9f0e5368c6a0bd133f41d46685dfae7e110c1d4903f976ddaaf"
     },
     "backend/src/main/java/com/smartops/knowledge/KnowledgePathPolicy.java": {
       "bytes": 935,
@@ -620,6 +696,22 @@
       "bytes": 1536,
       "sha256": "1a6126f9d89546db61cf5aa52cb7de73d1b537549ea922b15a95f542d26cfd2b"
     },
+    "backend/src/main/java/com/smartops/mapper/RecoveryContractMapper.java": {
+      "bytes": 3208,
+      "sha256": "0d3edf5daa1e0936685cca4e2126b21a640e835e391cf771d8d18c2f54da0d3c"
+    },
+    "backend/src/main/java/com/smartops/mapper/RecoveryObservationMapper.java": {
+      "bytes": 1764,
+      "sha256": "3ad4974d7d98ef1cdce4541a5d26fac5baef3afa1a17da8017ca9fe67093e062"
+    },
+    "backend/src/main/java/com/smartops/mapper/RecoveryReceiptMapper.java": {
+      "bytes": 2487,
+      "sha256": "e8f1df343794e0308dc627c8b1f2012cf8afe2bdca8cb3b674247eed19af3a5a"
+    },
+    "backend/src/main/java/com/smartops/mapper/RecoveryReplayBundleMapper.java": {
+      "bytes": 1980,
+      "sha256": "be417d585883e8c1c1c0c79446503048f079d279d38b57e9d4bc31928da5a3bc"
+    },
     "backend/src/main/java/com/smartops/mapper/SentinelAlertRefMapper.java": {
       "bytes": 1921,
       "sha256": "2e7fd31112e00a7a42fba22078e63bf6989a0f2ce657b47606ea3dd47a7ec1d9"
@@ -660,13 +752,25 @@
       "bytes": 116,
       "sha256": "942313ce2cae2ea774130ac9a8b1702003c4830dbb5d93d206e2cf12f0d5bb61"
     },
+    "backend/src/main/java/com/smartops/observability/SloController.java": {
+      "bytes": 1312,
+      "sha256": "465b12dbd260136130cf77c2d35b932303f988feeac2c0671c202447c4470dec"
+    },
+    "backend/src/main/java/com/smartops/observability/SloService.java": {
+      "bytes": 13471,
+      "sha256": "c3fb05d8286991520ab54e360044a308f32464018dd8972836a62384592d532b"
+    },
+    "backend/src/main/java/com/smartops/operations/BoundedOutput.java": {
+      "bytes": 2126,
+      "sha256": "54822ff1cd4223f734cd6da49756b7c4bbebd7a7e55caee4356c8c4514f01e6f"
+    },
     "backend/src/main/java/com/smartops/operations/ConnectionAdapter.java": {
       "bytes": 229,
       "sha256": "d3813a8132f331ce85301592a5c07fdbe9be132c8ce57c4f6d7384a0c7ab3b5c"
     },
     "backend/src/main/java/com/smartops/operations/ConnectionResult.java": {
-      "bytes": 826,
-      "sha256": "a6d53e4e69a0b9221b6aa9ae49049fdcf6a8b74b1c7703decbb70c128eb3e977"
+      "bytes": 1343,
+      "sha256": "f6452cba1d95d53ba46f9aa41ce59ab0fb60f37bddc90ad39f05e06a2fc48e58"
     },
     "backend/src/main/java/com/smartops/operations/HostKeyDecision.java": {
       "bytes": 103,
@@ -684,6 +788,10 @@
       "bytes": 810,
       "sha256": "5fd3c5c5378bf4f4fb6af8b9d1ef52378bbc585c8dd55036c33fac54f5bb7546"
     },
+    "backend/src/main/java/com/smartops/operations/OperationConnectionCoordinator.java": {
+      "bytes": 2375,
+      "sha256": "614d427afca25cdabd6502ce5d8ad97e4d9be3bb6358f0aabb4171279ed988bd"
+    },
     "backend/src/main/java/com/smartops/operations/OperationRedactor.java": {
       "bytes": 466,
       "sha256": "0a0fa9d15fe2d9c84789e0c126449ca819087a40fb72c076ce4ece9498e842eb"
@@ -693,12 +801,16 @@
       "sha256": "f6f878a471f37867b3cc06427f9558b9d2a9035ca490eba1f99caaf7403c8ad4"
     },
     "backend/src/main/java/com/smartops/operations/OperationRuntime.java": {
-      "bytes": 741,
-      "sha256": "bced80113cb4023c4f1ec4ff861e286e43230bc4843abfde4d5af0e532aa69d6"
+      "bytes": 901,
+      "sha256": "0ff147d71ba88ecc28a41b96609686fc2c816ef9f1a80eebcea005f31c1abbfd"
+    },
+    "backend/src/main/java/com/smartops/operations/OperationRuntimeJanitor.java": {
+      "bytes": 1112,
+      "sha256": "4bf5553ec1c7cd6a071e11aa6065f291f75df3398a4b14401a8a004ed829d32e"
     },
     "backend/src/main/java/com/smartops/operations/OperationRuntimeRegistry.java": {
-      "bytes": 1870,
-      "sha256": "ce9a3ace4a9089abd63a3657705a21f2970a361f8fa0bd92f82d5fe8de2eab68"
+      "bytes": 5970,
+      "sha256": "db08f7925279649a8156d82acb66b6b48f87cfb8274fd59af4faa7344f806266"
     },
     "backend/src/main/java/com/smartops/operations/OperationsCapabilityService.java": {
       "bytes": 1458,
@@ -729,8 +841,8 @@
       "sha256": "b712e5ca7cebba2d09b9559411e19c9c979395fa60c23fcbc9be44d422ef6434"
     },
     "backend/src/main/java/com/smartops/operations/SshConnectionAdapter.java": {
-      "bytes": 14466,
-      "sha256": "d2bfd94ccd24c5e486c1b952fe61d3f26723556bfad0142ccdf4924ac15b295e"
+      "bytes": 14942,
+      "sha256": "acba0baa210558594d5cca058ec34dee88f07bc6c98028351237c8d5c8c88444"
     },
     "backend/src/main/java/com/smartops/operations/TerminalMessage.java": {
       "bytes": 284,
@@ -740,9 +852,21 @@
       "bytes": 295,
       "sha256": "35c89689f9155ebf0b565699374ee840562ffd81ef87788868a19f21d0a14591"
     },
+    "backend/src/main/java/com/smartops/posture/SecurityPostureController.java": {
+      "bytes": 3730,
+      "sha256": "4a6f0ed1af5bc17abc2d487288ab4401e50822711c84e244cffd9cbbbc35962e"
+    },
+    "backend/src/main/java/com/smartops/posture/SecurityPostureService.java": {
+      "bytes": 26073,
+      "sha256": "b56ba32de89d2b7633d75e248f0f386bd15998b09e4f147c6b8497133ad0c862"
+    },
+    "backend/src/main/java/com/smartops/recovery/RecoveryContractService.java": {
+      "bytes": 24312,
+      "sha256": "4695f7eee3bc14542f09411a01034d3151872801bf3008b029dd4b1964006f7c"
+    },
     "backend/src/main/java/com/smartops/runbook/RunbookCatalogService.java": {
-      "bytes": 25008,
-      "sha256": "ba41d15eec5a79010ef13da5b9d74906c213ace40d5507faa78ef595e8c23589"
+      "bytes": 25068,
+      "sha256": "d7b58d46b9a9b393fdf581284590ee32a0a3cc4458f4b6fcb1ff8d4830ecd0d5"
     },
     "backend/src/main/java/com/smartops/runbook/RunbookController.java": {
       "bytes": 12426,
@@ -753,8 +877,8 @@
       "sha256": "890d8fdf768bd2e3a7e3d205aa09eb27fc673bdcd513c39951edcc0735d63e08"
     },
     "backend/src/main/java/com/smartops/runbook/RunbookExecutionService.java": {
-      "bytes": 69130,
-      "sha256": "a9fdfd28930bd90276e9f19d39950c2e9ec4ed1a2af733c8d68dcc73ccb35ac2"
+      "bytes": 80563,
+      "sha256": "97ab5a87b42d372c876d60f199aebd48e228a2dce599ba7c1f2246f59b801bd2"
     },
     "backend/src/main/java/com/smartops/runbook/RunbookPoller.java": {
       "bytes": 1737,
@@ -809,8 +933,8 @@
       "sha256": "4b278b8005687e6c189368258231bf9b76b6876fc82108524233b62700044d68"
     },
     "backend/src/main/java/com/smartops/security/InternalTokenAuthenticationFilter.java": {
-      "bytes": 3390,
-      "sha256": "cb0e3cfe052acc9c6725d57568da265cf7f70e3deb99db49aca640ad0326f136"
+      "bytes": 3584,
+      "sha256": "8452f799077ad45209f0434ae68e446a2e43a7fc4af28b8045205cd3e46ec3bb"
     },
     "backend/src/main/java/com/smartops/security/LocalGraphicalVerificationProvider.java": {
       "bytes": 15976,
@@ -820,13 +944,21 @@
       "bytes": 3077,
       "sha256": "4432dc79232ad9e44aca4bc14cce777f86c54aed79b8637faefbca6316220b99"
     },
+    "backend/src/main/java/com/smartops/security/OutboundUrlPolicy.java": {
+      "bytes": 6266,
+      "sha256": "a7a1b6ce7a6f04aa4697401d512f7e3f4e46527e164e1ec45846e3f82a02fbed"
+    },
     "backend/src/main/java/com/smartops/security/PlatformAdminGovernance.java": {
       "bytes": 2154,
       "sha256": "74e0a4a182b69321203e06468ba23ca9959468249766bb3b0077787b09622e0d"
     },
     "backend/src/main/java/com/smartops/security/RunTokenService.java": {
-      "bytes": 6080,
-      "sha256": "e3fd0e97687a17aa1ba9a93f4737fcd28200d64282af80a102f38308c3b08e60"
+      "bytes": 6084,
+      "sha256": "b8693f28e30d455073cfb54f2431d115e88a98f706ebac8bdd79ecf0e20f369d"
+    },
+    "backend/src/main/java/com/smartops/security/SecurityAssertions.java": {
+      "bytes": 2768,
+      "sha256": "cb83293dc222f55d668869faebbbdcaae037fa3347847ec0d353197cb5e180b3"
     },
     "backend/src/main/java/com/smartops/security/SecurityAuditService.java": {
       "bytes": 7966,
@@ -873,12 +1005,16 @@
       "sha256": "b8973f70edbbc9c117b2e20179654f162761bb9922409a723b26cb3670510b2f"
     },
     "backend/src/main/java/com/smartops/sentinel/AlertLifecycleService.java": {
-      "bytes": 16093,
-      "sha256": "edbf4931d90f92868f9ab4822dc53558133aa2062078665b6437a593fd3a16cd"
+      "bytes": 22612,
+      "sha256": "eb7ef649972b08111ab28db97f7810c4b229e4b5a4fb1813fb96afaed6717e8b"
     },
     "backend/src/main/java/com/smartops/sentinel/AlertSilence.java": {
-      "bytes": 1120,
-      "sha256": "93ade8253e9ac20f6fd759c3374fcec292a260bb3f3c24b37f340f0f8badffee"
+      "bytes": 1181,
+      "sha256": "3f378c253519e3c59cf72436900445c8fd4fd632eee7e0fdbb5dc4380e8eed47"
+    },
+    "backend/src/main/java/com/smartops/sentinel/AlertmanagerSilenceClient.java": {
+      "bytes": 3519,
+      "sha256": "770c7797c2c16de1e729066c644231fbd6f61c6ea2952dcde2611b9ede39dffe"
     },
     "backend/src/main/java/com/smartops/sentinel/SentinelAdvisor.java": {
       "bytes": 7991,
@@ -893,8 +1029,8 @@
       "sha256": "9b3da94ccaeb8d6ca37e3d03e1caeee11e607ffcc412019d7cd71e04bd7a22b9"
     },
     "backend/src/main/java/com/smartops/sentinel/SentinelController.java": {
-      "bytes": 24637,
-      "sha256": "f9dc5761f709693f941206ab8f87190271d75185841de85447627d666c59128b"
+      "bytes": 25354,
+      "sha256": "62910e058ae424034ff309e37969fb8d37e45973a3350f9291d286dc68ed2541"
     },
     "backend/src/main/java/com/smartops/sentinel/SentinelGuardianPoller.java": {
       "bytes": 1818,
@@ -925,8 +1061,8 @@
       "sha256": "10a2aaa86fc6a774179322acbb3f0f75479b1d9f6adc11fd595b5ec4f7aacb02"
     },
     "backend/src/main/java/com/smartops/sentinel/SentinelService.java": {
-      "bytes": 83007,
-      "sha256": "d6554b4d2eb303cbfc59385d29234fc1b66c35a0ab41bbb41dc7899d049fde8b"
+      "bytes": 89133,
+      "sha256": "ba0264bee6d223ed0b4f39b63d7e332f9b3214c3e1916d620c414e17e52a7cc1"
     },
     "backend/src/main/java/com/smartops/sentinel/SentinelThreshold.java": {
       "bytes": 4449,
@@ -1013,8 +1149,8 @@
       "sha256": "6fa722f440fa691d7fb556166c58d3d19f1ed8eaf5aa89d1003d9d99ba5e86a1"
     },
     "backend/src/main/java/com/smartops/service/MultiExecService.java": {
-      "bytes": 3544,
-      "sha256": "d7ba850313b839daa7675dc67e94bf6976e43230cef364c27e23c41195b424ba"
+      "bytes": 7485,
+      "sha256": "0400a4edd245d75140a51c7ae2dc087c4745bacf329382cdccb4910b1bd2257c"
     },
     "backend/src/main/java/com/smartops/service/ObservabilityService.java": {
       "bytes": 7216,
@@ -1025,16 +1161,16 @@
       "sha256": "03661b72e3d9f7d57079bee151d58f239aff863ca11d737f995f2eb4160d1c40"
     },
     "backend/src/main/java/com/smartops/service/OperationConnectionService.java": {
-      "bytes": 1931,
-      "sha256": "bdd75928ad200c7d3c778f3296e81bc60aa733162cb6ba6bbe68c4f73c72e4ca"
+      "bytes": 2250,
+      "sha256": "43ab72e25290d490c1ce51a25c165b60f86003f780253c701daaf504f87e82e5"
     },
     "backend/src/main/java/com/smartops/service/OperationFileService.java": {
       "bytes": 2248,
       "sha256": "059fa1fd86184bf210f6dd2c997d13057539733a3d0796d786f9ebc19669a3aa"
     },
     "backend/src/main/java/com/smartops/service/OperationRunQueryService.java": {
-      "bytes": 9394,
-      "sha256": "82714df21c251afd040f484435f03c320b9977dd6007f59c9c71149c0f9b53b2"
+      "bytes": 9475,
+      "sha256": "6a5809dced230a306b11ab6c697566a846b657f69ed8cb96994d8ad1e22bd3f2"
     },
     "backend/src/main/java/com/smartops/service/OperationRunRecorder.java": {
       "bytes": 2922,
@@ -1049,8 +1185,8 @@
       "sha256": "d8a77af42ade00f9493969a76e28c61664ef03b3ae7ce3d8849e630db46e75e8"
     },
     "backend/src/main/java/com/smartops/service/OperationToolService.java": {
-      "bytes": 36817,
-      "sha256": "b907c127fb97bd72253d10518839874f073779f3ee2da088afd758201a61cbfd"
+      "bytes": 39080,
+      "sha256": "878a463c3bf5de4e00818416ae96f6b39e73a76cab9573b8785815c6e5a020d9"
     },
     "backend/src/main/java/com/smartops/service/OperationTunnelService.java": {
       "bytes": 1462,
@@ -1300,6 +1436,14 @@
       "bytes": 2086,
       "sha256": "e8aa274ed72e8c1c6e9bd0c024fb975830a1f98aae9999db91cfa68b904cd066"
     },
+    "backend/src/main/resources/db/migration/V20261105.10__alert_silence_governance.sql": {
+      "bytes": 1000,
+      "sha256": "8a28e73054f9c4aaeb903e63f571e2c36c0b9a210e1b5e2e693ff59ac1ff4b28"
+    },
+    "backend/src/main/resources/db/migration/V20261105.11__recovery_contract.sql": {
+      "bytes": 5524,
+      "sha256": "6c9deccf3f03ca6cf4eb995220e1059361b201c862b8f9d72a1737ab9cd4bb29"
+    },
     "backend/src/main/resources/db/migration/V20261105.1__incident_center.sql": {
       "bytes": 3795,
       "sha256": "d16071027b9dfa5ac16127c081f296c859337c415c189faf0a5cca9fef714426"
@@ -1340,6 +1484,34 @@
       "bytes": 285,
       "sha256": "b9c6ad63fc689ce9885c21c63617458792ea7a2caec32fd5f35ee588da1a4b0d"
     },
+    "backend/src/main/resources/db/migration/V20261106.12__runbook_target_evidence.sql": {
+      "bytes": 578,
+      "sha256": "2385248b6b2ec623fabd13ffc4357771b0a9e737e4d3e619e9891a67b221dc25"
+    },
+    "backend/src/main/resources/db/migration/V20261106.13__iac_gitops.sql": {
+      "bytes": 3983,
+      "sha256": "660ad5cc50e20cf094c31e9d6dda18874d0919ebf80a3d2797178eaf9b326075"
+    },
+    "backend/src/main/resources/db/migration/V20261106.14__backup_recovery.sql": {
+      "bytes": 3250,
+      "sha256": "ea41106fee24b10d3726277c93c650bbb6ea6ab14dd1ed8c0b32edebd84972ac"
+    },
+    "backend/src/main/resources/db/migration/V20261106.15__finops.sql": {
+      "bytes": 2761,
+      "sha256": "72ffa8f56f5ad094a52f4bf60456880951d7230f46e25a4a812e1c30adc61cfe"
+    },
+    "backend/src/main/resources/db/migration/V20261106.16__security_posture.sql": {
+      "bytes": 3292,
+      "sha256": "ff2669965cd21ed851976595e2af7f1e6b544f74e41a2397ff3244eaf5432acf"
+    },
+    "backend/src/main/resources/db/migration/V20261106.17__platform_experiments.sql": {
+      "bytes": 2480,
+      "sha256": "540474c426fe2ae3d7e1de8faba64dd5c471caf4533d31542b26a198d0319eb8"
+    },
+    "backend/src/main/resources/db/migration/V20261106.18__sentinel_scheduler_metrics.sql": {
+      "bytes": 592,
+      "sha256": "5c3b8be35845860d7f64ca2bfab02779334eebf8c71c80a9199bbfd85154568d"
+    },
     "backend/src/test/java/com/smartops/admin/SysRbacServiceTest.java": {
       "bytes": 7514,
       "sha256": "152dc55830ffaf7ab26c2d89584f9c58d15afb6f02691f669fd6a679c50e12c8"
@@ -1351,6 +1523,10 @@
     "backend/src/test/java/com/smartops/assistant/MiniAssistantEngineTest.java": {
       "bytes": 22430,
       "sha256": "3073e87e8f740a43d41b368befcf4c0bd1aeb98a4b56a5c0cefc03354e2a2e8d"
+    },
+    "backend/src/test/java/com/smartops/backup/BackupServiceIntegrationTest.java": {
+      "bytes": 12965,
+      "sha256": "ec61ef606ef98c583a8feda35e0589b0b62c2b077ce65ce71203d8363355c00f"
     },
     "backend/src/test/java/com/smartops/cloud/AliyunEcsInventoryProviderTest.java": {
       "bytes": 7880,
@@ -1412,6 +1588,10 @@
       "bytes": 1885,
       "sha256": "3f5e15debd60a844f1401089370fae9d9f3b585bb908e9d800146638cffdcef3"
     },
+    "backend/src/test/java/com/smartops/controller/RecoveryContractSecurityTest.java": {
+      "bytes": 2977,
+      "sha256": "c96a511ae24a0cd9862564d8d01bec7b7bad3fe5b984b18d83df338b3f205aa1"
+    },
     "backend/src/test/java/com/smartops/controller/ServerControllerTest.java": {
       "bytes": 3351,
       "sha256": "82334f737dcaf15c4e103d19c6f174ba9459c4ca2e04b55ce8d8ca2c178fa0c7"
@@ -1452,6 +1632,10 @@
       "bytes": 1922,
       "sha256": "7acf2491b311f9b6a5575ddf2d66e1751ce746164b0937facd8391e9c1f6d9e6"
     },
+    "backend/src/test/java/com/smartops/diagnostics/host/HostDiagnosisServiceTest.java": {
+      "bytes": 14142,
+      "sha256": "11778dc72077673e11a1dc015a179a3d7c616c6fa2d18d9b8f4d05e1db161e9d"
+    },
     "backend/src/test/java/com/smartops/diagnostics/kubernetes/KubernetesDiagnosisServiceTest.java": {
       "bytes": 13172,
       "sha256": "d9ef67ac38a9a3eca649ecb1c5a23e728928fce536e333b1c2c5453e6f2cad83"
@@ -1459,6 +1643,18 @@
     "backend/src/test/java/com/smartops/diagnostics/network/NetworkPathServiceTest.java": {
       "bytes": 13922,
       "sha256": "3ed1b0211d9b42e6c19b188a901130227350bcc4991de776b6cd4da72322de53"
+    },
+    "backend/src/test/java/com/smartops/experiment/ExperimentServiceIntegrationTest.java": {
+      "bytes": 12056,
+      "sha256": "5667ecdc50674033d84031cb61404ee07b0478f61bc2e1ccf83f290e84247ebc"
+    },
+    "backend/src/test/java/com/smartops/finops/FinOpsServiceIntegrationTest.java": {
+      "bytes": 16036,
+      "sha256": "6ac9c16a44181a868be2862a19ab1ec3752c2eaa5de0c13bff624921dea20692"
+    },
+    "backend/src/test/java/com/smartops/iac/IacServiceIntegrationTest.java": {
+      "bytes": 14982,
+      "sha256": "6910a206fff46007fdca6e2bd6614605f5b9d844e2a75e1d89919017cc33efe4"
     },
     "backend/src/test/java/com/smartops/integration/AdminFoundationIntegrationTest.java": {
       "bytes": 29015,
@@ -1492,6 +1688,10 @@
       "bytes": 10284,
       "sha256": "717ba77c912c77a705036ec7372bbe6cb583c7d9c52ba7fcd89bcf65eade5144"
     },
+    "backend/src/test/java/com/smartops/integration/RecoveryContractIntegrationTest.java": {
+      "bytes": 10582,
+      "sha256": "874b8dfa5a31d1331a9dfb2f601fb45c0c68ac07d944545e55c1434c4ca6de4a"
+    },
     "backend/src/test/java/com/smartops/integration/RegistrationSecurityIntegrationTest.java": {
       "bytes": 20774,
       "sha256": "095999b4dafc15f6e1e36dae21c941f38d96242c68b675173ea440e897d353bb"
@@ -1516,6 +1716,10 @@
       "bytes": 6195,
       "sha256": "4d6d3061aa39b6c955da21f96d5a5f96c43f24a2242901a01607b27e06293c56"
     },
+    "backend/src/test/java/com/smartops/knowledge/KnowledgeCrawlServiceTest.java": {
+      "bytes": 2522,
+      "sha256": "06ab3eadf6595687d90cff5c2816a92367ddc8d0b174f6abde5bb2b590806ff6"
+    },
     "backend/src/test/java/com/smartops/knowledge/PersonalKnowledgeStorageTest.java": {
       "bytes": 1497,
       "sha256": "03f2de30fdeadd3f2800bd2cf1448c899a80970542b3421df9297eed08208bb9"
@@ -1532,6 +1736,14 @@
       "bytes": 1065,
       "sha256": "ba9d848e3559c0c3ed4e9a3e5e9202d1f9f45b4d70a7d523ca350fb13b73bff6"
     },
+    "backend/src/test/java/com/smartops/observability/SloServiceIntegrationTest.java": {
+      "bytes": 12046,
+      "sha256": "447d78338e33e77ab0739a35c2380035eb5d2f116c24bd06af77202644485a7e"
+    },
+    "backend/src/test/java/com/smartops/operations/BoundedOutputTest.java": {
+      "bytes": 1593,
+      "sha256": "f4c04e9bd0f0affb52240ad4549ef04b23b5945f524e03f7f6c44d153a00bc6a"
+    },
     "backend/src/test/java/com/smartops/operations/HostKeyTrustPolicyTest.java": {
       "bytes": 3034,
       "sha256": "b5059ecfa2a3d9549b05c2f9453a5651f8142d5bfa0070908de0e32c6effd250"
@@ -1539,6 +1751,10 @@
     "backend/src/test/java/com/smartops/operations/MyBatisKnownHostStoreTest.java": {
       "bytes": 2083,
       "sha256": "f207a0d2eb56161bf888816476f223e7161746a80e0afdd394f4274569855438"
+    },
+    "backend/src/test/java/com/smartops/operations/OperationConnectionCoordinatorTest.java": {
+      "bytes": 3299,
+      "sha256": "51b573af2b91972ab5f6ae5b78d4bdeb6944a16b5c06b92619c75d15d2ace9c2"
     },
     "backend/src/test/java/com/smartops/operations/OperationRedactorTest.java": {
       "bytes": 412,
@@ -1548,9 +1764,13 @@
       "bytes": 871,
       "sha256": "3e6715a84fe1a37477f4efb105b1521d7832bcdd7486a5dd1b0b2b0541e08787"
     },
+    "backend/src/test/java/com/smartops/operations/OperationRuntimeRegistryTest.java": {
+      "bytes": 4161,
+      "sha256": "2ef92887d6c9702da771bf273afdadaff414dbe6e5788bcedb1401c08e432a27"
+    },
     "backend/src/test/java/com/smartops/operations/OperationToolServiceTest.java": {
-      "bytes": 11974,
-      "sha256": "b41b9595e28a0ec5865c0afcfda4ca99ca5b12af224bf1300d25ab4abd122858"
+      "bytes": 13210,
+      "sha256": "df1301e63bc24aaa1414d237da27cca2266d295686bd83c1da029e2c20156456"
     },
     "backend/src/test/java/com/smartops/operations/OperationsCapabilityServiceTest.java": {
       "bytes": 833,
@@ -1564,9 +1784,13 @@
       "bytes": 4077,
       "sha256": "255f643dd953b82ffe724743c4118412ac5e1273042cf819d5531897e234c02f"
     },
+    "backend/src/test/java/com/smartops/posture/SecurityPostureServiceIntegrationTest.java": {
+      "bytes": 15404,
+      "sha256": "feb349d3164fab60e6cc3edc8134c0bb5bceb71aae06fd5b417470896bdfae10"
+    },
     "backend/src/test/java/com/smartops/runbook/RunbookIntegrationTest.java": {
-      "bytes": 21900,
-      "sha256": "25743398d5c9e2a62c0ca8b6db583dcd7a62a616af0774bab04a09aa81391795"
+      "bytes": 23029,
+      "sha256": "4b2a980a5eb68e665b83d5527fb02f3c571990d8098dc0411f714ae1a4598a0e"
     },
     "backend/src/test/java/com/smartops/security/HumanVerificationServiceTest.java": {
       "bytes": 17476,
@@ -1584,13 +1808,21 @@
       "bytes": 6623,
       "sha256": "f7067c5c38dad11b27c7f7d5b877811f377d063383064b00bef28be56097ae3d"
     },
+    "backend/src/test/java/com/smartops/security/OutboundUrlPolicyTest.java": {
+      "bytes": 3868,
+      "sha256": "e6631a669bbea8ef4d2b13434370393ec6a66300f8a7d3c6d23f9b767e2d2c8d"
+    },
     "backend/src/test/java/com/smartops/security/PlatformAdminGovernanceTest.java": {
       "bytes": 968,
       "sha256": "b238628c701d2d0b112ad9f1306def43e3416ce1fe41bce89e37854035ed8312"
     },
     "backend/src/test/java/com/smartops/security/RunTokenServiceTest.java": {
-      "bytes": 3296,
-      "sha256": "32f9518165ffb62a851ec762b3393fe4a303d4237c034758e9ad0de7230478c9"
+      "bytes": 3306,
+      "sha256": "0b77cd48a636b4f287962cc2d94bcf36bb4d8869bf6677538a0f5e157c69dd3a"
+    },
+    "backend/src/test/java/com/smartops/security/SecurityAssertionsTest.java": {
+      "bytes": 2967,
+      "sha256": "ebb03244f86267f8cdf412e19b2ef3f8032797cc854bd2076cff84d0ee893e94"
     },
     "backend/src/test/java/com/smartops/security/TeamResourceAuthorizerTest.java": {
       "bytes": 4103,
@@ -1612,6 +1844,14 @@
       "bytes": 20505,
       "sha256": "02210a69c72749fed7bbcdb4ae0979a18f93124978923dc23303a0b618211e47"
     },
+    "backend/src/test/java/com/smartops/sentinel/AlertSilenceGovernanceIntegrationTest.java": {
+      "bytes": 11949,
+      "sha256": "419bb61a238d3ae959a60d1bdf5f6d339e3b271752bd603e477ae680d1128390"
+    },
+    "backend/src/test/java/com/smartops/sentinel/AlertmanagerSilenceClientTest.java": {
+      "bytes": 7865,
+      "sha256": "c1bd4fc4cfb5ef3cffd88e8fc62ffdfe6f850682477ac3e717d32838bcde77b4"
+    },
     "backend/src/test/java/com/smartops/sentinel/SentinelAdvisorTest.java": {
       "bytes": 7318,
       "sha256": "4d288407f4edab47c57bf6e857619407b2e348e9c7bf35730e80634e78c34f71"
@@ -1631,6 +1871,10 @@
     "backend/src/test/java/com/smartops/sentinel/SentinelProposeRemediationPolicyTest.java": {
       "bytes": 3595,
       "sha256": "2452d03e2dd57156e6d0ff7ca5af028369c8fbc72f61a9727196a37fe2dfde68"
+    },
+    "backend/src/test/java/com/smartops/sentinel/SentinelSchedulerIntegrationTest.java": {
+      "bytes": 12032,
+      "sha256": "b6f6162949ba6a35a41749c333c61356b2630b378e830c154a3805fe6f72a1d0"
     },
     "backend/src/test/java/com/smartops/sentinel/SentinelScriptLintTest.java": {
       "bytes": 4889,
@@ -1689,8 +1933,8 @@
       "sha256": "092715312e272f5deb8c04e6afa838bcdf7dc84b7c625df0d5ab3f590ffdca56"
     },
     "backend/src/test/java/com/smartops/service/KnowledgeCandidateServiceTest.java": {
-      "bytes": 6909,
-      "sha256": "29d2d4c0e4e27934797b0a3edc54f82f1b1c502506ec715e15ea040e1e6a93f4"
+      "bytes": 6990,
+      "sha256": "0e4a2cc04970d240cb7360f30c25ebb4c1606f0127050ae0a169e9f659090165"
     },
     "backend/src/test/java/com/smartops/service/ModelAnalyticsServiceTest.java": {
       "bytes": 6137,
@@ -1708,17 +1952,21 @@
       "bytes": 2378,
       "sha256": "c6a85cd8b4b71ee2209bab5e821762b007ac4e349fc432a32567026cc4e22eb0"
     },
+    "backend/src/test/java/com/smartops/service/MultiExecBatchIntegrationTest.java": {
+      "bytes": 12713,
+      "sha256": "d2e446b928ab2a71566aef87cfc26cc2130767c0eea6fbdec7c66502554595c4"
+    },
     "backend/src/test/java/com/smartops/service/MultiExecServiceTest.java": {
-      "bytes": 1708,
-      "sha256": "6a6bd859933f233faeb12e5d2bfb34d684c5f45b77400ecb538fceb459e6abad"
+      "bytes": 1815,
+      "sha256": "60418e908ba27200d2246ab85ea835a530fdcb111add4405aeb31c011cdc3b30"
     },
     "backend/src/test/java/com/smartops/service/ObservabilityServiceTest.java": {
       "bytes": 4603,
       "sha256": "6c02a5d6d1dcc8be5532e7f9b0757fc8d4ff5aef427b3d49739a51a581bf65b2"
     },
     "backend/src/test/java/com/smartops/service/OperationRunQueryServiceTest.java": {
-      "bytes": 6137,
-      "sha256": "35e40442f3b786df2994f24fee2314958971ae9ca88861a51fbb9138616c5061"
+      "bytes": 6218,
+      "sha256": "e9075bda3dde566053027b87a31524b198d7871485b59ef4e08ffa1362dfe79a"
     },
     "backend/src/test/java/com/smartops/service/OperationRunVerificationTest.java": {
       "bytes": 6778,
@@ -2065,8 +2313,8 @@
       "sha256": "caac3287281698d84809b1b59a82de272e30cd36312e0b3caa9deadd7b1e0325"
     },
     "frontend/src/components/operations/MultiExecDialog.vue": {
-      "bytes": 3642,
-      "sha256": "b1d064fbc77b17a3b80e7dee548972b8698a09a1233860f4533d1da3160b2613"
+      "bytes": 3675,
+      "sha256": "2046efc08e1b1ded257b92578bd9851df5d2bbd66634e526e94f532ddd70cef3"
     },
     "frontend/src/components/operations/ObservabilityQuery.vue": {
       "bytes": 8514,
@@ -2093,8 +2341,8 @@
       "sha256": "0aed909d515c9203fc553f1f2043e5ce4589a021dc2eb896ad886841e30d6e3d"
     },
     "frontend/src/components/operations/RunHistoryDetailPanel.vue": {
-      "bytes": 12316,
-      "sha256": "62d3bcd0dafb6e72b9d960e622123322b7fae0da9d0814cd6e11af073569d313"
+      "bytes": 12609,
+      "sha256": "3fb87196eeba9fe89a09f642d199dc8c3d1d0d2b3acf983c174c973f44986f79"
     },
     "frontend/src/components/operations/RunHistoryFilters.vue": {
       "bytes": 3048,
@@ -2396,6 +2644,10 @@
       "bytes": 4928,
       "sha256": "b41f994d7e48248b64328e6a5805936f94be54c4621d7c392b4c6ff0043b3231"
     },
+    "frontend/src/views/operations/RecoveryContractsView.vue": {
+      "bytes": 12396,
+      "sha256": "257e8c22c9dbf0e6e9fc0567d06c1cac8f111899b39ec5070379392b6b6e69ce"
+    },
     "frontend/src/views/operations/RunHistoryView.vue": {
       "bytes": 4395,
       "sha256": "a17c1df6b7b1d7ab40d95d65675f005119e2df03c158a9e4505e221570a5623c"
@@ -2466,5 +2718,5 @@
     }
   },
   "schema_version": 1,
-  "source_digest": "sha256:436647f13909dd043c373514d1b2d41826316289e64c65d54c3e8113bc47d7c6"
+  "source_digest": "sha256:9f9e734241590138a16a1cd479a146208131f2457d38c3e380b0ecf8c1c3ea06"
 }

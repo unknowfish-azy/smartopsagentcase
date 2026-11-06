@@ -1,0 +1,22 @@
+diff --git "a/docs/development/fct-p0-01-prior/batch3/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html" "b/docs/competition/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
+index 05c5b93..06c603e 100644
+--- "a/docs/development/fct-p0-01-prior/batch3/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
++++ "b/docs/competition/\347\255\224\350\276\251\346\235\220\346\226\231-\346\211\223\345\215\260\345\220\210\350\256\242\346\234\254.html"
+@@ -129,7 +129,7 @@ a { color:#1f6feb; text-decoration:none; }
+ → 风险判断 → 人工审批 → 安全执行 → 结果验证 → 审计留痕 → 经验沉淀</code></pre>
+ <p>用一句人话概括：<strong>AI 负责思考，人负责授权，系统负责留痕。</strong></p>
+ <p>工程上，它由四端协同构成：</p>
+-<ul><li><strong>前端</strong> Vue 3 + Vite，用户层 / 管理员层双入口；</li><li><strong>后端</strong> Spring Boot，管账户、权限、审计、附件会话；</li><li><strong>AI 服务</strong> FastAPI，管模型网关、对话编排、RAG；</li><li><strong>Python Agent 框架（可插拔算法内核）</strong>，五个核心模块：planner（规划）/ executor（执行）/ inspector（核查）/ memory（记忆）/ policies（策略），经 <strong>113 个单测</strong>验证；产品级运行闭环由后端 <code>DecisionLoopService</code> 承载。</li></ul>
++<ul><li><strong>前端</strong> Vue 3 + Vite，用户层 / 管理员层双入口；</li><li><strong>后端</strong> Spring Boot，管账户、权限、审计、附件会话；</li><li><strong>AI 服务</strong> FastAPI，管模型网关、对话编排、RAG；</li><li><strong>Python Agent 框架（可插拔算法内核）</strong>，五个核心模块：planner（规划）/ executor（执行）/ inspector（核查）/ memory（记忆）/ policies（策略），经 <strong>82 个单测</strong>验证；产品级运行闭环由后端 <code>DecisionLoopService</code> 承载。</li></ul>
+ <p>但比"能跑起来"更重要的是——我们给这套系统装了<strong>三道锁和一本账</strong>：</p>
+ <ul><li><strong>第一道锁：证据锁。</strong> 没有证据支撑的结论，不得表述为确定事实。</li><li><strong>第二道锁：风险锁。</strong> AI 可以规划，但高风险动作必须人工审批，绝不允许自作主张。</li><li><strong>第三道锁：边界锁。</strong> 工具在沙箱与权限注册表里运行，能力被严格收口。</li><li><strong>一本账：审计账。</strong> 每一次判断与动作，都结构化留痕，可回溯、可复盘。</li></ul>
+ <p>这就是智维Agent 与所有"套壳聊天机器人"的本质区别。</p>
+@@ -291,7 +291,7 @@ a { color:#1f6feb; text-decoration:none; }
+ <p><strong>E7 🔥 你怎么保证不是"自评自嗨"？</strong><br/>评测契约要求：统一分组测试集、留 artifact hash、缺失值记 <code>null</code> 而非 0、零分母不报 0。<strong>这是防自嗨的机制。</strong></p>
+ <p><strong>E8 如果现在就让你跑一个真实评测，缺什么？</strong><br/>真实模型提供方 + 已标注且通过泄漏检查的分组测试集 + evaluator 适配器。三者到位即可出数。</p>
+ <h3>F. 工程与可复现（7 题）</h3>
+-<p><strong>F1 ⭐ 测试情况？</strong><br/>前端 563 项全过 + <code>tsc --noEmit</code> + 双构建；后端 87 个 JUnit 类（H2 MySQL 兼容跑真实迁移）；119 表迁移幂等。</p>
++<p><strong>F1 ⭐ 测试情况？</strong><br/>前端 494 项全过 + <code>tsc --noEmit</code> + 双构建；后端 87 个 JUnit 类（H2 MySQL 兼容跑真实迁移）；119 表迁移幂等。</p>
+ <p><strong>F2 前端为什么"部分 TS"？</strong><br/>共享逻辑层（48 模块）迁 TS 拿类型收益，组件层留 JS 控成本；<code>tsc --noEmit</code> 已进门禁。<strong>有意取舍，不是偷懒。</strong></p>
+ <p><strong>F3 🔥 610 个 Python 用例 + 656 个后端 @Test是不是凑数？</strong><br/>覆盖契约、安全不变量、领域逻辑，不是纯断言堆砌；核心是"防单人阻塞"的交接保证。</p>
+ <p><strong>F4 怎么保证可复现？</strong><br/>mock 零密钥跑通全链路；一键切 Ollama/OpenAI；docker-compose；迁移自动补表。</p>
