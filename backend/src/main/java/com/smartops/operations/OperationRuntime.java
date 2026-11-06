@@ -1,6 +1,7 @@
 package com.smartops.operations;
 
 import java.io.IOException;
+import java.util.function.BooleanSupplier;
 
 public interface OperationRuntime extends AutoCloseable {
     record CommandResult(int exitCode, String stdout, String stderr, boolean truncated) {
@@ -18,6 +19,10 @@ public interface OperationRuntime extends AutoCloseable {
     boolean isOpen();
     default CommandResult execute(String command, long timeoutMillis) throws IOException {
         throw new IOException("RUNTIME_EXEC_NOT_SUPPORTED");
+    }
+    /** PERF-06：三参 execute 带取消钩子；默认实现委托两参版本（不支持取消传播）。 */
+    default CommandResult execute(String command, long timeoutMillis, BooleanSupplier cancellationRequested) throws IOException {
+        return execute(command, timeoutMillis);
     }
     @Override void close();
 
