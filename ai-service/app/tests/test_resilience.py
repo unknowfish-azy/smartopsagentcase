@@ -166,8 +166,8 @@ async def test_chat_stream_interruption_has_error_and_no_done(monkeypatch):
     assert not any(event["event"] == "done" for event in events)
 
 
-def test_chat_inspector_preserves_explicit_verification_requirement(client):
-    response = client.post("/api/chat", json={
+def test_chat_inspector_preserves_explicit_verification_requirement(client, auth_headers):
+    response = client.post("/api/chat", headers=auth_headers(), json={
         "message": "核验任务",
         "use_rag": False,
         "metadata": {
@@ -183,8 +183,8 @@ def test_chat_inspector_preserves_explicit_verification_requirement(client):
     assert inspection["status"] == "WARN"
 
 
-def test_chat_inspector_explicit_request_alone_is_not_skipped(client):
-    response = client.post("/api/chat", json={"message": "检查任务", "use_rag": False, "metadata": {"verification_required": True}})
+def test_chat_inspector_explicit_request_alone_is_not_skipped(client, auth_headers):
+    response = client.post("/api/chat", headers=auth_headers(), json={"message": "检查任务", "use_rag": False, "metadata": {"verification_required": True}})
     assert response.status_code == 200
     inspection = response.json()["metadata"]["inspection"]
     assert inspection["status"] == "WARN"
@@ -200,7 +200,7 @@ async def test_progress_only_reports_executed_stages():
     assert done["metadata"]["rag_status"] == "disabled"
 
 
-def test_http_sse_route_exposes_interruption_without_done(client, monkeypatch):
+def test_http_sse_route_exposes_interruption_without_done(client, monkeypatch, auth_headers):
     monkeypatch.setattr(settings, "llm_provider", "ollama")
 
     async def interrupted(self, **kwargs):
@@ -208,7 +208,7 @@ def test_http_sse_route_exposes_interruption_without_done(client, monkeypatch):
         raise ConnectionError("test interrupted")
 
     monkeypatch.setattr(LLMService, "_ollama_stream", interrupted)
-    response = client.post("/api/chat/stream", json={"message": "nginx", "use_rag": False})
+    response = client.post("/api/chat/stream", headers=auth_headers(), json={"message": "nginx", "use_rag": False})
     assert response.status_code == 200  # SSE headers precede provider execution.
     assert '"delta": "real partial"' in response.text
     assert "event: error\n" in response.text

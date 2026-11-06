@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     # 留空表示 Knowledge 未开启鉴权。
     knowledge_api_key: str = ""
 
+    # SEC-01/SEC-02：Java 边缘签发的聊天 run 令牌校验密钥，必须与
+    # SMARTOPS_CHAT_RUN_TOKEN_SECRET 一致。留空时不接受任何聊天请求（503），
+    # 不会退回匿名可用的旧行为。
+    chat_run_token_secret: str = ""
+
+    # 仅本地/内网联调时显式打开；生产不得开启（等同放弃聊天鉴权）。
+    chat_allow_anonymous: bool = False
+
     request_timeout: int = 30
 
     model_config = SettingsConfigDict(

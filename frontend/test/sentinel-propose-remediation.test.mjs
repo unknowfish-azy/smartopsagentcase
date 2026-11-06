@@ -21,8 +21,9 @@ test('proposal reuses the team run lifecycle instead of executing', () => {
 })
 
 test('the tool is registered as non-read-only so it lands in PENDING_APPROVAL', () => {
-  // 第二个参数 false = 非只读 = 需要审批
-  assert.match(tools, /new ToolDefinition\("propose-remediation", false/)
+  // 当前目录通过 mutating(...) 构造器表达 false/readOnly，确保该工具进入审批链。
+  assert.match(tools, /add\(entries, mutating\("propose-remediation",/)
+  assert.match(tools, /private static Spec mutating\(.*?new Spec\(id, false/s)
   assert.match(tools, /TEAM_REMEDIATION_REQUIRES_SENTINEL_PREVIEW/,
     'generic executor must refuse to run the proposal tool')
 })
