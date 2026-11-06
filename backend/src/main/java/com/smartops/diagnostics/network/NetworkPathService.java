@@ -60,12 +60,15 @@ public class NetworkPathService {
     static final String STATUS_ERROR = "ERROR";
 
     private static final String SECURITY_GROUP_SUMMARY =
-            "未接入云安全组只读接口，需在云侧核验，不得视为通过";
+            "主机防火墙只读检查；云安全组规则未接入，需云侧核验，不得视为通过";
     private static final String ROUTE_SUMMARY =
-            "未接入云路由表只读接口，需在云侧核验，不得视为通过";
+            "主机路由表只读检查；云 VPC 路由表未接入，需云侧核验，不得视为通过";
 
     private static final Pattern PERMISSION_ERROR =
             Pattern.compile("forbidden|unauthorized|cannot", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PRIVILEGE_ERROR = Pattern.compile(
+            "permission denied|operation not permitted|must be root|requires root|are you root",
+            Pattern.CASE_INSENSITIVE);
     private static final Pattern MISSING_ERROR =
             Pattern.compile("notfound|not found|no resources found", Pattern.CASE_INSENSITIVE);
     private static final Pattern UNSUPPORTED_RESOURCE = Pattern.compile(
@@ -124,8 +127,8 @@ public class NetworkPathService {
 
         layers.add(collectTls(run, STATUS_FAILED.equals(dns.status()) ? LAYER_DNS : null));
 
-        layers.add(unverifiedLayer(LAYER_SECURITY_GROUP, SECURITY_GROUP_SUMMARY));
-        layers.add(unverifiedLayer(LAYER_ROUTE, ROUTE_SUMMARY));
+        layers.add(collectSecurityGroup(run));
+        layers.add(collectRoute(run));
 
         Instant endedAt = Instant.now();
         boolean permissionDenied = layers.stream()
@@ -469,6 +472,116 @@ public class NetworkPathService {
                 "TLS 证书校验失败：Verify return code " + code, blockedBy,
                 List.of(check(LAYER_TLS, STATUS_FAILED, command,
                         "Verify return code: " + code + " (" + reason + ")", execution.collectedAt(), 0)));
+    }
+
+    /* ── 安全组 / 路由（主机侧只读证据，云侧 API 未接入） ───────────────── */
+
+    private NetworkLayer collectSecurityGroup(Run run) {
+        if (run.request.host() == null) {
+            return notApplicable(LAYER_SECURITY_GROUP, "未提供 host，未核验安全组/防火墙");
+        }
+        Execution iptables = run.execute("iptables -S");
+        if (iptables == null) return budgetExhausted(LAYER_SECURITY_GROUP, "iptables -S", null);
+
+        String combined = (iptables.stdout() + " " + iptables.stderr()).trim();
+        if (COMMAND_UNAVAILABLE.matcher(combined).find()) {
+            return collectFirewallByNft(run, iptables);
+        }
+        if (iptables.exitCode() != 0) {
+            return firewallFailure(iptables, "iptables -S");
+        }
+        return firewallEvidence(iptables, "iptables -S");
+    }
+
+    private NetworkLayer collectFirewallByNft(Run run, Execution iptables) {
+        Execution nft = run.execute("nft list ruleset");
+        if (nft == null) return budgetExhausted(LAYER_SECURITY_GROUP, "nft list ruleset", null);
+        String combined = (nft.stdout() + " " + nft.stderr()).trim();
+        if (COMMAND_UNAVAILABLE.matcher(combined).find()) {
+            return layer(LAYER_SECURITY_GROUP, STATUS_UNVERIFIED,
+                    "目标主机没有 iptables/nft 命令，主机防火墙未核验；" + SECURITY_GROUP_SUMMARY, null,
+                    List.of(check("HOST_FIREWALL", STATUS_UNVERIFIED, "iptables -S / nft list ruleset",
+                                    "command not found", nft.collectedAt(), 0),
+                            cloudSecurityGroupCheck(nft.collectedAt())));
+        }
+        if (nft.exitCode() != 0) return firewallFailure(nft, "nft list ruleset");
+        return firewallEvidence(nft, "nft list ruleset");
+    }
+
+    private static NetworkLayer firewallFailure(Execution execution, String command) {
+        String message = execution.stderr().isBlank() ? execution.stdout() : execution.stderr();
+        if (PRIVILEGE_ERROR.matcher(message).find() || PERMISSION_ERROR.matcher(message).find()) {
+            return layer(LAYER_SECURITY_GROUP, STATUS_NO_PERMISSION,
+                    "主机防火墙规则读取被拒绝（需要特权），本层未核验；" + SECURITY_GROUP_SUMMARY, null,
+                    List.of(check("HOST_FIREWALL", STATUS_NO_PERMISSION, command, message,
+                                    execution.collectedAt(), 0),
+                            cloudSecurityGroupCheck(execution.collectedAt())));
+        }
+        return layer(LAYER_SECURITY_GROUP, STATUS_ERROR,
+                "主机防火墙规则读取失败，本层未核验；" + SECURITY_GROUP_SUMMARY, null,
+                List.of(check("HOST_FIREWALL", STATUS_ERROR, command, message, execution.collectedAt(), 0)));
+    }
+
+    private static NetworkLayer firewallEvidence(Execution execution, String command) {
+        String text = execution.stdout().isBlank() ? execution.stderr() : execution.stdout();
+        int rules = (int) text.lines().filter(line -> !line.isBlank()).count();
+        return layer(LAYER_SECURITY_GROUP, STATUS_UNVERIFIED,
+                "已采集主机防火墙 " + rules + " 条规则；" + SECURITY_GROUP_SUMMARY, null,
+                List.of(check("HOST_FIREWALL", STATUS_UNVERIFIED, command, text, execution.collectedAt(), rules),
+                        cloudSecurityGroupCheck(execution.collectedAt())));
+    }
+
+    private static NetworkCheck cloudSecurityGroupCheck(Instant collectedAt) {
+        return check("CLOUD_SECURITY_GROUP", STATUS_UNVERIFIED, "",
+                "云安全组只读接口未接入，需云侧核验", collectedAt, 0);
+    }
+
+    private NetworkLayer collectRoute(Run run) {
+        NetworkPathRequest request = run.request;
+        if (request.host() == null) {
+            return notApplicable(LAYER_ROUTE, "未提供 host，未核验路由");
+        }
+        String command = "ip route get " + request.host();
+        Execution execution = run.execute(command);
+        if (execution == null) return budgetExhausted(LAYER_ROUTE, command, null);
+
+        String combined = (execution.stdout() + " " + execution.stderr()).trim();
+        if (COMMAND_UNAVAILABLE.matcher(combined).find()) {
+            return layer(LAYER_ROUTE, STATUS_UNVERIFIED,
+                    "目标主机没有 ip 命令，主机路由未核验；" + ROUTE_SUMMARY, null,
+                    List.of(check("HOST_ROUTE", STATUS_UNVERIFIED, command, "command not found",
+                                    execution.collectedAt(), 0),
+                            cloudRouteCheck(execution.collectedAt())));
+        }
+        if (PRIVILEGE_ERROR.matcher(combined).find() || PERMISSION_ERROR.matcher(combined).find()) {
+            return layer(LAYER_ROUTE, STATUS_NO_PERMISSION,
+                    "主机路由表读取被拒绝（RBAC/特权），本层未核验；" + ROUTE_SUMMARY, null,
+                    List.of(check("HOST_ROUTE", STATUS_NO_PERMISSION, command, combined,
+                                    execution.collectedAt(), 0),
+                            cloudRouteCheck(execution.collectedAt())));
+        }
+        if (execution.exitCode() != 0) {
+            return layer(LAYER_ROUTE, STATUS_FAILED,
+                    "主机没有到 " + request.host() + " 的可用路由", null,
+                    List.of(check("HOST_ROUTE", STATUS_FAILED, command, combined, execution.collectedAt(), 0),
+                            cloudRouteCheck(execution.collectedAt())));
+        }
+        if (execution.stdout().isBlank()) {
+            return layer(LAYER_ROUTE, STATUS_DATA_MISSING,
+                    "ip route get 成功但没有输出，主机路由未核验", null,
+                    List.of(check("HOST_ROUTE", STATUS_DATA_MISSING, command,
+                                    "exit=0 but output is empty", execution.collectedAt(), 0)));
+        }
+        return layer(LAYER_ROUTE, STATUS_UNVERIFIED,
+                "主机路由可达（" + brief(execution.stdout()) + "）；" + ROUTE_SUMMARY, null,
+                List.of(check("HOST_ROUTE", STATUS_UNVERIFIED, command, execution.stdout(),
+                                execution.collectedAt(), 1),
+                        cloudRouteCheck(execution.collectedAt())));
+    }
+
+    private static NetworkCheck cloudRouteCheck(Instant collectedAt) {
+        return check("CLOUD_VPC_ROUTE", STATUS_UNVERIFIED, "",
+                "云 VPC 路由表只读接口未接入，需云侧核验", collectedAt, 0);
     }
 
     /* ── 层与检查项构造 ─────────────────────────────────────────────────── */
