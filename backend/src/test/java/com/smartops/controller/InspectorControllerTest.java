@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,11 +38,17 @@ class InspectorControllerTest {
     @MockBean
     private InspectorEventService service;
 
+    /** SEC-08：读侧从会话主体取身份；测试用 Authentication 作为 request principal。 */
+    private static org.springframework.security.core.Authentication login() {
+        return new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                new com.smartops.security.SessionUser(7L, "u7", "user", "user", false, 0), null, List.of());
+    }
+
     @Test
     void summaryUsesExistingApiEnvelope() throws Exception {
-        when(service.summary()).thenReturn(Map.of("total", 0, "pass", 0));
+        when(service.summary(any(), anyBoolean())).thenReturn(Map.of("total", 0, "pass", 0));
 
-        mockMvc.perform(get("/api/inspector/summary"))
+        mockMvc.perform(get("/api/inspector/summary").principal(login()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.total").value(0));
@@ -48,11 +56,11 @@ class InspectorControllerTest {
 
     @Test
     void eventsReturnsPersistedReadModel() throws Exception {
-        when(service.events(50)).thenReturn(List.of(
+        when(service.events(anyInt(), any(), anyBoolean())).thenReturn(List.of(
                 Map.of("id", "INS-001", "status", "PASS")
         ));
 
-        mockMvc.perform(get("/api/inspector/events"))
+        mockMvc.perform(get("/api/inspector/events").principal(login()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value("INS-001"));
     }

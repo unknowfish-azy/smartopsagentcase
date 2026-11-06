@@ -64,6 +64,7 @@ class InspectorPersistenceIntegrationTest {
         assertThat(stored.get("metadata"))
                 .isInstanceOfSatisfying(Map.class, metadata ->
                         assertThat(metadata.get("tool")).isEqualTo("nginx.logs"));
-        assertThat(service.summary().get("total")).isEqualTo(1L);
+        // 内部通道事件 user_id 为 NULL，用全局视图确认落库（SEC-08）。
+        assertThat(service.summary(null, true).get("total")).isEqualTo(1L);
     }
 }

@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS server;
 
 CREATE TABLE server (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        owner_id BIGINT,
                         name VARCHAR(100) NOT NULL,
                         host VARCHAR(255) NOT NULL,
                         port INT NOT NULL,

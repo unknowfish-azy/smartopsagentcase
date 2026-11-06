@@ -34,6 +34,8 @@ class ServerAuthenticationContractIntegrationTest {
         jdbc.update("DELETE FROM app_user WHERE username IN ('contract-admin','contract-operator')");
         String hash = new BCryptPasswordEncoder().encode(PASSWORD);
         jdbc.update("INSERT INTO app_user(username,password_hash,role) VALUES('contract-admin',?,'admin'),('contract-operator',?,'operator')", hash, hash);
+        // SEC-08：种子资产归属 operator——普通用户能读的是"自己的"资产；全局视图只对 admin.audit 开放。
+        jdbc.update("UPDATE server SET owner_id=(SELECT id FROM app_user WHERE username='contract-operator') WHERE id=1");
     }
     private void token() throws Exception {
         var request = get("/api/auth/session");
@@ -61,9 +63,10 @@ class ServerAuthenticationContractIntegrationTest {
         login("operator");
         for (int size : new int[]{10, 20, 50})
             mvc.perform(get("/api/servers").param("page", "1").param("size", String.valueOf(size)).session(session)).andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").isNumber());
-        mvc.perform(get("/api/servers/999999999").session(session)).andExpect(status().isBadRequest());
+        // SEC-08：不存在与无权访问统一 404（不再区分 400/403，避免资产存在性探测）。
+        mvc.perform(get("/api/servers/999999999").session(session)).andExpect(status().isNotFound());
         for (int id : new int[]{0, -1, 999999999})
-            mvc.perform(get("/api/servers/" + id + "/metrics/latest").session(session)).andExpect(status().isBadRequest());
+            mvc.perform(get("/api/servers/" + id + "/metrics/latest").session(session)).andExpect(status().isNotFound());
         mvc.perform(get("/api/servers/1/metrics/latest").session(session)).andExpect(status().isOk()).andExpect(jsonPath("$.data.serverId").value(1));
         mvc.perform(get("/api/servers/1/metrics").session(session)).andExpect(status().isOk());
         mvc.perform(post("/api/servers").session(session).header("X-CSRF-TOKEN", csrf).contentType("application/json").content(BODY)).andExpect(status().isForbidden());
