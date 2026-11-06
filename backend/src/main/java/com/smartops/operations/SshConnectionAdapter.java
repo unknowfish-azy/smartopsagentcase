@@ -35,6 +35,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 
 @Component
 public class SshConnectionAdapter implements ConnectionAdapter {
@@ -212,6 +213,45 @@ public class SshConnectionAdapter implements ConnectionAdapter {
                         OperationRedactor.redact(stderr.text()),
                         stdout.truncated() || stderr.truncated()
                 );
+            } catch (IOException cancelled) {
+                // 三参版本会把取消/超时转 COMMAND_CANCELLED / COMMAND_TIMEOUT 再上抛
+                throw cancelled;
+            }
+        }
+
+        /** PERF-06：带取消钩子的命令执行。100ms 粒度轮询 cancellationRequested；
+         *  命中时本地关闭通道并抛出 COMMAND_CANCELLED。 */
+        @Override
+        public CommandResult execute(String command, long timeoutMillis, BooleanSupplier cancellationRequested) throws IOException {
+            if (!isOpen()) throw new IOException("RUNTIME_CLOSED");
+            BoundedOutput stdout = new BoundedOutput(outputLimitBytes);
+            BoundedOutput stderr = new BoundedOutput(outputLimitBytes);
+            long deadline = System.currentTimeMillis() + Math.max(1, timeoutMillis);
+            try (ChannelExec channel = session.createExecChannel(command)) {
+                channel.setOut(stdout.stream());
+                channel.setErr(stderr.stream());
+                channel.open().verify(timeoutMillis);
+                Set<ClientChannelEvent> terminal = EnumSet.of(
+                        ClientChannelEvent.CLOSED, ClientChannelEvent.EXIT_STATUS);
+                while (System.currentTimeMillis() < deadline) {
+                    if (cancellationRequested != null && cancellationRequested.getAsBoolean()) {
+                        channel.close(true);
+                        close();
+                        throw new IOException("COMMAND_CANCELLED");
+                    }
+                    Set<ClientChannelEvent> events = channel.waitFor(terminal, 100);
+                    if (!events.isEmpty()) {
+                        Integer exitStatus = channel.getExitStatus();
+                        return new CommandResult(
+                                exitStatus == null ? -1 : exitStatus,
+                                OperationRedactor.redact(stdout.text()),
+                                OperationRedactor.redact(stderr.text()),
+                                stdout.truncated() || stderr.truncated()
+                        );
+                    }
+                }
+                channel.close(true);
+                throw new IOException("COMMAND_TIMEOUT");
             }
         }
 

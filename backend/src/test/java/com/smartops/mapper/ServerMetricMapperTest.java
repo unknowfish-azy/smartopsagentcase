@@ -38,7 +38,7 @@ class ServerMetricMapperTest {
     void selectLatestListShouldReturnData() {
 
         List<ServerMetricEntity> list =
-                metricMapper.selectLatestListByServerId(1L);
+                metricMapper.selectLatestListByServerId(1L, 100);
 
         assertNotNull(list);
         assertFalse(list.isEmpty());

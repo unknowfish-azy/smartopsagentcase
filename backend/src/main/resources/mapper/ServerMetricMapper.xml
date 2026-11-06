@@ -109,10 +109,9 @@
 
 
     <!-- =========================================================
-         最近100条
+         PERF-05：最近 N 条（点数预算由调用方传入）
          ========================================================= -->
     <select id="selectLatestListByServerId"
-            parameterType="long"
             resultMap="MetricResultMap">
 
         SELECT
@@ -129,7 +128,7 @@
         FROM server_metric
         WHERE server_id = #{serverId}
         ORDER BY collected_at DESC
-        LIMIT 100
+        LIMIT #{maxPoints}
 
     </select>
 
@@ -168,6 +167,46 @@
 
         DELETE FROM server_metric
         WHERE server_id = #{serverId}
+
+    </delete>
+
+
+    <!-- =========================================================
+         PERF-05：按小时聚合指定日期的 avg 行（downsampling）
+         H2/MySQL 兼容写法，不依赖 DATE_TRUNC
+         ========================================================= -->
+    <select id="selectHourlyAggregate"
+            resultMap="MetricResultMap">
+
+        SELECT
+        MIN(id) AS id,
+        #{serverId} AS server_id,
+        AVG(cpu_usage) AS cpu_usage,
+        AVG(memory_usage) AS memory_usage,
+        AVG(disk_usage) AS disk_usage,
+        AVG(network_in) AS network_in,
+        AVG(network_out) AS network_out,
+        AVG(load_average) AS load_average,
+        'NORMAL' AS status,
+        TIMESTAMP(DATE(collected_at),
+            CAST(CONCAT(HOUR(collected_at), ':00:00') AS TIME)) AS collected_at
+        FROM server_metric
+        WHERE server_id = #{serverId}
+          AND DATE(collected_at) = #{day}
+        GROUP BY DATE(collected_at), HOUR(collected_at)
+        ORDER BY collected_at ASC
+
+    </select>
+
+
+    <!-- =========================================================
+         PERF-05：删除 cutoff 之前的旧指标
+         ========================================================= -->
+    <delete id="deleteOlderThan">
+
+        DELETE FROM server_metric
+        WHERE server_id = #{serverId}
+          AND collected_at &lt; #{cutoff}
 
     </delete>
 

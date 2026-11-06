@@ -631,12 +631,16 @@ public class RunbookExecutionService {
                     : Math.min(step.timeoutSec() * 1000L, remainingMs);
             sequence.value++;
             Instant commandStartedAt = Instant.now();
+            // PERF-06：三参 execute 带取消钩子，让正在运行的 SSH 命令能在 deadline 或手动取消时被本地终止
+            java.util.function.BooleanSupplier cancellation = () ->
+                    cancelRequestedNow(runId) || deadline.toEpochMilli() - System.currentTimeMillis() <= 0;
             try {
                 if (Phase.EXECUTE.name().equals(phase.name()) && !state.dispatched) {
                     state.dispatched = true;
                     state.dispatchedAt = commandStartedAt;
                 }
-                OperationRuntime.CommandResult result = runtime.execute(command, Math.max(1, stepTimeoutMs));
+                OperationRuntime.CommandResult result = runtime.execute(
+                        command, Math.max(1, stepTimeoutMs), cancellation);
                 Instant commandEndedAt = Instant.now();
                 String stdout = bound(result.stdout());
                 String stderr = bound(result.stderr());
@@ -666,9 +670,17 @@ public class RunbookExecutionService {
             } catch (IOException failure) {
                 Instant commandEndedAt = Instant.now();
                 String error = safeMessage(failure);
-                boolean timeout = "COMMAND_TIMEOUT".equals(failure.getMessage());
+                String msg = failure.getMessage();
+                boolean timeout = "COMMAND_TIMEOUT".equals(msg);
+                boolean cancelled = "COMMAND_CANCELLED".equals(msg);
                 runRecorder.recordCommand(handle, sequence.value, command, -1, "", error,
                         commandStartedAt, commandEndedAt, false);
+                if (cancelled) {
+                    // PERF-06：取消由 deadline 或手动请求触发，本地通道已清理，远端状态未核验
+                    state.cancelled = true;
+                    state.error = "步骤「" + step.name() + "」执行被取消；本地通道已清理，远端状态未核验";
+                    return;
+                }
                 if (timeout && Phase.EXECUTE.name().equals(phase.name())) {
                     // 写命令可能已在远端开始：结果未知，不能当失败直接重试。
                     state.uncertain = true;

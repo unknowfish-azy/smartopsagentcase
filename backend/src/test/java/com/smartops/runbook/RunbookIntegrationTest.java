@@ -204,6 +204,38 @@ class RunbookIntegrationTest {
         assertThat(runtimes.get(nextTwo).commands).isEmpty();
     }
 
+    /* ── PERF-06 取消传播 ──────────────────────────────────────────── */
+
+    @Test
+    @DisplayName("PERF-06：命令执行中被取消时目标标记 CANCELLED，后续步骤不再派发，通道已关闭")
+    void commandCancellationPropagatesToLocalCleanup() {
+        long runbookId = catalog.create(OWNER, "cancel-hook-job", "取消传播", "DEV", "LOW", OWNER).id();
+        saveAndPublish(runbookId, List.of(), List.of(
+                        new StepSpec("EXECUTE", 1, "run", "run job", 0, "ABORT", null),
+                        new StepSpec("POST_CHECK", 1, "verify", "verify job", 0, "ABORT", null)));
+
+        String target = register(OWNER, "cancel");
+
+        PlanResult plan = execution.plan(OWNER, runbookId, List.of(target), Map.of(), false);
+        approveIfNeeded(plan);
+        RunView done = execution.execute(OWNER, plan.runId(), plan.confirmationNonce());
+
+        // 取消钩子通道真的被使用（而不是退回两参 execute）
+        assertThat(runtimes.get(target).usedThreeParam).isTrue();
+        assertThat(done.status()).isEqualTo("CANCELLED");
+        assertThat(statusOf(done, target)).isEqualTo("CANCELLED");
+        // 取消发生在 EXECUTE 步骤：POST_CHECK 不再派发
+        assertThat(runtimes.get(target).commands).containsExactly("run job");
+        // 本地通道已随取消清理
+        assertThat(runtimes.get(target).isOpen()).isFalse();
+
+        // 运行台账如实记录取消，而不是把取消当失败
+        List<String> runStatuses = jdbc.queryForList(
+                "SELECT status FROM operation_run_record WHERE tool_id=?", String.class,
+                "runbook:" + runbookId);
+        assertThat(runStatuses).containsExactly("CANCELLED");
+    }
+
     /* ── 回滚与失败分支 ─────────────────────────────────────────────── */
 
     @Test
@@ -383,6 +415,7 @@ class RunbookIntegrationTest {
         private final String mode;
         private final List<String> commands = new ArrayList<>();
         private volatile boolean open = true;
+        volatile boolean usedThreeParam = false;
 
         FakeRuntime(String id, Long userId, String mode) {
             this.id = id;
@@ -407,6 +440,19 @@ class RunbookIntegrationTest {
                 case "timeout" -> throw new IOException("COMMAND_TIMEOUT");
                 default -> new CommandResult(0, "ok", "");
             };
+        }
+
+        /** PERF-06：记录编排是否真的走了三参取消钩子通道；cancel 模式模拟本地通道已清理的取消上抛。 */
+        @Override
+        public CommandResult execute(String command, long timeoutMillis,
+                                     java.util.function.BooleanSupplier cancellationRequested) throws IOException {
+            usedThreeParam = true;
+            if ("cancel".equals(mode)) {
+                commands.add(command);
+                close();
+                throw new IOException("COMMAND_CANCELLED");
+            }
+            return execute(command, timeoutMillis);
         }
 
         @Override public void close() { open = false; }

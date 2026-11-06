@@ -10,20 +10,32 @@ import com.smartops.module.server.MetricStatus;
 import com.smartops.module.server.ServerStatus;
 import com.smartops.service.ServerMetricService;
 import com.smartops.vo.ServerMetricVO;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class ServerMetricServiceImpl implements ServerMetricService {
 
     private final ServerMapper serverMapper;
     private final ServerMetricMapper metricMapper;
+    private final int maxPointsPerServer;
+    private final int retentionDays;
+
+    public ServerMetricServiceImpl(ServerMapper serverMapper,
+                                   ServerMetricMapper metricMapper,
+                                   @Value("${smartops.observability.metric.max-points-per-server:2000}") int maxPointsPerServer,
+                                   @Value("${smartops.observability.metric.retention-days:90}") int retentionDays) {
+        this.serverMapper = serverMapper;
+        this.metricMapper = metricMapper;
+        this.maxPointsPerServer = maxPointsPerServer;
+        this.retentionDays = retentionDays;
+    }
 
     @Override
     public ServerMetricVO create(Long serverId,
@@ -94,10 +106,36 @@ public class ServerMetricServiceImpl implements ServerMetricService {
         }
 
         return metricMapper
-                .selectLatestListByServerId(serverId)
+                .selectLatestListByServerId(serverId, maxPointsPerServer)
                 .stream()
                 .map(this::toVO)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ServerMetricVO> aggregateDaily(Long serverId, LocalDate day) {
+        if (serverMapper.selectById(serverId) == null) {
+            throw new BusinessException("服务器不存在");
+        }
+        return metricMapper.selectHourlyAggregate(serverId, day)
+                .stream()
+                .map(this::toVO)
+                .toList();
+    }
+
+    @Override
+    public int retainOnlyBefore(Long serverId, LocalDateTime cutoff) {
+        if (serverMapper.selectById(serverId) == null) {
+            throw new BusinessException("服务器不存在");
+        }
+        return metricMapper.deleteOlderThan(serverId, cutoff);
+    }
+
+    @Override
+    public int retainDefaultFor(Long serverId) {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(retentionDays);
+        return retainOnlyBefore(serverId, cutoff);
     }
 
     private MetricStatus calculateStatus(Double cpu,

@@ -486,6 +486,45 @@ public class CloudAssetRepository {
                 args.toArray());
     }
 
+    // ===================== PERF-05：批量 latest 查询 =====================
+
+    /** PERF-05：给定 source_account_id 列表，返回每组 collected_at 最大的 ACTIVE 资源。
+     *  分批 500 避免 IN 子句过长；子查询 JOIN 取 MAX(collected_at)。 */
+    public List<AssetRow> latestBySourceAccountIds(List<Long> accountIds, long staleBeforeMs) {
+        return latestBatch(accountIds, "a.id", "r.source_account_id", staleBeforeMs);
+    }
+
+    /** PERF-05：给定 owner_user_id 列表，返回每组 collected_at 最大的 ACTIVE 资源。 */
+    public List<AssetRow> latestByOwnerIds(List<Long> ownerIds, long staleBeforeMs) {
+        return latestBatch(ownerIds, "u.id", "r.owner_user_id", staleBeforeMs);
+    }
+
+    private List<AssetRow> latestBatch(List<Long> ids, String outerIdCol, String joinCol, long staleBeforeMs) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        List<AssetRow> all = new ArrayList<>();
+        int batch = 500;
+        for (int i = 0; i < ids.size(); i += batch) {
+            int end = Math.min(i + batch, ids.size());
+            List<Long> chunk = ids.subList(i, end);
+            String placeholders = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            List<Object> args = new ArrayList<>(chunk);
+            args.add(timestamp(LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(staleBeforeMs), java.time.ZoneOffset.UTC)));
+            args.addAll(chunk);
+            String sql = "SELECT r.* FROM asset_resource r "
+                    + "JOIN (SELECT " + joinCol + " AS grp, MAX(collected_at) AS max_collected "
+                    + "        FROM asset_resource WHERE " + joinCol + " IN (" + placeholders + ") "
+                    + "          AND status='ACTIVE' AND collected_at >= ? "
+                    + "        GROUP BY " + joinCol + ") m ON m.grp = r.source_account_id "
+                    + "WHERE r.collected_at = m.max_collected AND r.status='ACTIVE'";
+            // 注意 args 顺序：chunk 先给 IN，staleBefore 给外层；上面写法顺序错了，修正
+            args.clear();
+            args.addAll(chunk);
+            args.add(timestamp(LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(staleBeforeMs), java.time.ZoneOffset.UTC)));
+            all.addAll(jdbc.query(sql, assetMapper(), args.toArray()));
+        }
+        return all;
+    }
+
     public List<CloudAccount> incompleteAccounts(long userId, String business) {
         List<Object> args = new ArrayList<>();
         args.add(userId);

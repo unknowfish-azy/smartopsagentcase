@@ -35,7 +35,9 @@ class ServerMetricServiceTest {
         metricService =
                 new ServerMetricServiceImpl(
                         serverMapper,
-                        metricMapper
+                        metricMapper,
+                        2000,
+                        90
                 );
     }
 
