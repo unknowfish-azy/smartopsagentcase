@@ -35,18 +35,19 @@ public class TeamAgentRunController {
     public ApiResponse<?> create(@AuthenticationPrincipal SessionUser actor, @PathVariable long teamId, @PathVariable long agentId,
                                  @Valid @RequestBody CreateInput input) {
         runtimes.requireOwned(input.runtimeId(), actor.id());
-        return ApiResponse.success(runs.create(actor, teamId, agentId, input.versionId(), input.runtimeId(), input.toolId(),
-                input.parameters(), input.idempotencyKey()));
+        // SEC-05：只读运行创建即 APPROVED，grant token 经 forRequester 只回发给申请人本人
+        return ApiResponse.success(runs.forRequester(runs.create(actor, teamId, agentId, input.versionId(), input.runtimeId(), input.toolId(),
+                input.parameters(), input.idempotencyKey()), actor));
     }
 
     @GetMapping("/api/team-agent-runs/{runId}")
     public ApiResponse<?> detail(@AuthenticationPrincipal SessionUser actor, @PathVariable long runId) {
-        return ApiResponse.success(runs.require(actor, runId));
+        return ApiResponse.success(runs.forRequester(runs.require(actor, runId), actor));
     }
 
     @GetMapping("/api/teams/{teamId}/runs")
     public ApiResponse<?> list(@AuthenticationPrincipal SessionUser actor, @PathVariable long teamId) {
-        return ApiResponse.success(runs.list(actor, teamId));
+        return ApiResponse.success(runs.list(actor, teamId).stream().map(run -> runs.forRequester(run, actor)).toList());
     }
 
     @GetMapping("/api/teams/{teamId}/approvals")

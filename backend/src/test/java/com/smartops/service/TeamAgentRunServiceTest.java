@@ -216,5 +216,37 @@ class TeamAgentRunServiceTest {
         assertThat(service.approve(user(300, "reviewer"), run.id()).status()).isEqualTo("APPROVED");
     }
 
+    /**
+     * SEC-05：grant token 只在 APPROVED 窗口内对申请人本人可见（HTTP 出参走 forRequester 视图）。
+     *
+     * <p>背景：token 在 {@code Run} 上是 {@code @JsonIgnore}，进程内单测读 record 组件
+     * 验证了校验，但 HTTP 层的合法执行人拿不到 token——审批后执行链路在线上是断的。</p>
+     */
+    @Test
+    void grantTokenOnlyVisibleToRequesterWithinApprovalWindow() {
+        var member = user(2, "operator");
+        var owner = user(1, "owner");
+        var run = service.create(member, 10, 7, 11, "runtime-1", "service-restart", Map.of("service", "api"));
+
+        // 待审阶段：申请人也看不到 token（尚未签发）
+        assertThat(service.forRequester(run, member)).doesNotContainKey("grantToken");
+
+        service.markPreview(owner, run.id(), "digest");
+        var approved = service.approve(owner, run.id());
+
+        // APPROVED 窗口内：申请人可见，审批人不可见
+        assertThat(service.forRequester(approved, member)).containsEntry("grantToken", approved.grantToken());
+        assertThat(service.forRequester(approved, owner)).doesNotContainKey("grantToken");
+        assertThat(service.forRequester(approved, user(3, "specialist"))).doesNotContainKey("grantToken");
+
+        // 只读运行创建即 APPROVED：token 立即可见（用于免审批执行）
+        var read = service.create(member, 10, 7, 11, "runtime-1", "host-health", Map.of());
+        assertThat(service.forRequester(read, member)).containsEntry("grantToken", read.grantToken());
+
+        // 消费后（RUNNING）：token 已置 NULL，不可再见
+        var consumed = service.consumeGrant(member, run.id(), "digest", approved.grantToken());
+        assertThat(service.forRequester(consumed, member)).doesNotContainKey("grantToken");
+    }
+
     private SessionUser user(long id, String role) { return new SessionUser(id, "u" + id, role, "user", false, 0); }
 }
