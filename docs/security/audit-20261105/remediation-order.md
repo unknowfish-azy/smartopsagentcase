@@ -244,6 +244,7 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 | 4.1 SEC-08 scope 收敛 | `server.owner_id`（V20261106.21）：创建归属本人、列表/详情/指标按属主、历史 NULL 仅 `admin.audit` 并审计；`inspector_event.user_id`（V20261106.20）：读侧按归属、全局视图仅 `admin.audit` 并审计、闭环只消费归属事件；新增 `CurrentSessions` 统一从会话主体取身份 | `ServerServiceTest` 6 pass（含他人资产 404、历史行仅审计管理员、列表按属主）、`ServerControllerTest`、`ServerMetricControllerTest`、`DecisionLoopServiceTest`（含全局/他人事件不投影）、`InspectorControllerTest` 通过 |
 | 4.1 SEC-09 创建返回主键 | `PersonalKnowledgeService.createLibrary/createEntry`、`OperatorMemoryService.recordConfirmed/recordLearned`、`KnowledgeCrawlService.createSource` 改用 `GeneratedKeyHolder`，删除 `MAX(id)` 反查 | `OperatorMemoryServiceTest`（含 8 线程并发各返回自己那行）、`PersonalKnowledgeServiceTest`、`KnowledgeCrawlServiceTest`、`DecisionLoopServiceTest` 通过 |
 | 4.1 SEC-10 幂等对齐 | `review` 用条件 UPDATE（`AND NOT(stage='LEARNED' AND outcome=?)`）原子认领学习，同结论重复/并发 review 不再重复 `learn`；结论翻转仍学习。`syncFromInspector` 的 `NOT EXISTS` 增加 `d.user_id` 对齐唯一键 `uq_agent_decision_loop_user_source`（V20261106.20），并捕获 `DuplicateKeyException` 跳过未抢到插入的并发请求 | `DecisionLoopServiceTest` 6 pass（连续 5 次 review 只学一次、结论翻转再学、8 线程并发同步只产生 1 条闭环） |
+| 5.2 SEC-11 统一脱敏 | `OperationRedactor` 扩展：`key=value`/`key: value`/JSON 引号值/`Bearer`/PEM 私钥块/`Cookie`；`JdbcOperationRunRecorder` 写库前脱敏命令与 stdout/stderr、证据；`OperationRunQueryService` 读回与人工核验证据同口径（兜底历史明文行）；`OperationToolService` 返回结果与错误脱敏；`KnowledgeCrawlService` 正文/标题入库前脱敏、URL 去 query、`last_error` 只落错误码；`InspectorEventService` 证据/元数据写库前脱敏 | `OperationRedactorTest`（env/Bearer/JSON/PEM/Cookie）、`OperationOutputRedactionTest`（写库 + 读回两侧）、`KnowledgeCrawlServiceTest`（错误码不含内部主机、URL 去 query）、`OperationRunQueryServiceTest`（历史行读回脱敏）通过；后端全量 733/0/0（1 skipped） | 2026-11-06 |
 | 2.2 SEC-04 Agent run 绑定 | 执行指纹 payload 新增 `run_id`；`create_for_step` 要求 run 身份；`create_request` 标记 Deprecation（仅信息记录、永不授权）；`approve` 拒绝 reviewer=requester | `tests/agent/test_execution_approval.py` 42 pass；`tests/agent` 88 pass；ai-service 86 pass | 2026-11-06 |
 
 **仍未完成（不得声称已修复）**：
@@ -252,4 +253,5 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 - nginx `/ai-api` 网络层隔离未实施，仅保留应用层 401（注释已标注）。
 - 连接期 IP pin 未实现，DNS rebinding 仍为残余风险。
 - 爬取并发上限（TM-25）、slow-drip（TM-23）未验证。
+- SEC-11 仅做应用层写库/回显脱敏：历史明文行未清洗；nginx access log / Logback 消息体未做框架级脱敏；真实爬取与 HTTP 回显未运行（TM-30/31 仅单测）。
 - TM-01/02/03/18-24 的 HTTP/网络级验收全部 `NOT_RUN`。
