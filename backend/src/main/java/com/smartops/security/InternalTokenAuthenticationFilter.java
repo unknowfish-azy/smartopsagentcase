@@ -37,9 +37,11 @@ public class InternalTokenAuthenticationFilter extends OncePerRequestFilter {
                 && (path.equals("/api/inspector/check")
                 || path.equals("/api/inspector/verify")
                 || path.equals("/api/inspector/replan"));
+        // 恢复契约写入只允许 agent 侧调用，浏览器会话不得代替内部身份。
+        boolean recoveryWrite = path.startsWith("/api/internal/recovery/");
         // CRUD endpoints are called by the web application. Only runtime and
         // invoke remain internal tool boundaries.
-        return !runtime && !inspectorWrite;
+        return !runtime && !inspectorWrite && !recoveryWrite;
     }
 
     @Override
