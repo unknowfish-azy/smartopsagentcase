@@ -5,6 +5,7 @@ import com.smartops.security.SessionUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -174,13 +175,23 @@ public class AlertLifecycleService {
                 && !"admin".equalsIgnoreCase(actor == null ? "" : String.valueOf(actor.role()));
         String status = requiresApproval ? "PENDING_APPROVAL" : "ACTIVE";
 
-        jdbc.update("""
-                INSERT INTO sentinel_silence (scope_type, scope_id, reason, starts_at, ends_at, created_by, status)
-                VALUES (?,?,?,?,?,?,?)
-                """, scope, request.scopeId(), request.reason().trim(),
-                java.sql.Timestamp.valueOf(start), java.sql.Timestamp.valueOf(end), userId, status);
-
-        long id = jdbc.queryForObject("SELECT MAX(id) FROM sentinel_silence WHERE created_by=?", Long.class, userId);
+        // SEC-09：直接取本次插入主键，避免同用户并发创建静默时 MAX(id) 取到别人的记录。
+        var keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement("""
+                    INSERT INTO sentinel_silence (scope_type, scope_id, reason, starts_at, ends_at, created_by, status)
+                    VALUES (?,?,?,?,?,?,?)
+                    """, new String[]{"id"});
+            statement.setObject(1, scope);
+            statement.setObject(2, request.scopeId());
+            statement.setObject(3, request.reason().trim());
+            statement.setObject(4, java.sql.Timestamp.valueOf(start));
+            statement.setObject(5, java.sql.Timestamp.valueOf(end));
+            statement.setObject(6, userId);
+            statement.setObject(7, status);
+            return statement;
+        }, keys);
+        long id = keys.getKey().longValue();
         if (!requiresApproval) {
             jdbc.update("UPDATE sentinel_silence SET approved_by=?, approved_at=? WHERE id=?",
                     userId, java.sql.Timestamp.valueOf(LocalDateTime.now()), id);

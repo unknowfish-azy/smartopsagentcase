@@ -3,24 +3,28 @@ package com.smartops.knowledge;
 import com.smartops.exception.BusinessException;
 import com.smartops.operations.OperationRedactor;
 import com.smartops.security.OutboundUrlPolicy;
+import com.smartops.security.PinnedDns;
 import com.smartops.security.SessionUser;
 import com.smartops.service.PersonalKnowledgeService;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.ProxySelector;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -60,16 +64,45 @@ public class KnowledgeCrawlService {
 
     private final JdbcTemplate jdbc;
     private final PersonalKnowledgeService knowledge;
-    private final HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(8))
-            .followRedirects(HttpClient.Redirect.NEVER)
-            // SEC-06：禁止继承系统/环境代理，避免代理绕过 IP 白名单。
-            .proxy(ProxySelector.of(null))
-            .build();
+    // SEC-06 连接期 DNS pin：java.net.http 在 JDK 17 上没有解析钩子，改用
+    // Apache HttpClient 5 + fail-closed 的 PinnedDns 解析器——建连只能拿到
+    // OutboundUrlPolicy 校验过的地址，DNS rebinding 窗口关闭。
+    // 重定向仍由 fetch() 手动逐跳处理（disableRedirectHandling），每跳重新校验并重新 pin。
+    private final CloseableHttpClient client;
 
     public KnowledgeCrawlService(JdbcTemplate jdbc, PersonalKnowledgeService knowledge) {
         this.jdbc = jdbc;
         this.knowledge = knowledge;
+        PoolingHttpClientConnectionManager connections = PoolingHttpClientConnectionManagerBuilder.create()
+                .setDnsResolver(new org.apache.hc.client5.http.DnsResolver() {
+                    @Override
+                    public java.net.InetAddress[] resolve(String host) throws java.net.UnknownHostException {
+                        return PinnedDns.resolve(host);
+                    }
+
+                    @Override
+                    public String resolveCanonicalHostname(String host) throws java.net.UnknownHostException {
+                        // 只允许已 pin 的主机；规范名即原始主机名，不做额外解析。
+                        PinnedDns.resolve(host);
+                        return host;
+                    }
+                })
+                .setDefaultConnectionConfig(ConnectionConfig.custom()
+                        .setConnectTimeout(Timeout.ofSeconds(8))
+                        .build())
+                .setMaxConnTotal(4)
+                .setMaxConnPerRoute(4)
+                .build();
+        this.client = HttpClients.custom()
+                .setConnectionManager(connections)
+                .disableRedirectHandling()
+                .disableAutomaticRetries()
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setConnectionRequestTimeout(Timeout.ofSeconds(8))
+                        .setResponseTimeout(Timeout.ofSeconds(8))
+                        .build())
+                .setUserAgent(USER_AGENT)
+                .build();
     }
 
     public CrawlSource createSource(SessionUser actor, Long libraryId, String name, String seedUrl, Integer maxPages, Integer depth) {
@@ -213,33 +246,58 @@ public class KnowledgeCrawlService {
             }
             // SEC-06：首跳与每一跳都在发起连接前重新校验，尾点域名、IPv4-mapped
             // IPv6 与解析后落在内网/保留网段的地址一律拒绝。
-            requirePublic(uri);
-            HttpRequest request = HttpRequest.newBuilder(uri)
-                    .timeout(Duration.ofSeconds(8))
-                    .header("User-Agent", USER_AGENT)
-                    .header("Accept", "text/html,application/xhtml+xml")
-                    .GET()
-                    .build();
-            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
-            int code = response.statusCode();
-            String location = response.headers().firstValue("Location").orElse(null);
-            try (InputStream body = response.body()) {
+            OutboundUrlPolicy.Decision decision = OutboundUrlPolicy.inspect(uri);
+            if (!decision.allowed()) {
+                throw new IOException("目标地址不允许访问（" + decision.rule() + "）");
+            }
+            // 连接期 pin：把校验过的地址登记给 DnsResolver，建连只能用这批地址
+            // （未登记的主机在该 resolver 上直接解析失败，fail-closed）。
+            PinnedDns.pin(uri.getHost(), decision.addresses());
+            HttpGet request = new HttpGet(uri);
+            request.setHeader("User-Agent", USER_AGENT);
+            request.setHeader("Accept", "text/html,application/xhtml+xml");
+            try (CloseableHttpResponse response = client.execute(request)) {
+                int code = response.getCode();
+                String location = headerValue(response, "Location");
                 if (code >= 200 && code < 300) {
-                    long declared = response.headers().firstValueAsLong("Content-Length").orElse(-1L);
+                    long declared = -1L;
+                    String declaredHeader = headerValue(response, "Content-Length");
+                    if (declaredHeader != null) {
+                        try {
+                            declared = Long.parseLong(declaredHeader.trim());
+                        } catch (NumberFormatException ignored) {
+                            // 异常的 Content-Length 交给流式读取上限兜底
+                        }
+                    }
                     if (declared > MAX_DOWNLOAD_BYTES) throw new IOException("响应体超过下载上限");
-                    return readBounded(body);
+                    try (InputStream body = response.getEntity() != null
+                            ? response.getEntity().getContent() : null) {
+                        return readBounded(body);
+                    }
                 }
+                // 重定向目标同样要过内网校验，避免借跳转绕过 host 白名单
+                if (code >= 300 && code < 400 && location != null) {
+                    URI target = uri.resolve(location);
+                    requirePublic(target);
+                    current = target.toString();
+                    continue;
+                }
+                throw new IOException("HTTP " + code);
+            } finally {
+                PinnedDns.clear(uri.getHost());
             }
-            // 重定向目标同样要过内网校验，避免借跳转绕过 host 白名单
-            if (code >= 300 && code < 400 && location != null) {
-                URI target = uri.resolve(location);
-                requirePublic(target);
-                current = target.toString();
-                continue;
-            }
-            throw new IOException("HTTP " + code);
         }
         throw new IOException("重定向次数过多");
+    }
+
+    /** HC5 的头部读取可能抛 ProtocolException（畸形头），按无此头处理。 */
+    private static String headerValue(CloseableHttpResponse response, String name) {
+        try {
+            var header = response.getHeader(name);
+            return header == null ? null : header.getValue();
+        } catch (org.apache.hc.core5.http.ProtocolException invalid) {
+            return null;
+        }
     }
 
     private static String readBounded(InputStream body) throws IOException {

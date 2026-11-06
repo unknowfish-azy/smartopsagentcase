@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartops.exception.BusinessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -156,14 +157,25 @@ public class IacService {
         }
 
         Instant now = Instant.now();
-        jdbc.update("""
-                INSERT INTO iac_apply_record
-                    (plan_id,user_id,workspace,status,dispatch_status,dispatched_at,verification_status)
-                VALUES (?,?,?,?,?,?,?)
-                """, planId, userId, plan.workspace(), "DISPATCHED", "SENT", Timestamp.from(now), "UNVERIFIED");
+        // SEC-09：直接取本次插入主键，避免同 plan 并发下发时 MAX(id) 取到别人的 apply 记录。
+        var keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement("""
+                    INSERT INTO iac_apply_record
+                        (plan_id,user_id,workspace,status,dispatch_status,dispatched_at,verification_status)
+                    VALUES (?,?,?,?,?,?,?)
+                    """, new String[]{"id"});
+            statement.setObject(1, planId);
+            statement.setObject(2, userId);
+            statement.setObject(3, plan.workspace());
+            statement.setObject(4, "DISPATCHED");
+            statement.setObject(5, "SENT");
+            statement.setObject(6, Timestamp.from(now));
+            statement.setObject(7, "UNVERIFIED");
+            return statement;
+        }, keys);
         jdbc.update("UPDATE iac_plan_record SET status='APPLYING' WHERE id=?", planId);
-        long applyId = jdbc.queryForObject(
-                "SELECT MAX(id) FROM iac_apply_record WHERE plan_id=?", Long.class, planId);
+        long applyId = keys.getKey().longValue();
         return applyRow(requireApply(userId, applyId));
     }
 

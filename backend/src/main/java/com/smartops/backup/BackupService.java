@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartops.exception.BusinessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
@@ -237,17 +238,32 @@ public class BackupService {
                     + "，hash=" + request.hashVerified()
                     + "，引用=" + reference + "，关键查询=" + keyQuery;
         }
-        jdbc.update("""
-                INSERT INTO backup_drill_record
-                    (set_id,mode,started_at,finished_at,baseline_captured_at,rpo_seconds,rto_seconds,
-                     expected_count,restored_count,hash_verified,reference_check,key_query_check,result,detail_json)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                """, setId, "ISOLATED_RESTORE", Timestamp.from(startedAt), Timestamp.from(finishedAt),
-                baseline == null ? null : Timestamp.from(baseline), rpo, rto,
-                request.expectedCount(), request.restoredCount(), request.hashVerified() ? 1 : 0,
-                reference, keyQuery, result, detail);
-        long id = jdbc.queryForObject("SELECT MAX(id) FROM backup_drill_record WHERE set_id=?",
-                Long.class, setId);
+        // SEC-09：直接取本次插入主键，避免同 set 并发演练时 MAX(id) 取到别人的记录。
+        var keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement("""
+                    INSERT INTO backup_drill_record
+                        (set_id,mode,started_at,finished_at,baseline_captured_at,rpo_seconds,rto_seconds,
+                         expected_count,restored_count,hash_verified,reference_check,key_query_check,result,detail_json)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    """, new String[]{"id"});
+            statement.setObject(1, setId);
+            statement.setObject(2, "ISOLATED_RESTORE");
+            statement.setObject(3, Timestamp.from(startedAt));
+            statement.setObject(4, Timestamp.from(finishedAt));
+            statement.setObject(5, baseline == null ? null : Timestamp.from(baseline));
+            statement.setObject(6, rpo);
+            statement.setObject(7, rto);
+            statement.setObject(8, request.expectedCount());
+            statement.setObject(9, request.restoredCount());
+            statement.setObject(10, request.hashVerified() ? 1 : 0);
+            statement.setObject(11, reference);
+            statement.setObject(12, keyQuery);
+            statement.setObject(13, result);
+            statement.setObject(14, detail);
+            return statement;
+        }, keys);
+        long id = keys.getKey().longValue();
         return drillView(jdbc.queryForObject("SELECT * FROM backup_drill_record WHERE id=?",
                 DRILL_MAPPER, id));
     }
