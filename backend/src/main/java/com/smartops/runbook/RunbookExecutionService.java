@@ -63,6 +63,11 @@ public class RunbookExecutionService {
     private static final int MAX_OUTPUT_CHARS = 20_000;
     private static final long LEASE_MS = 60_000L;
     private static final int MAX_OUTPUT_BYTES = 512 * 1024;
+    /**
+     * 多机批量命令的内部 Runbook 名称前缀。PERF-04 让批量命令复用同一套
+     * Run / 目标子任务模型，而不是另建一条"只发送不确认"的执行通路。
+     */
+    static final String AD_HOC_RUNBOOK_PREFIX = "__multi_exec__";
 
     private final JdbcTemplate jdbc;
     private final OperationRuntimeRegistry registry;
@@ -140,11 +145,140 @@ public class RunbookExecutionService {
         return applyPlan(userId, runId, runbook, version, runtimeIds, parameters, productionTarget);
     }
 
+    /**
+     * PERF-04：把多机批量命令固化为一次 Runbook Run。
+     *
+     * <p>与 OPS-11 使用同一套实现：一个 Run、逐目标子任务、同一 operation_run_record
+     * 证据、同一取消/并发/状态口径。审批由调用方（multi-exec 预览 + 二次确认）完成，
+     * 这里只校验审批次数与执行期风险一致，然后把运行置为 APPROVED。</p>
+     *
+     * @return 已就绪、可带 {@code confirmationNonce} 执行的 runId
+     */
+    @Transactional
+    public long prepareAdHocBatch(Long userId, String batchId, String command, List<String> runtimeIds,
+                                  int expectedApprovals, boolean productionTarget, String confirmationNonce,
+                                  int maxParallel, int timeoutSec) {
+        if (batchId == null || batchId.isBlank()) throw new BusinessException(400, "MULTI_EXEC_BATCH_REQUIRED");
+        if (command == null || command.isBlank()) throw new BusinessException(400, "MULTI_EXEC_COMMAND_REQUIRED");
+        if (confirmationNonce == null || confirmationNonce.isBlank()) {
+            throw new BusinessException(409, "MULTI_EXEC_CONFIRMATION_REQUIRED");
+        }
+        List<String> targets = normalizeTargets(userId, runtimeIds);
+        RunbookRow runbook = ensureAdHocRunbook(userId, productionTarget);
+        VersionView version = createAdHocVersion(userId, runbook, command, targets.size(), maxParallel, timeoutSec);
+        long runId = insertRunSkeleton(userId, runbook, version, Trigger.MANUAL, batchId,
+                "multi-exec:" + batchId, RunStatus.AWAITING_TARGETS);
+        PlanResult planned = applyPlan(userId, runId, runbook, version, targets, Map.of(), productionTarget);
+        if (planned.requiredApprovals() != expectedApprovals) {
+            throw new BusinessException(409, "MULTI_EXEC_APPROVAL_DRIFT");
+        }
+        int approved = jdbc.update("""
+                UPDATE runbook_run SET status='APPROVED',approval_count=?,approved_at=?,approved_by=NULL,
+                       second_approver_id=NULL,nonce_hash=?
+                 WHERE id=? AND user_id=?
+                """, expectedApprovals, Timestamp.from(Instant.now()), RunbookSupport.sha256(confirmationNonce.trim()),
+                runId, userId);
+        if (approved == 0) throw new BusinessException(404, "RUNBOOK_RUN_NOT_FOUND");
+        return runId;
+    }
+
+    private RunbookRow ensureAdHocRunbook(Long userId, boolean productionTarget) {
+        String name = AD_HOC_RUNBOOK_PREFIX + (productionTarget ? "prod" : "dev");
+        List<RunbookRow> existing = jdbc.query("""
+                SELECT id,user_id,name,description,environment,owner_id,declared_risk,enabled,current_version,
+                       created_at,updated_at
+                  FROM runbook WHERE user_id=? AND name=?
+                """, this::mapRunbookRow, userId, name);
+        if (!existing.isEmpty()) return existing.get(0);
+        try {
+            jdbc.update("""
+                    INSERT INTO runbook(user_id,name,description,environment,owner_id,declared_risk,enabled)
+                    VALUES(?,?,?,?,?,?,0)
+                    """, userId, name, "系统内部：多机批量命令，复用 Runbook 目标子任务模型",
+                    productionTarget ? "PROD" : "DEV", userId, Risk.LOW.name());
+        } catch (DuplicateKeyException raced) {
+            // 并发首次使用：唯一索引兜底，下面重查即可。
+        }
+        List<RunbookRow> rows = jdbc.query("""
+                SELECT id,user_id,name,description,environment,owner_id,declared_risk,enabled,current_version,
+                       created_at,updated_at
+                  FROM runbook WHERE user_id=? AND name=?
+                """, this::mapRunbookRow, userId, name);
+        if (rows.isEmpty()) throw new BusinessException(500, "MULTI_EXEC_RUNBOOK_INIT_FAILED");
+        return rows.get(0);
+    }
+
+    private VersionView createAdHocVersion(Long userId, RunbookRow runbook, String command, int targetCount,
+                                           int maxParallel, int timeoutSec) {
+        OperationRiskPolicy.Risk assessedRisk = riskPolicy.assess(command, targetCount > 1,
+                Environment.of(runbook.environment()).production()).risk();
+        String riskName = assessedRisk.name();
+        int concurrency = Math.max(1, Math.min(MAX_PARALLEL, maxParallel));
+        int timeout = Math.max(5, Math.min(86_400, timeoutSec));
+        int batchSize = Math.max(1, Math.min(100, targetCount));
+        for (int attempt = 0; attempt < 2; attempt++) {
+            try {
+                Integer latest = jdbc.queryForObject(
+                        "SELECT COALESCE(MAX(version),0) FROM runbook_version WHERE runbook_id=?",
+                        Integer.class, runbook.id());
+                int versionNo = (latest == null ? 0 : latest) + 1;
+                KeyHolder keys = new GeneratedKeyHolder();
+                jdbc.update(connection -> {
+                    PreparedStatement statement = connection.prepareStatement("""
+                            INSERT INTO runbook_version(runbook_id,version,note,risk_level,parameters_json,
+                                selector_json,timeout_sec,retry_limit,concurrency_limit,batch_size,canary_size,
+                                idempotency_rule,created_by)
+                            VALUES(?,?,?,?,NULL,NULL,?,0,?,?,0,?,?)
+                            """, Statement.RETURN_GENERATED_KEYS);
+                    statement.setLong(1, runbook.id());
+                    statement.setInt(2, versionNo);
+                    statement.setString(3, "多机批量命令：版本正文即命令原文，单目标一次");
+                    statement.setString(4, riskName);
+                    statement.setInt(5, timeout);
+                    statement.setInt(6, concurrency);
+                    statement.setInt(7, batchSize);
+                    statement.setString(8, "同一批号+目标只执行一次，不自动重试写操作");
+                    statement.setLong(9, userId);
+                    return statement;
+                }, keys);
+                long versionId = generatedId(keys);
+                jdbc.update("""
+                        INSERT INTO runbook_step(version_id,phase,seq,name,body,expect_exit_code,on_failure)
+                        VALUES(?, 'EXECUTE', 1, '多机批量命令', ?, 0, 'ABORT')
+                        """, versionId, command);
+                jdbc.update("UPDATE runbook SET current_version=?,declared_risk=?,updated_at=? WHERE id=?",
+                        versionNo, riskName, Timestamp.from(Instant.now()), runbook.id());
+                return catalog.loadVersion(runbook.id(), versionNo);
+            } catch (DuplicateKeyException raced) {
+                if (attempt == 1) throw new BusinessException(409, "MULTI_EXEC_VERSION_CONFLICT");
+            }
+        }
+        throw new BusinessException(409, "MULTI_EXEC_VERSION_CONFLICT");
+    }
+
+    private RunbookRow mapRunbookRow(java.sql.ResultSet result, int ignored) throws java.sql.SQLException {
+        return new RunbookRow(result.getLong("id"), result.getLong("user_id"), result.getString("name"),
+                result.getString("description"), result.getString("environment"),
+                (Long) result.getObject("owner_id"), result.getString("declared_risk"), result.getBoolean("enabled"),
+                (Integer) result.getObject("current_version"), instant(result.getTimestamp("created_at")),
+                instant(result.getTimestamp("updated_at")));
+    }
+
+    private static boolean isAdHoc(RunbookRow runbook) {
+        return runbook != null && runbook.name() != null && runbook.name().startsWith(AD_HOC_RUNBOOK_PREFIX);
+    }
+
+    private static List<StepPreview> rawStepPreviews(List<StepView> steps) {
+        return steps.stream().map(step -> new StepPreview(step.phase(), step.seq(), step.name(), step.body())).toList();
+    }
+
     private PlanResult applyPlan(Long userId, long runId, RunbookRow runbook, VersionView version,
                                  List<String> runtimeIds, Map<String, String> parameters, boolean productionTarget) {
         List<String> targets = normalizeTargets(userId, runtimeIds);
         Map<String, String> params = resolveParameters(version.parameters(), parameters);
-        List<StepPreview> previews = renderSteps(version.steps(), params);
+        List<StepPreview> previews = isAdHoc(runbook)
+                ? rawStepPreviews(version.steps())
+                : renderSteps(version.steps(), params);
         Environment environment = Environment.of(runbook.environment());
         boolean production = environment.production() || productionTarget;
 
@@ -245,7 +379,7 @@ public class RunbookExecutionService {
         List<TargetRow> targetRows = loadTargets(runId);
         List<TargetOutcome> outcomes = new ArrayList<>();
         executeGroups(userId, run, runbook, version, params, targetRows, outcomes);
-        finishRun(runId, outcomes);
+        finishRun(runId);
         return detail(userId, runId);
     }
 
@@ -344,7 +478,10 @@ public class RunbookExecutionService {
                                            Map<String, String> params, TargetRow target, int attempt) {
         Instant startedAt = Instant.now();
         int attemptNo = attempt + 1;
-        markRunning(run.id(), target.runtimeId(), attemptNo, startedAt);
+        if (!markRunning(run.id(), target.runtimeId(), attemptNo, startedAt)) {
+            return new TargetOutcome(target.runtimeId(), TargetStatus.CANCELLED, "作业已取消，该目标未派发",
+                    null, null, "", null, null, attemptNo);
+        }
 
         OperationRuntime runtime;
         try {
@@ -382,17 +519,18 @@ public class RunbookExecutionService {
 
         ExecutionState state = new ExecutionState();
         boolean executeRan = false;
+        boolean rawCommand = isAdHoc(runbook);
         // 同一 Run 内的命令序号必须连续：operation_run_output 有 (run_id, sequence_no) 唯一约束。
         SequenceCounter sequence = new SequenceCounter();
-        runPhase(Phase.PRE_CHECK, version.steps(), params, runtime, handle, deadline, run.id(), state, sequence);
+        runPhase(Phase.PRE_CHECK, version.steps(), params, runtime, handle, deadline, run.id(), state, sequence, rawCommand);
         String preCheckStatus = phaseStatus(state);
 
         if (!state.failed && !state.cancelled && !state.timedOut && !state.uncertain) {
             executeRan = true;
-            runPhase(Phase.EXECUTE, version.steps(), params, runtime, handle, deadline, run.id(), state, sequence);
+            runPhase(Phase.EXECUTE, version.steps(), params, runtime, handle, deadline, run.id(), state, sequence, rawCommand);
         }
         if (!state.failed && !state.cancelled && !state.timedOut && !state.uncertain) {
-            runPhase(Phase.POST_CHECK, version.steps(), params, runtime, handle, deadline, run.id(), state, sequence);
+            runPhase(Phase.POST_CHECK, version.steps(), params, runtime, handle, deadline, run.id(), state, sequence, rawCommand);
         }
 
         TargetStatus status;
@@ -420,7 +558,7 @@ public class RunbookExecutionService {
         if (state.failed && OnFailure.ROLLBACK.name().equals(state.onFailure)) {
             ExecutionState rollback = new ExecutionState();
             runPhase(Phase.ROLLBACK, version.steps(), params, runtime, handle, Instant.now().plusSeconds(300),
-                    run.id(), rollback, sequence);
+                    run.id(), rollback, sequence, false);
             rollbackStatus = rollback.failed ? TargetStatus.ROLLBACK_FAILED.name() : TargetStatus.ROLLED_BACK.name();
             rollbackOutput = rollback.output;
             status = rollback.failed ? TargetStatus.ROLLBACK_FAILED : TargetStatus.ROLLED_BACK;
@@ -448,7 +586,7 @@ public class RunbookExecutionService {
     /** 执行一个阶段的步骤；状态累积到 {@code state}，一旦失败/取消/超时立即停止该阶段。 */
     private void runPhase(Phase phase, List<StepView> steps, Map<String, String> params, OperationRuntime runtime,
                           OperationRunRecorder.RunHandle handle, Instant deadline, long runId, ExecutionState state,
-                          SequenceCounter sequence) {
+                          SequenceCounter sequence, boolean rawCommand) {
         List<StepView> phaseSteps = steps.stream()
                 .filter(step -> phase.name().equals(step.phase())).toList();
         for (StepView step : phaseSteps) {
@@ -464,23 +602,30 @@ public class RunbookExecutionService {
                 return;
             }
             SentinelVariables.Result substituted;
-            try {
-                substituted = SentinelVariables.applyChecked(step.body(), params);
-            } catch (IllegalArgumentException unsafe) {
-                state.failed = true;
-                state.failedPhase = phase.name();
-                state.onFailure = step.onFailure();
-                state.error = "参数值不安全：" + unsafe.getMessage();
-                return;
+            String command;
+            if (rawCommand) {
+                // 多机批量命令按原样交给 shell：${HOME} 等是远端 shell 变量，
+                // 不能让本地参数替换规则把它们判成"未提供的参数"。
+                command = step.body();
+            } else {
+                try {
+                    substituted = SentinelVariables.applyChecked(step.body(), params);
+                } catch (IllegalArgumentException unsafe) {
+                    state.failed = true;
+                    state.failedPhase = phase.name();
+                    state.onFailure = step.onFailure();
+                    state.error = "参数值不安全：" + unsafe.getMessage();
+                    return;
+                }
+                if (!substituted.unresolved().isEmpty()) {
+                    state.failed = true;
+                    state.failedPhase = phase.name();
+                    state.onFailure = step.onFailure();
+                    state.error = "步骤引用了未提供的参数：" + String.join("、", substituted.unresolved());
+                    return;
+                }
+                command = substituted.body();
             }
-            if (!substituted.unresolved().isEmpty()) {
-                state.failed = true;
-                state.failedPhase = phase.name();
-                state.onFailure = step.onFailure();
-                state.error = "步骤引用了未提供的参数：" + String.join("、", substituted.unresolved());
-                return;
-            }
-            String command = substituted.body();
 
             long stepTimeoutMs = step.timeoutSec() == null ? remainingMs
                     : Math.min(step.timeoutSec() * 1000L, remainingMs);
@@ -498,7 +643,8 @@ public class RunbookExecutionService {
                 state.lastExitCode = result.exitCode();
                 state.output = RunbookSupport.excerpt((stdout + "\n" + stderr).strip());
                 runRecorder.recordCommand(handle, sequence.value, command, result.exitCode(), stdout, stderr,
-                        commandStartedAt, commandEndedAt, truncated(result.stdout(), result.stderr()));
+                        commandStartedAt, commandEndedAt,
+                        truncated(result.stdout(), result.stderr()) || result.truncated());
                 runRecorder.heartbeat(handle);
                 if (result.exitCode() != step.expectExitCode()) {
                     state.failed = true;
@@ -602,7 +748,7 @@ public class RunbookExecutionService {
                 UUID.randomUUID().toString(), userId, runtime, "runbook-rollback:" + run.runbookId(),
                 rollbackKey, Instant.now(), Instant.now().plusSeconds(300), MAX_OUTPUT_BYTES, LEASE_MS));
         runPhase(Phase.ROLLBACK, version.steps(), params, runtime, handle, Instant.now().plusSeconds(300),
-                run.id(), state, new SequenceCounter());
+                run.id(), state, new SequenceCounter(), false);
         runRecorder.finish(handle, state.failed ? "FAILED" : "SUCCEEDED", Instant.now());
         markRollback(run.id(), target.runtimeId(),
                 state.failed ? TargetStatus.ROLLBACK_FAILED : TargetStatus.ROLLED_BACK,
@@ -868,9 +1014,13 @@ public class RunbookExecutionService {
                 """, runId, runtimeId, runtimeId, batchNo, canary);
     }
 
-    private void markRunning(long runId, String runtimeId, int attempt, Instant startedAt) {
-        jdbc.update("UPDATE runbook_run_target SET status='RUNNING',attempt=?,started_at=?,finished_at=NULL "
-                + "WHERE run_id=? AND runtime_id=?", attempt, Timestamp.from(startedAt), runId, runtimeId);
+    private boolean markRunning(long runId, String runtimeId, int attempt, Instant startedAt) {
+        // 只有仍待派发的目标才能进入 RUNNING：取消会把 PENDING 直接置为 CANCELLED，
+        // 已排在线程池里但尚未开始的目标必须在这里被挡住，不能先派发再补记取消。
+        int updated = jdbc.update("UPDATE runbook_run_target SET status='RUNNING',attempt=?,started_at=?,finished_at=NULL "
+                + "WHERE run_id=? AND runtime_id=? AND status IN ('PENDING','TIMEOUT')",
+                attempt, Timestamp.from(startedAt), runId, runtimeId);
+        return updated > 0;
     }
 
     private void finishTarget(long runId, String runtimeId, TargetStatus status, int attempt, Long operationRunId,
@@ -905,20 +1055,23 @@ public class RunbookExecutionService {
                 Timestamp.from(Instant.now()), runId, runtimeId);
     }
 
-    private void finishRun(long runId, List<TargetOutcome> outcomes) {
-        int succeeded = count(outcomes, TargetStatus.SUCCEEDED);
-        int failed = count(outcomes, TargetStatus.FAILED) + count(outcomes, TargetStatus.ROLLED_BACK)
-                + count(outcomes, TargetStatus.ROLLBACK_FAILED);
-        int unknown = count(outcomes, TargetStatus.UNKNOWN);
-        int cancelled = count(outcomes, TargetStatus.CANCELLED);
-        int skipped = count(outcomes, TargetStatus.SKIPPED);
+    private void finishRun(long runId) {
+        // 汇总以库内目标状态为准：取消时后续批次由 SQL 直接置为 CANCELLED，
+        // 它们不会出现在本轮 outcomes 里，只用内存结果会漏计。
+        int succeeded = targetCount(runId, "SUCCEEDED");
+        int failed = targetCount(runId, "FAILED") + targetCount(runId, "ROLLED_BACK")
+                + targetCount(runId, "ROLLBACK_FAILED");
+        int unknown = targetCount(runId, "UNKNOWN");
+        int cancelled = targetCount(runId, "CANCELLED");
+        int skipped = targetCount(runId, "SKIPPED");
+        int total = targetCount(runId);
 
         RunStatus status;
         if (unknown > 0) {
             status = RunStatus.UNKNOWN;
         } else if (cancelled > 0 && succeeded == 0 && failed == 0) {
             status = RunStatus.CANCELLED;
-        } else if (succeeded == outcomes.size() && !outcomes.isEmpty()) {
+        } else if (succeeded == total && total > 0) {
             status = RunStatus.SUCCEEDED;
         } else if (succeeded > 0) {
             status = RunStatus.PARTIAL;
@@ -935,8 +1088,17 @@ public class RunbookExecutionService {
                 note, runId);
     }
 
-    private static int count(List<TargetOutcome> outcomes, TargetStatus status) {
-        return (int) outcomes.stream().filter(outcome -> outcome.status() == status).count();
+    private int targetCount(long runId, String status) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM runbook_run_target WHERE run_id=? AND status=?",
+                Integer.class, runId, status);
+        return count == null ? 0 : count;
+    }
+
+    private int targetCount(long runId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM runbook_run_target WHERE run_id=?",
+                Integer.class, runId);
+        return count == null ? 0 : count;
     }
 
     /* ── 内部：读取与校验 ─────────────────────────────────────────────── */

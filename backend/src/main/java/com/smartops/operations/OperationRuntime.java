@@ -3,7 +3,11 @@ package com.smartops.operations;
 import java.io.IOException;
 
 public interface OperationRuntime extends AutoCloseable {
-    record CommandResult(int exitCode, String stdout, String stderr) {}
+    record CommandResult(int exitCode, String stdout, String stderr, boolean truncated) {
+        public CommandResult(int exitCode, String stdout, String stderr) {
+            this(exitCode, stdout, stderr, false);
+        }
+    }
 
     String id();
     Long userId();

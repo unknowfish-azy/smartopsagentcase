@@ -301,10 +301,11 @@ public class OperationToolService {
                 OperationRuntime.CommandResult result = runtime.execute(command, Math.min(COMMAND_TIMEOUT_MS, remainingMs));
                 Instant commandEndedAt = Instant.now();
                 Bounded bounded = bound(result.stdout(), result.stderr(), tool.outputLimitBytes());
+                boolean truncated = bounded.truncated() || result.truncated();
                 results.add(new ToolCommandResult(command, result.exitCode(), bounded.stdout(), bounded.stderr(),
-                        commandStartedAt, commandEndedAt, bounded.truncated()));
+                        commandStartedAt, commandEndedAt, truncated));
                 runRecorder.recordCommand(run, sequence, command, result.exitCode(), bounded.stdout(), bounded.stderr(),
-                        commandStartedAt, commandEndedAt, bounded.truncated());
+                        commandStartedAt, commandEndedAt, truncated);
                 if (result.exitCode() != 0) {
                     status = "FAILED";
                     break;

@@ -21,7 +21,7 @@ class OperationRunQueryServiceTest {
                 "jdbc:h2:mem:run-query-" + System.nanoTime() + ";MODE=MySQL;DB_CLOSE_DELAY=-1", "sa", "");
         jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("CREATE TABLE operation_run_record (id BIGINT AUTO_INCREMENT PRIMARY KEY, trace_id VARCHAR(64) NOT NULL, user_id BIGINT NOT NULL, session_id BIGINT, runtime_id VARCHAR(128) NOT NULL, tool_id VARCHAR(128) NOT NULL, status VARCHAR(32) NOT NULL, started_at TIMESTAMP NOT NULL, ended_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
-        jdbc.execute("CREATE TABLE operation_run_output (id BIGINT AUTO_INCREMENT PRIMARY KEY, run_id BIGINT NOT NULL, sequence_no INT NOT NULL, command_text CLOB NOT NULL, exit_code INT NOT NULL, stdout_text CLOB, stderr_text CLOB, started_at TIMESTAMP NOT NULL, ended_at TIMESTAMP NOT NULL)");
+        jdbc.execute("CREATE TABLE operation_run_output (id BIGINT AUTO_INCREMENT PRIMARY KEY, run_id BIGINT NOT NULL, sequence_no INT NOT NULL, command_text CLOB NOT NULL, exit_code INT NOT NULL, stdout_text CLOB, stderr_text CLOB, truncated TINYINT(1) NOT NULL DEFAULT 0, output_bytes BIGINT NOT NULL DEFAULT 0, started_at TIMESTAMP NOT NULL, ended_at TIMESTAMP NOT NULL)");
         jdbc.execute("CREATE TABLE operation_run_evidence (id BIGINT AUTO_INCREMENT PRIMARY KEY, run_id BIGINT NOT NULL, evidence_type VARCHAR(64) NOT NULL, content CLOB NOT NULL, source_ref VARCHAR(255), created_at TIMESTAMP NOT NULL)");
         service = new OperationRunQueryService(jdbc);
     }

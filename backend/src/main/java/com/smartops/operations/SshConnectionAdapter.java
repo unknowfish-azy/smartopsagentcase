@@ -14,6 +14,7 @@ import org.apache.sshd.sftp.client.SftpClient;
 import org.apache.sshd.sftp.client.SftpClientFactory;
 import org.apache.sshd.common.util.net.SshdSocketAddress;
 import org.apache.sshd.client.session.forward.ExplicitPortForwardingTracker;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -40,10 +41,13 @@ public class SshConnectionAdapter implements ConnectionAdapter {
     private static final long CONNECT_TIMEOUT_MS = 10_000;
     private final OperationRuntimeRegistry registry;
     private final HostKeyTrustPolicy hostKeyTrustPolicy;
+    private final long commandOutputLimitBytes;
 
-    public SshConnectionAdapter(OperationRuntimeRegistry registry, KnownHostStore knownHostStore) {
+    public SshConnectionAdapter(OperationRuntimeRegistry registry, KnownHostStore knownHostStore,
+                                @Value("${smartops.operations.ssh.output-limit-bytes:1048576}") long commandOutputLimitBytes) {
         this.registry = registry;
         this.hostKeyTrustPolicy = new HostKeyTrustPolicy(knownHostStore);
+        this.commandOutputLimitBytes = commandOutputLimitBytes;
     }
 
     @Override
@@ -85,7 +89,7 @@ public class SshConnectionAdapter implements ConnectionAdapter {
             }
             ssh.auth().verify(CONNECT_TIMEOUT_MS);
             if (decision == HostKeyDecision.TRUST_AND_SAVE) hostKeyTrustPolicy.save(session, captured.toPresentedHostKey(session));
-            String runtimeId = registry.register(new SshRuntime(userId, session.getId(), client, ssh));
+            String runtimeId = registry.register(new SshRuntime(userId, session.getId(), client, ssh, commandOutputLimitBytes));
             return ConnectionResult.online(runtimeId, captured.fingerprint, captured.algorithm);
         } catch (Exception ex) {
             closeQuietly(client);
@@ -129,6 +133,7 @@ public class SshConnectionAdapter implements ConnectionAdapter {
         private final Long sessionId;
         private final SshClient client;
         private final ClientSession session;
+        private final long outputLimitBytes;
         private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
             Thread thread = new Thread(r, "smartops-ssh-output");
             thread.setDaemon(true);
@@ -140,8 +145,9 @@ public class SshConnectionAdapter implements ConnectionAdapter {
         private volatile boolean open = true;
         private final java.util.Map<String, ExplicitPortForwardingTracker> tunnels = new java.util.concurrent.ConcurrentHashMap<>();
 
-        private SshRuntime(Long userId, Long sessionId, SshClient client, ClientSession session) {
+        private SshRuntime(Long userId, Long sessionId, SshClient client, ClientSession session, long outputLimitBytes) {
             this.userId = userId; this.sessionId = sessionId; this.client = client; this.session = session;
+            this.outputLimitBytes = outputLimitBytes;
         }
 
         @Override public String id() { return id; }
@@ -187,11 +193,11 @@ public class SshConnectionAdapter implements ConnectionAdapter {
         @Override
         public CommandResult execute(String command, long timeoutMillis) throws IOException {
             if (!isOpen()) throw new IOException("RUNTIME_CLOSED");
-            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+            BoundedOutput stdout = new BoundedOutput(outputLimitBytes);
+            BoundedOutput stderr = new BoundedOutput(outputLimitBytes);
             try (ChannelExec channel = session.createExecChannel(command)) {
-                channel.setOut(stdout);
-                channel.setErr(stderr);
+                channel.setOut(stdout.stream());
+                channel.setErr(stderr.stream());
                 channel.open().verify(timeoutMillis);
                 Set<ClientChannelEvent> events = channel.waitFor(
                         EnumSet.of(ClientChannelEvent.CLOSED, ClientChannelEvent.EXIT_STATUS), timeoutMillis);
@@ -202,8 +208,9 @@ public class SshConnectionAdapter implements ConnectionAdapter {
                 Integer exitStatus = channel.getExitStatus();
                 return new CommandResult(
                         exitStatus == null ? -1 : exitStatus,
-                        OperationRedactor.redact(stdout.toString(StandardCharsets.UTF_8)),
-                        OperationRedactor.redact(stderr.toString(StandardCharsets.UTF_8))
+                        OperationRedactor.redact(stdout.text()),
+                        OperationRedactor.redact(stderr.text()),
+                        stdout.truncated() || stderr.truncated()
                 );
             }
         }

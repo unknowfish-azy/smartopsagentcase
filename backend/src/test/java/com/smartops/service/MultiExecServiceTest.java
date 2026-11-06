@@ -16,7 +16,8 @@ class MultiExecServiceTest {
         OperationRuntimeRegistry registry = new OperationRuntimeRegistry();
         RecordingRuntime runtime = new RecordingRuntime(1L);
         String id = registry.register(runtime);
-        MultiExecService service = new MultiExecService(registry);
+        MultiExecService service = new MultiExecService(registry,
+                org.mockito.Mockito.mock(com.smartops.runbook.RunbookExecutionService.class), 10, 120_000);
         MultiExecService.Preview preview = service.preview(1L, "kubectl delete pod api", List.of(id), true);
 
         assertThatThrownBy(() -> service.execute(1L, preview.id(), preview.confirmationNonce(), "wrong"))

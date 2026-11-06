@@ -112,6 +112,7 @@ public class RunbookCatalogService {
                   FROM runbook r
                   LEFT JOIN runbook_version v ON v.runbook_id=r.id AND v.version=r.current_version
                  WHERE r.user_id=?
+                   AND LEFT(r.name, 14) <> '__multi_exec__'
                  ORDER BY r.id DESC LIMIT 200
                 """, (result, ignored) -> new RunbookView(result.getLong("id"), result.getLong("user_id"),
                 result.getString("name"), result.getString("description"), result.getString("environment"),
