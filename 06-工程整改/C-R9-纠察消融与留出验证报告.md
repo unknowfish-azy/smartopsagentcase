@@ -156,7 +156,10 @@ python scripts/eval_inspector_ablation.py
 > v2 脚本（schema_version=2）将此口径明确写入 `binary_classification.note`，新增 `uncertain_breakdown`、
 > `false_verification`（明确 `legacy_silent_pass_fn` 不等于真实 UI/执行闸放行率）、
 > `execution_gate`（NOT_RUN，待 E2E 证据）、`review_queue`（NOT_RUN）等独立指标。
-> 详见 `.runtime/score-p0-01/holdout-metrics.json` 和 `scripts/eval_false_success.py` 注释。
+> v3 脚本（schema_version=3）新增 `--platform-evidence` 输入：有 UI/执行闸/复核任务证据时，
+> `silent_release_violation` 统计"uncertain=true 但 UI 显示已恢复或执行仍放行"的反例；
+> 无证据时仍为 `NOT_RUN`。`silent_pass_fn=0` 依旧只代表 Inspector 输出字段层面，不是真实放行率。
+> 详见 `docs/development/score-p0-01-evidence/` 与 `scripts/eval_false_success.py` 注释。
 > 原文保留，作历史参考。
 
 1. **两个集都是 AI 编写**，没有独立人工标注。留出集是我在知道词表内容之后写的，只能估算"表达风格变化"带来的衰减，不能替代真人标注集。
@@ -172,10 +175,10 @@ python scripts/eval_inspector_ablation.py
 
 | 文件 | 类型 | 说明 |
 |---|---|---|
-| `scripts/eval_false_success.py` | 修改 | schema_version 2；每个比率显式 `{num, den, value}`；零分母 value=None；`uncertain_breakdown`（含 uncertain 正/负例、占比、explicit_coverage）；`false_verification`（含 legacy_silent_pass_fn 名称澄清 + caveat）；`review_queue`、`execution_gate` 分离并标记 NOT_RUN；fixture + script SHA256 绑定；删除误导标语"未知观测不计入二分类分母" |
-| `tests/scripts/test_eval_false_success.py` | 修改 | 适配 v2 嵌套 schema；新增 5 个测试：schema_version/ratio 结构、零分母 null、留出集 uncertain 正例计 FN（TP=5/TN=4/FP=1/FN=10/F1=0.4762）、NOT_RUN 字段、false_verified 与 legacy_silent_pass_fn 关系 |
+| `scripts/eval_false_success.py` | 修改 | v2：schema_version 2；每个比率显式 `{num, den, value}`；零分母 value=None；`uncertain_breakdown`（含 uncertain 正/负例、占比、explicit_coverage）；`false_verification`（含 legacy_silent_pass_fn 名称澄清 + caveat）；`review_queue`、`execution_gate` 分离并标记 NOT_RUN；fixture + script SHA256 绑定；删除误导标语"未知观测不计入二分类分母"。v3：schema_version 3；新增 `--platform-evidence`、`silent_release_violation` 反例指标、复核任务创建/状态计数 |
+| `tests/scripts/test_eval_false_success.py` | 修改 | 适配 v2 嵌套 schema；新增 5 个测试：schema_version/ratio 结构、零分母 null、留出集 uncertain 正例计 FN（TP=5/TN=4/FP=1/FN=10/F1=0.4762）、NOT_RUN 字段、false_verified 与 legacy_silent_pass_fn 关系。v3 追加 3 个测试：uncertain+UI 已恢复/放行被识别、仅 UI 已恢复也命中、复核"需创建"与"已创建"分离 |
 | `06-工程整改/C-R9-纠察消融与留出验证报告.md` | 修改 | 加 SCORE-P0-01 勘误注释块，标注 L156 已撤销，保留原文作历史参考 |
-| `.runtime/score-p0-01/*.json` | 新增 | 留出集/训练集完整 metrics JSON（schema_version=2，fixture + script SHA256 绑定） |
+| `.runtime/score-p0-01/*.json` | 新增 | 留出集/训练集完整 metrics JSON（schema_version=2，fixture + script SHA256 绑定）；v3 复跑结果改存 `docs/development/score-p0-01-evidence/` |
 
 **前序改动（2026-11-03，历史保留）**：
 

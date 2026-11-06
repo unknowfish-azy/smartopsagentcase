@@ -1,0 +1,8 @@
+{
+  "collect_only_mode": false,
+  "command": "scripts/fact_ledger.py --output-dir docs/development/fct-p0-01-evidence --collect-pytest --junitxml docs/development/fct-p0-01-evidence/pytest.xml",
+  "generated_at": "2026-11-05T15:16:11.752224+00:00",
+  "junitxml": "docs/development/fct-p0-01-evidence/pytest.xml",
+  "metrics_digest": "sha256:539234e20e7422078d3a658259e05d69aa415b5305f7ee5ddaad994d4d88b732",
+  "output_dir": "docs/development/fct-p0-01-evidence"
+}

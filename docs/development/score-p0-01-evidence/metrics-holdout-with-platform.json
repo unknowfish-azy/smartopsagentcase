@@ -1,0 +1,122 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-11-05T14:18:04.365453+00:00",
+  "binary_classification": {
+    "note": "expected_false_success=True and not detected_false_success counts as FN even when uncertain=True. unscored (expected_false_success=None) excluded from denominator.",
+    "TP": 5,
+    "TN": 4,
+    "FP": 1,
+    "FN": 10,
+    "positive_n": 15,
+    "negative_n": 5,
+    "precision": {
+      "num": 5,
+      "den": 6,
+      "value": 0.8333333333333334
+    },
+    "recall": {
+      "num": 5,
+      "den": 15,
+      "value": 0.3333333333333333
+    },
+    "F1": {
+      "num": 0.5555555555555556,
+      "den": 1.1666666666666667,
+      "value": 0.47619047619047616
+    }
+  },
+  "uncertain_breakdown": {
+    "uncertain_total": 10,
+    "uncertain_positive": 10,
+    "uncertain_negative": 0,
+    "uncertain_ratio_of_scored": {
+      "num": 10,
+      "den": 20,
+      "value": 0.5
+    },
+    "explicit_coverage": {
+      "num": 10,
+      "den": 20,
+      "value": 0.5
+    }
+  },
+  "false_verification": {
+    "false_verified_n": 0,
+    "false_verified_rate": {
+      "num": 0,
+      "den": 15,
+      "value": 0.0
+    },
+    "legacy_silent_pass_fn": 0,
+    "definition": "legacy silent_pass_fn = false_verified_n. NOTE: this only inspects Inspector output fields (verification_result.false_success / uncertain). It does NOT inspect UI, execution gate state, or human review queue — a value of 0 here does NOT prove zero real-world silent release."
+  },
+  "review_queue": {
+    "review_needed_n": 10,
+    "review_task_created_n": 1,
+    "review_task_created": 1,
+    "review_task_created_rate": {
+      "num": 1,
+      "den": 10,
+      "value": 0.1
+    },
+    "review_task_status": {
+      "OPEN": 1
+    },
+    "note": "review_task_created 仅统计确已创建任务的行；状态按任务状态计数。"
+  },
+  "execution_gate": {
+    "status": "RAN",
+    "evidence_rows": 2,
+    "false_release_n": 1,
+    "false_release_rate": {
+      "num": 1,
+      "den": 2,
+      "value": 0.5
+    },
+    "silent_release_violation_n": 1,
+    "silent_release_violation_rate": {
+      "num": 1,
+      "den": 2,
+      "value": 0.5
+    },
+    "violation_sample_ids": [
+      "HO-01"
+    ],
+    "definition": "false_release = expected=True ∧ execution_permitted=True ∧ 未检出；silent_release_violation = uncertain=True ∧ (UI 显示已恢复 ∨ execution_permitted=True)。两个比率分母分别为“有证据的正例数”和“有证据的 uncertain 数”，零分母为 null。"
+  },
+  "input_sizes": {
+    "total_rows": 20,
+    "scored_n": 20,
+    "unscored_n": 0
+  },
+  "row_schema": [
+    "sample_id",
+    "category",
+    "claim",
+    "probe_shape",
+    "expected_false_success",
+    "detected_false_success",
+    "unverifiable",
+    "uncertain",
+    "claim_state",
+    "inspection_status",
+    "reason",
+    "label_reason",
+    "ui_state",
+    "execution_permitted",
+    "review_task_created",
+    "review_task_status"
+  ],
+  "fixture": {
+    "path": "tests\\fixtures\\defense\\false_success_holdout.json",
+    "sha256": "424a636a2c6d0d02e329247138953478aa4e467d6505de1ce87e9ffa1094a304"
+  },
+  "script": {
+    "path": "scripts\\eval_false_success.py",
+    "sha256": "51eda696ab14e71d2e338030aa07dc4e1da0cf6238c7808fedb33f54b636689f"
+  },
+  "platform_evidence": {
+    "path": "docs\\development\\score-p0-01-evidence\\platform-evidence-counterexample.json",
+    "sha256": "3aba7a25b1f87c04a4de4e00d7b7d085d008003b5e197502087ef707e4c8759a"
+  }
+}
