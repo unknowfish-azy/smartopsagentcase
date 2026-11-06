@@ -91,6 +91,13 @@ from .replay import (
     ReplayBundle,
     replay,
 )
+from .publisher import (
+    IDEMPOTENCY_PREFIX,
+    INTERNAL_TOKEN_HEADER,
+    PublisherConfigError,
+    RecoveryPublisher,
+    RecoveryPublisherError,
+)
 
 __all__ = [
     "BUDGET_CONSTANTS",
@@ -170,4 +177,9 @@ __all__ = [
     "ObligationDiff",
     "ReplayBundle",
     "replay",
+    "IDEMPOTENCY_PREFIX",
+    "INTERNAL_TOKEN_HEADER",
+    "PublisherConfigError",
+    "RecoveryPublisher",
+    "RecoveryPublisherError",
 ]
