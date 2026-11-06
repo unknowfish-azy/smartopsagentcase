@@ -109,6 +109,7 @@ export const personalSystemGroups = Object.freeze([
       { label: 'DASHBOARD', cn: '哨兵监控台', routeName: 'SentinelDashboard', to: '/sentinel' },
       { label: 'SCRIPT LIBRARY', cn: '脚本库', routeName: 'ScriptLibrary', to: '/sentinel/scripts' },
       { label: 'ALERT CENTER', cn: '告警中心', routeName: 'AlertCenter', to: '/sentinel/alerts' },
+      { label: 'INCIDENT CENTER', cn: '工单中心', routeName: 'IncidentCenter', to: '/incidents' },
       { label: 'GUARDIAN', cn: '守护 Agent', routeName: 'SentinelGuardian', to: '/sentinel/guardian' }
     ]
   })

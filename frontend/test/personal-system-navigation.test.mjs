@@ -66,8 +66,8 @@ test('sentinel groups dashboard, scripts, alerts and Guardian under one menu', (
   assert.equal(group.id, 'sentinel')
   assert.equal(group.to, '/sentinel')
   assert.equal(group.cn, '哨兵与自动化')
-  assert.deepEqual(group.children.map(item => item.routeName), ['SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'SentinelGuardian'])
-  assert.deepEqual(group.children.map(item => item.to), ['/sentinel', '/sentinel/scripts', '/sentinel/alerts', '/sentinel/guardian'])
+  assert.deepEqual(group.children.map(item => item.routeName), ['SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'IncidentCenter', 'SentinelGuardian'])
+  assert.deepEqual(group.children.map(item => item.to), ['/sentinel', '/sentinel/scripts', '/sentinel/alerts', '/incidents', '/sentinel/guardian'])
   assert.equal(findPersonalSystemGroup('SentinelGuardian'), group)
   // 普通运维用户也要能用（不是管理员专属）。
   assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
