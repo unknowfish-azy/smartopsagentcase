@@ -1,5 +1,5 @@
 package com.smartops.finops;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.finops.FinOpsService.BudgetStatusView;
 import com.smartops.finops.FinOpsService.BudgetView;
@@ -37,7 +37,7 @@ public class FinOpsController {
 
     @PostMapping("/costs")
     public ApiResponse<CostIngestView> costs(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody CostBatchRequest request) {
         return ApiResponse.success(finops.ingestCosts(userId, request.batchId(),
                 request.billingMonth(), request.records()));
@@ -45,28 +45,28 @@ public class FinOpsController {
 
     @GetMapping("/summary")
     public ApiResponse<SummaryView> summary(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam String month) {
         return ApiResponse.success(finops.summary(userId, month));
     }
 
     @GetMapping("/trend")
     public ApiResponse<List<TrendPoint>> trend(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam(defaultValue = "6") int months) {
         return ApiResponse.success(finops.trend(userId, months));
     }
 
     @PostMapping("/usage")
     public ApiResponse<Integer> usage(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody UsageBatchRequest request) {
         return ApiResponse.success(finops.recordUsage(userId, request.samples()));
     }
 
     @GetMapping("/recommendations")
     public ApiResponse<RecommendationsView> recommendations(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam String month,
             @RequestParam Instant windowStart,
             @RequestParam Instant windowEnd) {
@@ -75,7 +75,7 @@ public class FinOpsController {
 
     @PostMapping("/budgets")
     public ApiResponse<BudgetView> budget(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody BudgetRequest request) {
         return ApiResponse.success(finops.createBudget(userId, request.name(), request.billingMonth(),
                 request.currency(), request.amountMinor(), request.allocationKey()));
@@ -83,7 +83,7 @@ public class FinOpsController {
 
     @GetMapping("/budgets/status")
     public ApiResponse<BudgetStatusView> budgetStatus(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam String month) {
         return ApiResponse.success(finops.budgetStatus(userId, month));
     }

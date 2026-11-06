@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.dto.operations.CreateOperationSessionRequest;
 import com.smartops.dto.operations.OperationSessionResponse;
@@ -17,11 +17,11 @@ public class OperationSessionController {
     private final OperationSessionService service;
 
     @GetMapping
-    public ApiResponse<List<OperationSessionResponse>> list(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) { return ApiResponse.success(service.list(userId)); }
+    public ApiResponse<List<OperationSessionResponse>> list(@CurrentUser Long userId) { return ApiResponse.success(service.list(userId)); }
 
     @PostMapping
-    public ApiResponse<OperationSessionResponse> create(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId, @Valid @RequestBody CreateOperationSessionRequest request) { return ApiResponse.success(service.create(userId, request)); }
+    public ApiResponse<OperationSessionResponse> create(@CurrentUser Long userId, @Valid @RequestBody CreateOperationSessionRequest request) { return ApiResponse.success(service.create(userId, request)); }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId, @PathVariable Long id) { service.delete(userId, id); return ApiResponse.success(); }
+    public ApiResponse<Void> delete(@CurrentUser Long userId, @PathVariable Long id) { service.delete(userId, id); return ApiResponse.success(); }
 }

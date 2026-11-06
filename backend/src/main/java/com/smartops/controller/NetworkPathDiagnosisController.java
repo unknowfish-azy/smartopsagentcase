@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.diagnostics.network.NetworkPathRequest;
 import com.smartops.diagnostics.network.NetworkPathService;
@@ -24,7 +24,7 @@ public class NetworkPathDiagnosisController {
 
     @PostMapping("/network/diagnose")
     public ApiResponse<NetworkPathResult> diagnose(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody DiagnoseRequest body) {
         NetworkPathRequest request = new NetworkPathRequest(
                 body.context(), body.namespace(), body.host(), body.port(), body.service(), body.ingress(),

@@ -1,5 +1,5 @@
 package com.smartops.posture;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.posture.SecurityPostureService.FindingInput;
 import com.smartops.posture.SecurityPostureService.FindingView;
@@ -39,7 +39,7 @@ public class SecurityPostureController {
 
     @PostMapping("/reports")
     public ApiResponse<ReportView> reports(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody ReportRequest request) {
         return ApiResponse.success(posture.ingestReport(userId, new ReportInput(
                 request.reportRef(), request.tool(), request.toolVersion(), request.scope(), request.target(),
@@ -49,7 +49,7 @@ public class SecurityPostureController {
 
     @PostMapping("/findings/{findingId}/verify-fix")
     public ApiResponse<VerifyView> verifyFix(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long findingId,
             @Valid @RequestBody VerifyFixRequest request) {
         return ApiResponse.success(posture.verifyFix(userId, findingId, request.reportRef()));
@@ -57,7 +57,7 @@ public class SecurityPostureController {
 
     @PostMapping("/findings/{findingId}/exception")
     public ApiResponse<FindingView> exception(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long findingId,
             @Valid @RequestBody ExceptionRequest request) {
         return ApiResponse.success(posture.exception(userId, findingId, request.until(), request.reason()));
@@ -65,7 +65,7 @@ public class SecurityPostureController {
 
     @GetMapping("/summary")
     public ApiResponse<SummaryView> summary(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam(required = false) String target) {
         return ApiResponse.success(posture.summary(userId, target));
     }

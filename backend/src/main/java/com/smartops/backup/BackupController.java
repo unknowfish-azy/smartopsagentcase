@@ -1,5 +1,5 @@
 package com.smartops.backup;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.backup.BackupService.ArtifactView;
 import com.smartops.backup.BackupService.DrillRequest;
 import com.smartops.backup.BackupService.DrillView;
@@ -34,13 +34,13 @@ public class BackupController {
 
     @GetMapping("/sets")
     public ApiResponse<List<SetView>> sets(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+            @CurrentUser Long userId) {
         return ApiResponse.success(backups.listSets(userId));
     }
 
     @PostMapping("/sets")
     public ApiResponse<SetView> createSet(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody CreateSetRequest request) {
         return ApiResponse.success(backups.createSet(userId, request.name(), request.environment(),
                 request.components(), request.retentionDays(), request.offsiteRequired()));
@@ -48,7 +48,7 @@ public class BackupController {
 
     @GetMapping("/sets/{setId}/status")
     public ApiResponse<StatusView> status(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long setId) {
         return ApiResponse.success(backups.status(userId, setId));
     }
@@ -56,7 +56,7 @@ public class BackupController {
     /** 导入备份脚本生成的清单（sha256 / 字节数 / 条目数）。 */
     @PostMapping("/sets/{setId}/manifests")
     public ApiResponse<List<ArtifactView>> manifest(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long setId,
             @Valid @RequestBody ManifestRequest request) {
         return ApiResponse.success(backups.ingestManifest(userId, setId, request.manifestJson()));
@@ -64,7 +64,7 @@ public class BackupController {
 
     @PostMapping("/sets/{setId}/artifacts/verify")
     public ApiResponse<ArtifactView> verify(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long setId,
             @Valid @RequestBody VerifyRequest request) {
         return ApiResponse.success(backups.verifyArtifact(userId, setId,
@@ -73,7 +73,7 @@ public class BackupController {
 
     @PostMapping("/sets/{setId}/artifacts/offsite")
     public ApiResponse<ArtifactView> offsite(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long setId,
             @Valid @RequestBody OffsiteRequest request) {
         return ApiResponse.success(backups.recordOffsite(userId, setId,
@@ -82,7 +82,7 @@ public class BackupController {
 
     @PostMapping("/sets/{setId}/drills")
     public ApiResponse<DrillView> drill(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long setId,
             @Valid @RequestBody DrillRunRequest request) {
         return ApiResponse.success(backups.recordDrill(userId, setId, new DrillRequest(

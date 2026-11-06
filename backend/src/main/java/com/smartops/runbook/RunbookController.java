@@ -1,5 +1,5 @@
 package com.smartops.runbook;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.runbook.RunbookCatalogService.ParameterSpec;
 import com.smartops.runbook.RunbookCatalogService.RunbookView;
@@ -47,13 +47,13 @@ public class RunbookController {
 
     @GetMapping
     public ApiResponse<List<RunbookView>> list(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+            @CurrentUser Long userId) {
         return ApiResponse.success(catalog.list(userId));
     }
 
     @PostMapping
     public ApiResponse<RunbookView> create(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody CreateRunbookRequest request) {
         return ApiResponse.success(catalog.create(userId, request.name(), request.description(),
                 request.environment(), request.riskLevel(), request.ownerId()));
@@ -61,14 +61,14 @@ public class RunbookController {
 
     @GetMapping("/{id}")
     public ApiResponse<RunbookView> detail(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id) {
         return ApiResponse.success(catalog.detail(userId, id));
     }
 
     @PutMapping("/{id}")
     public ApiResponse<RunbookView> update(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id,
             @RequestBody UpdateRunbookRequest request) {
         return ApiResponse.success(catalog.update(userId, id, request.name(), request.description(),
@@ -77,7 +77,7 @@ public class RunbookController {
 
     @PostMapping("/{id}/versions")
     public ApiResponse<VersionView> saveVersion(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id,
             @Valid @RequestBody SaveVersionRequest request) {
         return ApiResponse.success(catalog.saveVersion(userId, id, new VersionDraft(request.note(),
@@ -88,14 +88,14 @@ public class RunbookController {
 
     @GetMapping("/{id}/versions")
     public ApiResponse<List<VersionView>> versions(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id) {
         return ApiResponse.success(catalog.versions(userId, id));
     }
 
     @PostMapping("/{id}/publish")
     public ApiResponse<RunbookView> publish(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id) {
         return ApiResponse.success(catalog.publish(userId, id));
     }
@@ -104,7 +104,7 @@ public class RunbookController {
 
     @PostMapping("/{id}/plan")
     public ApiResponse<PlanResult> plan(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id,
             @Valid @RequestBody PlanRequest request) {
         return ApiResponse.success(execution.plan(userId, id, request.runtimeIds(), request.parameters(),
@@ -113,7 +113,7 @@ public class RunbookController {
 
     @PostMapping("/runs/{runId}/targets")
     public ApiResponse<PlanResult> attachTargets(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long runId,
             @Valid @RequestBody PlanRequest request) {
         return ApiResponse.success(execution.attachTargets(userId, runId, request.runtimeIds(),
@@ -122,7 +122,7 @@ public class RunbookController {
 
     @GetMapping("/runs")
     public ApiResponse<List<RunView>> runs(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "50") int limit) {
         return ApiResponse.success(execution.listRuns(userId, status, limit));
@@ -130,14 +130,14 @@ public class RunbookController {
 
     @GetMapping("/runs/{runId}")
     public ApiResponse<RunView> runDetail(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long runId) {
         return ApiResponse.success(execution.detail(userId, runId));
     }
 
     @PostMapping("/runs/{runId}/approve")
     public ApiResponse<RunView> approve(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long runId,
             @RequestBody(required = false) ApproveRequest request) {
         return ApiResponse.success(execution.approve(userId, runId, request == null ? null : request.note()));
@@ -145,7 +145,7 @@ public class RunbookController {
 
     @PostMapping("/runs/{runId}/execute")
     public ApiResponse<RunView> execute(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long runId,
             @Valid @RequestBody ExecuteRequest request) {
         return ApiResponse.success(execution.execute(userId, runId, request.confirmationNonce()));
@@ -153,14 +153,14 @@ public class RunbookController {
 
     @PostMapping("/runs/{runId}/cancel")
     public ApiResponse<RunView> cancel(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long runId) {
         return ApiResponse.success(execution.cancel(userId, runId));
     }
 
     @PostMapping("/runs/{runId}/rollback")
     public ApiResponse<RunView> rollback(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long runId) {
         return ApiResponse.success(execution.rollback(userId, runId));
     }
@@ -169,7 +169,7 @@ public class RunbookController {
 
     @PostMapping("/{id}/schedules")
     public ApiResponse<ScheduleView> createSchedule(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id,
             @Valid @RequestBody ScheduleRequest request) {
         return ApiResponse.success(execution.createSchedule(userId, id, request.cronExpr(),
@@ -178,13 +178,13 @@ public class RunbookController {
 
     @GetMapping("/schedules")
     public ApiResponse<List<ScheduleView>> schedules(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+            @CurrentUser Long userId) {
         return ApiResponse.success(execution.listSchedules(userId));
     }
 
     @PostMapping("/schedules/{scheduleId}/rearm")
     public ApiResponse<ScheduleView> rearmSchedule(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long scheduleId,
             @Valid @RequestBody RearmRequest request) {
         return ApiResponse.success(execution.rearmSchedule(userId, scheduleId, request.nextFireAt()));
@@ -192,7 +192,7 @@ public class RunbookController {
 
     @DeleteMapping("/schedules/{scheduleId}")
     public ApiResponse<Void> deleteSchedule(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long scheduleId) {
         execution.deleteSchedule(userId, scheduleId);
         return ApiResponse.success(null);
@@ -200,7 +200,7 @@ public class RunbookController {
 
     @PostMapping("/{id}/triggers")
     public ApiResponse<TriggerView> bindTrigger(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id,
             @RequestBody(required = false) TriggerRequest request) {
         return ApiResponse.success(execution.bindAlertTrigger(userId, id,
@@ -209,13 +209,13 @@ public class RunbookController {
 
     @GetMapping("/triggers")
     public ApiResponse<List<TriggerView>> triggers(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+            @CurrentUser Long userId) {
         return ApiResponse.success(execution.listTriggers(userId));
     }
 
     @DeleteMapping("/{id}/triggers/{eventType}")
     public ApiResponse<Void> deleteTrigger(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long id,
             @PathVariable String eventType) {
         execution.deleteTrigger(userId, id, eventType);

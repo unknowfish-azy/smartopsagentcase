@@ -131,6 +131,7 @@ class ModelRuntimeSecurityTest {
         );
 
         mockMvc.perform(post("/api/model-connections/1/invoke")
+                        .header("X-User-Id", "7")
                         .header("X-SmartOps-Internal-Token", "test-internal-token")
                         .contentType("application/json")
                         .content("{\"prompt\":\"status\"}"))

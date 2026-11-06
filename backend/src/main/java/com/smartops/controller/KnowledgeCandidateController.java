@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.service.KnowledgeCandidateService;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,14 +18,14 @@ public class KnowledgeCandidateController {
 
     @PostMapping("/from-operation-run/{runId}")
     public ApiResponse<KnowledgeCandidateService.KnowledgeCandidate> createFromOperationRun(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long runId) {
         return ApiResponse.success(service.createFromRun(userId, runId));
     }
 
     @GetMapping
     public ApiResponse<KnowledgeCandidateService.KnowledgeCandidatePage> list(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
@@ -34,14 +34,14 @@ public class KnowledgeCandidateController {
 
     @GetMapping("/{id}")
     public ApiResponse<KnowledgeCandidateService.KnowledgeCandidate> detail(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long id) {
         return ApiResponse.success(service.detail(userId, id));
     }
 
     @PostMapping("/{id}/promote")
     public ApiResponse<com.smartops.service.PersonalKnowledgeService.Entry> promote(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long id,
             @org.springframework.web.bind.annotation.RequestBody PromoteRequest request) {
         return ApiResponse.success(service.promote(userId, id, request.libraryId(), request.title(), request.contentMarkdown()));
@@ -49,7 +49,7 @@ public class KnowledgeCandidateController {
 
     @PostMapping("/{id}/reject")
     public ApiResponse<Void> reject(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long id,
             @org.springframework.web.bind.annotation.RequestBody RejectRequest request) {
         service.reject(userId, id, request.reason());

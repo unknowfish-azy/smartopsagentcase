@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.service.OperationTunnelService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,7 @@ public class OperationTunnelController {
     private final OperationTunnelService service;
 
     @PostMapping
-    public ApiResponse<String> start(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+    public ApiResponse<String> start(@CurrentUser Long userId,
                                     @PathVariable String runtimeId,
                                     @RequestParam String name,
                                     @RequestParam(defaultValue = "127.0.0.1") String listenAddress,
@@ -23,7 +23,7 @@ public class OperationTunnelController {
     }
 
     @DeleteMapping("/{tunnelId}")
-    public ApiResponse<Void> stop(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+    public ApiResponse<Void> stop(@CurrentUser Long userId,
                                   @PathVariable String runtimeId,
                                   @PathVariable String tunnelId) {
         service.stop(userId, runtimeId, tunnelId);

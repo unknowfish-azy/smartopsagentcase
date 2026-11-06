@@ -1,5 +1,5 @@
 package com.smartops.iac;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.iac.IacService.ApplyView;
 import com.smartops.iac.IacService.Check;
@@ -42,21 +42,21 @@ public class IacController {
 
     @PostMapping("/plans")
     public ApiResponse<PlanView> plan(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestBody PlanRequest request) {
         return ApiResponse.success(iac.plan(userId, request));
     }
 
     @GetMapping("/plans/{planId}")
     public ApiResponse<PlanView> plan(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long planId) {
         return ApiResponse.success(iac.detail(userId, planId));
     }
 
     @PostMapping("/plans/{planId}/approve")
     public ApiResponse<PlanView> approve(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long planId,
             @RequestBody(required = false) ApproveRequest request) {
         return ApiResponse.success(iac.approve(userId, planId, request != null && request.confirmDestroy()));
@@ -64,7 +64,7 @@ public class IacController {
 
     @PostMapping("/plans/{planId}/dispatch")
     public ApiResponse<ApplyView> dispatch(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long planId,
             @Valid @RequestBody DispatchRequest request) {
         return ApiResponse.success(iac.dispatch(userId, planId, request.confirmationNonce()));
@@ -72,7 +72,7 @@ public class IacController {
 
     @PostMapping("/applies/{applyId}/complete")
     public ApiResponse<ApplyView> complete(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long applyId,
             @Valid @RequestBody CompleteRequest request) {
         return ApiResponse.success(iac.completeApply(userId, applyId,
@@ -81,7 +81,7 @@ public class IacController {
 
     @PostMapping("/applies/{applyId}/verify")
     public ApiResponse<ApplyView> verify(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long applyId,
             @Valid @RequestBody VerifyRequest request) {
         return ApiResponse.success(iac.verify(userId, applyId, request.checks()));
@@ -89,14 +89,14 @@ public class IacController {
 
     @GetMapping("/releases")
     public ApiResponse<List<ReleaseView>> releases(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam String workspace) {
         return ApiResponse.success(iac.releases(userId, workspace));
     }
 
     @GetMapping("/drift")
     public ApiResponse<DriftView> drift(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam String workspace) {
         return ApiResponse.success(iac.drift(userId, workspace));
     }
