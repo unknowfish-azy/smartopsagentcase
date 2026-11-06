@@ -42,6 +42,7 @@ public class OperationToolService {
     private static final Pattern SAFE_NAMESPACE = Pattern.compile("[a-z0-9](?:[a-z0-9.-]{0,61}[a-z0-9])?");
     private static final Pattern POSITIVE_INTEGER = Pattern.compile("[1-9][0-9]{0,5}");
     private static final Pattern SAFE_SEARCH = Pattern.compile("[A-Za-z0-9][A-Za-z0-9 ._:/-]{0,127}");
+    private static final Pattern SAFE_RELATIVE_PATH = Pattern.compile("[A-Za-z0-9._][A-Za-z0-9._/-]{0,255}");
 
     /** 目录声明的输出 Schema 基线：所有命令型工具都以这四项作为证据骨架。 */
     private static final List<String> COMMAND_OUTPUT_SCHEMA =
@@ -106,6 +107,21 @@ public class OperationToolService {
         add(entries, real("mesh-status", values -> List.of(
                 "kubectl get pods,services -n " + safeNamespace(values, "namespace", "istio-system") + " -o wide")).params("namespace"));
         add(entries, real("terraform-environment", values -> List.of("terraform version -json")));
+        // OPS-12：validate / plan / show 只读三件套；plan/show 的结构化输出交给 /api/iac/plans/analyze
+        // 脱敏并识别 destroy/replace，审批与下发不在工具层直接完成。
+        add(entries, real("terraform-validate", values -> List.of(
+                "cd " + safeRelativePath(values, "directory") + " && terraform validate -json -no-color"))
+                .params("directory")
+                .verification("validate 只证明语法与引用合法，不代表计划可安全应用；需继续审阅 plan 的 destroy/replace"));
+        add(entries, real("terraform-plan", values -> List.of(
+                "cd " + safeRelativePath(values, "directory") + " && terraform plan -input=false -no-color"))
+                .params("directory")
+                .verification("plan 输出必须经 /api/iac/plans 保存并审批，禁止直接 apply"));
+        add(entries, real("terraform-show", values -> List.of(
+                "cd " + safeRelativePath(values, "directory") + " && terraform show -json "
+                        + safeRelativePath(values, "planFile")))
+                .params("directory", "planFile")
+                .verification("show -json 需经 /api/iac/plans/analyze 脱敏并识别销毁，不可直接应用"));
         add(entries, real("harbor-endpoint-check", values -> List.of(
                 "curl --fail --silent --show-error --max-time 10 https://" + safeHost(values, "host") + "/api/v2.0/health")).params("host"));
         add(entries, real("containerd-registry-inspect", values -> List.of(
@@ -396,6 +412,8 @@ public class OperationToolService {
         map.put("alert", new ToolParameter("alert", "name", true, "告警名称"));
         map.put("alertId", new ToolParameter("alertId", "name", true, "告警 ID"));
         map.put("scriptId", new ToolParameter("scriptId", "name", true, "脚本 ID"));
+        map.put("directory", new ToolParameter("directory", "relative-path", true, "Terraform 工作目录（相对路径，禁止 ..）"));
+        map.put("planFile", new ToolParameter("planFile", "relative-path", true, "plan 文件相对路径"));
         return Map.copyOf(map);
     }
 
@@ -473,6 +491,12 @@ public class OperationToolService {
     private static String safeName(Map<String, String> values, String key) {
         String value = values.getOrDefault(key, "").trim();
         if (!SAFE_NAME.matcher(value).matches()) invalid(key);
+        return value;
+    }
+
+    private static String safeRelativePath(Map<String, String> values, String key) {
+        String value = values.getOrDefault(key, "").trim();
+        if (!SAFE_RELATIVE_PATH.matcher(value).matches() || value.contains("..")) invalid(key);
         return value;
     }
 
