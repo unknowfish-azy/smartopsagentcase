@@ -197,6 +197,10 @@ class AdminFoundationIntegrationTest {
 
     @Test void concurrentDemotionsStillLeaveAnEnabledAdministrator() throws Exception {
         jdbc.update("UPDATE app_user SET role='admin' WHERE id=22");
+        // SEC-07：SQL 直提的管理员没有治理档案，按最小只读会被 403 拒绝。
+        // 这里显式任命为 deputy 并授予 admin.users，保持“两个有权限的管理员互降”的竞态意图。
+        var promoter = new com.smartops.security.SessionUser(11L, "foundation-admin", "admin", "admin", false, 0);
+        accounts.appointPlatformAdmin(promoter, 22L, "deputy", List.of("admin.users"));
         Client first = admin();
         Client second = login("foundation-user", PASSWORD, "admin");
         var executor = Executors.newFixedThreadPool(2);
