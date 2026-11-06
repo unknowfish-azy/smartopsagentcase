@@ -252,13 +252,14 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 | DB 迁移 MySQL 8 兼容 | `V20261106.20` 去重 `DELETE` 改为物化派生表（MySQL 8 禁止 DELETE 子查询直接引用目标表，Error 1093）；回滚半成品 DDL（`inspector_event.user_id` 列 + 失败 schema history 行）后实机迁移至 `20261106.21` | 提交 `ed013a1`；真实 MySQL 启动迁移通过；H2 `SentinelSchedulerIntegrationTest` 通过 | 2026-11-06 |
 | 平台 E2E 8 项验收 | 真实 MySQL 8 + `dev` profile 启动平台服务（内部 token 写、会话读），逐条执行 `platform-integration.md` §5 的 8 项：越权 404/空列表、幂等 200/409、重启后回执持久、失效与历史、双轴并列、`passed=false` 原值、伪造 `X-Run-ID` 拒绝、`REPLAY_INCOMPLETE` 不补探 | 26/26 检查 PASS；记录见 `docs/design/recovery-contract-v1/platform-integration.md` §8.5。Python `agent/recovery_contracts` 判定器未启动（`NOT_RUN`），verdict 由写入方原文提供 | 2026-11-06 |
 | 2.2 SEC-04/05 审批-预览-grant HTTP 级 | 真实 SSH 运行通道（声明式 `mock_ssh_server.py`，仅回显命令）+ MySQL/Redis + local 后端，走完整「建团队→邀请 admin→建 Agent 发布→申请→预览→审批→执行」链路：自批 403、未批先执行 409、未预览先批 409、申请人越权执行 403、缺 token 409、错 token 403、DB 篡改参数 409 `TEAM_RUN_PREVIEW_CHANGED`、过期 grant 403、一次性 grant 二次执行 409、撤回后 409，另含合法执行、幂等键、token 仅向申请人下发等正向对照；SEC-03 `rm -rf` 双人确认 `requiredApprovals=2` 与自批 `SECOND_APPROVER_REQUIRED` | 19/19 PASS；过程中发现并修复 grantToken 从不经 API 下发（审批后执行链路线上断裂），`forRequester` 视图 + `TeamAgentRunServiceTest` 12/12；提交 `735f1f8`；记录见 `docs/development/SEC04-05审批链路HTTP级验收执行记录-20261106晚.md`；Redis 启动后总体 health 503→200 | 2026-11-06 |
+| 3.2 SEC-06 残余 DNS rebinding 注入（本机受控 DNS） | `127.0.0.1` 起真实 UDP DNS：同一主机名先应答公网 `93.184.216.34`（模拟校验通过），随后切答 `127.0.0.1`（模拟校验与连接之间 rebinding）；本地蜜罐 TCP 端口记录是否真被连上。未 pin 客户端用「直连受控 DNS 的解析器」作攻击可达对照；生产接线（`PinnedDns` 作 DnsResolver）与「pin 缺失」作防守对照 | `PinnedDnsRebindingTest` 1/1：未 pin 客户端命中蜜罐（200，证明攻击真实可达）；已 pin 客户端只用公网地址建连、蜜罐计数不变；清除 pin 后 `UnknownHostException` fail-closed。全量 `mvn test` 769/0/0（1 skipped）。未改系统 DNS、未用公网出口，公网环境复验仍 `NOT_RUN`；记录见 `docs/development/安全整改-DNS-rebinding注入实验-20261106晚.md` | 2026-11-06 |
 
 **本次实机运行范围补充**：SEC-11/12/13 之后新增 MySQL 8 实机启动（Flyway 全量迁移）与恢复契约 E2E；后续批次已启动 Redis 与 local 后端做 HTTP 级验收（SEC-04/05 批次 H1 验证 Redis 指示器恢复 UP）；ai-service/nginx 部署面仍未实机验证。
 
 **仍未完成（不得声称已修复）**：
 - Python 审批仍为进程内状态，无持久化审批审计表；宿主 reviewer 身份认证仍由调用方负责（Python 侧无 HTTP 面，已有 42 项单测）。
 - nginx `/ai-api` 已加回环/私网 CIDR allowlist（公网 403），compose 不再发布 ai-service 8001；同源 `/ai` 仍依赖应用层 `X-Run-Token`，上层 LB 以私网回源时 allowlist 不生效（需网络 ACL）。
-- 连接期 IP pin 已实现（`PinnedDns` fail-closed 解析器，提交 `bbae40c`）：未登记 pin 的主机建连直接失败；真实 DNS rebinding 注入未执行（`NOT_RUN`），仅由 `ModelProviderClientTest` / `ModelInvocationAnalyticsTest` 单测覆盖。
+- 连接期 IP pin 已实现（`PinnedDns` fail-closed 解析器，提交 `bbae40c`）：未登记 pin 的主机建连直接失败。本机受控 DNS rebinding 注入实验已通过（真实 UDP 应答 public→`127.0.0.1` 切换、内网蜜罐对照命中、已 pin 与未登记 pin 均 0 连接，`PinnedDnsRebindingTest`）；未改系统 DNS、未用公网出口，公网环境的真实 rebinding 仍为 `NOT_RUN`。
 - 爬取并发上限（TM-25）、slow-drip（TM-23）未验证。
 - SEC-11 仅做应用层写库/回显脱敏：历史明文行未清洗；nginx access log / Logback 消息体未做框架级脱敏；真实爬取与 HTTP 回显未运行（TM-30/31 仅单测）。
 - SEC-12 knowledge 已以真实 uvicorn 启动验证（第一批 E2E-07，无/错 key 401、匿名 ingest 拒绝）；ai-service run token HTTP 级已验证（提交 `8f04733`）；ai-service 与 Knowledge 的部署环境变量注入（`KNOWLEDGE_API_KEY`）未在 compose 中固化。
