@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.service.IncidentRecommendationService;
 import com.smartops.service.OperatorMemoryService;
@@ -14,7 +14,7 @@ public class IncidentRecommendationController {
     private final OperatorMemoryService memories;
 
     @PostMapping
-    public ApiResponse<?> recommend(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId, @RequestBody IncidentRecommendationService.IncidentPattern incident) {
+    public ApiResponse<?> recommend(@CurrentUser Long userId, @RequestBody IncidentRecommendationService.IncidentPattern incident) {
         return ApiResponse.success(recommendations.recommend(incident, memories.list(userId)));
     }
 }

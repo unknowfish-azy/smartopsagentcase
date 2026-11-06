@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.diagnostics.kubernetes.KubernetesDiagnosisRequest;
 import com.smartops.diagnostics.kubernetes.KubernetesDiagnosisService;
@@ -24,7 +24,7 @@ public class KubernetesDiagnosisController {
 
     @PostMapping("/kubernetes/diagnose")
     public ApiResponse<KubernetesDiagnosisResult> diagnose(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody DiagnoseRequest body) {
         KubernetesDiagnosisRequest request = new KubernetesDiagnosisRequest(
                 body.context(), body.namespace(), body.workload(), body.pod(), body.container(),

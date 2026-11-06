@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.service.OperationToolService;
 import jakarta.validation.Valid;
@@ -29,14 +29,14 @@ public class OperationToolController {
 
     @PostMapping("/tools/preview")
     public ApiResponse<OperationToolService.ToolPreview> preview(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody PreviewRequest request) {
         return ApiResponse.success(service.preview(userId, request.toolId(), request.parameters()));
     }
 
     @PostMapping("/runtimes/{runtimeId}/tools/{toolId}/execute")
     public ApiResponse<OperationToolService.ToolRunResult> execute(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable String runtimeId,
             @PathVariable String toolId,
             @Valid @RequestBody ExecuteRequest request) {

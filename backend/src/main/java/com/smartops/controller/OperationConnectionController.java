@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.operations.ConnectionResult;
 import com.smartops.operations.HostKeyDecision;
@@ -17,7 +17,7 @@ public class OperationConnectionController {
 
     @PostMapping("/sessions/{sessionId}/connect")
     public ApiResponse<ConnectionResult> connect(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long sessionId,
             @RequestParam(defaultValue = "NONE") HostKeyDecision decision) {
         return ApiResponse.success(service.connect(userId, sessionId, decision));
@@ -25,7 +25,7 @@ public class OperationConnectionController {
 
     @DeleteMapping("/runtimes/{runtimeId}")
     public ApiResponse<Void> close(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable String runtimeId) {
         registry.removeOwned(runtimeId, userId).close();
         return ApiResponse.success();

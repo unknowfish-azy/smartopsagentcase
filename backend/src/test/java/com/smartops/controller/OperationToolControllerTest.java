@@ -1,7 +1,10 @@
 package com.smartops.controller;
 
+import com.smartops.security.CurrentUserArgumentResolver;
+import com.smartops.security.SessionUser;
 import com.smartops.service.OperationToolService;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,7 +29,9 @@ class OperationToolControllerTest {
     @BeforeEach
     void setUp() {
         service = mock(OperationToolService.class);
-        mvc = MockMvcBuilders.standaloneSetup(new OperationToolController(service)).build();
+        mvc = MockMvcBuilders.standaloneSetup(new OperationToolController(service))
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver())
+                .build();
     }
 
     @Test
@@ -35,7 +40,7 @@ class OperationToolControllerTest {
                 .thenReturn(new OperationToolService.ToolPreview("host-health", true, List.of("uptime")));
 
         mvc.perform(post("/api/operations/tools/preview")
-                        .header("X-User-Id", "7")
+                        .principal(auth(7L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"toolId\":\"host-health\",\"parameters\":{}}"))
                 .andExpect(status().isOk())
@@ -65,11 +70,16 @@ class OperationToolControllerTest {
         when(service.execute(eq(7L), eq("runtime-1"), eq("host-health"), any())).thenReturn(result);
 
         mvc.perform(post("/api/operations/runtimes/runtime-1/tools/host-health/execute")
-                        .header("X-User-Id", "7")
+                        .principal(auth(7L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"parameters\":{}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.traceId").value("trace-1"))
                 .andExpect(jsonPath("$.data.commands[0].exitCode").value(0));
+    }
+
+    private static UsernamePasswordAuthenticationToken auth(long id) {
+        return UsernamePasswordAuthenticationToken.authenticated(
+                new SessionUser(id, "u", "user"), null, List.of());
     }
 }

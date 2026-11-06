@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.service.HarborCatalogService;
 import lombok.RequiredArgsConstructor;
@@ -18,13 +18,13 @@ public class HarborCatalogController {
 
     @GetMapping("/connection-check")
     public ApiResponse<HarborCatalogService.ConnectionCheck> checkConnection(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+            @CurrentUser Long userId) {
         return ApiResponse.success(service.checkConnection(userId));
     }
 
     @GetMapping("/projects/{project}/artifacts")
     public ApiResponse<HarborCatalogService.Page<HarborCatalogService.Artifact>> artifacts(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable String project, @RequestParam String repository,
             @RequestParam(defaultValue = "1") int page) {
         return ApiResponse.success(service.listArtifacts(userId, project, repository, page));
@@ -32,14 +32,14 @@ public class HarborCatalogController {
 
     @GetMapping("/projects")
     public ApiResponse<HarborCatalogService.Page<HarborCatalogService.Project>> projects(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam(defaultValue = "1") int page) {
         return ApiResponse.success(service.listProjects(userId, page));
     }
 
     @GetMapping("/projects/{project}/repositories")
     public ApiResponse<HarborCatalogService.Page<HarborCatalogService.Repository>> repositories(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable String project, @RequestParam(defaultValue = "1") int page) {
         return ApiResponse.success(service.listRepositories(userId, project, page));
     }

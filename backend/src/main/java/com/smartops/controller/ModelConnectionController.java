@@ -6,6 +6,7 @@ import com.smartops.dto.model.ModelConnectionUpdateRequest;
 import com.smartops.dto.model.ModelInvocationRequest;
 import com.smartops.dto.model.ModelInvocationResponse;
 import com.smartops.dto.model.RuntimeModelConnectionResponse;
+import com.smartops.security.CurrentUser;
 import com.smartops.service.ModelConnectionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +25,7 @@ public class ModelConnectionController {
 
     @GetMapping
     public ResponseEntity<List<ModelConnectionResponse>> list(
-            @RequestHeader(
-                    value = "X-User-Id",
-                    defaultValue = "1"
-            )
-            Long userId
+            @CurrentUser Long userId
     ) {
 
         return ResponseEntity.ok(
@@ -39,11 +36,7 @@ public class ModelConnectionController {
 
     @PostMapping
     public ResponseEntity<ModelConnectionResponse> create(
-            @RequestHeader(
-                    value = "X-User-Id",
-                    defaultValue = "1"
-            )
-            Long userId,
+            @CurrentUser Long userId,
 
             @Valid
             @RequestBody
@@ -61,11 +54,7 @@ public class ModelConnectionController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ModelConnectionResponse> update(
-            @RequestHeader(
-                    value = "X-User-Id",
-                    defaultValue = "1"
-            )
-            Long userId,
+            @CurrentUser Long userId,
 
             @PathVariable
             Long id,
@@ -87,11 +76,7 @@ public class ModelConnectionController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
-            @RequestHeader(
-                    value = "X-User-Id",
-                    defaultValue = "1"
-            )
-            Long userId,
+            @CurrentUser Long userId,
 
             @PathVariable
             Long id
@@ -108,17 +93,14 @@ public class ModelConnectionController {
 
 
     /**
-     * 内部 Runtime 使用。
+     * 内部 Runtime 使用（internal token 通道）。
      *
-     * 这里故意不直接返回给前端页面。
+     * 这里故意不直接返回给前端页面；userId 由调用方（持内部 token 的后端服务）显式传入，
+     * 不再提供 {@code defaultValue = "1"} 的回落——缺失即为 400。
      */
     @GetMapping("/{id}/runtime")
     public ResponseEntity<RuntimeModelConnectionResponse> runtime(
-            @RequestHeader(
-                    value = "X-User-Id",
-                    defaultValue = "1"
-            )
-            Long userId,
+            @RequestHeader("X-User-Id") Long userId,
 
             @PathVariable
             Long id
@@ -134,7 +116,7 @@ public class ModelConnectionController {
 
     @PostMapping("/{id}/invoke")
     public ResponseEntity<ModelInvocationResponse> invoke(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
             @Valid @RequestBody ModelInvocationRequest request
     ) {

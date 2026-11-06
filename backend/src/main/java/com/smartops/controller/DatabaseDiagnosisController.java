@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.diagnostics.database.DatabaseDiagnosisRequest;
 import com.smartops.diagnostics.database.DatabaseDiagnosisService;
@@ -29,7 +29,7 @@ public class DatabaseDiagnosisController {
 
     @PostMapping("/database/diagnose")
     public ApiResponse<DatabaseDiagnosisResult> diagnose(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody DatabaseDiagnosisRequest request) {
         SessionUser actor = new SessionUser(userId, "user-" + userId, "user");
         return ApiResponse.success(service.diagnose(actor, request));

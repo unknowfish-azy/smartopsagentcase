@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.service.MultiExecService;
 import jakarta.validation.Valid;
@@ -18,21 +18,21 @@ public class MultiExecController {
 
     @PostMapping("/preview")
     public ApiResponse<MultiExecService.Preview> preview(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody PreviewRequest request) {
         return ApiResponse.success(service.preview(userId, request.command(), request.runtimeIds(), request.productionTarget()));
     }
 
     @PostMapping("/execute")
     public ApiResponse<MultiExecService.ExecutionResult> execute(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody ExecuteRequest request) {
         return ApiResponse.success(service.execute(userId, request.previewId(), request.confirmationNonce(), request.secondConfirmationNonce()));
     }
 
     @PostMapping("/cancel")
     public ApiResponse<MultiExecService.CancelResult> cancel(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody CancelRequest request) {
         return ApiResponse.success(service.cancel(userId, request.previewId()));
     }

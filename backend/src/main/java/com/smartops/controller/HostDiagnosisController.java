@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.diagnostics.host.HostDiagnosisRequest;
 import com.smartops.diagnostics.host.HostDiagnosisService;
@@ -23,7 +23,7 @@ public class HostDiagnosisController {
 
     @PostMapping("/host/diagnose")
     public ApiResponse<HostDiagnosisResult> diagnose(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody HostDiagnosisRequest body) {
         return ApiResponse.success(service.diagnose(userId, body));
     }

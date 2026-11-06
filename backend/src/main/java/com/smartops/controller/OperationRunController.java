@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.service.OperationRunQueryService;
 import jakarta.validation.Valid;
@@ -25,7 +25,7 @@ public class OperationRunController {
 
     @GetMapping
     public ApiResponse<OperationRunQueryService.RunPage> list(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @RequestParam(required = false) String traceId,
             @RequestParam(required = false) String toolId,
             @RequestParam(required = false) String status,
@@ -38,7 +38,7 @@ public class OperationRunController {
 
     @GetMapping("/{id}")
     public ApiResponse<OperationRunQueryService.RunDetail> detail(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long id) {
         return ApiResponse.success(service.detail(userId, id));
     }
@@ -48,7 +48,7 @@ public class OperationRunController {
      */
     @PostMapping("/{id}/verify")
     public ApiResponse<OperationRunQueryService.RunDetail> verify(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long id,
             @Valid @RequestBody VerifyRequest request) {
         return ApiResponse.success(service.verify(userId, id, request.decision(), request.note()));
@@ -64,7 +64,7 @@ public class OperationRunController {
      */
     @PostMapping("/{id}/cancel")
     public ApiResponse<Void> cancel(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long id) {
         service.requestCancel(userId, id);
         return ApiResponse.success(null);

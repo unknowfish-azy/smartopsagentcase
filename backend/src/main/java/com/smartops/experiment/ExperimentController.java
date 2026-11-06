@@ -1,5 +1,5 @@
 package com.smartops.experiment;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.experiment.ExperimentService.DrillInput;
 import com.smartops.experiment.ExperimentService.DrillView;
@@ -36,13 +36,13 @@ public class ExperimentController {
 
     @GetMapping("/evaluations")
     public ApiResponse<List<EvaluationView>> evaluations(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+            @CurrentUser Long userId) {
         return ApiResponse.success(experiments.listEvaluations(userId));
     }
 
     @PostMapping("/evaluations")
     public ApiResponse<EvaluationView> createEvaluation(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody EvaluationRequest request) {
         return ApiResponse.success(experiments.createEvaluation(userId, new EvaluationInput(
                 request.component(), request.title(), request.necessity(), request.businessTrigger(),
@@ -52,7 +52,7 @@ public class ExperimentController {
 
     @PostMapping("/evaluations/{evaluationId}/drills")
     public ApiResponse<DrillView> drill(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long evaluationId,
             @Valid @RequestBody DrillRunRequest request) {
         return ApiResponse.success(experiments.recordDrill(userId, evaluationId, new DrillInput(
@@ -63,7 +63,7 @@ public class ExperimentController {
 
     @PostMapping("/evaluations/{evaluationId}/exit")
     public ApiResponse<EvaluationView> exit(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable long evaluationId,
             @Valid @RequestBody ExitRequest request) {
         return ApiResponse.success(experiments.recordExit(userId, evaluationId, request.evidence()));

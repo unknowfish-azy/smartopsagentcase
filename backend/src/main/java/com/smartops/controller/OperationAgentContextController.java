@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.service.OperationAgentContextService;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ public class OperationAgentContextController {
 
     @GetMapping
     public ApiResponse<OperationAgentContextService.Context> get(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+            @CurrentUser Long userId,
             @PathVariable String runtimeId) {
         return ApiResponse.success(service.get(userId, runtimeId));
     }

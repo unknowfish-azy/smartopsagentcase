@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.service.ModelAnalyticsService;
 import com.smartops.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +15,13 @@ import java.util.Map;
 public class ModelAnalyticsController {
     private final ModelAnalyticsService service;
     @GetMapping
-    public Map<String,Object> report(@RequestHeader(value="X-User-Id", defaultValue="1") Long userId,
+    public Map<String,Object> report(@CurrentUser Long userId,
             @RequestParam(required=false) String month, @RequestParam(required=false) Long connectionId) {
         return service.report(userId, parseMonth(month), connectionId);
     }
     public record BudgetRequest(String month, BigDecimal tokenLimit) {}
     @PutMapping("/budget")
-    public Map<String,Object> budget(@RequestHeader(value="X-User-Id", defaultValue="1") Long userId, @RequestBody BudgetRequest request) {
+    public Map<String,Object> budget(@CurrentUser Long userId, @RequestBody BudgetRequest request) {
         YearMonth month = parseMonth(request.month());
         Long limit = null;
         if (request.tokenLimit() != null) {

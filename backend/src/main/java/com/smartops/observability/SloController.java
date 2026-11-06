@@ -1,5 +1,5 @@
 package com.smartops.observability;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,7 +32,7 @@ public class SloController {
     @GetMapping("/recovery/{contractRecordId}")
     public ApiResponse<SloService.RecoveryVerdict> recovery(
             @PathVariable long contractRecordId,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+            @CurrentUser Long userId) {
         return ApiResponse.success(sloService.judgeRecovery(contractRecordId, userId));
     }
 }

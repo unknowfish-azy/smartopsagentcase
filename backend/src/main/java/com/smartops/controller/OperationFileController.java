@@ -1,5 +1,5 @@
 package com.smartops.controller;
-
+import com.smartops.security.CurrentUser;
 import com.smartops.common.ApiResponse;
 import com.smartops.operations.SftpAccess;
 import com.smartops.service.OperationFileService;
@@ -20,14 +20,14 @@ public class OperationFileController {
     private final OperationFileService service;
 
     @GetMapping
-    public ApiResponse<List<SftpAccess.RemoteFile>> list(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+    public ApiResponse<List<SftpAccess.RemoteFile>> list(@CurrentUser Long userId,
                                                          @PathVariable String runtimeId,
                                                          @RequestParam(defaultValue = ".") String path) {
         return ApiResponse.success(service.list(userId, runtimeId, path));
     }
 
     @GetMapping("/content")
-    public ResponseEntity<InputStreamResource> download(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+    public ResponseEntity<InputStreamResource> download(@CurrentUser Long userId,
                                                         @PathVariable String runtimeId,
                                                         @RequestParam String path) {
         InputStream input = service.read(userId, runtimeId, path);
@@ -35,7 +35,7 @@ public class OperationFileController {
     }
 
     @PostMapping("/directory")
-    public ApiResponse<Void> mkdir(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+    public ApiResponse<Void> mkdir(@CurrentUser Long userId,
                                    @PathVariable String runtimeId,
                                    @RequestParam String path) {
         service.mkdir(userId, runtimeId, path);
@@ -43,7 +43,7 @@ public class OperationFileController {
     }
 
     @PostMapping(value = "/content", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<Long> upload(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+    public ApiResponse<Long> upload(@CurrentUser Long userId,
                                     @PathVariable String runtimeId,
                                     @RequestParam String path,
                                     @RequestPart MultipartFile file) {
@@ -56,7 +56,7 @@ public class OperationFileController {
     }
 
     @DeleteMapping("/content")
-    public ApiResponse<Void> delete(@RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
+    public ApiResponse<Void> delete(@CurrentUser Long userId,
                                     @PathVariable String runtimeId,
                                     @RequestParam String path,
                                     @RequestParam(required = false) String confirmation) {
