@@ -104,3 +104,21 @@ docker exec smartops-redis redis-cli ping                       # 期望 NOAUTH
 docker exec smartops-redis redis-cli -a "$REDIS_PASSWORD" ping   # 期望 PONG
 curl -fsS http://127.0.0.1:8080/actuator/health/readiness
 ```
+
+## 7. SEC-08 X-User-Id 全链路收敛部署验证（2026-11-07）
+
+- 背景：SEC-08 提交 `e856739` 后，运行中的 `smartops-backend` 容器仍是旧镜像（带 `defaultValue="1"` root 回落）。本节记录镜像重建与运行时烟测。
+- 操作：从运行中容器提取既有口令（未写盘），`docker compose up -d --build backend` 仅重建 backend（MySQL/Redis/ai-service 不动，数据卷保留）。
+- Maven 构建 86.3s 成功；backend 容器重建后 Up (healthy)，启动 6.68s，`SECURITY: 启动断言通过（production=false）`，readiness HTTP 200。
+
+### 7.1 运行时烟测：X-User-Id 不再被信任
+
+目标 `GET /api/operations/sessions`（典型会话路径 controller，已改用 `@CurrentUser`）：
+
+| 场景 | 旧行为（`defaultValue="1"`） | 新行为 |
+| --- | --- | --- |
+| 无认证、无 `X-User-Id` | 200（静默以 root 用户 1 执行） | **401** |
+| `X-User-Id: 1`、无会话 | 200（信任 header = root） | **401** |
+| `X-User-Id: 999`、无会话 | 200（信任任意用户） | **401** |
+
+结论：会话路径 controller 已不再读取客户端 `X-User-Id` header，身份统一从 `CurrentSessions.require(request)` 解析，无会话即 401 fail-closed；root 回落漏洞在运行时已关闭。`TrustedUserIdFilter` 保留作为纵深防御，但已无会话路径 controller 依赖该 header。

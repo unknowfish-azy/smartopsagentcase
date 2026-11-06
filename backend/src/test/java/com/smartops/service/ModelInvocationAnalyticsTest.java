@@ -72,7 +72,7 @@ class ModelInvocationAnalyticsTest {
     }
     @Test void disabledOrUnrecordableCallsNeverReachProvider() {
         connection.setEnabled(false);
-        assertThatThrownBy(() -> service.invoke(7L, 2L, request)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> service.invoke(7L, 2L, request)).isInstanceOf(com.smartops.exception.BusinessException.class);
         verifyNoInteractions(provider, analytics);
         connection.setEnabled(true);
         when(analytics.start(7L, 2L, "model-a")).thenThrow(new IllegalStateException("db down"));
