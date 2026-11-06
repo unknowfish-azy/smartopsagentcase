@@ -29,7 +29,7 @@ class FakeClient:
     async def __aexit__(self, *args):
         return None
 
-    async def post(self, url, *, headers, json):
+    async def post(self, url, *, headers, json, **kwargs):
         FakeClient.last_call = (url, headers, json)
         return FakeResponse()
 

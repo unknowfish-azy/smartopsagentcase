@@ -50,6 +50,18 @@ class Settings(BaseSettings):
 
     request_timeout: int = 30
 
+    # PERF-02：上游连接的容量预算。连接本身由 lifespan 管理的共享 transport 复用，
+    # 这里只声明上限与排队预算，避免"每个请求新建连接 + 无上限并发"。
+    http_max_connections: int = 100
+
+    http_max_keepalive_connections: int = 20
+
+    http_max_concurrent_requests: int = 32
+
+    http_queue_timeout: float = 2.0
+
+    http_pool_timeout: float = 5.0
+
     model_config = SettingsConfigDict(
         env_file=str(_REPO_ROOT / ".env"),
         env_file_encoding="utf-8",

@@ -9,7 +9,7 @@ if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 from agent.runtime_events import RunIdentity, terminal_event
 
-from ..core.exceptions import LLMException
+from ..core.exceptions import LLMException, UpstreamSaturated
 from ..schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -314,6 +314,13 @@ class ChatService:
                 system_prompt=SYSTEM_PROMPT,
             ):
                 yield {"event": "token", "data": {"delta": delta}}
+        except UpstreamSaturated:
+            # 容量不足是明确的过载状态：终止本次流式，不混入 mock 输出。
+            yield {"event": "error", "data": {
+                "code": "UPSTREAM_SATURATED",
+                "message": "上游容量已饱和，请稍后重试",
+            }}
+            return
         except LLMException:
             yield {"event": "error", "data": {
                 "code": "LLM_STREAM_INTERRUPTED",

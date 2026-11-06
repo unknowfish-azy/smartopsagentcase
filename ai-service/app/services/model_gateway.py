@@ -29,6 +29,9 @@ from typing import Any
 
 import httpx
 
+from ..core.exceptions import UpstreamSaturated
+from ..core.http_pool import http_pool
+
 
 class ModelGatewayError(RuntimeError):
     """模型网关异常。"""
@@ -93,13 +96,12 @@ class ModelGateway:
         }
 
         try:
-            async with httpx.AsyncClient(
-                timeout=self.timeout
-            ) as client:
+            async with http_pool.acquire(timeout=self.timeout) as client:
 
                 response = await client.get(
                     url,
                     headers=headers,
+                    timeout=self.timeout,
                 )
 
                 response.raise_for_status()
@@ -108,6 +110,9 @@ class ModelGateway:
                     response.json()
                 )
 
+        except UpstreamSaturated:
+            # 容量不足是明确的过载状态，不能伪装成"配置获取失败"。
+            raise
         except httpx.HTTPError as exc:
             raise ModelGatewayError(
                 f"获取模型配置失败：{exc}"
@@ -167,10 +172,14 @@ class ModelGateway:
             "temperature": temperature,
         }
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(url, headers=headers, json=payload)
+            async with http_pool.acquire(timeout=self.timeout) as client:
+                response = await client.post(
+                    url, headers=headers, json=payload, timeout=self.timeout
+                )
                 response.raise_for_status()
                 data: dict[str, Any] = response.json()
+        except UpstreamSaturated:
+            raise
         except httpx.HTTPError as exc:
             raise ModelGatewayError(
                 f"模型代理调用失败：{exc}"
