@@ -39,6 +39,17 @@
 | SEC-14 | P2 | CWE-918 | 模型连接 baseUrl 任意 http(s)，无内网限制（调用入口受内部 token 保护） | HC-02 |
 | SEC-15 | P2 | CWE-639 / CWE-807 | 内部 token 仅覆盖 5 条路径；`X-User-Id` 仍被多处 controller 直接读取；`internal-bypass` 开关可关鉴权 | HC-01 / HC-02 |
 
+## 1.1 本次修复状态（2026-11-06，代码 + 单测，未启动服务）
+
+| ID | 状态 | 已落地 | 残余 |
+| --- | --- | --- | --- |
+| SEC-01 | 已修（应用层） | 新增 `RunTokenService` + `GET /api/chat/run-token`；ai-service 所有 `/api/chat*` 依赖校验 HMAC/过期；未配密钥 503、匿名 401 | nginx `/ai-api` 仍可网络直达，但无令牌即 401；网络层隔离未做 |
+| SEC-02 | 已修 | run_id 只取签名令牌；客户端 `X-Run-ID` 被忽略；同一令牌复用 409 `RUN_TOKEN_REPLAYED`；令牌绑定 subject | 令牌单进程内存去重，多副本部署需共享存储 |
+| SEC-06 | 已修（代码级） | `OutboundUrlPolicy`：尾点/IDN/大小写归一，DNS 全地址分类（IPv4 私网/CGNAT/保留、IPv6 ULA/链路本地/映射/文档网段），首跳与逐跳复检，禁系统代理，下载 10MB 上限，单 run 60s 预算 | 未做连接期 IP pin；无并发上限（审计 TM-25 未覆盖）；未见真实 DNS rebinding 注入 |
+| SEC-15 | 已修（启动断言） | `SecurityAssertions` + `SecurityAssertionConfig`：生产（profile prod/production 或显式开关）下 `internal-bypass=true`、内部 token 缺失/过短、聊天令牌机密缺失 → `SECURITY_ASSERTION_FAILED` 拒绝启动；非生产仅告警 | `X-User-Id` 直读未收敛；内部 token 仍只覆盖 5 条路径；断言需真实启动一次才能观测（当前 `NOT_RUN`） |
+
+以上为单元测试结论（SEC-15 断言 7 pass；Python 309 passed）。全量后端最近一次 697 tests / 0 failures / 6 errors：错误集中在并行任务在途的 `RunbookIntegrationTest`（HTTP connect timeout），本批安全测试均通过。TM-01/02/18-24 的 HTTP/网络级复核仍为 `NOT_RUN`。
+
 ---
 
 ## 2. 风险详情

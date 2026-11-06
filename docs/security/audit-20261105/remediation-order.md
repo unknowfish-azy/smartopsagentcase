@@ -224,3 +224,22 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 - 每个 PR 说明：改了哪个轴（动作/纠察/恢复/授权）、是否改变 fail-closed 语义、回滚方式。
 - 未验证项保持 UNKNOWN，不得写成"已修复"。
 - 审计中途 ai-service 源码被移出主工作树；Phase 1 开工前先确认最终文件路径，否则阻塞。
+
+## 9. 执行记录（2026-11-06）
+
+本次只做代码与单元测试，**未启动 Java/ai-service/MySQL/Redis/nginx，未做 HTTP 或网络级验证**。
+
+| 项 | 结果 | 证据 |
+| --- | --- | --- |
+| 1.2 方案 A：Java 签发短时 run token | 已实现 `RunTokenService`（HMAC-SHA256，`sub/run/iat/exp`）+ `GET /api/chat/run-token`（会话认证、`no-store`） | `RunTokenServiceTest` 6 pass；`ChatRunTokenController` |
+| ai-service 校验 | 所有 `/api/chat*` 依赖 `verify_run_token`；run_id 只取令牌；未配密钥 503、缺失/无效/过期 401、复用 409 | `ai-service/app/tests/test_chat_auth.py` 8 pass |
+| 前端保持 SSE | `fetchChatRunToken()` → `streamChat(..., {runToken})` → `X-Run-Token` | `stream-resilience.test.mjs` 20 pass（含 2 条令牌用例） |
+| 1.5 爬取 SSRF | `OutboundUrlPolicy` + 首跳/逐跳/重定向复检、禁代理、10MB 下载上限、60s 总预算 | `OutboundUrlPolicyTest` 8 pass；`KnowledgeCrawlServiceTest` 3 pass |
+| 内部 token 生产断言 | `SecurityAssertions` + `ApplicationRunner`：生产下 bypass/缺 token/弱 token/缺聊天机密 → 启动失败 | `SecurityAssertionsTest` 7 pass |
+| 回归 | 后端定向测试通过；全量在并行任务改 `RunbookExecutionService` 时被编译阻断，待其稳定后重跑；Python 309 pass | 2026-11-06 |
+
+**仍未完成（不得声称已修复）**：
+- nginx `/ai-api` 网络层隔离未实施，仅保留应用层 401（注释已标注）。
+- 连接期 IP pin 未实现，DNS rebinding 仍为残余风险。
+- 爬取并发上限（TM-25）、slow-drip（TM-23）未验证。
+- TM-01/02/03/18-24 的 HTTP/网络级验收全部 `NOT_RUN`。
