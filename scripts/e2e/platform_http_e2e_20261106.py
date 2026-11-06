@@ -19,9 +19,12 @@
   E2E-06 SEC-06       爬取源指向内网/元数据地址 → run 前 KNOWLEDGE_CRAWL_URL_BLOCKED（fail-closed，不发起连接）
   E2E-07 SEC-12       knowledge 服务无/错 key 401，ingest 匿名 403，正确 key 放行
   E2E-08 SEC-07       无档案管理员只有最小只读能力（写 403 / 审计读 200）
+  E2E-09 SEC-14       模型连接 baseUrl 内网/元数据/非 http(s)/不可解析 → 创建即 400，
+                      列表无新增行、mock 供应商 0 请求；公网目标可创建（对照）
 
 用法：
   C:/Users/33908/AppData/Local/Programs/Python/Python314/python.exe scripts/e2e/platform_http_e2e_20261106.py
+  ... platform_http_e2e_20261106.py --only e2e_09   # 只跑 SEC-14（无需 knowledge 与 inspector 夹具）
 """
 
 from __future__ import annotations
@@ -30,10 +33,12 @@ import http.cookiejar
 import json
 import re
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BASE = "http://127.0.0.1:8080"
 KNOWLEDGE = "http://127.0.0.1:8002"
@@ -75,7 +80,10 @@ class Client:
         req = urllib.request.Request(BASE + path, data=data, headers=hdrs, method=method)
         try:
             with self.opener.open(req, timeout=30) as r:
-                return r.status, json.loads(r.read().decode("utf-8"))
+                raw = r.read().decode("utf-8")
+                if not raw:
+                    return r.status, {}
+                return r.status, json.loads(raw)
         except urllib.error.HTTPError as e:
             raw = e.read().decode("utf-8", "replace")
             try:
@@ -342,20 +350,133 @@ def e2e_08_governance_minimal():
           f"全局事件读 -> {status}（最小只读 admin.audit）；POST /api/admin/system/depts -> {wstatus} {wbody.get('message', '')[:40]}")
 
 
+def e2e_09_model_connection_ssrf(op1: Client):
+    """SEC-14：模型连接 baseUrl 的内网 SSRF 防护（创建即拒，不落库、不出站）。"""
+    hits = {"n": 0}
+
+    class Provider(BaseHTTPRequestHandler):
+        def do_POST(self):
+            hits["n"] += 1
+            body = b'{"choices":[{"message":{"content":"should-not-arrive"}}]}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    mock = ThreadingHTTPServer(("127.0.0.1", 0), Provider)
+    threading.Thread(target=mock.serve_forever, daemon=True).start()
+    loop_url = f"http://127.0.0.1:{mock.server_address[1]}/v1"
+    try:
+        _, before_body = op1.request("GET", "/api/model-connections")
+        before = len(_items(before_body))
+        targets = [
+            ("本机回环", loop_url, "NON_PUBLIC_ADDRESS"),
+            ("云元数据", "http://169.254.169.254/latest/meta-data", "NON_PUBLIC_ADDRESS"),
+            ("私网", "http://192.168.1.1/v1", "NON_PUBLIC_ADDRESS"),
+            ("非http", "ftp://8.8.8.8/v1", "SCHEME_NOT_ALLOWED"),
+            ("不可解析", "http://sec14-no-such-host.invalid/v1", "UNRESOLVABLE"),
+        ]
+        for label, url, rule in targets:
+            status, body = op1.request("POST", "/api/model-connections", {
+                "name": f"e2e-sec14-{label}",
+                "provider": "openai-compatible",
+                "baseUrl": url,
+                "modelName": "e2e-model",
+                "apiKey": "e2e-secret-not-real",
+            })
+            rejected = (status == 400 or body.get("code") == 400) \
+                and rule in str(body.get("message", ""))
+            check(f"E2E-09({label})", f"{label} baseUrl 创建即 400 {rule}", rejected,
+                  f"POST /api/model-connections baseUrl={url} -> HTTP {status} "
+                  f"code={body.get('code')} {str(body.get('message', ''))[:80]}")
+
+        _, after_body = op1.request("GET", "/api/model-connections")
+        after = len(_items(after_body))
+        check("E2E-09a", "被拒目标未写入连接行（列表数不变）", after == before,
+              f"GET /api/model-connections -> {before} 条 / {after} 条")
+        check("E2E-09b", "被拒目标未向 mock 供应商发起请求", hits["n"] == 0,
+              f"{loop_url} 本地 mock 收到 POST {hits['n']} 次")
+
+        status, body = op1.request("POST", "/api/model-connections", {
+            "name": "e2e-sec14-public",
+            "provider": "openai-compatible",
+            "baseUrl": "https://8.8.8.8/v1",
+            "modelName": "e2e-model",
+            "apiKey": "e2e-secret-not-real",
+        })
+        created = body.get("data") if isinstance(body, dict) and isinstance(body.get("data"), dict) \
+            else (body if isinstance(body, dict) else {})
+        accepted = status == 200 and created.get("baseUrl") == "https://8.8.8.8/v1"
+        deleted = None
+        if accepted and created.get("id"):
+            dstatus, _ = op1.request("DELETE", f"/api/model-connections/{created['id']}")
+            deleted = dstatus in (200, 204)
+        check("E2E-09c", "公网目标可创建（对照组，创建后清理）", accepted and deleted,
+              f"POST baseUrl=https://8.8.8.8/v1 -> HTTP {status} baseUrl={created.get('baseUrl')} "
+              f"id={created.get('id')}；DELETE -> {deleted}")
+    finally:
+        mock.shutdown()
+        mock.server_close()
+
+
+def register_operator() -> Client:
+    """临时注册一个 operator 账号并登录（夹具已清理时使用，账号名打印出来供清理）。"""
+    stamp = int(time.time())
+    username = f"e2e_sec14_{stamp}"
+    password = "E2eSec14#2026!"
+    client = Client()
+    client.refresh_csrf()
+    token = human_token(client, "register")
+    status, body = client.request("POST", "/api/auth/register", {
+        "username": username, "password": password,
+        "confirmPassword": password, "humanToken": token,
+    })
+    assert status == 200 and body.get("code") == 200, f"注册失败: {status} {body}"
+    print(f"[INFO] 临时账号 {username}，清理: DELETE FROM app_user WHERE username='{username}';")
+    return login(username, password, "user")
+
+
 def main():
+    only = None
+    if "--only" in sys.argv:
+        only = set(sys.argv[sys.argv.index("--only") + 1].split(","))
+
+    def want(name: str) -> bool:
+        return only is None or name in only
+
     print("=" * 72)
     print("平台 HTTP 级 E2E 验收（SEC 系列）—— 2026-11-06 晚")
     print("=" * 72)
-    e2e_01_base_and_csrf()
-    op1 = login("e2e_op1", "E2eOp#2026", "user")
-    admin = login("e2e_admin", "E2eAdmin#2026", "admin")
-    e2e_02_scope_isolation(op1)
-    e2e_03_audit_admin_global(admin)
-    e2e_04_loop_idempotent(op1)
-    e2e_05_loop_scope(op1)
-    e2e_06_crawl_fail_closed(op1)
-    e2e_07_knowledge_auth()
-    e2e_08_governance_minimal()
+    if want("e2e_01"):
+        e2e_01_base_and_csrf()
+
+    op1 = admin = None
+    if any(want(n) for n in ("e2e_02", "e2e_04", "e2e_05", "e2e_06", "e2e_09")):
+        op1 = register_operator() if "--register" in sys.argv \
+            else login("e2e_op1", "E2eOp#2026", "user")
+    if want("e2e_03"):
+        admin = login("e2e_admin", "E2eAdmin#2026", "admin")
+
+    if want("e2e_02"):
+        e2e_02_scope_isolation(op1)
+    if want("e2e_03"):
+        e2e_03_audit_admin_global(admin)
+    if want("e2e_04"):
+        e2e_04_loop_idempotent(op1)
+    if want("e2e_05"):
+        e2e_05_loop_scope(op1)
+    if want("e2e_06"):
+        e2e_06_crawl_fail_closed(op1)
+    if want("e2e_07"):
+        e2e_07_knowledge_auth()
+    if want("e2e_08"):
+        e2e_08_governance_minimal()
+    if want("e2e_09"):
+        e2e_09_model_connection_ssrf(op1)
 
     failed = [r for r in RESULTS if r[2] != "PASS"]
     print("=" * 72)

@@ -6,27 +6,75 @@ import com.smartops.dto.model.ModelInvocationRequest;
 import com.smartops.dto.model.ModelInvocationResponse;
 import com.smartops.entity.ModelConnection;
 import com.smartops.exception.BusinessException;
-import lombok.RequiredArgsConstructor;
+import com.smartops.security.OutboundUrlPolicy;
+import com.smartops.security.PinnedDns;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 模型供应商出站客户端。
+ *
+ * <p>SEC-14：建连必须落在 {@link OutboundUrlPolicy} 校验过的地址上。Java 17 的
+ * {@code java.net.http} 没有解析钩子，因此改用 Apache HttpClient 5 +
+ * fail-closed 的 {@link PinnedDns} 解析器：未登记 pin 的主机一律解析失败，
+ * 关闭"校验后改 DNS 应答"的 rebinding 窗口。pin 由调用方（ModelConnectionService）
+ * 在出站前登记、调用结束后清除。</p>
+ *
+ * <p>不跟随重定向、不自动重试，避免把 POST 转发到未校验目标或重复计费。</p>
+ */
 @Service
-@RequiredArgsConstructor
 public class ModelProviderClient {
 
+    private static final int CONNECT_TIMEOUT_SECONDS = 10;
+
     private final ObjectMapper objectMapper;
-    private final HttpClient client = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .build();
+    private final CloseableHttpClient client;
+
+    public ModelProviderClient(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+        PoolingHttpClientConnectionManager connections = PoolingHttpClientConnectionManagerBuilder.create()
+                .setDnsResolver(new org.apache.hc.client5.http.DnsResolver() {
+                    @Override
+                    public java.net.InetAddress[] resolve(String host) throws java.net.UnknownHostException {
+                        return PinnedDns.resolve(host);
+                    }
+
+                    @Override
+                    public String resolveCanonicalHostname(String host) throws java.net.UnknownHostException {
+                        PinnedDns.resolve(host);
+                        return host;
+                    }
+                })
+                .setDefaultConnectionConfig(ConnectionConfig.custom()
+                        .setConnectTimeout(Timeout.ofSeconds(CONNECT_TIMEOUT_SECONDS))
+                        .build())
+                .setMaxConnTotal(8)
+                .setMaxConnPerRoute(4)
+                .build();
+        this.client = HttpClients.custom()
+                .setConnectionManager(connections)
+                .disableRedirectHandling()
+                .disableAutomaticRetries()
+                .build();
+    }
 
     public ModelInvocationResponse invoke(
             ModelConnection connection,
@@ -45,38 +93,41 @@ public class ModelProviderClient {
         payload.put("messages", messages);
         payload.put("temperature", request.getTemperature() == null ? 0.2 : request.getTemperature());
 
+        int timeoutSeconds = connection.getTimeoutSeconds() == null ? 60 : connection.getTimeoutSeconds();
         try {
-            HttpRequest httpRequest = HttpRequest.newBuilder(endpoint)
-                    .timeout(Duration.ofSeconds(connection.getTimeoutSeconds()))
-                    .header("Authorization", "Bearer " + apiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
-                    .build();
-            HttpResponse<String> response = client.send(
-                    httpRequest, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new BusinessException(502,
-                        "模型服务调用失败（HTTP " + response.statusCode() + "）");
-            }
+            HttpPost httpRequest = new HttpPost(endpoint);
+            httpRequest.setConfig(RequestConfig.custom()
+                    .setConnectionRequestTimeout(Timeout.ofSeconds(Math.min(timeoutSeconds, CONNECT_TIMEOUT_SECONDS)))
+                    .setResponseTimeout(Timeout.ofSeconds(timeoutSeconds))
+                    .build());
+            httpRequest.setHeader("Authorization", "Bearer " + apiKey);
+            httpRequest.setEntity(new StringEntity(
+                    objectMapper.writeValueAsString(payload), ContentType.APPLICATION_JSON));
+            try (CloseableHttpResponse response = client.execute(httpRequest)) {
+                int status = response.getCode();
+                String body = response.getEntity() == null ? ""
+                        : EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                if (status < 200 || status >= 300) {
+                    throw new BusinessException(502,
+                            "模型服务调用失败（HTTP " + status + "）");
+                }
 
-            Map<String, Object> body = objectMapper.readValue(
-                    response.body(), new TypeReference<>() {});
-            String content = extractContent(body);
-            Map<String, Object> usage = body.get("usage") instanceof Map<?, ?> raw
-                    ? objectMapper.convertValue(raw, new TypeReference<>() {})
-                    : Map.of();
-            return ModelInvocationResponse.builder()
-                    .connectionId(connection.getId())
-                    .provider(connection.getProvider())
-                    .model(connection.getModelName())
-                    .content(content)
-                    .usage(usage)
-                    .build();
+                Map<String, Object> responseBody = objectMapper.readValue(
+                        body, new TypeReference<>() {});
+                String content = extractContent(responseBody);
+                Map<String, Object> usage = responseBody.get("usage") instanceof Map<?, ?> raw
+                        ? objectMapper.convertValue(raw, new TypeReference<>() {})
+                        : Map.of();
+                return ModelInvocationResponse.builder()
+                        .connectionId(connection.getId())
+                        .provider(connection.getProvider())
+                        .model(connection.getModelName())
+                        .content(content)
+                        .usage(usage)
+                        .build();
+            }
         } catch (BusinessException ex) {
             throw ex;
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            throw new BusinessException(502, "模型服务调用被中断");
         } catch (Exception ex) {
             throw new BusinessException(502, "模型服务调用失败");
         }
