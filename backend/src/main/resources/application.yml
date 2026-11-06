@@ -179,6 +179,9 @@ smartops:
       # "同一 IP/账号失败三次后才强制"的按风险策略。
       always-require-login: ${SMARTOPS_HUMAN_VERIFICATION_ALWAYS_REQUIRE_LOGIN:true}
     api-key-encryption-key: ${SMARTOPS_API_KEY_ENCRYPTION_KEY:}
+    # 生产判定：显式开关或激活 profile 含 prod/production。生产下若
+    # internal-bypass=true、内部 token 缺失/过短、聊天 run token 机密缺失，启动直接失败。
+    production: ${SMARTOPS_SECURITY_PRODUCTION:false}
     internal-token: ${SMARTOPS_INTERNAL_TOKEN:}
     internal-bypass: ${SMARTOPS_INTERNAL_BYPASS:false}
     chat:
