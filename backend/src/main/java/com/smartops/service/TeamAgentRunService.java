@@ -1,5 +1,6 @@
 package com.smartops.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -32,6 +33,8 @@ public class TeamAgentRunService {
     private final ObjectMapper mapper;
     /** 仅用于绑定摘要：键序固定，保证同样的参数得到同样的摘要。 */
     private final ObjectMapper canonicalMapper;
+    /** 出参视图：容忍 Instant（测试用裸 ObjectMapper 无 jsr310 模块）。 */
+    private final ObjectMapper viewMapper;
     private final Clock clock;
     private final SecurityAuditService audit;
     private final TeamNotificationService notifications;
@@ -59,6 +62,8 @@ public class TeamAgentRunService {
         this.agents = agents;
         this.mapper = mapper;
         this.canonicalMapper = mapper.copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+        this.viewMapper = mapper.copy().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
+                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         this.clock = clock;
         this.audit = audit;
         this.notifications = notifications;
@@ -136,6 +141,27 @@ public class TeamAgentRunService {
         Run run = find(runId);
         authorizer.requireMember(actor, run.teamId(), "view");
         return run;
+    }
+
+    private static final TypeReference<Map<String, Object>> RUN_VIEW_TYPE = new TypeReference<>() {};
+
+    /**
+     * SEC-05：一次性 grant token 只下发给申请人本人（执行人），且仅在 APPROVED 可执行窗口内。
+     *
+     * <p>此前 token 在 {@link Run} 上是 {@code @JsonIgnore}：单测在进程内直接读 record
+     * 组件验证了校验逻辑，但 HTTP 层的合法执行人永远拿不到 token，审批后的执行链路
+     * 在线上是断的。控制器 create/detail/list 出参统一经此视图：申请人本人可见
+     * token；审批人/其他成员看到的行不含 token；已消费（RUNNING/终态）后库里已置
+     * NULL，同样不可见。token 本就只能在 consumeGrant 中由申请人本人使用，此处
+     * 下发不扩大任何权限。</p>
+     */
+    public Map<String, Object> forRequester(Run run, SessionUser actor) {
+        Map<String, Object> view = viewMapper.convertValue(run, RUN_VIEW_TYPE);
+        if (run != null && view != null && Objects.equals(run.requesterId(), actor.id())
+                && "APPROVED".equals(run.status()) && run.grantToken() != null) {
+            view.put("grantToken", run.grantToken());
+        }
+        return view;
     }
 
     public List<Run> list(SessionUser actor, long teamId) {
