@@ -56,6 +56,8 @@ class RegistrationSecurityIntegrationTest {
         var encoder = new BCryptPasswordEncoder(4);
         jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(11,?,?,'admin'),(22,'existing-user',?,'operator')",
                 adminName, encoder.encode(ADMIN_PASSWORD), encoder.encode(USER_PASSWORD));
+        // SEC-07：治理档案是能力的唯一来源；SQL 种子的管理员按迁移回填语义显式建档。
+        com.smartops.support.TestPlatformProfiles.grantRoot(jdbc, 11L);
     }
 
     private Client anonymous() throws Exception {
@@ -219,6 +221,8 @@ class RegistrationSecurityIntegrationTest {
 
     @Test void passwordChangeCannotBypassTheAdministratorConfirmationLimit() throws Exception {
         jdbc.update("UPDATE app_user SET id=2222 WHERE id=11");
+        // SEC-07：档案跟着主体走，避免把能力留在旧 id 上。
+        jdbc.update("UPDATE platform_admin_profile SET user_id=2222 WHERE user_id=11");
         Client manager = admin();
         send(anonymous(), post("/api/auth/login"), Map.of("username", adminName, "password", ADMIN_PASSWORD, "portal", "user")).andExpect(status().isForbidden());
         for (int attempt = 0; attempt < 5; attempt++) {
@@ -270,7 +274,9 @@ class RegistrationSecurityIntegrationTest {
         send(promoted, post("/api/auth/password"), Map.of("currentPassword", USER_PASSWORD, "newPassword", "LongEnoughAdminPassword43!"))
                 .andExpect(status().isOk());
         Client updated = login("existing-user", "LongEnoughAdminPassword43!", "admin");
-        mvc.perform(get("/api/admin/users").session(updated.session())).andExpect(status().isOk());
+        // SEC-07：提升后的管理员档案为 deputy 且默认无能力——改密只解决 mustChangePassword，
+        // 管理接口仍需最高管理员按能力目录显式授予（这里未授予，故仍 403）。
+        mvc.perform(get("/api/admin/users").session(updated.session())).andExpect(status().isForbidden());
     }
 
     @Test void existingAdministratorPasswordIsNotSilentlyReplaced() throws Exception {

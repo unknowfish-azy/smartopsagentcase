@@ -120,11 +120,20 @@ public class UserAccountService {
     public boolean hasPlatformCapability(SessionUser actor, String capability) {
         if (actor == null || !"admin".equals(actor.role()) || !"admin".equals(actor.portal()) || capability == null) return false;
         List<PlatformProfile> profiles = profileOf(actor.id());
-        // 治理迁移前创建的管理员没有档案，沿用历史语义视为最高管理员。
-        if (profiles.isEmpty()) return true;
+        // SEC-07：缺档案的管理员只保留最小只读能力，其余一律 403（fail-closed）；
+        // “缺档案=最高管理员”的历史语义是提权漏洞，不再沿用。
+        if (profiles.isEmpty()) return PlatformAdminGovernance.MINIMAL_READ_ONLY_CAPABILITIES.contains(capability);
         // 已撤销的管理员档案保留：不得因为缺少能力行而被重新放行。
         if (profiles.get(0).revoked()) return false;
-        return jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=? AND capability=?", Integer.class, actor.id(), capability) > 0;
+        // SEC-07：最小只读是未撤销管理员的保底视图（新建/提升的 deputy 默认零能力行，
+        // 但审计与团队只读仍应可见）；写能力与配置能力必须显式授予能力行。
+        if (PlatformAdminGovernance.MINIMAL_READ_ONLY_CAPABILITIES.contains(capability)) return true;
+        try {
+            return jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_capability WHERE user_id=? AND capability=?", Integer.class, actor.id(), capability) > 0;
+        } catch (org.springframework.dao.DataAccessException unavailable) {
+            // SEC-07：治理数据不可用时拒绝判定（明确 500），绝不回退为放行或静默拒绝。
+            throw new BusinessException(500, "平台治理数据不可用，请联系系统管理员");
+        }
     }
 
     private record PlatformProfile(String level, java.sql.Timestamp revokedAt) {
@@ -217,8 +226,9 @@ public class UserAccountService {
             return jdbc.query("SELECT u.id,u.username,u.enabled,p.level,COALESCE(GROUP_CONCAT(c.capability), '') capabilities FROM app_user u JOIN platform_admin_profile p ON p.user_id=u.id LEFT JOIN platform_admin_capability c ON c.user_id=u.id WHERE u.role='admin' AND p.revoked_at IS NULL GROUP BY u.id,u.username,u.enabled,p.level ORDER BY CASE p.level WHEN 'root' THEN 0 WHEN 'deputy' THEN 1 ELSE 2 END,u.id",
                     (row, ignored) -> new PlatformAdminView(row.getLong("id"), row.getString("username"), row.getBoolean("enabled"), row.getString("level"), row.getString("capabilities").isBlank() ? List.of() : List.of(row.getString("capabilities").split(","))),
                     new Object[0]);
-        } catch (org.springframework.dao.DataAccessException missingMigration) {
-            return jdbc.query("SELECT id,username,enabled FROM app_user WHERE role='admin' ORDER BY id", (row, ignored) -> new PlatformAdminView(row.getLong("id"), row.getString("username"), row.getBoolean("enabled"), "root", List.of()), new Object[0]);
+        } catch (org.springframework.dao.DataAccessException unavailable) {
+            // SEC-07：治理数据不可用时不得把全部 admin 当 root 展示（fail-open 已移除）。
+            throw new BusinessException(500, "平台治理数据不可用，请联系系统管理员");
         }
     }
 
@@ -282,8 +292,9 @@ public class UserAccountService {
 
     private String platformLevel(SessionUser actor) {
         List<PlatformProfile> profiles = profileOf(actor.id());
-        // 治理建档前的存量管理员没有档案，按历史语义视为最高管理员。
-        return profiles.isEmpty() ? PlatformAdminGovernance.ROOT : profiles.get(0).level();
+        // SEC-07：无档案不视为最高管理员；能力门禁已按最小只读兜底，
+        // 任命/撤销/转让都要求显式档案与能力。
+        return profiles.isEmpty() ? null : profiles.get(0).level();
     }
 
     public AccountPage list(String query, String role, Boolean enabled, int page, int pageSize) {
@@ -322,6 +333,8 @@ public class UserAccountService {
         } catch (DuplicateKeyException error) { throw new BusinessException(409, "账号已存在"); }
         long id = jdbc.queryForObject("SELECT id FROM app_user WHERE username=?", Long.class, username);
         jdbc.update("INSERT INTO account_security(user_id,must_change_password) VALUES(?,?)", id, mustChange);
+        // SEC-07：新建管理员必须显式建档（deputy、默认无能力），不得落入“缺档案=全能力”。
+        if ("admin".equals(role)) ensureAdminProfile(id);
         assignRoles(id, roleIds);
         audit.record(actor, actor == null && "operator".equals(role) ? "REGISTER" : "CREATE_USER", Long.toString(id), "SUCCESS");
         return viewOf(requireAccount(id));
@@ -339,6 +352,11 @@ public class UserAccountService {
         boolean changed = false;
         if (!account.role.equals(role) || account.enabled != enabled) {
             jdbc.update("UPDATE app_user SET role=?,enabled=? WHERE id=?", role, enabled, id);
+            if (!account.role.equals(role) && "admin".equals(role)) {
+                // SEC-07：提升为管理员必须显式建档（deputy、默认无能力），
+                // 之后由最高管理员按能力目录逐项授予。
+                ensureAdminProfile(id);
+            }
             bumpVersion(id, account.mustChangePassword || (!account.role.equals("admin") && role.equals("admin")));
             changed = true;
         }
@@ -448,7 +466,17 @@ public class UserAccountService {
     @Transactional
     public void bootstrap(String username, String password) {
         if (password == null || password.isBlank() || count("SELECT COUNT(*) FROM app_user") != 0) return;
-        createAccount(username, password, "admin", false, null);
+        AccountView created = createAccount(username, password, "admin", false, null);
+        // SEC-07：首个管理员显式建档为 root 并授予全部能力；
+        // 后续管理员一律走能力目录显式任命，不再有“缺档案=ROOT”。
+        jdbc.update("UPDATE platform_admin_profile SET level='root' WHERE user_id=?", created.id());
+        PlatformAdminGovernance.ROOT_CAPABILITIES.forEach(capability ->
+                jdbc.update("INSERT INTO platform_admin_capability(user_id,capability) VALUES(?,?)", created.id(), capability));
+    }
+
+    /** SEC-07：为管理员补建最小档案（deputy、无能力行）；已有档案（含已撤销）保持不动。 */
+    private void ensureAdminProfile(long userId) {
+        jdbc.update("INSERT INTO platform_admin_profile(user_id,level) SELECT ?, 'deputy' WHERE NOT EXISTS (SELECT 1 FROM platform_admin_profile WHERE user_id=?)", userId, userId);
     }
 
     private long count(String sql) { return jdbc.queryForObject(sql, Long.class); }

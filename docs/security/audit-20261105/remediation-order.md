@@ -236,7 +236,9 @@ rg -n "Bearer |password=|api_key=" backend/logs   # 样例期望 0 命中
 | 前端保持 SSE | `fetchChatRunToken()` → `streamChat(..., {runToken})` → `X-Run-Token` | `stream-resilience.test.mjs` 20 pass（含 2 条令牌用例） |
 | 1.5 爬取 SSRF | `OutboundUrlPolicy` + 首跳/逐跳/重定向复检、禁代理、10MB 下载上限、60s 总预算 | `OutboundUrlPolicyTest` 8 pass；`KnowledgeCrawlServiceTest` 3 pass |
 | 内部 token 生产断言 | `SecurityAssertions` + `ApplicationRunner`：生产下 bypass/缺 token/弱 token/缺聊天机密 → 启动失败 | `SecurityAssertionsTest` 7 pass |
-| 回归 | 后端定向测试通过；全量在并行任务改 `RunbookExecutionService` 时被编译阻断，待其稳定后重跑；Python 309 pass | 2026-11-06 |
+| SEC-03 双人确认 | 预览绑定 `ownerId`+TTL+条目上限；`requiredApprovals>1` 且执行者=预览者 → 409 `SECOND_APPROVER_REQUIRED`；过期 409 `PREVIEW_EXPIRED`、超限 429 `PREVIEW_LIMIT_EXCEEDED`、成功执行后重放 404 | `MultiExecServiceTest` 6 pass |
+| SEC-07 治理 fail-closed | 缺档案仅最小只读；`platformLevel` 缺档案=null；治理表故障 500；新建/提升 admin 显式建档（deputy 无能力）；bootstrap 首 root 显式授全能力；4 个集成测试种子改用 `TestPlatformProfiles.grantRoot` 显式建档 | `UserAccountGovernanceIntegrationTest` 6 项（待并行 MyBatis 稳定后跑通） |
+| 回归 | SEC-03 单测 6/6 通过；SEC-07 集成与全量被并行 MyBatis 在途变更（ServerMetric/OperationKnownHostMapper）阻断，待其稳定后补跑；Python 309 pass | 2026-11-06 |
 
 **仍未完成（不得声称已修复）**：
 - nginx `/ai-api` 网络层隔离未实施，仅保留应用层 401（注释已标注）。

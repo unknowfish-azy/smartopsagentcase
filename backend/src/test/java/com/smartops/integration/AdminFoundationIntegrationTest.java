@@ -48,6 +48,8 @@ class AdminFoundationIntegrationTest {
         }
         String hash = new BCryptPasswordEncoder().encode(PASSWORD);
         jdbc.update("INSERT INTO app_user(id,username,password_hash,role) VALUES(11,'foundation-admin',?,'admin'),(22,'foundation-user',?,'operator')", hash, hash);
+        // SEC-07：治理档案是能力的唯一来源；SQL 种子的管理员按迁移回填语义显式建档。
+        com.smartops.support.TestPlatformProfiles.grantRoot(jdbc, 11L);
     }
 
     private Client anonymous() throws Exception {

@@ -34,14 +34,20 @@ public class MultiExecService {
     private final Map<String, Long> activeRuns = new ConcurrentHashMap<>();
     private final int maxParallel;
     private final int timeoutMs;
+    private final long previewTtlMs;
+    private final int previewMaxEntries;
 
     public MultiExecService(OperationRuntimeRegistry registry, RunbookExecutionService runbookExecution,
                             @Value("${smartops.operations.multi-exec.max-parallel:10}") int maxParallel,
-                            @Value("${smartops.operations.multi-exec.timeout-ms:120000}") int timeoutMs) {
+                            @Value("${smartops.operations.multi-exec.timeout-ms:120000}") int timeoutMs,
+                            @Value("${smartops.operations.multi-exec.preview-ttl-ms:900000}") long previewTtlMs,
+                            @Value("${smartops.operations.multi-exec.preview-max-entries:200}") int previewMaxEntries) {
         this.registry = registry;
         this.runbookExecution = runbookExecution;
         this.maxParallel = Math.max(1, Math.min(10, maxParallel));
         this.timeoutMs = Math.max(5_000, timeoutMs);
+        this.previewTtlMs = Math.max(1, previewTtlMs);
+        this.previewMaxEntries = Math.max(1, previewMaxEntries);
     }
 
     public Preview preview(Long userId, String command, List<String> runtimeIds, boolean productionTarget) {
@@ -49,11 +55,14 @@ public class MultiExecService {
         if (runtimeIds == null || runtimeIds.isEmpty()) throw new BusinessException(400, "TARGETS_REQUIRED");
         List<String> immutableTargets = List.copyOf(runtimeIds);
         immutableTargets.forEach(id -> registry.requireOwned(id, userId));
+        // SEC-03：预览必须绑定创建者并带 TTL/上限，防止内存堆积与过期预览被执行。
+        purgeExpiredPreviews();
+        if (previews.size() >= previewMaxEntries) throw new BusinessException(429, "PREVIEW_LIMIT_EXCEEDED");
         OperationRiskPolicy.Assessment assessment = riskPolicy.assess(command, immutableTargets.size() > 1, productionTarget);
         String id = UUID.randomUUID().toString();
         String nonce = nonce();
         Preview preview = new Preview(id, immutableTargets, OperationRedactor.redact(command), assessment.risk().name(),
-                assessment.requiredApprovals(), nonce, productionTarget, command);
+                assessment.requiredApprovals(), nonce, productionTarget, command, userId, System.currentTimeMillis());
         previews.put(id, preview);
         return preview;
     }
@@ -61,9 +70,18 @@ public class MultiExecService {
     public ExecutionResult execute(Long userId, String previewId, String confirmationNonce, String secondConfirmationNonce) {
         Preview preview = previews.get(previewId);
         if (preview == null) throw new BusinessException(404, "PREVIEW_NOT_FOUND");
+        if (System.currentTimeMillis() - preview.createdAt() > previewTtlMs) {
+            previews.remove(previewId);
+            throw new BusinessException(409, "PREVIEW_EXPIRED");
+        }
         if (!preview.confirmationNonce().equals(confirmationNonce)) throw new BusinessException(409, "CONFIRMATION_REQUIRED");
         if (preview.requiredApprovals() > 1 && !preview.confirmationNonce().equals(secondConfirmationNonce)) {
             throw new BusinessException(409, "SECOND_CONFIRMATION_REQUIRED");
+        }
+        // SEC-03：双人确认必须来自不同主体——执行者等于预览创建者即自批，
+        // 回显同一个 nonce 不构成第二人复核。
+        if (preview.requiredApprovals() > 1 && preview.ownerId() != null && preview.ownerId().equals(userId)) {
+            throw new BusinessException(409, "SECOND_APPROVER_REQUIRED");
         }
         if (previews.remove(previewId) == null) {
             throw new BusinessException(409, "MULTI_EXEC_PREVIEW_ALREADY_EXECUTED");
@@ -123,9 +141,14 @@ public class MultiExecService {
         return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    private void purgeExpiredPreviews() {
+        long now = System.currentTimeMillis();
+        previews.entrySet().removeIf(entry -> now - entry.getValue().createdAt() > previewTtlMs);
+    }
+
     public record Preview(String id, List<String> targetRuntimeIds, String redactedCommand, String risk,
                           int requiredApprovals, String confirmationNonce, boolean productionTarget,
-                          @JsonIgnore String rawCommand) {}
+                          @JsonIgnore String rawCommand, @JsonIgnore Long ownerId, @JsonIgnore long createdAt) {}
     public record TargetResult(String runtimeId, String status, String error, Long operationRunId, Integer exitCode,
                                String outputExcerpt, String dispatchStatus) {}
     public record ExecutionResult(String previewId, long runId, String status, int succeeded, int failed,
