@@ -25,13 +25,18 @@ public class SecurityAssertionConfig {
             @Value("${spring.profiles.active:}") String activeProfiles,
             @Value("${smartops.security.internal-bypass:false}") boolean internalBypass,
             @Value("${smartops.security.internal-token:}") String internalToken,
-            @Value("${smartops.security.chat.run-token.secret:}") String chatRunTokenSecret) {
+            @Value("${smartops.security.chat.run-token.secret:}") String chatRunTokenSecret,
+            @Value("${spring.datasource.password:}") String datasourcePassword,
+            @Value("${spring.data.redis.password:}") String redisPassword,
+            @Value("${smartops.attachments.api-key-encryption-key:}") String apiKeyEncryptionKey) {
         return arguments -> {
             List<String> profiles = activeProfiles == null || activeProfiles.isBlank()
                     ? List.of()
                     : Arrays.asList(activeProfiles.split(","));
             boolean production = SecurityAssertions.isProduction(profiles, explicitProduction);
             SecurityAssertions.verify(production, internalBypass, internalToken, chatRunTokenSecret);
+            SecurityAssertions.verifyDeploymentSecrets(
+                    production, datasourcePassword, redisPassword, apiKeyEncryptionKey);
             if (!production && internalBypass) {
                 log.warn("SECURITY: internal-bypass=true 仅允许本地调试；生产环境会拒绝启动");
             }

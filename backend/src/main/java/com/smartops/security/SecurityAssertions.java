@@ -46,6 +46,38 @@ public final class SecurityAssertions {
         }
     }
 
+    /** SEC-13：已知默认/弱口令黑名单（compose 示例值与常见弱口令）。 */
+    private static final List<String> KNOWN_DEFAULT_PASSWORDS = List.of(
+            "change-me-password", "change-me-root-password", "root", "password", "123456", "admin");
+
+    /**
+     * SEC-13：生产环境部署凭据断言——数据源/Redis 密码与附件加密 key 缺失或等于
+     * 已知默认值时拒绝启动。只读配置做判断，不改运行时行为。
+     */
+    public static void verifyDeploymentSecrets(boolean production,
+                                               String datasourcePassword,
+                                               String redisPassword,
+                                               String apiKeyEncryptionKey) {
+        if (!production) return;
+        List<String> failures = new ArrayList<>();
+        if (isBlank(datasourcePassword)) {
+            failures.add("MYSQL_PASSWORD 未配置（生产数据源不允许空密码）");
+        } else if (KNOWN_DEFAULT_PASSWORDS.contains(datasourcePassword.trim())) {
+            failures.add("MYSQL_PASSWORD 是已知默认口令（change-me/常见弱口令），必须替换");
+        }
+        if (isBlank(redisPassword)) {
+            failures.add("REDIS_PASSWORD 未配置（生产 Redis 必须启用 requirepass）");
+        } else if (KNOWN_DEFAULT_PASSWORDS.contains(redisPassword.trim())) {
+            failures.add("REDIS_PASSWORD 是已知默认口令（change-me/常见弱口令），必须替换");
+        }
+        if (isBlank(apiKeyEncryptionKey)) {
+            failures.add("SMARTOPS_API_KEY_ENCRYPTION_KEY 未配置（附件/凭据加密 key 不允许为空）");
+        }
+        if (!failures.isEmpty()) {
+            throw new IllegalStateException("SECURITY_ASSERTION_FAILED: " + String.join("; ", failures));
+        }
+    }
+
     /**
      * 生产判定：显式开关优先，否则看激活 profile 是否包含 prod/production。
      */

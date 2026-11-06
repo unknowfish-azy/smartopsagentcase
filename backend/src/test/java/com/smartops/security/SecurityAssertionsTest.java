@@ -69,4 +69,36 @@ class SecurityAssertionsTest {
         assertEquals(false, SecurityAssertions.isProduction(List.of("dev"), false));
         assertTrue(SecurityAssertions.isProduction(List.of(), true));
     }
+
+    @Test
+    void productionRejectsMissingDeploymentPasswords() {
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                () -> SecurityAssertions.verifyDeploymentSecrets(true, "", "", ""));
+
+        assertTrue(failure.getMessage().contains("MYSQL_PASSWORD 未配置"));
+        assertTrue(failure.getMessage().contains("REDIS_PASSWORD 未配置"));
+        assertTrue(failure.getMessage().contains("SMARTOPS_API_KEY_ENCRYPTION_KEY 未配置"));
+    }
+
+    @Test
+    void productionRejectsKnownDefaultPasswords() {
+        IllegalStateException mysqlDefault = assertThrows(IllegalStateException.class,
+                () -> SecurityAssertions.verifyDeploymentSecrets(true, "change-me-password", "strong-pass", "key"));
+        assertTrue(mysqlDefault.getMessage().contains("已知默认口令"));
+
+        IllegalStateException redisDefault = assertThrows(IllegalStateException.class,
+                () -> SecurityAssertions.verifyDeploymentSecrets(true, "strong-pass", "change-me-root-password", "key"));
+        assertTrue(redisDefault.getMessage().contains("已知默认口令"));
+    }
+
+    @Test
+    void productionAcceptsInjectedDeploymentSecrets() {
+        assertDoesNotThrow(() -> SecurityAssertions.verifyDeploymentSecrets(
+                true, "injected-strong-mysql-pass", "injected-strong-redis-pass", "base64key"));
+    }
+
+    @Test
+    void nonProductionAllowsEmptyDeploymentPasswordsForLocalDev() {
+        assertDoesNotThrow(() -> SecurityAssertions.verifyDeploymentSecrets(false, "", "", ""));
+    }
 }

@@ -41,20 +41,23 @@ services:
 
     environment:
 
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root-password}
+      # SEC-13：不再提供 change-me 默认口令；未通过环境变量注入时 compose 直接拒绝启动。
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required (SEC-13: no default credentials)}"
 
       MYSQL_DATABASE: ${MYSQL_DATABASE:-smartops}
 
       MYSQL_USER: ${MYSQL_USER:-smartops}
 
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-password}
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required (SEC-13: no default credentials)}"
 
       TZ: Asia/Shanghai
 
 
-    ports:
-
-      - "${MYSQL_PORT:-3306}:3306"
+    # SEC-13：3306 不发布到宿主机，仅容器网络内可达；
+    # 本机调试需要直连时用 `docker exec -it smartops-mysql mysql -u...` 或临时放开注释。
+    # ports:
+    #
+    #   - "${MYSQL_PORT:-3306}:3306"
 
 
     volumes:
@@ -101,16 +104,25 @@ services:
     restart: unless-stopped
 
 
+    # SEC-13：Redis 必须启用 requirepass（密码经 REDIS_PASSWORD 注入，无默认值）。
     command:
       [
         "redis-server",
-        "/usr/local/etc/redis/redis.conf"
+        "/usr/local/etc/redis/redis.conf",
+        "--requirepass",
+        "${REDIS_PASSWORD:?REDIS_PASSWORD is required (SEC-13: redis must have requirepass)}"
       ]
 
+    environment:
 
-    ports:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
-      - "${REDIS_PORT:-6379}:6379"
+
+    # SEC-13：6379 不发布到宿主机，仅容器网络内可达；
+    # 本机调试需要直连时用 `docker exec -it smartops-redis redis-cli`。
+    # ports:
+    #
+    #   - "${REDIS_PORT:-6379}:6379"
 
 
     volumes:
@@ -124,9 +136,8 @@ services:
 
       test:
         [
-          "CMD",
-          "redis-cli",
-          "ping"
+          "CMD-SHELL",
+          "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"
         ]
 
       interval: 10s
@@ -181,11 +192,21 @@ services:
 
       MYSQL_USERNAME: ${MYSQL_USER:-smartops}
 
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-password}
+      # SEC-13：与 mysql 服务同源，禁止回落到示例口令。
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required (SEC-13: no default credentials)}"
 
       REDIS_HOST: redis
 
       REDIS_PORT: 6379
+
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?REDIS_PASSWORD is required (SEC-13: redis must have requirepass)}"
+
+      # SEC-13：生产启动断言要求以下值由外部注入，compose 不提供默认。
+      SMARTOPS_API_KEY_ENCRYPTION_KEY: "${SMARTOPS_API_KEY_ENCRYPTION_KEY:?SMARTOPS_API_KEY_ENCRYPTION_KEY is required}"
+
+      SMARTOPS_INTERNAL_TOKEN: "${SMARTOPS_INTERNAL_TOKEN:?SMARTOPS_INTERNAL_TOKEN is required}"
+
+      SMARTOPS_CHAT_RUN_TOKEN_SECRET: "${SMARTOPS_CHAT_RUN_TOKEN_SECRET:?SMARTOPS_CHAT_RUN_TOKEN_SECRET is required}"
 
       TZ: Asia/Shanghai
 
