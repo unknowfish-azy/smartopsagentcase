@@ -28,6 +28,7 @@ class ModelInvocationAnalyticsTest {
     private final ModelInvocationRequest request = new ModelInvocationRequest();
     @BeforeEach void setup() {
         connection = new ModelConnection(); connection.setEnabled(true); connection.setModelName("model-a"); connection.setApiKeyCiphertext("encrypted");
+        connection.setBaseUrl("http://8.8.8.8/v1");
         when(mapper.findById(2L, 7L)).thenReturn(connection);
         when(crypto.decrypt("encrypted")).thenReturn("secret");
         when(analytics.start(7L, 2L, "model-a")).thenReturn("invocation");
