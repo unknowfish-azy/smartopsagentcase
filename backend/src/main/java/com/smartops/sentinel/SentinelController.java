@@ -40,6 +40,12 @@ public class SentinelController {
         return ApiResponse.success(sentinel.listTasks(actor));
     }
 
+    /** 调度器最近一轮的实测指标与生效配置（队列年龄、到期延迟、背压、慢车道）。 */
+    @GetMapping("/scheduler-stats")
+    public ApiResponse<Map<String, Object>> schedulerStats(@AuthenticationPrincipal SessionUser actor) {
+        return ApiResponse.success(sentinel.schedulerStatus(actor));
+    }
+
     @PostMapping("/tasks")
     public ApiResponse<SentinelService.TaskView> createTask(@AuthenticationPrincipal SessionUser actor,
                                                             @RequestBody TaskRequest request) {

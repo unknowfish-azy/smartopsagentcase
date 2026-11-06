@@ -84,10 +84,18 @@ public class SentinelService {
     private final long leaseMs;
     /** 失败退避上限，避免故障目标被无限拉长间隔。 */
     private final long maxBackoffSec;
+    /** 慢目标判定阈值：上次实测耗时超过该值即进入慢车道。 */
+    private final long slowThresholdMs;
+    /** 慢车道容量：慢目标最多占用这些槽位，不挤占通用槽位。 */
+    private final int slowLaneSize;
+    /** 整轮等待上限：超过后未完成的采集交给租约回收，不继续阻塞调度线程。 */
+    private final long roundDeadlineMs;
     private final String instanceId;
     private final Semaphore inFlight;
+    /** 慢目标专用车道，与通用槽位隔离。 */
+    private final Semaphore slowLane;
     private final ExecutorService workers;
-    private volatile SchedulerStats lastStats = new SchedulerStats(0, 0, 0, 0L, 0L);
+    private volatile SchedulerStats lastStats = new SchedulerStats(0, 0, 0, 0, 0, 0L, 0L, 0L, 0L);
 
     public SentinelService(JdbcTemplate jdbc, OperationRuntimeRegistry runtimes,
                            com.smartops.service.OperationConnectionService connections,
@@ -98,7 +106,11 @@ public class SentinelService {
                            @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.max-concurrency:8}") int maxConcurrency,
                            @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.batch-size:40}") int batchSize,
                            @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.lease-ms:90000}") long leaseMs,
-                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.max-backoff-sec:3600}") long maxBackoffSec) {
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.max-backoff-sec:3600}") long maxBackoffSec,
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.slow-threshold-ms:2000}") long slowThresholdMs,
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.slow-lane-size:2}") int slowLaneSize,
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.round-deadline-ms:45000}") long roundDeadlineMs,
+                           @org.springframework.beans.factory.annotation.Value("${smartops.sentinel.poll.instance-id:}") String instanceIdOverride) {
         this.jdbc = jdbc;
         this.runtimes = runtimes;
         this.connections = connections;
@@ -110,8 +122,13 @@ public class SentinelService {
         this.batchSize = Math.max(this.maxConcurrency, batchSize);
         this.leaseMs = Math.max(15_000, leaseMs);
         this.maxBackoffSec = Math.max(60, maxBackoffSec);
-        this.instanceId = resolveInstanceId();
+        this.slowThresholdMs = Math.max(1, slowThresholdMs);
+        this.slowLaneSize = Math.max(1, Math.min(this.maxConcurrency, slowLaneSize));
+        this.roundDeadlineMs = Math.max(this.leaseMs, roundDeadlineMs);
+        this.instanceId = instanceIdOverride == null || instanceIdOverride.isBlank()
+                ? resolveInstanceId() : instanceIdOverride.trim();
         this.inFlight = new Semaphore(this.maxConcurrency);
+        this.slowLane = new Semaphore(this.slowLaneSize);
         this.workers = java.util.concurrent.Executors.newFixedThreadPool(this.maxConcurrency, runnable -> {
             Thread thread = new Thread(runnable, "sentinel-poller");
             thread.setDaemon(true);
@@ -1052,10 +1069,11 @@ public class SentinelService {
     @Transactional
     public void sampleOnce(TaskView task) {
         Instant now = clock.instant();
+        long startedNs = System.nanoTime();
         OperationRuntime runtime = openRuntime(task);
         if (runtime == null) {
             recordFailure(task, true, "no_runtime",
-                    "没有可用的运行连接（会话级连接关闭后需重新建立）", now);
+                    "没有可用的运行连接（会话级连接关闭后需重新建立）", now, elapsedMs(startedNs));
             return;
         }
         try {
@@ -1063,21 +1081,29 @@ public class SentinelService {
                     collectionCommand(task.kind(), task.target(), task.matchRule()), 15_000);
             if (result.exitCode() != 0) {
                 recordFailure(task, false, "error",
-                        truncate("命令退出码 " + result.exitCode() + "：" + result.stderr(), 500), now);
+                        truncate("命令退出码 " + result.exitCode() + "：" + result.stderr(), 500), now,
+                        elapsedMs(startedNs));
                 return;
             }
+            long durationMs = elapsedMs(startedNs);
             Map<String, Double> snapshot = parseMetrics(task, result.stdout());
             storeSamples(task, snapshot, now);
-            // 成功：下一轮按任务周期执行；连续失败计数归零。
+            // 成功：下一轮按任务周期执行；连续失败计数归零，并记录本次实测耗时供慢目标识别。
             jdbc.update("UPDATE sentinel_task SET last_status='online', last_error=NULL, last_seen_at=CURRENT_TIMESTAMP, "
-                            + "success_count=success_count+1, consecutive_failures=0, next_run_at=?, "
+                            + "success_count=success_count+1, consecutive_failures=0, next_run_at=?, last_duration_ms=?, "
                             + "claimed_by=NULL, lease_expires_at=NULL WHERE id=?",
-                    java.sql.Timestamp.from(now.plusSeconds(Math.max(1, task.intervalSec()) + jitterSeconds())), task.id());
+                    java.sql.Timestamp.from(now.plusSeconds(Math.max(1, task.intervalSec()) + jitterSeconds())),
+                    (int) Math.min(Integer.MAX_VALUE, durationMs), task.id());
             evaluate(task, snapshot, now);
         } catch (Exception failure) {
             log.debug("sentinel sample failed task={}", task.id(), failure);
-            recordFailure(task, false, "error", truncate(String.valueOf(failure.getMessage()), 500), now);
+            recordFailure(task, false, "error", truncate(String.valueOf(failure.getMessage()), 500), now,
+                    elapsedMs(startedNs));
         }
+    }
+
+    private static long elapsedMs(long startedNs) {
+        return Math.max(0L, (System.nanoTime() - startedNs) / 1_000_000);
     }
 
     /**
@@ -1086,21 +1112,23 @@ public class SentinelService {
      * <p>这是 PERF-01 的关键修正：原实现失败后只累加计数，到期判定仍按 last_seen_at，
      * 故障目标会被每一轮反复重采，既压垮目标也占满采集槽位。</p>
      */
-    private void recordFailure(TaskView task, boolean runtimeMissing, String status, String error, Instant now) {
+    private void recordFailure(TaskView task, boolean runtimeMissing, String status, String error, Instant now,
+                               long durationMs) {
         Integer failures = jdbc.queryForObject(
                 "SELECT COALESCE(consecutive_failures,0) FROM sentinel_task WHERE id=?", Integer.class, task.id());
         int next = (failures == null ? 0 : failures) + 1;
         long backoff = backoffSeconds(task.intervalSec(), next);
+        int duration = (int) Math.min(Integer.MAX_VALUE, durationMs);
         if (runtimeMissing) {
             jdbc.update("UPDATE sentinel_task SET last_status=?, last_error=?, last_seen_at=NULL, "
-                            + "failure_count=failure_count+1, consecutive_failures=?, next_run_at=?, "
+                            + "failure_count=failure_count+1, consecutive_failures=?, next_run_at=?, last_duration_ms=?, "
                             + "claimed_by=NULL, lease_expires_at=NULL WHERE id=?",
-                    status, error, next, java.sql.Timestamp.from(now.plusSeconds(backoff)), task.id());
+                    status, error, next, java.sql.Timestamp.from(now.plusSeconds(backoff)), duration, task.id());
         } else {
             jdbc.update("UPDATE sentinel_task SET last_status=?, last_error=?, last_seen_at=CURRENT_TIMESTAMP, "
-                            + "failure_count=failure_count+1, consecutive_failures=?, next_run_at=?, "
+                            + "failure_count=failure_count+1, consecutive_failures=?, next_run_at=?, last_duration_ms=?, "
                             + "claimed_by=NULL, lease_expires_at=NULL WHERE id=?",
-                    status, error, next, java.sql.Timestamp.from(now.plusSeconds(backoff)), task.id());
+                    status, error, next, java.sql.Timestamp.from(now.plusSeconds(backoff)), duration, task.id());
         }
     }
 
@@ -1291,31 +1319,52 @@ public class SentinelService {
      *   <li>成功写入 {@code next_run_at=now+interval}，失败写入指数退避 + 抖动的时间，
      *       失败任务因此有明确的"下次采集时间"，不会被反复重采。</li>
      * </ul>
-     * 本方法等待本批完成（最多一个租约时长），便于调用方与测试观察到确定结果；
+     * 本方法等待本批完成（最多一个整轮 deadline），便于调用方与测试观察到确定结果；
      * 超时未完成的任务由租约自动回退给下一轮，不会重复采集。</p>
      */
     public int pollDueTasks() {
         Instant roundStarted = clock.instant();
-        List<TaskView> due = selectDueTasks();
+        List<DueTask> due = selectDueTasks();
         if (due.isEmpty()) {
-            lastStats = new SchedulerStats(0, 0, 0, 0, 0L);
+            lastStats = new SchedulerStats(0, 0, 0, 0, 0, 0L, 0L, 0L, 0L);
             return 0;
         }
+        long queueAgeMs = 0L;
+        for (DueTask candidate : due) {
+            long age = Math.max(0L, roundStarted.toEpochMilli() - candidate.dueAt().toEpochMilli());
+            if (age > queueAgeMs) queueAgeMs = age;
+        }
         List<Future<?>> futures = new ArrayList<>();
+        Instant deadline = roundStarted.plusMillis(roundDeadlineMs);
         int claimed = 0;
-        int skippedForBackpressure = 0;
-        for (TaskView task : due) {
-            if (!inFlight.tryAcquire()) {
-                // 背压：并发额度已占满，本轮不再认领，避免任务堆积在无界队列里。
-                skippedForBackpressure = due.size() - claimed;
+        int claimedSlow = 0;
+        int deferredSlow = 0;
+        int deferredForBackpressure = 0;
+        long dueLatencyMs = 0L;
+        for (DueTask candidate : due) {
+            TaskView task = candidate.task();
+            // 上次实测耗时超过阈值的任务进慢车道；车道满了就留到下一轮，
+            // 慢目标因此最多占用 slowLaneSize 个槽位，不会挤占通用槽位。
+            boolean slow = candidate.lastDurationMs() >= slowThresholdMs;
+            Semaphore lane = slow ? slowLane : inFlight;
+            if (!lane.tryAcquire()) {
+                if (slow) {
+                    deferredSlow++;
+                    continue;
+                }
+                // 背压：通用槽位已占满，本轮不再认领，未认领的任务留给下一轮。
+                deferredForBackpressure = due.size() - claimed - deferredSlow;
                 break;
             }
             Instant claimedAt = clock.instant();
             if (!claim(task, claimedAt)) {
-                inFlight.release();
+                lane.release();
                 continue;
             }
             claimed++;
+            if (slow) claimedSlow++;
+            long latency = Math.max(0L, claimedAt.toEpochMilli() - candidate.dueAt().toEpochMilli());
+            if (latency > dueLatencyMs) dueLatencyMs = latency;
             futures.add(workers.submit(() -> {
                 try {
                     sampleOnce(task);
@@ -1323,15 +1372,17 @@ public class SentinelService {
                     log.warn("sentinel sample crashed task={}", task.id(), failure);
                     releaseClaim(task.id());
                 } finally {
-                    inFlight.release();
+                    lane.release();
                 }
             }));
         }
         long waitedMs = 0L;
         for (Future<?> future : futures) {
+            long remainingMs = deadline.toEpochMilli() - clock.instant().toEpochMilli();
+            if (remainingMs <= 0) break;
             long startedWaiting = System.nanoTime();
             try {
-                future.get(leaseMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+                future.get(Math.min(leaseMs, remainingMs), java.util.concurrent.TimeUnit.MILLISECONDS);
             } catch (Exception unfinished) {
                 // 超时或异常都不重试：租约到期后下一轮自然可以再次认领。
                 log.warn("sentinel sample unfinished task batch, defer to next round");
@@ -1341,9 +1392,12 @@ public class SentinelService {
             }
         }
         long roundMs = (clock.instant().toEpochMilli() - roundStarted.toEpochMilli());
-        lastStats = new SchedulerStats(due.size(), claimed, skippedForBackpressure, roundMs, waitedMs);
-        if (skippedForBackpressure > 0) {
-            log.info("sentinel backpressure: claimed={} deferred={} roundMs={}", claimed, skippedForBackpressure, roundMs);
+        lastStats = new SchedulerStats(due.size(), claimed, deferredForBackpressure, deferredSlow,
+                claimedSlow, roundMs, waitedMs, queueAgeMs, dueLatencyMs);
+        if (deferredForBackpressure > 0 || deferredSlow > 0) {
+            log.info("sentinel backpressure: claimed={} deferred={} deferredSlow={} slowClaimed={} "
+                            + "queueAgeMs={} dueLatencyMs={} roundMs={}",
+                    claimed, deferredForBackpressure, deferredSlow, claimedSlow, queueAgeMs, dueLatencyMs, roundMs);
         }
         return claimed;
     }
@@ -1351,12 +1405,49 @@ public class SentinelService {
     /** 最近一轮调度的观测值，供状态接口与验证脚本读取。 */
     public SchedulerStats schedulerStats() { return lastStats; }
 
-    public record SchedulerStats(int due, int claimed, int deferredByBackpressure, long roundMs, long waitMs) {}
+    /** 调度器自身的配置，随状态一起返回，便于确认实际生效的并发与慢车道参数。 */
+    public Map<String, Object> schedulerConfig() {
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("maxConcurrency", maxConcurrency);
+        config.put("batchSize", batchSize);
+        config.put("leaseMs", leaseMs);
+        config.put("maxBackoffSec", maxBackoffSec);
+        config.put("slowThresholdMs", slowThresholdMs);
+        config.put("slowLaneSize", slowLaneSize);
+        config.put("roundDeadlineMs", roundDeadlineMs);
+        config.put("instanceId", instanceId);
+        return config;
+    }
 
-    private List<TaskView> selectDueTasks() {
+    /** 最近一轮调度实测指标 + 生效配置；需要登录，读不到数据时如实返回零值而不是估算值。 */
+    public Map<String, Object> schedulerStatus(SessionUser actor) {
+        userId(actor);
+        Map<String, Object> status = new LinkedHashMap<>();
+        status.put("stats", lastStats);
+        status.put("config", schedulerConfig());
+        return status;
+    }
+
+    /**
+     * 一轮调度的实测指标。
+     *
+     * <ul>
+     *   <li>{@code queueAgeMs}：本轮开始时最老到期任务已等待的毫秒数（队列年龄）；</li>
+     *   <li>{@code dueLatencyMs}：从到期到真正认领的最长延迟；</li>
+     *   <li>{@code deferredSlow}：慢车道已满而推迟到下一轮的慢任务数。</li>
+     * </ul>
+     */
+    public record SchedulerStats(int due, int claimed, int deferredByBackpressure, int deferredSlow,
+                                 int claimedSlow, long roundMs, long waitMs, long queueAgeMs, long dueLatencyMs) {}
+
+    /** 到期任务及其到期时间、上次实测耗时。 */
+    private record DueTask(TaskView task, Instant dueAt, long lastDurationMs) {}
+
+    private List<DueTask> selectDueTasks() {
+        Instant now = clock.instant();
         return jdbc.query("""
                 SELECT id,name,kind,target,match_rule,interval_sec,template_id,enabled,last_seen_at,last_status,
-                       last_error,success_count,failure_count,runtime_id,group_label
+                       last_error,success_count,failure_count,runtime_id,group_label,next_run_at,last_duration_ms
                   FROM sentinel_task
                  WHERE enabled=1
                    AND (claimed_by IS NULL OR lease_expires_at < NOW())
@@ -1365,14 +1456,25 @@ public class SentinelService {
                              OR TIMESTAMPDIFF(SECOND, last_seen_at, NOW()) >= interval_sec)))
                  ORDER BY next_run_at IS NULL DESC, next_run_at ASC, last_seen_at ASC
                  LIMIT ?
-                """, (row, ignored) -> new TaskView(
-                row.getLong("id"), row.getString("name"), row.getString("kind"), row.getString("target"),
-                row.getString("match_rule"), row.getInt("interval_sec"), row.getObject("template_id", Long.class),
-                row.getBoolean("enabled"),
-                row.getTimestamp("last_seen_at") == null ? null : row.getTimestamp("last_seen_at").toInstant().toString(),
-                row.getString("last_status"), row.getString("last_error"),
-                row.getLong("success_count"), row.getLong("failure_count"), row.getString("runtime_id"),
-                row.getString("group_label")), batchSize);
+                """, (row, ignored) -> {
+            java.sql.Timestamp lastSeen = row.getTimestamp("last_seen_at");
+            java.sql.Timestamp nextRun = row.getTimestamp("next_run_at");
+            int intervalSec = row.getInt("interval_sec");
+            // 到期时间在 Java 内计算，避免 H2/MySQL 时间函数差异；从未采集过的任务视为"此刻到期"。
+            Instant dueAt = nextRun != null
+                    ? nextRun.toInstant()
+                    : (lastSeen != null ? lastSeen.toInstant().plusSeconds(intervalSec) : now);
+            Integer duration = row.getObject("last_duration_ms", Integer.class);
+            TaskView task = new TaskView(
+                    row.getLong("id"), row.getString("name"), row.getString("kind"), row.getString("target"),
+                    row.getString("match_rule"), intervalSec, row.getObject("template_id", Long.class),
+                    row.getBoolean("enabled"),
+                    lastSeen == null ? null : lastSeen.toInstant().toString(),
+                    row.getString("last_status"), row.getString("last_error"),
+                    row.getLong("success_count"), row.getLong("failure_count"), row.getString("runtime_id"),
+                    row.getString("group_label"));
+            return new DueTask(task, dueAt, duration == null ? 0L : duration.longValue());
+        }, batchSize);
     }
 
     /**
