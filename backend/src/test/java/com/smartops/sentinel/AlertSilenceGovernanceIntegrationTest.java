@@ -13,6 +13,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +46,7 @@ class AlertSilenceGovernanceIntegrationTest {
 
     @Autowired JdbcTemplate jdbc;
     @Autowired AlertLifecycleService lifecycle;
+    @Autowired SentinelNotifier notifier;
 
     @BeforeEach
     void reset() {
@@ -149,5 +151,83 @@ class AlertSilenceGovernanceIntegrationTest {
         assertThatThrownBy(() -> lifecycle.cancelSilence(OWNER, silenceId))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("不存在");
+    }
+
+    @Test
+    @DisplayName("外部平台写入失败时记录 FAILED 与原因，不冒充同步成功")
+    void externalSyncFailureIsRecordedAsFailed() {
+        AlertLifecycleService external = new AlertLifecycleService(jdbc, notifier,
+                new AlertmanagerSilenceClient("http://127.0.0.1:1", "") {
+                    @Override public boolean configured() { return true; }
+                    @Override public String create(String scope, Long scopeId, Instant startsAt,
+                                                   Instant endsAt, String reason, String createdBy) {
+                        throw new IllegalStateException("connection refused");
+                    }
+                });
+
+        AlertLifecycleService.SilenceView view = external.createSilence(OWNER,
+                new AlertLifecycleService.SilenceRequest("TASK", TASK_ID, "外部同步演练",
+                        LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2)));
+
+        assertThat(view.externalStatus()).isEqualTo("FAILED");
+        assertThat(view.externalError()).contains("connection refused");
+        assertThat(view.status()).isEqualTo("ACTIVE");
+        assertThat(AlertSilence.isActive(jdbc, TASK_ID, Instant.now())).isTrue();
+    }
+
+    @Test
+    @DisplayName("外部撤销失败时本地记录保留并报错，避免接口假撤销")
+    void externalRevokeFailureKeepsLocalSilence() {
+        AlertLifecycleService external = new AlertLifecycleService(jdbc, notifier,
+                new AlertmanagerSilenceClient("http://127.0.0.1:1", "") {
+                    @Override public boolean configured() { return true; }
+                    @Override public String create(String scope, Long scopeId, Instant startsAt,
+                                                   Instant endsAt, String reason, String createdBy) {
+                        return "ext-9";
+                    }
+                    @Override public void expire(String externalId) {
+                        throw new IllegalStateException("external 502");
+                    }
+                });
+
+        AlertLifecycleService.SilenceView view = external.createSilence(OWNER,
+                new AlertLifecycleService.SilenceRequest("TASK", TASK_ID, "外部撤销演练",
+                        LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2)));
+        assertThat(view.externalStatus()).isEqualTo("SYNCED");
+
+        assertThatThrownBy(() -> external.cancelSilence(OWNER, view.id()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("SILENCE_EXTERNAL_REVOKE_FAILED");
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sentinel_silence WHERE id=?", Integer.class, view.id()))
+                .isEqualTo(1);
+        assertThat(AlertSilence.isActive(jdbc, TASK_ID, Instant.now())).isTrue();
+    }
+
+    @Test
+    @DisplayName("外部撤销成功后才删除本地记录，且撤销的是真实外部 ID")
+    void externalRevokeHappensBeforeLocalRemoval() {
+        List<String> revoked = new ArrayList<>();
+        AlertLifecycleService external = new AlertLifecycleService(jdbc, notifier,
+                new AlertmanagerSilenceClient("http://127.0.0.1:1", "") {
+                    @Override public boolean configured() { return true; }
+                    @Override public String create(String scope, Long scopeId, Instant startsAt,
+                                                   Instant endsAt, String reason, String createdBy) {
+                        return "ext-42";
+                    }
+                    @Override public void expire(String externalId) {
+                        revoked.add(externalId);
+                    }
+                });
+
+        long silenceId = external.createSilence(OWNER,
+                new AlertLifecycleService.SilenceRequest("GLOBAL", null, "外部撤销成功演练",
+                        LocalDateTime.now().minusMinutes(1), LocalDateTime.now().plusHours(2))).id();
+        external.cancelSilence(OWNER, silenceId);
+
+        assertThat(revoked).containsExactly("ext-42");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sentinel_silence WHERE id=?", Integer.class, silenceId))
+                .isZero();
+        assertThat(AlertSilence.isActive(jdbc, TASK_ID, Instant.now())).isFalse();
     }
 }

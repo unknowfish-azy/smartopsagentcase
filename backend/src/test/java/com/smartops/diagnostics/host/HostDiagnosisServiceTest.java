@@ -189,6 +189,24 @@ class HostDiagnosisServiceTest {
         assertThat(result.overallStatus()).isEqualTo("INCOMPLETE");
     }
 
+    @Test
+    void command_budget_exhaustion_truncates_and_marks_remaining_checks_unverified() {
+        // Redis/nginx 均存在时，按检查顺序会把 14 条命令预算耗尽：
+        // 前 13 条给出真实结论，nginx -t 起不再执行，剩余检查必须如实标 UNVERIFIED。
+        HostDiagnosisResult result = diagnose(heavyRuntime());
+
+        assertThat(result.truncated()).isTrue();
+        assertThat(check(result, "REDIS_REPLICATION").status()).isEqualTo("OK");
+        assertThat(check(result, "REDIS_PERSISTENCE").status()).isEqualTo("OK");
+        assertThat(check(result, "NGINX_UPSTREAM").status()).isEqualTo("UNVERIFIED");
+        assertThat(check(result, "NGINX_UPSTREAM").evidence()).contains("预算");
+        assertThat(check(result, "JVM").status()).isEqualTo("UNVERIFIED");
+        assertThat(check(result, "JVM").evidence()).contains("预算");
+        assertThat(result.unverified()).isTrue();
+        assertThat(result.overallStatus()).isEqualTo("INCOMPLETE");
+        assertThat(result.checks()).extracting(HostCheck::status).doesNotContain("FAILED");
+    }
+
     /* ── 测试替身与夹具 ─────────────────────────────────────────────────── */
 
     private static HostDiagnosisResult diagnose(StubRuntime runtime) {
@@ -225,6 +243,24 @@ class HostDiagnosisServiceTest {
                 .reply("nginx -v", 127, "", "bash: nginx: command not found")
                 .reply("\"java\"", 1, "", "")
                 .fallback(1, "", "");
+    }
+
+    /** 重负载主机：redis 与 nginx 都存在，前 13 条命令即用掉预算，用于验证截断语义。 */
+    private static StubRuntime heavyRuntime() {
+        return healthyRuntime()
+                .reply("redis-server", 0, "5678 /usr/bin/redis-server 127.0.0.1:6379\n", "")
+                .reply("info replication", 0, """
+                        # Replication
+                        role:master
+                        connected_slaves:1
+                        """, "")
+                .reply("info persistence", 0, """
+                        rdb_last_bgsave_status:ok
+                        aof_last_bgrewrite_status:ok
+                        loading:0
+                        """, "")
+                .reply("nginx -v", 0, "nginx version: nginx/1.24.0\n", "")
+                .reply("nginx -t", 0, "nginx: configuration file /etc/nginx/nginx.conf test is successful\n", "");
     }
 
     private static final class StubRuntime implements OperationRuntime {
