@@ -475,3 +475,7 @@ if ($KeepAlive) {
     Write-Ok '保活模式：本窗口保持不退出，按 Ctrl+C 结束（子进程独立控制台，不受影响）'
     while ($true) { Start-Sleep -Seconds 30 }
 }
+
+# 必须显式退出：不写 exit 时，$LASTEXITCODE 会残留脚本内最后一次原生命令（taskkill/mvn 等）
+# 的返回值，调用方（桌面入口、CI）会据此误判成功/失败。
+exit 0

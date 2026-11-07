@@ -33,6 +33,17 @@
 
 双击入口：`scripts\windows\start-platform.cmd`（桌面版 `SmartOpsAgent-启动全部后台功能.cmd` 转发到同一脚本）。
 
+### 桌面入口（SmartOpsAgent-启动/关闭全部后台功能.ps1）
+
+桌面那两个脚本是**带体检的转发壳**，自身不含启停逻辑，只做四件事：
+
+1. 定位仓库：`SMARTOPS_ROOT` → `D:\SmartOpsAgent` → 脚本所在目录及上级 → 各盘符根目录下的 `SmartOpsAgent`；都找不到则退出码 2 并给出 `setx` 指引（仓库搬家不用改脚本，设一次环境变量即可）。
+2. 参数转发：桌面入口接受与 `start-platform.ps1` 相同的开关，另有 `-Open`（启动成功后打开 5173）与 `-Force`（停止后对残留端口补刀）。
+3. 失败留窗口：打印退出码、日志目录、最近三个日志文件名，交互式运行时停住等回车，不会一闪而过。
+4. 停止后逐端口核对八个服务，残留的报出 PID 与进程名；MySQL 只标注「仍在运行，未停止」。
+
+`.cmd` 与 `.ps1` 必须同目录（`.cmd` 只负责拉起 `.ps1`，并透传参数与退出码）。CI 里可设 `SMARTOPS_NO_PAUSE=1` 关闭暂停。
+
 ## check-env.ps1
 
 检查：
