@@ -42,8 +42,33 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BASE = "http://127.0.0.1:8080"
 KNOWLEDGE = "http://127.0.0.1:8002"
-# 与数据准备脚本一致（见执行记录）
-OP1_ID, OP2_ID, ADMIN_ID = 12, 13, 11
+
+
+def _resolve_fixture_ids() -> tuple[int, int, int]:
+    """按用户名解析夹具 ID（夹具由 scripts/e2e/seed_sec_fixtures.py 自举）。"""
+    try:
+        import pymysql
+    except ImportError:  # 无驱动时退回历史固定 ID
+        return 12, 13, 11
+    try:
+        conn = pymysql.connect(host="127.0.0.1", user="root", password="password",
+                               database="smartops", charset="utf8mb4")
+    except Exception:
+        return 12, 13, 11
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT username, id FROM app_user WHERE username IN "
+                        "('e2e_op1','e2e_op2','e2e_admin')")
+            found = {name: uid for name, uid in cur.fetchall()}
+    finally:
+        conn.close()
+    if len(found) < 3:
+        raise SystemExit("夹具账号缺失，先执行：python scripts/e2e/seed_sec_fixtures.py")
+    return found["e2e_op1"], found["e2e_op2"], found["e2e_admin"]
+
+
+# 夹具 ID 以库中实际值为准（seed_sec_fixtures.py 自举，避免依赖固定自增值）
+OP1_ID, OP2_ID, ADMIN_ID = _resolve_fixture_ids()
 
 COLOR_HEX = {
     "红色": "#e2453c", "蓝色": "#2f6fe0", "绿色": "#2f9e5f",

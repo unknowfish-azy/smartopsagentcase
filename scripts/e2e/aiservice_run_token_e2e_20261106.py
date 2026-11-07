@@ -18,6 +18,7 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import sys
 import time
 
@@ -26,7 +27,8 @@ from sec0405_approval_e2e_20261106 import (  # noqa: E402
     OP1, check, ensure_user, RESULTS,
 )
 
-AI_BASE = "http://127.0.0.1:8010"
+# 默认 8010（脚本自带约定）；可用 SMARTOPS_AI_BASE 覆盖以匹配 start-all.ps1 的 8001。
+AI_BASE = os.environ.get("SMARTOPS_AI_BASE", "http://127.0.0.1:8010").rstrip("/")
 SECRET = None  # 从 .env 读取
 
 
