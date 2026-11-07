@@ -7,7 +7,7 @@ ai-service 以共享 HMAC secret 校验签名/过期/一次性。本脚本在真
 
 前置：
   1. 后端 8080（local profile，SMARTOPS_CHAT_RUN_TOKEN_SECRET 已从根 .env 注入）；
-  2. ai-service 已启动（uvicorn，本脚本默认 127.0.0.1:8010）；
+  2. ai-service 已启动（uvicorn，本脚本默认 127.0.0.1:8001，与 start-platform.ps1 / .env 一致）；
   3. 根 .env 中两端 secret 一致（CHAT_RUN_TOKEN_SECRET / SMARTOPS_CHAT_RUN_TOKEN_SECRET）。
 
 用法：
@@ -27,8 +27,8 @@ from sec0405_approval_e2e_20261106 import (  # noqa: E402
     OP1, check, ensure_user, RESULTS,
 )
 
-# 默认 8010（脚本自带约定）；可用 SMARTOPS_AI_BASE 覆盖以匹配 start-all.ps1 的 8001。
-AI_BASE = os.environ.get("SMARTOPS_AI_BASE", "http://127.0.0.1:8010").rstrip("/")
+# 默认 8001（与项目约定 / .env 的 AI_SERVICE_URL 一致）；可用 SMARTOPS_AI_BASE 覆盖。
+AI_BASE = os.environ.get("SMARTOPS_AI_BASE", "http://127.0.0.1:8001").rstrip("/")
 SECRET = None  # 从 .env 读取
 
 

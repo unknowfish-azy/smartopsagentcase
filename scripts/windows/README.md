@@ -2,6 +2,29 @@
 
 用于 SmartOpsAgent Windows 本地开发环境。
 
+## start-platform.ps1（推荐：一键启停全栈）
+
+管理本机八个服务（MySQL / Redis / Ollama / 后端 / knowledge / ai-service / 用户前端 / 管理前端），外加 E2E 用的 mock SSH。已在跑且健康检查通过的服务会被跳过，不会重复拉起。
+
+```powershell
+.\start-platform.ps1              # 启动全部（含 mock SSH）
+.\start-platform.ps1 -SkipMockSsh # 演示模式：不起 mock SSH
+.\start-platform.ps1 -Status      # 只读看状态（UP / WARN / DOWN）
+.\start-platform.ps1 -Stop        # 停止全部（MySQL 为系统服务，不停）
+.\start-platform.ps1 -Restart     # 先停再起
+.\start-platform.ps1 -KeepAlive   # 起完不退出，前台保活（CI / 受管会话里用）
+```
+
+特性：
+
+- 统一从根 `.env` 注入环境变量（JDK 17、DB 口令、run token secret、LLM 配置），Windows 大小写不敏感导致的重复键会自动去重；
+- 启动前清理 `*_proxy` 并固定 `NO_PROXY=127.0.0.1,localhost`，避免系统代理劫持本机健康检查；
+- 每个服务带健康门禁（HTTP 内容匹配，而不只是端口通），未就绪会打印日志尾部；
+- 进程号写入 `.runtime\pids\<svc>.pid`，日志写入 `.runtime\logs\<svc>-<时间戳>.log`；
+- 结束时若有关键服务未就绪，以退出码 1 失败，不会假成功。
+
+双击入口：`scripts\windows\start-platform.cmd`（桌面版 `SmartOpsAgent-启动全部后台功能.cmd` 转发到同一脚本）。
+
 ## check-env.ps1
 
 检查：
