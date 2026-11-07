@@ -13,7 +13,15 @@
 .\start-platform.ps1 -Stop        # 停止全部（MySQL 为系统服务，不停）
 .\start-platform.ps1 -Restart     # 先停再起
 .\start-platform.ps1 -KeepAlive   # 起完不退出，前台保活（CI / 受管会话里用）
+.\start-platform.ps1 -Dev         # 后端走 mvn spring-boot:run（改代码即时生效，多 ~400MB）
 ```
+
+后端默认**单 JVM 跑 jar**：脚本比对 `backend/target/*.jar` 与 `backend/src` 最新修改时间，
+源码有更新会自动 `mvn -DskipTests package` 后重启，不会跑到旧代码。需要 Maven 热重启行为时用 `-Dev`。
+
+内存口径（2026-11-07 实测，提交内存）：九服务合计约 2.3GB；其中 knowledge 因收敛 torch 线程
+（`OMP_NUM_THREADS=1`）从 2.6GB 降到 1.1GB，是最大的一笔。详见
+`docs/一键启动脚本与冷启动验收-20261107.md` 第 9 节。
 
 特性：
 
