@@ -52,7 +52,9 @@ import pymysql
 BASE = "http://127.0.0.1:8080"
 SSH_USER, SSH_PASSWORD, SSH_PORT = "e2eops", "E2eSsh#2026", 2222
 OP1, OP2 = "e2e_op1", "e2e_op2"
-PASSWORD = "E2eOps#2026!"
+# 必须与 seed_sec_fixtures.py / platform_http_e2e 保持一致：
+# 账号是跨套件共享的，口令不一致会让后跑的套件登录 401（曾发生）。
+PASSWORD = "E2eOp#2026"
 MYSQL = dict(host="127.0.0.1", port=3306, user="root", password="password",
              database="smartops", charset="utf8mb4", autocommit=True)
 
@@ -182,7 +184,16 @@ def login(username: str, password: str, portal: str = "user") -> Client:
 
 
 def ensure_user(username: str) -> Client:
-    """注册（不存在时）并登录；返回会话客户端。注册被限流时退化为 SQL 建号（bcrypt 直写）。"""
+    """确保账号可用并登录。
+
+    顺序很关键：先拿现有口令试登录，能登就绝不改库。
+    早期实现无条件走注册/SQL 重置，会把共享夹具账号的 password_hash 覆盖成本脚本口令，
+    导致后跑的 platform_http_e2e 登录 401（套件顺序一换就挂，属于测试间污染）。
+    """
+    try:
+        return login(username, PASSWORD)
+    except AssertionError:
+        print(f"  账号 {username} 现有口令登录失败，尝试注册/重置")
     client = Client()
     client.refresh_csrf()
     try:
@@ -249,7 +260,10 @@ def cleanup(op1_id: int, op2_id: int, team_id: int):
             f"DELETE FROM team_workspace WHERE id={team_id}",
             f"DELETE FROM team_invitation WHERE team_id={team_id}",
             f"DELETE FROM team_notification WHERE team_id={team_id}",
-            f"DELETE FROM app_user WHERE id IN ({op1_id},{op2_id})",
+            # 注意：不要删 app_user 里的 e2e_op1/e2e_op2。
+            # 这两个账号是 platform_http_e2e 与 sec03 共用的夹具，由 seed_sec_fixtures.py 建/清；
+            # 本脚本删过一次，导致之后跑 platform_http_e2e 直接 401（登录失败）——套件顺序一变就挂。
+            # 需要清理账号时统一走：python scripts/e2e/seed_sec_fixtures.py --cleanup
             f"DELETE FROM security_audit_event WHERE actor_id IN ({op1_id},{op2_id})",
             f"DELETE FROM operation_run_record WHERE user_id IN ({op1_id},{op2_id})",
             f"DELETE FROM operation_session WHERE user_id IN ({op1_id},{op2_id})",

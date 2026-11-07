@@ -20,6 +20,7 @@
     .\start-platform.ps1 -Restart        # 重启全部
     .\start-platform.ps1 -SkipMockSsh    # 不起 mock SSH（演示模式推荐）
     .\start-platform.ps1 -KeepAlive      # 起完后不退出，前台保持（CI / 需要在会话内保活时用）
+    .\start-platform.ps1 -Dev            # 后端走 mvn spring-boot:run（改代码即时生效，多一个 JVM 约 400MB）
 #>
 [CmdletBinding()]
 param(
@@ -29,6 +30,7 @@ param(
     [switch]$SkipMockSsh,
     [switch]$SkipAdmin,
     [switch]$KeepAlive,
+    [switch]$Dev,
     [int]$TimeoutSeconds = 180
 )
 
@@ -215,7 +217,13 @@ function Stop-Service4 {
     if (Test-Path -LiteralPath $PidFile) {
         $procId = (Get-Content -LiteralPath $PidFile -ErrorAction SilentlyContinue | Select-Object -First 1)
         if ($procId) {
-            & taskkill.exe /PID $procId /T /F 2>$null | Out-Null
+            # taskkill 对"进程已不存在"会往 stderr 写错误；在 $ErrorActionPreference='Stop'
+            # 下这会被提升成 NativeCommandError 直接中断整个停止流程（重复执行 -Stop 必踩）。
+            # 这里临时降级 + 包 try，退出码仍以 $LASTEXITCODE 为准。
+            $prev = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try { & taskkill.exe /PID $procId /T /F *>&1 | Out-Null } catch { }
+            $ErrorActionPreference = $prev
             if ($LASTEXITCODE -eq 0) { $killed = $true }
         }
         Remove-Item -LiteralPath $PidFile -Force -ErrorAction SilentlyContinue
@@ -224,7 +232,10 @@ function Stop-Service4 {
     if (-not $killed -and (Test-Port $Port)) {
         $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($conn) {
-            & taskkill.exe /PID $conn.OwningProcess /T /F 2>$null | Out-Null
+            $prev = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try { & taskkill.exe /PID $conn.OwningProcess /T /F *>&1 | Out-Null } catch { }
+            $ErrorActionPreference = $prev
             $killed = $LASTEXITCODE -eq 0
         }
     }
@@ -332,25 +343,80 @@ if (-not (Test-Port 11434)) {
 if (Test-Health 'http://127.0.0.1:11434/api/tags' 'models') { Write-Ok 'Ollama 11434 就绪' } else { Write-Warn2 'Ollama 未就绪（AI 对话将不可用）' }
 
 # 后端
-Start-Service4 -Name 'backend' -Port 8080 -WorkDir (Join-Path $ProjectRoot 'backend') `
-    -Command 'mvn -s .mvn\smartops-settings.xml spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.arguments=--server.port=8080' `
-    -HealthUrl 'http://127.0.0.1:8080/actuator/health' -Expect 'UP' `
-    -PidFile (Join-Path $PidDir 'backend.pid') `
-    -ExtraEnv (Select-EnvTable @{
-        SERVER_PORT = '8080'; SERVER__PORT = '8080';
-        MYSQL_USERNAME = $env:MYSQL_USERNAME;
-        MYSQL_PASSWORD = $env:MYSQL_PASSWORD;
-        SMARTOPS_CHAT_RUN_TOKEN_SECRET = $env:SMARTOPS_CHAT_RUN_TOKEN_SECRET;
-        SPRING_PROFILES_ACTIVE = 'local';
-    })
+# 默认单 JVM 跑打好包的 jar：`mvn spring-boot:run` 会多养一个 ~420MB 的 Maven JVM，
+# 而且启动要先跑一遍 Maven 生命周期，纯属浪费。改动源码后 jar 会自动重新打包。
+# 需要 Maven 的热重启行为时加 -Dev。
+$backendDir = Join-Path $ProjectRoot 'backend'
+$backendJar = Join-Path $backendDir 'target\smartops-backend-0.0.1-SNAPSHOT.jar'
+$jvmArgs = '-Xms128m -Xmx640m -XX:MaxMetaspaceSize=320m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss1m -Dfile.encoding=UTF-8'
+
+function Update-BackendJar {
+    param([string]$Dir, [string]$Jar)
+    if (-not (Test-Path -LiteralPath $Jar)) { return $true }
+    $jarTime = (Get-Item -LiteralPath $Jar).LastWriteTimeUtc
+    $pomTime = (Get-Item -LiteralPath (Join-Path $Dir 'pom.xml')).LastWriteTimeUtc
+    if ($pomTime -gt $jarTime) { return $true }
+    $srcRoot = Join-Path $Dir 'src'
+    if (-not (Test-Path -LiteralPath $srcRoot)) { return $false }
+    $newest = Get-ChildItem -LiteralPath $srcRoot -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Extension -in @('.java', '.yml', '.yaml', '.properties', '.xml', '.sql') } |
+        Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    return ($newest -and $newest.LastWriteTimeUtc -gt $jarTime)
+}
+
+$useJar = -not $Dev
+if (-not $useJar) {
+    Write-Step '后端以 Maven 模式启动（-Dev 或 jar 不可用）'
+    Start-Service4 -Name 'backend' -Port 8080 -WorkDir $backendDir `
+        -Command 'mvn -s .mvn\smartops-settings.xml spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.arguments=--server.port=8080' `
+        -HealthUrl 'http://127.0.0.1:8080/actuator/health' -Expect 'UP' `
+        -PidFile (Join-Path $PidDir 'backend.pid') `
+        -ExtraEnv (Select-EnvTable @{
+            SERVER_PORT = '8080'; SERVER__PORT = '8080';
+            MYSQL_USERNAME = $env:MYSQL_USERNAME;
+            MYSQL_PASSWORD = $env:MYSQL_PASSWORD;
+            SMARTOPS_CHAT_RUN_TOKEN_SECRET = $env:SMARTOPS_CHAT_RUN_TOKEN_SECRET;
+            SPRING_PROFILES_ACTIVE = 'local';
+            MAVEN_OPTS = $jvmArgs;
+        })
+}
+else {
+    if (Update-BackendJar -Dir $backendDir -Jar $backendJar) {
+        Write-Step '后端源码有更新，先打 jar（mvn -DskipTests package）'
+        Push-Location $backendDir
+        try {
+            & mvn -s .mvn\smartops-settings.xml -q -DskipTests package
+            if ($LASTEXITCODE -ne 0) { throw "mvn package 失败（退出码 $LASTEXITCODE）" }
+        }
+        finally { Pop-Location }
+        Write-Ok "jar 已更新：$backendJar"
+    }
+    Start-Service4 -Name 'backend' -Port 8080 -WorkDir $backendDir `
+        -Command ('java {0} -jar "{1}" --spring.profiles.active=local --server.port=8080' -f $jvmArgs, $backendJar) `
+        -HealthUrl 'http://127.0.0.1:8080/actuator/health' -Expect 'UP' `
+        -PidFile (Join-Path $PidDir 'backend.pid') `
+        -ExtraEnv (Select-EnvTable @{
+            SERVER_PORT = '8080'; SERVER__PORT = '8080';
+            MYSQL_USERNAME = $env:MYSQL_USERNAME;
+            MYSQL_PASSWORD = $env:MYSQL_PASSWORD;
+            SMARTOPS_CHAT_RUN_TOKEN_SECRET = $env:SMARTOPS_CHAT_RUN_TOKEN_SECRET;
+        })
+}
 
 # knowledge
+# torch/OpenMP 默认按物理核数起线程（本机 32 核 → 提交内存 2.6GB），
+# 限制为单线程后从 2.6GB 降到 1.1GB，而语料就 299 条，启动时间几乎不变。
 $python = Get-Python
 Start-Service4 -Name 'knowledge' -Port 8002 -WorkDir $ProjectRoot `
     -Command ('"{0}" -m uvicorn knowledge.server:app --host 127.0.0.1 --port 8002' -f $python) `
     -HealthUrl 'http://127.0.0.1:8002/api/ready' -Expect 'smartops-knowledge-service' `
     -PidFile (Join-Path $PidDir 'knowledge.pid') `
-    -ExtraEnv (Select-EnvTable @{ KNOWLEDGE_API_KEY = $env:KNOWLEDGE_API_KEY })
+    -ExtraEnv (Select-EnvTable @{
+        KNOWLEDGE_API_KEY = $env:KNOWLEDGE_API_KEY;
+        OMP_NUM_THREADS = '1'; MKL_NUM_THREADS = '1';
+        OPENBLAS_NUM_THREADS = '1'; NUMEXPR_NUM_THREADS = '1';
+        TOKENIZERS_PARALLELISM = 'false';
+    })
 
 # ai-service
 Start-Service4 -Name 'ai-service' -Port 8001 -WorkDir (Join-Path $ProjectRoot 'ai-service') `
@@ -367,12 +433,12 @@ Start-Service4 -Name 'ai-service' -Port 8001 -WorkDir (Join-Path $ProjectRoot 'a
 
 # 前端用户端 / 管理端
 Start-Service4 -Name 'frontend' -Port 5173 -WorkDir (Join-Path $ProjectRoot 'frontend') `
-    -Command 'set "NODE_OPTIONS=--max-old-space-size=512" && npm run dev -- --host 127.0.0.1 --port 5173' `
+    -Command 'set "NODE_OPTIONS=--max-old-space-size=384" && npm run dev -- --host 127.0.0.1 --port 5173' `
     -HealthUrl 'http://127.0.0.1:5173/' -Expect $null -PidFile (Join-Path $PidDir 'frontend.pid')
 
 if (-not $SkipAdmin) {
     Start-Service4 -Name 'admin' -Port 5174 -WorkDir (Join-Path $ProjectRoot 'frontend') `
-        -Command 'set "NODE_OPTIONS=--max-old-space-size=512" && npm run dev:admin -- --host 127.0.0.1 --port 5174' `
+        -Command 'set "NODE_OPTIONS=--max-old-space-size=384" && npm run dev:admin -- --host 127.0.0.1 --port 5174' `
         -HealthUrl 'http://127.0.0.1:5174/' -Expect $null -PidFile (Join-Path $PidDir 'admin.pid')
 }
 
