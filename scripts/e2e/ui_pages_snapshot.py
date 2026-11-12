@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -24,7 +25,25 @@ ADMIN_FRONT = "http://127.0.0.1:5174"
 OUT = Path("test-artifacts/ui-pages")
 
 DEMO_USER = "demo_ops"
-DEMO_PASSWORD = "SmartOpsDemo2026!"
+
+
+def _demo_password() -> str:
+    """演示口令只来自环境变量或本机 .env，不写入仓库（仓库公开，硬编码等于泄露）。"""
+    key = "SMARTOPS_DEMO_PASSWORD"
+    value = os.environ.get(key)
+    if not value:
+        env_file = Path(__file__).resolve().parents[2] / ".env"
+        if env_file.exists():
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                if line.startswith(key + "="):
+                    value = line.split("=", 1)[1].strip()
+                    break
+    if not value:
+        raise SystemExit(f"缺少 {key}：请在环境变量或仓库根目录 .env 中配置 demo_ops 演示口令")
+    return value
+
+
+DEMO_PASSWORD = _demo_password()
 
 USER_ROUTES = [
     ("01-home", "/"),
