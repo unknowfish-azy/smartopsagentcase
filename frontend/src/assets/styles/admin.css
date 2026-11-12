@@ -15,14 +15,14 @@
   --admin-border: #e4e7ed; --admin-border-strong: #d4d7de; --admin-accent: #3d6aff; --admin-accent-text: #2450d6;
   --admin-soft: #eef3ff; --admin-hover: #f4f4f5; --admin-danger: #a82035;
   --admin-success-bg: #eef6f1; --admin-success-text: #15654a; --admin-warning-bg: #fbf3e2; --admin-warning-text: #7a5406;
-  /* koi-ui 数值：radius 8–12px、hover 上浮 2px、柔和阴影 */
-  --admin-radius: 10px; --admin-radius-sm: 8px; --admin-radius-pill: 999px; --admin-lift: -2px;
-  --admin-shadow: 0 2px 8px rgb(48 49 51 / 6%); --admin-shadow-hover: 0 6px 20px rgb(48 49 51 / 10%);
-  --admin-control-height: 44px; --admin-focus: 2px;
+  /* P2：数值统一收敛到 --ds-* 令牌；--admin-* 名称保留，避免 20+ 管理页选择器失效。 */
+  --admin-radius: var(--ds-radius-lg); --admin-radius-sm: var(--ds-radius-md); --admin-radius-pill: var(--ds-radius-pill); --admin-lift: -2px;
+  --admin-shadow: var(--ds-shadow-1); --admin-shadow-hover: var(--ds-shadow-2);
+  --admin-control-height: var(--ds-control-height); --admin-focus: 2px;
   /* 继续兼容既有 --smart-* 令牌体系（admin 层内部覆盖，不修改 variables.css） */
   --smart-bg: var(--admin-bg); --smart-surface: var(--admin-panel); --smart-text: var(--admin-text); --smart-muted: var(--admin-muted);
   --smart-border: var(--admin-border); --smart-border-strong: var(--admin-border); --smart-primary-strong: var(--admin-accent); --smart-danger: var(--admin-danger);
-  color: var(--admin-text); background: var(--admin-bg); font: 14px/1.6 var(--font-cn, system-ui, sans-serif); color-scheme: light;
+  color: var(--admin-text); background: var(--admin-bg); font: var(--ds-font-md)/var(--ds-line-base) var(--ds-font-cn); color-scheme: light;
 }
 :root[data-theme='dark'] .admin-surface {
   /* 深色令牌：同一套语言，换用 koi-ui dark 体系 */
@@ -30,7 +30,7 @@
   --admin-border: #3a3f47; --admin-border-strong: #4c4d4f; --admin-accent: #5c8bff; --admin-accent-text: #8db0ff;
   --admin-soft: #24304a; --admin-hover: #252627; --admin-danger: #ffa8b6;
   --admin-success-bg: #1b2a24; --admin-success-text: #79d3b0; --admin-warning-bg: #2b2519; --admin-warning-text: #e0bd77;
-  --admin-shadow: 0 2px 8px rgb(0 0 0 / 28%); --admin-shadow-hover: 0 6px 20px rgb(0 0 0 / 38%);
+  --admin-shadow: var(--ds-shadow-1); --admin-shadow-hover: var(--ds-shadow-2);
   color-scheme: dark;
 }
 .admin-surface *, .admin-surface *::before, .admin-surface *::after { box-sizing: border-box; }

@@ -85,3 +85,15 @@ Quiet, technical, editorial. The interface presents a personal SRE knowledge spa
 - Default method: replicate design language and write own components. A new npm dependency requires a fresh GitHub API license check before introduction; licenses change as projects migrate (tremorjs/tremor is gone, tremorlabs/tremor is Apache-2.0).
 - Star count and apparent completeness never imply commercial usability. Every intake decision records its SPDX id and verification date in `reports/open-source-license-verification-2026-10-18.md`.
 - Any performance or effect metric (savings, accuracy, usage deltas) states its measurement basis, sample window, and comparison baseline. The project is evidence-first: unevidenced states are never presented as fact, and external visual vocabulary never overrides this.
+
+## Revision 2026-11-12 — Dual-surface contract (supersedes conflicting legacy values)
+
+The 0-4px radius rule above described the original editorial prototype. The product now has two explicit surfaces; where this section conflicts with earlier lines, **this section wins**.
+
+- **Expressive surface** (`/login`, brand/intro pages): cosmic starfield + a single simplified jelly-glass card. Radius 12-14px, blur <= 12px, one static inner highlight, spring deformation on focus. No per-frame pointer-driven gradient repaint, no WebGL, no 1MB bitmap, no vertical ink scroll, no OPS glyph.
+- **Tool surface** (user console on :5173, admin console on :5174): enterprise-grade, quiet, high-density flat. Radius 4-8px, 1px rules, flat backgrounds, **zero `backdrop-filter`**, no particles, no WebGL. Cards are a legitimate tool primitive here (tables, filters, metrics), unlike the editorial prototype.
+- Radius tokens: `--ds-radius-sm 4` / `--ds-radius-md 8` / `--ds-radius-lg 12` / `--ds-radius-pill 999`. New code must use `--ds-*`; `--smart-*` remains a compatibility alias and `--el-*` is a hard contract that must not be rewritten.
+- Breakpoints are exactly 375 / 768 / 1024 / 1440 / 1920 (`src/design/breakpoints.js`). Do not introduce new ad-hoc breakpoint values.
+- Typography is a local system stack (`--ds-font-cn`, `--ds-font-mono`); external Google Fonts `@import` is removed to unblock first paint and offline use.
+- Motion budget: one shared rAF scheduler (`src/visual/motionScheduler.js`), 30fps default, 15fps on sustained slow frames, off-screen pause, static single frame under reduced motion. `src/design/surfacePolicy.js` exposes the adaptive recommendation and its human-readable reason.
+- Evidence rule still applies: every visual/performance claim (FCP, LCP, frame time, rAF count, blur radius) must state its measurement basis and before/after baseline. See `docs/development/前端整改-企业级控制台与果冻登录方案-20261112.md`.

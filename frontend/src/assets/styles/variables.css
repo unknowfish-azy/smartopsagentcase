@@ -1,5 +1,21 @@
 :root {
   color-scheme: dark;
+  /* --ds-* : 统一设计令牌（P0）。--smart-* 保持向后兼容，新代码优先用 --ds-*。
+     表现层（登录/品牌）与工具层（控制台）共用色板，但只有表现层允许玻璃与星空。 */
+  --ds-color-canvas: #05090d; --ds-color-surface: #071018; --ds-color-surface-raised: #0b1721; --ds-color-card: #0a1118;
+  --ds-color-text: #e8f2f7; --ds-color-muted: #92a6b5; --ds-color-primary: #2496ed; --ds-color-primary-strong: #7ad7f5;
+  --ds-color-success: #8bcfb4; --ds-color-warning: #d9b96d; --ds-color-danger: #dc8490;
+  --ds-color-border: rgba(159, 190, 207, .18); --ds-color-border-strong: rgba(159, 190, 207, .34);
+  --ds-radius-sm: 4px; --ds-radius-md: 8px; --ds-radius-lg: 12px; --ds-radius-pill: 999px;
+  --ds-space-1: 4px; --ds-space-2: 8px; --ds-space-3: 12px; --ds-space-4: 16px; --ds-space-6: 24px; --ds-space-8: 32px; --ds-space-12: 48px;
+  --ds-font-xs: 12px; --ds-font-sm: 13px; --ds-font-md: 14px; --ds-font-lg: 16px; --ds-font-xl: 20px; --ds-font-2xl: 24px;
+  --ds-line-tight: 1.4; --ds-line-base: 1.55; --ds-line-loose: 1.7;
+  --ds-shadow-1: 0 1px 2px rgba(0, 0, 0, .18); --ds-shadow-2: 0 8px 24px rgba(0, 0, 0, .2); --ds-shadow-3: 0 20px 56px rgba(0, 0, 0, .3);
+  --ds-density: default; --ds-control-height: 36px; --ds-row-height: 40px;
+  --ds-z-base: 0; --ds-z-dropdown: 100; --ds-z-sticky: 200; --ds-z-modal: 400; --ds-z-toast: 600;
+  --ds-duration-fast: 160ms; --ds-duration-spring: 200ms;
+  --ds-font-cn: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --ds-font-mono: ui-monospace, "Cascadia Mono", "Consolas", monospace;
   --smart-bg: #05090d; --smart-surface-ghost: rgba(7, 16, 24, .48); --smart-signal-running: #7ad7f5; --smart-signal-idle: #92a6b5; --smart-focus-ring: #b8eeff; --smart-shadow-command: 0 22px 70px rgba(0,0,0,.34); --smart-surface: #071018; --smart-surface-raised: #0b1721; --smart-card: #0a1118; --smart-text: #e8f2f7; --smart-muted: #92a6b5;
   --smart-primary: #2496ed; --smart-primary-strong: #7ad7f5; --smart-border: rgba(159, 190, 207, .18);
   --smart-primary-soft: rgba(122, 215, 245, .12); --smart-primary-foreground: #ffffff; --smart-border-strong: rgba(159, 190, 207, .34);
@@ -27,6 +43,11 @@
 
 [data-theme='light'] {
   color-scheme: light;
+  --ds-color-canvas: #f4f7f9; --ds-color-surface: #ffffff; --ds-color-surface-raised: #fafdff; --ds-color-card: #ffffff;
+  --ds-color-text: #10212b; --ds-color-muted: #4d606c; --ds-color-primary: #0e5f92; --ds-color-primary-strong: #084b73;
+  --ds-color-success: #176b50; --ds-color-warning: #8a5a08; --ds-color-danger: #a33f52;
+  --ds-color-border: rgba(16, 53, 70, .22); --ds-color-border-strong: rgba(16, 53, 70, .34);
+  --ds-shadow-1: 0 1px 2px rgba(16, 53, 70, .08); --ds-shadow-2: 0 8px 24px rgba(16, 53, 70, .1); --ds-shadow-3: 0 20px 56px rgba(16, 53, 70, .14);
   --smart-bg: #f4f7f9; --smart-surface-ghost: rgba(255,255,255,.72); --smart-signal-running: #0e5f92; --smart-signal-idle: #496679; --smart-focus-ring: #0e5f92; --smart-shadow-command: 0 20px 50px rgba(16,53,70,.15);
   --smart-surface: #ffffff;
   --smart-surface-raised: #fafdff;

@@ -8,6 +8,7 @@ import { getGlobalFluidField, getWhaleBreath, getWhaleSwimMotion } from './organ
 import { createWhalePointCloud } from './whaleShape.js'
 import { observeCanvasTheme, readCanvasPalette } from './canvasTheme.js'
 import { visualMode } from '../../visual/visualMode.js'
+import { subscribe } from '../../visual/motionScheduler.js'
 
 const props = defineProps({
   state: { type: String, default: 'idle' },
@@ -42,8 +43,6 @@ onMounted(() => {
   const cloud = createWhalePointCloud(quality.count)
   let palette = readCanvasPalette()
   let visible = !document.hidden
-  let frame = 0
-  let lastFrame = 0
   let width = 1
   let height = 1
   let pixelRatio = 1
@@ -106,28 +105,16 @@ onMounted(() => {
     context.restore()
   }
 
-  const render = (time = 0) => {
-    if (!visible || document.hidden) {
-      redraw()
-      return
-    }
-    if (!quality.animate || reducedMotion()) {
-      redraw()
-      return
-    }
-    if (time - lastFrame >= 33) {
-      lastFrame = time
-      draw(time)
-    }
-    frame = requestAnimationFrame(render)
-  }
-
+  // P3：鲸鱼 2D 云团接入全页共享 rAF 调度器，避免与星野/果冻叠加逐帧竞争。
+  const loopId = `canvas-whale-${Math.random().toString(36).slice(2, 8)}`
+  let unsubscribeLoop = () => {}
   const syncMotion = () => {
-    cancelAnimationFrame(frame)
+    unsubscribeLoop()
+    unsubscribeLoop = () => {}
     quality = resolveQuality(window.innerWidth, reducedMotion())
-    lastFrame = 0
-    if (visible && !document.hidden && quality.animate && !reducedMotion()) frame = requestAnimationFrame(render)
-    else draw()
+    if (visible && !document.hidden && quality.animate && !reducedMotion()) {
+      unsubscribeLoop = subscribe((_dt, now) => draw(now), { fps: 30, id: loopId })
+    } else draw()
   }
 
   const onTheme = nextPalette => { palette = nextPalette; redraw() }
@@ -147,7 +134,7 @@ onMounted(() => {
   reducedQuery.addEventListener?.('change', syncMotion)
 
   dispose = () => {
-    cancelAnimationFrame(frame)
+    unsubscribeLoop()
     observer.disconnect()
     resizeObserver.disconnect()
     stopTheme()

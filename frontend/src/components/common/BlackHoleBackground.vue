@@ -9,7 +9,9 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { BH_CONFIG } from './blackHoleConfig.js'
 
-defineProps({ imageSrc: { type: String, default: '/assets/black-hole-effect.png' } })
+// P3：默认不再加载 1MB 的 black-hole-effect.png，改用 <1KB 静态星野占位，
+// 消除整图 getImageData 同步扫描对渲染线程的阻塞；外部仍可传 imageSrc 覆盖。
+defineProps({ imageSrc: { type: String, default: '/assets/starfield-placeholder.svg' } })
 const root = ref(null), reference = ref(null), canvas = ref(null)
 let ctx, observer, motion
 let stars = [], frame = 0, enabled = true, last = 0
@@ -41,6 +43,14 @@ function prepare() {
       const surround = (light(sx - 3, sy) + light(sx + 3, sy) + light(sx, sy - 3) + light(sx, sy + 3)) / 4
       if (surround > 85) continue
       stars.push({ x: sx, y: sy, phase: Math.random() * Math.PI * 2, speed: .6 + Math.random() * .8 })
+    }
+  }
+  if (!stars.length) {
+    // 内联占位图没有实拍白点可采样：用确定性伪随机补齐星点，保证可复现。
+    let seed = 20261112
+    const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296 }
+    for (let i = 0; i < (BH_CONFIG.starCount || 260); i++) {
+      stars.push({ x: rand() * sample.width, y: rand() * sample.height, phase: rand() * Math.PI * 2, speed: .6 + rand() * .8 })
     }
   }
   const stride = Math.max(1, Math.ceil(stars.length / BH_CONFIG.starCount))

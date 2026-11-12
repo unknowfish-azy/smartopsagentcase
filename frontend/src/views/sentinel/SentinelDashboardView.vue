@@ -475,7 +475,7 @@ let tickTimer = null
 onMounted(() => {
   loadSentinel()
   startPolling(30000) // 真实轮询：每 30 秒刷新一次哨兵数据（后端未接入时静默失败，不伪造数据）
-  tickTimer = setInterval(() => { nowTs.value = Date.now() }, 1000) // 驱动"最后更新：N 秒前"
+  tickTimer = setInterval(() => { nowTs.value = Date.now() }, 5000) // P3：1s 改 5s，避免每秒触发整组件响应式重渲染
 })
 
 onUnmounted(() => {

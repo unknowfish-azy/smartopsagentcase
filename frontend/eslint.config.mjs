@@ -11,6 +11,9 @@ export default [
       "dist-admin/**",
       "**/dist-*/**",
       "**/.vite-*/**",
+      // Vite 预构建缓存是生成物，不参与 lint（此前导致 263 个与源码无关的 error）。
+      ".vite/**",
+      "**/.vite/**",
       "**/test-artifacts/**",
       // TS 由 vite/tsc 负责，不在本轮 lint 范围
       "**/*.ts",

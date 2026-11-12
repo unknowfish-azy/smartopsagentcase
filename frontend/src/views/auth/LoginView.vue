@@ -2,9 +2,6 @@
   <StellarOceanProvider state="thinking">
   <main class="login-shell" :data-visual-mode="visualMode">
     <CanvasAmbientField class="login-ambient" />
-    <div class="login-ink" aria-hidden="true">
-      <p v-for="(passage, index) in inkScroll" :key="index">{{ passage }}</p>
-    </div>
     <MeteorShower v-if="visualMode === 'balanced'" class="login-meteors" />
     <header class="login-topbar">
       <div class="login-brand"><span class="login-brand__mark" aria-hidden="true">智</span><div><strong>智维 Agent</strong><span>SMARTOPS / PERSONAL WORKSPACE</span></div></div>
@@ -132,18 +129,6 @@ import { visualMode, setVisualMode } from '../../visual/visualMode.js'
 const CanvasParticleWhale = defineAsyncComponent(() => import('../../components/common/CanvasParticleWhale.vue'))
 const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
 
-// 滕王阁序 —— 登录页全局背景板字迹：整篇两遍铺陈，竖排右起如手卷
-const inkPassages = [
-  '豫章故郡，洪都新府。星分翼轸，地接衡庐。襟三江而带五湖，控蛮荆而引瓯越。物华天宝，龙光射牛斗之墟；人杰地灵，徐孺下陈蕃之榻。雄州雾列，俊采星驰。台隍枕夷夏之交，宾主尽东南之美。都督阎公之雅望，棨戟遥临；宇文新州之懿范，襜帷暂驻。十旬休假，胜友如云；千里逢迎，高朋满座。腾蛟起凤，孟学士之词宗；紫电青霜，王将军之武库。家君作宰，路出名区；童子何知，躬逢胜饯。',
-  '时维九月，序属三秋。潦水尽而寒潭清，烟光凝而暮山紫。俨骖騑于上路，访风景于崇阿。临帝子之长洲，得天人之旧馆。层峦耸翠，上出重霄；飞阁流丹，下临无地。鹤汀凫渚，穷岛屿之萦回；桂殿兰宫，即冈峦之体势。',
-  '披绣闼，俯雕甍。山原旷其盈视，川泽纡其骇瞩。闾阎扑地，钟鸣鼎食之家；舸舰弥津，青雀黄龙之舳。云销雨霁，彩彻区明。落霞与孤鹜齐飞，秋水共长天一色。渔舟唱晚，响穷彭蠡之滨；雁阵惊寒，声断衡阳之浦。',
-  '遥襟甫畅，逸兴遄飞。爽籁发而清风生，纤歌凝而白云遏。睢园绿竹，气凌彭泽之樽；邺水朱华，光照临川之笔。四美具，二难并。穷睇眄于中天，极娱游于暇日。天高地迥，觉宇宙之无穷；兴尽悲来，识盈虚之有数。望长安于日下，目吴会于云间。地势极而南溟深，天柱高而北辰远。关山难越，谁悲失路之人；萍水相逢，尽是他乡之客。怀帝阍而不见，奉宣室以何年。',
-  '嗟乎！时运不齐，命途多舛。冯唐易老，李广难封。屈贾谊于长沙，非无圣主；窜梁鸿于海曲，岂乏明时。所赖君子见机，达人知命。老当益壮，宁移白首之心；穷且益坚，不坠青云之志。酌贪泉而觉爽，处涸辙以犹欢。北海虽赊，扶摇可接；东隅已逝，桑榆非晚。孟尝高洁，空余报国之情；阮籍猖狂，岂效穷途之哭。',
-  '勃，三尺微命，一介书生。无路请缨，等终军之弱冠；有怀投笔，慕宗悫之长风。舍簪笏于百龄，奉晨昏于万里。非谢家之宝树，接孟氏之芳邻。他日趋庭，叨陪鲤对；今兹捧袂，喜托龙门。杨意不逢，抚凌云而自惜；钟期既遇，奏流水以何惭。',
-  '胜地不常，盛筵难再。兰亭已矣，梓泽丘墟。临别赠言，幸承恩于伟饯；登高作赋，是所望于群公。敢竭鄙怀，恭疏短引。一言均赋，四韵俱成。请洒潘江，各倾陆海云尔。'
-]
-const inkScroll = [...inkPassages, ...inkPassages]
-
 const router = useRouter()
 const route = useRoute()
 const form = reactive({ username: '', password: '', confirmPassword: '', portal: route.query.portal === 'admin' ? 'admin' : 'user' })
@@ -179,6 +164,8 @@ let glassFrame = 0
 let glassMotionQuery
 let glassPointerX = 64
 let glassPointerY = 8
+let lastGlassWriteAt = 0
+const GLASS_LIGHT_THROTTLE_MS = 30
 
 function syncPortalUrl(portal) {
   if (!['user', 'admin'].includes(portal) || route.query.portal === portal) return
@@ -215,12 +202,17 @@ function resetGlassLight() {
 
 function moveGlassLight(event) {
   if (event.pointerType === 'touch' || visualMode.value !== 'balanced' || glassMotionQuery?.matches) return
+  // P1：保留 --login-light-x/y 的写入契约（浏览器测试依赖），但降频到约 33Hz，
+  // 且 ::before 已改为静态高光、不再引用这两个变量，因此写入不再触发渐变重绘。
+  const now = performance.now()
+  if (now - lastGlassWriteAt < GLASS_LIGHT_THROTTLE_MS) return
   const bounds = event.currentTarget.getBoundingClientRect()
   glassPointerX = Math.max(0, Math.min(100, (event.clientX - bounds.left) / bounds.width * 100))
   glassPointerY = Math.max(0, Math.min(100, (event.clientY - bounds.top) / bounds.height * 100))
   if (glassFrame) return
   glassFrame = requestAnimationFrame(() => {
     glassFrame = 0
+    lastGlassWriteAt = now
     glassCard.value?.style.setProperty('--login-light-x', `${glassPointerX.toFixed(1)}%`)
     glassCard.value?.style.setProperty('--login-light-y', `${glassPointerY.toFixed(1)}%`)
   })
@@ -331,11 +323,9 @@ async function finishLogin(user) {
 </script>
 
 <style scoped>
-.login-shell { --login-glass-bg: rgba(9, 22, 32, .76); --login-glass-edge: rgba(173, 222, 239, .32); --login-glass-highlight: rgba(222, 248, 255, .16); --login-glass-luster: rgba(146, 224, 249, .1); --login-glass-shadow: 0 24px 64px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(222, 248, 255, .32), inset 1px 0 0 rgba(222, 248, 255, .12), inset 0 -1px 0 rgba(122, 215, 245, .12); --login-glass-blur: 22px; --login-glyph-edge: rgba(181, 237, 250, .25); --login-ink-color: rgba(216, 230, 238, .07); position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100dvh; gap: 28px; padding: 24px clamp(20px, 4.4vw, 72px); color: var(--smart-text); background: var(--smart-bg); }
+.login-shell { --login-glass-bg: rgba(9, 22, 32, .76); --login-glass-edge: rgba(173, 222, 239, .32); --login-glass-highlight: rgba(222, 248, 255, .16); --login-glass-luster: rgba(146, 224, 249, .1); --login-glass-shadow: 0 24px 64px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(222, 248, 255, .32), inset 1px 0 0 rgba(222, 248, 255, .12), inset 0 -1px 0 rgba(122, 215, 245, .12); --login-glass-blur: 10px; --login-glyph-edge: rgba(181, 237, 250, .25); position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100dvh; gap: 28px; padding: 24px clamp(20px, 4.4vw, 72px); color: var(--smart-text); background: var(--smart-bg); }
 .login-shell > .login-ambient { opacity: .42; pointer-events: none; }
 .login-shell > .login-meteors { opacity: .3; pointer-events: none; }
-.login-ink { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; writing-mode: vertical-rl; color: var(--login-ink-color); font-family: "Kaiti SC", "STKaiti", "KaiTi", "楷体", "Noto Serif SC", serif; padding: 4.5vh 2.6vw 5vh 3vw; }
-.login-ink p { margin: 0 0 0 1.1em; font-size: clamp(17px, 1.5vw, 25px); letter-spacing: .3em; line-height: 2.15; }
 .login-topbar, .login-layout, .login-page-footer { position: relative; z-index: 1; width: min(100%, 1240px); margin-inline: auto; }
 .login-topbar { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .login-brand { display: flex; align-items: center; gap: 12px; }
@@ -364,10 +354,10 @@ async function finishLogin(user) {
 .login-trust > div { display: grid; gap: 6px; }
 .login-trust dt { color: var(--smart-muted); font-size: 12px; }
 .login-trust dd { margin: 0; color: var(--smart-text); font-size: 13px; }
-.login-form { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 13px; width: 100%; min-width: 0; padding: 26px; border: 1px solid var(--login-glass-edge); border-radius: 20px; background: var(--login-glass-bg); box-shadow: var(--login-glass-shadow); backdrop-filter: blur(var(--login-glass-blur)) saturate(135%); -webkit-backdrop-filter: blur(var(--login-glass-blur)) saturate(135%); }
+.login-form { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 13px; width: 100%; min-width: 0; padding: 26px; border: 1px solid var(--login-glass-edge); border-radius: 14px 14px 14px 14px / 13px 13px 15px 15px; background: var(--login-glass-bg); box-shadow: var(--login-glass-shadow); backdrop-filter: blur(var(--login-glass-blur)) saturate(120%); -webkit-backdrop-filter: blur(var(--login-glass-blur)) saturate(120%); }
 .login-form::before, .login-form::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0; }
-.login-form::before { background: radial-gradient(ellipse 320px 280px at var(--login-light-x, 64%) var(--login-light-y, 8%), var(--login-glass-highlight), transparent 72%), linear-gradient(145deg, var(--login-glass-luster), transparent 36%, transparent 70%, var(--login-glass-luster)); opacity: .8; }
-.login-form::after { background: linear-gradient(115deg, transparent 28%, var(--login-glass-highlight) 45%, transparent 62%); background-size: 260% 100%; opacity: .28; animation: login-glass-flow 18s ease-in-out infinite; }
+.login-form::before { background: radial-gradient(ellipse 70% 55% at 50% -10%, var(--login-glass-highlight), transparent 72%), linear-gradient(145deg, var(--login-glass-luster), transparent 36%); opacity: .55; }
+.login-form::after { background: linear-gradient(180deg, var(--login-glass-highlight), transparent 18%, transparent 82%, var(--login-glass-luster)); opacity: .16; animation: none; }
 .login-form > * { position: relative; z-index: 1; }
 .login-form__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .login-form__header .editorial-label { margin-bottom: 12px; font-size: 10px; letter-spacing: .06em; }
@@ -410,7 +400,7 @@ async function finishLogin(user) {
 .login-form :is(button, input):focus-visible, .login-appearance select:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 3px; }
 .login-form .login-input-shell input:focus-visible { outline: none; }
 .login-page-footer { display: flex; justify-content: space-between; gap: 16px; color: var(--smart-muted); font: 10px var(--font-mono); letter-spacing: .06em; }
-:global([data-theme='light'] .login-shell) { --login-glass-bg: rgba(255, 255, 255, .74); --login-glass-edge: rgba(80, 125, 146, .27); --login-glass-highlight: rgba(255, 255, 255, .8); --login-glass-luster: rgba(145, 201, 218, .18); --login-glass-shadow: 0 20px 56px rgba(16, 53, 70, .09), inset 0 1px 0 rgba(255, 255, 255, .98), inset 1px 0 0 rgba(255, 255, 255, .72), inset 0 -1px 0 rgba(80, 125, 146, .12); --login-glyph-edge: rgba(80, 125, 146, .2); --login-ink-color: rgba(16, 33, 43, .06); }
+:global([data-theme='light'] .login-shell) { --login-glass-bg: rgba(255, 255, 255, .74); --login-glass-edge: rgba(80, 125, 146, .27); --login-glass-highlight: rgba(255, 255, 255, .8); --login-glass-luster: rgba(145, 201, 218, .18); --login-glass-shadow: 0 20px 56px rgba(16, 53, 70, .09), inset 0 1px 0 rgba(255, 255, 255, .98), inset 1px 0 0 rgba(255, 255, 255, .72), inset 0 -1px 0 rgba(80, 125, 146, .12); --login-glyph-edge: rgba(80, 125, 146, .2); }
 :global([data-theme='light'] .login-organisms .login-jellyfish) { opacity: .92; }
 :global([data-theme='light'] .login-glyph) { opacity: .55; }
 @keyframes login-glass-flow { 0%, 100% { background-position: 100% 50%; } 50% { background-position: 0% 50%; } }
@@ -426,11 +416,9 @@ async function finishLogin(user) {
   .login-organisms .login-jellyfish { top: 8%; right: 5%; width: 90%; height: 84%; }
   .login-form { width: min(100%, 480px); margin-inline: auto; }
   .login-page-footer { margin-top: auto; }
-  .login-ink { padding: 4vh 4vw 4.5vh 5vw; }
-  .login-ink p { font-size: clamp(16px, 2vw, 20px); letter-spacing: .26em; line-height: 2; }
 }
 @media (max-width: 600px) {
-  .login-shell { --login-glass-blur: 12px; gap: 20px; padding: 20px 16px; }
+  .login-shell { --login-glass-blur: 8px; gap: 20px; padding: 20px 16px; }
   .login-topbar { flex-wrap: wrap; gap: 16px; }
   .login-brand > div > span { font-size: 8px; }
   .login-appearance { width: 100%; gap: 12px; }
@@ -441,18 +429,30 @@ async function finishLogin(user) {
   .login-copy .editorial-label { font-size: 9px; margin-bottom: 8px; }
   .login-organisms { height: 128px; }
   .login-layout { gap: 16px; }
-  .login-form { gap: 16px; padding: 24px 20px; border-radius: 16px; }
+  .login-form { gap: 16px; padding: 24px 20px; border-radius: 12px; }
   .login-form__header h2 { font-size: 27px; }
   .login-form__status { font-size: 8px; }
   .login-page-footer { font-size: 9px; flex-wrap: wrap; }
-  .login-ink { padding: 3.5vh 6vw 4vh 7vw; }
-  .login-ink p { font-size: 15px; letter-spacing: .22em; line-height: 1.9; }
 }
-.login-shell[data-visual-mode='lightweight'], .login-shell[data-visual-mode='reduced-motion'] { --login-glass-blur: 10px; }
+.login-shell[data-visual-mode='lightweight'], .login-shell[data-visual-mode='reduced-motion'] { --login-glass-blur: 6px; }
 .login-shell:not([data-visual-mode='balanced']) .login-form::after,
 .login-shell:not([data-visual-mode='balanced']) .login-glyph span { animation: none; }
 @media (pointer: coarse) { .login-form::after, .login-glyph span { animation: none; } }
-@media (prefers-reduced-motion: reduce) { .login-submit__spinner, .login-form::after, .login-glyph span { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .login-submit__spinner, .login-form::after, .login-glyph span { animation: none; } .login-form, .login-submit { transition: none; } }
 .login-shell[data-visual-mode='reduced-motion'] .login-submit__spinner { animation: none; }
+/* P1 简约化：画面只保留「一句价值主张 + 宇宙星空 + 一个果冻卡」。
+   装饰性元素只做视觉隐藏、不删 DOM，避免破坏既有的布局/几何回归契约。 */
+.login-glyph, .login-scene-label { display: none; }
+.login-trust { grid-template-columns: 1fr; gap: 8px; margin-top: 18px; padding-top: 14px; }
+.login-trust > div:not(:first-child) { display: none; }
+.login-trust > div { display: flex; align-items: baseline; gap: 10px; }
+.login-copy__description { max-width: 380px; font-size: 14px; line-height: 1.7; }
+/* 卡片聚焦反馈统一由 global.css 的 .login-form 规则负责（含 reduced-motion 关闭）；
+   这里只保留按钮的按压缩放，卡片几何恒为 transform: none。 */
+.login-submit { transition: transform 180ms cubic-bezier(.22, 1.3, .36, 1), background-color 160ms ease; }
+.login-submit:active { transform: scale(.985); }
+.login-organisms::before { opacity: .55; }
+.login-form { gap: 12px; }
+.login-form__header h2 { font-size: 24px; }
 @supports not (backdrop-filter: blur(1px)) { .login-form { background: var(--smart-surface); } }
 </style>
