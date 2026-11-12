@@ -7,6 +7,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getGlobalFluidField } from './organismMotion.js'
 import { observeCanvasTheme, readCanvasPalette } from './canvasTheme.js'
 import { visualMode } from '../../visual/visualMode.js'
+import { subscribe } from '../../visual/motionScheduler.js'
 
 const canvas = ref(null)
 let dispose = () => {}
@@ -27,7 +28,6 @@ onMounted(() => {
   let width = 1
   let height = 1
   let pixelRatio = 1
-  let frame = 0
   let visible = !document.hidden
 
   const resize = () => {
@@ -65,16 +65,15 @@ onMounted(() => {
     context.globalAlpha = 1
   }
 
-  const render = time => {
-    if (visible && !document.hidden && !reducedMotion()) {
-      draw(time)
-      frame = requestAnimationFrame(render)
-    } else draw()
-  }
+  // P3：不再自建 rAF 循环，改由全页共享调度器统一驱动（30fps，离屏自动暂停）。
+  const loopId = `ambient-field-${Math.random().toString(36).slice(2, 8)}`
+  let unsubscribeLoop = () => {}
   const syncMotion = () => {
-    cancelAnimationFrame(frame)
-    if (visible && !document.hidden && !reducedMotion()) frame = requestAnimationFrame(render)
-    else draw()
+    unsubscribeLoop()
+    unsubscribeLoop = () => {}
+    if (visible && !document.hidden && !reducedMotion()) {
+      unsubscribeLoop = subscribe((_dt, now) => draw(now), { fps: 30, id: loopId })
+    } else draw()
   }
   const onTheme = nextPalette => { palette = nextPalette; draw() }
   const onVisibility = () => { visible = !document.hidden; syncMotion() }
@@ -87,7 +86,7 @@ onMounted(() => {
   document.addEventListener('visibilitychange', onVisibility)
   reducedQuery.addEventListener?.('change', syncMotion)
   dispose = () => {
-    cancelAnimationFrame(frame)
+    unsubscribeLoop()
     stopTheme()
     stopMode()
     window.removeEventListener('resize', resize)

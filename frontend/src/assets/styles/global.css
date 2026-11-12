@@ -1,12 +1,12 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+﻿/* P0：外部字体裸 @import 会阻塞首屏且离线不可用，改为纯本地字体栈（见 --ds-font-cn / --ds-font-mono）。 */
 @media (max-width: 767px) { body { overflow-x: hidden; }.app-layout { overflow-x: clip; } }
 * { box-sizing: border-box; } html, body, #app { width: 100%; min-height: 100%; margin: 0; }
-body { background: var(--smart-bg); color: var(--smart-text); font-family: Geist, "Segoe UI", sans-serif; font-size: 16px; line-height: 1.55; background-image: linear-gradient(rgba(122,215,245,.022) 1px, transparent 1px), linear-gradient(90deg, rgba(122,215,245,.018) 1px, transparent 1px); background-size: 64px 64px; }
+body { background: var(--smart-bg); color: var(--smart-text); font-family: var(--ds-font-cn); font-size: 16px; line-height: 1.55; background-image: linear-gradient(rgba(122,215,245,.022) 1px, transparent 1px), linear-gradient(90deg, rgba(122,215,245,.018) 1px, transparent 1px); background-size: 64px 64px; }
 button, input, textarea, select { font: inherit; } a { color: inherit; text-decoration: none; } button { cursor: pointer; } :focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 3px; }
 .app-layout { min-height: 100dvh; position: relative; isolation: isolate; }.sidebar { position: fixed; inset: 20px auto 20px 20px; width: var(--sidebar-width); z-index: 5; display: flex; flex-direction: column; padding: 28px 20px 18px; border: 1px solid var(--smart-border); background: rgba(5,9,13,.94); box-shadow: 0 18px 56px rgba(0,0,0,.2); transition: width var(--duration-fast) ease; }.sidebar.collapsed { width: 78px; overflow: hidden; }.sidebar.collapsed .wordmark small, .sidebar.collapsed .section-nav span, .sidebar.collapsed .nav-label, .sidebar.collapsed .system-status { opacity: 0; pointer-events: none; }
 .wordmark { display: grid; gap: 4px; padding: 0 4px 36px; font-family: "Geist Mono", ui-monospace, monospace; font-size: 13px; letter-spacing: .1em; }.wordmark small, .nav-label, .system-status span, .topbar, .text-control { color: var(--smart-muted); font-family: "Geist Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: .11em; }.section-nav { display: grid; gap: 3px; }.nav-label { margin: 0 0 8px; }.nav-label--system { margin-top: 28px; }.section-nav a { display: grid; grid-template-columns: 28px 1fr; align-items: center; min-height: 38px; color: var(--smart-muted); font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; letter-spacing: .06em; border-left: 1px solid transparent; transition: color var(--duration-fast), border-color var(--duration-fast), padding var(--duration-fast); }.nav-icon { width: 16px; height: 16px; color: rgba(146,166,181,.66); stroke-width: 1.6; }.section-nav a:hover, .section-nav a.router-link-active { padding-left: 8px; border-left-color: var(--smart-primary); color: var(--smart-text); }.section-nav a.router-link-active .nav-icon { color: var(--smart-primary-strong); }
-.system-status { display: grid; gap: 12px; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--smart-border); }.system-status div { display: flex; justify-content: space-between; gap: 8px; }.system-status strong { color: var(--smart-primary-strong); font-weight: 500; }.system-status time { color: var(--smart-muted); }.text-control { width: max-content; padding: 0; border: 0; background: none; text-align: left; }.main-area { min-width: 0; margin-left: calc(var(--sidebar-width) + 40px); position: relative; z-index: 1; }.topbar { min-height: 56px; position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 16px; padding: 0 40px; border-bottom: 1px solid var(--smart-border); background: rgba(5,9,13,.72); backdrop-filter: blur(10px); }.menu-button { display: none; border: 0; padding: 0; background: none; color: var(--smart-muted); font: inherit; }.route-context { margin: 0; color: var(--smart-text); }.topbar-right { display: flex; gap: 18px; margin-left: auto; white-space: nowrap; }.content { position: relative; z-index: 1; max-width: 1640px; padding: 0 56px 96px; }
-.page-header { padding: 56px 0 28px; border-bottom: 1px solid var(--smart-border); }.page-header h1, h1, h2, h3 { font-family: Geist, "Segoe UI", sans-serif; font-weight: 400; letter-spacing: 0; }.editorial-label { margin: 0 0 18px; color: var(--smart-primary-strong); font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; }.page-header p, .muted { color: var(--smart-muted); }.el-card { border: 1px solid var(--smart-border) !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; background: rgba(10,17,24,.82) !important; color: var(--smart-text) !important; }.el-table, .el-table tr, .el-table th.el-table__cell { background: transparent !important; color: var(--smart-text) !important; }.el-table td.el-table__cell, .el-table th.el-table__cell.is-leaf { border-bottom-color: var(--smart-border) !important; }
+.system-status { display: grid; gap: 12px; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--smart-border); }.system-status div { display: flex; justify-content: space-between; gap: 8px; }.system-status strong { color: var(--smart-primary-strong); font-weight: 500; }.system-status time { color: var(--smart-muted); }.text-control { width: max-content; padding: 0; border: 0; background: none; text-align: left; }.main-area { min-width: 0; margin-left: calc(var(--sidebar-width) + 40px); position: relative; z-index: 1; }.topbar { min-height: 56px; position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 16px; padding: 0 40px; border-bottom: 1px solid var(--smart-border); background: rgba(5,9,13,.92); backdrop-filter: none; }.menu-button { display: none; border: 0; padding: 0; background: none; color: var(--smart-muted); font: inherit; }.route-context { margin: 0; color: var(--smart-text); }.topbar-right { display: flex; gap: 18px; margin-left: auto; white-space: nowrap; }.content { position: relative; z-index: 1; max-width: 1640px; padding: 0 56px 96px; }
+.page-header { padding: 56px 0 28px; border-bottom: 1px solid var(--smart-border); }.page-header h1, h1, h2, h3 { font-family: var(--ds-font-cn); font-weight: 400; letter-spacing: 0; }.editorial-label { margin: 0 0 18px; color: var(--smart-primary-strong); font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; }.page-header p, .muted { color: var(--smart-muted); }.el-card { border: 1px solid var(--smart-border) !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; background: rgba(10,17,24,.82) !important; color: var(--smart-text) !important; }.el-table, .el-table tr, .el-table th.el-table__cell { background: transparent !important; color: var(--smart-text) !important; }.el-table td.el-table__cell, .el-table th.el-table__cell.is-leaf { border-bottom-color: var(--smart-border) !important; }
 /* LGGC is the material primitive; these overrides keep it legible in the dark ops workspace. */
 .app-layout--liquid .sidebar,
 .app-layout--liquid .topbar,
@@ -36,16 +36,16 @@ button, input, textarea, select { font: inherit; } a { color: inherit; text-deco
   border-color: var(--smart-glass-border) !important;
   background: var(--smart-glass-bg) !important;
   box-shadow: var(--smart-glass-shadow) !important;
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .app-layout--liquid .dimensions span,
 .login-shell--liquid .login-form {
   border-color: var(--smart-glass-border) !important;
   background: var(--smart-glass-bg) !important;
   box-shadow: var(--smart-glass-shadow) !important;
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .login-shell--liquid .login-form {
   border-radius: 14px;
@@ -91,7 +91,7 @@ button, input, textarea, select { font: inherit; } a { color: inherit; text-deco
 .app-layout--liquid .el-button:hover { border-color: var(--smart-primary-strong) !important; }
 .app-layout--liquid .el-table__inner-wrapper::before { background-color: var(--smart-glass-border) !important; }
 .app-layout--liquid .el-table tr:hover > td.el-table__cell { background: rgba(122, 215, 245, .08) !important; }
-.app-layout--liquid .lggc { color: var(--smart-text); --lggc-bg: var(--smart-glass-bg); --lggc-border: var(--smart-glass-border); --lggc-highlight: var(--smart-glass-highlight); --lggc-blur: 24px; }
+.app-layout--liquid .lggc { color: var(--smart-text); --lggc-bg: var(--smart-glass-bg); --lggc-border: var(--smart-glass-border); --lggc-highlight: var(--smart-glass-highlight); --lggc-blur: 0px; }
 .app-layout--liquid > .sidebar.lggc::before,
 .app-layout--liquid > .main-area > .topbar.lggc::before {
   inset: 0;
@@ -270,3 +270,54 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--smart-te
 ::-webkit-scrollbar-corner { background: transparent; }
 ::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--smart-text) 16%, transparent) padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--smart-text) 28%, transparent) padding-box; }
+
+/* ==========================================================================
+   P0 工具层：企业级简约高密度控制台
+   断点统一 375 / 768 / 1024 / 1440 / 1920（唯一常量见 src/design/breakpoints.js）。
+   表现层（登录/品牌）单独在 LoginView.vue 内定义，互不影响。
+   ========================================================================== */
+:root { --ds-surface-radius: var(--ds-radius-md); }
+[data-density='compact'] { --ds-control-height: 30px; --ds-row-height: 32px; --ds-space-4: 12px; }
+[data-density='comfortable'] { --ds-control-height: 44px; --ds-row-height: 48px; --ds-space-4: 20px; }
+
+/* 工具层所有面板统一扁平：1px 边界、8px 圆角、单层阴影、无 backdrop-filter。 */
+.app-layout .el-card,
+.app-layout .app-card,
+.app-layout .panel,
+.app-layout .stat-card,
+.app-layout .metric-card,
+.app-layout .info-card,
+.app-layout .network-card,
+.app-layout .history-card,
+.admin-surface .admin-card,
+.admin-surface .admin-panel {
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-1);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.app-layout .el-table .el-table__cell,
+.admin-surface .admin-table-wrap th,
+.admin-surface .admin-table-wrap td { line-height: var(--ds-line-tight); }
+
+/* 层级令牌：后续新增浮层请复用，不再写裸 z-index 数字。 */
+.app-layout > .sidebar { z-index: var(--ds-z-sticky); }
+.app-layout .topbar { z-index: var(--ds-z-sticky); }
+.el-overlay, .el-dialog__wrapper { z-index: var(--ds-z-modal); }
+.el-message, .el-notification { z-index: var(--ds-z-toast); }
+
+/* 表现层果冻：聚焦时仅以阴影抬升与高光增强传达“果冻”质感，绝不改动表单几何——
+   视觉契约要求 .login-form 的 transform 恒为 none，故挤压/形变一律落在 ::before 装饰层。 */
+.login-form { transition: box-shadow var(--ds-duration-spring) ease; }
+.login-form:focus-within { box-shadow: 0 22px 60px rgba(7, 16, 26, .5), 0 2px 10px rgba(7, 16, 26, .35); }
+.login-form::before { transition: transform var(--ds-duration-spring) cubic-bezier(.22, 1.2, .36, 1), opacity var(--ds-duration-spring) ease; }
+.login-form:focus-within::before { transform: scale(1.015); }
+@media (prefers-reduced-motion: reduce) { .login-form, .login-form::before { transition: none; } .login-form:focus-within::before { transform: none; } }
+
+/* 运行时低帧率降级：由 motionScheduler.js 置位，静态一帧胜过掉帧动画。 */
+[data-motion-degraded='true'] .login-form,
+[data-motion-degraded='true'] .app-layout .app-jellyfish { animation: none !important; transition: none !important; }
+
+/* 工具层在窄屏进一步收敛装饰与留白。 */
+@media (max-width: 1024px) { .app-layout .content { padding-inline: var(--ds-space-6); } }
+@media (max-width: 768px) { .app-layout .content { padding-inline: var(--ds-space-4); } }

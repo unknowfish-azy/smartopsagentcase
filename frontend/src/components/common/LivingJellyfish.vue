@@ -25,6 +25,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getEcosystemTide, getJellyfishProfile } from './organismMotion'
 import { getStellarFlowField } from './stellarOcean'
+import { subscribe } from '../../visual/motionScheduler.js'
 
 const props = defineProps({
   state: { type: String, default: 'idle' },
@@ -44,7 +45,7 @@ const ringEls = ref([])
 const tentacles = Array.from({ length: 12 }, (_, index) => ({ id: index, phase: index * 1.87, length: 108 + ((index * 43) % 82), offset: (index - 5.5) * 12.2, speed: 0.58 + (index % 5) * 0.12 }))
 const flows = Array.from({ length: 6 }, (_, index) => index)
 const rings = Array.from({ length: 3 }, (_, index) => index)
-const particles = Array.from({ length: 360 }, (_, index) => ({
+const particles = Array.from({ length: 200 }, (_, index) => ({
   id: index,
   phase: index * 2.399,
   radius: ((index * 17) % 97) / 97,
@@ -56,7 +57,6 @@ const particles = Array.from({ length: 360 }, (_, index) => ({
 
 const pointer = { x: 200, y: 190, active: false }
 const visibleParticles = computed(() => props.motionMode === 'balanced' ? particles : particles.slice(0, 120))
-let frame = 0
 let visible = true
 let reduced = false
 let particleTime = 0
@@ -165,11 +165,9 @@ function render(time = 0, staticFrame = false) {
     element.setAttribute('fill', ['var(--jelly-core, #ff8ccc)', 'var(--jelly-flow, #78e7ff)', 'var(--jelly-edge, #b7a1ff)'][index % 3])
   })
 }
-function schedule(time = 0) {
-  if (!visible || reduced) { render(time, true); return }
-  render(time)
-  frame = requestAnimationFrame(schedule)
-}
+// P3：不再自建 rAF，交给全页共享调度器（30fps）统一排队；离屏与隐藏由调度器暂停。
+const loopId = `living-jellyfish-${Math.random().toString(36).slice(2, 8)}`
+let unsubscribeLoop = () => {}
 function onPointerMove(event) {
   const bounds = svg.value.getBoundingClientRect()
   pointer.x = (event.clientX - bounds.left) / bounds.width * 400
@@ -179,8 +177,10 @@ function onPointerMove(event) {
 function onPointerLeave() { pointer.active = false }
 function syncMotion() {
   reduced = query.matches || props.motionMode === 'reduced-motion'
-  cancelAnimationFrame(frame)
-  schedule(reduced ? 0 : performance.now())
+  unsubscribeLoop()
+  unsubscribeLoop = () => {}
+  if (!visible || reduced) render(performance.now(), true)
+  else unsubscribeLoop = subscribe((_dt, now) => render(now), { fps: 30, id: loopId })
 }
 onMounted(() => {
   query = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -192,7 +192,7 @@ onMounted(() => {
   syncMotion()
 })
 onBeforeUnmount(() => {
-  cancelAnimationFrame(frame)
+  unsubscribeLoop()
   svg.value?.removeEventListener('pointermove', onPointerMove)
   svg.value?.removeEventListener('pointerleave', onPointerLeave)
   document.removeEventListener('visibilitychange', visibilityHandler)

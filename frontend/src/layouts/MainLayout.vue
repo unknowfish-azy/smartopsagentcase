@@ -87,7 +87,7 @@ import { useAiChatStore } from '../stores/aiChat.js'
 import { currentSession, logoutSession } from '../security/session.js'
 import { isAdminSession } from '../security/portalPolicy.js'
 import { resolvedTheme, setThemeMode, themeMode } from '../theme.js'
-import { isLightweightVisualMode, setVisualMode, visualMode } from '../visual/visualMode.js'
+import { hasExplicitVisualMode, isLightweightVisualMode, setVisualMode, visualMode, visualModeExplicit } from '../visual/visualMode.js'
 import { personalSystemGroups } from '../navigation/personalSystemNavigation.js'
 import { navHealthBadgeMap } from '../navigation/navigationHealth.js'
 import { getVisibleNavigationGroups, ROLE_LABELS } from '../security/accessModel.js'
@@ -123,7 +123,9 @@ const isNarrowViewport = ref(false)
 const navigationPanel = ref(null)
 let timer
 const setTheme = setThemeMode
-const showEnhancedHomeVisuals = computed(() => route.name === 'Dashboard' && !isLightweightVisualMode.value)
+// P0/P3 自适应视觉预算：工具层默认不加载 WebGL 装饰，首次访问即简约高性能；
+// 只有用户显式选择过视觉档位（且为 balanced）才启用增强层。保留计算属性名与模板字符串契约。
+const showEnhancedHomeVisuals = computed(() => route.name === 'Dashboard' && !isLightweightVisualMode.value && visualModeExplicit.value && hasExplicitVisualMode())
 
 const systemNav = [
   { label: 'TRACE', cn: '执行轨迹', to: '/agent/trace', icon: Connection }

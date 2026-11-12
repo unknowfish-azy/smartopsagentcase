@@ -24,6 +24,7 @@ import { resolveWhaleQuality } from './whaleQuality'
 import { createWhalePointCloud, whaleRegions } from './whaleShape'
 import { observeCanvasTheme, readCanvasPalette } from './canvasTheme.js'
 import { resolveEffectTheme } from './effectTheme.js'
+import { subscribe } from '../../visual/motionScheduler.js'
 
 const props = defineProps({
   state: { type: String, default: 'idle' },
@@ -110,7 +111,6 @@ onMounted(() => {
   const stellarFlowMaterial = new PointsMaterial({ color: '#bceeff', size: 0.018, transparent: true, opacity: 0.58, depthWrite: false, blending: AdditiveBlending, sizeAttenuation: true })
   scene.add(new Points(stellarFlowGeometry, stellarFlowMaterial))
 
-  let frame = 0
   let visible = true
   let lastTime = 0
   let frameCounter = 0
@@ -284,20 +284,19 @@ onMounted(() => {
       if (fastFrames > 320 && drawScale < 1) { drawScale = Math.min(1, drawScale + 0.1); fastFrames = 0 }
     }
   }
-  const render = (time = 0) => {
-    if (visible && quality.animate && !reducedQuery.matches) {
-      const delta = Math.min(time - lastTime || 16, 64)
-      lastTime = time; frameCounter += 1; adaptQuality(delta); updateParticles(time)
-      renderer.render(scene, camera)
-      frame = requestAnimationFrame(render)
-      return
-    }
+  // P3：WebGL 鲸鱼不再自建 rAF，接入全页共享调度器（30fps + 离屏暂停）。
+  const loopId = `particle-whale-${Math.random().toString(36).slice(2, 8)}`
+  let unsubscribeLoop = () => {}
+  const step = time => {
+    const delta = Math.min(time - lastTime || 16, 64)
+    lastTime = time; frameCounter += 1; adaptQuality(delta); updateParticles(time)
     renderer.render(scene, camera)
   }
   const syncMotion = () => {
-    cancelAnimationFrame(frame); lastTime = 0
-    if (quality.animate && !reducedQuery.matches && visible) frame = requestAnimationFrame(render)
-    else render()
+    unsubscribeLoop(); unsubscribeLoop = () => {}; lastTime = 0
+    if (quality.animate && !reducedQuery.matches && visible) {
+      unsubscribeLoop = subscribe((_dt, now) => step(now), { fps: 30, id: loopId })
+    } else renderer.render(scene, camera)
   }
   const pointerMove = (event) => {
     const bounds = element.getBoundingClientRect()
@@ -339,7 +338,7 @@ onMounted(() => {
   reducedQuery.addEventListener('change', syncMotion)
   dispose = () => {
     stopTheme()
-    cancelAnimationFrame(frame); observer.disconnect()
+    unsubscribeLoop(); observer.disconnect()
     element.removeEventListener('pointermove', pointerMove); element.removeEventListener('pointerleave', pointerLeave)
     window.removeEventListener('resize', resize); document.removeEventListener('visibilitychange', syncMotion); reducedQuery.removeEventListener('change', syncMotion)
     geometry.dispose(); material.dispose(); lineGeometry.dispose(); lineMaterial.dispose(); breathGeometry.dispose(); breathMaterial.dispose()

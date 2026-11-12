@@ -36,7 +36,7 @@ const { status, checkedAt, loading, stale, error, load } = createDiagnosticState
 
 function formatTime(value) { return new Date(value).toLocaleString('zh-CN') }
 
-onMounted(() => { load(); freshnessTimer = window.setInterval(() => { now.value = Date.now() }, 1000) })
+onMounted(() => { load(); freshnessTimer = window.setInterval(() => { now.value = Date.now() }, 5000) })
 onBeforeUnmount(() => window.clearInterval(freshnessTimer))
 </script>
 
