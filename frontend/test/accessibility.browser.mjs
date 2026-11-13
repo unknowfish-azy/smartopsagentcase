@@ -73,6 +73,12 @@ async function settle(page) {
   try {
     await page.waitForFunction(() => document.body.scrollHeight > 300, { timeout: 12000 })
     await page.waitForFunction(() => !document.querySelector('[aria-busy="true"]'), { timeout: 8000 }).catch(() => {})
+    // 动效层会让内容在入场动画期间短暂处于半透明态，axe 会把这种「过渡帧」判成对比度不足，
+    // 且结论随动画进度漂移（同一页面不同轮次命中不同节点）。等有限次动画跑完再扫描，
+    // 无限循环的呼吸 / 脉冲（iterations: Infinity）不等待，因此不会真正挂住。
+    await page.waitForFunction(() => document.getAnimations()
+      .filter(animation => animation.effect?.getTiming?.()?.iterations !== Infinity)
+      .every(animation => animation.playState !== 'running'), { timeout: 3000 }).catch(() => {})
     return true
   } catch {
     return false
@@ -80,8 +86,10 @@ async function settle(page) {
 }
 
 // Vite 首次编译路由模块时可能返回动态导入失败，重试一次即可区分环境抖动与真实空白。
-async function open(page, path) {
+// 重试时清空上一轮的 pageerror：判定以「最终一次加载」为准，否则抖动错误仍会让门禁失败。
+async function open(page, path, errors) {
   for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0 && errors) errors.length = 0
     await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded' })
     if (await settle(page)) return true
   }
@@ -132,7 +140,7 @@ try {
     for (const theme of ['light', 'dark']) {
       for (const target of pages) {
         const { context, page, errors } = await preparePage(browser, { ...viewport, theme })
-        const rendered = await open(page, target.path)
+        const rendered = await open(page, target.path, errors)
         const violations = await axeScan(page)
         const overflow = await overflowOf(page)
         report.matrix.push({ viewport: `${viewport.width}x${viewport.height}`, theme, page: target.name, rendered, violations: violations.length, overflow: overflow.scrollWidth > overflow.clientWidth + 1 })
@@ -153,7 +161,7 @@ try {
   // 200% 缩放代理：1440 物理像素下把 CSS 视口减半到 720x500。
   for (const target of pages) {
     const { context, page, errors } = await preparePage(browser, { width: 720, height: 500, theme: 'light' })
-    const rendered = await open(page, target.path)
+    const rendered = await open(page, target.path, errors)
     const overflow = await overflowOf(page)
     const violations = await axeScan(page)
     report.zoom200.push({
@@ -169,7 +177,7 @@ try {
   // 键盘可达性与焦点可见性：Tab 遍历聊天页，记录每个落点是否有可见焦点指示。
   {
     const { context, page, errors } = await preparePage(browser, { width: 1440, height: 1000, theme: 'light' })
-    await open(page, '/chat')
+    await open(page, '/chat', errors)
     // 先输入内容，否则发送按钮处于 disabled，无法进入 Tab 序列（这不是缺陷）。
     const composer = page.getByLabel('输入消息', { exact: true })
     await composer.fill('键盘可达性检查')
@@ -226,7 +234,7 @@ try {
   // reduced-motion：列表页不应存在 >100ms 的持续动画。
   {
     const { context, page, errors } = await preparePage(browser, { width: 1440, height: 1000, theme: 'light', reducedMotion: 'reduce' })
-    await open(page, '/')
+    await open(page, '/', errors)
     const animated = await page.evaluate(() => {
       const offenders = []
       for (const element of document.querySelectorAll('*')) {
