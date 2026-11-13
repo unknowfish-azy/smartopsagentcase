@@ -6,7 +6,7 @@
       <MeteorShower v-if="showEnhancedHomeVisuals" />
       <ParticleWhale v-if="showEnhancedHomeVisuals" :placement="whalePlacement" :state="whaleState" />
       <CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace" :placement="whalePlacement" :state="whaleState" />
-      <LivingJellyfish v-if="!isConnectionWorkspace && visualMode !== 'reduced-motion'" class="app-jellyfish" :class="`app-jellyfish--${whalePlacement}`" :state="jellyfishState" ecosystem="protected" />
+      <LivingJellyfish v-if="!isConnectionWorkspace && visualMode === 'balanced'" class="app-jellyfish" :class="`app-jellyfish--${whalePlacement}`" :state="jellyfishState" ecosystem="protected" />
       <OpsSpiderPet v-if="!isTeamSpace && !isKnowledgeSpace" :state="opsSpiderState" :agent-state="whaleState" :compact="route.name === 'Connections'" @navigate="openOpsSpiderAction" />
       <button v-if="opsSpider.hidden && !isTeamSpace && !isKnowledgeSpace" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
       <SmartInquiryDrawer v-if="!isTeamSpace" />
@@ -242,14 +242,14 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
 <style scoped>
 .topbar-right { flex-wrap: wrap; }
 .app-layout[data-visual-mode='reduced-motion'] :deep(*) { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-.home-galaxy { position: fixed; opacity: .7; }
+.home-galaxy { position: fixed; opacity: .38; }
 .workspace-context { display: flex; align-items: center; gap: 8px; padding: 8px 18px 0; color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .1em; }.workspace-context select { min-height: 26px; max-width: 220px; padding: 3px 20px 3px 7px; border: 1px solid var(--smart-border); border-radius: 4px; background: var(--smart-surface); color: var(--smart-text); font: 11px var(--font-cn); }.workspace-context small { color: var(--smart-primary-strong); font: 9px var(--font-mono); }
 .tools-menu { position: relative; margin-left: auto; }.tools-trigger { border: 0; background: transparent; color: var(--smart-primary-strong); font: 10px var(--font-mono); letter-spacing: .1em; cursor: pointer; }.tools-dropdown { position: absolute; z-index: 30; top: 28px; right: 0; display: grid; grid-template-columns: repeat(3, 170px); gap: 18px; padding: 18px; border: 1px solid var(--smart-border-strong); background: var(--smart-surface); box-shadow: 0 18px 45px rgba(0,0,0,.38); }.tools-dropdown section { display: grid; align-content: start; gap: 8px; }.tools-dropdown strong { color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .1em; }.tools-dropdown a { color: var(--smart-text); font: 12px var(--font-cn); text-decoration: none; }.tools-dropdown a:hover { color: var(--smart-primary-strong); }
 .theme-control { display: inline-flex; align-items: center; gap: 7px; color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .08em; }.theme-control select { min-height: 28px; padding: 3px 22px 3px 7px; border: 1px solid var(--smart-border); border-radius: 4px; background: var(--smart-surface); color: var(--smart-text); font: 10px var(--font-cn); cursor: pointer; }.theme-control select:hover { border-color: var(--smart-primary-strong); }
 .theme-control.visual-mode-control select { min-width: 96px; min-height: 44px; font-size: 12px; }
 .visual-mode-control select:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 3px; }
 .nav-icon { width: 14px; height: 14px; }.nav-copy { display: grid; gap: 1px; min-width: 0; }.nav-copy b { color: inherit; font: 10px var(--font-mono); letter-spacing: .1em; font-weight: 400; }.nav-copy small { color: var(--smart-muted); font: 12px var(--font-cn); letter-spacing: 0; }.nav-label { display: grid; gap: 3px; }.nav-label b { font: 10px var(--font-mono); letter-spacing: .13em; font-weight: 400; }.nav-label small { color: var(--smart-muted); font: 11px var(--font-cn); letter-spacing: 0; }.nav-label--system { margin-top: 28px; }
-.app-jellyfish { position: fixed; z-index: 0; top: 7vh; right: 4vw; width: min(24vw, 320px); height: min(40vh, 380px); opacity: .38; pointer-events: none; }.app-jellyfish--agent { top: 11vh; right: 7vw; width: min(32vw, 420px); height: min(52vh, 500px); opacity: .62; }.app-jellyfish--knowledge { top: 5vh; right: 1vw; opacity: .28; transform: scale(.84); }.app-jellyfish--operations { top: auto; right: 4vw; bottom: 4vh; opacity: .38; transform: scale(.82); }.app-jellyfish--memory { top: auto; right: -1vw; bottom: 4vh; opacity: .26; transform: scale(.76); }
+.app-jellyfish { position: fixed; z-index: 0; top: 8vh; right: -6vw; width: min(22vw, 280px); height: min(38vh, 340px); opacity: .32; pointer-events: none; }.app-jellyfish--agent { top: 12vh; right: -5vw; width: min(28vw, 360px); height: min(46vh, 420px); opacity: .36; }.app-jellyfish--knowledge { top: 6vh; right: -7vw; opacity: .26; transform: scale(.8); }.app-jellyfish--operations { top: auto; right: -6vw; bottom: 4vh; opacity: .30; transform: scale(.78); }.app-jellyfish--memory { top: auto; right: -8vw; bottom: 4vh; opacity: .24; transform: scale(.72); }
 .app-companion-status{position:fixed;z-index:9;left:24px;bottom:18px;pointer-events:none}
 .spider-restore-control {
   position: fixed;
@@ -366,7 +366,7 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
     left: 225px;
   }
 }
-@media (max-width: 767px) { .app-jellyfish { width: 230px; height: 280px; top: 54px; right: -44px; opacity: .24; }.app-jellyfish--agent { top: 62px; right: -18px; opacity: .4; }.app-jellyfish--operations, .app-jellyfish--memory { top: auto; bottom: 20px; right: -54px; }.section-nav { display: none; }.theme-control__label { display: none; }.theme-control select { min-height: 26px; } }
+@media (max-width: 767px) { .app-jellyfish { width: 200px; height: 240px; top: 54px; right: -70px; opacity: .22; }.app-jellyfish--agent { top: 62px; right: -60px; opacity: .28; }.app-jellyfish--operations, .app-jellyfish--memory { top: auto; bottom: 20px; right: -80px; }.section-nav { display: none; }.theme-control__label { display: none; }.theme-control select { min-height: 26px; } }
 @media (max-width: 767px) { .spider-restore-control { right: 16px; bottom: 16px; } }
 @media (prefers-reduced-motion: reduce) { .app-jellyfish { opacity: .12; } }
 @media (max-width: 767px) {
@@ -379,10 +379,10 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
   .topbar-right > time { font-size: 9px; }
   .tools-dropdown { width: min(330px, calc(100vw - 36px)); grid-template-columns: 1fr; max-height: 65dvh; overflow-y: auto; }
 }
-.app-jellyfish--home { top: 44vh; right: 3vw; width: min(23vw, 300px); height: min(38vh, 340px); opacity: .62; }
+.app-jellyfish--home { top: 38vh; right: -7vw; width: min(20vw, 260px); height: min(34vh, 300px); opacity: .42; }
 .team-scope-note{padding:12px;color:var(--smart-muted);font-size:12px;line-height:1.7}
 .workspace-context{flex-wrap:wrap}
-@media (max-width: 767px) { .app-jellyfish--home { top: 52vh; right: -20px; left: auto; width: 180px; height: 230px; opacity: .36; } }
+@media (max-width: 767px) { .app-jellyfish--home { top: 52vh; right: -80px; left: auto; width: 180px; height: 230px; opacity: .28; } }
 .sidebar :deep(.nav-discovery-trigger) { width:100%; margin-bottom:20px; flex-shrink:0; }
 .sidebar :deep(.nav-discovery-trigger kbd) { margin-left:auto; font-size:8px; padding-left:6px; }
 @media(min-width:768px) {
