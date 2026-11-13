@@ -8,6 +8,8 @@ import router from './router'
 
 import './assets/styles/variables.css'
 import './assets/styles/global.css'
+import './assets/styles/motion-layer.css'
+import './assets/styles/motion-strong.css'
 import { initializeTheme } from './theme.js'
 
 initializeTheme()
