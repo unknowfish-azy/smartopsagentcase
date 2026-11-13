@@ -18,13 +18,14 @@
    ========================================================================== */
 
 .app-layout {
-  --ml-stagger-step: 40ms;
+  --ml-stagger-step: 70ms;
   --ml-cycle: 3.6s;
   --ml-stream-caret: var(--ds-color-primary, var(--smart-primary, #4fc3f7));
   --ml-live: rgba(63, 185, 80, .9);
   --ml-live-warn: rgba(230, 162, 60, .9);
   --ml-live-critical: rgba(235, 87, 87, .9);
-  --ml-shift: 2px;
+  --ml-shift: 6px;
+  --ml-stagger-dur: 340ms;
 }
 
 /* --------------------------------------------------------------------------
@@ -45,9 +46,9 @@
   animation: ml-rise-in var(--ds-duration-spring, 200ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
 }
 
-/* 子项错峰：默认按 DOM 顺序给前 12 项 40ms 步进 */
+/* 子项错峰：默认按 DOM 顺序给前 12 项 70ms 步进 */
 .app-layout .ml-stagger > * {
-  animation: ml-rise-in var(--ds-duration-spring, 200ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) backwards;
+  animation: ml-rise-in var(--ml-stagger-dur, 340ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) backwards;
 }
 .app-layout .ml-stagger > *:nth-child(1)  { animation-delay: calc(var(--ml-stagger-step) * 0); }
 .app-layout .ml-stagger > *:nth-child(2)  { animation-delay: calc(var(--ml-stagger-step) * 1); }
@@ -72,7 +73,7 @@
 .app-layout .ml-stagger-cols-2 > *,
 .app-layout .ml-stagger-cols-3 > *,
 .app-layout .ml-stagger-cols-4 > * {
-  animation: ml-rise-in var(--ds-duration-spring, 200ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) backwards;
+  animation: ml-rise-in var(--ml-stagger-dur, 340ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) backwards;
 }
 .app-layout .ml-stagger-cols-2 > *:nth-child(2n+2) { animation-delay: calc(var(--ml-stagger-step) * 1); }
 .app-layout .ml-stagger-cols-3 > *:nth-child(3n+2) { animation-delay: calc(var(--ml-stagger-step) * 1); }
@@ -228,16 +229,20 @@
    曾被 transform 打断，此处严格规避）。
    -------------------------------------------------------------------------- */
 .app-layout .sentinel-surface > *,
-.app-layout .ops-card,
-.app-layout .dashboard-bento > * {
+.app-layout .bento-dashboard > * {
   animation: ml-fade-in 240ms var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
 }
 .app-layout .sentinel-surface > *:nth-child(2),
-.app-layout .dashboard-bento > *:nth-child(2) { animation-delay: var(--ml-stagger-step); }
+.app-layout .bento-dashboard > *:nth-child(2) { animation-delay: var(--ml-stagger-step); }
 .app-layout .sentinel-surface > *:nth-child(3),
-.app-layout .dashboard-bento > *:nth-child(3) { animation-delay: calc(var(--ml-stagger-step) * 2); }
+.app-layout .bento-dashboard > *:nth-child(3) { animation-delay: calc(var(--ml-stagger-step) * 2); }
 .app-layout .sentinel-surface > *:nth-child(4),
-.app-layout .dashboard-bento > *:nth-child(4) { animation-delay: calc(var(--ml-stagger-step) * 3); }
+.app-layout .bento-dashboard > *:nth-child(4) { animation-delay: calc(var(--ml-stagger-step) * 3); }
+
+/* .ops-card 自动挂载：排除已被 stagger/rise 编排的卡片，避免 ml-fade-in 覆盖 ml-rise-in */
+.app-layout .ops-card:not(.ml-stagger > *):not([class*='ml-stagger-cols'] > *):not(.ml-rise) {
+  animation: ml-fade-in 240ms var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+}
 
 .app-layout .el-table__row {
   animation: ml-fade-in 200ms var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
@@ -272,7 +277,7 @@
   .app-layout .ml-parallax,
   .app-layout .sentinel-surface > *,
   .app-layout .ops-card,
-  .app-layout .dashboard-bento > *,
+  .app-layout .bento-dashboard > *,
   .app-layout .el-table__row,
   .app-layout .ml-stream-lines > *,
   .app-layout .ops-kpi__value,
@@ -296,7 +301,7 @@
   .app-layout .ml-parallax,
   .app-layout .sentinel-surface > *,
   .app-layout .ops-card,
-  .app-layout .dashboard-bento > *,
+  .app-layout .bento-dashboard > *,
   .app-layout .el-table__row,
   .app-layout .ops-kpi__value,
   .app-layout .ops-statusbar__item b {
@@ -308,7 +313,7 @@
   .app-layout .ml-rise,
   .app-layout .ml-stagger > *,
   .app-layout .sentinel-surface > *,
-  .app-layout .dashboard-bento > *,
+  .app-layout .bento-dashboard > *,
   .app-layout .el-table__row {
     opacity: 1 !important;
     transform: none !important;
@@ -326,7 +331,7 @@
 [data-motion-degraded='true'] .app-layout .ml-stream-lines > *,
 [data-motion-degraded='true'] .app-layout .ops-card,
 [data-motion-degraded='true'] .app-layout .sentinel-surface > *,
-[data-motion-degraded='true'] .app-layout .dashboard-bento > *,
+[data-motion-degraded='true'] .app-layout .bento-dashboard > *,
 [data-motion-degraded='true'] .app-layout .el-table__row,
 [data-motion-degraded='true'] .app-layout .ops-kpi__value,
 [data-motion-degraded='true'] .app-layout .ops-statusbar__item b {

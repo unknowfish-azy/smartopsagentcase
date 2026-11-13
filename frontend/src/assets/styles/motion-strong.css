@@ -134,9 +134,22 @@
 /* B1 卡片流光：用 background-image 扫过。
    不用 outline（会吃掉 :focus-visible 焦点框，a11y 键盘测试会挂）、
    不用 box-shadow / border-color（会覆盖 .ops-card--interactive:hover）、
-   不用 transform（会覆盖 hover 抬升）。background-image 单独设置不影响
-   卡片原有的 background-color。 */
+   不用 transform（会覆盖 hover 抬升）。
+   —— 关键：流光改挂到 .ops-card::before 伪元素上，而不是直接写在 .ops-card
+   的 animation 里。因为 .ops-card 自身要承载入场动画（ml-rise-in / ml-fade-in，
+   走 opacity/transform），animation 简写会互相覆盖。background-position 与
+   opacity/transform 属性互不干扰，拆到伪元素后两者可同时运行。
+   ::before 用 z-index:-1 + isolation:isolate 压在卡片背景之上、内容之下。 */
 .app-layout[data-visual-mode='balanced'] .ops-card {
+  isolation: isolate;
+}
+.app-layout[data-visual-mode='balanced'] .ops-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
   background-image: linear-gradient(110deg, transparent 38%, rgba(122, 215, 245, .075) 50%, transparent 62%);
   background-size: 220% 100%;
   animation: ms-edge-flow var(--ms-mid) linear infinite;
@@ -234,6 +247,7 @@
    ========================================================================== */
 @media (max-width: 768px) {
   .app-layout[data-visual-mode='balanced'] .ops-card,
+  .app-layout[data-visual-mode='balanced'] .ops-card::before,
   .app-layout[data-visual-mode='balanced'] .ops-kpi__value,
   .app-layout[data-visual-mode='balanced'] .content > *,
   .app-layout[data-visual-mode='balanced'] .ui-pill--live::before,
@@ -276,6 +290,7 @@
 
 [data-motion-degraded='true'] .app-layout [data-visual-mode='balanced'] *,
 [data-motion-degraded='true'] .app-layout[data-visual-mode='balanced'] *,
+[data-motion-degraded='true'] .app-layout[data-visual-mode='balanced'] *::before,
 [data-motion-degraded='true'] .login-shell[data-visual-mode='balanced'] *,
 [data-motion-degraded='true'] .login-shell[data-visual-mode='balanced'] *::before {
   animation: none !important;
