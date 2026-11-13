@@ -21,14 +21,18 @@ const artifact = `${root}\\.runtime\\performance-${stamp}`
 await mkdir(artifact, { recursive: true })
 
 const port = 4410 + Math.floor(Math.random() * 80)
-const base = `http://127.0.0.1:${port}`
-const vite = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
-  cwd: `${root}\\frontend`,
-  stdio: 'ignore'
-})
-for (let attempt = 0; attempt < 150; attempt++) {
-  try { const response = await fetch(base); if (response.ok) break } catch {}
-  await new Promise(resolve => setTimeout(resolve, 100))
+const externalBase = process.env.SMARTOPS_BROWSER_BASE_URL
+const base = externalBase || `http://127.0.0.1:${port}`
+let vite = null
+if (!externalBase) {
+  vite = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
+    cwd: `${root}\\frontend`,
+    stdio: 'ignore'
+  })
+  for (let attempt = 0; attempt < 150; attempt++) {
+    try { const response = await fetch(base); if (response.ok) break } catch {}
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
 }
 
 let commit = 'unknown'
@@ -58,12 +62,15 @@ async function preparePage() {
     if (message.type() === 'error') noise.push(message.text())
   })
 
-  await page.route(url => url.pathname.startsWith('/api/') || url.pathname.startsWith('/ai/'),
-    route => route.fulfill({ status: 501, json: { code: 501, message: 'unknown fixture route' } }))
+  // 关键 fixture 先注册（Playwright 先注册先匹配）
   await page.routeWebSocket('**/*', socket => socket.close())
   await page.route('**/api/assistant/options', route => route.fulfill({
     json: { code: 200, data: { selectedKey: 'mini', options: [{ key: 'mini', name: '智维 Mini', kind: 'builtin', model: 'fixture', enabled: true, available: true, status: 'ready' }] } }
   }))
+  await page.route('**/api/chat/run-token', route => route.fulfill({
+    json: { code: 200, data: { runToken: 'v1.fixture-token-fixture-token-fixture-token-fixture-token-fixture-hmac' } }
+  }))
+  await page.route('**/api/assistant/conversations', route => route.fulfill({ json: { code: 200, data: [] } }))
   await page.route('**/api/conversations', route => route.fulfill({ json: { code: 200, data: [] } }))
   await page.route('**/api/auth/session', route => route.fulfill({
     json: { code: 200, data: { user: { id: 77, username: 'perf-user', role: 'operator' }, csrfToken: 'perf-csrf' } }
@@ -77,9 +84,12 @@ async function preparePage() {
       `event: token\ndata: ${JSON.stringify({ ...run, delta: '请先检查磁盘使用率，' })}\n`,
       `event: token\ndata: ${JSON.stringify({ ...run, delta: '再清理日志与临时文件。' })}\n`,
       `event: done\ndata: ${JSON.stringify({ ...run, status: 'succeeded', content: '请先检查磁盘使用率，再清理日志与临时文件。', citations: [{ source: 'reference/disk.md', content: 'df -h' }], metadata: { degraded: true, run_event: { ...run, status: 'succeeded' } }, run_event: { ...run, status: 'succeeded' } })}\n`
-    ].join('\n')
+    ].join('\n\n')
     return route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream; charset=utf-8' }, body: sse })
   })
+  // 兜底：未单独 mock 的 /api/ 和 /ai/ 路径统一返回 501
+  await page.route(url => url.pathname.startsWith('/api/') || url.pathname.startsWith('/ai/'),
+    route => route.fulfill({ status: 501, json: { code: 501, message: 'unknown fixture route' } }))
   await page.addInitScript(() => {
     localStorage.setItem('smartops_preview_auth', JSON.stringify({ id: 77, username: 'perf-user', role: 'operator' }))
     localStorage.setItem('smartops_theme', 'light')
@@ -263,7 +273,7 @@ try {
   }
 } finally {
   await browser.close()
-  if (!vite.killed) vite.kill()
+  if (vite && !vite.killed) vite.kill()
 }
 
 const report = {
