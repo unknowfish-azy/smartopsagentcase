@@ -1,4 +1,10 @@
 <template>
+  <div ref="alertsShellRef" class="sentinel-shell" :data-theme="resolvedTheme">
+    <CanvasAmbientField v-if="!isMobile" class="sentinel-ambient" :palette-root="alertsShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
+    <div v-if="!isMobile" class="sentinel-aurora" aria-hidden="true"></div>
+    <MeteorShower v-if="!isMobile" class="sentinel-meteors" />
+    <div class="sentinel-mask" aria-hidden="true"></div>
+
   <section class="sentinel-surface" aria-labelledby="alerts-title">
     <header class="sentinel-page-header">
       <div>
@@ -242,12 +248,14 @@
       </p>
     </section>
   </section>
+  </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, reactive, ref, defineAsyncComponent } from 'vue'
 import SentinelNotice from './SentinelNotice.vue'
 import SentinelEmpty from './SentinelEmpty.vue'
+import { resolvedTheme as _resolvedTheme } from '../../theme.js'
 import {
   analyzeAlert,
   createAlertRule,
@@ -259,6 +267,14 @@ import {
 } from './sentinelStore.js'
 import { ALERT_SEVERITIES, ALERT_STATUSES, NOTIFY_CHANNELS, requiresHumanBeforeRemediation } from './sentinelModel.js'
 import './sentinel.css'
+
+const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
+const MeteorShower = defineAsyncComponent(() => import('../../components/common/MeteorShower.vue'))
+
+const alertsShellRef = ref(null)
+const resolvedTheme = computed(() => _resolvedTheme.value)
+const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
+function updateMobile() { isMobile.value = window.innerWidth < 1024 }
 
 const busyId = ref(null)
 const actionMessage = ref('')
@@ -419,7 +435,8 @@ async function submitRule() {
   } finally { creating.value = false }
 }
 
-onMounted(loadSentinel)
+onMounted(() => { updateMobile(); window.addEventListener('resize', updateMobile); loadSentinel() })
+onBeforeUnmount(() => window.removeEventListener('resize', updateMobile))
 </script>
 
 <style scoped>
@@ -454,4 +471,20 @@ onMounted(loadSentinel)
   .alert-card__meta time { margin-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .alert-card__actions button { transition: none; } }
+
+/* === 启佑风格背景层 === */
+.sentinel-shell{position:relative;min-height:calc(100vh - 64px);overflow:hidden;background:radial-gradient(ellipse at 80% 10%,rgba(122,215,245,.10) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,rgba(63,185,80,.07) 0%,transparent 50%),#040B16}
+.sentinel-shell[data-theme='light']{background:radial-gradient(ellipse at 80% 10%,rgba(26,110,154,.07) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,rgba(26,127,55,.04) 0%,transparent 50%),#EAF3FA}
+.sentinel-ambient{position:absolute;inset:0;z-index:0;opacity:.48;pointer-events:none}
+.sentinel-meteors{position:absolute;inset:0;z-index:0;opacity:.35;pointer-events:none}
+.sentinel-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 75% 15%,rgba(122,215,245,.22) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(63,185,80,.16) 0%,transparent 45%);filter:blur(24px);background-size:240% 240%;animation:sentinel-drift 22s ease-in-out infinite alternate}
+.sentinel-aurora::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 30% 20% at 15% 50%,rgba(122,215,245,.35),transparent 70%);filter:blur(18px);animation:sentinel-sweep 32s ease-in-out infinite}
+.sentinel-shell[data-theme='light'] .sentinel-aurora{background:radial-gradient(ellipse at 75% 15%,rgba(26,110,154,.14) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(26,127,55,.10) 0%,transparent 45%)}
+.sentinel-shell[data-theme='light'] .sentinel-aurora::after{background:radial-gradient(ellipse 30% 20% at 15% 50%,rgba(26,110,154,.22),transparent 70%)}
+@keyframes sentinel-drift{0%{background-position:0% 0%,100% 100%;transform:translate3d(0,0,0)}100%{background-position:30% 10%,70% 90%;transform:translate3d(-2%,2%,0)}}
+@keyframes sentinel-sweep{0%,100%{opacity:.55;transform:translate3d(0,0,0)}50%{opacity:1;transform:translate3d(-8%,4%,0)}}
+@media(prefers-reduced-motion:reduce){.sentinel-aurora,.sentinel-aurora::after{animation:none}}
+.sentinel-mask{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(4,11,22,.42) 100%)}
+.sentinel-shell[data-theme='light'] .sentinel-mask{background:radial-gradient(ellipse at center,transparent 40%,rgba(234,243,250,.42) 100%)}
+.sentinel-shell>.sentinel-surface{position:relative;z-index:1}
 </style>
