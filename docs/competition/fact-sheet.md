@@ -43,6 +43,9 @@
 1. `submission-master-plan.md` F01/F02/F03 旧值作废，统一改抄本表。
 2. `国赛冲刺总方案-20261113.md` §3.1「前端整改未 commit」、§3.2 T9 首要动作、§9 风险行均已过时（见 F11）。
 3. M02 引用时必须**同时给开发集与留出集**：只报 1.0 属于红线②"选择性呈现"。留出集召回 0.3333 是技术报告 §8 局限的真实素材。
+4. `06-工程整改/` 目录下所有文档（口径台账、README-交付、整改对照差分）的假成功 F1=.6667 均为 2026-11-03 扩词表前旧规则口径，已标注废弃。当前统一口径：开发集 F1=1.0（样本内过拟合，禁用于答辩泛化），留出集 F1=0.4762/R=0.3333（n=20，真实泛化）；静默放过=0。
+5. `docs/competition/ops-defense-v6.md` 假成功段落已修正为开发集/留出集双口径。`docs/competition/defense-qa.md` Q18 已修正为引用 eval_results.csv 真实数据。
+6. `06-工程整改/numeric_consistency.csv` 为 2026-11-03 历史审计快照，`frontend_tests=458`（456 passed / 2 failed）已过时——当前前端门禁为 503 passed / 0 failed（见 F03）。CSV 本身作历史留存，不修改，引用以 fact-sheet 为准。
 
 ### 3.2 M01 口径
 脚本：`python scripts/eval_retrieval.py --output <csv>`（`--include-variants` 为补充集）。答案真值来自数据集 `knowledgeIds`，故指标受 DRAFT 数据质量约束；70 变体为 AI 生成未复核，**有效独立样本约 14，不得当作 n=70 的统计显著性**。
