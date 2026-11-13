@@ -1,6 +1,6 @@
 <template>
   <StellarOceanProvider state="thinking">
-  <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode">
+  <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode" :data-theme="resolvedTheme">
     <!-- CanvasAmbientField: 启佑风格增强——粒子增密 + 星网连线 -->
     <CanvasAmbientField class="login-ambient" :palette-root="loginShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
     <!-- 极光光带：中景层大尺度缓慢漂移（零 KB，CSS 渐变 + transform）。方案 §6.2 推荐替代视频层。 -->
@@ -124,7 +124,7 @@ import { loginSession, registrationPolicy, registerAccount } from '../../securit
 import { sessionLanding } from '../../security/portalPolicy.js'
 import { resolvePortalSwitch } from '../../security/portalSwitch.js'
 import { registrationError } from '../../security/passwordPolicy.js'
-import { themeMode, setThemeMode } from '../../theme.js'
+import { themeMode, resolvedTheme, setThemeMode } from '../../theme.js'
 import { visualMode, setVisualMode } from '../../visual/visualMode.js'
 
 const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
@@ -367,7 +367,7 @@ async function finishLogin(user) {
   background: var(--smart-bg);
 }
 /* 亮色启佑：浅蓝星天 + 白玻璃 */
-:global([data-theme='light']) .login-shell {
+.login-shell[data-theme='light'] {
   --smart-bg: #EAF3FA;
   --smart-surface: #FFFFFF;
   --smart-primary: #1A6E9A;
@@ -423,13 +423,13 @@ async function finishLogin(user) {
   50%      { opacity: 1;    transform: translate3d(-8%, 4%, 0); }
 }
 /* 启佑亮色：极光换成浅蓝淡绿光带 */
-:global([data-theme='light']) .login-aurora {
+.login-shell[data-theme='light'] .login-aurora {
   background:
     radial-gradient(ellipse 55% 38% at 22% 28%, rgba(26, 110, 154, .18), transparent 65%),
     radial-gradient(ellipse 45% 32% at 72% 68%, rgba(26, 127, 55, .10), transparent 60%),
     radial-gradient(ellipse 38% 28% at 50% 50%, rgba(14, 79, 122, .08), transparent 70%);
 }
-:global([data-theme='light']) .login-aurora::after {
+.login-shell[data-theme='light'] .login-aurora::after {
   background: radial-gradient(ellipse 28% 18% at 78% 22%, rgba(43, 138, 176, .14), transparent 60%);
 }
 .login-shell[data-visual-mode='lightweight'] .login-aurora,
