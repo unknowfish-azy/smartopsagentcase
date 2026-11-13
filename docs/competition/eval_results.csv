@@ -1,0 +1,21 @@
+metric_id,item,value,n,status,measured_at,source,caveat
+M01,recall_at_3,0.5000,14,MEASURED,2026-11-13,reports/t1-20261113/m01_retrieval.csv,14 条 DRAFT 原始问法；仅验证链路不代表泛化
+M01,MRR,0.4286,14,MEASURED,2026-11-13,reports/t1-20261113/m01_retrieval.csv,同上
+M01,recall_at_3_with_ai_variants,0.7000,70,MEASURED,2026-11-13,reports/t1-20261113/m01_retrieval_with_variants.csv,56 条 AI 改写未人工复核；有效独立样本约 14
+M01,MRR_with_ai_variants,0.6571,70,MEASURED,2026-11-13,reports/t1-20261113/m01_retrieval_with_variants.csv,同上
+M02_dev,precision,1.0000,47,MEASURED,2026-11-13,reports/t1-20261113/m02_metrics.json,TP=26 TN=21 FP=0 FN=0；冻结合成开发集非真实分布
+M02_dev,recall,1.0000,47,MEASURED,2026-11-13,reports/t1-20261113/m02_metrics.json,同上
+M02_dev,F1,1.0000,47,MEASURED,2026-11-13,reports/t1-20261113/m02_metrics.json,同上
+M02_dev,execution_gate_evidence,NOT_RUN,0,NOT_RUN,2026-11-13,reports/t1-20261113/m02_metrics.json,无平台证据输入；不得声称执行闸已验证
+M02_holdout,precision,0.8333,20,MEASURED,2026-11-13,reports/t1-20261113/m02_holdout_metrics.json,TP=5 TN=4 FP=1 FN=10；留出集
+M02_holdout,recall,0.3333,20,MEASURED,2026-11-13,reports/t1-20261113/m02_holdout_metrics.json,uncertain 占 50%（10/20）；召回短板须写入局限
+M02_holdout,F1,0.4762,20,MEASURED,2026-11-13,reports/t1-20261113/m02_holdout_metrics.json,同上
+M03,first_token_latency_p50_ms,3589.6,20,MEASURED,2026-11-13,reports/t1-20261113/m03_metrics.json,ollama qwen3:1.7b 本机CPU推理；20/20成功；run token本地签发不含Java边缘/登录开销
+M03,first_token_latency_p95_ms,4522.5,20,MEASURED,2026-11-13,reports/t1-20261113/m03_metrics.json,同上；mean=3494.4ms
+M03,total_latency_p50_ms,6839.5,20,MEASURED,2026-11-13,reports/t1-20261113/m03_metrics.json,SSE 流式完成；mean=6682.7ms
+M03,total_latency_p95_ms,9096.4,20,MEASURED,2026-11-13,reports/t1-20261113/m03_metrics.json,同上
+M03,first_sse_event_p50_ms,16.6,20,MEASURED,2026-11-13,reports/t1-20261113/m03_metrics.json,仅框架 run 事件对照值；禁止当作首 token 时延引用
+M04,risk_declaration_accuracy,0.7619,21,MEASURED,2026-11-13,reports/t1-20261113/m04_metrics.json,口径A工具级声明一致性；全量枚举21个操作（非30抽样）；16/21一致
+M04,confusion_matrix,HIGH->HIGH=1;HIGH->LOW=2;LOW->LOW=15;LOW->MEDIUM=1;MEDIUM->LOW=2,21,MEASURED,2026-11-13,reports/t1-20261113/m04_metrics.json,声明值 vs RiskClassifier 输出
+M04,approval_required_missed_by_classifier,3,3,MEASURED,2026-11-13,reports/t1-20261113/m04_risk_consistency.csv,docker.compose/docker.restart/redis.restart 被判 LOW；双轨不一致不等于已发生越权（policy_engine.py:23 读声明值）
+M05,blind_review_mean_and_cohens_kappa,NOT_RUN,0,NOT_RUN,2026-11-13,scripts/eval_blind_review.py,需 3 名真人评者；空白评分表 reports/t1-20261113/m05_ratings_template.csv
