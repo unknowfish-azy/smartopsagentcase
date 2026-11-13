@@ -69,7 +69,7 @@ import AppEmpty from '../../components/common/AppEmpty.vue'
 import InspectorTrace from '../../components/inspector/InspectorTrace.vue'
 import InspectorEvidence from '../../components/inspector/InspectorEvidence.vue'
 import InspectorIssueList from '../../components/inspector/InspectorIssueList.vue'
-import { resolvedTheme as _resolvedTheme } from '../../stores/theme.js'
+import { resolvedTheme as _resolvedTheme } from '../../theme.js'
 
 const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
 
