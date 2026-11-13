@@ -1,4 +1,4 @@
-﻿/* P0：外部字体裸 @import 会阻塞首屏且离线不可用，改为纯本地字体栈（见 --ds-font-cn / --ds-font-mono）。 */
+﻿﻿/* P0：外部字体裸 @import 会阻塞首屏且离线不可用，改为纯本地字体栈（见 --ds-font-cn / --ds-font-mono）。 */
 @media (max-width: 767px) { body { overflow-x: hidden; }.app-layout { overflow-x: clip; } }
 * { box-sizing: border-box; } html, body, #app { width: 100%; min-height: 100%; margin: 0; }
 body { background: var(--smart-bg); color: var(--smart-text); font-family: var(--ds-font-cn); font-size: 16px; line-height: 1.55; background-image: linear-gradient(rgba(122,215,245,.022) 1px, transparent 1px), linear-gradient(90deg, rgba(122,215,245,.018) 1px, transparent 1px); background-size: 64px 64px; }
@@ -327,3 +327,132 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--smart-te
 /* 工具层在窄屏进一步收敛装饰与留白。 */
 @media (max-width: 1024px) { .app-layout .content { padding-inline: var(--ds-space-6); } }
 @media (max-width: 768px) { .app-layout .content { padding-inline: var(--ds-space-4); } }
+
+/* ==========================================================================
+   T20 控制台分层组件层（只作用于工具层 .app-layout，表现层不受影响）
+   规则：分层靠 surface 明度 + hairline + 极柔阴影；hover 只抬升 1px；
+   无 backdrop-filter、无渐变按钮、无彩虹配色。
+   ========================================================================== */
+.app-layout {
+  background: var(--ds-surface-base);
+  background-image: none;
+}
+
+/* 9 级字阶工具类（display / h1 / h2 / h3 / section / body / body-caption / caption / overline） */
+.u-display { margin: 0; font-size: var(--ds-type-display-size); font-weight: var(--ds-type-display-weight); line-height: var(--ds-line-height-tight); letter-spacing: -.02em; font-variant-numeric: var(--ds-type-num); }
+.u-h1 { margin: 0; font-size: var(--ds-type-h1-size); font-weight: var(--ds-type-h1-weight); line-height: var(--ds-line-height-tight); letter-spacing: -.01em; }
+.u-h2 { margin: 0; font-size: var(--ds-type-h2-size); font-weight: var(--ds-type-h2-weight); line-height: var(--ds-line-height-tight); }
+.u-h3 { margin: 0; font-size: var(--ds-type-h3-size); font-weight: var(--ds-type-h3-weight); line-height: var(--ds-line-height-tight); }
+.u-section { margin: 0; font-size: var(--ds-type-section-size); font-weight: var(--ds-type-section-weight); line-height: var(--ds-line-height-base); }
+.u-body { font-size: var(--ds-type-body-size); font-weight: var(--ds-type-body-weight); }
+.u-body-caption { font-size: var(--ds-type-body-caption-size); color: var(--ds-color-muted); }
+.u-caption { font-size: var(--ds-type-caption-size); color: var(--ds-color-muted); }
+.u-overline { font-family: var(--ds-font-mono); font-size: var(--ds-type-overline-size); font-weight: var(--ds-type-overline-weight); letter-spacing: .1em; text-transform: uppercase; color: var(--ds-color-muted); }
+.u-num { font-variant-numeric: var(--ds-type-num); letter-spacing: -.01em; }
+
+/* 分层卡片：静默抬升，点击区整体可聚焦 */
+.ops-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--ds-card-padding);
+  border: 1px solid var(--ds-hairline);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-raised);
+  box-shadow: var(--ds-elevation-1);
+  color: var(--ds-color-text);
+  transition: box-shadow var(--ds-motion-duration) var(--ds-ease-out), transform var(--ds-motion-duration) var(--ds-ease-out), border-color var(--ds-motion-duration) var(--ds-ease-out);
+}
+.ops-card--flat { box-shadow: none; }
+.ops-card--overlay { background: var(--ds-surface-overlay); box-shadow: var(--ds-elevation-2); }
+.ops-card--interactive:hover,
+.ops-card--interactive:focus-within { box-shadow: var(--ds-elevation-2); transform: translateY(calc(var(--ds-motion-hover) * -1)); border-color: var(--ds-color-border); }
+.ops-card__head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.ops-card__head > .ops-card__titles { display: grid; gap: 2px; min-width: 0; }
+.ops-card__head > :last-child:not(.ops-card__titles) { margin-left: auto; }
+.ops-card__body { flex: 1; min-height: 0; }
+.ops-card__foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ds-hairline); }
+
+/* 分段标题：overline（左上小标）+ 标题 + 右侧动作 */
+.ops-section { display: flex; align-items: flex-end; gap: 16px; margin: 0 0 var(--ds-space-4); }
+.ops-section__titles { display: grid; gap: 4px; min-width: 0; }
+.ops-section__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.ops-divider { height: 1px; margin: var(--ds-space-6) 0; border: 0; background: var(--ds-hairline); }
+
+/* 标签 chip：22px 高、hairline 描边、语义色文字 + 极淡底 */
+.ui-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: var(--ds-tag-height); padding: 0 var(--ds-tag-padding-x);
+  border: 1px solid var(--ds-tag-border); border-radius: var(--ds-tag-radius);
+  background: transparent; color: var(--ds-color-muted);
+  font-size: var(--ds-type-caption-size); font-weight: 500; line-height: 1; white-space: nowrap;
+}
+.ui-tag--sm { height: var(--ds-tag-height-sm); padding: 0 6px; font-size: 11px; }
+.ui-tag--mono { font-family: var(--ds-font-mono); letter-spacing: .04em; }
+.ui-tag--solid { border-color: transparent; background: var(--ds-pill-neutral-bg); color: var(--ds-color-text); }
+.ui-tag--success { border-color: transparent; background: var(--ds-pill-success-bg); color: var(--ds-pill-success-fg); }
+.ui-tag--warning { border-color: transparent; background: var(--ds-pill-warning-bg); color: var(--ds-pill-warning-fg); }
+.ui-tag--danger { border-color: transparent; background: var(--ds-pill-danger-bg); color: var(--ds-pill-danger-fg); }
+.ui-tag--info { border-color: transparent; background: var(--ds-pill-info-bg); color: var(--ds-pill-info-fg); }
+.ui-tag--neutral { border-color: transparent; background: var(--ds-pill-neutral-bg); color: var(--ds-semantic-neutral); }
+
+/* 状态 pill：带信号点，用于运行状态/健康度 */
+.ui-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 10px; border-radius: var(--ds-radius-pill);
+  border: 1px solid var(--ds-hairline); background: var(--ds-pill-neutral-bg);
+  color: var(--ds-semantic-neutral); font-size: var(--ds-type-caption-size); line-height: 1;
+}
+.ui-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ui-pill--success { background: var(--ds-pill-success-bg); color: var(--ds-pill-success-fg); }
+.ui-pill--warning { background: var(--ds-pill-warning-bg); color: var(--ds-pill-warning-fg); }
+.ui-pill--danger { background: var(--ds-pill-danger-bg); color: var(--ds-pill-danger-fg); }
+.ui-pill--info { background: var(--ds-pill-info-bg); color: var(--ds-pill-info-fg); }
+.ui-pill--live::before { animation: ui-pill-pulse 2s var(--ds-ease-in-out) infinite; }
+@keyframes ui-pill-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* SOP 四步进度：采集 → 研判 → 审批 → 关闭 */
+.ui-sop { display: flex; align-items: center; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ui-sop__step { display: inline-flex; align-items: center; gap: 6px; color: var(--ds-semantic-neutral); font-size: var(--ds-type-caption-size); white-space: nowrap; }
+.ui-sop__step::before { content: ''; width: 14px; height: 14px; flex: none; border: 1px solid var(--ds-color-border-strong); border-radius: 50%; }
+.ui-sop__step + .ui-sop__step { margin-left: 10px; padding-left: 18px; position: relative; }
+.ui-sop__step + .ui-sop__step::after { content: ''; position: absolute; left: 0; top: 50%; width: 10px; height: 1px; background: var(--ds-color-border-strong); }
+.ui-sop__step--done { color: var(--ds-semantic-success); }
+.ui-sop__step--done::before { border-color: var(--ds-semantic-success); background: var(--ds-pill-success-bg); }
+.ui-sop__step--active { color: var(--ds-semantic-info); font-weight: 600; }
+.ui-sop__step--active::before { border-color: var(--ds-semantic-info); box-shadow: 0 0 0 3px var(--ds-pill-info-bg); }
+
+/* 骨架屏：明度脉冲，不用渐变条 */
+.ui-skeleton { display: block; border-radius: var(--ds-radius-sm); background: color-mix(in srgb, var(--ds-color-text) 8%, var(--ds-surface-raised)); animation: ui-skeleton-pulse 1.6s var(--ds-ease-in-out) infinite; }
+.ui-skeleton--text { height: 12px; margin: 6px 0; }
+.ui-skeleton--title { height: 20px; width: 46%; margin-bottom: 12px; }
+.ui-skeleton--block { height: 96px; }
+@keyframes ui-skeleton-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+/* 表格密度（控制台统一 40px / compact 34px 行高） */
+.app-layout .el-table .el-table__cell { padding: 8px 0; }
+.app-layout .el-table .cell { line-height: var(--ds-line-tight); }
+[data-density='compact'] .app-layout .el-table .el-table__cell { padding: 4px 0; }
+.app-layout .el-table th.el-table__cell { background: transparent; color: var(--ds-color-muted); font-size: var(--ds-type-caption-size); font-weight: 600; letter-spacing: .04em; }
+
+/* KPI 数字：大字号薄字重 + tabular-nums，标签在上、单位在下 */
+.ops-kpi { display: grid; gap: 6px; }
+.ops-kpi__value { font-size: var(--ds-type-h1-size); font-weight: 300; line-height: 1.1; font-variant-numeric: var(--ds-type-num); letter-spacing: -.02em; }
+.ops-kpi__value small { margin-left: 4px; font-size: var(--ds-type-caption-size); font-weight: 500; color: var(--ds-color-muted); }
+
+/* 全局状态条：顶栏右侧的环境 / 告警 / 健康 / Agent 状态 */
+.ops-statusbar { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; }
+.ops-statusbar__item { display: inline-flex; align-items: center; gap: 6px; color: var(--ds-color-muted); font-size: var(--ds-type-caption-size); white-space: nowrap; }
+.ops-statusbar__item b { color: var(--ds-color-text); font-weight: 600; font-variant-numeric: var(--ds-type-num); }
+.ops-statusbar__sep { width: 1px; height: 12px; background: var(--ds-hairline); }
+@media (max-width: 1024px) { .ops-statusbar__item--optional { display: none; } }
+@media (max-width: 768px) { .ops-statusbar { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ops-card,
+  .ui-skeleton,
+  .ui-pill--live::before { transition: none !important; animation: none !important; }
+  .ops-card--interactive:hover { transform: none; }
+}
+

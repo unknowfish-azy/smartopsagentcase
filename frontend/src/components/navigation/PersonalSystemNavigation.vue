@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
 .nav-health-badge-slot { position:absolute; right:10px; bottom:9px; }
 .personal-system-navigation.is-collapsed .nav-health-badge-slot { right:6px; bottom:auto; top:7px; }
 /* 收起态子菜单浮出层（桌面图标轨专用，fixed 定位避开侧栏 overflow 裁剪）。 */
-.navigation-flyout { position:fixed; left:84px; z-index:60; min-width:210px; padding:10px 6px; overflow-y:auto; border:1px solid var(--smart-border-strong); border-radius:6px; background:var(--smart-surface); box-shadow:0 18px 45px rgba(0,0,0,.38); }
+.navigation-flyout { position:fixed; left:calc(var(--ds-sidebar-width-collapsed, 64px) + var(--ds-space-5, 20px)); z-index:60; min-width:210px; padding:10px 6px; overflow-y:auto; border:1px solid var(--smart-border-strong); border-radius:6px; background:var(--smart-surface); box-shadow:0 18px 45px rgba(0,0,0,.38); }
 .navigation-flyout__title { display:flex; align-items:baseline; gap:8px; margin:0 0 6px; padding:0 12px 8px; border-bottom:1px solid var(--smart-border); }
 .navigation-flyout__title b { color:var(--smart-primary-strong); font:10px var(--font-mono); letter-spacing:.1em; font-weight:400; }
 .navigation-flyout__title small { color:var(--smart-muted); font:11px var(--font-cn); }
