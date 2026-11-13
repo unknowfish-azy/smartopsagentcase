@@ -1,0 +1,460 @@
+﻿/* ==========================================================================
+   motion-layer.css — 统一动效编排层（L2 数据层 / L3 交互层）
+   --------------------------------------------------------------------------
+   背景：TRÆ 已把 L1 氛围层（星网 / 极光 / 流星 / 果冻登录）做完整，
+   但核心业务页「内容区」几乎静态。本文件补 L2/L3，让数据在动、AI 在思考。
+
+   设计约束（沿用 T11 / T20 已验证基线）：
+   1. 作用域只限 .app-layout 工具层；**显式排除 .login-shell / .login-form**，
+      不触碰登录页契约（login-glass 要求 .login-form transform 恒为 none）。
+   2. 不用 backdrop-filter / blur（T11 G3 控制台 blur=0 基线）。
+   3. 不改任何元素的基础 transform；动画只用 opacity / box-shadow /
+      background-position / filter / translateY(<=2px)，且结束态归零。
+   4. 状态色沿用运维语义（红=故障/高危、绿=健康），不套用股票涨跌配色。
+   5. 四重降级：系统 reduced-motion / 运行时掉帧 / 轻量视觉档 / 窄屏。
+
+   零 template 改动：除语义类族外，另对既有类名（.ops-* / .el-table /
+   .ui-pill--live 等）做低侵入自动挂载，全站工具层即刻生效。
+   ========================================================================== */
+
+.app-layout {
+  --ml-stagger-step: 40ms;
+  --ml-cycle: 3.6s;
+  --ml-stream-caret: var(--ds-color-primary, var(--smart-primary, #4fc3f7));
+  --ml-live: rgba(63, 185, 80, .9);
+  --ml-live-warn: rgba(230, 162, 60, .9);
+  --ml-live-critical: rgba(235, 87, 87, .9);
+  --ml-shift: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   1. L3 入场 / 编排
+   -------------------------------------------------------------------------- */
+@keyframes ml-rise-in {
+  from { opacity: 0; transform: translateY(var(--ml-shift)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 自动挂载专用：纯 opacity，绝不覆盖 .ops-card--interactive:hover 的 transform */
+@keyframes ml-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.app-layout .ml-rise {
+  animation: ml-rise-in var(--ds-duration-spring, 200ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+}
+
+/* 子项错峰：默认按 DOM 顺序给前 12 项 40ms 步进 */
+.app-layout .ml-stagger > * {
+  animation: ml-rise-in var(--ds-duration-spring, 200ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+}
+.app-layout .ml-stagger > *:nth-child(1)  { animation-delay: calc(var(--ml-stagger-step) * 0); }
+.app-layout .ml-stagger > *:nth-child(2)  { animation-delay: calc(var(--ml-stagger-step) * 1); }
+.app-layout .ml-stagger > *:nth-child(3)  { animation-delay: calc(var(--ml-stagger-step) * 2); }
+.app-layout .ml-stagger > *:nth-child(4)  { animation-delay: calc(var(--ml-stagger-step) * 3); }
+.app-layout .ml-stagger > *:nth-child(5)  { animation-delay: calc(var(--ml-stagger-step) * 4); }
+.app-layout .ml-stagger > *:nth-child(6)  { animation-delay: calc(var(--ml-stagger-step) * 5); }
+.app-layout .ml-stagger > *:nth-child(7)  { animation-delay: calc(var(--ml-stagger-step) * 6); }
+.app-layout .ml-stagger > *:nth-child(8)  { animation-delay: calc(var(--ml-stagger-step) * 7); }
+.app-layout .ml-stagger > *:nth-child(9)  { animation-delay: calc(var(--ml-stagger-step) * 8); }
+.app-layout .ml-stagger > *:nth-child(10) { animation-delay: calc(var(--ml-stagger-step) * 9); }
+.app-layout .ml-stagger > *:nth-child(11) { animation-delay: calc(var(--ml-stagger-step) * 10); }
+.app-layout .ml-stagger > *:nth-child(12) { animation-delay: calc(var(--ml-stagger-step) * 11); }
+
+/* --------------------------------------------------------------------------
+   L3 网格感知 stagger（对应 Y02：按网格位置算 delay，断点列数变化时仍自然）
+   用法：在 auto-fill / 固定列网格容器上加 .ml-stagger-cols-N。
+   按列错峰：同列内的行共享 delay，阅读顺序从左到右逐列推进。
+   -------------------------------------------------------------------------- */
+.app-layout .ml-stagger-cols-2 > *,
+.app-layout .ml-stagger-cols-3 > *,
+.app-layout .ml-stagger-cols-4 > * {
+  animation: ml-rise var(--ml-duration-base) var(--ml-ease-out) both;
+  will-change: transform, opacity;
+}
+.app-layout .ml-stagger-cols-2 > *:nth-child(2n+2) { animation-delay: calc(var(--ml-stagger-step) * 1); }
+.app-layout .ml-stagger-cols-3 > *:nth-child(3n+2) { animation-delay: calc(var(--ml-stagger-step) * 1); }
+.app-layout .ml-stagger-cols-3 > *:nth-child(3n+3) { animation-delay: calc(var(--ml-stagger-step) * 2); }
+.app-layout .ml-stagger-cols-4 > *:nth-child(4n+2) { animation-delay: calc(var(--ml-stagger-step) * 1); }
+.app-layout .ml-stagger-cols-4 > *:nth-child(4n+3) { animation-delay: calc(var(--ml-stagger-step) * 2); }
+.app-layout .ml-stagger-cols-4 > *:nth-child(4n+4) { animation-delay: calc(var(--ml-stagger-step) * 3); }
+
+/* --------------------------------------------------------------------------
+   2. L2 数据层 — KPI 读数 / 指标连增（对应 L4 DDX 连增看板）
+   仅做「读数感」微脉冲 + tabular-nums 防跳动；真实数字滚动由 P1 接后端实现。
+   -------------------------------------------------------------------------- */
+@keyframes ml-digit-breathe {
+  0%, 100% { opacity: 1; }
+  45%      { opacity: .78; }
+  60%      { opacity: 1; }
+}
+
+.app-layout .ml-kpi,
+.app-layout .ops-kpi__value,
+.app-layout .ops-statusbar__item b {
+  font-variant-numeric: var(--ds-type-num, tabular-nums);
+}
+
+.app-layout .ml-kpi {
+  animation: ml-digit-breathe var(--ml-cycle) var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite;
+}
+
+/* 连增阶梯：三段依次点亮，暗示指标持续累积（纯视觉，不伪造数据） */
+@keyframes ml-trend-step {
+  0%, 100% { opacity: .35; }
+  30%      { opacity: 1; }
+  60%      { opacity: .55; }
+}
+
+.app-layout .ml-trend {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 14px;
+}
+.app-layout .ml-trend > i {
+  display: block;
+  width: 3px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  animation: ml-trend-step 2.4s var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite;
+}
+.app-layout .ml-trend > i:nth-child(1) { height: 40%; animation-delay: 0s; }
+.app-layout .ml-trend > i:nth-child(2) { height: 70%; animation-delay: .3s; }
+.app-layout .ml-trend > i:nth-child(3) { height: 100%; animation-delay: .6s; }
+
+/* --------------------------------------------------------------------------
+   3. L2 数据流 — 扫光 / 时序传导（对应 L1 MLP+GRU 传感器时序预测）
+   用 background-position 平移，不产生合成层抖动。
+   -------------------------------------------------------------------------- */
+@keyframes ml-sweep-pass {
+  0%   { background-position: -180% 0; }
+  100% { background-position: 180% 0; }
+}
+
+.app-layout .ml-sweep {
+  position: relative;
+}
+.app-layout .ml-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(100deg, transparent 38%, rgba(122, 215, 245, .055) 50%, transparent 62%);
+  background-size: 220% 100%;
+  animation: ml-sweep-pass 7s linear infinite;
+}
+
+/* 时序传导：已完成步骤竖向光点流动（ExecutionTrace 已有局部实现，此处为全站可复用版） */
+@keyframes ml-flow-down {
+  0%, 100% { box-shadow: inset 0 -14px 14px rgba(122, 215, 245, 0); }
+  50%      { box-shadow: inset 0  14px 14px rgba(122, 215, 245, .28); }
+}
+.app-layout .ml-flow::before {
+  animation: ml-flow-down 1.8s var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite;
+}
+
+/* --------------------------------------------------------------------------
+   4. L2 流式层 — AI 逐 token 输出（对应 L2 40亿token / Codex-GPT）
+   光标用 ::after，不改变文本节点，不影响复制与屏幕阅读器。
+   -------------------------------------------------------------------------- */
+@keyframes ml-caret-blink {
+  0%, 45%  { opacity: 1; }
+  55%, 100%{ opacity: 0; }
+}
+@keyframes ml-line-reveal {
+  from { opacity: 0; transform: translateY(var(--ml-shift)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.app-layout .ml-stream::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: -.12em;
+  background: var(--ml-stream-caret);
+  opacity: .85;
+  animation: ml-caret-blink 1.05s steps(1, end) infinite;
+}
+.app-layout .ml-stream-lines > * {
+  animation: ml-line-reveal 260ms var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+}
+.app-layout .ml-stream-lines > *:nth-child(1) { animation-delay: 0ms; }
+.app-layout .ml-stream-lines > *:nth-child(2) { animation-delay: 90ms; }
+.app-layout .ml-stream-lines > *:nth-child(3) { animation-delay: 180ms; }
+.app-layout .ml-stream-lines > *:nth-child(4) { animation-delay: 270ms; }
+.app-layout .ml-stream-lines > *:nth-child(5) { animation-delay: 360ms; }
+.app-layout .ml-stream-lines > *:nth-child(6) { animation-delay: 450ms; }
+
+/* --------------------------------------------------------------------------
+   5. L2 状态层 — 实时呼吸点（运维状态色，非涨跌色）
+   -------------------------------------------------------------------------- */
+@keyframes ml-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: .95; }
+  60%      { box-shadow: 0 0 0 5px transparent; opacity: .6; }
+}
+
+.app-layout .ml-live,
+.app-layout .ui-pill--live::before {
+  color: var(--ml-live);
+  animation: ml-live-pulse 2.4s var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite;
+}
+.app-layout .ml-live--warn     { color: var(--ml-live-warn); }
+.app-layout .ml-live--critical { color: var(--ml-live-critical); animation-duration: 1.4s; }
+
+/* --------------------------------------------------------------------------
+   6. L3 视差呼应（对应 L5 宇宙星空：内容层与背景层极轻微深度差）
+   只用 background-position，不用 transform，避免 CLS 与合成层膨胀。
+   -------------------------------------------------------------------------- */
+@keyframes ml-parallax-drift {
+  0%, 100% { background-position: 0 0; }
+  50%      { background-position: 0 var(--ml-shift); }
+}
+.app-layout .ml-parallax {
+  animation: ml-parallax-drift 18s ease-in-out infinite;
+}
+
+/* --------------------------------------------------------------------------
+   7. 零 template 改动的自动挂载（低侵入，作用于既有类名）
+   只用 opacity，不使用 transform —— 避免动画终态覆盖
+   .ops-card--interactive:hover 的 1px 抬升（历史上 login-glass 契约
+   曾被 transform 打断，此处严格规避）。
+   -------------------------------------------------------------------------- */
+.app-layout .sentinel-surface > *,
+.app-layout .ops-card,
+.app-layout .dashboard-bento > * {
+  animation: ml-fade-in 240ms var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+}
+.app-layout .sentinel-surface > *:nth-child(2),
+.app-layout .dashboard-bento > *:nth-child(2) { animation-delay: var(--ml-stagger-step); }
+.app-layout .sentinel-surface > *:nth-child(3),
+.app-layout .dashboard-bento > *:nth-child(3) { animation-delay: calc(var(--ml-stagger-step) * 2); }
+.app-layout .sentinel-surface > *:nth-child(4),
+.app-layout .dashboard-bento > *:nth-child(4) { animation-delay: calc(var(--ml-stagger-step) * 3); }
+
+.app-layout .el-table__row {
+  animation: ml-fade-in 200ms var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+}
+.app-layout .el-table__row:nth-child(2) { animation-delay: 30ms; }
+.app-layout .el-table__row:nth-child(3) { animation-delay: 60ms; }
+.app-layout .el-table__row:nth-child(4) { animation-delay: 90ms; }
+.app-layout .el-table__row:nth-child(5) { animation-delay: 120ms; }
+.app-layout .el-table__row:nth-child(n+6) { animation-delay: 150ms; }
+
+/* 持续生命感：KPI 读数 / 状态条数值极低频微脉冲（opacity 1→.88→1）。
+   只动透明度，不动尺寸与位移，避免数字抖动与 CLS。 */
+.app-layout .ops-kpi__value,
+.app-layout .ops-statusbar__item b {
+  animation: ml-digit-breathe var(--ml-cycle) var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite;
+}
+.app-layout .ops-statusbar__item b { animation-duration: 5.2s; }
+
+/* --------------------------------------------------------------------------
+   8. 四重降级门禁（顺序在最后，确保优先级生效）
+   注意：伪元素动画必须单独停，只停宿主元素不会取消 ::after 的 animation。
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* 窄屏只保留「AI 在输出 / 系统在线」两个最有信息量的动效 */
+  .app-layout .ml-rise,
+  .app-layout .ml-stagger > *,
+  .app-layout .ml-kpi,
+  .app-layout .ml-trend > i,
+  .app-layout .ml-sweep::after,
+  .app-layout .ml-flow::before,
+  .app-layout .ml-parallax,
+  .app-layout .sentinel-surface > *,
+  .app-layout .ops-card,
+  .app-layout .dashboard-bento > *,
+  .app-layout .el-table__row,
+  .app-layout .ml-stream-lines > *,
+  .app-layout .ops-kpi__value,
+  .app-layout .ops-statusbar__item b {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-layout .ml-rise,
+  .app-layout .ml-stagger > *,
+  .app-layout .ml-kpi,
+  .app-layout .ml-trend > i,
+  .app-layout .ml-sweep::after,
+  .app-layout .ml-flow::before,
+  .app-layout .ml-stream::after,
+  .app-layout .ml-stream-lines > *,
+  .app-layout .ml-live,
+  .app-layout .ui-pill--live::before,
+  .app-layout .ml-parallax,
+  .app-layout .sentinel-surface > *,
+  .app-layout .ops-card,
+  .app-layout .dashboard-bento > *,
+  .app-layout .el-table__row,
+  .app-layout .ops-kpi__value,
+  .app-layout .ops-statusbar__item b {
+    animation: none !important;
+    transition: none !important;
+  }
+  .app-layout .ml-stream::after { opacity: 0; }
+  .app-layout .ml-stream-lines > *,
+  .app-layout .ml-rise,
+  .app-layout .ml-stagger > *,
+  .app-layout .sentinel-surface > *,
+  .app-layout .dashboard-bento > *,
+  .app-layout .el-table__row {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* 运行时低帧率降级：由 visual/motionScheduler.js 置位（含伪元素） */
+[data-motion-degraded='true'] .app-layout [class*='ml-'],
+[data-motion-degraded='true'] .app-layout [class*='ml-']::after,
+[data-motion-degraded='true'] .app-layout [class*='ml-']::before,
+[data-motion-degraded='true'] .app-layout .ops-card,
+[data-motion-degraded='true'] .app-layout .sentinel-surface > *,
+[data-motion-degraded='true'] .app-layout .dashboard-bento > *,
+[data-motion-degraded='true'] .app-layout .el-table__row,
+[data-motion-degraded='true'] .app-layout .ops-kpi__value,
+[data-motion-degraded='true'] .app-layout .ops-statusbar__item b {
+  animation: none !important;
+}
+
+/* 三档视觉模式：轻量 / 减少动态 一律出静态终态，不创建运动 */
+.app-layout[data-visual-mode='lightweight'] [class*='ml-'],
+.app-layout[data-visual-mode='reduced-motion'] [class*='ml-'],
+[data-visual-mode='lightweight'] .app-layout [class*='ml-'],
+[data-visual-mode='reduced-motion'] .app-layout [class*='ml-'],
+.app-layout[data-visual-mode='lightweight'] [class*='ml-']::after,
+[data-visual-mode='reduced-motion'] .app-layout [class*='ml-']::before,
+.app-layout[data-visual-mode='lightweight'] .ops-kpi__value,
+.app-layout[data-visual-mode='reduced-motion'] .ops-kpi__value,
+[data-visual-mode='lightweight'] .app-layout .ops-statusbar__item b,
+[data-visual-mode='reduced-motion'] .app-layout .ops-statusbar__item b {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* ==========================================================================
+   9. P1–P3 数据层 / 流式层 / 交互层增强（延续「零 template 改动」策略）
+   --------------------------------------------------------------------------
+   取证发现：AiChatPanel.vue 已自带 .ai-cursor / .ai-chat-pending /
+   .ai-trace__step.is-active 的流式动效，并在其 scoped 样式里做了
+   prefers-reduced-motion 降级。故此处**不重复实现**，只补「编排与呼应」。
+   所有规则依旧只用 opacity / text-shadow / filter，不占布局、不改几何。
+   ========================================================================== */
+
+/* ---- P1 · L4 指标连增：读数冷光呼吸（叠加在既有 ml-digit-breathe 上） ---- */
+@keyframes ml-kpi-glow {
+  0%, 100% { text-shadow: none; }
+  50%      { text-shadow: 0 0 12px rgba(79, 195, 247, .3); }
+}
+.app-layout .ops-kpi__value {
+  animation:
+    ml-digit-breathe var(--ml-cycle) var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite,
+    ml-kpi-glow var(--ml-cycle) var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite;
+}
+
+/* KPI 卡片「连增阶梯」：三段光条贴在标题下方，纯 CSS 生成，不新增 DOM。
+   用 .ops-card__head::after（该伪元素经查未被占用），高度 2px、absolute 定位
+   于 head 内部；head 已是 flex，设为 relative 不改变其布局流。 */
+.app-layout .ops-card__head { position: relative; }
+.app-layout .ops-card__head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 42px;
+  height: 2px;
+  border-radius: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(79, 195, 247, .18) 0 30%,
+    rgba(79, 195, 247, .48) 30% 65%,
+    rgba(79, 195, 247, .9) 65% 100%);
+  opacity: .55;
+  animation: ml-trend-step 2.4s var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite;
+}
+
+/* ---- P2 · L2 40亿token 生成流：消息逐条入场 + 处理时间线错峰 ---- */
+.app-layout .ai-chat-message {
+  animation: ml-fade-in 260ms var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+}
+.app-layout .ai-chat-message:nth-last-child(4) { animation-delay: 0ms; }
+.app-layout .ai-chat-message:nth-last-child(3) { animation-delay: 45ms; }
+.app-layout .ai-chat-message:nth-last-child(2) { animation-delay: 90ms; }
+.app-layout .ai-chat-message:nth-last-child(1) { animation-delay: 135ms; }
+
+.app-layout .ai-trace__step.is-active {
+  animation: ml-digit-breathe 2s var(--ds-ease-in-out, cubic-bezier(.4, 0, .2, 1)) infinite;
+}
+
+/* ---- P3 · L3 B端交互：路由转场 + 按下反馈（不碰 transform） ---- */
+.app-layout .content > * {
+  animation: ml-fade-in 220ms var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+}
+.app-layout .ops-card--interactive:active { filter: brightness(1.06); }
+
+/* ---- P3 · L5 视口揭示：渐进增强，仅支持 scroll-driven animations 的浏览器 ----
+   刻意不自动挂载到既有类名，供实现模型按需挂 .ml-reveal-on-scroll，
+   避免与 .ops-card 的 ml-fade-in 时间轴冲突。 */
+@keyframes ml-reveal-on-scroll {
+  from { opacity: .3; }
+  to   { opacity: 1; }
+}
+@supports (animation-timeline: view()) {
+  .app-layout .ml-reveal-on-scroll {
+    animation: ml-reveal-on-scroll linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 20%;
+  }
+}
+
+/* ---- P1–P3 新增规则的降级（与 §8 四重门禁并列，双保险） ---- */
+@media (max-width: 768px) {
+  .app-layout .ops-kpi__value,
+  .app-layout .ops-card__head::after,
+  .app-layout .ai-chat-message,
+  .app-layout .ai-trace__step.is-active,
+  .app-layout .content > *,
+  .app-layout .ml-reveal-on-scroll {
+    animation: none !important;
+  }
+  .app-layout .ops-card__head::after { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-layout .ops-kpi__value,
+  .app-layout .ops-card__head::after,
+  .app-layout .ai-chat-message,
+  .app-layout .ai-trace__step.is-active,
+  .app-layout .content > *,
+  .app-layout .ml-reveal-on-scroll {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .app-layout .ops-card__head::after { display: none; }
+}
+[data-motion-degraded='true'] .app-layout .ops-kpi__value,
+[data-motion-degraded='true'] .app-layout .ops-card__head::after,
+[data-motion-degraded='true'] .app-layout .ai-chat-message,
+[data-motion-degraded='true'] .app-layout .ai-trace__step.is-active,
+[data-motion-degraded='true'] .app-layout .content > * {
+  animation: none !important;
+}
+.app-layout[data-visual-mode='lightweight'] .ops-kpi__value,
+.app-layout[data-visual-mode='reduced-motion'] .ops-kpi__value,
+.app-layout[data-visual-mode='lightweight'] .ops-card__head::after,
+.app-layout[data-visual-mode='reduced-motion'] .ops-card__head::after,
+.app-layout[data-visual-mode='lightweight'] .content > *,
+.app-layout[data-visual-mode='reduced-motion'] .content > * {
+  animation: none !important;
+}
+
+/* 登录页隔离：登录页有独立动效体系与 login-glass 契约，本层完全不介入。
+   后续维护者请勿把 ml-* 类挂到 .login-shell / .login-form 内。 */

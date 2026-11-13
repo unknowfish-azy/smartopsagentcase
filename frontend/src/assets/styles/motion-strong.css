@@ -1,0 +1,291 @@
+﻿/* ==========================================================================
+   motion-strong.css — 强动效层（用户 2026-11-13 20:40「大幅度修改，增加动画强效果」）
+   --------------------------------------------------------------------------
+   定位：motion-layer.css 是「克制企业级」基线；本文件是**强度档**，
+   只在 visualMode === 'balanced' 时生效。选「轻量视觉 / 减少动态」、
+   系统偏好 reduced-motion、运行时掉帧、窄屏 —— 本层全部规则自动不生效。
+
+   设计红线（沿用已验收契约，不得破坏）：
+   1. **不给 .login-form 加任何 transform**（login-glass 契约要求恒为 none）。
+      登录页所有强效果只用 opacity / background-position / filter / box-shadow。
+   2. **不给 .login-stars-front 加 transform**：login-layout 契约会校验它
+      必须留在 .login-organisms 舞台内，位移会越界。改用 background-position。
+   3. 不新增 DOM、不新增 JS、不新增网络请求、不用 backdrop-filter（T11 blur=0）。
+   4. reduced-motion 下本层完全不加载 → login-layout 校验的
+      `.login-form::after` animationName='none' 断言继续成立。
+   ========================================================================== */
+
+.app-layout[data-visual-mode='balanced'],
+.login-shell[data-visual-mode='balanced'] {
+  --ms-glow: rgba(122, 215, 245, .55);
+  --ms-glow-soft: rgba(43, 168, 200, .3);
+  --ms-green: rgba(63, 185, 80, .55);
+  --ms-fast: 2.4s;
+  --ms-mid: 6s;
+  --ms-slow: 14s;
+}
+
+/* ==========================================================================
+   A. 登录页 —— 门面强效果
+   ========================================================================== */
+
+/* A1 极光：三层化 + 提速 + 增亮（原 22s/32s、低透明度 → 14s/18s、明显可见） */
+.login-shell[data-visual-mode='balanced'] .login-aurora {
+  animation-duration: var(--ms-slow);
+  filter: blur(26px) saturate(1.25);
+  opacity: 1;
+}
+.login-shell[data-visual-mode='balanced'] .login-aurora::after {
+  animation-duration: 18s;
+  opacity: 1;
+}
+/* 第三道斜向光带：新增伪元素（经查 ::before 未被占用），冷蓝缓慢横扫 */
+.login-shell[data-visual-mode='balanced'] .login-aurora::before {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  pointer-events: none;
+  background: linear-gradient(115deg,
+    transparent 34%,
+    rgba(122, 215, 245, .16) 46%,
+    rgba(184, 238, 255, .26) 50%,
+    rgba(122, 215, 245, .16) 54%,
+    transparent 66%);
+  background-size: 220% 220%;
+  animation: ms-aurora-band 11s ease-in-out infinite;
+}
+@keyframes ms-aurora-band {
+  0%, 100% { background-position: 0% 0%; opacity: .35; }
+  50%      { background-position: 100% 100%; opacity: .95; }
+}
+
+/* A2 星尘：大尺度缓慢漂移（仅 background-position，不改 transform / 几何）
+   注意：LoginView 的 login-stars-twinkle 是 scoped keyframes（Vue 会重命名），
+   全局样式引用不到，故本层自带 ms-twinkle，顺便满足 login-layout 契约
+   「balanced 下星尘层 computed opacity 必须变化」的实测断言。 */
+.login-shell[data-visual-mode='balanced'] .login-stars-bg {
+  animation: ms-stars-drift 26s linear infinite alternate,
+             ms-twinkle 4.5s ease-in-out infinite alternate-reverse;
+}
+.login-shell[data-visual-mode='balanced'] .login-stars-front {
+  animation: ms-stars-drift 17s linear infinite alternate-reverse,
+             ms-twinkle 2.6s ease-in-out infinite alternate-reverse;
+}
+@keyframes ms-stars-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 46px 30px; }
+}
+@keyframes ms-twinkle {
+  from { opacity: .55; }
+  to   { opacity: 1; }
+}
+
+/* A3 标题冷光呼吸：字阶不变、只加光晕，保持企业级可读性 */
+.login-shell[data-visual-mode='balanced'] .login-copy h1 {
+  animation: ms-title-glow var(--ms-mid) ease-in-out infinite;
+}
+@keyframes ms-title-glow {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50%      { filter: drop-shadow(0 0 14px var(--ms-glow-soft)); }
+}
+
+/* A4 品牌徽记慢速自转（装饰元素，不参与表单几何） */
+.login-shell[data-visual-mode='balanced'] .login-brand__mark--star {
+  animation: ms-mark-spin 24s linear infinite;
+}
+@keyframes ms-mark-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* A5 表单卡：边缘光晕呼吸（box-shadow，绝不用 transform） */
+.login-shell[data-visual-mode='balanced'] .login-form {
+  animation: ms-card-glow var(--ms-mid) ease-in-out infinite;
+}
+@keyframes ms-card-glow {
+  0%, 100% { box-shadow: var(--login-glass-shadow); }
+  50%      { box-shadow: var(--login-glass-shadow), 0 0 0 1px var(--ms-glow-soft), 0 0 34px rgba(43, 168, 200, .16); }
+}
+
+/* A6 提交按钮：冷蓝光泽扫过 + 光晕脉冲（hover 契约只查几何，光效不影响） */
+.login-shell[data-visual-mode='balanced'] .login-submit {
+  animation: ms-submit-glow var(--ms-fast) ease-in-out infinite;
+}
+@keyframes ms-submit-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(122, 215, 245, 0); }
+  50%      { box-shadow: 0 0 18px 2px rgba(122, 215, 245, .22); }
+}
+
+/* A7 顶栏与页脚：细光带流过分界线（纯 background-position） */
+.login-shell[data-visual-mode='balanced'] .login-topbar {
+  background-image: linear-gradient(90deg, transparent 30%, rgba(122, 215, 245, .12) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: ms-line-sweep 9s linear infinite;
+}
+@keyframes ms-line-sweep {
+  from { background-position: -120% 0; }
+  to   { background-position: 120% 0; }
+}
+
+/* ==========================================================================
+   B. 控制台工具层 —— 数据/交互强效果
+   ========================================================================== */
+
+/* B1 卡片流光：用 background-image 扫过。
+   不用 outline（会吃掉 :focus-visible 焦点框，a11y 键盘测试会挂）、
+   不用 box-shadow / border-color（会覆盖 .ops-card--interactive:hover）、
+   不用 transform（会覆盖 hover 抬升）。background-image 单独设置不影响
+   卡片原有的 background-color。 */
+.app-layout[data-visual-mode='balanced'] .ops-card {
+  background-image: linear-gradient(110deg, transparent 38%, rgba(122, 215, 245, .075) 50%, transparent 62%);
+  background-size: 220% 100%;
+  animation: ms-edge-flow var(--ms-mid) linear infinite;
+}
+@keyframes ms-edge-flow {
+  from { background-position: -120% 0; }
+  to   { background-position: 120% 0; }
+}
+
+/* B2 KPI 读数：冷光脉冲 + 已有的 ml-digit-breathe 叠加（不伪造数值） */
+.app-layout[data-visual-mode='balanced'] .ops-kpi__value {
+  animation: ms-kpi-glow var(--ms-fast) ease-in-out infinite,
+             ml-digit-breathe var(--ml-cycle, 3.6s) ease-in-out infinite;
+}
+@keyframes ms-kpi-glow {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50%      { filter: drop-shadow(0 0 10px var(--ms-glow)); }
+}
+
+/* B3 路由转场：从「纯淡入」升级为「明显滑入」（作用于页面根，不是卡片，
+   不会覆盖 .ops-card--interactive:hover 的 transform） */
+.app-layout[data-visual-mode='balanced'] .content > * {
+  animation: ms-route-in 420ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes ms-route-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* B4 实时状态点：双层扩散环（比基线的单层呼吸明显得多） */
+.app-layout[data-visual-mode='balanced'] .ui-pill--live::before {
+  animation: ms-live-ring var(--ms-fast) ease-out infinite;
+}
+@keyframes ms-live-ring {
+  0%   { box-shadow: 0 0 0 0 var(--ms-green), 0 0 0 0 transparent; opacity: 1; }
+  70%  { box-shadow: 0 0 0 7px transparent, 0 0 0 12px rgba(63, 185, 80, .10); opacity: .75; }
+  100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; opacity: 1; }
+}
+
+/* B5 侧栏 active 指示：内发光脉冲（不改 border-left-color，避免与 hover 冲突） */
+.app-layout[data-visual-mode='balanced'] .section-nav a.router-link-active {
+  animation: ms-nav-active var(--ms-mid) ease-in-out infinite;
+}
+@keyframes ms-nav-active {
+  0%, 100% { box-shadow: inset 2px 0 0 rgba(122, 215, 245, .35); }
+  50%      { box-shadow: inset 2px 0 0 rgba(122, 215, 245, .95), inset 14px 0 22px -14px rgba(122, 215, 245, .45); }
+}
+
+/* B6 导航图标：hover 冷光 + 轻微放大（图标是 inline SVG，不影响布局） */
+.app-layout[data-visual-mode='balanced'] .section-nav a:hover .nav-icon {
+  filter: drop-shadow(0 0 6px var(--ms-glow));
+  transform: scale(1.12);
+  transition: filter 150ms ease, transform 150ms ease;
+}
+
+/* B7 AI 流式光标增强：更亮 + 尾迹（复用既有 .ai-cursor，不重造 DOM）
+   chat-blink 是 AiChatPanel 的 scoped keyframes，全局不可见，改自带 blink。 */
+.app-layout[data-visual-mode='balanced'] .ai-cursor {
+  box-shadow: 0 0 8px var(--ms-glow);
+  animation: ms-caret-blink 1s steps(2, start) infinite, ms-caret-bloom 2s ease-in-out infinite;
+}
+@keyframes ms-caret-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+@keyframes ms-caret-bloom {
+  0%, 100% { box-shadow: 0 0 5px var(--ms-glow); }
+  50%      { box-shadow: 0 0 12px var(--ms-glow); }
+}
+
+/* B8 图表 / 拓扑画布：低频明度呼吸，暗示数据持续刷新 */
+.app-layout[data-visual-mode='balanced'] .sentinel-crawler-canvas,
+.app-layout[data-visual-mode='balanced'] .ops-chart {
+  animation: ms-canvas-breathe var(--ms-mid) ease-in-out infinite;
+}
+@keyframes ms-canvas-breathe {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.09); }
+}
+
+/* B9 表格行：hover 时光带扫过（background-position，不改 transform） */
+.app-layout[data-visual-mode='balanced'] .el-table__row:hover {
+  background-image: linear-gradient(90deg, transparent, rgba(122, 215, 245, .07), transparent);
+  background-size: 200% 100%;
+  animation: ms-row-sweep 1.1s ease-out 1;
+}
+@keyframes ms-row-sweep {
+  from { background-position: -100% 0; }
+  to   { background-position: 100% 0; }
+}
+
+/* ==========================================================================
+   C. 降级门禁 —— 任一条件命中，本层全部效果立即归零
+   （与 motion-layer.css 的四重门禁一致，但本层更严格：balanced 之外全停）
+   ========================================================================== */
+@media (max-width: 768px) {
+  .app-layout[data-visual-mode='balanced'] .ops-card,
+  .app-layout[data-visual-mode='balanced'] .ops-kpi__value,
+  .app-layout[data-visual-mode='balanced'] .content > *,
+  .app-layout[data-visual-mode='balanced'] .ui-pill--live::before,
+  .app-layout[data-visual-mode='balanced'] .section-nav a.router-link-active,
+  .app-layout[data-visual-mode='balanced'] .ai-cursor,
+  .app-layout[data-visual-mode='balanced'] .sentinel-crawler-canvas,
+  .app-layout[data-visual-mode='balanced'] .ops-chart,
+  .login-shell[data-visual-mode='balanced'] .login-aurora,
+  .login-shell[data-visual-mode='balanced'] .login-aurora::before,
+  .login-shell[data-visual-mode='balanced'] .login-aurora::after,
+  .login-shell[data-visual-mode='balanced'] .login-stars-bg,
+  .login-shell[data-visual-mode='balanced'] .login-stars-front,
+  .login-shell[data-visual-mode='balanced'] .login-copy h1,
+  .login-shell[data-visual-mode='balanced'] .login-brand__mark--star,
+  .login-shell[data-visual-mode='balanced'] .login-form,
+  .login-shell[data-visual-mode='balanced'] .login-submit,
+  .login-shell[data-visual-mode='balanced'] .login-topbar {
+    animation: none !important;
+    outline-color: transparent !important;
+    filter: none !important;
+  }
+  .login-shell[data-visual-mode='balanced'] .login-aurora::before { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-layout[data-visual-mode='balanced'] *,
+  .app-layout[data-visual-mode='balanced'] *::before,
+  .app-layout[data-visual-mode='balanced'] *::after,
+  .login-shell[data-visual-mode='balanced'] *,
+  .login-shell[data-visual-mode='balanced'] *::before,
+  .login-shell[data-visual-mode='balanced'] *::after {
+    animation: none !important;
+    transition: none !important;
+    filter: none !important;
+  }
+  /* 刻意不写 transform:none —— Element Plus 的 popper / 下拉层用
+     translate3d 定位，通配归零会让弹出层错位；停动画已足够满足降级语义。 */
+  .login-shell[data-visual-mode='balanced'] .login-aurora::before { display: none; }
+}
+
+[data-motion-degraded='true'] .app-layout [data-visual-mode='balanced'] *,
+[data-motion-degraded='true'] .app-layout[data-visual-mode='balanced'] *,
+[data-motion-degraded='true'] .login-shell[data-visual-mode='balanced'] *,
+[data-motion-degraded='true'] .login-shell[data-visual-mode='balanced'] *::before {
+  animation: none !important;
+  filter: none !important;
+  outline-color: transparent !important;
+}
+
+/* lightweight / reduced-motion 档：本文件所有 A/B 段规则本来就不匹配，
+   这里再补一道通配保险，防止后续维护者误把前缀写宽。 */
+.app-layout[data-visual-mode='lightweight'] [class*='ms-'],
+.app-layout[data-visual-mode='reduced-motion'] [class*='ms-'] {
+  animation: none !important;
+}
