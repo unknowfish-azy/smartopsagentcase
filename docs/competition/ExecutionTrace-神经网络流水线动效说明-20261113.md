@@ -1,7 +1,9 @@
 # ExecutionTrace · 神经网络流水线动效说明
 
 > 版本：v1.0 · 日期：2026-11-13 · 页面：`/agent/trace` · 文件：`ExecutionTraceView.vue`
-> 源参考：抖音《基于 MLP+GRU 神经网络的引擎传感器时序预测项目》BV 1HZ9YBcEnY
+> 动效语义来源：抖音《基于 MLP+GRU 神经网络的引擎传感器时序预测项目》（`v.douyin.com/xN1ozBw-5Go`，**仅标题推导，未取得画面**）——取「时间轴数据流 + 节点触发」。
+> 视觉风格来源：启佑 Spark You 智慧星空平台（B站 `BV1HZ9YBcEnY`，571s，`no_reprint:1`）。
+> 注意：上述两条是**不同来源**，此前头部把抖音标题与 B站 BV 混写成同一条，属出处错标，已更正。
 
 ---
 
