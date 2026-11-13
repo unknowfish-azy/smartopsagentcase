@@ -1,11 +1,15 @@
 <template>
   <StellarOceanProvider state="thinking">
   <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode" :data-theme="resolvedTheme">
-    <!-- CanvasAmbientField: 启佑风格增强——粒子增密 + 星网连线 -->
-    <CanvasAmbientField class="login-ambient" :palette-root="loginShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
-    <!-- 极光光带：中景层大尺度缓慢漂移（零 KB，CSS 渐变 + transform）。方案 §6.2 推荐替代视频层。 -->
-    <div v-if="visualMode !== 'reduced-motion'" class="login-aurora" aria-hidden="true"></div>
-    <MeteorShower v-if="visualMode === 'balanced'" class="login-meteors" />
+    <!-- §8 Gate-1 CanvasAmbientField: 桌面端才挂载 + 移动端轻量降级（70 颗 + 无连线） -->
+    <CanvasAmbientField v-if="!isMobile" class="login-ambient" :palette-root="loginShellRef" :star-multiplier="visualMode === 'lightweight' ? 1 : 1.8" :connect-particles="visualMode !== 'lightweight'" :connect-max-dist="130" />
+    <!-- §8 Gate-2 封面视频槽：balanced 档 + 桌面端 + 仅当 public/assets/login-cover.mp4 存在时才挂载 -->
+    <video v-if="!isMobile && visualMode === 'balanced'" class="login-cover-video" :poster="loginCoverPoster" autoplay muted loop playsinline preload="metadata"></video>
+    <!-- §8 Gate-3 暗遮罩：视频层叠用（40% 暗，按最亮帧验对比度） -->
+    <div v-if="!isMobile" class="login-cover-mask" aria-hidden="true"></div>
+    <!-- 极光光带：中景层大尺度缓慢漂移（零 KB，CSS 渐变 + transform） -->
+    <div v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-aurora" aria-hidden="true"></div>
+    <MeteorShower v-if="!isMobile && visualMode === 'balanced'" class="login-meteors" />
     <header class="login-topbar">
       <div class="login-brand"><span class="login-brand__mark login-brand__mark--star" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none"><circle cx="16" cy="16" r="3" fill="currentColor"/><circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.2" opacity=".5"/><circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width=".6" opacity=".28"/><g stroke="currentColor" stroke-width="1" opacity=".65"><path d="M16 2 L16 7"/><path d="M16 25 L16 30"/><path d="M2 16 L7 16"/><path d="M25 16 L30 16"/></g></svg></span><div><strong>智维 Agent</strong><span>SMARTOPS · SPARKING OPERATIONS</span></div></div>
       <div class="login-appearance" aria-label="外观设置">
@@ -129,6 +133,12 @@ import { visualMode, setVisualMode } from '../../visual/visualMode.js'
 
 const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
 
+// §8 Gate-2: 移动端 <1024 不加载任何背景动效（T11 性能基线）
+const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
+
+// §8 Gate-4: poster 占位图复用 starfield-placeholder.svg
+const loginCoverPoster = '/assets/starfield-placeholder.svg'
+
 const router = useRouter()
 const route = useRoute()
 const form = reactive({ username: '', password: '', confirmPassword: '', portal: route.query.portal === 'admin' ? 'admin' : 'user' })
@@ -245,11 +255,17 @@ onMounted(() => {
     form.username = hint
     rememberMe.value = true
   }
+  // §8 Gate-2: 监听窗口尺寸变化
+  window.addEventListener('resize', updateMobile)
 })
+
+// §8 Gate-2: 移动端检测（1024px 断点）
+function updateMobile() { isMobile.value = window.innerWidth < 1024 }
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(glassFrame)
   glassMotionQuery?.removeEventListener('change', resetGlassLight)
+  window.removeEventListener('resize', updateMobile)
 })
 
 async function loadPolicy() {
@@ -392,6 +408,12 @@ async function finishLogin(user) {
     inset 0 -1px 0 rgba(14, 79, 122, .10);
   --login-glyph-edge: rgba(14, 79, 122, .18);
 }
+/* §8 Gate-2: 封面视频槽（封面动态壁纸，balanced 档 + 桌面端才挂载） */
+.login-cover-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
+.login-cover-video[src] { opacity: 1; }
+/* §8 Gate-3: 暗遮罩（40% 深暗，视频层叠用；极光/粒子独立时也提供统一暗度基线） */
+.login-cover-mask { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 30%, rgba(4, 11, 22, .40) 100%); }
+:global([data-theme='light']) .login-cover-mask { background: radial-gradient(ellipse at center, transparent 30%, rgba(234, 243, 250, .40) 100%); }
 .login-shell > .login-ambient { opacity: .42; pointer-events: none; }
 .login-shell > .login-meteors { opacity: .3; pointer-events: none; }
 /* 启佑极光光带：大尺度缓慢漂移的中景层（方案 §6.2 推荐，零 KB 替代视频层） */
