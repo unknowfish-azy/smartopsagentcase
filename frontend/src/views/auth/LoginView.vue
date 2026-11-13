@@ -3,6 +3,8 @@
   <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode">
     <!-- CanvasAmbientField: 启佑风格增强——粒子增密 + 星网连线 -->
     <CanvasAmbientField class="login-ambient" :palette-root="loginShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
+    <!-- 极光光带：中景层大尺度缓慢漂移（零 KB，CSS 渐变 + transform）。方案 §6.2 推荐替代视频层。 -->
+    <div v-if="visualMode !== 'reduced-motion'" class="login-aurora" aria-hidden="true"></div>
     <MeteorShower v-if="visualMode === 'balanced'" class="login-meteors" />
     <header class="login-topbar">
       <div class="login-brand"><span class="login-brand__mark login-brand__mark--star" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none"><circle cx="16" cy="16" r="3" fill="currentColor"/><circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.2" opacity=".5"/><circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width=".6" opacity=".28"/><g stroke="currentColor" stroke-width="1" opacity=".65"><path d="M16 2 L16 7"/><path d="M16 25 L16 30"/><path d="M2 16 L7 16"/><path d="M25 16 L30 16"/></g></svg></span><div><strong>智维 Agent</strong><span>SMARTOPS · SPARKING OPERATIONS</span></div></div>
@@ -392,6 +394,48 @@ async function finishLogin(user) {
 }
 .login-shell > .login-ambient { opacity: .42; pointer-events: none; }
 .login-shell > .login-meteors { opacity: .3; pointer-events: none; }
+/* 启佑极光光带：大尺度缓慢漂移的中景层（方案 §6.2 推荐，零 KB 替代视频层） */
+.login-aurora {
+  position: absolute; inset: -10%; z-index: 0;
+  pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 30%, rgba(43, 168, 200, .22), transparent 65%),
+    radial-gradient(ellipse 50% 35% at 75% 70%, rgba(63, 185, 80, .14), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(122, 215, 245, .10), transparent 70%);
+  background-size: 240% 240%;
+  animation: login-aurora-drift 22s ease-in-out infinite alternate;
+  filter: blur(20px);
+}
+/* 第二道光带：冷蓝斜向扫过 */
+.login-aurora::after {
+  content: ''; position: absolute; inset: -20%;
+  background: radial-gradient(ellipse 30% 20% at 80% 20%, rgba(122, 215, 245, .18), transparent 60%);
+  background-size: 200% 200%;
+  animation: login-aurora-sweep 32s ease-in-out infinite;
+}
+@keyframes login-aurora-drift {
+  0%   { background-position: 0% 0%; transform: translate3d(0, 0, 0); }
+  50%  { background-position: 60% 40%; transform: translate3d(-2%, 1%, 0); }
+  100% { background-position: 100% 100%; transform: translate3d(1%, -1%, 0); }
+}
+@keyframes login-aurora-sweep {
+  0%, 100% { opacity: .55; transform: translate3d(0, 0, 0); }
+  50%      { opacity: 1;    transform: translate3d(-8%, 4%, 0); }
+}
+/* 启佑亮色：极光换成浅蓝淡绿光带 */
+:global([data-theme='light']) .login-aurora {
+  background:
+    radial-gradient(ellipse 55% 38% at 22% 28%, rgba(26, 110, 154, .18), transparent 65%),
+    radial-gradient(ellipse 45% 32% at 72% 68%, rgba(26, 127, 55, .10), transparent 60%),
+    radial-gradient(ellipse 38% 28% at 50% 50%, rgba(14, 79, 122, .08), transparent 70%);
+}
+:global([data-theme='light']) .login-aurora::after {
+  background: radial-gradient(ellipse 28% 18% at 78% 22%, rgba(43, 138, 176, .14), transparent 60%);
+}
+.login-shell[data-visual-mode='lightweight'] .login-aurora,
+.login-shell[data-visual-mode='lightweight'] .login-aurora::after { animation-duration: 32s; }
+.login-shell:not([data-visual-mode='balanced']) .login-aurora::after { animation: none; opacity: .4; }
+@media (prefers-reduced-motion: reduce) { .login-aurora, .login-aurora::after { animation: none; } }
 .login-topbar, .login-layout, .login-page-footer { position: relative; z-index: 1; width: min(100%, 1240px); margin-inline: auto; }
 .login-topbar { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .login-brand { display: flex; align-items: center; gap: 12px; }
