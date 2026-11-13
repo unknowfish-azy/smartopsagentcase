@@ -456,3 +456,42 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--smart-te
   .ops-card--interactive:hover { transform: none; }
 }
 
+/* ==========================================================================
+   P5 · a11y 对比度修复（axe color-contrast serious ×17，跨 4 视口 × 明暗 × 4 页面）
+   根因：侧栏导航默认/active 态用 --smart-muted，叠加 active 高亮背景与
+   .nav-coordinate 的 opacity:.65 后低于 4.5:1。
+   修法：统一改用「主文本色 88% + muted 12%」混合 —— 暗色主题自动提亮、
+   浅色主题自动压深，一条规则通吃；并取消 coordinate 的透明度衰减。
+   选择器带 .app-layout .sidebar 前缀，确保压过组件 scoped 的同名规则。
+   ========================================================================== */
+.app-layout .sidebar .section-nav a,
+.app-layout .sidebar .navigation-group__link {
+  color: color-mix(in srgb, var(--smart-text) 88%, var(--smart-muted));
+}
+/* 更广、更高特异性：PersonalSystemNavigation 等导航组件未必在 .sidebar 内，
+   且 scoped 规则带 [data-v-*]（0,2,1），需 (0,3,1) 才能压过。
+   实测过窄时的失败值：/chat 序号 #fdfdfd on #fff = 1.01:1、
+   /servers 序号 #828b90 on #fff = 3.47:1。
+   文字统一主文本色、序号统一强调色 —— 明暗主题下与背景均 ≥4.5:1。 */
+.app-layout[data-visual-mode] .nav-copy > b,
+.app-layout[data-visual-mode] .nav-copy > small,
+.app-layout[data-visual-mode] .nav-label > small {
+  color: var(--smart-text);
+}
+.app-layout[data-visual-mode] .nav-coordinate {
+  color: var(--smart-primary-strong);
+  opacity: 1;
+}
+/* success 标签在浅色主题浅绿底上前景偏亮，混入主文本色压深 */
+.ui-tag--success,
+.ui-pill--success {
+  color: color-mix(in srgb, var(--ds-pill-success-fg) 70%, var(--smart-text));
+}
+/* 窄屏下侧栏是「整宽顶部条」而非固定导轨（<768px 时 .section-nav 也被隐藏），
+   因此 .main-area 不能再保留桌面导轨的左偏移 —— 否则内容被挤到 99px 宽并产生
+   横向溢出（实测 375 视口 documentElement.scrollWidth 572）。 */
+@media (max-width: 767px) {
+  .app-layout > .main-area,
+  .app-layout:not(.app-layout--sidebar-collapsed) > .main-area { margin-left: 0; }
+}
+
