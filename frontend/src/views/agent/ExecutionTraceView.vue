@@ -1,8 +1,9 @@
 <template>
   <div ref="traceShellRef" class="trace-shell" :data-theme="resolvedTheme">
-    <!-- 启佑风格背景层：粒子网络 + 极光光带 -->
-    <CanvasAmbientField v-if="!isMobile" class="trace-ambient" :palette-root="traceShellRef" :star-multiplier="1.2" connect-particles :connect-max-dist="110" />
+    <!-- 启佑风格背景层：粒子网络（拉满强度） + 双层极光 + 流星 -->
+    <CanvasAmbientField v-if="!isMobile" class="trace-ambient" :palette-root="traceShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
     <div v-if="!isMobile" class="trace-aurora" aria-hidden="true"></div>
+    <MeteorShower v-if="!isMobile" class="trace-meteors" />
     <div class="trace-mask" aria-hidden="true"></div>
 
     <div class="page">
@@ -72,6 +73,7 @@ import InspectorIssueList from '../../components/inspector/InspectorIssueList.vu
 import { resolvedTheme as _resolvedTheme } from '../../theme.js'
 
 const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
+const MeteorShower = defineAsyncComponent(() => import('../../components/common/MeteorShower.vue'))
 
 const route = useRoute()
 const event = ref({})
@@ -131,28 +133,50 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateMobile))
     #EAF3FA;
 }
 .trace-ambient {
-  position: absolute; inset: 0; z-index: 0; opacity: .38; pointer-events: none;
+  position: absolute; inset: 0; z-index: 0; opacity: .48; pointer-events: none;
+}
+.trace-meteors {
+  position: absolute; inset: 0; z-index: 0; opacity: .35; pointer-events: none;
 }
 .trace-aurora {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse at 75% 15%, rgba(122, 215, 245, .18) 0%, transparent 45%),
-    radial-gradient(ellipse at 30% 85%, rgba(63, 185, 80, .12) 0%, transparent 45%);
+    radial-gradient(ellipse at 75% 15%, rgba(122, 215, 245, .22) 0%, transparent 45%),
+    radial-gradient(ellipse at 30% 85%, rgba(63, 185, 80, .16) 0%, transparent 45%);
   filter: blur(24px);
   background-size: 240% 240%;
-  animation: trace-drift 28s ease-in-out infinite alternate;
+  animation: trace-drift 22s ease-in-out infinite alternate;
+}
+/* 扫光球（和 LoginView 同构） */
+.trace-aurora::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 30% 20% at 15% 50%, rgba(122, 215, 245, .35), transparent 70%);
+  filter: blur(18px);
+  animation: trace-sweep 32s ease-in-out infinite;
+}
+.trace-shell[data-theme='light'] .trace-aurora {
+  background:
+    radial-gradient(ellipse at 75% 15%, rgba(26, 110, 154, .14) 0%, transparent 45%),
+    radial-gradient(ellipse at 30% 85%, rgba(26, 127, 55, .10) 0%, transparent 45%);
+}
+.trace-shell[data-theme='light'] .trace-aurora::after {
+  background: radial-gradient(ellipse 30% 20% at 15% 50%, rgba(26, 110, 154, .22), transparent 70%);
 }
 @keyframes trace-drift {
   0%   { background-position: 0% 0%, 100% 100%; transform: translate3d(0, 0, 0); }
   100% { background-position: 30% 10%, 70% 90%; transform: translate3d(-2%, 2%, 0); }
 }
-@media (prefers-reduced-motion: reduce) { .trace-aurora { animation: none; } }
+@keyframes trace-sweep {
+  0%, 100% { opacity: .55; transform: translate3d(0, 0, 0); }
+  50%      { opacity: 1;    transform: translate3d(-8%, 4%, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .trace-aurora, .trace-aurora::after { animation: none; } }
 .trace-mask {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(4, 11, 22, .55) 100%);
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(4, 11, 22, .42) 100%);
 }
 .trace-shell[data-theme='light'] .trace-mask {
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(234, 243, 250, .55) 100%);
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(234, 243, 250, .42) 100%);
 }
 
 /* === 主内容层 === */
@@ -240,9 +264,14 @@ header p { color: #8B98A5; font-size: 13px; margin: 0; }
   border: 2px solid rgba(122, 215, 245, .45);
   box-shadow: 0 0 8px rgba(122, 215, 245, .18);
 }
-.trace-step.done .trace-connector::after { background: #3FB950; border-color: #3FB950; box-shadow: 0 0 10px rgba(63, 185, 80, .5); }
-.trace-step.check .trace-connector::after { background: #E7C56D; border-color: #E7C56D; box-shadow: 0 0 10px rgba(231, 197, 109, .5); }
+.trace-step.done .trace-connector::after { background: #3FB950; border-color: #3FB950; box-shadow: 0 0 10px rgba(63, 185, 80, .5); animation: trace-pulse-glow 2.4s ease-in-out infinite; }
+.trace-step.check .trace-connector::after { background: #E7C56D; border-color: #E7C56D; box-shadow: 0 0 10px rgba(231, 197, 109, .5); animation: trace-pulse-glow 2.4s ease-in-out infinite; }
 .trace-step.pending .trace-connector::after { background: #040B16; border-color: rgba(107, 114, 128, .6); }
+@keyframes trace-pulse-glow {
+  0%, 100% { box-shadow: 0 0 6px currentColor; }
+  50%      { box-shadow: 0 0 14px currentColor, 0 0 22px currentColor; }
+}
+@media (prefers-reduced-motion: reduce) { .trace-step.done .trace-connector::after, .trace-step.check .trace-connector::after { animation: none; } }
 
 .trace-body { display: grid; gap: 4px; padding-top: 2px; }
 .trace-body strong { font-size: 14px; font-weight: 600; color: #E6EDF3; }
