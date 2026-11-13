@@ -99,6 +99,52 @@
   --label-size: 10px;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px; --space-12: 48px; --space-16: 64px; --space-24: 96px;
   --radius-sm: 2px; --duration-fast: 160ms; --sidebar-width: 252px;
+
+  /* ============================================================
+     T20 图表 / 标签 / 焦点 / 动效 / 密度扩展
+     语义色收敛：最多 5 色（accent / cyan / success / warning / danger），
+     禁止彩虹 donut；网格与轴走 hairline，tooltip 走 overlay 表面。
+     ============================================================ */
+  --ds-chart-1: #2496ed;   /* accent（主序列） */
+  --ds-chart-2: #7ad7f5;   /* cyan（次序列） */
+  --ds-chart-3: #3fb950;   /* success */
+  --ds-chart-4: #d29922;   /* warning */
+  --ds-chart-5: #f85149;   /* danger */
+  --ds-chart-neutral: #8b949e;
+  --ds-chart-grid: rgba(255, 255, 255, .06);
+  --ds-chart-axis: rgba(255, 255, 255, .10);
+  --ds-chart-text: #92a6b5;
+  --ds-chart-tooltip-bg: #1B212A;
+  --ds-chart-tooltip-border: rgba(255, 255, 255, .10);
+  --ds-chart-area-opacity: .14;
+
+  /* 标签 chip / pill 尺寸与描边 */
+  --ds-tag-height: 22px;
+  --ds-tag-height-sm: 18px;
+  --ds-tag-padding-x: 8px;
+  --ds-tag-radius: 4px;
+  --ds-tag-border: rgba(255, 255, 255, .10);
+  --ds-pill-info-fg: #58a6ff;
+  --ds-pill-success-fg: #3fb950;
+  --ds-pill-warning-fg: #d29922;
+  --ds-pill-danger-fg: #f85149;
+  --ds-pill-neutral-bg: rgba(139, 148, 158, .14);
+
+  /* 无障碍焦点环 */
+  --ds-focus-ring-color: #7ad7f5;
+  --ds-focus-ring-width: 2px;
+  --ds-focus-ring-offset: 2px;
+
+  /* 动效降级节奏（prefers-reduced-motion 下由 global.css 归零） */
+  --ds-motion-hover: 1px;
+  --ds-motion-duration: 150ms;
+  --ds-motion-stagger: 40ms;
+
+  /* 控制台层间距/行高补充 */
+  --ds-section-gap: 28px;
+  --ds-card-padding: 20px;
+  --ds-card-padding-sm: 14px;
+  --ds-row-height-compact-num: 34px;
 }
 
 [data-theme='light'] {
@@ -150,6 +196,27 @@
   --smart-accent-foreground: #ffffff;
   --pet-action-bg: #ffffff; --pet-action-text: #10212b; --pet-action-border: rgba(16, 53, 70, .22); --pet-action-shadow: 0 6px 16px rgba(16, 53, 70, .12);
   --pet-panel-bg: rgba(255, 255, 255, .98); --pet-panel-border: rgba(16, 53, 70, .22); --pet-border: rgba(14, 95, 146, .38); --pet-core-bg: #ffffff; --pet-core-border: rgba(14, 95, 146, .42); --pet-core-text: #084b73;
+
+  /* T20 亮色对应值 */
+  --ds-chart-1: #0e5f92;
+  --ds-chart-2: #2b8fb8;
+  --ds-chart-3: #1a7f37;
+  --ds-chart-4: #9a6700;
+  --ds-chart-5: #cf222e;
+  --ds-chart-neutral: #57606a;
+  --ds-chart-grid: rgba(16, 53, 70, .08);
+  --ds-chart-axis: rgba(16, 53, 70, .12);
+  --ds-chart-text: #4d606c;
+  --ds-chart-tooltip-bg: #ffffff;
+  --ds-chart-tooltip-border: rgba(16, 53, 70, .18);
+  --ds-chart-area-opacity: .10;
+  --ds-tag-border: rgba(16, 53, 70, .14);
+  --ds-pill-info-fg: #0969da;
+  --ds-pill-success-fg: #1a7f37;
+  --ds-pill-warning-fg: #9a6700;
+  --ds-pill-danger-fg: #cf222e;
+  --ds-pill-neutral-bg: rgba(87, 96, 106, .10);
+  --ds-focus-ring-color: #0e5f92;
 }
 
 :root[data-theme] {
