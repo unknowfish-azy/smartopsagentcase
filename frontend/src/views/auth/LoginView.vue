@@ -1,7 +1,8 @@
 <template>
   <StellarOceanProvider state="thinking">
   <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode">
-    <CanvasAmbientField class="login-ambient" :palette-root="loginShellRef" />
+    <!-- CanvasAmbientField: 启佑风格增强——粒子增密 + 星网连线 -->
+    <CanvasAmbientField class="login-ambient" :palette-root="loginShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
     <MeteorShower v-if="visualMode === 'balanced'" class="login-meteors" />
     <header class="login-topbar">
       <div class="login-brand"><span class="login-brand__mark login-brand__mark--star" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none"><circle cx="16" cy="16" r="3" fill="currentColor"/><circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.2" opacity=".5"/><circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width=".6" opacity=".28"/><g stroke="currentColor" stroke-width="1" opacity=".65"><path d="M16 2 L16 7"/><path d="M16 25 L16 30"/><path d="M2 16 L7 16"/><path d="M25 16 L30 16"/></g></svg></span><div><strong>智维 Agent</strong><span>SMARTOPS · SPARKING OPERATIONS</span></div></div>
