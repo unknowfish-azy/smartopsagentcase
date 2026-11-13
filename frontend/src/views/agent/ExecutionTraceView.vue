@@ -145,14 +145,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateMobile))
     radial-gradient(ellipse at 30% 85%, rgba(63, 185, 80, .16) 0%, transparent 45%);
   filter: blur(24px);
   background-size: 240% 240%;
-  animation: trace-drift 22s ease-in-out infinite alternate;
-}
-/* 扫光球（和 LoginView 同构） */
-.trace-aurora::after {
-  content: ''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse 30% 20% at 15% 50%, rgba(122, 215, 245, .35), transparent 70%);
-  filter: blur(18px);
-  animation: trace-sweep 32s ease-in-out infinite;
+  animation: trace-drift 16s ease-in-out infinite alternate;
 }
 .trace-shell[data-theme='light'] .trace-aurora {
   background:
@@ -162,6 +155,14 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateMobile))
 .trace-shell[data-theme='light'] .trace-aurora::after {
   background: radial-gradient(ellipse 30% 20% at 15% 50%, rgba(26, 110, 154, .22), transparent 70%);
 }
+/* 扫光球（和 LoginView 同构） */
+.trace-aurora::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 30% 20% at 15% 50%, rgba(122, 215, 245, .35), transparent 70%);
+  filter: blur(18px);
+  animation: trace-sweep 24s ease-in-out infinite;
+}
+/* drift 加速：原 22s → 16s，与步骤触发节奏同频（2.4s × 4 步 ≈ 9.6s，半周期对齐） */
 @keyframes trace-drift {
   0%   { background-position: 0% 0%, 100% 100%; transform: translate3d(0, 0, 0); }
   100% { background-position: 30% 10%, 70% 90%; transform: translate3d(-2%, 2%, 0); }
@@ -243,7 +244,7 @@ header p { color: #8B98A5; font-size: 13px; margin: 0; }
 }
 .trace-shell[data-theme='light'] .trace-index { color: #1A6E9A; }
 
-/* 时序连接竖线 */
+/* 时序连接竖线 + 数据流脉冲（从上往下流动的光点） */
 .trace-connector {
   position: relative; width: 18px; height: 100%;
 }
@@ -255,7 +256,18 @@ header p { color: #8B98A5; font-size: 13px; margin: 0; }
 }
 .trace-step:last-child .trace-connector::before { bottom: 50%; }
 .trace-connector[data-done='true']::before { background: linear-gradient(to bottom, #3FB950, rgba(122, 215, 245, .4)); }
-/* 节点圆点 */
+/* 数据流脉冲光点（沿已完成步骤向下流） */
+.trace-step.done .trace-connector::before,
+.trace-step.check .trace-connector::before {
+  box-shadow: inset 0 -10px 12px rgba(63, 185, 80, .8);
+}
+.trace-step.done .trace-connector::before { animation: trace-pulse-flow 1.6s ease-in-out infinite; }
+.trace-step.check .trace-connector::before { animation: trace-pulse-flow 2.2s ease-in-out infinite; }
+@keyframes trace-pulse-flow {
+  0%, 100% { box-shadow: inset 0 -14px 14px rgba(63, 185, 80, .0); }
+  50%      { box-shadow: inset 0 14px 14px rgba(63, 185, 80, .9); }
+}
+/* 节点圆点（三级脉冲：接收→放大→发射） */
 .trace-connector::after {
   content: ''; position: absolute;
   left: 2px; top: 6px;
@@ -264,14 +276,23 @@ header p { color: #8B98A5; font-size: 13px; margin: 0; }
   border: 2px solid rgba(122, 215, 245, .45);
   box-shadow: 0 0 8px rgba(122, 215, 245, .18);
 }
-.trace-step.done .trace-connector::after { background: #3FB950; border-color: #3FB950; box-shadow: 0 0 10px rgba(63, 185, 80, .5); animation: trace-pulse-glow 2.4s ease-in-out infinite; }
-.trace-step.check .trace-connector::after { background: #E7C56D; border-color: #E7C56D; box-shadow: 0 0 10px rgba(231, 197, 109, .5); animation: trace-pulse-glow 2.4s ease-in-out infinite; }
-.trace-step.pending .trace-connector::after { background: #040B16; border-color: rgba(107, 114, 128, .6); }
-@keyframes trace-pulse-glow {
-  0%, 100% { box-shadow: 0 0 6px currentColor; }
-  50%      { box-shadow: 0 0 14px currentColor, 0 0 22px currentColor; }
+/* 三级脉冲：收到→放大→发射光环 */
+.trace-step.done .trace-connector::after,
+.trace-step.check .trace-connector::after {
+  animation: trace-neuron 2.4s ease-in-out infinite;
 }
-@media (prefers-reduced-motion: reduce) { .trace-step.done .trace-connector::after, .trace-step.check .trace-connector::after { animation: none; } }
+@keyframes trace-neuron {
+  0%, 100% { width: 10px; height: 10px; box-shadow: 0 0 6px currentColor, 0 0 0 0 currentColor; }
+  30%      { width: 14px; height: 14px; box-shadow: 0 0 18px currentColor, 0 0 0 4px rgba(63, 185, 80, .35); }
+  60%      { width: 10px; height: 10px; box-shadow: 0 0 10px currentColor, 0 0 0 20px rgba(63, 185, 80, 0); }
+}
+.trace-step.done .trace-connector::after { background: #3FB950; border-color: #3FB950; color: #3FB950; }
+.trace-step.check .trace-connector::after { background: #E7C56D; border-color: #E7C56D; color: #E7C56D; }
+.trace-step.pending .trace-connector::after { background: #040B16; border-color: rgba(107, 114, 128, .6); }
+@media (prefers-reduced-motion: reduce) {
+  .trace-step.done .trace-connector::before, .trace-step.check .trace-connector::before { animation: none; }
+  .trace-step.done .trace-connector::after, .trace-step.check .trace-connector::after { animation: none; }
+}
 
 .trace-body { display: grid; gap: 4px; padding-top: 2px; }
 .trace-body strong { font-size: 14px; font-weight: 600; color: #E6EDF3; }
@@ -295,22 +316,42 @@ header p { color: #8B98A5; font-size: 13px; margin: 0; }
   text-align: center; color: #6B7280; font-size: 13px;
 }
 
-/* === 推理摘要卡 === */
+/* === 推理摘要卡：AI 推理输出感（呼吸 + 边框光流） === */
 .reasoning-card {
   padding: 20px 24px;
   background: rgba(16, 33, 55, .55);
   border: 1px solid rgba(122, 215, 245, .18);
   border-radius: 12px;
   backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+.reasoning-card::before {
+  content: ''; position: absolute; inset: -1px; border-radius: 13px;
+  background: linear-gradient(120deg, transparent 0%, rgba(122, 215, 245, .18) 30%, rgba(63, 185, 80, .15) 60%, transparent 100%);
+  animation: trace-reason-flow 6s linear infinite;
+  pointer-events: none;
+}
+.reasoning-card::after {
+  content: ''; position: absolute; inset: 0; border-radius: 12px;
+  background: inherit; z-index: -1;
+}
+@keyframes trace-reason-flow {
+  0%   { background-position: 0% 0%; opacity: .7; }
+  100% { background-position: 200% 0%; opacity: 1; }
 }
 .trace-shell[data-theme='light'] .reasoning-card {
   background: rgba(255, 255, 255, .72);
   border-color: rgba(26, 110, 154, .14);
 }
-.reasoning-card h2 { font-size: 15px; margin: 0 0 10px; color: #7AD7F5; }
-.reasoning-card p { margin: 0; color: #A0AEC0; font-size: 13px; line-height: 1.6; }
+.reasoning-card h2 { font-size: 15px; margin: 0 0 10px; color: #7AD7F5; position: relative; z-index: 1; }
+.reasoning-card p { margin: 0; color: #A0AEC0; font-size: 13px; line-height: 1.6; position: relative; z-index: 1; animation: trace-reason-breathe 4s ease-in-out infinite; }
+@keyframes trace-reason-breathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .78; }
+}
 
-/* === 指标网格 === */
+/* === 指标网格：实时脉冲（模拟传感器读数） === */
 .grid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
 }
@@ -320,13 +361,28 @@ header p { color: #8B98A5; font-size: 13px; margin: 0; }
   border: 1px solid rgba(122, 215, 245, .15);
   border-radius: 10px;
   backdrop-filter: blur(10px);
+  transition: border-color .3s;
+}
+.grid article:hover { border-color: rgba(122, 215, 245, .35); }
+.grid article:nth-child(1) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: 0s; }
+.grid article:nth-child(2) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: .4s; }
+.grid article:nth-child(3) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: .8s; }
+.grid article:nth-child(4) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: 1.2s; }
+.grid article:nth-child(5) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: 1.6s; }
+.grid article:nth-child(6) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: 2.0s; }
+.grid article:nth-child(7) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: 2.4s; }
+.grid article:nth-child(8) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: 2.8s; }
+@keyframes trace-digit-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  40%      { transform: scale(1.05); opacity: .85; }
+  60%      { transform: scale(.97); opacity: 1; }
 }
 .trace-shell[data-theme='light'] .grid article {
   background: rgba(255, 255, 255, .72);
   border-color: rgba(26, 110, 154, .14);
 }
 .grid span { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #6B7280; }
-.grid strong { display: block; margin-top: 8px; font-size: 14px; color: #E6EDF3; overflow-wrap: anywhere; }
+.grid strong { display: block; margin-top: 8px; font-size: 14px; color: #E6EDF3; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .trace-shell[data-theme='light'] .grid strong { color: #0C2535; }
 
 /* === 双栏 === */
