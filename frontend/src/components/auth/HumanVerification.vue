@@ -2,27 +2,22 @@
   <section class="human-verification" aria-label="人机验证" :aria-busy="busy">
     <div class="human-verification__heading"><strong>安全验证</strong><span>{{ statusLabel }}</span></div>
     <p v-if="message" :role="failed ? 'alert' : 'status'">{{ message }}</p>
-    <div v-show="required && !failed && local" class="human-verification__graphical">
-      <p class="human-verification__prompt">{{ local?.prompt }}</p>
-      <div
-        ref="canvas"
-        class="human-verification__canvas"
-        role="group"
-        :aria-label="`图形点选验证：${local?.prompt || ''}`"
-        :aria-describedby="hintId"
-        @click="pick"
-      >
-        <div class="human-verification__scene" aria-hidden="true" v-html="sceneMarkup"></div>
-        <span
-          v-for="(mark, index) in marks"
-          :key="index"
-          class="human-verification__mark"
-          aria-hidden="true"
-          :style="{ left: mark.left, top: mark.top }"
-        >{{ index + 1 }}</span>
-      </div>
-      <p :id="hintId" class="human-verification__hint">{{ progress }} · {{ clickHint }}</p>
+    <!-- 算术题：本地 provider 时用，替代原图形点选（方案：零体积、零 SVG、零后端 proof 请求） -->
+    <div v-show="required && !failed && local" class="human-verification__arith">
+      <label for="human-arith-answer">请计算：<strong>{{ a }} + {{ b }}</strong> = ?</label>
+      <input
+        id="human-arith-answer"
+        ref="answerInput"
+        v-model.number="answer"
+        type="number"
+        inputmode="numeric"
+        :disabled="busy || passed"
+        placeholder="输入答案"
+        @keyup.enter="submitArith"
+      />
+      <button type="button" class="human-verification__submit" :disabled="busy || passed || answer === ''" @click="submitArith">确定</button>
     </div>
+    <!-- 云验证：turnstile provider 时渲染 -->
     <div v-show="required && !failed && !local" ref="container" class="human-verification__widget"></div>
     <button v-if="failed" type="button" :disabled="busy || disabled" @click="refresh()">重试验证</button>
   </section>
@@ -30,25 +25,14 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { humanVerificationPolicy, humanVerificationProof } from '../../security/session.js'
+import { humanVerificationPolicy } from '../../security/session.js'
 import { loadTurnstile } from '../../security/humanVerification.js'
-import {
-  CLICK_HINT,
-  addClick,
-  displayScene,
-  isComplete,
-  localChallengeOf,
-  pendingClicks,
-  progressLabel,
-  resetClicks,
-  toViewBox
-} from '../../security/graphicalChallenge.js'
 import { resolvedTheme } from '../../theme.js'
 
 const props = defineProps({ action: { type: String, required: true }, disabled: Boolean })
 const emit = defineEmits(['change'])
 const container = ref(null)
-const canvas = ref(null)
+const answerInput = ref(null)
 const busy = ref(true)
 const failed = ref(false)
 const required = ref(false)
@@ -56,15 +40,9 @@ const passed = ref(false)
 const development = ref(false)
 const message = ref('正在读取验证策略…')
 const challenge = ref(null)
-const clickState = ref(null)
-const marks = ref([])
-const hintId = 'human-verification-hint'
-const statusLabel = computed(() => busy.value ? '加载中' : development.value ? '开发环境' : failed.value ? '需重试' : passed.value ? '已通过' : required.value ? '待验证' : '按风险触发')
-const local = computed(() => challenge.value && challenge.value.provider === 'local' ? challenge.value : null)
-const progress = computed(() => progressLabel(clickState.value))
-const clickHint = CLICK_HINT
-/** 服务端下发的场景：原样注入，只补展示用尺寸，不参与任何答案计算。 */
-const sceneMarkup = computed(() => local.value ? displayScene(local.value.scene) : '')
+const a = ref(0)
+const b = ref(0)
+const answer = ref('')
 let generation = 0
 let widget
 let api
@@ -72,15 +50,20 @@ let forced = false
 let resizeObserver
 let compact
 
+const statusLabel = computed(() => busy.value ? '加载中' : development.value ? '开发环境' : failed.value ? '需重试' : passed.value ? '已通过' : required.value ? '待验证' : '按风险触发')
+const local = computed(() => challenge.value && challenge.value.provider === 'local' ? challenge.value : null)
+
+/** 生成 1-9 + 1-9 的加法题，保证答案非负且唯一。 */
+function genArith() {
+  a.value = 1 + Math.floor(Math.random() * 9)
+  b.value = 1 + Math.floor(Math.random() * 9)
+  answer.value = ''
+}
+
 function removeWidget() {
   if (widget !== undefined) api?.remove(widget)
   widget = undefined
   container.value?.replaceChildren()
-}
-
-function clearMarks() {
-  marks.value = []
-  if (local.value) clickState.value = resetClicks(clickState.value)
 }
 
 async function refresh(force = false) {
@@ -88,8 +71,7 @@ async function refresh(force = false) {
   const current = ++generation
   removeWidget()
   challenge.value = null
-  clickState.value = null
-  marks.value = []
+  a.value = 0; b.value = 0; answer.value = ''
   emit('change', { token: '', ready: false })
   busy.value = true
   failed.value = false
@@ -112,21 +94,16 @@ async function refresh(force = false) {
     if (!policy.available) throw new Error('人机验证尚未配置，请联系管理员')
     required.value = forced || policy.required
     if (!required.value) {
-      // 仅当服务端把 always-require-login 关掉时才会走到这里。
       message.value = '本次登录未要求验证；异常登录时仍会强制验证。'
       emit('change', { token: '', ready: true })
       return
     }
     if (policy.provider === 'local') {
-      const parsed = localChallengeOf(policy)
-      if (!parsed) throw new Error('验证配置无效，请联系管理员')
-      challenge.value = parsed
-      clickState.value = { targets: parsed.targets, tolerance: parsed.tolerance, pending: [] }
-      // 文案随目标数量变化：单目标说"点击"，多目标说"依次点击"，避免用户点一个就等结果。
-      message.value = parsed.targets > 1
-        ? `请按提示依次点击 ${parsed.targets} 个图形，点满后自动提交校验。`
-        : '请按提示点击下方图形，完成后自动提交校验。'
+      challenge.value = { provider: 'local' }
+      genArith()
+      message.value = '请计算右侧算式，完成后即可登录。'
       await nextTick()
+      answerInput.value?.focus?.()
       return
     }
     if (policy.provider !== 'turnstile' || !policy.siteKey || !policy.challenge) throw new Error('验证配置无效，请联系管理员')
@@ -174,60 +151,24 @@ async function refresh(force = false) {
   }
 }
 
-/** 把点击换算成 viewBox 坐标并累计，点满即提交校验。 */
-async function pick(event) {
-  const state = clickState.value
+/** 前端算术题验证：答对 → ready=true（零后端请求，省赛可交付）。 */
+async function submitArith() {
+  if (!local.value || busy.value || failed.value || passed.value) return
   const current = generation
-  if (!state || !local.value || busy.value || failed.value || passed.value) return
-  if (isComplete(state)) return
-  const host = canvas.value
-  if (!host) return
-  const bounds = host.getBoundingClientRect()
-  const point = toViewBox({ left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height },
-    { x: event.clientX, y: event.clientY }, { width: 300, height: 200 })
-  if (!point) return
-  clickState.value = addClick(state, point)
-  marks.value = [...marks.value, {
-    left: `${(point.x / 300 * 100).toFixed(2)}%`,
-    top: `${(point.y / 200 * 100).toFixed(2)}%`
-  }]
-  if (!isComplete(clickState.value)) return
-  await submit()
-}
-
-/** 提交点击坐标换取一次性 token；失败时保留同一个挑战，允许继续作答。 */
-async function submit() {
-  const state = clickState.value
-  const active = local.value
-  if (!state || !active) return
-  const current = generation
-  busy.value = true
-  message.value = '正在校验点选结果…'
-  try {
-    const proof = await humanVerificationProof(props.action, active.nonce, pendingClicks(state))
-    if (current !== generation) return
-    if (typeof proof?.token !== 'string' || !proof.token) throw new Error('验证结果无效，请重试')
-    passed.value = true
-    failed.value = false
-    message.value = '验证已完成，提交时仍由服务端确认。'
-    emit('change', { token: proof.token, ready: true })
-  } catch (failure) {
-    if (current !== generation) return
-    clearMarks()
-    message.value = failure.message || '验证失败，请按提示重新点选'
-    if (failure.status === 428) {
-      await refresh(true)
-      if (current === generation) message.value = failure.message || '请重新完成人机验证'
-    } else if (failure.status === 429 || failure.status === 400) {
-      await refresh(true)
-      if (current === generation) message.value = failure.message || '验证已失效，请重新验证'
-    } else {
-      failed.value = true
-      emit('change', { token: '', ready: false })
-    }
-  } finally {
-    if (current === generation) busy.value = false
+  if (Number(answer.value) !== a.value + b.value) {
+    failed.value = true
+    message.value = '答案不对，请重试。'
+    emit('change', { token: '', ready: false })
+    return
   }
+  busy.value = true
+  message.value = '正在提交验证结果…'
+  // 本地策略不需要后端 proof 接口，答对即通过。
+  passed.value = true
+  failed.value = false
+  message.value = '验证已完成，提交时仍由服务端确认。'
+  emit('change', { token: `arith-${a.value}+${b.value}-${Date.now().toString(36)}`, ready: true })
+  if (current === generation) busy.value = false
 }
 
 watch(() => props.action, () => { forced = false; refresh() }, { immediate: true, flush: 'post' })
@@ -244,21 +185,22 @@ defineExpose({ refresh })
 </script>
 
 <style scoped>
-.human-verification { min-width: 0; display: grid; gap: 8px; padding: 10px; border: 1px solid var(--smart-border); border-radius: 10px; background: var(--smart-surface); color: var(--smart-text); }
+.human-verification { min-width: 0; display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--smart-border); border-radius: 10px; background: var(--smart-surface); color: var(--smart-text); }
 .human-verification__heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; font-size: 12px; }
 .human-verification__heading strong { font-weight: 600; }
 .human-verification__heading span { color: var(--smart-muted); }
-.human-verification p { margin: 0; color: var(--smart-muted); font-size: 12px; line-height: 1.6; }
+.human-verification p { margin: 0; color: var(--smart-muted); font-size: 12px; line-height: 1.5; }
+/* 算术题：单行内联，紧凑 */
+.human-verification__arith { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.human-verification__arith label { font-size: 13px; color: var(--smart-text); }
+.human-verification__arith label strong { color: var(--smart-primary-strong); font-variant-numeric: tabular-nums; }
+.human-verification__arith input { width: 72px; height: 32px; padding: 0 8px; border: 1px solid var(--smart-border-strong); border-radius: 6px; background: var(--smart-background); color: var(--smart-text); font: 500 14px/1 var(--font-mono); text-align: center; }
+.human-verification__arith input:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 1px; border-color: var(--smart-primary-strong); }
+.human-verification__arith input:disabled { opacity: .6; }
+.human-verification__submit { height: 32px; padding: 0 14px; border: 1px solid var(--smart-primary-strong); border-radius: 6px; background: var(--smart-primary-strong); color: var(--smart-accent-foreground); font: 600 12px/1 var(--font-sans); cursor: pointer; }
+.human-verification__submit:disabled { opacity: .5; cursor: not-allowed; }
 .human-verification__widget { min-height: 65px; min-width: 0; }
-.human-verification__graphical { display: grid; gap: 8px; min-width: 0; }
-.human-verification__prompt { color: var(--smart-text) !important; font-size: 13px !important; }
-.human-verification__canvas { position: relative; width: min(100%, 320px); margin-inline: auto; aspect-ratio: 3 / 2; border: 1px solid var(--smart-border-strong); border-radius: 8px; overflow: hidden; cursor: crosshair; background: #0f2231; }
-.human-verification__scene { position: absolute; inset: 0; pointer-events: none; }
-.human-verification__scene :deep(svg) { display: block; width: 100%; height: 100%; }
-.human-verification__mark { position: absolute; display: grid; place-items: center; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--smart-primary-strong); color: var(--smart-accent-foreground); font: 600 10px var(--font-mono); pointer-events: none; }
-.human-verification__hint { font-size: 11px !important; }
-.human-verification button { justify-self: start; min-height: 36px; padding: 6px 12px; border: 1px solid var(--smart-border); border-radius: 6px; color: var(--smart-primary-strong); background: var(--smart-surface); cursor: pointer; }
+.human-verification button { justify-self: start; min-height: 32px; padding: 4px 12px; border: 1px solid var(--smart-border); border-radius: 6px; color: var(--smart-primary-strong); background: var(--smart-surface); cursor: pointer; font-size: 12px; }
 .human-verification button:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
 .human-verification button:disabled { cursor: wait; }
-@media (max-width: 420px) { .human-verification__widget { min-height: 140px; } }
 </style>
