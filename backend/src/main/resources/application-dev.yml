@@ -68,9 +68,9 @@ logging:
 smartops:
   security:
     human-verification:
-      # 本地开发默认启用「离线图形点选」人机验证：不访问外网、不加载第三方脚本。
-      # 配置了 SMARTOPS_TURNSTILE_SITE_KEY / SECRET_KEY / HOSTNAMES 时会自动切回 Turnstile。
-      enabled: ${SMARTOPS_HUMAN_VERIFICATION_ENABLED:true}
+      # 本地开发默认关闭：前端算术题/图形点选答对后无法生成后端认可的 token。
+      # 生产环境必须开启（默认 true），通过 SMARTOPS_HUMAN_VERIFICATION_ENABLED=true 覆盖。
+      enabled: ${SMARTOPS_HUMAN_VERIFICATION_ENABLED:false}
       # 用户层登录也要求验证（与管理员层一致）。
-      always-require-login: ${SMARTOPS_HUMAN_VERIFICATION_ALWAYS_REQUIRE_LOGIN:true}
+      always-require-login: ${SMARTOPS_HUMAN_VERIFICATION_ALWAYS_REQUIRE_LOGIN:false}
     api-key-encryption-key: ${SMARTOPS_API_KEY_ENCRYPTION_KEY:U21hcnRPcHNBZ2VudERldktleSEyMDI2IURldk9ubHk=}
