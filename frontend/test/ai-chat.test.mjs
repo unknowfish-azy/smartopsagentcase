@@ -8,8 +8,8 @@ const dashboardSource = await readFile(new URL('../src/views/dashboard/Dashboard
 const chatSource = await readFile(new URL('../src/views/chat/ChatView.vue', import.meta.url), 'utf8')
 const panelSource = await readFile(new URL('../src/components/ai/AiChatPanel.vue', import.meta.url), 'utf8')
 
-test('homepage keeps its carousel without a duplicate chat panel', () => {
-  assert.match(dashboardSource, /<HomeOrbitCarousel/)
+test('homepage uses Bento dashboard without a duplicate chat panel (T19 D1 裁决变更为采纳 Bento)', () => {
+  assert.match(dashboardSource, /<DashboardBento/)
   assert.doesNotMatch(dashboardSource, /AiChatPanel|home-chat-section/)
 })
 

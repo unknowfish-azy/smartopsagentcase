@@ -23,13 +23,15 @@ test('desktop sidebar expanded state is driven by the store', () => {
 
 test('collapse control is a compact bottom-right overlay', () => {
   assert.match(layoutSource, /\.sidebar-collapse-control\s*{[^}]*position:\s*fixed/s)
-  assert.match(layoutSource, /\.sidebar-collapse-control\s*{[^}]*left:\s*196px/s)
+  /* T19：侧栏用新令牌，收起位置跟随 --ds-sidebar-width-collapsed */
+  assert.match(layoutSource, /\.sidebar-collapse-control\s*{[^}]*left:\s*calc\(var\(--ds-sidebar-width-collapsed/s)
   assert.match(layoutSource, /\.sidebar-collapse-control\s*{[^}]*bottom:\s*34px/s)
   assert.match(layoutSource, /\.sidebar-collapse-control\s*{[^}]*width:\s*auto/s)
 })
 
-test('sidebar uses a smooth transition for width and navigation copy', () => {
-  assert.match(layoutSource, /transition:\s*width 260ms cubic-bezier\(\.22, 1, \.36, 1\)/)
+test('sidebar uses a smooth transition driven by the design-system tokens (T19)', () => {
+  /* T19：侧栏过渡用新令牌 --ds-duration-micro / --ds-ease-out，带 fallback */
+  assert.match(layoutSource, /transition:\s*width var\(--ds-duration-micro, 150ms\) var\(--ds-ease-out, cubic-bezier\(\.22,1,\.36,1\)\)/)
   assert.match(layoutSource, /transition:\s*opacity 180ms ease, visibility 0s linear 180ms/)
   assert.match(layoutSource, /transition:\s*opacity 180ms ease, visibility 0s linear 0s/)
 })

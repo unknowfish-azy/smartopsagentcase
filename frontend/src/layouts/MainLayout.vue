@@ -256,15 +256,16 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
 }
 /* Scope motion to the desktop rail. Keep icon columns fixed while revealing labels. */
 @media (min-width: 768px) {
-  .app-layout:not(.app-layout--tools) > .main-area { margin-left: 112px; }
-  .app-layout:not(.app-layout--tools):not(.app-layout--sidebar-collapsed) > .main-area { margin-left: 296px; }
+  /* T19：侧栏用新设计令牌，展开 256px / 收起 64px */
+  .app-layout:not(.app-layout--tools) > .main-area { margin-left: var(--ds-sidebar-width-collapsed, 64px); }
+  .app-layout:not(.app-layout--tools):not(.app-layout--sidebar-collapsed) > .main-area { margin-left: var(--ds-sidebar-width, 256px); }
   .app-layout:not(.app-layout--tools) > .sidebar {
-    width: 72px; padding: 22px 12px 18px; overflow-x: hidden; overflow-y: auto;
+    width: var(--ds-sidebar-width-collapsed, 64px); padding: 22px 12px 18px; overflow-x: hidden; overflow-y: auto;
     align-items: stretch; justify-content: flex-start;
-    transition: width 260ms cubic-bezier(.22, 1, .36, 1);
+    transition: width var(--ds-duration-micro, 150ms) var(--ds-ease-out, cubic-bezier(.22,1,.36,1));
   }
   .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded {
-    width: 252px; transition-duration: 140ms;
+    width: var(--ds-sidebar-width, 256px); transition-duration: var(--ds-duration-micro, 150ms);
   }
   .app-layout:not(.app-layout--tools) > .sidebar .wordmark {
     position: relative; flex: 0 0 72px; height: 72px; padding: 0 0 24px;
@@ -328,7 +329,7 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
   }
   .sidebar-expand-control span { display: block; width: 16px; height: 2px; border-radius: 2px; background: currentColor; }
   .sidebar-collapse-control {
-    position: fixed; z-index: 20; left: 196px; bottom: 34px; width: auto; min-width: 66px; margin: 0; padding: 6px 9px;
+    position: fixed; z-index: 20; left: calc(var(--ds-sidebar-width-collapsed, 64px) + var(--ds-space-5, 20px) + 112px); bottom: 34px; width: auto; min-width: 66px; margin: 0; padding: 6px 9px;
     border: 1px solid var(--smart-border); border-radius: 7px; background: color-mix(in srgb, var(--smart-surface) 92%, transparent);
     color: var(--smart-muted); font: 10px var(--font-cn); line-height: 1; text-align: center; cursor: pointer;
   }
