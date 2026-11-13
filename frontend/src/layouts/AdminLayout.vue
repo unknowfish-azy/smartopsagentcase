@@ -22,7 +22,7 @@
     <div class="admin-main">
       <header class="admin-header">
         <div class="admin-header__left">
-          <button type="button" class="admin-header-btn" :aria-label="collapsed ? '展开侧栏' : '折叠侧栏'" @click="collapsed = !collapsed">{{ collapsed ? '☰' : '⟨' }}</button>
+          <button type="button" class="admin-header-btn" :aria-label="collapsed ? '展开侧栏' : '折叠侧栏'" @click="collapsed = !collapsed"><svg v-if="collapsed" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
           <nav class="admin-breadcrumb" aria-label="面包屑">
             <template v-if="crumb"><span>{{ crumb.group }}</span><span class="admin-breadcrumb-sep">/</span><span class="admin-breadcrumb-current">{{ crumb.item }}</span></template>
             <template v-else><span>管理总览</span></template>
@@ -30,9 +30,9 @@
         </div>
         <div class="admin-header__toolbar">
           <CommandPalette :entries="discoveryEntries" />
-          <button type="button" class="admin-header-btn" :title="isDarkTheme ? '切到浅色' : '切到深色'" :aria-label="isDarkTheme ? '切到浅色' : '切到深色'" @click="toggleDark">{{ isDarkTheme ? '☀' : '☾' }}</button>
-          <button type="button" class="admin-header-btn" :title="fullscreen ? '退出全屏' : '全屏'" @click="toggleFullscreen">{{ fullscreen ? '⤢' : '⤡' }}</button>
-          <button type="button" class="admin-header-btn" title="刷新" @click="refresh">⟳</button>
+          <button type="button" class="admin-header-btn" :title="isDarkTheme ? '切到浅色' : '切到深色'" :aria-label="isDarkTheme ? '切到浅色' : '切到深色'" @click="toggleDark"><svg v-if="isDarkTheme" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5A8 8 0 1 1 11.5 4 6.5 6.5 0 0 0 20 12.5Z"/></svg></button>
+          <button type="button" class="admin-header-btn" :title="fullscreen ? '退出全屏' : '全屏'" :aria-label="fullscreen ? '退出全屏' : '全屏'" @click="toggleFullscreen"><svg v-if="fullscreen" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5"/></svg><svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
+          <button type="button" class="admin-header-btn" title="刷新" aria-label="刷新" @click="refresh"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg></button>
           <div class="admin-user" ref="userMenuRoot">
             <button type="button" class="admin-user-trigger" :aria-expanded="userMenuOpen" aria-haspopup="menu" aria-label="账户菜单" @click="userMenuOpen = !userMenuOpen">
               <span class="admin-user-avatar">{{ avatarChar }}</span>

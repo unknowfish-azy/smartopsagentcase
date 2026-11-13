@@ -176,11 +176,14 @@ function onPointerMove(event) {
 }
 function onPointerLeave() { pointer.active = false }
 function syncMotion() {
-  reduced = query.matches || props.motionMode === 'reduced-motion'
+  const nextReduced = query.matches || props.motionMode === 'reduced-motion'
+  const reductionChanged = nextReduced !== reduced
+  reduced = nextReduced
   unsubscribeLoop()
   unsubscribeLoop = () => {}
-  if (!visible || reduced) render(performance.now(), true)
-  else unsubscribeLoop = subscribe((_dt, now) => render(now), { fps: 30, id: loopId })
+  if (!visible || reduced) {
+    if (reductionChanged || !visible) render(performance.now(), true)
+  } else unsubscribeLoop = subscribe((_dt, now) => render(now), { fps: 30, id: loopId })
 }
 onMounted(() => {
   query = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -198,7 +201,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', visibilityHandler)
   query?.removeEventListener('change', syncMotion)
 })
-watch(() => props.motionMode, () => { if (query) syncMotion() }, { flush: 'post' })
+watch(() => props.motionMode, () => { if (query) syncMotion() }, { flush: 'sync' })
 </script>
 
 <style scoped>

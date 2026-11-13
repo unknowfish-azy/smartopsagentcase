@@ -83,6 +83,7 @@ try {
     await page.getByRole('button', { name: '返回登录', exact: true }).click()
     for (const appearance of ['dark', 'light']) {
       await page.getByLabel('选择主题模式').selectOption(appearance)
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       await readable(page, '.login-form__footer')
       await readable(page, '.login-submit')
     }

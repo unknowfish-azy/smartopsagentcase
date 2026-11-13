@@ -331,7 +331,6 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
     position: fixed; z-index: 20; left: 196px; bottom: 34px; width: auto; min-width: 66px; margin: 0; padding: 6px 9px;
     border: 1px solid var(--smart-border); border-radius: 7px; background: color-mix(in srgb, var(--smart-surface) 92%, transparent);
     color: var(--smart-muted); font: 10px var(--font-cn); line-height: 1; text-align: center; cursor: pointer;
-    backdrop-filter: blur(8px);
   }
   .sidebar-expand-control:hover, .sidebar-expand-control:focus-visible,
   .sidebar-collapse-control:hover, .sidebar-collapse-control:focus-visible {

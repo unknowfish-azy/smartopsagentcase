@@ -83,7 +83,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', shortcut); close()
 .nav-discovery-trigger span { font-size:12px; }
 kbd { font:9px var(--font-mono); color:var(--smart-muted); border-left:1px solid var(--smart-border); padding-left:10px; }
 .nav-discovery { width:min(680px,calc(100vw - 32px)); max-height: min(740px,85dvh); padding:0; margin:8dvh auto auto; border:1px solid var(--smart-border); border-top:2px solid var(--smart-primary-strong); border-radius:4px; background:var(--smart-surface); color:var(--smart-text); box-shadow:0 32px 100px #0008; }
-.nav-discovery::backdrop { background:#02070cc9; backdrop-filter:blur(8px); }
+.nav-discovery::backdrop { background:#02070cc9; }
 .nav-discovery header { display:flex; justify-content:space-between; align-items:center; padding:28px 28px 20px; }
 .nav-discovery header small { font:9px var(--font-mono); letter-spacing:.15em; color:var(--smart-primary-strong); }
 .nav-discovery h2 { margin:12px 0 0; font-size:30px; font-weight:500; }
