@@ -47,7 +47,7 @@
 
 /* 子项错峰：默认按 DOM 顺序给前 12 项 40ms 步进 */
 .app-layout .ml-stagger > * {
-  animation: ml-rise-in var(--ds-duration-spring, 200ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) both;
+  animation: ml-rise-in var(--ds-duration-spring, 200ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) backwards;
 }
 .app-layout .ml-stagger > *:nth-child(1)  { animation-delay: calc(var(--ml-stagger-step) * 0); }
 .app-layout .ml-stagger > *:nth-child(2)  { animation-delay: calc(var(--ml-stagger-step) * 1); }
@@ -67,11 +67,12 @@
    用法：在 auto-fill / 固定列网格容器上加 .ml-stagger-cols-N。
    按列错峰：同列内的行共享 delay，阅读顺序从左到右逐列推进。
    -------------------------------------------------------------------------- */
+/* fill-mode 用 backwards 而非 both：动画结束后不保留终态 transform，
+   否则 .ops-card--interactive:hover 的 1px 抬升会被动画终态 translateY(0) 永久覆盖。 */
 .app-layout .ml-stagger-cols-2 > *,
 .app-layout .ml-stagger-cols-3 > *,
 .app-layout .ml-stagger-cols-4 > * {
-  animation: ml-rise var(--ml-duration-base) var(--ml-ease-out) both;
-  will-change: transform, opacity;
+  animation: ml-rise-in var(--ds-duration-spring, 200ms) var(--ds-ease-out, cubic-bezier(.22, 1, .36, 1)) backwards;
 }
 .app-layout .ml-stagger-cols-2 > *:nth-child(2n+2) { animation-delay: calc(var(--ml-stagger-step) * 1); }
 .app-layout .ml-stagger-cols-3 > *:nth-child(3n+2) { animation-delay: calc(var(--ml-stagger-step) * 1); }
@@ -263,6 +264,7 @@
   /* 窄屏只保留「AI 在输出 / 系统在线」两个最有信息量的动效 */
   .app-layout .ml-rise,
   .app-layout .ml-stagger > *,
+  .app-layout [class*='ml-stagger-cols'] > *,
   .app-layout .ml-kpi,
   .app-layout .ml-trend > i,
   .app-layout .ml-sweep::after,
@@ -282,6 +284,7 @@
 @media (prefers-reduced-motion: reduce) {
   .app-layout .ml-rise,
   .app-layout .ml-stagger > *,
+  .app-layout [class*='ml-stagger-cols'] > *,
   .app-layout .ml-kpi,
   .app-layout .ml-trend > i,
   .app-layout .ml-sweep::after,
@@ -316,6 +319,11 @@
 [data-motion-degraded='true'] .app-layout [class*='ml-'],
 [data-motion-degraded='true'] .app-layout [class*='ml-']::after,
 [data-motion-degraded='true'] .app-layout [class*='ml-']::before,
+[data-motion-degraded='true'] .app-layout .ml-stagger > *,
+[data-motion-degraded='true'] .app-layout .ml-stagger-cols-2 > *,
+[data-motion-degraded='true'] .app-layout .ml-stagger-cols-3 > *,
+[data-motion-degraded='true'] .app-layout .ml-stagger-cols-4 > *,
+[data-motion-degraded='true'] .app-layout .ml-stream-lines > *,
 [data-motion-degraded='true'] .app-layout .ops-card,
 [data-motion-degraded='true'] .app-layout .sentinel-surface > *,
 [data-motion-degraded='true'] .app-layout .dashboard-bento > *,
@@ -330,6 +338,16 @@
 .app-layout[data-visual-mode='reduced-motion'] [class*='ml-'],
 [data-visual-mode='lightweight'] .app-layout [class*='ml-'],
 [data-visual-mode='reduced-motion'] .app-layout [class*='ml-'],
+[data-visual-mode='lightweight'] .app-layout .ml-stagger > *,
+[data-visual-mode='lightweight'] .app-layout .ml-stagger-cols-2 > *,
+[data-visual-mode='lightweight'] .app-layout .ml-stagger-cols-3 > *,
+[data-visual-mode='lightweight'] .app-layout .ml-stagger-cols-4 > *,
+[data-visual-mode='lightweight'] .app-layout .ml-stream-lines > *,
+[data-visual-mode='reduced-motion'] .app-layout .ml-stagger > *,
+[data-visual-mode='reduced-motion'] .app-layout .ml-stagger-cols-2 > *,
+[data-visual-mode='reduced-motion'] .app-layout .ml-stagger-cols-3 > *,
+[data-visual-mode='reduced-motion'] .app-layout .ml-stagger-cols-4 > *,
+[data-visual-mode='reduced-motion'] .app-layout .ml-stream-lines > *,
 .app-layout[data-visual-mode='lightweight'] [class*='ml-']::after,
 [data-visual-mode='reduced-motion'] .app-layout [class*='ml-']::before,
 .app-layout[data-visual-mode='lightweight'] .ops-kpi__value,
