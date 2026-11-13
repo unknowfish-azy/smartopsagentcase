@@ -82,9 +82,10 @@ onMounted(() => {
       unsubscribeLoop = subscribe((_dt, now) => draw(now), { fps: 30, id: loopId })
     } else draw()
   }
-  const onTheme = nextPalette => { palette = nextPalette; draw() }
+  // 主题变化始终监听 documentElement（data-theme 在 html 上），但色板从 paletteRoot 读取。
+  const onTheme = () => { palette = readCanvasPalette(root); draw() }
   const onVisibility = () => { visible = !document.hidden; syncMotion() }
-  const stopTheme = observeCanvasTheme(onTheme, root)
+  const stopTheme = observeCanvasTheme(onTheme)
   const stopMode = watch(visualMode, syncMotion)
   // paletteRoot 变化时（如登录页从启佑风格切回默认）手动重读色板
   const stopRoot = watch(paletteRoot, nextRoot => {
