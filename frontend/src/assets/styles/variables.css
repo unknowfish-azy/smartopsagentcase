@@ -14,6 +14,66 @@
   --ds-density: default; --ds-control-height: 36px; --ds-row-height: 40px;
   --ds-z-base: 0; --ds-z-dropdown: 100; --ds-z-sticky: 200; --ds-z-modal: 400; --ds-z-toast: 600;
   --ds-duration-fast: 160ms; --ds-duration-spring: 200ms;
+
+  /* ============================================================
+     T18 新设计语言（企业级分层控制台）
+     只新增令牌，不删除/重命名任何现有 --ds-* / --smart-*。
+     组件迁移时逐步改用新令牌；T11 契约保持。
+     ============================================================ */
+
+  /* §3.1 真灰底三层表面明度步进（暗色第一设计面，Linear 范式） */
+  --ds-surface-base: #0E1116;        /* 页面底 */
+  --ds-surface-raised: #151A21;      /* 卡片（+1 档明度） */
+  --ds-surface-overlay: #1B212A;     /* 弹层/抽屉（+2 档明度） */
+  /* 分层抬升：hairline border + 极柔阴影，不靠 blur（保持 T11 G3 控制台 blur=0） */
+  --ds-hairline: rgba(255, 255, 255, .06);
+  --ds-elevation-1: 0 1px 2px rgba(0, 0, 0, .30);
+  --ds-elevation-2: 0 4px 16px rgba(0, 0, 0, .35);
+  --ds-elevation-3: 0 12px 32px rgba(0, 0, 0, .42);
+
+  /* §3.2 9 级字阶（display / h1 / h2 / h3 / section / body / body-caption / caption / overline）
+     数字用 tabular-nums；关键指标大字号 + 薄字重（Stripe 范式） */
+  --ds-type-display-size: 36px;   --ds-type-display-weight: 300;
+  --ds-type-h1-size: 28px;        --ds-type-h1-weight: 500;
+  --ds-type-h2-size: 22px;        --ds-type-h2-weight: 500;
+  --ds-type-h3-size: 18px;        --ds-type-h3-weight: 500;
+  --ds-type-section-size: 16px;   --ds-type-section-weight: 600;
+  --ds-type-body-size: 14px;     --ds-type-body-weight: 400;
+  --ds-type-body-caption-size: 13px; --ds-type-body-caption-weight: 400;
+  --ds-type-caption-size: 12px;   --ds-type-caption-weight: 400;
+  --ds-type-overline-size: 11px;  --ds-type-overline-weight: 600;
+  --ds-type-num: tabular-nums;
+  --ds-line-height-tight: 1.3;
+  --ds-line-height-base: 1.5;
+
+  /* §3.1 语义色暗色校准（Stripe 范式，对比度校验） */
+  --ds-semantic-success: #3fb950;
+  --ds-semantic-warning: #d29922;
+  --ds-semantic-danger: #f85149;
+  --ds-semantic-info: #58a6ff;
+  --ds-semantic-neutral: #8b949e;
+  /* 状态 Pill 背景（极淡底） */
+  --ds-pill-success-bg: rgba(63, 185, 80, .15);
+  --ds-pill-warning-bg: rgba(210, 153, 34, .18);
+  --ds-pill-danger-bg: rgba(248, 81, 73, .15);
+  --ds-pill-info-bg: rgba(88, 166, 255, .14);
+
+  /* §3.3 布局系统：256px 侧栏 + 12 栅格 + 24px gutter */
+  --ds-sidebar-width: 256px;
+  --ds-sidebar-width-collapsed: 64px;
+  --ds-grid-columns: 12;
+  --ds-grid-gutter: 24px;
+  --ds-row-min: 180px;
+
+  /* §3.4 微交互（克制 150ms / Ease Out） */
+  --ds-duration-micro: 150ms;
+  --ds-ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ds-ease-in-out: cubic-bezier(.4, 0, .2, 1);
+
+  /* §3.3 密度模式（Compact / Default） */
+  --ds-density-compact: compact;
+  --ds-control-height-compact: 30px;
+  --ds-row-height-compact: 34px;
   --ds-font-cn: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   --ds-font-mono: ui-monospace, "Cascadia Mono", "Consolas", monospace;
   --smart-bg: #05090d; --smart-surface-ghost: rgba(7, 16, 24, .48); --smart-signal-running: #7ad7f5; --smart-signal-idle: #92a6b5; --smart-focus-ring: #b8eeff; --smart-shadow-command: 0 22px 70px rgba(0,0,0,.34); --smart-surface: #071018; --smart-surface-raised: #0b1721; --smart-card: #0a1118; --smart-text: #e8f2f7; --smart-muted: #92a6b5;
@@ -48,6 +108,24 @@
   --ds-color-success: #176b50; --ds-color-warning: #8a5a08; --ds-color-danger: #a33f52;
   --ds-color-border: rgba(16, 53, 70, .22); --ds-color-border-strong: rgba(16, 53, 70, .34);
   --ds-shadow-1: 0 1px 2px rgba(16, 53, 70, .08); --ds-shadow-2: 0 8px 24px rgba(16, 53, 70, .1); --ds-shadow-3: 0 20px 56px rgba(16, 53, 70, .14);
+
+  /* T18 亮色对应值（同暗色令牌名） */
+  --ds-surface-base: #F4F7FA;         /* 页面底 */
+  --ds-surface-raised: #FFFFFF;       /* 卡片 */
+  --ds-surface-overlay: #FFFFFF;      /* 弹层 */
+  --ds-hairline: rgba(16, 53, 70, .08);
+  --ds-elevation-1: 0 1px 2px rgba(16, 53, 70, .08);
+  --ds-elevation-2: 0 4px 16px rgba(16, 53, 70, .10);
+  --ds-elevation-3: 0 12px 32px rgba(16, 53, 70, .14);
+  --ds-semantic-success: #1a7f37;
+  --ds-semantic-warning: #9a6700;
+  --ds-semantic-danger: #cf222e;
+  --ds-semantic-info: #0969da;
+  --ds-semantic-neutral: #57606a;
+  --ds-pill-success-bg: rgba(26, 127, 55, .10);
+  --ds-pill-warning-bg: rgba(154, 103, 0, .14);
+  --ds-pill-danger-bg: rgba(207, 34, 46, .10);
+  --ds-pill-info-bg: rgba(9, 105, 218, .10);
   --smart-bg: #f4f7f9; --smart-surface-ghost: rgba(255,255,255,.72); --smart-signal-running: #0e5f92; --smart-signal-idle: #496679; --smart-focus-ring: #0e5f92; --smart-shadow-command: 0 20px 50px rgba(16,53,70,.15);
   --smart-surface: #ffffff;
   --smart-surface-raised: #fafdff;
