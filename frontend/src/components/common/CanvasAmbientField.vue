@@ -9,11 +9,11 @@ import { observeCanvasTheme, readCanvasPalette } from './canvasTheme.js'
 import { visualMode } from '../../visual/visualMode.js'
 import { subscribe } from '../../visual/motionScheduler.js'
 
-defineProps({
+const props = defineProps({
   /** 从哪个 DOM 元素读 Canvas 色板变量；默认 document.documentElement。
    *  允许登录页注入启佑风格的局部 --smart-* 令牌而不影响控制台。 */
   paletteRoot: { type: Object, default: null },
-  /** 星星数量乘数（默认 1，即 70/130 颗）。启佑登录页可用 1.6 增密。 */
+  /** 星星数量乘数（默认 1，即 70/130 颗）。启佑登录页可用 1.8 增密。 */
   starMultiplier: { type: Number, default: 1 },
   /** 是否启用粒子间连线网络（经典 particle-network 效果，启佑登录页启用）。 */
   connectParticles: { type: Boolean, default: false },
@@ -31,13 +31,13 @@ onMounted(() => {
   const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
   const reducedMotion = () => reducedQuery.matches || visualMode.value === 'reduced-motion'
   const baseCount = window.innerWidth < 768 ? 70 : 130
-  const stars = Array.from({ length: Math.round(baseCount * starMultiplier.value) }, (_, index) => ({
+  const stars = Array.from({ length: Math.round(baseCount * props.starMultiplier) }, (_, index) => ({
     x: ((Math.sin(index * 12.9898) * 43758.5453) % 1 + 1) % 1,
     y: ((Math.sin(index * 78.233 + 2) * 43758.5453) % 1 + 1) % 1,
     size: .5 + Math.abs(Math.sin(index * 4.17)) * 1.6,
     phase: index * .83
   }))
-  const root = paletteRoot.value || document.documentElement
+  const root = props.paletteRoot || document.documentElement
   let palette = readCanvasPalette(root)
   let width = 1
   let height = 1
@@ -76,8 +76,8 @@ onMounted(() => {
       }
     })
     // 粒子间连线网络（启佑风格增强）
-    if (connectParticles.value) {
-      const maxDist = connectMaxDist.value
+    if (props.connectParticles) {
+      const maxDist = props.connectMaxDist
       const maxDist2 = maxDist * maxDist
       context.lineCap = 'round'
       for (let i = 0; i < positions.length; i++) {
@@ -129,7 +129,7 @@ onMounted(() => {
   const stopTheme = observeCanvasTheme(onTheme)
   const stopMode = watch(visualMode, syncMotion)
   // paletteRoot 变化时（如登录页从启佑风格切回默认）手动重读色板
-  const stopRoot = watch(paletteRoot, nextRoot => {
+  const stopRoot = watch(() => props.paletteRoot, nextRoot => {
     palette = readCanvasPalette(nextRoot || document.documentElement)
     draw()
   })
