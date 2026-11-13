@@ -75,13 +75,61 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
-/* 所有数据用静态占位 + 令牌驱动样式；T21 接入时从 Agent store 替换 briefing 内容 */
-const briefing = computed(() => ({
-  generatedAt: '2 分钟前',
-  summary: '自上次会话以来，Sentinel 发现 1 个磁盘使用率告警（/var 分区 89%），未触发高危动作。知识库新增 3 条。Agent 今日 3 次运行全部成功，无假成功。'
-}))
+/* T21：AI 情境简报层接后端 /api/inspector（§3.5 差异化招牌）。
+   fetch 失败时 fallback 静态 mock，保证首页永不白屏。 */
+const BRIEFING_FALLBACK = {
+  generatedAt: '离线模式',
+  summary: '离线模式：连接 /api/inspector 失败，展示上次会话快照。'
+}
+
+const briefing = ref(null)
+const briefLoading = ref(true)
+const summary = ref({ total: 0, pass: 0, warning: 0, high: 0, critical: 0 })
+const recentEvents = ref([])
+
+async function loadBriefing() {
+  briefLoading.value = true
+  try {
+    const [sumRes, evRes] = await Promise.all([
+      fetch('/api/inspector/summary', { credentials: 'include' }),
+      fetch('/api/inspector/events?limit=5', { credentials: 'include' })
+    ])
+    if (!sumRes.ok) throw new Error(`summary ${sumRes.status}`)
+    summary.value = (await sumRes.json())?.data || {}
+    if (evRes.ok) {
+      recentEvents.value = ((await evRes.json())?.data || []).slice(0, 5)
+    }
+    briefing.value = assembleBriefing()
+  } catch (err) {
+    briefing.value = BRIEFING_FALLBACK
+  } finally {
+    briefLoading.value = false
+  }
+}
+
+function assembleBriefing() {
+  const { total, pass = 0, warning = 0, high = 0, critical = 0 } = summary.value
+  const parts = []
+  if (total > 0) {
+    parts.push(`自上次会话以来，Inspector 累计 ${total} 次核查：${pass} 通过，${warning} 警告`)
+    if (high) parts.push(`${high} 高危`)
+    if (critical) parts.push(`${critical} 严重`)
+  }
+  const latest = recentEvents.value[0]
+  if (latest) {
+    parts.push(`最新事件：[${latest.severity || latest.status || 'INFO'}] ${(latest.reason || latest.category || '').slice(0, 60)}`)
+  }
+  return {
+    generatedAt: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    summary: parts.join('；') || '暂无 Agent 巡检事件，一切平静。'
+  }
+}
+
+onMounted(loadBriefing)
+
+/* 其余 KPI / 态势 / 活动静态占位，T22 逐页迁移时再接对应 API */
 
 const kpis = [
   { key: 'servers', label: '服务器', value: '4', sub: '2 在线 · 1 维护中', tone: 'neutral', pill: 'READY' },
