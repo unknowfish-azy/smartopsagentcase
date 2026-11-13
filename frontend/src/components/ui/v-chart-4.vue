@@ -41,7 +41,9 @@ function render() {
   const palette = chartPalette(root.value)
   chart.setOption({
     animation: !motionQuery?.matches,
-    animationDuration: 350,
+    animationDuration: 480,
+    animationDurationUpdate: 280,
+    animationEasing: 'cubicOut',
     color: palette,
     aria: { enabled: true },
     textStyle: { fontFamily: 'system-ui, sans-serif' },
@@ -51,7 +53,7 @@ function render() {
     xAxis: chartCategoryAxis(root.value, { labels: props.labels, formatter: value => value.slice(5) }),
     yAxis: chartValueAxis(root.value, { maximum: props.maximum }),
     series: props.series.map((item, index) => {
-      const base = { name: item.name, data: item.data, type: 'line', smooth: 0.2, smoothMonotone: 'x', connectNulls: false, showSymbol: item.data.some((value, position) => value != null && item.data[position - 1] == null && item.data[position + 1] == null), symbolSize: 6, lineStyle: { width: 2 }, emphasis: { focus: 'series' } }
+      const base = { name: item.name, data: item.data, type: 'line', smooth: 0.2, smoothMonotone: 'x', connectNulls: false, showSymbol: item.data.some((value, position) => value != null && item.data[position - 1] == null && item.data[position + 1] == null), symbolSize: 6, lineStyle: { width: 2 }, emphasis: { focus: 'series' }, animationDuration: 480, animationEasing: 'cubicOut' }
       // 参考线挂在首序列上（markLine 不参与图例与数据表，避免污染逐日数值口径）
       if (index === 0 && props.reference && Number.isFinite(Number(props.reference.value))) {
         base.markLine = {

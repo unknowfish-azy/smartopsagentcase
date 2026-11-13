@@ -32,13 +32,13 @@
       </header>
 
       <!-- KPI 带（态势总览）：服务器 / 活跃告警 / 知识库 / Agent 巡检 -->
-      <div class="bento-kpi bento-status">
+      <div class="bento-kpi bento-status ml-stagger-cols-4">
         <article v-for="kpi in kpis" :key="kpi.key" class="ops-card ops-card--interactive kpi-card">
           <header class="kpi-head">
             <span class="u-overline">{{ kpi.label }}</span>
             <span class="ui-tag ui-tag--sm" :class="`ui-tag--${kpi.tone}`">{{ kpi.pill }}</span>
           </header>
-          <strong class="ops-kpi__value u-num">{{ kpi.value }}</strong>
+          <strong class="ops-kpi__value u-num"><KpiNumber :value="kpi.value" /></strong>
           <small class="u-caption">{{ kpi.sub }}</small>
         </article>
       </div>
@@ -55,7 +55,7 @@
           </header>
           <p v-if="sentinelNote" class="bento-note">{{ sentinelNote }}</p>
           <p v-else-if="activeAlerts.length === 0" class="bento-note">当前没有待处理告警，最近一次巡检结果见右侧图表。</p>
-          <ol v-else class="alert-stream">
+          <ol v-else class="alert-stream ml-stagger">
             <li v-for="alert in activeAlerts.slice(0, 5)" :key="alert.id" class="alert-row">
               <span class="ui-tag ui-tag--sm" :class="`ui-tag--${severityTone(alert.severity)}`">{{ alert.severity || 'P3' }}</span>
               <div class="alert-body">
@@ -76,7 +76,7 @@
               <h3 class="u-section">常用入口</h3>
             </div>
           </header>
-          <div class="quick-grid">
+          <div class="quick-grid ml-stagger">
             <RouterLink v-for="link in quickLinks" :key="link.to" class="quick-link" :to="link.to">
               <strong>{{ link.label }}</strong>
               <span class="u-caption">{{ link.desc }}</span>
@@ -140,6 +140,7 @@ import { listKnowledgeLibraries } from '../../api/personalKnowledge.ts'
 import { loadSentinel, sentinelState } from '../../views/sentinel/sentinelStore.js'
 import { ALERT_STATUSES } from '../../views/sentinel/sentinelModel.js'
 import OpsChart from './OpsChart.vue'
+import KpiNumber from './KpiNumber.vue'
 
 /* 全部数据来自真实接口；任一来源失败即标记失败并显示「—」，绝不回填看起来像真的假数据。 */
 const ACTIVE_ALERT_STATUSES = new Set(['OPEN', 'PENDING_APPROVAL', 'REMEDIATING'])

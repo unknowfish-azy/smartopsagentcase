@@ -55,6 +55,12 @@ function resolveColor(token, palette, position) {
   return token
 }
 
+/* E6 图表入场：柱状按数据下标错峰生长（每根 90ms），折线整体生长时长 480ms。
+   数据刷新复用 update 时长，ECharts 自动做 enter/update/exit 平滑迁移，不需手动 tween。 */
+const BAR_STAGGER = 90
+const LINE_DRAW = 480
+const UPDATE_DURATION = 280
+
 function seriesOption(item, palette) {
   if (props.type === 'line') {
     return {
@@ -67,7 +73,9 @@ function seriesOption(item, palette) {
       symbolSize: 5,
       lineStyle: { width: 2 },
       areaStyle: { opacity: 0.12 },
-      emphasis: { focus: 'series' }
+      emphasis: { focus: 'series' },
+      animationDuration: LINE_DRAW,
+      animationEasing: 'cubicOut'
     }
   }
   return {
@@ -78,7 +86,10 @@ function seriesOption(item, palette) {
     type: 'bar',
     barWidth: props.series.length > 1 ? 14 : 32,
     itemStyle: { borderRadius: 2 },
-    emphasis: { focus: 'series' }
+    emphasis: { focus: 'series' },
+    animationDelay: idx => idx * BAR_STAGGER,
+    animationDuration: 360,
+    animationEasing: 'cubicOut'
   }
 }
 
@@ -87,7 +98,9 @@ function render() {
   const palette = chartPalette(root.value)
   chart.setOption({
     animation: !motionQuery?.matches,
-    animationDuration: 320,
+    animationDuration: 360,
+    animationDurationUpdate: UPDATE_DURATION,
+    animationEasingUpdate: 'cubicInOut',
     color: palette,
     aria: { enabled: true },
     grid: { left: 8, right: 16, top: 18, bottom: 8, containLabel: true },

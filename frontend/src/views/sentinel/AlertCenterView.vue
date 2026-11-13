@@ -48,7 +48,7 @@
       </p>
     </SentinelEmpty>
 
-    <div v-else-if="state.alerts.length" class="alert-grid">
+    <div v-else-if="state.alerts.length" class="alert-grid ml-stagger-cols-3">
       <article v-for="alert in state.alerts" :key="alert.id" class="alert-card ops-card ops-card--interactive">
         <header class="alert-card__head">
           <span class="ui-tag ui-tag--sm" :class="`ui-tag--${severityTone(alert.severity)}`">{{ alert.severity || 'P3' }}</span>
