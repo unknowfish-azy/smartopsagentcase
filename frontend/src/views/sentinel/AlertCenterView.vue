@@ -42,42 +42,45 @@
       </p>
     </SentinelEmpty>
 
-    <div v-else-if="state.alerts.length" class="sentinel-table-wrap">
-      <table>
-        <caption class="sentinel-caption">告警事件与处置闭环状态</caption>
-        <thead>
-          <tr>
-            <th scope="col">级别</th>
-            <th scope="col">标题</th>
-            <th scope="col">指标 / 观测值</th>
-            <th scope="col">状态</th>
-            <th scope="col">AI 研判</th>
-            <th scope="col">处置脚本</th>
-            <th scope="col">工单</th>
-            <th scope="col">产生时间</th>
-            <th scope="col">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="alert in state.alerts" :key="alert.id">
-            <td><span class="sentinel-tag" :class="`sentinel-tag--${(alert.severity || 'p3').toLowerCase()}`">{{ alert.severity }}</span></td>
-            <td>{{ alert.title }}</td>
-            <td class="sentinel-mono">{{ alert.metric }} = {{ alert.observedValue }}（阈值 {{ alert.thresholdValue }}）</td>
-            <td>{{ statusLabel(alert.status) }}</td>
-            <td class="sentinel-muted">{{ alert.aiSummary || '未生成' }}</td>
-            <td>{{ scriptName(alert.recommendedScriptId) }}</td>
-            <td>{{ alert.ticketId || '—' }}</td>
-            <td>{{ alert.firedAt }}</td>
-            <td class="sentinel-actions">
-              <button type="button" :disabled="busyId === alert.id" @click="analyze(alert)">研判</button>
-              <button type="button" :disabled="busyId === alert.id" @click="notify(alert)">通知</button>
-              <!-- 只有已关闭的告警才能沉淀为经验；未关闭时后端会拒绝，这里提前禁用并说明原因。 -->
-              <button type="button" :disabled="busyId === alert.id || alert.status !== 'CLOSED'" :title="alert.status === 'CLOSED' ? '沉淀为知识候选，等待团队复核' : '需先人工确认关闭后才能沉淀为知识'" @click="sediment(alert)">沉淀</button>
-              <button type="button" :disabled="busyId === alert.id" title="交给团队 Agent 提出处置：生成预览并在团队侧创建待审批运行，不执行命令" @click="openProposal(alert)">走团队审批</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else-if="state.alerts.length" class="alert-grid">
+      <article v-for="alert in state.alerts" :key="alert.id" class="alert-card ops-card ops-card--interactive">
+        <header class="alert-card__head">
+          <span class="ui-tag ui-tag--sm" :class="`ui-tag--${severityTone(alert.severity)}`">{{ alert.severity || 'P3' }}</span>
+          <h2 class="alert-card__title">{{ alert.title || '未命名告警' }}</h2>
+          <span class="ui-pill" :class="`ui-pill--${statusTone(alert.status)}`">{{ statusLabel(alert.status) }}</span>
+        </header>
+
+        <div class="alert-card__meta">
+          <span class="ui-tag ui-tag--sm ui-tag--mono">{{ alert.metric || '指标' }}</span>
+          <span>观测 <b class="u-num">{{ alert.observedValue ?? '—' }}</b></span>
+          <span>阈值 <b class="u-num">{{ alert.thresholdValue ?? '—' }}</b></span>
+          <span>脚本：{{ scriptName(alert.recommendedScriptId) }}</span>
+          <span>工单：{{ alert.ticketId || '—' }}</span>
+          <time>{{ alert.firedAt || '—' }}</time>
+        </div>
+
+        <p class="alert-card__ai" :class="{ 'is-empty': !alert.aiSummary }">
+          {{ alert.aiSummary || '尚未生成 AI 研判。点击「研判」获取建议与证据（仅建议，不改变状态、不执行脚本）。' }}
+        </p>
+
+        <!-- 处置闭环四步：采集 → 研判 → 审批 → 关闭（状态由告警真实字段推导） -->
+        <ol class="ui-sop" aria-label="处置进度">
+          <li
+            v-for="step in sopSteps(alert)"
+            :key="step.label"
+            class="ui-sop__step"
+            :class="{ 'ui-sop__step--done': step.done, 'ui-sop__step--active': step.active }"
+          >{{ step.label }}</li>
+        </ol>
+
+        <footer class="alert-card__actions">
+          <button type="button" :disabled="busyId === alert.id" @click="analyze(alert)">研判</button>
+          <button type="button" :disabled="busyId === alert.id" @click="notify(alert)">通知</button>
+          <!-- 只有已关闭的告警才能沉淀为经验；未关闭时后端会拒绝，这里提前禁用并说明原因。 -->
+          <button type="button" :disabled="busyId === alert.id || alert.status !== 'CLOSED'" :title="alert.status === 'CLOSED' ? '沉淀为知识候选，等待团队复核' : '需先人工确认关闭后才能沉淀为知识'" @click="sediment(alert)">沉淀</button>
+          <button type="button" :disabled="busyId === alert.id" title="交给团队 Agent 提出处置：生成预览并在团队侧创建待审批运行，不执行命令" @click="openProposal(alert)">走团队审批</button>
+        </footer>
+      </article>
       <p v-if="actionMessage" class="sentinel-hint sentinel-hint--table" role="status">{{ actionMessage }}</p>
     </div>
 
@@ -266,6 +269,37 @@ const statusLabel = id => ALERT_STATUSES.find(item => item.id === id)?.label ?? 
 const scriptName = id => state.scripts.find(script => script.id === id)?.name ?? (id ? `#${id}` : '—')
 const reload = () => loadSentinel()
 
+/** 级别 → 语义标签色：P0/P1 危险，P2 警告，P3 中性。 */
+const severityTone = severity => {
+  const level = String(severity || '').toUpperCase()
+  return level === 'P0' || level === 'P1' ? 'danger' : level === 'P2' ? 'warning' : 'neutral'
+}
+
+/** 处置状态 → 状态 pill 色。 */
+function statusTone(status) {
+  const value = String(status || '').toUpperCase()
+  if (value === 'CLOSED') return 'success'
+  if (value === 'REMEDIATING') return 'info'
+  if (value === 'PENDING_APPROVAL' || value === 'OPEN') return 'warning'
+  return 'neutral'
+}
+
+/**
+ * 四步处置进度：采集 → 研判 → 审批 → 关闭。
+ * 只用告警真实字段推导：有 aiSummary 视为已研判，进入处置/已关闭视为已审批，CLOSED 为已关闭。
+ */
+function sopSteps(alert) {
+  const status = String(alert?.status || '').toUpperCase()
+  const steps = [
+    { label: '采集', done: true },
+    { label: '研判', done: Boolean(alert?.aiSummary) },
+    { label: '审批', done: status === 'REMEDIATING' || status === 'CLOSED' },
+    { label: '关闭', done: status === 'CLOSED' }
+  ]
+  const activeIndex = steps.findIndex(step => !step.done)
+  return steps.map((step, index) => ({ ...step, active: index === activeIndex }))
+}
+
 /** 研判：只产生建议，不改变告警状态、不执行脚本。 */
 async function analyze(alert) {
   busyId.value = alert.id
@@ -387,3 +421,37 @@ async function submitRule() {
 
 onMounted(loadSentinel)
 </script>
+
+<style scoped>
+/* T20：告警卡片化 —— 级别 / 状态 / 观测值 / AI 摘要 / 四步 SOP 同屏可读。 */
+.alert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: var(--ds-space-4); }
+.alert-card { gap: 12px; }
+.alert-card__head { display: flex; align-items: flex-start; gap: 10px; }
+.alert-card__title { margin: 0; min-width: 0; color: var(--ds-color-text); font-size: var(--ds-type-h3-size); font-weight: 500; line-height: 1.35; }
+.alert-card__head .ui-pill { margin-left: auto; flex: none; }
+.alert-card__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--ds-color-muted); font-size: var(--ds-type-caption-size); }
+.alert-card__meta b { color: var(--ds-color-text); font-weight: 600; }
+.alert-card__meta time { margin-left: auto; font-family: var(--ds-font-mono); white-space: nowrap; }
+.alert-card__ai {
+  margin: 0; padding: 10px 12px;
+  border: 1px solid var(--ds-hairline); border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-text) 3%, var(--ds-surface-base));
+  color: var(--ds-color-text); font-size: var(--ds-type-body-caption-size); line-height: 1.6;
+}
+.alert-card__ai.is-empty { color: var(--ds-color-muted); }
+.alert-card .ui-sop { flex-wrap: wrap; row-gap: 6px; }
+.alert-card__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--ds-hairline); }
+.alert-card__actions button {
+  min-height: 30px; padding: 4px 12px;
+  border: 1px solid var(--ds-color-border); border-radius: var(--ds-radius-sm);
+  background: transparent; color: var(--ds-color-text); font-size: var(--ds-type-caption-size);
+  transition: border-color var(--ds-motion-duration) var(--ds-ease-out), color var(--ds-motion-duration) var(--ds-ease-out);
+}
+.alert-card__actions button:hover:not(:disabled) { border-color: var(--ds-color-primary); color: var(--ds-color-primary); }
+.alert-card__actions button:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 768px) {
+  .alert-grid { grid-template-columns: 1fr; }
+  .alert-card__meta time { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .alert-card__actions button { transition: none; } }
+</style>

@@ -58,7 +58,25 @@
             </div>
           </div>
           <div v-if="!isTeamSpace" class="tools-menu"><button type="button" class="tools-trigger" @click="toggleToolsMenu">TOOLS / 工具</button><div v-if="toolsOpen" class="tools-dropdown"><section v-for="group in toolGroups" :key="group.label"><strong>{{ group.label }}</strong><RouterLink v-for="tool in group.items" :key="tool.id" :to="`/tools/${tool.id}`" @click="toolsOpen = false">{{ tool.label }}</RouterLink></section></div></div>
-          <div class="topbar-right"><CompanionStatus /><label class="theme-control"><span class="theme-control__label">THEME</span><select aria-label="选择主题模式" :value="themeMode" @change="setThemeMode($event.target.value)"><option value="light">浅色</option><option value="dark">深色</option><option value="system">跟随系统</option></select></label><label class="theme-control visual-mode-control"><span class="theme-control__label">VISUAL</span><select aria-label="选择视觉模式" :value="visualMode" @change="setVisualMode($event.target.value)"><option value="balanced">平衡视觉</option><option value="lightweight">轻量视觉</option><option value="reduced-motion">减少动效</option></select></label><time>{{ currentTime }}</time></div>
+          <div class="topbar-right">
+            <div v-if="!isTeamSpace" class="ops-statusbar" aria-label="全局运行状态">
+              <span class="ops-statusbar__item" title="当前运维空间">
+                <span class="u-overline">ENV</span><b>{{ currentWorkspace.name }}</b>
+              </span>
+              <span class="ops-statusbar__sep" aria-hidden="true"></span>
+              <RouterLink class="ops-statusbar__item" to="/sentinel/alerts" :title="inspectorOffline ? '告警数据不可用（未登录或后端未接入）' : '待处理 / 待审批 / 处置中告警'">
+                <span class="u-overline">ALERTS</span><b :class="alertTone">{{ activeAlerts ?? '—' }}</b>
+              </RouterLink>
+              <span class="ops-statusbar__sep" aria-hidden="true"></span>
+              <RouterLink class="ops-statusbar__item ops-statusbar__item--optional" to="/health" :title="inspectorOffline ? '健康数据不可用（未登录或后端未接入）' : '健康分（来自 Inspector 巡检摘要）'">
+                <span class="u-overline">HEALTH</span><b :class="healthTone">{{ healthScore ?? '—' }}</b><template v-if="healthScore !== null">/100</template>
+              </RouterLink>
+              <span class="ops-statusbar__sep" aria-hidden="true"></span>
+              <span class="ops-statusbar__item ops-statusbar__item--optional" title="当前智能体状态">
+                <span class="u-overline">AGENT</span><b>{{ whaleState.toUpperCase() }}</b>
+              </span>
+            </div>
+            <CompanionStatus /><label class="theme-control"><span class="theme-control__label">THEME</span><select aria-label="选择主题模式" :value="themeMode" @change="setThemeMode($event.target.value)"><option value="light">浅色</option><option value="dark">深色</option><option value="system">跟随系统</option></select></label><label class="theme-control visual-mode-control"><span class="theme-control__label">VISUAL</span><select aria-label="选择视觉模式" :value="visualMode" @change="setVisualMode($event.target.value)"><option value="balanced">平衡视觉</option><option value="lightweight">轻量视觉</option><option value="reduced-motion">减少动效</option></select></label><time>{{ currentTime }}</time></div>
         </header>
         <div class="workspace-context" :class="{ 'workspace-context--team': isTeamSpace, 'workspace-context--admin': currentRole === 'admin' }"><SpaceSwitcher /><span class="workspace-context__scope">{{ currentRole === 'admin' ? 'ADMIN SCOPE' : isTeamSpace ? 'TEAM SCOPE' : 'PERSONAL SCOPE' }}</span><template v-if="!isTeamSpace"><select aria-label="当前运维空间" :value="appStore.currentWorkspaceId" @change="appStore.setCurrentWorkspace($event.target.value)"><option v-for="workspace in availableWorkspaces" :key="workspace.id" :value="workspace.id">{{ workspace.name }}</option></select><small>{{ currentWorkspace.label }}</small></template><small v-else>团队权限独立 · 不共享个人资料</small></div>
         <main id="main-content" class="content" tabindex="-1"><PageStepper v-if="!isTeamSpace" :route-name="route.name?.toString()" /><RouterView /></main>
@@ -92,6 +110,7 @@ import { personalSystemGroups } from '../navigation/personalSystemNavigation.js'
 import { navHealthBadgeMap } from '../navigation/navigationHealth.js'
 import { getVisibleNavigationGroups, ROLE_LABELS } from '../security/accessModel.js'
 import { availableWorkspaces, useAppStore } from '../stores/app'
+import { startGlobalOpsPolling, useGlobalOpsStatus } from '../composables/useGlobalOpsStatus'
 
 const CanvasParticleWhale = defineAsyncComponent(() => import('../components/common/CanvasParticleWhale.vue'))
 const CanvasAmbientField = defineAsyncComponent(() => import('../components/common/CanvasAmbientField.vue'))
@@ -139,6 +158,11 @@ const routeContext = computed(() => route.meta.section || route.name?.toString()
 const currentRole = computed(() => isAdminSession(currentSession.value) ? 'admin' : 'operator')
 const avatarChar = computed(() => (currentSession.value?.username || 'U').charAt(0).toUpperCase())
 const navigationGroups = computed(() => getVisibleNavigationGroups(personalSystemGroups, currentRole.value))
+
+/* 顶栏全局运行态：只读真实接口，失败显示「—」。 */
+const { activeAlerts, healthScore, inspectorOffline } = useGlobalOpsStatus()
+const alertTone = computed(() => activeAlerts.value === null ? 'is-muted' : activeAlerts.value > 0 ? 'is-danger' : 'is-success')
+const healthTone = computed(() => healthScore.value === null ? 'is-muted' : healthScore.value >= 90 ? 'is-success' : healthScore.value >= 70 ? 'is-warning' : 'is-danger')
 
 const discoveryEntries = computed(() => navigationEntries(navigationGroups.value))
 
@@ -211,7 +235,7 @@ async function toggleNavigation() {
 
 watch(() => route.name, routeName => appStore.setRouteNavigation(routeName?.toString()), { immediate: true })
 watch(() => route.fullPath, value => companion.setPage(value), { immediate: true })
-onMounted(() => { disconnectCompanion = companion.connectLegacyEvents(window); updateViewportMode(); updateTime(); window.addEventListener('resize', updateViewportMode); timer = window.setInterval(updateTime, 30000); document.addEventListener('pointerdown', onDocumentPointerdown, true); document.addEventListener('keydown', onDocumentKeydown) })
+onMounted(() => { disconnectCompanion = companion.connectLegacyEvents(window); updateViewportMode(); updateTime(); startGlobalOpsPolling(); window.addEventListener('resize', updateViewportMode); timer = window.setInterval(updateTime, 30000); document.addEventListener('pointerdown', onDocumentPointerdown, true); document.addEventListener('keydown', onDocumentKeydown) })
 onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('resize', updateViewportMode); window.clearInterval(timer); document.removeEventListener('pointerdown', onDocumentPointerdown, true); document.removeEventListener('keydown', onDocumentKeydown) })
 </script>
 
@@ -391,4 +415,20 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
 .account-menu-dropdown button:disabled:hover { background: transparent; color: var(--smart-text); }
 @media (max-width: 767px) { .account-menu-name { display: none; } .account-menu-trigger { padding: 3px 8px 3px 4px; } .account-menu-dropdown { left: auto; right: 0; } }
 @media (prefers-reduced-motion: reduce) { .account-menu-trigger, .account-menu-caret, .account-menu-dropdown a, .account-menu-dropdown button { transition: none; } }
+
+/* T20 控制台外壳：侧栏 / 顶栏改用分层表面令牌，去掉旧的玻璃与装饰描边。 */
+.app-layout:not(.app-layout--tools) > .sidebar,
+.app-layout:not(.app-layout--tools) > .main-area > .topbar {
+  background: var(--ds-surface-raised) !important;
+  border-color: var(--ds-hairline) !important;
+  box-shadow: var(--ds-elevation-1) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.app-layout:not(.app-layout--tools) > .sidebar { border-top: 0 !important; }
+.ops-statusbar__item b.is-success { color: var(--ds-semantic-success); }
+.ops-statusbar__item b.is-warning { color: var(--ds-semantic-warning); }
+.ops-statusbar__item b.is-danger { color: var(--ds-semantic-danger); }
+.ops-statusbar__item b.is-muted { color: var(--ds-color-muted); }
+.ops-statusbar__item:hover { color: var(--ds-color-text); }
 </style>

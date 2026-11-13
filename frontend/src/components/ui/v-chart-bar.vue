@@ -20,6 +20,7 @@ import { GridComponent, TooltipComponent, LegendComponent, AriaComponent } from 
 import { CanvasRenderer } from 'echarts/renderers'
 import { resolvedTheme } from '../../theme.js'
 import { formatMetric } from '../model/modelAnalytics.js'
+import { chartCategoryAxis, chartPalette, chartTooltip, chartValueAxis } from '../../design/chartTheme.js'
 
 use([BarChart, GridComponent, TooltipComponent, LegendComponent, AriaComponent, CanvasRenderer])
 const props = defineProps({
@@ -35,7 +36,8 @@ function render() {
   if (!chart || !root.value) return
   const css = getComputedStyle(root.value)
   const color = name => css.getPropertyValue(name).trim()
-  const palette = resolvedTheme.value === 'light' ? ['#087b8b', '#785ac2', '#ba731c'] : ['#6cddd6', '#b5a0fa', '#f2bf6b']
+  // 语义调色板（最多 5 色）由 design/chartTheme.js 统一提供。
+  const palette = chartPalette(root.value)
   chart.setOption({
     animation: !motionQuery?.matches,
     animationDuration: 350,
@@ -44,15 +46,10 @@ function render() {
     textStyle: { fontFamily: 'system-ui, sans-serif' },
     grid: { left: 10, right: 22, top: 34, bottom: 12, containLabel: true },
     // 图例右上：10px mono 小字（Helicone 式图表密度）
-    legend: { top: 0, right: 0, icon: 'roundRect', itemHeight: 3, itemWidth: 18, textStyle: { color: color('--smart-muted'), fontSize: 10, fontFamily: 'var(--font-mono, ui-monospace)' } },
-    tooltip: {
-      trigger: 'axis', renderMode: 'richText', confine: true, axisPointer: { type: 'shadow' },
-      backgroundColor: color('--smart-surface'), borderColor: color('--smart-border'),
-      textStyle: { color: color('--smart-text'), fontSize: 12 },
-      valueFormatter: value => value == null ? '未上报' : `${formatMetric(value, 1)} ${props.unit}`
-    },
-    xAxis: { type: 'category', data: props.labels, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: color('--smart-muted'), margin: 14, formatter: value => value.slice(5) } },
-    yAxis: { type: 'value', min: 0, max: props.maximum, axisLabel: { color: color('--smart-muted'), formatter: value => value >= 1000000 ? `${value / 1000000}M` : value >= 1000 ? `${value / 1000}k` : value }, splitLine: { lineStyle: { color: color('--smart-border'), type: 'dashed' } } },
+    legend: { top: 0, right: 0, icon: 'roundRect', itemHeight: 3, itemWidth: 18, textStyle: { color: color('--ds-chart-text'), fontSize: 10, fontFamily: 'var(--font-mono, ui-monospace)' } },
+    tooltip: { ...chartTooltip(root.value, props.unit, value => value == null ? '未上报' : `${formatMetric(value, 1)} ${props.unit}`), axisPointer: { type: 'shadow' } },
+    xAxis: { ...chartCategoryAxis(root.value, { labels: props.labels, formatter: value => value.slice(5) }), boundaryGap: true },
+    yAxis: chartValueAxis(root.value, { maximum: props.maximum }),
     // 堆叠柱：6px 柱宽、无圆角、2px 系列间距——科技感来自几何锐利度，不是发光
     series: props.series.map(item => ({
       name: item.name, data: item.data, type: 'bar', stack: 'usage',

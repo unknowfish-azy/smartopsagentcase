@@ -23,6 +23,7 @@ const expandableGroup = ({ id, label, cn, icon, routeName, to, children, roles }
 export const personalSystemGroups = Object.freeze([
   directGroup({ id: 'home', label: 'HOME', cn: '首页', icon: 'HomeFilled', routeName: 'Dashboard', to: '/' }),
   directGroup({ id: 'ai-chat', label: 'AI CHAT', cn: 'AI 对话', icon: 'ChatDotRound', routeName: 'Chat', to: '/chat' }),
+  directGroup({ id: 'insights', label: 'INSIGHTS', cn: '自然语言洞察', icon: 'DataAnalysis', routeName: 'Insights', to: '/insights' }),
   directGroup({ id: 'team-space', label: 'TEAM SPACE', cn: '团队协作', icon: 'Grid', routeName: 'TeamSpaces', to: '/teams' }),
   directGroup({ id: 'knowledge', label: '知识库', cn: '知识库', icon: 'Collection', routeName: 'Knowledge', to: '/knowledge' }),
   directGroup({ id: 'cloud-native', label: 'CLOUD NATIVE', cn: '云原生工程', icon: 'Monitor', routeName: 'CloudNativeWorkbench', to: '/cloud-native' }),

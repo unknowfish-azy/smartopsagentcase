@@ -6,12 +6,30 @@
       <button v-if="hiddenCount" type="button" class="ai-chat-earlier" @click="showEarlierMessages">加载更早的消息（还有 {{ hiddenCount }} 条）</button>
       <article v-for="message in visibleMessages" :key="message.id" class="ai-chat-message" :class="`ai-chat-message--${message.role}`">
         <div class="ai-chat-message__meta">{{ message.role === 'user' ? 'YOU' : message.providerKey === 'attachment-receipt' ? '附件保存回执 · 非 AI 分析' : 'SMARTOPS AGENT' }}</div>
-        <ol v-if="message.thinking && message.thinking.length" class="ai-thinking" aria-label="AI 思考过程">
-          <li v-for="(step, index) in message.thinking" :key="index" :class="{ 'is-active': message.streaming && index === message.thinking.length - 1, 'is-done': !message.streaming }">
-            <span class="ai-thinking__label">{{ step.label }}</span>
-            <span class="ai-thinking__detail">{{ step.detail }}</span>
-          </li>
-        </ol>
+        <details v-if="message.thinking && message.thinking.length" class="ai-trace" :open="message.streaming">
+          <summary class="ai-trace__head">
+            <span class="ai-trace__title">处理过程</span>
+            <span class="ui-tag ui-tag--sm" :class="message.streaming ? 'ui-tag--info' : 'ui-tag--success'">{{ message.streaming ? '处理中' : '已完成' }}</span>
+            <span class="ai-trace__count">{{ message.thinking.length }} 步</span>
+          </summary>
+          <ol class="ai-trace__list" aria-label="AI 处理时间线">
+            <li
+              v-for="(step, index) in message.thinking"
+              :key="index"
+              class="ai-trace__step"
+              :class="{ 'is-active': message.streaming && index === message.thinking.length - 1, 'is-done': !message.streaming || index < message.thinking.length - 1 }"
+            >
+              <span class="ai-trace__marker" aria-hidden="true"></span>
+              <div class="ai-trace__body">
+                <div class="ai-trace__row">
+                  <span class="ui-tag ui-tag--sm ui-tag--mono" :class="`ui-tag--${stepKind(step.label).tone}`">{{ stepKind(step.label).tag }}</span>
+                  <strong>{{ step.label }}</strong>
+                </div>
+                <p v-if="step.detail">{{ step.detail }}</p>
+              </div>
+            </li>
+          </ol>
+        </details>
         <p v-if="message.pending && !message.streaming && !message.content" class="ai-chat-pending"><span></span><span></span><span></span></p>
         <p v-else-if="message.content" :class="{ 'ai-chat-message__error': message.error }">{{ message.content }}<span v-if="message.streaming" class="ai-cursor" aria-hidden="true"></span></p>
         <div v-if="message.error && !message.pending" class="ai-chat-retry-row">
@@ -181,6 +199,16 @@ function buildRagPayload() {
 
 function runEventStatusLabel(status) {
   return { started: '已开始', succeeded: '已完成', failed: '失败', denied: '已拒绝', dry_run: '演练' }[status] || '未知状态'
+}
+
+/* 处理步骤分类：只根据步骤标题里的关键词推断「检索 / 工具 / 推理」，不改变 store 协议。 */
+const STEP_KINDS = [
+  { test: /检索|知识|引用|RAG|召回/i, tag: '检索', tone: 'info' },
+  { test: /工具|调用|执行|脚本|诊断|巡检|检查/i, tag: '工具', tone: 'warning' },
+  { test: /推理|分析|规划|思考|判断|生成/i, tag: '推理', tone: 'neutral' }
+]
+function stepKind(label = '') {
+  return STEP_KINDS.find(kind => kind.test.test(label)) || { tag: '步骤', tone: 'neutral' }
 }
 
 // 运行诊断只展示本链路真实上报的字段；缺失就明确写“未记录”，不猜测 provider 或耗时。
@@ -438,15 +466,21 @@ onBeforeUnmount(() => {
 .ai-chat-hint, .ai-chat-error { margin: 0; padding: 0 13px 9px; font-size: 11px; }.ai-chat-hint { color: var(--smart-muted); }
 .ai-chat-quick-actions { display: flex; flex-wrap: wrap; gap: 7px; }.ai-chat-quick-actions button { min-height: 32px; padding: 0 10px; border-color: var(--smart-border); border-radius: 999px; font-size: 11px; }.ai-chat-quick-actions button:hover { color: var(--smart-text); background: var(--smart-surface); border-color: var(--smart-border-strong); }
 .is-loading { animation: chat-spin 1s linear infinite; } @keyframes chat-spin { to { transform: rotate(360deg); } } @keyframes chat-pulse { 0%, 80%, 100% { opacity: .35; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
-.ai-thinking { display: grid; gap: 5px; margin: 0 0 8px; padding: 8px 10px; list-style: none; border: 1px dashed var(--smart-border-strong); border-radius: 8px; background: color-mix(in srgb, var(--smart-surface) 60%, transparent); }
-.ai-thinking li { display: flex; align-items: baseline; gap: 7px; font-size: 11px; color: var(--smart-muted); opacity: .55; transition: opacity var(--duration-fast), color var(--duration-fast); }
-.ai-thinking li::before { content: ''; flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--smart-muted); transform: translateY(1px); }
-.ai-thinking li.is-done { opacity: 1; color: var(--smart-text); }
-.ai-thinking li.is-done::before { background: var(--smart-success, #5fbf8f); }
-.ai-thinking li.is-active { opacity: 1; color: var(--smart-primary-strong); }
-.ai-thinking li.is-active::before { background: var(--smart-primary-strong); animation: chat-pulse 1s infinite ease-in-out; }
-.ai-thinking__label { font-weight: 500; }
-.ai-thinking__detail { color: var(--smart-muted); }
+/* T20：处理过程升级为竖线时间线，步骤标签区分「检索 / 工具 / 推理」。 */
+.ai-trace { margin: 0 0 8px; border: 1px solid var(--ds-hairline); border-radius: var(--ds-radius-md); background: color-mix(in srgb, var(--ds-surface-base) 70%, transparent); }
+.ai-trace__head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; list-style: none; cursor: pointer; }
+.ai-trace__head::-webkit-details-marker { display: none; }
+.ai-trace__title { color: var(--ds-color-muted); font: 9px var(--ds-font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.ai-trace__count { margin-left: auto; color: var(--ds-color-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.ai-trace__list { position: relative; display: grid; gap: 10px; margin: 0; padding: 4px 12px 12px 26px; list-style: none; }
+.ai-trace__list::before { content: ''; position: absolute; left: 17px; top: 8px; bottom: 16px; width: 1px; background: var(--ds-color-border-strong); }
+.ai-trace__step { position: relative; display: grid; gap: 2px; }
+.ai-trace__marker { position: absolute; left: -13px; top: 5px; width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ds-color-border-strong); background: var(--ds-surface-raised); }
+.ai-trace__step.is-done .ai-trace__marker { border-color: var(--ds-semantic-success); background: var(--ds-semantic-success); }
+.ai-trace__step.is-active .ai-trace__marker { border-color: var(--ds-semantic-info); background: var(--ds-semantic-info); animation: chat-pulse 1.2s infinite ease-in-out; }
+.ai-trace__row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ai-trace__row strong { color: var(--ds-color-text); font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-trace__body p { margin: 2px 0 0; color: var(--ds-color-muted); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
 .ai-cursor { display: inline-block; width: 6px; height: 1em; margin-left: 2px; vertical-align: text-bottom; background: var(--smart-primary-strong); animation: chat-blink 1s steps(2, start) infinite; }
 @keyframes chat-blink { to { visibility: hidden; } }
 .ai-chat-rag-debug { border-top: 1px solid var(--smart-border); padding: 8px 13px 10px; font-size: 11px; color: var(--smart-muted); }
@@ -464,5 +498,5 @@ onBeforeUnmount(() => {
 .rag-debug-reset { margin-top: 8px; padding: 3px 9px; border: 1px solid var(--smart-border); border-radius: 6px; background: transparent; color: var(--smart-muted); cursor: pointer; font: 10px var(--font-mono); letter-spacing: .06em; }
 .rag-debug-reset:hover { color: var(--smart-text); border-color: var(--smart-border-strong); }
 @media (max-width: 600px) { .ai-chat-message { max-width: 94%; }.ai-chat-empty { align-items: flex-start; }.ai-chat-quick-actions { gap: 6px; }.ai-chat-quick-actions button { flex: 1 1 140px; }.rag-debug-grid { grid-template-columns: 1fr; } }
-@media (prefers-reduced-motion: reduce) { .ai-chat-pending span, .is-loading, .ai-chat-icon-button.is-recording svg { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ai-chat-pending span, .is-loading, .ai-chat-icon-button.is-recording svg, .ai-trace__step.is-active .ai-trace__marker { animation: none; } }
 </style>

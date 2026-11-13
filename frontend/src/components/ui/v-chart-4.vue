@@ -20,6 +20,7 @@ import { GridComponent, TooltipComponent, LegendComponent, AriaComponent } from 
 import { CanvasRenderer } from 'echarts/renderers'
 import { resolvedTheme } from '../../theme.js'
 import { formatMetric } from '../model/modelAnalytics.js'
+import { chartCategoryAxis, chartPalette, chartTooltip, chartValueAxis } from '../../design/chartTheme.js'
 
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, AriaComponent, CanvasRenderer])
 const props = defineProps({
@@ -36,7 +37,8 @@ function render() {
   if (!chart || !root.value) return
   const css = getComputedStyle(root.value)
   const color = name => css.getPropertyValue(name).trim()
-  const palette = resolvedTheme.value === 'light' ? ['#087b8b', '#785ac2', '#ba731c'] : ['#6cddd6', '#b5a0fa', '#f2bf6b']
+  // 语义调色板（最多 5 色）由 design/chartTheme.js 统一提供，禁止组件内写死彩虹色。
+  const palette = chartPalette(root.value)
   chart.setOption({
     animation: !motionQuery?.matches,
     animationDuration: 350,
@@ -44,15 +46,10 @@ function render() {
     aria: { enabled: true },
     textStyle: { fontFamily: 'system-ui, sans-serif' },
     grid: { left: 10, right: 22, top: 42, bottom: 12, containLabel: true },
-    legend: { top: 0, left: 0, icon: 'roundRect', itemHeight: 3, itemWidth: 18, textStyle: { color: color('--smart-muted') } },
-    tooltip: {
-      trigger: 'axis', renderMode: 'richText', confine: true,
-      backgroundColor: color('--smart-surface'), borderColor: color('--smart-border'),
-      textStyle: { color: color('--smart-text'), fontSize: 12 },
-      valueFormatter: value => value == null ? '未上报' : `${formatMetric(value, 1)} ${props.unit}`
-    },
-    xAxis: { type: 'category', data: props.labels, boundaryGap: false, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: color('--smart-muted'), margin: 14, formatter: value => value.slice(5) } },
-    yAxis: { type: 'value', min: 0, max: props.maximum, axisLabel: { color: color('--smart-muted'), formatter: value => value >= 1000000 ? `${value / 1000000}M` : value >= 1000 ? `${value / 1000}k` : value }, splitLine: { lineStyle: { color: color('--smart-border'), type: 'dashed' } } },
+    legend: { top: 0, left: 0, icon: 'roundRect', itemHeight: 3, itemWidth: 18, textStyle: { color: color('--ds-chart-text') } },
+    tooltip: chartTooltip(root.value, props.unit, value => value == null ? '未上报' : `${formatMetric(value, 1)} ${props.unit}`),
+    xAxis: chartCategoryAxis(root.value, { labels: props.labels, formatter: value => value.slice(5) }),
+    yAxis: chartValueAxis(root.value, { maximum: props.maximum }),
     series: props.series.map((item, index) => {
       const base = { name: item.name, data: item.data, type: 'line', smooth: 0.2, smoothMonotone: 'x', connectNulls: false, showSymbol: item.data.some((value, position) => value != null && item.data[position - 1] == null && item.data[position + 1] == null), symbolSize: 6, lineStyle: { width: 2 }, emphasis: { focus: 'series' } }
       // 参考线挂在首序列上（markLine 不参与图例与数据表，避免污染逐日数值口径）
