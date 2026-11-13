@@ -93,14 +93,15 @@
 :root[data-theme='dark'] .admin-status-tag--on, :root[data-theme='dark'] .admin-status-tag--ok, :root[data-theme='dark'] .admin-status-tag--off, :root[data-theme='dark'] .admin-status-tag--fail { background: transparent; }
 
 /* --- 骨架：侧栏 + 头部 + 标签页 + 内容区（koi-ui 纵向布局）---------------- */
+/* T19：管理端侧栏与用户端用同一令牌体系，保持 256px 展开 / 64px 收起 + 150ms ease-out */
 .admin-layout { display: flex; min-height: 100dvh; }
 .admin-sidebar {
-  position: sticky; top: 0; align-self: flex-start; height: 100dvh; width: 220px; flex: 0 0 auto;
+  position: sticky; top: 0; align-self: flex-start; height: 100dvh; width: var(--ds-sidebar-width, 256px); flex: 0 0 auto;
   display: flex; flex-direction: column; min-width: 0; padding: 0 8px 14px;
-  border-right: 1px solid var(--admin-border); background: var(--admin-panel);
-  transition: width .22s cubic-bezier(.4, 0, .2, 1); overflow: hidden;
+  border-right: 1px solid var(--ds-hairline, var(--admin-border)); background: var(--admin-panel);
+  transition: width var(--ds-duration-micro, 150ms) var(--ds-ease-out, cubic-bezier(.4, 0, .2, 1)); overflow: hidden;
 }
-.admin-layout.is-collapsed .admin-sidebar { width: 64px; }
+.admin-layout.is-collapsed .admin-sidebar { width: var(--ds-sidebar-width-collapsed, 64px); }
 .admin-layout.is-collapsed .admin-navigation-group h2, .admin-layout.is-collapsed .admin-nav-label, .admin-layout.is-collapsed .admin-brand-name, .admin-layout.is-collapsed .admin-sidebar__brand small { display: none; }
 .admin-sidebar__brand {
   display: flex; align-items: center; gap: 10px; height: 56px; flex: 0 0 auto; padding: 0 8px;
