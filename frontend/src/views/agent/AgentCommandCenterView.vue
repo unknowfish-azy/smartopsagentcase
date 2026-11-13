@@ -1,6 +1,12 @@
 <template>
+  <div ref="agentShellRef" class="agent-shell" :data-theme="resolvedTheme">
+    <CanvasAmbientField v-if="!isMobile" class="agent-ambient" :palette-root="agentShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
+    <div v-if="!isMobile" class="agent-aurora" aria-hidden="true"></div>
+    <MeteorShower v-if="!isMobile" class="agent-meteors" />
+    <div class="agent-mask" aria-hidden="true"></div>
+
   <AgentSkillGuidance />
-  <div class="page">
+  <div class="page agent-page">
     <header>
       <div>
         <p class="eyebrow">AI AGENT · 决策闭环</p>
@@ -149,12 +155,14 @@
       <button type="button" :disabled="submitting" @click="submitCreate">创建</button>
     </template>
   </el-dialog>
+  </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, reactive, ref, defineAsyncComponent } from 'vue'
 import AgentSkillGuidance from '../../components/agent/AgentSkillGuidance.vue'
 import AppEmpty from '../../components/common/AppEmpty.vue'
+import { resolvedTheme as _resolvedTheme } from '../../theme.js'
 import {
   createDecisionLoop,
   decideDecisionLoop,
@@ -164,6 +172,14 @@ import {
   recallDecisionMemories,
   reviewDecisionLoop
 } from '../../api/decisionLoop'
+
+const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
+const MeteorShower = defineAsyncComponent(() => import('../../components/common/MeteorShower.vue'))
+
+const agentShellRef = ref(null)
+const resolvedTheme = computed(() => _resolvedTheme.value)
+const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
+function updateMobile() { isMobile.value = window.innerWidth < 1024 }
 
 const stages = [
   { key: 'ANALYZE', name: '分析', desc: '现象、证据、影响面' },
@@ -312,7 +328,8 @@ async function submitCreate() {
   }
 }
 
-onMounted(load)
+onMounted(() => { updateMobile(); window.addEventListener('resize', updateMobile); load() })
+onBeforeUnmount(() => window.removeEventListener('resize', updateMobile))
 </script>
 
 <style scoped>
@@ -375,4 +392,20 @@ button:disabled{cursor:wait;opacity:.65}
 .form{display:grid;gap:8px;margin-top:4px}
 .create-form{display:grid;gap:10px}
 @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.pipeline{grid-template-columns:repeat(2,1fr)}.workspace{grid-template-columns:1fr}}
+
+/* === 启佑风格背景层 === */
+.agent-shell{position:relative;min-height:calc(100vh - 64px);overflow:hidden;background:radial-gradient(ellipse at 80% 10%,rgba(122,215,245,.10) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,rgba(63,185,80,.07) 0%,transparent 50%),#040B16}
+.agent-shell[data-theme='light']{background:radial-gradient(ellipse at 80% 10%,rgba(26,110,154,.07) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,rgba(26,127,55,.04) 0%,transparent 50%),#EAF3FA}
+.agent-ambient{position:absolute;inset:0;z-index:0;opacity:.48;pointer-events:none}
+.agent-meteors{position:absolute;inset:0;z-index:0;opacity:.35;pointer-events:none}
+.agent-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 75% 15%,rgba(122,215,245,.22) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(63,185,80,.16) 0%,transparent 45%);filter:blur(24px);background-size:240% 240%;animation:agent-drift 22s ease-in-out infinite alternate}
+.agent-aurora::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 30% 20% at 15% 50%,rgba(122,215,245,.35),transparent 70%);filter:blur(18px);animation:agent-sweep 32s ease-in-out infinite}
+.agent-shell[data-theme='light'] .agent-aurora{background:radial-gradient(ellipse at 75% 15%,rgba(26,110,154,.14) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(26,127,55,.10) 0%,transparent 45%)}
+.agent-shell[data-theme='light'] .agent-aurora::after{background:radial-gradient(ellipse 30% 20% at 15% 50%,rgba(26,110,154,.22),transparent 70%)}
+@keyframes agent-drift{0%{background-position:0% 0%,100% 100%;transform:translate3d(0,0,0)}100%{background-position:30% 10%,70% 90%;transform:translate3d(-2%,2%,0)}}
+@keyframes agent-sweep{0%,100%{opacity:.55;transform:translate3d(0,0,0)}50%{opacity:1;transform:translate3d(-8%,4%,0)}}
+@media(prefers-reduced-motion:reduce){.agent-aurora,.agent-aurora::after{animation:none}}
+.agent-mask{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(4,11,22,.42) 100%)}
+.agent-shell[data-theme='light'] .agent-mask{background:radial-gradient(ellipse at center,transparent 40%,rgba(234,243,250,.42) 100%)}
+.agent-shell>.agent-page,.agent-shell>AgentSkillGuidance{position:relative;z-index:1}
 </style>
