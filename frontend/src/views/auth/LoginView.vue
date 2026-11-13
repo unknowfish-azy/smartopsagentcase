@@ -1,10 +1,10 @@
 <template>
   <StellarOceanProvider state="thinking">
-  <main class="login-shell" :data-visual-mode="visualMode">
-    <CanvasAmbientField class="login-ambient" />
+  <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode">
+    <CanvasAmbientField class="login-ambient" :palette-root="loginShellRef" />
     <MeteorShower v-if="visualMode === 'balanced'" class="login-meteors" />
     <header class="login-topbar">
-      <div class="login-brand"><span class="login-brand__mark" aria-hidden="true">智</span><div><strong>智维 Agent</strong><span>SMARTOPS / PERSONAL WORKSPACE</span></div></div>
+      <div class="login-brand"><span class="login-brand__mark login-brand__mark--star" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none"><circle cx="16" cy="16" r="3" fill="currentColor"/><circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.2" opacity=".5"/><circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width=".6" opacity=".28"/><g stroke="currentColor" stroke-width="1" opacity=".65"><path d="M16 2 L16 7"/><path d="M16 25 L16 30"/><path d="M2 16 L7 16"/><path d="M25 16 L30 16"/></g></svg></span><div><strong>智维 Agent</strong><span>SMARTOPS · SPARKING OPERATIONS</span></div></div>
       <div class="login-appearance" aria-label="外观设置">
         <label><span>主题</span><select aria-label="选择主题模式" :value="themeMode" @change="setThemeMode($event.target.value)"><option value="light">浅色</option><option value="dark">深色</option><option value="system">跟随系统</option></select></label>
         <label><span>视觉</span><select aria-label="选择视觉模式" :value="visualMode" @change="setVisualMode($event.target.value)"><option value="balanced">平衡视觉</option><option value="lightweight">轻量视觉</option><option value="reduced-motion">减少动态</option></select></label>
@@ -22,10 +22,9 @@
         <div><dt>访问权限</dt><dd>按账号授权</dd></div>
         <div><dt>会话保护</dt><dd>安全令牌校验</dd></div>
       </dl>
-      <div class="login-organisms" aria-hidden="true">
-        <div class="login-glyph"><span>OPS</span></div>
-        <CanvasParticleWhale v-if="visualMode === 'balanced'" placement="knowledge" state="thinking" />
-        <LivingJellyfish class="login-jellyfish" state="thinking" ecosystem="login" :motion-mode="visualMode" />
+      <div class="login-organisms login-organisms--spark" aria-hidden="true">
+        <div class="login-stars-bg"></div>
+        <div class="login-stars-front"></div>
         <span class="login-scene-label">KNOWLEDGE · MEMORY · AGENT</span>
       </div>
     </section>
@@ -114,11 +113,10 @@
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, Hide, Lock, User, View } from '@element-plus/icons-vue'
-import LivingJellyfish from '../../components/common/LivingJellyfish.vue'
-import StellarOceanProvider from '../../components/common/StellarOceanProvider.vue'
-import MeteorShower from '../../components/common/MeteorShower.vue'
 import HumanVerification from '../../components/auth/HumanVerification.vue'
 import MfaChallenge from '../../components/auth/MfaChallenge.vue'
+import StellarOceanProvider from '../../components/common/StellarOceanProvider.vue'
+import MeteorShower from '../../components/common/MeteorShower.vue'
 import { loginSession, registrationPolicy, registerAccount } from '../../security/session.js'
 import { sessionLanding } from '../../security/portalPolicy.js'
 import { resolvePortalSwitch } from '../../security/portalSwitch.js'
@@ -126,7 +124,6 @@ import { registrationError } from '../../security/passwordPolicy.js'
 import { themeMode, setThemeMode } from '../../theme.js'
 import { visualMode, setVisualMode } from '../../visual/visualMode.js'
 
-const CanvasParticleWhale = defineAsyncComponent(() => import('../../components/common/CanvasParticleWhale.vue'))
 const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
 
 const router = useRouter()
@@ -144,6 +141,7 @@ const showPassword = ref(false)
 const rememberMe = ref(false)
 const focusedInput = ref('')
 const glassCard = ref(null)
+const loginShellRef = ref(null)
 const humanCheck = ref(null)
 const humanState = reactive({ token: '', ready: false })
 function updateHumanState(state) { Object.assign(humanState, state) }
@@ -323,13 +321,81 @@ async function finishLogin(user) {
 </script>
 
 <style scoped>
-.login-shell { --login-glass-bg: rgba(9, 22, 32, .76); --login-glass-edge: rgba(173, 222, 239, .32); --login-glass-highlight: rgba(222, 248, 255, .16); --login-glass-luster: rgba(146, 224, 249, .1); --login-glass-shadow: 0 24px 64px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(222, 248, 255, .32), inset 1px 0 0 rgba(222, 248, 255, .12), inset 0 -1px 0 rgba(122, 215, 245, .12); --login-glass-blur: 10px; --login-glyph-edge: rgba(181, 237, 250, .25); position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100dvh; gap: 28px; padding: 24px clamp(20px, 4.4vw, 72px); color: var(--smart-text); background: var(--smart-bg); }
+/* ============================================================
+   启佑 (Spark You) · 智慧星空 风格覆盖
+   只在 .login-shell 局部生效，不影响控制台。
+   CanvasAmbientField 通过 palette-root 读这些局部令牌色偏。
+   ============================================================ */
+.login-shell {
+  /* —— 启佑星空局部令牌（CanvasAmbientField 通过 paletteRoot 读这些）—— */
+  --smart-bg: #040B16;
+  --smart-surface: #081422;
+  --smart-primary: #2BA8C8;
+  --smart-primary-strong: #7AD7F5;
+  --smart-primary-soft: rgba(122, 215, 245, .14);
+  --smart-text: #E8F2F7;
+  --smart-muted: #6B8BA4;
+  --smart-border: rgba(122, 215, 245, .14);
+  --smart-border-strong: rgba(122, 215, 245, .28);
+  --smart-surface-raised: #0B1A2C;
+  /* effect-* 令牌：青绿星云 */
+  --smart-effect-primary: #3FB950;
+  --smart-effect-strong: #7AD7F5;
+  --smart-effect-muted: #6B8BA4;
+  --smart-effect-star: #B8EEFF;
+  /* —— 玻璃卡视觉参数（启佑：更厚 blur + 青绿高光 + 柔阴影）—— */
+  --login-glass-bg: rgba(8, 20, 34, .72);
+  --login-glass-edge: rgba(122, 215, 245, .28);
+  --login-glass-highlight: rgba(184, 238, 255, .14);
+  --login-glass-luster: rgba(122, 215, 245, .08);
+  --login-glass-shadow:
+    0 30px 72px rgba(0, 0, 0, .32),
+    0 8px 24px rgba(43, 168, 200, .06),
+    inset 0 1px 0 rgba(184, 238, 255, .24),
+    inset 1px 0 0 rgba(122, 215, 245, .10),
+    inset 0 -1px 0 rgba(122, 215, 245, .10);
+  --login-glass-blur: 14px;
+  --login-glyph-edge: rgba(122, 215, 245, .22);
+  position: relative; isolation: isolate;
+  display: flex; flex-direction: column;
+  min-height: 100dvh; gap: 28px;
+  padding: 24px clamp(20px, 4.4vw, 72px);
+  color: var(--smart-text);
+  background: var(--smart-bg);
+}
+/* 亮色启佑：浅蓝星天 + 白玻璃 */
+:global([data-theme='light']) .login-shell {
+  --smart-bg: #EAF3FA;
+  --smart-surface: #FFFFFF;
+  --smart-primary: #1A6E9A;
+  --smart-primary-strong: #0E4F7A;
+  --smart-text: #0C2535;
+  --smart-muted: #46687A;
+  --smart-border: rgba(14, 79, 122, .18);
+  --smart-border-strong: rgba(14, 79, 122, .30);
+  --smart-surface-raised: #F2F8FC;
+  --smart-effect-primary: #1A7F37;
+  --smart-effect-strong: #0E4F7A;
+  --smart-effect-muted: #46687A;
+  --smart-effect-star: #2B8AB0;
+  --login-glass-bg: rgba(255, 255, 255, .78);
+  --login-glass-edge: rgba(14, 79, 122, .24);
+  --login-glass-highlight: rgba(255, 255, 255, .90);
+  --login-glass-luster: rgba(14, 79, 122, .12);
+  --login-glass-shadow:
+    0 24px 60px rgba(14, 79, 122, .10),
+    inset 0 1px 0 rgba(255, 255, 255, .98),
+    inset 1px 0 0 rgba(255, 255, 255, .70),
+    inset 0 -1px 0 rgba(14, 79, 122, .10);
+  --login-glyph-edge: rgba(14, 79, 122, .18);
+}
 .login-shell > .login-ambient { opacity: .42; pointer-events: none; }
 .login-shell > .login-meteors { opacity: .3; pointer-events: none; }
 .login-topbar, .login-layout, .login-page-footer { position: relative; z-index: 1; width: min(100%, 1240px); margin-inline: auto; }
 .login-topbar { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .login-brand { display: flex; align-items: center; gap: 12px; }
-.login-brand__mark { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--smart-border-strong); border-radius: 12px; color: var(--smart-primary-strong); background: var(--smart-surface); font-size: 20px; }
+.login-brand__mark { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--smart-border-strong); border-radius: 50%; color: var(--smart-primary-strong); background: var(--smart-surface); }
+.login-brand__mark--star { box-shadow: 0 0 0 3px var(--smart-primary-soft); }
 .login-brand > div { display: grid; gap: 5px; }
 .login-brand strong { font-size: 17px; font-weight: 600; }
 .login-brand > div > span { font: 9px var(--font-mono); letter-spacing: .1em; color: var(--smart-muted); }
@@ -343,12 +409,35 @@ async function finishLogin(user) {
 .login-copy h1 { margin: 0; font: 500 clamp(36px, 3.7vw, 56px)/1.22 var(--font-cn); letter-spacing: -.025em; text-shadow: none; }
 .login-copy h1 span { color: var(--smart-primary-strong); }
 .login-copy__description { margin: 20px 0 0; max-width: 440px; color: var(--smart-muted); font-size: 15px; line-height: 1.8; }
-.login-organisms { position: relative; isolation: isolate; width: 100%; height: clamp(290px, 35vh, 350px); margin-top: 24px; pointer-events: none; }
-.login-organisms::before { content: ''; position: absolute; inset: 10% 0 2%; border-radius: 50%; background: radial-gradient(ellipse at 60% 42%, var(--smart-primary-soft), transparent 65%); }
-.login-organisms :deep(.canvas-whale) { position: absolute; top: 5%; left: 0; right: auto; width: 51%; height: 55%; transform: none; opacity: .32; pointer-events: none; }
-.login-organisms .login-jellyfish { position: absolute; z-index: 1; top: 8%; right: 7%; width: min(64%, 360px); height: 88%; opacity: .95; pointer-events: none; filter: none; }
-.login-glyph { position: absolute; left: 2%; bottom: 12%; opacity: .7; font: 800 clamp(80px, 10vw, 156px)/1 var(--font-display); letter-spacing: -.07em; pointer-events: none; }
-.login-glyph span { color: transparent; background: linear-gradient(125deg, var(--login-glass-highlight), var(--login-glass-luster) 30%, var(--login-glass-highlight) 45%, transparent 68%); background-size: 220% 100%; background-clip: text; -webkit-background-clip: text; -webkit-text-stroke: 1px var(--login-glyph-edge); animation: login-glass-flow 22s ease-in-out infinite; }
+.login-organisms { position: relative; isolation: isolate; width: 100%; height: clamp(290px, 35vh, 350px); margin-top: 24px; pointer-events: none; overflow: hidden; border-radius: 16px; }
+/* 启佑星云背景：深青径向渐变 */
+.login-organisms--spark::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(ellipse at 70% 55%, rgba(43, 168, 200, .18) 0%, rgba(63, 185, 80, .08) 40%, transparent 70%); }
+/* 启佑星尘粒子：背景层（60 颗） */
+.login-stars-bg { position: absolute; inset: 0; border-radius: inherit; background-image:
+  radial-gradient(1px 1px at 12% 18%, rgba(184, 238, 255, .55), transparent 50%),
+  radial-gradient(1px 1px at 34% 72%, rgba(122, 215, 245, .45), transparent 50%),
+  radial-gradient(1px 1px at 56% 26%, rgba(184, 238, 255, .48), transparent 50%),
+  radial-gradient(1px 1px at 78% 58%, rgba(122, 215, 245, .52), transparent 50%),
+  radial-gradient(1px 1px at 88% 16%, rgba(184, 238, 255, .42), transparent 50%),
+  radial-gradient(1px 1px at 22% 88%, rgba(63, 185, 80, .38), transparent 50%),
+  radial-gradient(1.5px 1.5px at 68% 82%, rgba(184, 238, 255, .60), transparent 50%),
+  radial-gradient(1px 1px at 44% 42%, rgba(122, 215, 245, .40), transparent 50%);
+  background-size: 100% 100%;
+  animation: login-stars-twinkle 6s ease-in-out infinite alternate;
+}
+/* 启佑星尘：前景层（稍亮，位置微偏移） */
+.login-stars-front { position: absolute; inset: 0; border-radius: inherit; background-image:
+  radial-gradient(1.2px 1.2px at 18% 42%, rgba(255, 255, 255, .70), transparent 50%),
+  radial-gradient(1px 1px at 48% 66%, rgba(184, 238, 255, .55), transparent 50%),
+  radial-gradient(1.4px 1.4px at 72% 30%, rgba(255, 255, 255, .60), transparent 50%),
+  radial-gradient(1px 1px at 92% 78%, rgba(122, 215, 245, .50), transparent 50%),
+  radial-gradient(1.1px 1.1px at 6% 64%, rgba(184, 238, 255, .48), transparent 50%);
+  animation: login-stars-twinkle 4.5s ease-in-out infinite alternate-reverse;
+}
+@keyframes login-stars-twinkle {
+  from { opacity: .6; }
+  to { opacity: 1; }
+}
 .login-scene-label { position: absolute; bottom: 0; left: 0; font: 10px var(--font-mono); color: var(--smart-muted); letter-spacing: .12em; }
 .login-trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0 0; padding-top: 18px; border-top: 1px solid var(--smart-border); }
 .login-trust > div { display: grid; gap: 6px; }
@@ -400,10 +489,6 @@ async function finishLogin(user) {
 .login-form :is(button, input):focus-visible, .login-appearance select:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 3px; }
 .login-form .login-input-shell input:focus-visible { outline: none; }
 .login-page-footer { display: flex; justify-content: space-between; gap: 16px; color: var(--smart-muted); font: 10px var(--font-mono); letter-spacing: .06em; }
-:global([data-theme='light'] .login-shell) { --login-glass-bg: rgba(255, 255, 255, .74); --login-glass-edge: rgba(80, 125, 146, .27); --login-glass-highlight: rgba(255, 255, 255, .8); --login-glass-luster: rgba(145, 201, 218, .18); --login-glass-shadow: 0 20px 56px rgba(16, 53, 70, .09), inset 0 1px 0 rgba(255, 255, 255, .98), inset 1px 0 0 rgba(255, 255, 255, .72), inset 0 -1px 0 rgba(80, 125, 146, .12); --login-glyph-edge: rgba(80, 125, 146, .2); }
-:global([data-theme='light'] .login-organisms .login-jellyfish) { opacity: .92; }
-:global([data-theme='light'] .login-glyph) { opacity: .55; }
-@keyframes login-glass-flow { 0%, 100% { background-position: 100% 50%; } 50% { background-position: 0% 50%; } }
 @keyframes login-spin { to { transform: rotate(360deg); } }
 @media (max-width: 1100px) {
   .login-shell { gap: 24px; }
@@ -411,9 +496,8 @@ async function finishLogin(user) {
   .login-showcase { display: grid; grid-template-columns: minmax(0, 1fr) 170px; align-items: center; gap: 12px; }
   .login-copy .editorial-label { margin-bottom: 12px; font-size: 10px; }
   .login-copy h1 { font-size: 30px; }
-  .login-copy__description, .login-trust, .login-scene-label, .login-glyph, .login-organisms :deep(.canvas-whale) { display: none; }
+  .login-copy__description, .login-trust, .login-scene-label { display: none; }
   .login-organisms { width: 100%; height: 170px; margin: 0; }
-  .login-organisms .login-jellyfish { top: 8%; right: 5%; width: 90%; height: 84%; }
   .login-form { width: min(100%, 480px); margin-inline: auto; }
   .login-page-footer { margin-top: auto; }
 }
@@ -435,14 +519,13 @@ async function finishLogin(user) {
   .login-page-footer { font-size: 9px; flex-wrap: wrap; }
 }
 .login-shell[data-visual-mode='lightweight'], .login-shell[data-visual-mode='reduced-motion'] { --login-glass-blur: 6px; }
-.login-shell:not([data-visual-mode='balanced']) .login-form::after,
-.login-shell:not([data-visual-mode='balanced']) .login-glyph span { animation: none; }
-@media (pointer: coarse) { .login-form::after, .login-glyph span { animation: none; } }
-@media (prefers-reduced-motion: reduce) { .login-submit__spinner, .login-form::after, .login-glyph span { animation: none; } .login-form, .login-submit { transition: none; } }
+.login-shell:not([data-visual-mode='balanced']) .login-form::after { animation: none; }
+@media (pointer: coarse) { .login-form::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .login-submit__spinner, .login-form::after { animation: none; } .login-form, .login-submit { transition: none; } }
 .login-shell[data-visual-mode='reduced-motion'] .login-submit__spinner { animation: none; }
-/* P1 简约化：画面只保留「一句价值主张 + 宇宙星空 + 一个果冻卡」。
-   装饰性元素只做视觉隐藏、不删 DOM，避免破坏既有的布局/几何回归契约。 */
-.login-glyph, .login-scene-label { display: none; }
+/* 启佑简化：星尘粒子在 reduced-motion 下关闭闪烁 */
+@media (prefers-reduced-motion: reduce) { .login-stars-bg, .login-stars-front { animation: none; } }
+.login-scene-label { display: none; }
 .login-trust { grid-template-columns: 1fr; gap: 8px; margin-top: 18px; padding-top: 14px; }
 .login-trust > div:not(:first-child) { display: none; }
 .login-trust > div { display: flex; align-items: baseline; gap: 10px; }

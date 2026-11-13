@@ -143,8 +143,9 @@ test('non-home surfaces use Canvas fallbacks and keep Three.js on the dashboard'
   assert.match(mainLayout, /route.name === 'Dashboard' && !isLightweightVisualMode.value/)
   assert.equal(login.includes("import('../../components/common/ParticleWhale.vue')"), false)
   assert.equal(login.includes("import('../../components/ui/milky-way.vue')"), false)
-  assert.match(login, /CanvasParticleWhale/)
+  assert.equal(login.includes("CanvasParticleWhale"), false)
   assert.match(login, /CanvasAmbientField/)
+  assert.match(login, /palette-root/)
   for (const content of [canvasWhale, ambientField]) {
     assert.equal(content.includes("from 'three'"), false)
     assert.match(content, /readCanvasPalette/)
