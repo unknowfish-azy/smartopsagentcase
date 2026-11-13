@@ -74,15 +74,16 @@
             <span>步骤 {{ output.sequenceNo }}</span>
             <b :class="`exit-${outputState(output.exitCode)}`">Exit {{ output.exitCode ?? '未知' }}</b>
           </div>
-          <pre class="command"><code>{{ output.command }}</code></pre>
+          <!-- axe scrollable-region-focusable：带 overflow:auto 的区域必须可键盘聚焦 -->
+          <pre class="command" tabindex="0" role="region" :aria-label="`步骤 ${output.sequenceNo} 命令`"><code>{{ output.command }}</code></pre>
           <div class="outputs">
             <div>
               <h4>标准输出 stdout <em v-if="output.truncated" class="truncated">已截断</em></h4>
-              <pre :class="{ empty: !visibleOutput(output.stdout) }">{{ visibleOutput(output.stdout) || '无标准输出' }}</pre>
+              <pre tabindex="0" role="region" :aria-label="`步骤 ${output.sequenceNo} 标准输出`" :class="{ empty: !visibleOutput(output.stdout) }">{{ visibleOutput(output.stdout) || '无标准输出' }}</pre>
             </div>
             <div>
               <h4>错误输出 stderr <em v-if="output.truncated" class="truncated">已截断</em></h4>
-              <pre :class="{ empty: !visibleOutput(output.stderr) }">{{ visibleOutput(output.stderr) || '无错误输出' }}</pre>
+              <pre tabindex="0" role="region" :aria-label="`步骤 ${output.sequenceNo} 错误输出`" :class="{ empty: !visibleOutput(output.stderr) }">{{ visibleOutput(output.stderr) || '无错误输出' }}</pre>
             </div>
           </div>
         </article>

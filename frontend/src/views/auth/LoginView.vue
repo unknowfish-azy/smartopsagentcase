@@ -376,6 +376,10 @@ async function finishLogin(user) {
   --login-glass-blur: 14px;
   --login-glyph-edge: rgba(122, 215, 245, .22);
   position: relative; isolation: isolate;
+  /* 启佑极光层 .login-aurora 以 inset:-10% 外扩做漂移，若不裁剪会把
+     documentElement.scrollWidth 撑大 20%（login-layout 契约实测 1440→1584）。
+     overflow-x:clip 只裁剪、不创建滚动容器，不影响 sticky 与原生 select 弹层。 */
+  overflow-x: clip;
   display: flex; flex-direction: column;
   min-height: 100dvh; gap: 28px;
   padding: 24px clamp(20px, 4.4vw, 72px);
