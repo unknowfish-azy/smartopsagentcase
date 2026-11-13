@@ -138,7 +138,7 @@
   <table>
     <tr><th>目标</th><th>落地方式</th></tr>
     <tr><td>AI 技术深度</td><td>Agent 五模块；混合检索 + 证据验证 + 可信度评分；SSE 流式与思考阶段事件</td></tr>
-    <tr><td>前端工程质量</td><td>Vue 3 + Vite 7；共享逻辑层 TS；构建分包；494 项前端测试 + 类型检查 + 双入口构建门禁</td></tr>
+    <tr><td>前端工程质量</td><td>Vue 3 + Vite 7；共享逻辑层 TS；构建分包；503 项前端测试 + 类型检查 + 双入口构建门禁（2026-11-13 实测）</td></tr>
     <tr><td>可运行性</td><td>默认 mock 模型零密钥跑通；一键切换 Ollama / OpenAI 兼容模型</td></tr>
     <tr><td>安全可信</td><td>BCrypt(12)、人机校验、CSRF、MFA、风险策略引擎、人工审批、审计留痕</td></tr>
     <tr><td>可扩展性</td><td>插件化工具（Docker/Kubernetes/MySQL/Nginx/Redis）、MCP 适配器、多会话存储后端</td></tr>
@@ -309,13 +309,25 @@
 
   <h3>6.1 测试策略</h3>
   <ul>
-    <li><b>前端质量门禁</b>：494 项前端测试覆盖契约、安全不变量与领域逻辑；<code>tsc --noEmit</code> 类型检查纳入门禁；双入口（用户层/管理层）构建门禁保证同源。</li>
+    <li><b>前端质量门禁</b>：503 项前端测试覆盖契约、安全不变量与领域逻辑（2026-11-13 实测，T11 前端门禁）；<code>tsc --noEmit</code> 类型检查纳入门禁；双入口（用户层/管理层）构建门禁保证同源。</li>
     <li><b>分层测试</b>：单元测试、集成测试、E2E 测试覆盖 Agent 与 API；<code>pytest.ini</code> 统一编排。</li>
     <li><b>算法评测</b>：<code>docs/experiments/</code> 提供评测计划、消融实验、检索评测、可信度评测，配合 OpsBench 样例数据集进行回归。</li>
     <li><b>可信度验证</b>：对检索召回、证据命中、<code>trust_score</code> 分布做量化评估，确保"可解释"可被度量。</li>
   </ul>
 
-  <h3>6.2 部署架构</h3>
+  <h3>6.2 AI 评测数据现状（诚实声明）</h3>
+  <p>以下数据全部来自 <code>docs/competition/fact-sheet.md</code>，标注 <b>MEASURED</b>（实测）、<b>DRAFT</b>（小样本/仅验证链路）、<b>NOT_RUN</b>（未执行）。所有评测脚本 fixture 冻结、SHA256 绑定、不可篡改。</p>
+  <table>
+    <tr><th>指标</th><th>值</th><th>n</th><th>状态</th><th>口径说明</th></tr>
+    <tr><td>假成功检测 F1</td><td><b>开发集 1.0 / 留出集 0.48</b></td><td>47 / 20</td><td>MEASURED</td><td><b>必须同时报</b>，仅报开发集属于选择性呈现。开发集词表过拟合，留出集 F1=0.48 为真实泛化；留出集 10 条漏检全部落在"无法判定"（检测器老实承认看不懂），静默放过 0</td></tr>
+    <tr><td>风险分级准确率</td><td><b>0.76</b></td><td>21</td><td>MEASURED</td><td>工具级风险声明一致性；3 个 approval_required 被低估，论证保留人工审批闸的必要性</td></tr>
+    <tr><td>首 token 时延 P50 / P95</td><td><b>3590ms / 4523ms</b></td><td>20</td><td>MEASURED</td><td>Ollama qwen3:1.7b，本机 CPU；不是云端实测，环境声明</td></tr>
+    <tr><td>检索 Recall@3 / MRR</td><td><b>0.50 / 0.43</b></td><td>14</td><td><b>DRAFT</b></td><td>14 条原始问法，仅验证链路；真实留出集 Recall@3=0.57（C-R8）</td></tr>
+    <tr><td>M05 真人盲评</td><td>—</td><td>—</td><td><b>NOT_RUN</b></td><td>3 名真人评者未到位，作为国赛补充证据</td></tr>
+  </table>
+  <div class="note">红线：禁止只报开发集 F1=1.0（选择性呈现）；禁止报"AI 识别指令风险"（按 F10 工具级声明口径）。评测脚本与 fixture 见 <code>scripts/eval_*.py</code>，冻结评测用例见 <code>tests/fixtures/defense/</code>。</div>
+
+  <h3>6.3 部署架构</h3>
   <ul>
     <li><b>容器化</b>：<code>deploy/</code> 提供 docker-compose、MySQL 初始化 SQL，一键拉起多服务。</li>
     <li><b>存储</b>：MySQL 8（业务与审计，119 张表）+ Redis 7（会话/限流）。</li>
@@ -323,7 +335,7 @@
     <li><b>跨平台</b>：Windows 提供 <code>scripts/windows/*.ps1</code>，Linux/macOS 提供等效 shell 脚本；<code>.env.example</code> 模板化所有密钥，密钥一律留空不入库。</li>
   </ul>
 
-  <h3>6.3 运行与可复现</h3>
+  <h3>6.4 运行与可复现</h3>
   <div class="note">默认 <code>LLM_PROVIDER=mock</code>，无需任何模型密钥即可完整跑通"提问 → 检索 → 规划 → 审批 → 执行 → 核查 → 审计"全链路；评委与用户可零配置复现，企业落地时再切到 Ollama / OpenAI 兼容模型。</div>
   <p>启动顺序：AI 服务（:8001）→ 知识服务（:8002）→ 后端（:8080，Spring Boot）→ 前端（:5173 用户层 / :5174 管理员层）。首次管理员由 <code>SMARTOPS_BOOTSTRAP_USERNAME/PASSWORD</code> 引导创建（仅账户表为空时生效）。</p>
 </section>
