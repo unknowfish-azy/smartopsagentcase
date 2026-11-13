@@ -9,6 +9,12 @@ import { observeCanvasTheme, readCanvasPalette } from './canvasTheme.js'
 import { visualMode } from '../../visual/visualMode.js'
 import { subscribe } from '../../visual/motionScheduler.js'
 
+defineProps({
+  /** 从哪个 DOM 元素读 Canvas 色板变量；默认 document.documentElement。
+   *  允许登录页注入启佑风格的局部 --smart-* 令牌而不影响控制台。 */
+  paletteRoot: { type: Object, default: null }
+})
+
 const canvas = ref(null)
 let dispose = () => {}
 
@@ -24,7 +30,8 @@ onMounted(() => {
     size: .5 + Math.abs(Math.sin(index * 4.17)) * 1.6,
     phase: index * .83
   }))
-  let palette = readCanvasPalette()
+  const root = paletteRoot.value || document.documentElement
+  let palette = readCanvasPalette(root)
   let width = 1
   let height = 1
   let pixelRatio = 1
@@ -77,8 +84,13 @@ onMounted(() => {
   }
   const onTheme = nextPalette => { palette = nextPalette; draw() }
   const onVisibility = () => { visible = !document.hidden; syncMotion() }
-  const stopTheme = observeCanvasTheme(onTheme)
+  const stopTheme = observeCanvasTheme(onTheme, root)
   const stopMode = watch(visualMode, syncMotion)
+  // paletteRoot 变化时（如登录页从启佑风格切回默认）手动重读色板
+  const stopRoot = watch(paletteRoot, nextRoot => {
+    palette = readCanvasPalette(nextRoot || document.documentElement)
+    draw()
+  })
 
   resize()
   syncMotion()
@@ -89,6 +101,7 @@ onMounted(() => {
     unsubscribeLoop()
     stopTheme()
     stopMode()
+    stopRoot?.()
     window.removeEventListener('resize', resize)
     document.removeEventListener('visibilitychange', onVisibility)
     reducedQuery.removeEventListener?.('change', syncMotion)

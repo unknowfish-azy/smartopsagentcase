@@ -5,9 +5,8 @@ import test from 'node:test'
 const source = await readFile(new URL('../src/views/auth/LoginView.vue', import.meta.url), 'utf8')
 
 test('login view separates its decorative showcase from the accessible auth form', () => {
-  assert.match(source, /class="login-glyph"/)
+  assert.match(source, /class="[^"]*login-organisms/)
   assert.match(source, /class="login-showcase"/)
-  assert.match(source, /class="login-organisms"/)
   assert.match(source, /aria-hidden="true"/)
   assert.match(source, /class="login-form login-form--portal"/)
   assert.doesNotMatch(source, /@pointermove="moveGlyph"|top: 43vh|right: -25px/)
@@ -40,7 +39,8 @@ test('login portal switching routes to the owning service and preserves redirect
 test('login appearance reuses the application preferences without loading Three', () => {
   assert.match(source, /setThemeMode/)
   assert.match(source, /setVisualMode/)
-  assert.match(source, /:motion-mode="visualMode"/)
+  assert.match(source, /:data-visual-mode="visualMode"/)
+  assert.match(source, /palette-root="loginShellRef"/)
   assert.doesNotMatch(source, /from ['"]three|import\(['"].*milky-way/)
 })
 
