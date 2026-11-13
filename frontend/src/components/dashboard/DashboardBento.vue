@@ -1,160 +1,306 @@
 <template>
   <section class="bento-dashboard" aria-label="工作仪表盘">
-    <!-- AI 情境简报层（T21，§3.5 差异化招牌） -->
-    <header class="bento-briefing" v-if="briefing">
-      <div class="briefing-avatar" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2a5 5 0 0 0-5 5v4H5a1 1 0 0 0 0 2h2v2a5 5 0 0 0 10 0v-2h2a1 1 0 1 0 0-2h-2V7a5 5 0 0 0-5-5Z"/><circle cx="10" cy="7" r=".8" fill="currentColor"/><circle cx="14" cy="7" r=".8" fill="currentColor"/></svg>
+    <!-- 加载骨架：只占位不造数 -->
+    <template v-if="loading">
+      <div class="bento-briefing ops-card">
+        <span class="ui-skeleton ui-skeleton--title" />
+        <span class="ui-skeleton ui-skeleton--text" style="width: 72%" />
       </div>
-      <div class="briefing-content">
-        <span class="briefing-label">Agent 巡检简报 · {{ briefing.generatedAt }}</span>
-        <p class="briefing-text">{{ briefing.summary }}</p>
+      <div class="bento-kpi">
+        <article v-for="n in 4" :key="n" class="ops-card">
+          <span class="ui-skeleton ui-skeleton--text" style="width: 42%" />
+          <span class="ui-skeleton" style="height: 34px; margin-top: 12px" />
+          <span class="ui-skeleton ui-skeleton--text" style="width: 64%" />
+        </article>
       </div>
-    </header>
+      <div class="bento-main">
+        <article class="ops-card bento-alerts"><span class="ui-skeleton ui-skeleton--block" /></article>
+        <article class="ops-card bento-actions"><span class="ui-skeleton ui-skeleton--block" /></article>
+      </div>
+    </template>
 
-    <!-- KPI 带（4 张，12 栅格 = 3+3+3+3） -->
-    <div class="bento-kpi">
-      <article v-for="kpi in kpis" :key="kpi.key" class="kpi-card" :class="`kpi-card--${kpi.tone}`">
-        <header class="kpi-head">
-          <span class="kpi-label">{{ kpi.label }}</span>
-          <span class="kpi-pill" v-if="kpi.pill" :class="`kpi-pill--${kpi.tone}`">{{ kpi.pill }}</span>
-        </header>
-        <strong class="kpi-value">{{ kpi.value }}</strong>
-        <small class="kpi-sub">{{ kpi.sub }}</small>
-      </article>
-    </div>
+    <template v-else>
+      <!-- AI 情境简报：只基于真实巡检摘要与最近事件 -->
+      <header class="bento-briefing ops-card">
+        <div class="briefing-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2a5 5 0 0 0-5 5v4H5a1 1 0 0 0 0 2h2v2a5 5 0 0 0 10 0v-2h2a1 1 0 1 0 0-2h-2V7a5 5 0 0 0-5-5Z" /><circle cx="10" cy="7" r=".8" fill="currentColor" /><circle cx="14" cy="7" r=".8" fill="currentColor" /></svg>
+        </div>
+        <div class="briefing-content">
+          <span class="briefing-label">Agent 巡检简报 · {{ briefingTime }}</span>
+          <p class="briefing-text">{{ briefingText }}</p>
+        </div>
+      </header>
 
-    <!-- 态势 + 活动（左右 6/6） -->
-    <div class="bento-main">
-      <article class="bento-card bento-status">
-        <header class="bento-card-head">
-          <h3>系统态势</h3>
-          <span class="bento-card-eyebrow">SYSTEM · STATUS</span>
-        </header>
-        <ul class="status-list">
-          <li v-for="item in statuses" :key="item.key" class="status-row">
-            <span class="status-dot" :class="`status-dot--${item.state}`" aria-hidden="true"></span>
-            <span class="status-name">{{ item.name }}</span>
-            <span class="status-value">{{ item.value }}</span>
-          </li>
-        </ul>
-      </article>
+      <!-- KPI 带（态势总览）：服务器 / 活跃告警 / 知识库 / Agent 巡检 -->
+      <div class="bento-kpi bento-status">
+        <article v-for="kpi in kpis" :key="kpi.key" class="ops-card ops-card--interactive kpi-card">
+          <header class="kpi-head">
+            <span class="u-overline">{{ kpi.label }}</span>
+            <span class="ui-tag ui-tag--sm" :class="`ui-tag--${kpi.tone}`">{{ kpi.pill }}</span>
+          </header>
+          <strong class="ops-kpi__value u-num">{{ kpi.value }}</strong>
+          <small class="u-caption">{{ kpi.sub }}</small>
+        </article>
+      </div>
 
-      <article class="bento-card bento-activity">
-        <header class="bento-card-head">
-          <h3>近期活动</h3>
-          <span class="bento-card-eyebrow">RECENT · ACTIVITY</span>
-        </header>
-        <ol class="activity-list">
-          <li v-for="(item, idx) in activities" :key="idx" class="activity-row">
-            <time class="activity-time">{{ item.time }}</time>
-            <span class="activity-type" :class="`activity-type--${item.type}`">{{ item.typeLabel }}</span>
-            <span class="activity-text">{{ item.text }}</span>
-          </li>
-        </ol>
-      </article>
-    </div>
+      <div class="bento-main">
+        <!-- 告警流（活动流） -->
+        <article class="ops-card bento-alerts bento-activity">
+          <header class="ops-card__head">
+            <div class="ops-card__titles">
+              <span class="u-overline">ALERT STREAM</span>
+              <h3 class="u-section">活跃告警</h3>
+            </div>
+            <RouterLink class="bento-more" to="/sentinel/alerts">打开告警中心 →</RouterLink>
+          </header>
+          <p v-if="sentinelNote" class="bento-note">{{ sentinelNote }}</p>
+          <p v-else-if="activeAlerts.length === 0" class="bento-note">当前没有待处理告警，最近一次巡检结果见右侧图表。</p>
+          <ol v-else class="alert-stream">
+            <li v-for="alert in activeAlerts.slice(0, 5)" :key="alert.id" class="alert-row">
+              <span class="ui-tag ui-tag--sm" :class="`ui-tag--${severityTone(alert.severity)}`">{{ alert.severity || 'P3' }}</span>
+              <div class="alert-body">
+                <strong>{{ alert.title || '未命名告警' }}</strong>
+                <span class="u-caption">{{ alert.metric || '指标' }} = {{ alert.observedValue ?? '—' }}（阈值 {{ alert.thresholdValue ?? '—' }}）</span>
+              </div>
+              <span class="ui-tag ui-tag--sm ui-tag--neutral">{{ statusLabel(alert.status) }}</span>
+              <time class="alert-time u-caption">{{ alert.firedAt || '—' }}</time>
+            </li>
+          </ol>
+        </article>
 
-    <!-- 知识 / Agent 双列（3/3 紧凑） -->
-    <div class="bento-compact">
-      <article class="bento-card bento-mini">
-        <header class="bento-card-head">
-          <h3>知识条目</h3>
-        </header>
-        <strong class="bento-mini-value">18</strong>
-        <small class="bento-mini-sub">已入库 · 3 待完善</small>
-      </article>
-      <article class="bento-card bento-mini">
-        <header class="bento-card-head">
-          <h3>Agent 运行</h3>
-        </header>
-        <strong class="bento-mini-value">3</strong>
-        <small class="bento-mini-sub">今日 · 全部成功</small>
-      </article>
-    </div>
+        <!-- 快捷入口 -->
+        <article class="ops-card bento-actions">
+          <header class="ops-card__head">
+            <div class="ops-card__titles">
+              <span class="u-overline">SHORTCUTS</span>
+              <h3 class="u-section">常用入口</h3>
+            </div>
+          </header>
+          <div class="quick-grid">
+            <RouterLink v-for="link in quickLinks" :key="link.to" class="quick-link" :to="link.to">
+              <strong>{{ link.label }}</strong>
+              <span class="u-caption">{{ link.desc }}</span>
+            </RouterLink>
+          </div>
+        </article>
+      </div>
+
+      <!-- 图表：巡检结果分布 + 近 7 日事件 -->
+      <div class="bento-charts">
+        <article class="ops-card bento-distribution">
+          <header class="ops-card__head">
+            <div class="ops-card__titles">
+              <span class="u-overline">INSPECTOR · DISTRIBUTION</span>
+              <h3 class="u-section">巡检结果分布</h3>
+            </div>
+            <span class="u-caption">来源：/api/inspector/summary</span>
+          </header>
+          <p v-if="!summary" class="bento-note">巡检摘要不可用（未登录或后端未接入），暂无分布数据。</p>
+          <OpsChart
+            v-else
+            title="巡检结果分布"
+            type="bar"
+            :labels="distribution.labels"
+            :series="distribution.series"
+            :colors="distribution.colors"
+            unit="次"
+            :height="200"
+          />
+        </article>
+
+        <article class="ops-card bento-trend">
+          <header class="ops-card__head">
+            <div class="ops-card__titles">
+              <span class="u-overline">INSPECTOR · EVENTS</span>
+              <h3 class="u-section">近 7 日事件</h3>
+            </div>
+            <span class="u-caption">最近 {{ events.length }} 条真实事件</span>
+          </header>
+          <p v-if="events.length === 0" class="bento-note">暂无巡检事件，无法生成趋势。</p>
+          <OpsChart
+            v-else
+            title="近 7 日巡检事件"
+            type="line"
+            :labels="trend.labels"
+            :series="trend.series"
+            unit="条"
+            :height="200"
+          />
+        </article>
+      </div>
+    </template>
   </section>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { getInspectorEvents, getInspectorSummary } from '../../api/inspector'
+import { getServers } from '../../api/server'
+import { listKnowledgeLibraries } from '../../api/personalKnowledge.ts'
+import { loadSentinel, sentinelState } from '../../views/sentinel/sentinelStore.js'
+import { ALERT_STATUSES } from '../../views/sentinel/sentinelModel.js'
+import OpsChart from './OpsChart.vue'
 
-/* T21：AI 情境简报层接后端 /api/inspector（§3.5 差异化招牌）。
-   fetch 失败时 fallback 静态 mock，保证首页永不白屏。 */
-const BRIEFING_FALLBACK = {
-  generatedAt: '离线模式',
-  summary: '离线模式：连接 /api/inspector 失败，展示上次会话快照。'
-}
+/* 全部数据来自真实接口；任一来源失败即标记失败并显示「—」，绝不回填看起来像真的假数据。 */
+const ACTIVE_ALERT_STATUSES = new Set(['OPEN', 'PENDING_APPROVAL', 'REMEDIATING'])
+const SEVERITY_ORDER = { P0: 0, P1: 1, P2: 2, P3: 3 }
 
-const briefing = ref(null)
-const briefLoading = ref(true)
-const summary = ref({ total: 0, pass: 0, warning: 0, high: 0, critical: 0 })
-const recentEvents = ref([])
+const loading = ref(true)
+const failures = reactive({ servers: false, knowledge: false })
+const servers = ref([])
+const libraries = ref([])
+const summary = ref(null)
+const events = ref([])
 
-async function loadBriefing() {
-  briefLoading.value = true
-  try {
-    const [sumRes, evRes] = await Promise.all([
-      fetch('/api/inspector/summary', { credentials: 'include' }),
-      fetch('/api/inspector/events?limit=5', { credentials: 'include' })
-    ])
-    if (!sumRes.ok) throw new Error(`summary ${sumRes.status}`)
-    summary.value = (await sumRes.json())?.data || {}
-    if (evRes.ok) {
-      recentEvents.value = ((await evRes.json())?.data || []).slice(0, 5)
-    }
-    briefing.value = assembleBriefing()
-  } catch (err) {
-    briefing.value = BRIEFING_FALLBACK
-  } finally {
-    briefLoading.value = false
-  }
-}
+const quickLinks = [
+  { to: '/sentinel/alerts', label: '告警中心', desc: '研判 · 通知 · 沉淀' },
+  { to: '/health', label: '健康诊断', desc: '服务自检与故障定位' },
+  { to: '/connections', label: '连接中心', desc: '远程资产与运行通道' },
+  { to: '/chat', label: 'AI 对话', desc: '一句话发起排障' }
+]
 
-function assembleBriefing() {
-  const { total, pass = 0, warning = 0, high = 0, critical = 0 } = summary.value
-  const parts = []
-  if (total > 0) {
-    parts.push(`自上次会话以来，Inspector 累计 ${total} 次核查：${pass} 通过，${warning} 警告`)
-    if (high) parts.push(`${high} 高危`)
-    if (critical) parts.push(`${critical} 严重`)
-  }
-  const latest = recentEvents.value[0]
-  if (latest) {
-    parts.push(`最新事件：[${latest.severity || latest.status || 'INFO'}] ${(latest.reason || latest.category || '').slice(0, 60)}`)
-  }
+const num = value => Number(value ?? 0) || 0
+
+const serverStats = computed(() => {
+  if (failures.servers) return null
+  const status = item => String(item?.status || '').toUpperCase()
   return {
-    generatedAt: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-    summary: parts.join('；') || '暂无 Agent 巡检事件，一切平静。'
+    total: servers.value.length,
+    online: servers.value.filter(item => status(item) === 'ONLINE').length,
+    warning: servers.value.filter(item => status(item) === 'WARNING').length
   }
+})
+
+const activeAlerts = computed(() => {
+  if (sentinelState.status !== 'ready') return []
+  return sentinelState.alerts
+    .filter(alert => ACTIVE_ALERT_STATUSES.has(String(alert?.status || '').toUpperCase()))
+    .sort((a, b) => (SEVERITY_ORDER[a?.severity] ?? 9) - (SEVERITY_ORDER[b?.severity] ?? 9))
+})
+
+const sentinelNote = computed(() => {
+  if (sentinelState.status === 'ready') return ''
+  if (sentinelState.status === 'unauthorized') return '未登录，哨兵告警暂不可用。'
+  if (sentinelState.status === 'unavailable') return sentinelState.reason || '哨兵接口不可用。'
+  return '正在读取哨兵告警…'
+})
+
+const kpis = computed(() => {
+  const server = serverStats.value
+  const alertCount = sentinelState.status === 'ready' ? activeAlerts.value.length : null
+  const inspector = summary.value
+  const abnormal = inspector ? num(inspector.warning) + num(inspector.high) + num(inspector.critical) : 0
+  return [
+    {
+      key: 'servers',
+      label: '服务器',
+      value: server ? String(server.total) : '—',
+      sub: server ? `${server.online} 在线 · ${server.warning} 异常` : '服务器接口不可用',
+      tone: server && server.warning ? 'warning' : 'neutral',
+      pill: server && server.warning ? 'ATTENTION' : 'INVENTORY'
+    },
+    {
+      key: 'alerts',
+      label: '活跃告警',
+      value: alertCount === null ? '—' : String(alertCount),
+      sub: alertCount === null ? '哨兵数据不可用' : alertCount ? '待处理 / 待审批 / 处置中' : '当前无活跃告警',
+      tone: alertCount === null ? 'neutral' : alertCount ? 'warning' : 'success',
+      pill: alertCount === null ? 'OFFLINE' : alertCount ? 'ACTION' : 'CLEAR'
+    },
+    {
+      key: 'knowledge',
+      label: '知识库',
+      value: failures.knowledge ? '—' : String(libraries.value.length),
+      sub: failures.knowledge ? '知识接口不可用' : '个人知识库',
+      tone: 'neutral',
+      pill: 'KNOWLEDGE'
+    },
+    {
+      key: 'inspector',
+      label: 'Agent 巡检',
+      value: inspector ? String(num(inspector.total)) : '—',
+      sub: inspector ? `${num(inspector.pass)} 通过 · ${abnormal} 异常` : '巡检接口不可用',
+      tone: inspector && abnormal ? 'warning' : 'neutral',
+      pill: inspector ? 'INSPECTOR' : 'OFFLINE'
+    }
+  ]
+})
+
+const distribution = computed(() => {
+  const source = summary.value
+  return {
+    labels: ['通过', '警告', '高危', '严重'],
+    series: [{ name: '巡检结果', data: source ? [num(source.pass), num(source.warning), num(source.high), num(source.critical)] : [0, 0, 0, 0] }],
+    colors: ['--ds-chart-3', '--ds-chart-4', '--ds-chart-5', '--ds-chart-5']
+  }
+})
+
+const trend = computed(() => {
+  const days = []
+  const now = new Date()
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const day = new Date(now)
+    day.setDate(now.getDate() - offset)
+    const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+    days.push({ key, label: key.slice(5) })
+  }
+  const counts = new Map(days.map(day => [day.key, 0]))
+  events.value.forEach(event => {
+    const key = String(event?.createdAt || '').slice(0, 10)
+    if (counts.has(key)) counts.set(key, counts.get(key) + 1)
+  })
+  return {
+    labels: days.map(day => day.label),
+    series: [{ name: '事件数', data: days.map(day => counts.get(day.key)) }]
+  }
+})
+
+const briefingTime = computed(() => new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }))
+
+const briefingText = computed(() => {
+  const source = summary.value
+  if (!source) return '巡检接口不可用（未登录或后端未接入），暂无 Agent 简报。'
+  const parts = []
+  const total = num(source.total)
+  if (total > 0) {
+    parts.push(`累计 ${total} 次核查：${num(source.pass)} 通过，${num(source.warning)} 警告`)
+    if (num(source.high)) parts.push(`${num(source.high)} 高危`)
+    if (num(source.critical)) parts.push(`${num(source.critical)} 严重`)
+  }
+  const latest = events.value[0]
+  if (latest) {
+    parts.push(`最新事件：[${latest.severity || 'INFO'}] ${String(latest.reason || latest.category || latest.taskId || '').slice(0, 60)}`)
+  }
+  return parts.join('；') || '暂无巡检记录，一切平静。'
+})
+
+const severityTone = severity => {
+  const level = String(severity || '').toUpperCase()
+  return level === 'P0' || level === 'P1' ? 'danger' : level === 'P2' ? 'warning' : 'neutral'
+}
+const statusLabel = id => ALERT_STATUSES.find(item => item.id === id)?.label ?? id ?? '—'
+
+async function load() {
+  loading.value = true
+  await Promise.allSettled([
+    getServers()
+      .then(response => { servers.value = Array.isArray(response?.data) ? response.data : (response?.data?.items || []) })
+      .catch(() => { failures.servers = true }),
+    listKnowledgeLibraries()
+      .then(response => { const data = response?.data; libraries.value = Array.isArray(data) ? data : (data?.items || []) })
+      .catch(() => { failures.knowledge = true }),
+    getInspectorSummary()
+      .then(response => { summary.value = response?.data || null })
+      .catch(() => { summary.value = null }),
+    getInspectorEvents(100)
+      .then(response => { events.value = Array.isArray(response?.data) ? response.data : [] })
+      .catch(() => { events.value = [] }),
+    loadSentinel()
+  ])
+  loading.value = false
 }
 
-onMounted(loadBriefing)
-
-/* 其余 KPI / 态势 / 活动静态占位，T22 逐页迁移时再接对应 API */
-
-const kpis = [
-  { key: 'servers', label: '服务器', value: '4', sub: '2 在线 · 1 维护中', tone: 'neutral', pill: 'READY' },
-  { key: 'alerts', label: '活跃告警', value: '1', sub: '磁盘使用率 89%', tone: 'warning', pill: 'ATTENTION' },
-  { key: 'knowledge', label: '知识条目', value: '18', sub: 'BM25 + 向量双路', tone: 'neutral' },
-  { key: 'agent', label: 'Agent 运行', value: '3', sub: '今日 · 全部成功', tone: 'success' }
-]
-
-const statuses = [
-  { key: 'backend', name: '后端', state: 'healthy', value: ':8080 /actuator/health OK' },
-  { key: 'ai', name: 'AI 服务', state: 'healthy', value: 'Ollama qwen3:1.7b 本地' },
-  { key: 'knowledge', name: '知识服务', state: 'healthy', value: ':8002 ready' },
-  { key: 'redis', name: 'Redis', state: 'healthy', value: ':6379 连接数 3' },
-  { key: 'mysql', name: 'MySQL', state: 'healthy', value: ':3306 连接正常' },
-  { key: 'disk', name: '磁盘告警', state: 'warning', value: '/var 分区 89%' }
-]
-
-const activities = [
-  { time: '14:32', type: 'agent', typeLabel: 'Agent', text: 'Agent 巡检完成，判定 1 条磁盘告警' },
-  { time: '14:18', type: 'chat', typeLabel: '对话', text: '询问 MySQL 连接数排查方案' },
-  { time: '13:55', type: 'knowledge', typeLabel: '知识', text: '新增 Ubuntu 22.04 Nginx 安装条目' },
-  { time: '13:40', type: 'run', typeLabel: '执行', text: '执行磁盘清理脚本，成功释放 2.1GB' },
-  { time: '12:05', type: 'approval', typeLabel: '审批', text: '批准重启 Nginx（Agent 申请）' },
-  { time: '11:22', type: 'chat', typeLabel: '对话', text: '附一张 502 截图，AI 给出重启建议' }
-]
+onMounted(load)
 </script>
 
 <style scoped>
@@ -162,144 +308,69 @@ const activities = [
   display: grid;
   gap: var(--ds-grid-gutter, 24px);
   padding: var(--ds-space-6, 24px);
-  background: var(--ds-surface-base, var(--ds-color-canvas));
+  background: var(--ds-surface-base);
   min-height: calc(100dvh - 112px);
   grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: minmax(var(--ds-row-min, 180px), auto);
+  align-content: start;
 }
 
-/* AI 简报层（跨全宽） */
-.bento-briefing {
-  grid-column: 1 / -1;
-  display: flex; gap: 14px; align-items: flex-start;
-  padding: var(--ds-space-4, 16px) var(--ds-space-5, 20px);
-  background: var(--ds-surface-overlay);
-  border: 1px solid var(--ds-hairline, rgba(255,255,255,.06));
-  border-radius: var(--ds-radius-md, 8px);
-  box-shadow: var(--ds-elevation-1);
-  transition: border-color var(--ds-duration-micro) var(--ds-ease-out);
-}
-.bento-briefing:hover { border-color: color-mix(in srgb, var(--ds-color-primary, #2496ed) 40%, var(--ds-hairline, transparent)); }
+.bento-briefing { grid-column: 1 / -1; flex-direction: row; align-items: flex-start; gap: 14px; }
 .briefing-avatar {
   flex-shrink: 0; width: 32px; height: 32px; display: grid; place-content: center;
-  color: var(--ds-color-primary, #2496ed);
-  background: var(--ds-pill-info-bg, rgba(88,166,255,.14));
+  color: var(--ds-color-primary);
+  background: var(--ds-pill-info-bg);
   border-radius: 8px;
 }
 .briefing-content { min-width: 0; }
-.briefing-label {
-  display: block; font: 10px var(--ds-font-mono, ui-monospace, monospace);
-  color: var(--ds-color-muted, #92a6b5); letter-spacing: .1em;
-}
-.briefing-text {
-  margin: var(--ds-space-1, 4px) 0 0; font-size: var(--ds-type-body-caption-size, 13px);
-  line-height: var(--ds-line-height-base, 1.5); color: var(--ds-color-text, #e8f2f7);
-}
+.briefing-label { display: block; font: 10px var(--ds-font-mono); color: var(--ds-color-muted); letter-spacing: .1em; }
+.briefing-text { margin: 4px 0 0; font-size: var(--ds-type-body-caption-size); line-height: var(--ds-line-height-base); color: var(--ds-color-text); }
 
-/* KPI 带（每卡 3 栅格，4 卡 = 12） */
-.bento-kpi { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--ds-grid-gutter, 24px); }
-.kpi-card {
-  grid-column: span 3;
-  padding: var(--ds-space-5, 20px);
-  background: var(--ds-surface-raised);
-  border: 1px solid var(--ds-hairline, rgba(255,255,255,.06));
-  border-radius: var(--ds-radius-md, 8px);
-  box-shadow: var(--ds-elevation-1);
-  transition: box-shadow var(--ds-duration-micro) var(--ds-ease-out), transform var(--ds-duration-micro) var(--ds-ease-out);
-}
-.kpi-card:hover { box-shadow: var(--ds-elevation-2); transform: translateY(-1px); }
-.kpi-head { display: flex; justify-content: space-between; align-items: center; }
-.kpi-label {
-  font: var(--ds-type-overline-weight, 600) var(--ds-type-overline-size, 11px) var(--ds-font-cn);
-  letter-spacing: .08em; color: var(--ds-color-muted, #92a6b5);
-}
-.kpi-value {
-  display: block; margin-top: var(--ds-space-2, 8px);
-  font-weight: var(--ds-type-display-weight, 300);
-  font-size: var(--ds-type-display-size, 36px);
-  font-variant-numeric: var(--ds-type-num, tabular-nums);
-  color: var(--ds-color-text, #e8f2f7);
-  line-height: 1;
-}
-.kpi-sub { display: block; margin-top: var(--ds-space-2, 8px); font-size: var(--ds-type-caption-size, 12px); color: var(--ds-color-muted, #92a6b5); }
-.kpi-pill {
-  font: 10px var(--ds-font-mono, monospace); letter-spacing: .1em; padding: 3px 8px;
-  border-radius: var(--ds-radius-pill, 999px); background: var(--ds-pill-info-bg, rgba(88,166,255,.14));
-}
-.kpi-pill--warning { background: var(--ds-pill-warning-bg, rgba(210,153,34,.18)); color: var(--ds-semantic-warning, #d29922); }
-.kpi-pill--success { background: var(--ds-pill-success-bg, rgba(63,185,80,.15)); color: var(--ds-semantic-success, #3fb950); }
-.kpi-pill--neutral { background: var(--ds-pill-info-bg, rgba(88,166,255,.14)); color: var(--ds-color-primary, #2496ed); }
+.bento-kpi, .bento-main, .bento-charts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--ds-grid-gutter, 24px); }
+.kpi-card { grid-column: span 3; gap: 8px; }
+.kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kpi-card .ops-kpi__value { color: var(--ds-color-text); }
 
-/* 主区（态势 + 活动 6/6） */
-.bento-main { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--ds-grid-gutter, 24px); }
-.bento-card {
-  padding: var(--ds-space-5, 20px);
-  background: var(--ds-surface-raised);
-  border: 1px solid var(--ds-hairline, rgba(255,255,255,.06));
-  border-radius: var(--ds-radius-md, 8px);
-  box-shadow: var(--ds-elevation-1);
-}
-.bento-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--ds-space-4, 16px); }
-.bento-card-head h3 { margin: 0; font-weight: var(--ds-type-section-weight, 600); font-size: var(--ds-type-section-size, 16px); color: var(--ds-color-text, #e8f2f7); }
-.bento-card-eyebrow { font: 10px var(--ds-font-mono, monospace); color: var(--ds-color-muted, #92a6b5); letter-spacing: .1em; }
-.bento-status { grid-column: span 6; }
-.bento-activity { grid-column: span 6; }
+.bento-alerts { grid-column: span 8; }
+.bento-actions { grid-column: span 4; }
+.bento-distribution { grid-column: span 7; }
+.bento-trend { grid-column: span 5; }
 
-.status-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--ds-space-2, 8px); }
-.status-row {
-  display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: var(--ds-space-3, 12px);
-  padding: var(--ds-space-2, 8px) var(--ds-space-3, 12px); border-radius: var(--ds-radius-sm, 4px);
-  background: color-mix(in srgb, var(--ds-color-text) 2%, var(--ds-surface-base));
-  transition: background var(--ds-duration-micro) var(--ds-ease-out);
-}
-.status-row:hover { background: color-mix(in srgb, var(--ds-color-primary) 6%, var(--ds-surface-base)); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ds-semantic-success, #3fb950); }
-.status-dot--healthy { background: var(--ds-semantic-success, #3fb950); }
-.status-dot--warning { background: var(--ds-semantic-warning, #d29922); }
-.status-dot--critical { background: var(--ds-semantic-danger, #f85149); }
-.status-name { font-size: var(--ds-type-body-caption-size, 13px); color: var(--ds-color-text, #e8f2f7); }
-.status-value { font-size: var(--ds-type-caption-size, 12px); color: var(--ds-color-muted, #92a6b5); font-variant-numeric: tabular-nums; }
+.bento-more { margin-left: auto; padding: 4px 0; color: var(--ds-color-primary); font-size: var(--ds-type-caption-size); white-space: nowrap; }
+.bento-more:hover { color: var(--ds-color-primary-strong); }
+.bento-note { margin: 4px 0; color: var(--ds-color-muted); font-size: var(--ds-type-body-caption-size); line-height: var(--ds-line-height-base); }
 
-.activity-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--ds-space-2, 8px); }
-.activity-row {
-  display: grid; grid-template-columns: 64px auto 1fr; align-items: baseline; gap: var(--ds-space-3, 12px);
-  padding: var(--ds-space-2, 8px) var(--ds-space-3, 12px); border-radius: var(--ds-radius-sm, 4px);
-  background: color-mix(in srgb, var(--ds-color-text) 2%, var(--ds-surface-base));
-  font-size: var(--ds-type-body-caption-size, 13px);
+.alert-stream { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.alert-row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-text) 3%, var(--ds-surface-raised));
+  transition: background var(--ds-motion-duration) var(--ds-ease-out);
 }
-.activity-time { font: 11px var(--ds-font-mono, monospace); color: var(--ds-color-muted, #92a6b5); }
-.activity-type {
-  font: 10px var(--ds-font-mono, monospace); letter-spacing: .06em; padding: 2px 6px; border-radius: 4px;
-  background: var(--ds-pill-info-bg, rgba(88,166,255,.14)); color: var(--ds-color-primary, #2496ed);
-}
-.activity-type--agent { background: var(--ds-pill-success-bg, rgba(63,185,80,.15)); color: var(--ds-semantic-success, #3fb950); }
-.activity-type--warning { background: var(--ds-pill-warning-bg, rgba(210,153,34,.18)); color: var(--ds-semantic-warning, #d29922); }
-.activity-type--danger { background: var(--ds-pill-danger-bg, rgba(248,81,73,.15)); color: var(--ds-semantic-danger, #f85149); }
-.activity-text { color: var(--ds-color-text, #e8f2f7); }
+.alert-row:hover { background: color-mix(in srgb, var(--ds-color-primary) 7%, var(--ds-surface-raised)); }
+.alert-body { display: grid; gap: 2px; min-width: 0; }
+.alert-body strong { color: var(--ds-color-text); font-size: var(--ds-type-body-caption-size); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alert-time { font-family: var(--ds-font-mono); white-space: nowrap; }
 
-/* 紧凑双列 */
-.bento-compact { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--ds-grid-gutter, 24px); }
-.bento-mini { grid-column: span 6; display: grid; gap: var(--ds-space-2, 8px); }
-.bento-mini-value {
-  font-weight: var(--ds-type-display-weight, 300); font-size: var(--ds-type-h1-size, 28px);
-  font-variant-numeric: tabular-nums; color: var(--ds-color-text, #e8f2f7);
+.quick-grid { display: grid; gap: 8px; }
+.quick-link {
+  display: grid; gap: 2px; padding: 10px 12px;
+  border: 1px solid var(--ds-hairline); border-radius: var(--ds-radius-md);
+  background: transparent; transition: border-color var(--ds-motion-duration) var(--ds-ease-out), background var(--ds-motion-duration) var(--ds-ease-out);
 }
-.bento-mini-sub { font-size: var(--ds-type-caption-size, 12px); color: var(--ds-color-muted, #92a6b5); }
+.quick-link strong { color: var(--ds-color-text); font-size: var(--ds-type-body-size); font-weight: 500; }
+.quick-link:hover { border-color: var(--ds-color-border); background: color-mix(in srgb, var(--ds-color-primary) 6%, transparent); }
 
-/* 响应式：≤ 1024 KPI 每卡 6 栅格，≤ 640 每卡 12 栅格 */
 @media (max-width: 1024px) {
   .kpi-card { grid-column: span 6; }
+  .bento-alerts, .bento-actions, .bento-distribution, .bento-trend { grid-column: span 12; }
 }
 @media (max-width: 640px) {
-  .bento-dashboard { padding: var(--ds-space-4, 16px); gap: var(--ds-space-4, 16px); }
-  .kpi-card, .bento-status, .bento-activity, .bento-mini { grid-column: span 12; }
-  .status-row { grid-template-columns: 8px 1fr; }
-  .status-value { grid-column: 2; justify-self: end; }
+  .bento-dashboard { padding: var(--ds-space-4); gap: var(--ds-space-4); }
+  .kpi-card { grid-column: span 12; }
+  .alert-row { grid-template-columns: auto minmax(0, 1fr); }
+  .alert-row .ui-tag--neutral, .alert-time { grid-column: 2; justify-self: start; }
 }
-
-/* 减少动态 */
 @media (prefers-reduced-motion: reduce) {
-  .bento-briefing, .kpi-card, .bento-card { transition: none; }
-  .kpi-card:hover { transform: none; }
+  .alert-row, .quick-link { transition: none; }
 }
 </style>

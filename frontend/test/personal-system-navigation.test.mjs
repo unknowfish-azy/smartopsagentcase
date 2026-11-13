@@ -45,7 +45,7 @@ test('keeps cloud-native resources inside its workbench route', () => {
 
 test('contains only groups with existing direct routes', () => {
   assert.deepEqual(visiblePersonalSystemGroups(personalSystemGroups).map(group => group.id), [
-    'home', 'ai-chat', 'team-space', 'knowledge', 'cloud-native', 'plugins', 'skills', 'connections', 'harbor', 'operations', 'health', 'milestones', 'models', 'agent', 'memory', 'sentinel'
+    'home', 'ai-chat', 'insights', 'team-space', 'knowledge', 'cloud-native', 'plugins', 'skills', 'connections', 'harbor', 'operations', 'health', 'milestones', 'models', 'agent', 'memory', 'sentinel'
   ])
 })
 

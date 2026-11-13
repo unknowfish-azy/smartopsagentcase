@@ -47,6 +47,12 @@ const routes = [
                 meta: { ...routeMetaFor('Chat'), section: 'AI CHAT / AI 对话' }
             },
             {
+                path: 'insights',
+                name: 'Insights',
+                component: () => import('../views/insights/NaturalLanguageInsightsView.vue'),
+                meta: { section: 'NL INSIGHTS / 自然语言洞察' }
+            },
+            {
                 path: 'servers',
                 name: 'ServerList',
                 component: () => import('../views/server/ServerListView.vue'),
