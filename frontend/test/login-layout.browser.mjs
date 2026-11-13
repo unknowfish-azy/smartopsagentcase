@@ -7,15 +7,25 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true })
 await mkdir('test-artifacts/login-layout', { recursive: true })
 const overlaps = (first, second) => first.x < second.x + second.width && first.x + first.width > second.x && first.y < second.y + second.height && first.y + first.height > second.y
 
+// dd67b45 起登录页由「果冻水母」重构为「启佑星空」：LivingJellyfish 被移除，
+// 装饰主体改为 .login-organisms 舞台 + .login-stars-* 星尘层 + CanvasAmbientField。
+// 本函数保留原有「装饰可见 / 不遮挡表单与标题 / 留在预留舞台内 / 无横向溢出」
+// 四项语义，仅把被删元素迁移到当前等价元素，不放宽任何断言。
 async function geometry(page) {
-  const jelly = await page.locator('.login-jellyfish .organism').boundingBox()
+  const stage = await page.locator('.login-organisms').boundingBox()
+  const stars = await page.locator('.login-stars-front').boundingBox()
   const form = await page.locator('.login-form').boundingBox()
   const copy = await page.locator('.login-copy').boundingBox()
-  assert.ok(jelly?.width > 40 && jelly?.height > 40, 'jellyfish remains visible')
-  assert.equal(overlaps(jelly, form), false, 'jellyfish must not sit beneath the authentication form')
-  assert.equal(overlaps(jelly, copy), false, 'jellyfish must not obscure the title')
-  const stage = await page.locator('.login-organisms').boundingBox()
-  assert.ok(jelly.x >= stage.x && jelly.y >= stage.y && jelly.x + jelly.width <= stage.x + stage.width && jelly.y + jelly.height <= stage.y + stage.height, 'animated jellyfish stays in its reserved stage')
+  assert.ok(stage?.width > 40 && stage?.height > 40, 'decorative stage remains visible')
+  assert.ok(stars?.width > 40 && stars?.height > 40, 'starfield layer remains visible')
+  assert.equal(overlaps(stage, form), false, 'decorative stage must not sit beneath the authentication form')
+  assert.equal(overlaps(stage, copy), false, 'decorative stage must not obscure the title')
+  assert.ok(
+    stars.x >= stage.x - 1 && stars.y >= stage.y - 1 &&
+    stars.x + stars.width <= stage.x + stage.width + 1 &&
+    stars.y + stars.height <= stage.y + stage.height + 1,
+    'starfield stays inside its reserved stage'
+  )
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false)
 }
 
@@ -59,7 +69,7 @@ try {
       return route.fulfill({ json: { code: 200, data } })
     })
     await page.goto(`${base}/login`, { waitUntil: 'networkidle' })
-    await page.locator('.login-jellyfish .body').waitFor()
+    await page.locator('.login-stars-front').waitFor()
     await geometry(page)
     for (const selector of ['.login-copy h1', '.login-form h2', '.login-field__label', '.login-form__footer', '.login-form__policy', '.login-submit', '.role-switcher button', '.login-registration button']) await readable(page, selector)
     await readable(page, 'input[autocomplete="username"]', '::placeholder')
@@ -89,22 +99,29 @@ try {
     }
     await page.getByLabel('选择视觉模式').selectOption('lightweight')
     assert.equal(await page.locator('.meteor-shower').count(), 0)
-    assert.equal(await page.locator('.login-jellyfish .particles circle').count(), 120)
+    assert.equal(await page.locator('.login-cover-video').count(), 0, 'lightweight drops the cover video layer')
+    assert.equal(await page.locator('.login-stars-front').count(), 1, 'starfield remains as the zero-cost fallback')
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await page.getByLabel('选择视觉模式').selectOption('reduced-motion')
-    await page.locator('.login-jellyfish[data-motion-mode="reduced-motion"]').waitFor()
-    const still = await page.locator('.login-jellyfish .organism').getAttribute('transform')
+    await page.locator('.login-shell[data-visual-mode="reduced-motion"]').waitFor()
+    assert.equal(await page.locator('.login-aurora').count(), 0, 'reduced-motion drops the aurora layer')
+    const still = await page.locator('.login-form').evaluate(el => getComputedStyle(el, '::after').animationName)
+    assert.equal(still, 'none', 'reduced-motion stops the form decorative animation')
     await page.waitForTimeout(180)
-    assert.equal(await page.locator('.login-jellyfish .organism').getAttribute('transform'), still)
+    assert.equal(await page.locator('.login-form').evaluate(el => getComputedStyle(el, '::after').animationName), 'none')
     if (width === 1440 && theme === 'dark') {
       await page.getByLabel('选择视觉模式').selectOption('balanced')
-      await page.locator('.login-jellyfish[data-motion-mode="balanced"]').waitFor()
-      const moving = await page.locator('.login-jellyfish .organism').getAttribute('transform')
+      await page.locator('.login-shell[data-visual-mode="balanced"]').waitFor()
+      const moving = await page.locator('.login-stars-front').evaluate(el => getComputedStyle(el).animationName)
+      assert.notEqual(moving, 'none', 'balanced keeps the starfield twinkle alive')
+      const opacities = []
       for (let sample = 0; sample < 6; sample++) {
         await page.waitForTimeout(500)
         await geometry(page)
+        opacities.push(await page.locator('.login-stars-front').evaluate(el => getComputedStyle(el).opacity))
       }
-      assert.notEqual(await page.locator('.login-jellyfish .organism').getAttribute('transform'), moving)
+      assert.ok(new Set(opacities).size > 1, 'starfield twinkle is actually animating in balanced mode')
+      assert.equal(await page.locator('.login-stars-front').evaluate(el => getComputedStyle(el).animationName), moving)
       await page.reload({ waitUntil: 'networkidle' })
       assert.equal(await page.getByLabel('选择主题模式').inputValue(), 'light')
       assert.equal(await page.getByLabel('选择视觉模式').inputValue(), 'balanced')
