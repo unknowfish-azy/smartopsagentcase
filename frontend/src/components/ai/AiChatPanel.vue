@@ -12,7 +12,7 @@
             <span class="ui-tag ui-tag--sm" :class="message.streaming ? 'ui-tag--info' : 'ui-tag--success'">{{ message.streaming ? '处理中' : '已完成' }}</span>
             <span class="ai-trace__count">{{ message.thinking.length }} 步</span>
           </summary>
-          <ol class="ai-trace__list" aria-label="AI 处理时间线">
+          <ol class="ai-trace__list ml-stagger" aria-label="AI 处理时间线">
             <li
               v-for="(step, index) in message.thinking"
               :key="index"
@@ -31,7 +31,15 @@
           </ol>
         </details>
         <p v-if="message.pending && !message.streaming && !message.content" class="ai-chat-pending"><span></span><span></span><span></span></p>
-        <p v-else-if="message.content" :class="{ 'ai-chat-message__error': message.error }">{{ message.content }}<span v-if="message.streaming" class="ai-cursor" aria-hidden="true"></span></p>
+        <template v-else-if="message.content">
+          <!-- 流式中：保持原文逐字输出 + 光标；完成后：按行拆分逐行揭示（S-AI） -->
+          <p v-if="message.streaming" :class="{ 'ai-chat-message__error': message.error }">{{ message.content }}<span class="ai-cursor" aria-hidden="true"></span></p>
+          <p v-else :class="{ 'ai-chat-message__error': message.error, 'ml-stream-lines': message.role === 'assistant' }">
+            <template v-for="(line, idx) in splitLines(message.content)" :key="idx">
+              <span class="ai-chat-message__line">{{ line }}</span>
+            </template>
+          </p>
+        </template>
         <div v-if="message.error && !message.pending" class="ai-chat-retry-row">
           <span class="ai-chat-retry-hint">回答生成失败，可直接重试；不会重复发送你的问题。</span>
           <button type="button" class="ai-chat-retry" :disabled="sending" :aria-label="`重试第 ${message.attempt || 1} 次失败的回答`" @click="retryMessage(message.id)">重试</button>
@@ -209,6 +217,11 @@ const STEP_KINDS = [
 ]
 function stepKind(label = '') {
   return STEP_KINDS.find(kind => kind.test.test(label)) || { tag: '步骤', tone: 'neutral' }
+}
+
+/* 把回答按换行拆成独立行，供 ml-stream-lines 逐行揭示；单行内容保持不拆分。 */
+function splitLines(content = '') {
+  return String(content).split('\n')
 }
 
 // 运行诊断只展示本链路真实上报的字段；缺失就明确写“未记录”，不猜测 provider 或耗时。
@@ -415,6 +428,8 @@ onBeforeUnmount(() => {
 .ai-chat-message--user { justify-self: end; border-color: color-mix(in srgb, var(--smart-primary) 50%, var(--smart-border)); background: color-mix(in srgb, var(--smart-primary-soft, rgba(122,215,245,.12)) 72%, var(--smart-surface)); }
 .ai-chat-message__meta { margin-bottom: 7px; color: var(--smart-primary-strong); font: 9px var(--font-mono); letter-spacing: .12em; }
 .ai-chat-message p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--smart-text); font-size: 13px; line-height: 1.65; }
+/* 逐行揭示：每行作为块级堆叠，继承 ml-stream-lines 的错峰淡入。 */
+.ai-chat-message__line { display: block; min-height: 1.65em; }
 .ai-chat-message__error, .ai-chat-error { color: var(--smart-danger, #f08d9c) !important; }
 /* 浅色主题下原错误色 #f08d9c 对比度不足，改用深红以满足 AA。 */
 [data-theme='light'] .ai-chat-message__error, [data-theme='light'] .ai-chat-error { color: #b42318 !important; }

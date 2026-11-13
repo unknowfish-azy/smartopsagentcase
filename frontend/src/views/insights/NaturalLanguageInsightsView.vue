@@ -45,7 +45,7 @@
         </p>
 
         <template v-else>
-          <div v-if="result.charts?.length" class="insights-charts">
+          <div v-if="result.charts?.length" class="insights-charts ml-stagger-cols-2">
             <OpsChart
               v-for="(chart, index) in result.charts"
               :key="index"
@@ -59,7 +59,7 @@
             />
           </div>
 
-          <ul v-if="result.items?.length" class="insights-list">
+          <ul v-if="result.items?.length" class="insights-list ml-stagger">
             <li v-for="item in result.items" :key="item.name">
               <strong>{{ item.name }}</strong>
               <span v-if="item.desc" class="u-caption">{{ item.desc }}</span>

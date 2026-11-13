@@ -40,7 +40,9 @@ function render() {
   const palette = chartPalette(root.value)
   chart.setOption({
     animation: !motionQuery?.matches,
-    animationDuration: 350,
+    animationDuration: 360,
+    animationDurationUpdate: 280,
+    animationEasing: 'cubicOut',
     color: palette,
     aria: { enabled: true },
     textStyle: { fontFamily: 'system-ui, sans-serif' },
@@ -51,11 +53,15 @@ function render() {
     xAxis: { ...chartCategoryAxis(root.value, { labels: props.labels, formatter: value => value.slice(5) }), boundaryGap: true },
     yAxis: chartValueAxis(root.value, { maximum: props.maximum }),
     // 堆叠柱：6px 柱宽、无圆角、2px 系列间距——科技感来自几何锐利度，不是发光
-    series: props.series.map(item => ({
+    series: props.series.map((item, seriesIndex) => ({
       name: item.name, data: item.data, type: 'bar', stack: 'usage',
       barWidth: 6, barGap: '20%',
       itemStyle: { borderRadius: 0 },
-      emphasis: { focus: 'series' }
+      emphasis: { focus: 'series' },
+      // E6 柱状错峰：每根柱 90ms 步进；多系列时同下标柱同时生长
+      animationDelay: idx => idx * 90 + seriesIndex * 20,
+      animationDuration: 360,
+      animationEasing: 'cubicOut'
     }))
   }, { notMerge: true })
 }
