@@ -7,7 +7,7 @@ const base = process.env.SMARTOPS_BROWSER_BASE_URL || 'http://127.0.0.1:5173'
 const browser = await chromium.launch({ executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', headless: true })
 await mkdir('test-artifacts/model-analytics', { recursive: true })
 try {
-  for (const width of [1440, 375]) {
+  for (const width of [375, 768, 1024, 1440, 1920]) {
     const page = await browser.newPage({ viewport: { width, height: 1000 }, reducedMotion: 'reduce' })
     const errors = [], requests = [], saved = []
     let fail = false, failSave = false, budget = 30000, empty = false, delayMonth = ''
