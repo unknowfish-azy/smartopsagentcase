@@ -6,7 +6,7 @@ import { chromium } from 'playwright'
 
 const base = process.env.SMARTOPS_TEST_URL || 'http://127.0.0.1:5173'
 const bootstrap = await readFile(new URL('../../.runtime/secrets/bootstrap.env', import.meta.url), 'utf8')
-const credentials = Object.fromEntries(bootstrap.trim().split(/\r?\n/).map(line => {
+const _credentials = Object.fromEntries(bootstrap.trim().split(/\r?\n/).map(line => {
     const separator = line.indexOf('=')
     return [line.slice(0, separator), line.slice(separator + 1)]
 }))

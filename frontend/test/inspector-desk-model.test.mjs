@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 
 import {
   binEvents, linkState, linkStateRun, linkText, linkTextRun,
-  filterEvents, filterRuns, runsByTraceMap, eventsByTraceMap,
+  filterEvents, filterRuns,
   normalizeEvents, normalizeRuns, buildDemoData
 } from '../src/components/inspector/desk/deskModel.js'
 

@@ -15,7 +15,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import GatewayQuotaEditor from '../../components/model/GatewayQuotaEditor.vue'
 import GatewayGroupForm from '../../components/model/GatewayGroupForm.vue'
-import { listGatewayKeys, createGatewayKey, revokeGatewayKey, configureGatewayGroup, listGatewayGroups, updateGatewayGroup, deleteGatewayGroup, updateGatewayGroupQuota, getGatewayAnalytics, getGatewayRoutes, addGatewayRoute, updateGatewayRoute, updateGatewayRouteStatus, deleteGatewayRoute } from '../../api/model'
+import { listGatewayKeys, createGatewayKey, revokeGatewayKey, configureGatewayGroup, listGatewayGroups, updateGatewayGroup, deleteGatewayGroup, updateGatewayGroupQuota, getGatewayAnalytics, getGatewayRoutes, updateGatewayRoute, updateGatewayRouteStatus, deleteGatewayRoute } from '../../api/model'
 const route = useRoute(), router = useRouter(), tabs = [{ id: 'overview', label: 'OVERVIEW', cn: '网关总览' }, { id: 'groups', label: 'MODEL GROUPS', cn: '模型分组' }, { id: 'keys', label: 'VIRTUAL KEYS', cn: '虚拟 Key' }, { id: 'audit', label: 'AUDIT / HEALTH', cn: '运行观测' }]
 const view = computed(() => ['groups', 'keys', 'audit'].includes(route.query.view) ? route.query.view : 'overview'), unwrap = response => response?.data ?? response
 const keys = ref([]), keysLoading = ref(false), keySaving = ref(false), keyBusy = ref(null), keyError = ref(''), keyNotice = ref(''), newKey = ref(''), groups = ref([]), groupsLoading = ref(false), groupSaving = ref(false), groupError = ref(''), groupNotice = ref(''), groupBusy = ref(null), routeDrafts = ref({})

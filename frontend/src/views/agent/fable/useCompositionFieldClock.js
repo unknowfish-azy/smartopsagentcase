@@ -14,7 +14,7 @@
  *   current.value                     // 插值后的当前值（Vue ref）
  */
 
-import { ref, shallowRef } from 'vue'
+import { shallowRef } from 'vue'
 import { subscribe } from '../../../visual/motionScheduler.js'
 
 const TAU = 0.28 // 时间常数，秒

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { before, after, test } from 'node:test'
 import { chromium } from 'playwright'
 import { mockSession } from './helpers/session.mjs'
-import { blockLiveApi, mockAssistant, miniOption, externalOption } from './helpers/assistant.mjs'
+import { blockLiveApi, mockAssistant } from './helpers/assistant.mjs'
 
 let browser
 before(async () => { browser = await chromium.launch({ executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', headless: true }) })

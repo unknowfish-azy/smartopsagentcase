@@ -10,7 +10,7 @@
 </template>
 <script setup>
 import { reactive } from 'vue'
-const props = defineProps({ saving: Boolean })
+defineProps({ saving: Boolean })
 const emit = defineEmits(['submit'])
 const form = reactive({ slug: '', name: '', connectionId: null, requestLimit24h: '', tokenLimit24h: '' })
 function submit() { emit('submit', { ...form, requestLimit24h: form.requestLimit24h === '' ? null : Number(form.requestLimit24h), tokenLimit24h: form.tokenLimit24h === '' ? null : Number(form.tokenLimit24h) }) }

@@ -12,7 +12,6 @@ import { observeCanvasTheme, readCanvasPalette } from './canvasTheme.js'
 const canvas = ref(null)
 let animationFrame = 0
 let resizeObserver
-let mediaQuery
 let scrollTimer
 let scrolling = false
 let scrollHandler
@@ -147,7 +146,6 @@ onMounted(() => {
   resizeObserver.observe(element.parentElement)
   scrollHandler = onScroll
   window.addEventListener('scroll', scrollHandler, { passive: true })
-  mediaQuery = reduced
   element.dataset.ready = 'true'
 })
 
@@ -158,7 +156,6 @@ onBeforeUnmount(() => {
   clearTimeout(scrollTimer)
   resizeObserver?.disconnect()
   if (scrollHandler) window.removeEventListener('scroll', scrollHandler)
-  mediaQuery = undefined
 })
 </script>
 

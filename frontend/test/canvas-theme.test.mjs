@@ -11,9 +11,9 @@ test('canvas palette returns safe dark defaults without a browser document', () 
 test('canvas palette reads CSS variables and reacts to data-theme mutations', () => {
   const root = { dataset: { theme: 'light' } }
   const lightVariables = {
-    '--smart-bg': '#f4f7f9', '--smart-surface': '#ffffff', '--smart-primary': '#0e5f92',
-    '--smart-primary-strong': '#084b73', '--smart-muted': '#4d606c',
-    '--smart-border': 'rgba(16, 53, 70, .22)', '--smart-primary-soft': 'rgba(14, 95, 146, .08)', '--smart-text': '#10212b'
+    '--smart-bg': '#f6f8fa', '--smart-surface': '#ffffff', '--smart-primary': '#0e5f92',
+    '--smart-primary-strong': '#084b73', '--smart-muted': '#57606a',
+    '--smart-border': 'rgba(31, 35, 40, .22)', '--smart-primary-soft': 'rgba(14, 95, 146, .08)', '--smart-text': '#1f2329'
   }
   const darkVariables = {
     '--smart-bg': '#05090d', '--smart-surface': '#071018', '--smart-primary': '#2496ed',

@@ -21,8 +21,11 @@
           <button type="button" class="persona-pet__mini" aria-label="关闭小鱼" title="关闭" @click.stop="store.disable()">×</button>
         </span>
       </header>
-      <div class="persona-pet__stage">
+      <div class="persona-pet__stage" @click="onStageClick">
         <AgentPersona ref="personaRef" mode="vrm" :state="agentState" @ready="onReady" />
+        <transition name="pet-bubble">
+          <span v-if="reaction" class="persona-pet__bubble" :key="reactionKey">{{ reaction }}</span>
+        </transition>
       </div>
       <p class="persona-pet__note" aria-live="polite">
         {{ speechLabel }}
@@ -60,6 +63,23 @@ const dragging = ref(false)
 const speaking = ref(false)
 const ready = ref(false)
 const speechSupported = isSpeechSynthesisAvailable()
+
+/* D1：点击反应气泡 */
+const REACTIONS = [
+  '在的～', '我看看…', '嗯？', '收到！', '让我想想…',
+  '没问题', '稍等', '好的', '明白', '正在处理…'
+]
+const reaction = ref('')
+const reactionKey = ref(0)
+let reactionTimer = null
+
+function onStageClick () {
+  if (speaking.value) return
+  reaction.value = REACTIONS[Math.floor(Math.random() * REACTIONS.length)]
+  reactionKey.value++
+  if (reactionTimer) clearTimeout(reactionTimer)
+  reactionTimer = setTimeout(() => { reaction.value = '' }, 2200)
+}
 
 const viewport = reactive({ width: window.innerWidth, height: window.innerHeight })
 const currentViewport = computed(() => ({ viewportWidth: viewport.width, viewportHeight: viewport.height }))
@@ -169,6 +189,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewport)
   petSpeech.dispose()
   personaRef.value?.stopSpeaking?.()
+  if (reactionTimer) clearTimeout(reactionTimer)
 })
 </script>
 
@@ -294,6 +315,33 @@ onBeforeUnmount(() => {
 .persona-pet__note-hint {
   margin-left: var(--ds-space-1);
   color: var(--ds-color-text);
+}
+
+/* D1：点击反应气泡 */
+.persona-pet__bubble {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 5px 12px;
+  border-radius: 14px;
+  background: var(--ds-color-surface-raised);
+  border: 1px solid var(--ds-accent, #7ad7f5);
+  color: var(--ds-color-text);
+  font: 12px/1.4 var(--ds-font-cn);
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(36, 150, 237, .25);
+  pointer-events: none;
+}
+.pet-bubble-enter-active,
+.pet-bubble-leave-active {
+  transition: opacity .2s ease, transform .2s ease;
+}
+.pet-bubble-enter-from,
+.pet-bubble-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
 }
 
 .persona-pet--collapsed {

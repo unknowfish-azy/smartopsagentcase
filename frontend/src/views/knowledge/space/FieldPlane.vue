@@ -26,7 +26,6 @@ const emit = defineEmits(['click', 'keydown'])
 const showTitle    = computed(() => ['mid', 'near', 'focus'].includes(props.lod))
 const showTypeChip = computed(() => ['mid', 'near', 'focus'].includes(props.lod))
 const showSummary  = computed(() => ['near', 'focus'].includes(props.lod))
-const showTags     = computed(() => ['near', 'focus'].includes(props.lod))
 
 // far / mid 不参与 Tab 序，aria-hidden
 const interactive = computed(() => ['near', 'focus'].includes(props.lod))

@@ -13,7 +13,6 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 
 /**
  * Skeleton loading placeholder (T20, §3.3 微交互系统)
@@ -28,7 +27,7 @@ import { computed } from 'vue'
  * @prop {boolean} ariaHidden - 是否 aria-hidden（默认 true；作为装饰使用）
  * @prop {string} ariaLabel - role=status 时的 aria-label
  */
-const props = defineProps({
+defineProps({
   variant: { type: String, default: 'rect' },
   width: { type: String, default: '100%' },
   height: { type: String, default: '16px' },
@@ -40,15 +39,6 @@ const props = defineProps({
   ariaLabel: { type: String, default: '加载中' }
 })
 
-const computedStyle = computed(() => {
-  const parts = []
-  if (!props.inlineStyle) {
-    parts.push(`width: ${props.width}`)
-    parts.push(`height: ${props.height}`)
-    if (props.radius) parts.push(`border-radius: ${props.radius}`)
-  }
-  return parts.join('; ') || undefined
-})
 </script>
 
 <style scoped>
