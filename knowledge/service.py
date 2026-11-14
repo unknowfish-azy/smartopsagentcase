@@ -20,7 +20,10 @@ SmartOpsAgent Knowledge Service.
 
 from __future__ import annotations
 
+import json
 import threading
+import logging
+from pathlib import Path
 from typing import Any, Iterable
 from uuid import uuid4
 
@@ -201,6 +204,95 @@ class KnowledgeService:
         self._persist_now()
 
         return len(chunks)
+
+    # ------------------------------------------------------------------
+    # Spatial Field Phase B：catalog.json ingest + chunk 查询
+    # ------------------------------------------------------------------
+
+    def ingest_catalog(
+        self,
+        catalog_path: str | Path,
+        *,
+        skip_if_ingested: bool = True,
+    ) -> int:
+        """读取 catalog.json（前端 knowledgeEntries 快照）并 ingest。
+
+        **关键**：``document_id`` 强制 = ``entry["id"]``，保证 KnowledgeService
+        chunk 与前端 knowledgeEntry 的连接键硬对齐（Phase B HC-1）。
+
+        返回摄入的 chunk 总数。catalog.json 不存在或解析失败 → 返回 0，
+        不抛异常（Phase B HC-4：启动 ingest 失败降级为 Phase A 真实状态）。
+        """
+        p = Path(catalog_path)
+        if not p.is_file():
+            logging.getLogger(__name__).warning(
+                "catalog.json 不存在（跳过 ingest）：%s", p
+            )
+            return 0
+
+        # 同一进程不重复 ingest 同一份 catalog（避免 reference corpus 和 catalog
+        # 撞同一个 document_id 导致 chunk 重复）。
+        if skip_if_ingested and getattr(self, "_catalog_ingested", False):
+            logging.getLogger(__name__).info(
+                "catalog.json 已 ingest，跳过"
+            )
+            return 0
+
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            logging.getLogger(__name__).warning(
+                "catalog.json 解析失败（跳过 ingest）：%s", exc
+            )
+            return 0
+
+        entries = data.get("entries") or []
+        if not entries:
+            logging.getLogger(__name__).warning(
+                "catalog.json entries 为空（跳过 ingest）"
+            )
+            return 0
+
+        documents: list[dict[str, Any]] = []
+        for entry in entries:
+            content = entry.get("content") or ""
+            if not content.strip():
+                continue
+            documents.append({
+                "content": content,
+                "source": entry.get("source") or entry.get("title") or "",
+                "version": entry.get("version") or "latest",
+                "document_id": entry["id"],  # 硬对齐：document_id = entry.id
+            })
+
+        if not documents:
+            logging.getLogger(__name__).warning(
+                "catalog.json entries 无有效 content（跳过 ingest）"
+            )
+            return 0
+
+        n_chunks = self.add_documents(documents)
+        self._catalog_ingested = True
+        logging.getLogger(__name__).info(
+            "[spatial-field] ingest_catalog: entries=%d → documents=%d → chunks=%d",
+            len(entries), len(documents), n_chunks,
+        )
+        return n_chunks
+
+    def find_chunks_for_document(self, entry_id: str) -> list[Any]:
+        """按 document_id（= knowledgeEntry.id）返回匹配的 chunks。
+
+        Phase B HC-2：运行时拼装，不引新表。空返回时表示该 entry 尚未 ingest，
+        不是"找不到"——前端应渲染为"未绑定"而不是报错。
+        """
+        with self._lock:
+            return [c for c in self._chunks
+                    if getattr(c, "document_id", None) == entry_id]
+
+    def document_ids(self) -> set[str]:
+        """当前已 ingest 的全部 document_id 集合（HUD / 诊断用）。"""
+        with self._lock:
+            return {getattr(c, "document_id", "") for c in self._chunks if getattr(c, "document_id", None)}
 
     # ------------------------------------------------------------------
     # RAG-P1-01：持久化 / 恢复

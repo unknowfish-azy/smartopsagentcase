@@ -9,7 +9,9 @@
  */
 
 export const WORLD_DEFAULT = { w: 3200, h: 2000 }
-export const CARD_DEFAULT  = { w: 200, h: 124, gap: 12, headH: 40, pad: 12, maxCols: 6 }
+/* 卡片尺寸不再固定：由域内网格按「铺满 + 接近 1.5 宽高比」评分选出（REVIEW.md ③）。
+   这里只留间距常量。 */
+export const GRID_DEFAULT  = { gap: 12, headH: 40, pad: 12, maxCols: 20 }
 
 /* 卡片内容分档：判据是**屏幕像素**（世界尺寸 × 相机缩放 k），不是世界像素。
  * 同一张卡在不同缩放下可读性不同，所以档位必须逐卡算，不能用全局 LOD 一刀切。
@@ -70,9 +72,30 @@ function split (items, box, out, horizontal) {
   }
 }
 
+/* 域内网格选列：枚举列数，评分 = |宽高比 − 1.5| + |空格率| × 1.5，取最小（REVIEW.md ③）。
+ * 只按宽度算列数会出现「卡片很瘦/很胖且域内下半截空着」，加上空格率才铺得满。 */
+function pickGrid (n, innerW, innerH, { gap, maxCols }) {
+  if (n <= 0) return { cols: 0, rows: 0, cw: 0, ch: 0 }
+  let best = null
+  for (let cols = 1; cols <= maxCols; cols++) {
+    const rows = Math.ceil(n / cols)
+    const cw = (innerW - gap * (cols - 1)) / cols
+    const ch = (innerH - gap * (rows - 1)) / rows
+    if (cw < 8 || ch < 8) continue
+    const score = Math.abs(cw / ch - 1.5) + Math.abs((cols * rows - n) / n) * 1.5
+    if (!best || score < best.score) best = { cols, rows, cw, ch, score }
+  }
+  if (!best) {
+    // 域太小或卡太多：退化成单列密排，保证不出现 0 尺寸
+    const rows = n
+    return { cols: 1, rows, cw: Math.max(8, innerW), ch: Math.max(8, (innerH - gap * (rows - 1)) / rows) }
+  }
+  return { cols: best.cols, rows: best.rows, cw: Math.floor(best.cw), ch: Math.floor(best.ch) }
+}
+
 export function computeLayout (entries, domains, { w = WORLD_DEFAULT.w, h = WORLD_DEFAULT.h,
-  cardW = CARD_DEFAULT.w, cardH = CARD_DEFAULT.h, gap = CARD_DEFAULT.gap,
-  headH = CARD_DEFAULT.headH, pad = CARD_DEFAULT.pad, maxCols = CARD_DEFAULT.maxCols } = {}) {
+  gap = GRID_DEFAULT.gap, headH = GRID_DEFAULT.headH, pad = GRID_DEFAULT.pad,
+  maxCols = GRID_DEFAULT.maxCols } = {}) {
 
   // 1) 每域条目数（entries 里可能有 domain 不在 domains 里的——先按 entries 实际值聚合）
   const counts = new Map()
@@ -117,8 +140,6 @@ export function computeLayout (entries, domains, { w = WORLD_DEFAULT.w, h = WORL
     const innerY = z.y + headH + pad
     const innerW = z.w - pad * 2
     const innerH = z.h - headH - pad * 2
-    const cols   = Math.max(1, Math.min(maxCols, Math.floor((innerW + gap) / (cardW + gap))))
-    const rows   = Math.max(1, Math.ceil((innerH + gap) / (cardH + gap)))
 
     const inDomain = entries
       .filter(e => String(e.domain || 'undefined') === z.d.id)
@@ -131,26 +152,31 @@ export function computeLayout (entries, domains, { w = WORLD_DEFAULT.w, h = WORL
         return String(a.id || '').localeCompare(String(b.id || ''))
       })
 
+    // 卡片尺寸随域自适应：列数与卡片宽高由评分选出
+    const grid = pickGrid(inDomain.length, innerW, innerH, { gap, maxCols })
+
     for (let i = 0; i < inDomain.length; i++) {
       const e = inDomain[i]
-      const col = i % cols
-      const row = Math.floor(i / cols)
+      const col = i % grid.cols
+      const row = Math.floor(i / grid.cols)
       cards.push({
         id: `${z.d.id}-${i}`,
         entry: e,
         domainId: z.d.id,
         zoneId: z.d.id,
         col, row,
-        x: innerX + col * (cardW + gap),
-        y: innerY + row * (cardH + gap),
-        w: cardW,
-        h: cardH,
+        x: innerX + col * (grid.cw + gap),
+        y: innerY + row * (grid.ch + gap),
+        w: grid.cw,
+        h: grid.ch,
       })
     }
 
-    // 附加 cols/rows 回 zone（用于 HUD 计算、迷你地图、单测断言）
-    z.cols = cols
-    z.rows = rows
+    // 附加 cols/rows/cw/ch 回 zone（用于 HUD 计算、迷你地图、单测断言）
+    z.cols = grid.cols
+    z.rows = grid.rows
+    z.cw   = grid.cw
+    z.ch   = grid.ch
     z.n    = inDomain.length
     z.id   = z.d.id
     z.label = z.d.label

@@ -293,8 +293,12 @@ Clear-ProxyVarDuplicates
 Import-ProjectEnvironment
 Write-Host ''
 
+# ── -Status：只打印状态表，不启动不停止 ─────────────────────────────
 if ($Status) { Show-Status; exit 0 }
 
+# ── -Stop：停止所有应用服务（Kind='system' 的 MySQL 不停）────────────
+# 停止顺序由 $services 数组决定（定义在下方"服务定义"段，前端→后端→基础设施）。
+# 先停依赖方再停被依赖方，避免请求打到已关闭的后端。
 if ($Stop) {
     foreach ($svc in @($services | Where-Object { $_.Kind -ne 'system' })) {
         Stop-Service4 -Name $svc.Name -Port $svc.Port -PidFile (Join-Path $PidDir ($svc.Name + '.pid'))
@@ -304,6 +308,7 @@ if ($Stop) {
     exit 0
 }
 
+# ── -Restart：先停再启。停掉后等 2 秒让端口释放，再走下面的正常启动流程 ──
 if ($Restart) {
     foreach ($svc in @($services | Where-Object { $_.Kind -ne 'system' })) {
         Stop-Service4 -Name $svc.Name -Port $svc.Port -PidFile (Join-Path $PidDir ($svc.Name + '.pid'))
@@ -311,7 +316,9 @@ if ($Restart) {
     Start-Sleep -Seconds 2
 }
 
-# MySQL：系统服务，仅在未监听时尝试拉起
+# ── MySQL：系统服务，仅在未监听时尝试拉起 ────────────────────────────
+# MySQL 是后端的硬性依赖，3306 不就绪时直接抛异常（fail-fast），
+# 避免后续后端启动失败却看不出原因。
 if (-not (Test-Port 3306)) {
     Write-Step 'MySQL 未运行，尝试启动系统服务'
     $svc = Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -323,7 +330,8 @@ if (-not (Test-Port 3306)) {
 if (-not (Test-Port 3306)) { throw 'MySQL 未就绪（3306 未监听），后续服务会启动失败' }
 Write-Ok 'MySQL 3306 就绪'
 
-# Redis
+# ── Redis：缓存与会话存储 ────────────────────────────────────────────
+# Redis 不在 PATH 时只告警不阻断（后端健康会显示 DOWN 但接口可用）。
 $redisExe = (Get-Command redis-server -ErrorAction SilentlyContinue).Source
 if (-not (Test-Port 6379)) {
     if ($redisExe) {
@@ -337,7 +345,9 @@ if (-not (Test-Port 6379)) {
 }
 if (Test-Port 6379) { Write-Ok 'Redis 6379 就绪' }
 
-# Ollama
+# ── Ollama：本地模型推理（可选）──────────────────────────────────────
+# Ollama 未就绪时 AI 对话不可用，但平台其它功能正常。
+# 优先用 PATH 里的 ollama，找不到则尝试默认安装路径。
 if (-not (Test-Port 11434)) {
     $ollamaExe = (Get-Command ollama -ErrorAction SilentlyContinue).Source
     if (-not $ollamaExe) {
@@ -355,7 +365,7 @@ if (-not (Test-Port 11434)) {
 }
 if (Test-Health 'http://127.0.0.1:11434/api/tags' 'models') { Write-Ok 'Ollama 11434 就绪' } else { Write-Warn2 'Ollama 未就绪（AI 对话将不可用）' }
 
-# 后端
+# ── 后端：Spring Boot ─────────────────────────────────────────────────
 # 默认单 JVM 跑打好包的 jar：`mvn spring-boot:run` 会多养一个 ~420MB 的 Maven JVM，
 # 而且启动要先跑一遍 Maven 生命周期，纯属浪费。改动源码后 jar 会自动重新打包。
 # 需要 Maven 的热重启行为时加 -Dev。
@@ -363,6 +373,8 @@ $backendDir = Join-Path $ProjectRoot 'backend'
 $backendJar = Join-Path $backendDir 'target\smartops-backend-0.0.1-SNAPSHOT.jar'
 $jvmArgs = '-Xms128m -Xmx640m -XX:MaxMetaspaceSize=320m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss1m -Dfile.encoding=UTF-8'
 
+# Update-BackendJar：判断 jar 是否需要重新打包。
+# 返回 $true 表示需要打包（jar 不存在 / pom.xml 更新 / src 下有文件比 jar 新）。
 function Update-BackendJar {
     param([string]$Dir, [string]$Jar)
     if (-not (Test-Path -LiteralPath $Jar)) { return $true }
@@ -371,6 +383,7 @@ function Update-BackendJar {
     if ($pomTime -gt $jarTime) { return $true }
     $srcRoot = Join-Path $Dir 'src'
     if (-not (Test-Path -LiteralPath $srcRoot)) { return $false }
+    # 只比较源码文件（.java/.yml/.properties 等），不比较编译产物
     $newest = Get-ChildItem -LiteralPath $srcRoot -Recurse -File -ErrorAction SilentlyContinue |
         Where-Object { $_.Extension -in @('.java', '.yml', '.yaml', '.properties', '.xml', '.sql') } |
         Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
@@ -379,6 +392,7 @@ function Update-BackendJar {
 
 $useJar = -not $Dev
 if (-not $useJar) {
+    # -Dev 模式：走 mvn spring-boot:run，改 Java 代码自动热重启（多占 ~420MB 内存）
     Write-Step '后端以 Maven 模式启动（-Dev 或 jar 不可用）'
     Start-Service4 -Name 'backend' -Port 8080 -WorkDir $backendDir `
         -Command 'mvn -s .mvn\smartops-settings.xml spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.arguments=--server.port=8080' `
@@ -394,6 +408,7 @@ if (-not $useJar) {
         })
 }
 else {
+    # 默认模式：源码有更新时先 mvn package，再用 java -jar 启动（省内存、启动快）
     if (Update-BackendJar -Dir $backendDir -Jar $backendJar) {
         Write-Step '后端源码有更新，先打 jar（mvn -DskipTests package）'
         Push-Location $backendDir
@@ -416,7 +431,7 @@ else {
         })
 }
 
-# knowledge
+# ── 知识服务：FastAPI（:8002）────────────────────────────────────────
 # torch/OpenMP 默认按物理核数起线程（本机 32 核 → 提交内存 2.6GB），
 # 限制为单线程后从 2.6GB 降到 1.1GB，而语料就 299 条，启动时间几乎不变。
 $python = Get-Python
@@ -431,7 +446,8 @@ Start-Service4 -Name 'knowledge' -Port 8002 -WorkDir $ProjectRoot `
         TOKENIZERS_PARALLELISM = 'false';
     })
 
-# ai-service
+# ── AI 服务：FastAPI（:8001）────────────────────────────────────────
+# 注入 LLM 配置、聊天令牌密钥、知识服务地址与 API Key。
 Start-Service4 -Name 'ai-service' -Port 8001 -WorkDir (Join-Path $ProjectRoot 'ai-service') `
     -Command ('"{0}" -m uvicorn app.main:app --host 127.0.0.1 --port 8001' -f $python) `
     -HealthUrl 'http://127.0.0.1:8001/api/health' -Expect 'smartops-ai-service' `
@@ -444,7 +460,8 @@ Start-Service4 -Name 'ai-service' -Port 8001 -WorkDir (Join-Path $ProjectRoot 'a
         KNOWLEDGE_API_KEY = $env:KNOWLEDGE_API_KEY;
     })
 
-# 前端用户端 / 管理端
+# ── 前端：Vite dev server（用户端 5173 / 管理端 5174）────────────────
+# NODE_OPTIONS 限制 Vite 内存上限，避免大项目 OOM。
 Start-Service4 -Name 'frontend' -Port 5173 -WorkDir (Join-Path $ProjectRoot 'frontend') `
     -Command 'set "NODE_OPTIONS=--max-old-space-size=384" && npm run dev -- --host 127.0.0.1 --port 5173' `
     -HealthUrl 'http://127.0.0.1:5173/' -Expect $null -PidFile (Join-Path $PidDir 'frontend.pid')
@@ -455,7 +472,7 @@ if (-not $SkipAdmin) {
         -HealthUrl 'http://127.0.0.1:5174/' -Expect $null -PidFile (Join-Path $PidDir 'admin.pid')
 }
 
-# mock SSH（E2E 审批链路专用，演示可 -SkipMockSsh）
+# ── mock SSH：E2E 审批链路专用（演示可 -SkipMockSsh）──────────────────
 if (-not $SkipMockSsh) {
     Start-Service4 -Name 'mock-ssh' -Port 2222 -WorkDir $ProjectRoot `
         -Command ('"{0}" scripts/e2e/mock_ssh_server.py' -f $python) `

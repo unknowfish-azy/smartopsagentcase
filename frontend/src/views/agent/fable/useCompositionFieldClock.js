@@ -71,8 +71,23 @@ export function useCompositionFieldClock(initial = NEUTRAL_FIELD, reduced = fals
     cur.gaze.y += (target.gaze.y - cur.gaze.y) * k
     cur.pulse += (target.pulse - cur.pulse) * k
 
-    // 触发 Vue 更新（shallowRef 需要替换引用才响应）
-    current.value = { ...cur, gaze: { ...cur.gaze } }
+    // 收敛检测（DESIGN §10：数据不变时静置，画面必须完全静止）。
+    // 所有参数与 target 的差都 < 1e-6 时跳过 shallowRef 替换，
+    // 避免 Vue 因引用变化触发不必要的重渲染。
+    const converged =
+      Math.abs(target.aperture - cur.aperture) < 1e-6 &&
+      Math.abs(target.tilt - cur.tilt) < 1e-6 &&
+      Math.abs(target.volume - cur.volume) < 1e-6 &&
+      Math.abs(target.spin - cur.spin) < 1e-6 &&
+      Math.abs(target.groove - cur.groove) < 1e-6 &&
+      Math.abs(target.grain - cur.grain) < 1e-6 &&
+      Math.abs(target.gaze.x - cur.gaze.x) < 1e-6 &&
+      Math.abs(target.gaze.y - cur.gaze.y) < 1e-6 &&
+      Math.abs(target.pulse - cur.pulse) < 1e-6
+
+    if (!converged) {
+      current.value = { ...cur, gaze: { ...cur.gaze } }
+    }
   }
 
   stop = subscribe(onFrame, { fps: 30, id: 'composition-field-clock' })

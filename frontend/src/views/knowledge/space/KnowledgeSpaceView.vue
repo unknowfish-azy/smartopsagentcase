@@ -43,26 +43,24 @@ const listItems = computed(() => {
   })
 })
 
-/* ===== 方向键空间导航：在当前焦点卡所在域内按 row/col 邻近移动 ===== */
+/* ===== 方向键空间导航：在当前焦点卡所在域内按 row/col 邻近移动 =====
+   走格子而不是按世界坐标距离算——卡片尺寸随域自适应，硬编码 200/124 会跨行。 */
 function findNeighborInZone (zoneId, rowDelta, colDelta, fromId) {
-  const rowDeltaY = rowDelta * (124 + 12)   // cardH + gap
-  const colDeltaX = colDelta * (200 + 12)
   const base = cardById.get(fromId)
   if (!base) return null
-  const zCards = cards.filter(c => c.zoneId === zoneId)
-  // 取所有候选，算到 targetPos 的距离，取最近的
-  const targetX = base.x + colDeltaX
-  const targetY = base.y + rowDeltaY
-  let best = null, bestDist = Infinity
-  for (const c of zCards) {
-    if (c.id === fromId) continue
-    const d = Math.hypot(c.x - targetX, c.y - targetY)
-    // 方向约束：↑ 必须 y < base.y，↓ 必须 y > base.y，← 必须 x < base.x，→ 必须 x > base.x
-    if (rowDelta === -1 && c.y >= base.y) continue
-    if (rowDelta ===  1 && c.y <= base.y) continue
-    if (colDelta === -1 && c.x >= base.x) continue
-    if (colDelta ===  1 && c.x <= base.x) continue
-    if (d < bestDist) { bestDist = d; best = c }
+  let best = null, bestScore = Infinity
+  for (const c of cards) {
+    if (c.zoneId !== zoneId || c.id === fromId) continue
+    const dr = c.row - base.row
+    const dc = c.col - base.col
+    if (rowDelta === -1 && dr >= 0) continue
+    if (rowDelta ===  1 && dr <= 0) continue
+    if (colDelta === -1 && dc >= 0) continue
+    if (colDelta ===  1 && dc <= 0) continue
+    // 主方向距离优先，另一轴只用于挑「同一列 / 同一行」的最近一张
+    const score = (rowDelta !== 0 ? Math.abs(dr) : Math.abs(dc)) * 100 +
+                  (rowDelta !== 0 ? Math.abs(dc) : Math.abs(dr))
+    if (score < bestScore) { bestScore = score; best = c }
   }
   return best
 }

@@ -11,28 +11,30 @@
    ============================================================================ */
 
 .fable {
-  /* 色板：墨 / 纸 / 陶土 / 杏 / 黄油 / 鼠尾草 / 梅 / 注视青 */
-  --fab-bg: #0a0d10;
-  --fab-plane: #0e1217;
-  --fab-plane-2: #13181e;
-  --fab-paper: #f1e8d6;
-  --fab-paper-72: rgba(241, 232, 214, 0.72);
-  --fab-paper-46: rgba(241, 232, 214, 0.46);
-  --fab-paper-26: rgba(241, 232, 214, 0.26);
-  --fab-rule: rgba(241, 232, 214, 0.12);
-  --fab-rule-2: rgba(241, 232, 214, 0.26);
-  --fab-clay: #c76a48;
-  --fab-clay-deep: #7a3020;
-  --fab-apricot: #e6a275;
-  --fab-butter: #d4b25a;
-  --fab-sage: #8ea388;
-  --fab-plum: #947597;
-  --fab-gaze: #72c4e0;
+  /* 色板：对齐项目设计令牌（T18/T20 控制台色系），弃用独立的暖色复古纸色板。
+     纸面→正文色，陶土→主色蓝，杏→主色强青，黄油→告警，鼠尾草→成功，梅→紫，注视→青。 */
+  --fab-bg: var(--ds-surface-base, #0E1116);
+  --fab-plane: var(--ds-surface-raised, #151A21);
+  --fab-plane-2: var(--ds-surface-overlay, #1B212A);
+  --fab-paper: var(--ds-color-text, #e8f2f7);
+  --fab-paper-72: color-mix(in srgb, var(--ds-color-text, #e8f2f7) 72%, transparent);
+  --fab-paper-46: color-mix(in srgb, var(--ds-color-text, #e8f2f7) 46%, transparent);
+  --fab-paper-26: color-mix(in srgb, var(--ds-color-text, #e8f2f7) 26%, transparent);
+  --fab-rule: color-mix(in srgb, var(--ds-color-text, #e8f2f7) 8%, transparent);
+  --fab-rule-2: var(--ds-color-border, rgba(159, 190, 207, .18));
+  --fab-clay: var(--ds-color-primary, #2496ed);
+  --fab-clay-deep: color-mix(in srgb, var(--ds-color-primary, #2496ed) 55%, #000);
+  --fab-apricot: var(--ds-color-primary-strong, #7ad7f5);
+  --fab-butter: var(--ds-color-warning, #d9b96d);
+  --fab-sage: var(--ds-color-success, #8bcfb4);
+  --fab-plum: var(--ds-lane-4, #9b8cf0);
+  --fab-gaze: var(--ds-color-primary-strong, #7ad7f5);
 
   --fab-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --fab-ease-io: cubic-bezier(0.4, 0, 0.2, 1);
   --fab-mono: var(--ds-font-mono, ui-monospace, "Cascadia Mono", Consolas, monospace);
-  --fab-cn: var(--ds-font-cn, "PingFang SC", "Microsoft YaHei", sans-serif);
+  /* 中文字体走项目 Noto Sans SC；果冻感靠字重 500/600 + 柔化 + 微光实现，不引第三方字体 */
+  --fab-cn: var(--ds-font-cn, "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif);
 
   /* 构成参数：由状态覆写，形状据此重排 */
   --fab-arc-x: 50%;
@@ -52,7 +54,10 @@
   color: var(--fab-paper);
   background: var(--fab-bg);
   font-family: var(--fab-cn);
+  /* 去锐化：亚像素抗锯齿 + 优化易读性，避免大字号细笔划发虚发锐 */
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* 纸面：96px 测量网格 + 顶部渐隐 */
@@ -66,30 +71,29 @@
     linear-gradient(to bottom, var(--fab-rule) 1px, transparent 1px);
   background-size: 96px 96px;
   background-position: -1px -1px;
-  opacity: 0.42;
+  opacity: 0.22;
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 96%);
   mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 96%);
   pointer-events: none;
 }
 
 .fable[data-theme="light"] {
-  --fab-bg: #f3ede0;
-  --fab-plane: #f8f3e6;
-  --fab-plane-2: #eee6d5;
-  --fab-paper: #171a1e;
-  --fab-paper-72: rgba(23, 26, 30, 0.76);
-  --fab-paper-46: rgba(23, 26, 30, 0.54);
-  --fab-paper-26: rgba(23, 26, 30, 0.32);
-  --fab-rule: rgba(23, 26, 30, 0.12);
-  --fab-rule-2: rgba(23, 26, 30, 0.3);
-  --fab-clay: #a34a28;
-  --fab-clay-deep: #6c2815;
-  --fab-apricot: #ae6c3a;
-  --fab-butter: #8b6b1c;
-  --fab-sage: #4a6244;
-  --fab-plum: #604668;
-  --fab-gaze: #125f78;
-  --fab-tonal: rgba(243, 237, 224, 0.5);
+  --fab-bg: var(--ds-surface-base, #F4F7FA);
+  --fab-plane: var(--ds-surface-raised, #FFFFFF);
+  --fab-plane-2: var(--ds-surface-overlay, #FFFFFF);
+  --fab-paper: var(--ds-color-text, #10212b);
+  --fab-paper-72: color-mix(in srgb, var(--ds-color-text, #10212b) 76%, transparent);
+  --fab-paper-46: color-mix(in srgb, var(--ds-color-text, #10212b) 54%, transparent);
+  --fab-paper-26: color-mix(in srgb, var(--ds-color-text, #10212b) 32%, transparent);
+  --fab-rule: color-mix(in srgb, var(--ds-color-text, #10212b) 10%, transparent);
+  --fab-rule-2: var(--ds-color-border, rgba(16, 53, 70, .22));
+  --fab-clay: var(--ds-color-primary, #0e5f92);
+  --fab-clay-deep: color-mix(in srgb, var(--ds-color-primary, #0e5f92) 60%, #000);
+  --fab-apricot: var(--ds-color-primary-strong, #084b73);
+  --fab-butter: var(--ds-color-warning, #8a5a08);
+  --fab-sage: var(--ds-color-success, #176b50);
+  --fab-plum: var(--ds-lane-4, #6e56c7);
+  --fab-gaze: var(--ds-color-primary-strong, #084b73);
 }
 
 .fable *,
@@ -144,9 +148,13 @@
   margin: 0;
   font-family: var(--fab-cn);
   font-size: clamp(46px, 6.4vw, 88px);
-  font-weight: 300;
+  font-weight: 500;
   line-height: 0.94;
-  letter-spacing: 0.005em;
+  letter-spacing: 0.02em;
+  /* 果冻感：柔焦微光让字形边缘不锐利，带一点糖衣高光 */
+  text-shadow:
+    0 0 1px color-mix(in srgb, var(--fab-apricot) 40%, transparent),
+    0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 .fable-title .title-en {
@@ -252,7 +260,7 @@
     linear-gradient(to right, var(--fab-rule) 1px, transparent 1px),
     linear-gradient(to bottom, var(--fab-rule) 1px, transparent 1px);
   background-size: 48px 48px;
-  opacity: 0.5;
+  opacity: 0.22;
   pointer-events: none;
 }
 
@@ -426,9 +434,13 @@
   margin: 0;
   font-family: var(--fab-cn);
   font-size: clamp(44px, 5vw, 70px);
-  font-weight: 300;
+  font-weight: 500;
   line-height: 0.92;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.03em;
+  /* 果冻感：状态名带糖衣高光 */
+  text-shadow:
+    0 0 1px color-mix(in srgb, var(--fab-clay) 36%, transparent),
+    0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 .cap-en {
@@ -544,8 +556,8 @@
   margin: 0;
   font-family: var(--fab-cn);
   font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 
 .fable-panel-head .en {

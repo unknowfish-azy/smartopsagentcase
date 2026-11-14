@@ -77,22 +77,30 @@ function Ensure-Ollama {
     throw 'Timed out waiting for Ollama API /api/tags on port 11434.'
 }
 
+# Start-CommandWindow：在隐藏窗口里启动单个服务（cmd /c 方式）。
+# 与 start-platform.ps1 的 Start-Service4 不同，本函数不等待健康检查、
+# 不记录 PID——就绪等待由调用方用 Wait-TcpPort 单独完成。
+# 端口已被占用时直接跳过（避免重复启动）。
 function Start-CommandWindow {
     param([string]$Name, [string]$WorkingDirectory, [string]$Command, [int]$Port)
 
     if (-not (Test-Path -LiteralPath $WorkingDirectory -PathType Container)) {
         throw ("{0} directory not found: {1}" -f $Name, $WorkingDirectory)
     }
+    # 端口已在监听 → 说明服务已在跑，跳过（不重复启动）
     if ($Port -gt 0 -and (Test-TcpPort -HostName '127.0.0.1' -Port $Port)) {
         Write-Host ("[CHECK] {0}: existing listener on {1}; verifying readiness instead of starting a duplicate" -f $Name, $Port)
         return
     }
+    # 日志写到 .runtime/launcher-logs/，文件名含服务名 + 时间戳
     $logDirectory = Join-Path $ProjectRoot '.runtime\launcher-logs'
     New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
     $logName = ($Name -replace '[^a-zA-Z0-9_-]', '-') + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff')
     $stdout = Join-Path $logDirectory ($logName + '.stdout.log')
     $stderr = Join-Path $logDirectory ($logName + '.stderr.log')
     Write-Host ("[START] {0}; logs: {1}" -f $Name, $stdout)
+    # 用 cmd /c 启动（兼容 java -jar / python -m uvicorn / npm run dev 等），
+    # WindowStyle Hidden 让控制台窗口不弹出，stdout/stderr 重定向到日志文件
     Start-Process -FilePath 'cmd.exe' -WorkingDirectory $WorkingDirectory `
         -ArgumentList @('/c', $Command) -WindowStyle Hidden `
         -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
@@ -140,8 +148,10 @@ try {
         throw ("Project root not found: {0}" -f $ProjectRoot)
     }
 
+    # ── Ollama：本地模型推理（硬性依赖，不在则直接报错）───────────────
     Ensure-Ollama
 
+    # ── Docker 依赖：MySQL + Redis（可 -SkipDependencies 跳过）─────────
     if (-not $SkipDependencies) {
         $dockerDir = Join-Path $ProjectRoot 'deploy\docker'
         if (Test-Path -LiteralPath $dockerDir -PathType Container) {
@@ -159,6 +169,9 @@ try {
         Write-Host '[SKIP] Docker dependencies'
     }
 
+    # ── 前端用户端（5173）：先起前端再等端口监听 ──────────────────────
+    # 注意：与 start-platform.ps1 顺序相反——本脚本是"起一个等一个"，
+    # 前端不需要后端就能起来（Vite dev server 独立运行），所以先起前端。
     Start-CommandWindow -Name 'Frontend user (5173)' -WorkingDirectory $frontendDir -Port 5173 `
         -Command 'set "NODE_OPTIONS=--max-old-space-size=512" && npm run dev -- --host 0.0.0.0 --port 5173'
     Wait-TcpPort -ServiceName 'Frontend user' -Port 5173
@@ -167,14 +180,19 @@ try {
         -Command 'set "NODE_OPTIONS=--max-old-space-size=512" && npm run dev:admin -- --host 0.0.0.0 --port 5174'
     Wait-TcpPort -ServiceName 'Frontend admin' -Port 5174
 
+    # ── 后端（8080）：先 mvn package 再 java -jar ────────────────────
+    # JVM 参数经过严格封顶（-Xmx512m + SerialGC），避免后端吃掉太多内存。
+    # -XX:+ExitOnOutOfMemoryError 确保 OOM 时进程直接退出，不会半死不活。
     Start-CommandWindow -Name 'Backend (8080)' -WorkingDirectory $backendDir -Port 8080 `
         -Command 'mvn -s .mvn\smartops-settings.xml -q -DskipTests package && java -Xms64m -Xmx512m -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=96m -XX:MaxDirectMemorySize=128m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8 -jar target\smartops-backend-0.0.1-SNAPSHOT.jar'
     Wait-ServiceReadiness -ServiceName 'Backend' -Uri 'http://127.0.0.1:8080/actuator/health' -TimeoutSeconds $StartupTimeoutSeconds -PollSeconds $PollIntervalSeconds
 
+    # ── AI 服务（8001）：uvicorn 启动 FastAPI ────────────────────────
     Start-CommandWindow -Name 'AI service (8001)' -WorkingDirectory $aiServiceDir -Port 8001 `
         -Command 'python -m uvicorn app.main:app --host 0.0.0.0 --port 8001'
     Wait-ServiceReadiness -ServiceName 'AI service' -Uri 'http://127.0.0.1:8001/api/health' -ExpectedService 'smartops-ai-service' -TimeoutSeconds $StartupTimeoutSeconds -PollSeconds $PollIntervalSeconds
 
+    # ── 知识服务（8002）：uvicorn 启动 FastAPI，开发态开 --reload ──────
     # 开发态加 --reload（只监听 knowledge/ 下的 .py）：改代码后自动换 worker，
     # 父进程不退出，不用再手工重启；生产部署不要开这个开关。
     Start-CommandWindow -Name 'Knowledge service (8002)' -WorkingDirectory $ProjectRoot -Port 8002 `

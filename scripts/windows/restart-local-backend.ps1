@@ -39,14 +39,23 @@ $jvmOptions = @(
     '-XX:+UseSerialGC',
     '-XX:+ExitOnOutOfMemoryError'
 )
+# Ollama 是后端的可选依赖（AI 对话需要），有内置运行时就顺带拉起
 if (Test-Path -LiteralPath (Join-Path $root '.runtime\mini\runtime\ollama.exe')) { & (Join-Path $PSScriptRoot 'start-mini.ps1') }
+
+# bootstrap.env 是生产级安全凭据文件（含内部 token、加密密钥等），由 2-安装环境.bat 生成。
+# 不存在时直接抛异常（fail-closed），不允许用空密钥启动。
 $credentialFile = Join-Path $root '.runtime\secrets\bootstrap.env'
 if (!(Test-Path -LiteralPath $credentialFile)) { throw 'Create a private bootstrap environment before first startup' }
+
+# 把 jar 复制到 .runtime/backend/ 带时间戳的目录，避免运行时直接操作 target/ 下的构建产物
+# （下次 mvn package 会覆盖 target 里的 jar，而运行中的进程持有的是复制后的副本）
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
 $runtimeDirectory = Join-Path $root '.runtime\backend'
 [System.IO.Directory]::CreateDirectory($runtimeDirectory) | Out-Null
 $runtimeJar = Join-Path $runtimeDirectory "smartops-backend-$stamp.jar"
 Copy-Item -LiteralPath $jar -Destination $runtimeJar
+
+# ── 加载环境变量：.env + bootstrap.env，启动后还原 ───────────────────
 $previous = @{}
 try {
     foreach ($file in @((Join-Path $root '.env'), $credentialFile)) {
@@ -58,17 +67,26 @@ try {
             }
         }
     }
+
+    # ── 停掉旧的后端进程：先校验端口归属，避免误杀其它程序 ────────────
     $listeners = @(Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
     foreach ($listener in $listeners) {
         $process = Get-CimInstance Win32_Process -Filter "ProcessId=$listener"
+        # 只杀"java.exe 且命令行含本项目路径/SmartOpsApplication"的进程，
+        # 否则抛异常拒绝停止（端口可能被 IDE 或其它项目占用）
         if (!$process -or $process.Name -ne 'java.exe' -or ($process.CommandLine -notmatch [regex]::Escape($backend) -and $process.CommandLine -notmatch [regex]::Escape($runtimeDirectory) -and $process.CommandLine -notmatch 'com\.smartops\.SmartOpsApplication')) { throw 'Port 8080 belongs to another application; refusing to stop it' }
         Stop-Process -Id $listener -Force
-        Wait-Process -Id $listener -Timeout 20 -ErrorAction SilentlyContinue
+        Wait-Process -Id $listener -Timeout 20 -ErrorAction SilentlyContinue   # 等最多 20 秒让进程真正退出
     }
+
+    # ── 启动新后端：安全模式，internal-bypass=false ──────────────────
+    # --server.address=127.0.0.1 只监听回环地址（不暴露到公网）
+    # --smartops.security.internal-bypass=false 关闭内部接口绕过（生产安全）
     $logs = Join-Path $root '.runtime\logs'
     [System.IO.Directory]::CreateDirectory($logs) | Out-Null
     $process = Start-Process -FilePath $Java -ArgumentList (@('-Dfile.encoding=UTF-8') + $jvmOptions + @('-jar', "`"$runtimeJar`"", '--server.address=127.0.0.1', '--smartops.security.internal-bypass=false')) -WorkingDirectory $backend -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logs "backend-secure-$stamp.out.log") -RedirectStandardError (Join-Path $logs "backend-secure-$stamp.err.log")
     Write-Output "Backend launched: PID $($process.Id), logs .runtime/logs/backend-secure-$stamp.*.log"
 } finally {
+    # 无论成功失败都还原环境变量，避免污染后续命令
     foreach ($name in $previous.Keys) { [Environment]::SetEnvironmentVariable($name, $previous[$name], 'Process') }
 }
