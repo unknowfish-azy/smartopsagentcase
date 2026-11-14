@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "agent-avatar-3d-v1 sources checklist",
+  "type": "object",
+  "required": ["checkedAt", "entries"],
+  "additionalProperties": true,
+  "properties": {
+    "checkedAt": { "type": "string", "description": "人工核查日期，ISO 8601" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/entry" }
+    }
+  },
+  "definitions": {
+    "entry": {
+      "type": "object",
+      "required": ["id", "kind", "allow"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "repo": { "type": ["string", "null"], "pattern": "^[\\w.-]+/[\\w.-]+$" },
+        "kind": {
+          "enum": ["reference-code", "reference-doc", "offline-tool", "model-asset", "rejected"]
+        },
+        "spdx": { "type": ["string", "null"] },
+        "allow": {
+          "type": "boolean",
+          "description": "唯一权限开关。false 时脚本不得发任何请求。"
+        },
+        "runtime": {
+          "type": "boolean",
+          "description": "是否会进入前端运行时依赖；只有 MIT/Apache-2.0/CC0 可为 true。"
+        },
+        "urls": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri", "pattern": "^https://" }
+        },
+        "licenseUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "非 GitHub 仓库型来源（如官方 FAQ 页）的许可原文地址；脚本只允许跳转到该 URL 自身域名。"
+        },
+        "use": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "model-asset" } } },
+          "then": { "required": ["urls"] }
+        }
+      ]
+    }
+  }
+}

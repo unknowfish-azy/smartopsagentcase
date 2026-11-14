@@ -16,6 +16,7 @@ const routeMetadata = Object.freeze({
   MilestoneHall: Object.freeze({ personalGroup: 'milestones', pageFlow: null }),
   AgentCommandCenter: Object.freeze({ personalGroup: 'agent', pageFlow: 'agent' }),
   ExecutionTrace: Object.freeze({ personalGroup: 'agent', pageFlow: 'agent' }),
+  AgentPersona: Object.freeze({ personalGroup: 'agent', pageFlow: null }),
   InspectorCenter: Object.freeze({ personalGroup: 'memory', pageFlow: 'memory' }),
   InspectorStatistics: Object.freeze({ personalGroup: 'memory', pageFlow: 'memory' }),
   OperationRunHistory: Object.freeze({ personalGroup: 'memory', pageFlow: null }),
