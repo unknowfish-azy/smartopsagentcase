@@ -53,11 +53,20 @@ else { Write-Fail '未找到 Node.js（winget install OpenJS.NodeJS.LTS）'; exi
 
 Write-Blank
 
+# 启动顺序说明：Redis → 后端 → 知识服务 → AI 服务 → 前端。
+# 依赖关系：后端需要 MySQL（系统服务，假设已运行）+ Redis；
+#           AI 服务需要知识服务（KNOWLEDGE_SERVICE_URL）；
+#           前端需要后端（API 代理）。所以按此顺序拉起。
+# 每个服务都过 Start-ServiceProcess 的健康检查才算就绪，未就绪会打印日志末尾。
+
 # ── 1. Redis ─────────────────────────────────────────────────────────
+# Redis 用于后端的会话、限流、任务状态缓存。不是硬性依赖：
+# Redis 不在时后端仍能启动（actuator/health 会显示 DOWN，但接口可用）。
 $redisOk = Test-Port 6379
 if (-not $redisOk -and -not $SkipRedis) {
     $redisExe = Find-RedisServer
     if ($redisExe) {
+        # 优先用本地 redis-server.exe，绑定 127.0.0.1（不暴露到公网）
         Write-Step '启动 Redis（6379）'
         $log = Join-Path $script:LogDir ('redis-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')
         $p = Start-Process -FilePath $redisExe -ArgumentList @('--port', '6379', '--bind', '127.0.0.1') -WindowStyle Hidden -PassThru -RedirectStandardOutput $log
@@ -66,6 +75,7 @@ if (-not $redisOk -and -not $SkipRedis) {
         $redisOk = Test-Port 6379
         if ($redisOk) { Write-Ok 'Redis 就绪' } else { Write-Warn "Redis 未能监听 6379（日志：$log）" }
     } else {
+        # 没找到 redis-server.exe，尝试启动系统服务（Memurai / Redis）
         $svc = Get-Service -Name 'Memurai*', 'Redis*' -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($svc) {
             Write-Step "启动 Redis 服务 $($svc.Name)"
@@ -77,6 +87,8 @@ if ($redisOk) { Write-Ok 'Redis 6379 就绪' }
 else { Write-Warn 'Redis 未就绪：平台仍可启动，但后端健康状态会显示 DOWN、会话/限流可能异常' }
 
 # ── 2. 后端（jar 优先，无 Maven 也能跑）───────────────────────────────
+# 优先用打好包的 jar 直接跑（省内存、启动快）；jar 不存在时才用 Maven 现场打包。
+# JVM 参数经过封顶：-Xmx640m + SerialGC，避免后端吃掉太多内存。
 $jar = Join-Path $script:Root 'backend\target\smartops-backend-0.0.1-SNAPSHOT.jar'
 $backendDir = Join-Path $script:Root 'backend'
 if (-not (Test-Path -LiteralPath $jar)) {
@@ -92,6 +104,7 @@ if (-not (Test-Path -LiteralPath $jar)) {
     exit 1
 }
 
+# Redis 就绪时期望健康检查返回 'UP'；Redis 不在时后端健康会是 DEGRADED，不做强校验
 $backendArgs = '-Xms128m -Xmx640m -XX:MaxMetaspaceSize=320m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Dfile.encoding=UTF-8 -jar "{0}" --spring.profiles.active=local --server.port=8080' -f $jar
 $backendExpect = if ($redisOk) { 'UP' } else { $null }
 $okBackend = Start-ServiceProcess -Name 'backend' -Port 8080 -WorkDir $backendDir -Exe $java -ArgString $backendArgs `
@@ -99,6 +112,9 @@ $okBackend = Start-ServiceProcess -Name 'backend' -Port 8080 -WorkDir $backendDi
     -TimeoutSeconds $TimeoutSeconds
 
 # ── 3. 知识服务（:8002）──────────────────────────────────────────────
+# knowledge.server:app 是 FastAPI 应用，提供 RAG 混合检索。
+# ExtraEnv 里的 OMP_NUM_THREADS=1 等是为了限制 torch/OpenMP 线程数，
+# 否则 torch 会按物理核数起线程（32 核机器 → 提交内存 2.6GB），限制后降到约 1.1GB。
 $okKnowledge = Start-ServiceProcess -Name 'knowledge' -Port 8002 -WorkDir $script:Root `
     -Exe $py.Path -ArgString '-m uvicorn knowledge.server:app --host 127.0.0.1 --port 8002' `
     -HealthUrl 'http://127.0.0.1:8002/api/ready' -Expect 'smartops-knowledge-service' `
@@ -106,6 +122,9 @@ $okKnowledge = Start-ServiceProcess -Name 'knowledge' -Port 8002 -WorkDir $scrip
     -TimeoutSeconds $TimeoutSeconds
 
 # ── 4. AI 服务（:8001）───────────────────────────────────────────────
+# app.main:app 是 FastAPI 应用，提供 LLM 网关、对话、RAG 编排。
+# 注入的环境变量：聊天令牌密钥、知识服务 API Key 与地址、LLM Provider。
+# 这些值从根 .env 读取，由 2-安装环境.bat 自动生成。
 $okAi = Start-ServiceProcess -Name 'ai-service' -Port 8001 -WorkDir (Join-Path $script:Root 'ai-service') `
     -Exe $py.Path -ArgString '-m uvicorn app.main:app --host 127.0.0.1 --port 8001' `
     -HealthUrl 'http://127.0.0.1:8001/api/health' -Expect 'smartops-ai-service' `
@@ -118,6 +137,8 @@ $okAi = Start-ServiceProcess -Name 'ai-service' -Port 8001 -WorkDir (Join-Path $
     -TimeoutSeconds $TimeoutSeconds
 
 # ── 5. 前端 ──────────────────────────────────────────────────────────
+# 用户层（5173）与管理端（5174）是两个独立的 Vite dev server，共用同一套后端与会话。
+# --strictPort 确保端口被占用时直接失败而不是自动换端口（避免访问错地址）。
 $feDir = Join-Path $script:Root 'frontend'
 $okFront = Start-ServiceProcess -Name 'frontend' -Port 5173 -WorkDir $feDir `
     -CommandLine 'npm run dev -- --host 127.0.0.1 --port 5173 --strictPort' `

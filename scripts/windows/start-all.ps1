@@ -1,4 +1,7 @@
 # SmartOpsAgent Windows development startup (PowerShell 5.1 compatible)
+# 新手提示：第一次跑项目请用 scripts/handoff-kit/ 下的一键脚本（自动生成
+# .env 密钥、建库、装依赖）。本脚本适合已装好环境、需要"等每个服务 HTTP
+# 就绪后再启下一个"的顺序启动场景。
 [CmdletBinding()]
 param(
     [string]$ProjectRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),

@@ -2,6 +2,28 @@
 
 用于 SmartOpsAgent Windows 本地开发环境。
 
+## 新手推荐路径
+
+**第一次接触项目？请直接用 [`../handoff-kit/`](../handoff-kit/) 下的四个一键脚本**，它们会自动处理环境检查、依赖安装、`.env` 密钥生成、数据库创建等所有繁琐步骤。
+
+本目录的脚本面向**已装好环境、需要更细粒度控制**的开发者。如果你不确定该用哪个，先看下表：
+
+| 场景 | 脚本 | 说明 |
+|---|---|---|
+| 日常启停全栈 | `start-platform.ps1` | 推荐，支持 `-Status` / `-Stop` / `-Restart` |
+| 一键启动（打开新窗口） | `start-dev.ps1` / `start-dev.bat` | 各服务独立 cmd 窗口，便于看实时日志 |
+| 顺序等待就绪启动 | `start-all.ps1` | 每个服务等 HTTP 就绪后才起下一个 |
+| 只起管理员前端 | `start-admin-frontend.ps1` | 单独起 5174 管理端 |
+| 启动本地 Ollama | `start-mini.ps1` | 本地推理运行时 |
+| 检查环境 | `check-env.ps1` | Java/Maven/Node/Python/Git/Docker |
+| 查看运行状态 | `status-local.ps1` | 端口、进程内存、Docker、磁盘 |
+| 检查配置完整性 | `check-config.ps1` | .env 必需项是否齐全 |
+| 重启知识服务 | `restart-knowledge.ps1` | 带热重载 `-Reload` |
+| 重启后端 | `restart-local-backend.ps1` | 安全模式，需 bootstrap.env |
+| 停止所有服务 | `stop-all-local.ps1` | 按进程路径精确回收，不误杀 |
+
+> ⚠️ **不要混用**：`start-platform.ps1`、`start-all.ps1`、`start-dev.ps1` 都是全栈启动脚本，选一个用即可，同时跑会争抢端口。
+
 ## start-platform.ps1（推荐：一键启停全栈）
 
 管理本机八个服务（MySQL / Redis / Ollama / 后端 / knowledge / ai-service / 用户前端 / 管理前端），外加 E2E 用的 mock SSH。已在跑且健康检查通过的服务会被跳过，不会重复拉起。

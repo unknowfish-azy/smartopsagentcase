@@ -109,3 +109,50 @@ The 0-4px radius rule above described the original editorial prototype. The prod
 - **Ambient organisms:** `MainLayout` skips the whale and jellyfish on this route (`isCompositionPlate`) because their particles cross the plate copy; the desktop pet stays and remains user-dismissible.
 - **Evidence rule:** the page renders only live runtime signals or explicitly tagged `SAMPLE` / `REHEARSAL` content; missing data renders `—`, never an estimate. Structural parameters (aperture / tilt / volume) are drawing parameters, labelled as such, and never presented as model or operational metrics.
 - Spec and acceptance: `docs/design/agent-module-v1/DESIGN.md`, `frontend/test/agent-module.browser.mjs`.
+
+## Revision 2026-11-14 — Spatial Field plate (scoped exception inside the tool surface)
+
+`/knowledge/space` 的 **场域**视图模式（`views/knowledge/space/SpaceFieldView.vue` + FieldStage/FieldPlane/EvidenceBed/ThreadLayer/InsightCanopy）是工具层里的"三层空间场"，不是新的 surface 类型；`/knowledge/space` 的 **空间 / 网格 / 列表** 三个原有视图完全不受影响，其余路由也不受影响。
+
+此节的所有约束仅作用于上述组件树；其他路由继续遵守 tool surface 基线（零 WebGL / 零粒子 / 零 backdrop-filter）。
+
+### 允许项
+- **CSS 3D 变换层**：`FieldStage` 作为 `perspective` 容器，子元素使用 `transform-style: preserve-3d` + `translate3d(x, y, z)` 在世界坐标系中定位。yaw / pitch 受限轨道（yaw ±35°, pitch 8–52°），三机位预设，Esc 三级回退。
+- **单 Canvas2D 证据层**（`EvidenceBed.vue`）：只画真实 `evidenceRefs`，空数组不装饰。15fps（motionScheduler 订阅），reduced-motion 静态单帧。新事件到达时 400ms 一次性局部脉冲，不循环。
+- **SVG 线程层**（`ThreadLayer.vue`）：屏幕空间叠加，与世界坐标换算后绘制。纵向渐变（`--ds-accent-soft → --ds-accent → --ds-text-secondary`），hover 2px + relation 标签。`contradicts` 用虚线 + 菱形端点；`operational` 用短横线 + 空心端点。
+
+### 仍然禁止（与 tool surface 一致）
+- **WebGL**（three.js / raw WebGL）— 暂未达准入条件（见 DESIGN.md §7 四条：FPS 不足、世界平面 ≥1500、MASTER 新增 scoped exception、有 before/after 实测）。
+- **粒子装饰**（背景网格 / 星空 / 永续动画）。`EvidenceBed` 空数组时 canvas 必须完全透明。
+- **`backdrop-filter` / `backdrop-blur`**（FieldPlane / InsightCanopy 使用 `rgba()` 半透明背景）。
+- **逐帧框架状态写入**（不允许在 `requestAnimationFrame` 里逐平面 `setState` / `v-model`；所有变换批量一次性写 `transform`）。
+- **新增独立 `requestAnimationFrame` 循环**（全部走 `motionScheduler.subscribe()`，共享 rAF 调度器）。
+
+### 预算（硬约束，DESIGN §6.2）
+- 同帧挂载世界平面 ≤ **480**；超出按距相机 target 的距离升序截断并 `console.warn('[field] plane budget exceeded …')`。
+- 同帧可见平面 ≤ **180**（视锥 + 距离裁剪）。
+- 帧率：30fps 默认，慢帧自动降 15fps（motionScheduler 的全局降级机制），`prefers-reduced-motion` 下单帧静态无补间。
+- `will-change: transform` 生效元素 ≤ 40；其余靠合成层提升（`translate3d` 天然促成）。
+- 世界平面数据结构（JS 对象）≤ 2 MB。
+
+### 文字与可访问性
+- **所有文本为屏幕空间 DOM**（FieldPlane / InsightCanopy 直接输出 `<span>` / `<h3>`，不画 canvas-text / SDF-text）。必须可选中、可搜索、可被读屏。
+- `aria-label` 复述位置与身份（DESIGN §8）：知识层 / 洞察层 · domain · 条目身份。
+- `far` / `mid` LOD 平面 `aria-hidden="true"`、`tabindex="-1"`，不参与 Tab 序；`near` / `focus` 平面可聚焦。
+- 触控命中区 ≥ 44px；对比度 ≥ 4.5:1。
+- 断点 375 下禁用自由轨道（SpaceFieldView.vue media query 禁用 pointermove 拖拽，隐藏 ThreadLayer）。
+
+### 其他
+- **不引入新 npm 依赖**（Phase A 0 新增依赖；WebGL 需先过 Open Source Intake）。
+- **不新建后端接口**（Phase A 纯前端数据契约；Phase B 才加只读 `GET /api/knowledge/{id}/evidence-refs`）。
+- **不改 `catalogProjection` 白名单**（`knowledgeModel.js` 的字段白名单保持不动；新增的 `evidenceRefs` / `insightRefs` / `freshness` 被自动丢弃，这是正确行为，它们是前端派生/待接入字段）。
+- **不编造数据**：`evidenceRefs` 缺失 → EvidenceBed 对应域无带；绑定 0 命中 → `operational` 模式（InsightCanopy 显式「未绑定知识」）。
+
+### Evidence rule
+- 平面预算的 before/after：`npm run perf:baseline`（覆盖 `/knowledge/space` field 视图场景）或独立 node 脚本验证 `computeField.stats`（见 `frontend/test/field-layout.test.mjs`）。
+- 帧率 / 内存：motionScheduler 输出的帧时间日志 + Chrome DevTools Performance 面板截图。
+- 无 before/after 数字的性能结论视为未验收。
+
+- Spec: `docs/design/spatial-knowledge-field/DESIGN.md`, `docs/design/spatial-knowledge-field/KNOWLEDGE-INSIGHT-BINDING.md`
+- Source: `frontend/src/views/knowledge/space/useFieldLayout.js`, `bindingIndex.js`, `SpaceFieldView.vue`, `FieldStage.vue`, `FieldPlane.vue`, `EvidenceBed.vue`, `ThreadLayer.vue`, `InsightCanopy.vue`
+- Tests: `frontend/test/field-layout.test.mjs`, `frontend/test/binding-index.test.mjs`
