@@ -7,6 +7,7 @@
         <p>查询远程运维工具的命令、退出码、标准输出、错误输出与证据链。</p>
       </div>
       <button class="button" type="button" :disabled="loading" @click="loadRuns(page.page)">{{ loading ? '刷新中…' : '刷新记录' }}</button>
+      <RouterLink class="button" :to="deskLink">在洞察台打开</RouterLink>
     </header>
     <RunHistoryFilters v-model:filters="filters" :form-error="formError" @search="loadRuns(1)" @reset="resetFilters" />
     <div v-if="error" class="state error" role="alert">
@@ -43,6 +44,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRunHistory } from '../../composables/useRunHistory.js'
 import RunHistoryFilters from '../../components/operations/RunHistoryFilters.vue'
 import RunHistoryListPanel from '../../components/operations/RunHistoryListPanel.vue'
@@ -72,6 +74,13 @@ const {
   resetFilters,
   copyTrace
 } = useRunHistory()
+
+const deskLink = computed(() => {
+  const params = new URLSearchParams({ view: 'runs' })
+  if (selectedId.value) params.set('id', String(selectedId.value))
+  if (filters.value.traceId) params.set('traceId', filters.value.traceId)
+  return `/inspector/desk?${params.toString()}`
+})
 </script>
 
 <style scoped>

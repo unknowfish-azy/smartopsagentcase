@@ -6,6 +6,7 @@
         <p>仅展示数据库中的真实纠察数据</p>
       </div>
       <RouterLink to="/inspector">返回中心</RouterLink>
+      <RouterLink to="/inspector/desk?view=stats">在洞察台打开</RouterLink>
     </header>
 
     <InspectorSummary :summary="data.summary || {}" />
