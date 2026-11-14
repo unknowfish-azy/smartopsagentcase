@@ -319,6 +319,33 @@ function watchMountedZones () {
     if (c && allowed.has(c.zoneId)) next.add(id)
   }
   mountedCards.value = next
+  // 非 mounted 域的卡 DOM 从 IO 里 unobserve（避免回调风暴）
+  for (const el of document.querySelectorAll('.ks-card')) {
+    const id = el.dataset.card
+    const c = cardById.get(id)
+    if (c && !allowed.has(c.zoneId)) {
+      try { io?.unobserve(el) } catch {}
+    }
+  }
+}
+
+// 手动同步扫描：把 DOM 已经在视口内的卡立即加进 mountedCards
+function flushMountedVisibleNow () {
+  if (!io) return
+  const stageRect = stageRef.value?.getBoundingClientRect?.()
+  const next = new Set(mountedCards.value)
+  for (const el of document.querySelectorAll('.ks-card')) {
+    const id = el.dataset.card
+    if (!id) continue
+    const r = el.getBoundingClientRect()
+    if (stageRect && r.right > stageRect.left && r.left < stageRect.right && r.bottom > stageRect.top && r.top < stageRect.bottom) {
+      next.add(id)
+      try { io.observe(el) } catch {}
+    } else {
+      try { io.unobserve(el) } catch {}
+    }
+  }
+  mountedCards.value = next
 }
 
 // hover 高亮：同 platform 的连线加粗
@@ -523,14 +550,15 @@ onMounted(() => {
   watch(mountedZoneIds, async () => {
     watchMountedZones()
     await nextTick()
-    // 给新挂载的 DOM 注册到 IO（IO 会用 initial 交叉率触发回调，自动把可见卡加入 mountedCards）
+    // 立即同步把视口内的卡加进 mountedCards（headless 环境下 IO 初始判定可能延迟或恒 false）
+    flushMountedVisibleNow()
+    // 再把未 flush 到的 observe 进 IO，后续由 IO 异步驱动
     worldRef.value?.querySelectorAll('.ks-card').forEach(el => {
       const id = el.dataset.card
-      if (id && !pendingUnmount.has(id)) {
+      if (id && !mountedCards.value.has(id)) {
         try { io?.observe(el) } catch {}
       }
     })
-    // 全局可见性刷新（相机 k / tx / ty 变时也触发，但用 watchEffect 会太频繁，这里手动在 wheel/drag/zoneClick 里调）
   }, { immediate: false })
 })
 onBeforeUnmount(() => {
