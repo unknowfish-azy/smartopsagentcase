@@ -142,6 +142,68 @@
   box-shadow: inset 0 0 0 1px var(--ds-color-border);
 }
 
+/* 缩放控件：与密度分段同高，数值按钮兼作复位。 */
+.rg-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--ds-radius-sm);
+  background: color-mix(in srgb, var(--ds-color-text) 6%, transparent);
+}
+
+.rg-zoom__btn,
+.rg-zoom__value {
+  height: 22px;
+  border: 0;
+  border-radius: calc(var(--ds-radius-sm) - 1px);
+  background: transparent;
+  color: var(--ds-color-muted);
+  font-size: var(--ds-type-caption-size);
+  cursor: pointer;
+}
+
+.rg-zoom__btn {
+  width: 22px;
+  line-height: 1;
+}
+
+.rg-zoom__value {
+  min-width: 44px;
+  padding: 0 4px;
+  color: var(--ds-color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.rg-zoom__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rg-zoom__btn:not(:disabled):hover,
+.rg-zoom__value:hover {
+  background: var(--ds-surface-base);
+  box-shadow: inset 0 0 0 1px var(--ds-color-border);
+}
+
+/* 视口：横向裁剪，缩放后的内容靠 pan 移动；纵向高度随缩放换算，不压住下面的内容。 */
+.rg-viewport {
+  position: relative;
+  overflow-x: clip;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.rg-viewport.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.rg-stage {
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
 /* 图例与筛选：一条可换行的细带，不与主图争高度。 */
 .rg-legend {
   display: flex;
@@ -531,6 +593,48 @@
   color: var(--ds-color-muted);
 }
 
+/* 待审行就地动作：贴着第二行文字，不挤占标题行。 */
+.rg-cand__acts {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.rg-act {
+  height: 18px;
+  padding: 0 7px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface-base);
+  color: var(--ds-color-text);
+  font-size: 10.5px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--ds-duration-micro) var(--ds-ease-out), border-color var(--ds-duration-micro) var(--ds-ease-out);
+}
+
+.rg-act:hover {
+  border-color: var(--ds-color-border-strong);
+  background: var(--ds-surface-raised);
+}
+
+.rg-act:focus-visible {
+  outline: 2px solid var(--ds-color-primary);
+  outline-offset: 1px;
+}
+
+.rg-act--primary {
+  border-color: transparent;
+  background: var(--ds-semantic-warning);
+  color: var(--ds-surface-base);
+  font-weight: 500;
+}
+
+.rg-act--primary:hover {
+  background: color-mix(in srgb, var(--ds-semantic-warning) 84%, var(--ds-color-text));
+}
+
 .rg-tag {
   display: inline-flex;
   align-items: center;
@@ -643,7 +747,134 @@
   font-size: 10.5px;
 }
 
-/* 动效降级：三档模式的 reduced-motion 与运行时降级标记都必须停掉呼吸环。 */
+/* 键盘焦点：蓝环只表示「键盘停在这一行」，与选中态的左侧竖条可叠加。 */
+.rg-row.is-focused {
+  box-shadow: inset 0 0 0 1px var(--ds-color-primary);
+}
+
+.rg-row.is-focused.is-selected {
+  box-shadow:
+    inset 2px 0 0 var(--ds-color-primary),
+    inset 0 0 0 1px color-mix(in srgb, var(--ds-color-primary) 45%, transparent);
+}
+
+.rg-legend__kbd {
+  margin-left: auto;
+  font: 10.5px/1.4 var(--ds-font-mono);
+  color: var(--ds-color-muted);
+  white-space: nowrap;
+}
+
+/* 审核快捷菜单（DESIGN §7）：可用项写请求与写入目标，置灰项写根本原因。 */
+.rg-menu-scrim {
+  position: fixed;
+  inset: 0;
+  /* 高于 toast（80），否则残留提示会盖住菜单项。 */
+  z-index: 84;
+}
+
+.rg-menu {
+  position: fixed;
+  z-index: 85;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-raised);
+  box-shadow: var(--ds-elevation-3);
+}
+
+.rg-menu__head {
+  display: grid;
+  gap: 2px;
+  padding: 8px 8px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--ds-hairline);
+}
+
+.rg-menu__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ds-color-text);
+}
+
+.rg-menu__meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--ds-color-muted);
+}
+
+.rg-menu__item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--ds-radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rg-menu__item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ds-color-text) 6%, transparent);
+}
+
+.rg-menu__item:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--ds-color-text) 6%, transparent);
+  box-shadow: inset 0 0 0 1px var(--ds-color-primary);
+}
+
+.rg-menu__item.is-blocked {
+  cursor: not-allowed;
+}
+
+.rg-menu__label {
+  font-size: 12px;
+  color: var(--ds-color-text);
+}
+
+.rg-menu__item.is-blocked .rg-menu__label {
+  color: var(--ds-color-muted);
+}
+
+.rg-menu__detail {
+  font: 10.5px/1.45 var(--ds-font-mono);
+  color: var(--ds-color-muted);
+  overflow-wrap: anywhere;
+}
+
+.rg-menu__detail--blocked {
+  font-family: var(--ds-font-cn);
+}
+
+.rg-menu__cancel {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 0;
+  border-top: 1px solid var(--ds-hairline);
+  background: transparent;
+  color: var(--ds-color-muted);
+  font-size: 11px;
+  text-align: right;
+  cursor: pointer;
+}
+
+.rg-menu__cancel:focus-visible {
+  outline: 2px solid var(--ds-color-primary);
+  outline-offset: -2px;
+}
+
 .app-layout[data-visual-mode='reduced-motion'] .rg-avatar--waiting::after,
 [data-motion-degraded='true'] .rg-avatar--waiting::after {
   animation: none;
@@ -674,7 +905,8 @@
   }
 
   .rg-legend__group[aria-label='状态编码'],
-  .rg-legend__group[aria-label='线条虚实'] {
+  .rg-legend__group[aria-label='线条虚实'],
+  .rg-legend__kbd {
     display: none;
   }
 

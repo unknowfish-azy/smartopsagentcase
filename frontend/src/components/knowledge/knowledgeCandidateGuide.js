@@ -6,7 +6,7 @@ export const knowledgeCandidateGuides = Object.freeze([
     toolId: 'k8s.service.diagnose',
     title: '【演示】Kubernetes Service 无可用 Endpoint',
     summary: '演示如何依据 Service、Endpoint 与 Pod 标签证据形成可审核的故障知识。',
-    status: 'PENDING_REVIEW',
+    status: 'PROMOTED',
     createdAt: '2026-09-27T00:00:00+08:00',
     isGuide: true,
     contentMarkdown: `# 演示知识候选：Kubernetes Service 无可用 Endpoint
@@ -816,6 +816,21 @@ SELECT * FROM performance_schema.replication_applier_status_by_worker;
 - [ ] 修复方案不含未经确认的跳事务操作
 - [ ] 验证包含复制指标和业务数据一致性
 `
+  })
+])
+
+/* 演示条目：与第一条演示候选配对（entry.source_ref === candidate.trace_id），
+   让演示模式也能看到条目泳道和采纳事件，而不是把 8 条候选全堆在「待归类」。 */
+export const knowledgeEntryGuides = Object.freeze([
+  Object.freeze({
+    id: 'DEMO-ENTRY-001',
+    libraryId: 1,
+    title: '【演示】Kubernetes Service 无可用 Endpoint',
+    version: 1,
+    verificationStatus: 'UNVERIFIED',
+    sourceRef: 'demo-trace-k8s-service',
+    createdAt: '2026-09-27T00:40:00+08:00',
+    isGuide: true
   })
 ])
 
