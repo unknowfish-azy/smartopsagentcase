@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
-import { reviewQueueWithGuide } from '../src/components/knowledge/knowledgeCandidateGuide.js'
+import { knowledgeEntryGuides, reviewQueueWithGuide } from '../src/components/knowledge/knowledgeCandidateGuide.js'
 import { renderKnowledgeMarkdown } from '../src/components/knowledge/renderKnowledgeMarkdown.js'
 
 test('knowledge candidate review route is available under Memory', async () => {
@@ -66,6 +66,22 @@ test('virtual review queue covers representative operation domains with detailed
     assert.match(item.contentMarkdown, /## 修复后验证/)
     assert.match(item.contentMarkdown, /## 风险与回滚/)
   }
+})
+
+test('virtual guidance ships one labelled entry paired with a candidate so the lane graph has an entry lane', () => {
+  const guided = reviewQueueWithGuide({ items: [], total: 0, page: 1, pageSize: 20 })
+
+  assert.equal(knowledgeEntryGuides.length, 1)
+  const entry = knowledgeEntryGuides[0]
+  assert.equal(entry.isGuide, true)
+  assert.equal(entry.verificationStatus, 'UNVERIFIED')
+  assert.match(entry.title, /【演示】/)
+
+  // 配对靠 source_ref === trace_id，和后端 promote 写入的键一致。
+  const paired = guided.items.filter(item => item.traceId === entry.sourceRef)
+  assert.equal(paired.length, 1, '演示条目必须对上且只对上一条演示候选')
+  assert.equal(paired[0].status, 'PROMOTED', '配对的演示候选应为已采纳，才能产生演化史事件')
+  assert.equal(guided.items.length, 8)
 })
 
 test('real candidates replace virtual guidance as soon as data exists', () => {

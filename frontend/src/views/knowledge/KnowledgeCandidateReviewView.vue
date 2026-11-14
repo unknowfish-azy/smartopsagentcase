@@ -11,6 +11,7 @@
       </header>
 
       <ReviewGraph
+        ref="graphRef"
         :model="graph"
         :library-name="libraryLabel"
         :selected-id="selectedId"
@@ -21,6 +22,8 @@
         :truncated="truncated"
         :total="total"
         @select="toggleCandidate"
+        @act="onRowAction"
+        @menu="openMenu"
         @update:color-mode="colorMode = $event"
         @update:density="density = $event"
         @load-more="loadMore"
@@ -43,9 +46,13 @@
       <template v-if="detail">
         <dl class="kr-side__facts">
           <div><dt>来源工具</dt><dd>{{ detail.toolId }}</dd></div>
-          <div><dt>来源 Trace</dt><dd><code>{{ detail.traceId }}</code></dd></div>
+          <div><dt>来源 Trace</dt><dd><DecodeText :value="detail.traceId" tag="code" /></dd></div>
           <div><dt>运行记录</dt><dd>#{{ detail.sourceRunId }}</dd></div>
           <div><dt>生成时间</dt><dd>{{ formatTime(detail.createdAt) }}</dd></div>
+          <div>
+            <dt>目标条目</dt>
+            <dd class="kr-side__fact-text">{{ detailEntry ? `${detailEntry.title} · v${detailEntry.version}` : '待归类（source_ref 无对应条目）' }}</dd>
+          </div>
         </dl>
 
         <div class="kr-side__notice">
@@ -66,25 +73,80 @@
             class="kr-btn kr-btn--primary"
             :disabled="!canReview"
             :title="adoptHint"
-            @click="onAdopt(detail)"
+            @click="openAction('adopt', detail, $event)"
           >采纳并新建条目</button>
-          <button class="kr-btn" :disabled="!canReview" @click="onReject(detail)">驳回并记录原因</button>
+          <button class="kr-btn" :disabled="!canReview" @click="openAction('reject', detail, $event)">驳回并记录原因</button>
         </footer>
       </template>
 
       <p v-else class="kr-side__loading">正在读取候选详情…</p>
     </aside>
 
-    <!-- 驳回 popover -->
-    <div v-if="rejectPopover" class="kr-pop">
-      <h4>驳回并记录原因</h4>
-      <p>原因会追加到候选摘要，不可为空。<br>将执行：<code>POST /api/knowledge/candidates/{{ rejectPopover.id }}/reject</code></p>
-      <input v-model="rejectReason" placeholder="例：证据不足（缺上游日志）" @keydown.enter="confirmReject" />
-      <div class="kr-pop__acts">
-        <button class="kr-btn" @click="rejectPopover = null">取消</button>
-        <button class="kr-btn kr-btn--primary" @click="confirmReject">确认驳回</button>
-      </div>
+    <!-- 就地审核 popover：采纳要先选知识库与标题，驳回原因必填；提交前重新校验状态。 -->
+    <div v-if="action" class="kr-pop-scrim" @click.self="closeAction">
+      <form class="kr-pop" :style="actionStyle" @submit.prevent>
+        <h4>{{ action.type === 'adopt' ? '采纳并新建条目' : '驳回并记录原因' }}</h4>
+        <p class="kr-pop__cand">{{ action.candidate.title }}</p>
+
+        <template v-if="action.type === 'adopt'">
+          <label class="kr-pop__field">
+            <span>目标知识库</span>
+            <select v-model.number="adoptTarget">
+              <option v-for="library in libraries" :key="library.id" :value="library.id">
+                {{ library.name || `知识库 #${library.id}` }}
+              </option>
+            </select>
+          </label>
+          <label class="kr-pop__field">
+            <span>条目标题</span>
+            <input ref="titleInputRef" v-model="adoptTitle" placeholder="条目标题" @keydown.enter.prevent="confirmAdopt" />
+          </label>
+          <p class="kr-pop__hint">将在所选知识库新建条目 v1（未验证）。后端 promote 只能新建，不能并入已有条目。</p>
+          <p v-if="actionError" class="kr-pop__error" role="alert">{{ actionError }}</p>
+          <code class="kr-pop__req">POST /api/knowledge/candidates/{{ action.candidate.id }}/promote → 知识库 #{{ adoptTarget }} 新建条目</code>
+        </template>
+
+        <template v-else>
+          <label class="kr-pop__field">
+            <span>驳回原因</span>
+            <input ref="reasonInputRef" v-model="rejectReason" placeholder="例：证据不足（缺上游日志）" @keydown.enter.prevent="confirmReject" />
+          </label>
+          <p class="kr-pop__hint">原因会追加到候选摘要，不可为空。</p>
+          <p v-if="actionError" class="kr-pop__error" role="alert">{{ actionError }}</p>
+          <code class="kr-pop__req">POST /api/knowledge/candidates/{{ action.candidate.id }}/reject → summary</code>
+        </template>
+
+        <div class="kr-pop__acts">
+          <button type="button" class="kr-btn" @click="closeAction">取消</button>
+          <button
+            v-if="action.type === 'adopt'"
+            type="button"
+            class="kr-btn kr-btn--primary"
+            :disabled="actionBusy"
+            @click="confirmAdopt"
+          >确认采纳</button>
+          <button
+            v-else
+            type="button"
+            class="kr-btn kr-btn--primary"
+            :disabled="actionBusy"
+            @click="confirmReject"
+          >确认驳回</button>
+        </div>
+      </form>
     </div>
+
+    <!-- 右键 / Shift+F10 的审核快捷菜单：可用项写请求，置灰项写根本原因。 -->
+    <ReviewActionMenu
+      v-if="menu"
+      :target="menu.row"
+      :libraries="libraries"
+      :guide-mode="guideMode"
+      :top="menu.top"
+      :left="menu.left"
+      @action="onMenuAction"
+      @close="menu = null"
+    />
 
     <!-- toast -->
     <div v-if="toast" class="kr-toast" :class="{ 'kr-toast--on': toast }">
@@ -95,13 +157,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { getKnowledgeCandidate, getKnowledgeCandidates, promoteKnowledgeCandidate, rejectKnowledgeCandidate } from '../../api/operations.ts'
 import { getKnowledgeEntries, listKnowledgeLibraries } from '../../api/personalKnowledge.ts'
-import { reviewQueueWithGuide } from '../../components/knowledge/knowledgeCandidateGuide.js'
+import { knowledgeEntryGuides, reviewQueueWithGuide } from '../../components/knowledge/knowledgeCandidateGuide.js'
 import { renderKnowledgeMarkdown } from '../../components/knowledge/renderKnowledgeMarkdown.js'
+import DecodeText from '../../components/common/DecodeText.vue'
 import KnowledgeReviewGraph from '../../components/knowledge/KnowledgeReviewGraph.vue'
 import ReviewGraph from './reviewGraph/ReviewGraph.vue'
+import ReviewActionMenu from './reviewGraph/ReviewActionMenu.vue'
 import { buildReviewGraph } from './reviewGraph/useReviewGraph.js'
 
 /* 后端把 pageSize 上限钳到 100（KnowledgeCandidateService#list），这里就用满上限。 */
@@ -119,14 +183,25 @@ const density = ref('comfortable')
 const selectedId = ref(null)
 const detail = ref(null)
 const loadingMore = ref(false)
-const rejectPopover = ref(null)
+const action = ref(null)
+const actionError = ref('')
+const actionBusy = ref(false)
+const adoptTarget = ref(null)
+const adoptTitle = ref('')
 const rejectReason = ref('')
+const graphRef = ref(null)
+const menu = ref(null)
+const titleInputRef = ref(null)
+const reasonInputRef = ref(null)
 const toast = ref(null)
 let toastTimer = null
 
+/* 演示模式没有后端条目，补一条带 isGuide 的演示条目，泳道图才能演示「条目 + 采纳事件」。 */
+const graphEntries = computed(() => (guideMode.value ? [...entries.value, ...knowledgeEntryGuides] : entries.value))
+
 const graph = computed(() => buildReviewGraph({
   candidates: candidates.value,
-  entries: entries.value,
+  entries: graphEntries.value,
   colorMode: colorMode.value,
   density: density.value
 }))
@@ -165,6 +240,11 @@ const adoptHint = computed(() => {
 
 const renderedMarkdown = computed(() => renderKnowledgeMarkdown(detail.value?.contentMarkdown))
 
+const actionStyle = computed(() => ({
+  top: `${action.value?.top ?? 120}px`,
+  left: `${action.value?.left ?? 24}px`
+}))
+
 const unwrap = response => response?.data ?? response
 const formatTime = value => value
   ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'medium', hour12: false }).format(new Date(value))
@@ -200,20 +280,32 @@ async function loadCandidates() {
   pagesLoaded.value = 1
 }
 
-/* 条目泳道的数据源：每个知识库拉一页条目，按 source_ref 与候选 trace_id 回挂。 */
+/* 条目泳道的数据源：每个知识库拉全量条目，按 source_ref 与候选 trace_id 回挂。
+   只取第一页会让第 101 条之后的条目匹配不到候选，把已有条目的候选误标成「待归类」，
+   所以这里翻页到底；上限 10 页，超出时在页脚如实标注而不是静默丢弃。 */
+const ENTRY_PAGE_SIZE = 100
+const ENTRY_PAGE_LIMIT = 10
+
 async function loadEntries(libraryList) {
-  if (!libraryList.length) return []
-  const pages = await Promise.all(libraryList.map(library => getKnowledgeEntries(library.id, {
-    page: 1,
-    pageSize: 100
-  }).catch(cause => {
-    entryNote.value = `知识库「${library.name || library.id}」条目读取失败：${cause.message || '未知错误'}`
-    return null
-  })))
-  return pages.flatMap(result => {
-    const page = unwrap(result)
-    return Array.isArray(page?.items) ? page.items : []
-  })
+  const pages = await Promise.all(libraryList.map(async library => {
+    const collected = []
+    try {
+      for (let page = 1; page <= ENTRY_PAGE_LIMIT; page += 1) {
+        const result = unwrap(await getKnowledgeEntries(library.id, { page, pageSize: ENTRY_PAGE_SIZE }))
+        const items = Array.isArray(result?.items) ? result.items : []
+        collected.push(...items)
+        const total = Number(result?.total ?? items.length)
+        if (items.length < ENTRY_PAGE_SIZE || collected.length >= total) break
+        if (page === ENTRY_PAGE_LIMIT) {
+          entryNote.value = `知识库「${library.name || library.id}」条目超过 ${ENTRY_PAGE_LIMIT * ENTRY_PAGE_SIZE} 条，超出部分未参与泳道匹配`
+        }
+      }
+    } catch (cause) {
+      entryNote.value = `知识库「${library.name || library.id}」条目读取失败：${cause.message || '未知错误'}`
+    }
+    return collected
+  }))
+  return pages.flat()
 }
 
 async function loadLibraries() {
@@ -273,47 +365,222 @@ function closeSide() {
   selectedId.value = null
 }
 
-async function onAdopt(candidate) {
-  if (candidate.isGuide) { showToast('演示数据不可写库', 'guideMode 候选不调用 promote'); return }
-  if (adoptLibraryId.value == null) { showToast('还没有知识库', 'POST /promote 需要 libraryId，请先创建知识库'); return }
-  try {
-    await promoteKnowledgeCandidate(candidate.id, {
-      libraryId: adoptLibraryId.value,
-      title: candidate.title,
-      contentMarkdown: candidate.contentMarkdown
+function onRowAction(payload) {
+  openAction(payload.type, payload.candidate, payload.anchor)
+}
+
+/* 动作面板贴着触发按钮出现，并夹在视口内；不遮挡整页，只挡一次点击。 */
+function openAction(type, candidate, anchor) {
+  if (!candidate) return
+  if (candidate.isGuide) { showToast('演示数据不可写库', 'guideMode 候选不调用 promote / reject'); return }
+  if (candidate.status !== 'PENDING_REVIEW') {
+    showToast(`该候选已是「${statusLabel(candidate.status)}」`, '只有 PENDING_REVIEW 可以采纳或驳回')
+    return
+  }
+  const width = 320
+  const rect = anchor?.getBoundingClientRect?.()
+  const top = rect ? Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - 300)) : 120
+  const left = rect ? Math.min(Math.max(12, rect.right - width), window.innerWidth - width - 12) : 24
+  action.value = { type, candidate, top, left }
+  actionError.value = ''
+  actionBusy.value = false
+  if (type === 'adopt') {
+    adoptTarget.value = adoptLibraryId.value
+    adoptTitle.value = candidate.title || ''
+    // 键盘路径：打开即把焦点放进标题框，回车直接确认（库与标题都有默认值）。
+    nextTick(() => {
+      titleInputRef.value?.focus?.()
+      titleInputRef.value?.select?.()
     })
-    showToast('采纳成功：已新建条目 v1（未验证）', `POST /api/knowledge/candidates/${candidate.id}/promote`)
-    await loadWorkspace()
-    await loadDetail(candidate.id)
-  } catch (cause) {
-    const conflicted = (cause.status ?? cause.response?.status) === 409
-    showToast(conflicted ? '该候选已被处理，正在刷新' : '采纳失败', conflicted ? '409 KNOWLEDGE_CANDIDATE_NOT_PENDING' : cause.message)
-    if (conflicted) await loadWorkspace()
+  } else {
+    rejectReason.value = ''
+    nextTick(() => reasonInputRef.value?.focus?.())
   }
 }
 
-function onReject(candidate) {
-  if (candidate.isGuide) { showToast('演示数据不可写库'); return }
-  rejectPopover.value = { id: candidate.id, cand: candidate }
-  rejectReason.value = ''
+function closeAction() {
+  action.value = null
+  actionError.value = ''
+  actionBusy.value = false
+}
+
+const isConflict = cause => (cause?.status ?? cause?.response?.status) === 409
+
+/* 写操作之后一律以服务端为准：重新拉列表与条目，选中项若还开着就重新读详情。 */
+async function refreshAfterChange(id) {
+  await loadWorkspace()
+  if (selectedId.value === id) await loadDetail(id)
+}
+
+async function confirmAdopt() {
+  const target = action.value?.candidate
+  if (!target) return
+  if (adoptTarget.value == null) { actionError.value = '请选择目标知识库'; return }
+  const title = adoptTitle.value.trim()
+  if (!title) { actionError.value = '条目标题不能为空'; return }
+  actionError.value = ''
+  actionBusy.value = true
+  try {
+    // 提交前重新校验：状态已被处理就什么都不写，直接刷新成真实状态。
+    const fresh = unwrap(await getKnowledgeCandidate(target.id))
+    if (fresh?.status !== 'PENDING_REVIEW') {
+      closeAction()
+      showToast('该候选已被处理', `服务端当前状态：${statusLabel(fresh?.status)}；未提交 promote`)
+      await refreshAfterChange(target.id)
+      return
+    }
+    await promoteKnowledgeCandidate(target.id, {
+      libraryId: adoptTarget.value,
+      title,
+      contentMarkdown: fresh.contentMarkdown ?? target.contentMarkdown
+    })
+    const library = libraries.value.find(item => item.id === adoptTarget.value)
+    const libraryName = library?.name || `知识库 #${adoptTarget.value}`
+    closeAction()
+    showToast(
+      `已采纳：在「${libraryName}」新建条目「${title}」v1（未验证）`,
+      `POST /api/knowledge/candidates/${target.id}/promote → 知识库 ${adoptTarget.value} 新建条目`
+    )
+    await refreshAfterChange(target.id)
+  } catch (cause) {
+    if (isConflict(cause)) {
+      closeAction()
+      showToast('该候选已被处理', '409 KNOWLEDGE_CANDIDATE_NOT_PENDING；已刷新为服务端真实状态')
+      await refreshAfterChange(target.id)
+      return
+    }
+    actionBusy.value = false
+    actionError.value = cause.message || '采纳失败，请重试'
+  }
 }
 
 async function confirmReject() {
+  const target = action.value?.candidate
+  if (!target) return
   const reason = rejectReason.value.trim()
-  if (!reason) { showToast('请填写驳回原因'); return }
-  const { id } = rejectPopover.value
-  rejectPopover.value = null
+  if (!reason) { actionError.value = '请填写驳回原因'; return }
+  actionError.value = ''
+  actionBusy.value = true
   try {
-    await rejectKnowledgeCandidate(id, reason)
-    showToast('已驳回，原因已写入摘要', `POST /api/knowledge/candidates/${id}/reject`)
-    await loadWorkspace()
-    if (detail.value?.id === id) await loadDetail(id)
+    await rejectKnowledgeCandidate(target.id, reason)
+    closeAction()
+    showToast('已驳回：原因已追加到候选摘要', `POST /api/knowledge/candidates/${target.id}/reject → summary`)
+    await refreshAfterChange(target.id)
   } catch (cause) {
-    showToast('驳回失败', cause.message)
+    if (isConflict(cause)) {
+      closeAction()
+      showToast('该候选已被处理', '409 KNOWLEDGE_CANDIDATE_NOT_PENDING；已刷新为服务端真实状态')
+      await refreshAfterChange(target.id)
+      return
+    }
+    actionBusy.value = false
+    actionError.value = cause.message || '驳回失败，请重试'
   }
 }
 
-onMounted(loadWorkspace)
+/* ---------- 快捷菜单（右键 / Shift+F10） ---------- */
+
+function openMenu({ row, x, y }) {
+  const width = 300
+  const left = Math.max(12, Math.min(x, window.innerWidth - width - 12))
+  const top = Math.max(12, Math.min(y, window.innerHeight - 420))
+  action.value = null
+  menu.value = { row, top, left }
+}
+
+function onMenuAction(key) {
+  const open = menu.value
+  menu.value = null
+  if (!open) return
+  const anchor = { getBoundingClientRect: () => ({ bottom: open.top, right: open.left + 40 }) }
+  if (key === 'adopt') { openAction('adopt', open.row.candidate, anchor); return }
+  if (key === 'reject') { openAction('reject', open.row.candidate, anchor); return }
+  if (key === 'evidence') { if (open.row.candidate) toggleCandidate(open.row.candidate.id); return }
+  if (key === 'copy-trace') copyTrace(open.row.candidate)
+}
+
+async function copyTrace(candidate) {
+  if (!candidate?.traceId) return
+  try {
+    await navigator.clipboard.writeText(candidate.traceId)
+    showToast('已复制 Trace ID', candidate.traceId)
+  } catch {
+    showToast('复制失败', '浏览器拒绝了剪贴板写入')
+  }
+}
+
+/* ---------- 键盘（DESIGN §6.3）：状态在 ReviewGraph，这里统一分发 ---------- */
+
+function isTypingTarget(target) {
+  if (!(target instanceof HTMLElement)) return false
+  return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable
+}
+
+function onKeydown(event) {
+  if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return
+  if (isTypingTarget(event.target)) {
+    if (event.key === 'Escape' && action.value) { event.preventDefault(); closeAction() }
+    return
+  }
+  // 行内按钮自己的回车/空格交给浏览器，避免和全局 Enter 重复触发。
+  const onButton = event.target instanceof HTMLElement && event.target.closest('button')
+  if (onButton && (event.key === 'Enter' || event.key === ' ')) return
+
+  const api = graphRef.value
+
+  if (event.key === 'Escape') {
+    if (menu.value) { menu.value = null; event.preventDefault(); return }
+    if (action.value) { closeAction(); event.preventDefault(); return }
+    if (selectedId.value != null) { closeSide(); event.preventDefault(); return }
+    if (api?.clearFocus()) { event.preventDefault(); return }
+    if (api?.clearFilter()) { event.preventDefault() }
+    return
+  }
+
+  if (menu.value || action.value || !api) return
+
+  const key = event.key
+  /* 键盘焦点是虚拟焦点（行上只有 ring），Shift+F10 在这里兜底；行内真焦点时由行自己处理。 */
+  if (key === 'F10' && event.shiftKey) {
+    const row = api.focusedRow()
+    if (row) {
+      const rect = api.focusTarget()?.getBoundingClientRect?.()
+      event.preventDefault()
+      openMenu({ row, x: rect ? rect.right - 24 : 24, y: rect ? rect.top : 80 })
+    }
+    return
+  }
+  if (key === 'ArrowDown' || key === 'ArrowUp') {
+    event.preventDefault()
+    api.moveFocus(key === 'ArrowDown' ? 1 : -1)
+    return
+  }
+  if (key === '?') { event.preventDefault(); api.toggleLegend(); return }
+  if (key === 'f' || key === 'F') { if (api.focusChain()) event.preventDefault(); return }
+
+  const row = api.focusedRow()
+  if (key === 'Enter') {
+    if (row?.candidate) { event.preventDefault(); toggleCandidate(row.candidate.id) }
+    return
+  }
+  if (key === 'a' || key === 'A') {
+    if (row) { event.preventDefault(); openAction('adopt', row.candidate, api.focusTarget()) }
+    return
+  }
+  if (key === 'r' || key === 'R') {
+    if (row) { event.preventDefault(); openAction('reject', row.candidate, api.focusTarget()) }
+  }
+}
+
+onMounted(() => {
+  loadWorkspace()
+  window.addEventListener('keydown', onKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  clearTimeout(toastTimer)
+})
 </script>
 
 <style scoped>
@@ -356,6 +623,7 @@ onMounted(loadWorkspace)
 .kr-side__facts dt { color: var(--ds-semantic-neutral); }
 .kr-side__facts dd { margin: 0; color: var(--ds-color-text); font-family: var(--ds-font-mono); font-size: 11.5px; overflow-wrap: anywhere; }
 .kr-side__facts code { font-family: var(--ds-font-mono); }
+.kr-side__facts .kr-side__fact-text { font-family: var(--ds-font-cn); font-size: 11.5px; }
 
 .kr-side__notice { margin: 12px 18px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--ds-semantic-warning) 34%, transparent); border-radius: var(--ds-radius-md); background: color-mix(in srgb, var(--ds-semantic-warning) 7%, transparent); font-size: 11.5px; color: var(--ds-color-muted); line-height: 1.6; }
 .kr-side__notice strong { display: block; color: var(--ds-semantic-warning); font-weight: 500; margin-bottom: 4px; }
@@ -385,13 +653,20 @@ onMounted(loadWorkspace)
 .kr-btn--primary:hover:not(:disabled) { background: color-mix(in srgb, var(--ds-semantic-warning) 82%, var(--ds-color-text)); }
 .kr-btn:disabled { opacity: .45; cursor: not-allowed; }
 
-/* popover */
-.kr-pop { position: fixed; z-index: 70; width: 300px; padding: 12px; border: 1px solid var(--ds-color-border); border-radius: var(--ds-radius-md); background: var(--ds-surface-raised); box-shadow: var(--ds-elevation-3); top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.kr-pop h4 { margin: 0 0 8px; font-size: 12.5px; font-weight: 500; color: var(--ds-color-text); }
-.kr-pop p { margin: 0 0 8px; color: var(--ds-semantic-neutral); font-size: 11px; line-height: 1.5; }
-.kr-pop code { font-family: var(--ds-font-mono); }
-.kr-pop input { width: 100%; height: 30px; padding: 0 8px; border-radius: var(--ds-radius-md); border: 1px solid var(--ds-color-border); background: var(--ds-surface-base); color: var(--ds-color-text); font: 12px var(--ds-font-cn); }
-.kr-pop__acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+/* 就地审核 popover：贴按钮定位（top/left 由脚本夹在视口内），窄屏不超宽。 */
+.kr-pop-scrim { position: fixed; inset: 0; z-index: 69; }
+.kr-pop { position: fixed; z-index: 70; width: 320px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow: auto; padding: 14px; border: 1px solid var(--ds-color-border); border-radius: var(--ds-radius-md); background: var(--ds-surface-raised); box-shadow: var(--ds-elevation-3); }
+.kr-pop h4 { margin: 0 0 6px; font-size: 12.5px; font-weight: 500; color: var(--ds-color-text); }
+.kr-pop__cand { margin: 0 0 10px; font-size: 12px; line-height: 1.45; color: var(--ds-color-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.kr-pop__field { display: grid; gap: 4px; margin-bottom: 8px; font-size: 11px; color: var(--ds-semantic-neutral); }
+.kr-pop__field select,
+.kr-pop__field input { width: 100%; height: 30px; padding: 0 8px; border-radius: var(--ds-radius-md); border: 1px solid var(--ds-color-border); background: var(--ds-surface-base); color: var(--ds-color-text); font: 12px var(--ds-font-cn); }
+.kr-pop__field select:focus-visible,
+.kr-pop__field input:focus-visible { outline: 2px solid var(--ds-color-primary); outline-offset: 1px; }
+.kr-pop__hint { margin: 0 0 8px; font-size: 11px; line-height: 1.55; color: var(--ds-color-muted); }
+.kr-pop__error { margin: 0 0 8px; font-size: 11px; line-height: 1.5; color: var(--ds-semantic-danger); }
+.kr-pop__req { display: block; font: 10.5px/1.5 var(--ds-font-mono); color: var(--ds-semantic-neutral); overflow-wrap: anywhere; }
+.kr-pop__acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 
 /* toast */
 .kr-toast { position: fixed; right: 18px; bottom: 18px; z-index: 80; max-width: 420px; padding: 10px 12px; border-radius: var(--ds-radius-md); border: 1px solid var(--ds-color-border); background: var(--ds-surface-raised); box-shadow: var(--ds-elevation-3); font-size: 12px; line-height: 1.55; color: var(--ds-color-text); opacity: 0; transform: translateY(6px); transition: opacity var(--ds-duration-spring) var(--ds-ease-out), transform var(--ds-duration-spring) var(--ds-ease-out); }

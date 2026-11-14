@@ -4,7 +4,7 @@
     :class="[
       `rg-row--${row.kind}`,
       row.kind === 'cand' && `rg-row--${statusClass}`,
-      { 'is-selected': selected, 'is-unassigned': row.unassigned, 'is-dimmed': dimmed }
+      { 'is-selected': selected, 'is-focused': focused, 'is-unassigned': row.unassigned, 'is-dimmed': dimmed }
     ]"
     :style="rowStyle"
     :data-row-id="row.id"
@@ -14,6 +14,8 @@
     @click="emitSelect"
     @keydown.enter.prevent="emitSelect"
     @keydown.space.prevent="emitSelect"
+    @contextmenu.prevent="emitMenu"
+    @keydown.shift.f10.prevent.stop="emitMenu"
   >
     <template v-if="row.kind === 'gap'">
       <span class="rg-gap" aria-hidden="true"></span>
@@ -22,6 +24,7 @@
     <template v-else-if="row.kind === 'entry'">
       <span class="rg-entry-name" :title="entryTitle">{{ entryTitle }}</span>
       <span v-if="row.entry" class="rg-tag rg-tag--version">v{{ row.entry.version }}</span>
+      <span v-if="row.entry?.isGuide" class="rg-tag rg-tag--quiet">演示条目</span>
       <span v-if="row.unassigned" class="rg-tag rg-tag--quiet">尚未关联知识条目</span>
       <span v-else-if="row.pending" class="rg-tag rg-tag--pending">{{ row.pending }} 条待审</span>
       <span v-else class="rg-tag rg-tag--quiet">无待审</span>
@@ -44,6 +47,11 @@
         <span class="rg-cand__line rg-cand__line--sub">
           <span class="rg-cand__note" :title="secondLine">{{ secondLine }}</span>
           <span class="rg-tag rg-tag--target" v-if="!row.entry">待归类</span>
+          <!-- 待审行就地操作：不进侧栏也能采纳/驳回，DESIGN §6.1 -->
+          <span v-if="actionable" class="rg-cand__acts">
+            <button type="button" class="rg-act rg-act--primary" @click.stop="emitAct('adopt', $event)" @keydown.stop>采纳</button>
+            <button type="button" class="rg-act" @click.stop="emitAct('reject', $event)" @keydown.stop>驳回</button>
+          </span>
         </span>
       </span>
     </template>
@@ -66,14 +74,32 @@ import { laneCenter, rejectReasonOf, STATUS_TEXT } from './useReviewGraph.js'
 const props = defineProps({
   row: { type: Object, required: true },
   selected: { type: Boolean, default: false },
+  focused: { type: Boolean, default: false },
   dimmed: { type: Boolean, default: false },
   padLeft: { type: Number, default: 0 },
   avatarSize: { type: Number, default: 28 }
 })
 
-const emit = defineEmits(['select'])
+const emit = defineEmits(['select', 'act', 'menu'])
+
+/* 右键与 Shift+F10 都落到同一行；键盘触发时没有鼠标坐标，就用行的右上角。 */
+function emitMenu(event) {
+  const rect = event?.currentTarget?.getBoundingClientRect?.()
+  const x = event?.clientX > 0 ? event.clientX : (rect ? rect.right - 24 : 0)
+  const y = event?.clientY > 0 ? event.clientY : (rect ? rect.top : 0)
+  emit('menu', { row: props.row, x, y })
+}
 
 const interactive = computed(() => props.row.kind === 'cand' || props.row.kind === 'commit')
+
+/* 只有真待审、且不是演示数据时才给就地动作，避免对已决策行承诺可写。 */
+const actionable = computed(() => props.row.kind === 'cand'
+  && props.row.candidate?.status === 'PENDING_REVIEW'
+  && !props.row.candidate?.isGuide)
+
+function emitAct(type, event) {
+  emit('act', { type, candidate: props.row.candidate, anchor: event?.currentTarget ?? null })
+}
 
 const rowStyle = computed(() => ({
   height: `${props.row.h}px`,
@@ -93,8 +119,9 @@ const statusClass = computed(() => {
 const statusLabel = computed(() => {
   const candidate = props.row.candidate
   if (!candidate) return ''
-  if (candidate.isGuide) return '演示数据'
-  return STATUS_TEXT[candidate.status] || candidate.status || '未知状态'
+  /* 演示数据也要写清真实状态，前缀「演示」表示不写库。 */
+  const status = STATUS_TEXT[candidate.status] || '未知状态'
+  return candidate.isGuide ? `演示 · ${status}` : status
 })
 
 const statusTagClass = computed(() => {
@@ -129,6 +156,10 @@ const avatarStyle = computed(() => ({
 const secondLine = computed(() => {
   const candidate = props.row.candidate
   if (!candidate) return ''
+  /* 演示数据不写库，所以不能写成「已新建条目」。 */
+  if (candidate.isGuide) {
+    return candidate.status === 'PROMOTED' ? '演示数据：已采纳示意，未写库' : '演示数据：仅供界面引导，不写库'
+  }
   if (candidate.status === 'PENDING_REVIEW') return '采纳后在所选知识库新建条目 v1（未验证）'
   if (candidate.status === 'PROMOTED') {
     const entry = props.row.entry
@@ -152,6 +183,7 @@ const commitTitle = computed(() => {
   if (!event) return ''
   if (event.kind === 'adopt') {
     const version = event.entry?.version ? `v${event.entry.version}` : 'v1'
+    if (event.candidate?.isGuide) return `演示 · 采纳后条目 ${version}（未写库） · ${event.entry?.title || ''}`
     return `新建条目 ${version} · ${event.entry?.title || event.candidate?.title || ''}`
   }
   const reason = rejectReasonOf(event.candidate?.summary)
