@@ -84,3 +84,20 @@
 
 用户打开这个视图 5 秒内应该说出：**「哪些域最重、哪条和我现在的事最近、我怎么进去看它。」**
 如果 3D 效果很好看但看完还是不知道知识库长什么样，就是没做成。
+
+---
+
+## 附：已有实装与实装原型（先读再动手）
+
+| 文件 | 用途 |
+| --- | --- |
+| `frontend/src/views/knowledge/space/KnowledgeSpaceView.vue` | **已有一版实装**（域级虚拟化 + IntersectionObserver + `useSpaceLayout/Camera`）。在它基础上改，不要另起 |
+| `docs/design/knowledge-spatial-ia-v1/space-app.html` | 本轮**实装原型**：737 条真实数据 + L0 SVG 批量块 + 三档卡片内容（按屏幕像素）+ 检索/侧栏/迷你地图 |
+| `docs/design/knowledge-spatial-ia-v1/APPLIED.md` | 实测数字（layout 1.6–2.5ms、DOM 0/200/153）+ 4 个真实 bug |
+| `docs/design/knowledge-spatial-ia-v1/REVIEW.md` | 对拍：实装 vs 原型，**优先改哪三处**（第一条：L0 缺密度肌理） |
+| `docs/design/knowledge-spatial-ia-v1/DEEP-REVERSE.md` | HTML-in-Canvas 的精确 API 与限制（Phase-2 才需要读） |
+
+**新增两条红线**：
+
+9. **L0 必须有密度肌理**：一域一个 `<svg>` 画该域全部卡片的 `<rect>`（737 个 rect 只占一个绘制层），DOM 卡片仍为 0；某域开始挂真卡片后关掉它的 SVG 层。
+10. **卡片内容分档按屏幕像素判定**（`c.w * cam.k`），不要用世界像素：同一张 98px 宽的卡在 68% 时屏幕上只有 61px，塞两行标题才不糊。

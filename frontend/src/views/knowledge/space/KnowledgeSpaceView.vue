@@ -6,6 +6,20 @@ import { knowledgeReadApi } from '../knowledgeLibrary.js'
 import { computeLayout, WORLD_DEFAULT } from './useSpaceLayout.js'
 import { useSpaceCamera } from './useSpaceCamera.js'
 
+/* —— 空间场新增（SP-01/02/03/04/06/07）—— 现有视图逻辑完全不动 */
+import SpaceFieldView from './SpaceFieldView.vue'
+import { computeField, FIELD as FIELD_CONSTANTS } from './useFieldLayout.js'
+import { buildBindingIndex } from './bindingIndex.js'
+import FieldStage from './FieldStage.vue'
+import FieldPlane from './FieldPlane.vue'
+import EvidenceBed from './EvidenceBed.vue'
+import ThreadLayer from './ThreadLayer.vue'
+import InsightCanopy from './InsightCanopy.vue'
+
+// 空间场一次计算（无洞察输入，先跑知识层 + 证据层）
+const SP_NOW = Date.parse('2026-11-14T00:00:00Z')
+const spField = computeField(knowledgeEntries, knowledgeDomains, [], { now: SP_NOW })
+
 const viewMode = ref('space')
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 function onViewModeChange (mode) { viewMode.value = mode }
@@ -598,6 +612,7 @@ onBeforeUnmount(() => {
         <span v-if="hitCount > 0" class="ks-hit-badge">{{ hitCount }}</span>
       </label>
       <button class="ks-pill" type="button" :class="{ 'ks-pill--on': viewMode === 'space' }" @click="onViewModeChange('space')">空间</button>
+      <button class="ks-pill" type="button" :class="{ 'ks-pill--on': viewMode === 'field' }" @click="onViewModeChange('field')">场域</button>
       <button class="ks-pill" type="button" :class="{ 'ks-pill--on': viewMode === 'grid' }" @click="onViewModeChange('grid')">网格</button>
       <button class="ks-pill" type="button" :class="{ 'ks-pill--on': viewMode === 'list' }" @click="onViewModeChange('list')">列表</button>
       <button class="ks-pill" type="button" @click="cam.fitOverview(worldRef, stageRef); renderHUD(); renderMinimapViewport()" v-if="viewMode === 'space'">总览 0</button>
@@ -727,6 +742,9 @@ onBeforeUnmount(() => {
         </div>
       </aside>
     </div>
+
+    <!-- ============ 三层空间场视图（CSS 3D / FieldStage + FieldPlane） ============ -->
+    <SpaceFieldView v-else-if="viewMode === 'field'" />
 
     <!-- ============ 网格视图：域分组 + 横向卡 ============ -->
     <div v-else-if="viewMode === 'grid'" class="ks-alternate">
