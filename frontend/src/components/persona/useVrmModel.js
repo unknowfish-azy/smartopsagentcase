@@ -9,6 +9,7 @@
 import {
   AmbientLight,
   Box3,
+  Color,
   DirectionalLight,
   LinearFilter,
   Object3D,
@@ -68,7 +69,14 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
   key.position.set(0.8, 1.7, 1.4)
   const rim = new DirectionalLight(0x2496ed, 0.85)
   rim.position.set(-1.3, 1.1, -1.1)
-  scene.add(ambient, key, rim)
+  // 深海氛围补光：下方微弱青蓝光 + 侧后方弱粉紫（呼应登录水母），让轮廓有层次
+  const fillOcean = new DirectionalLight(0x7AD7F5, 0.4)
+  fillOcean.position.set(0.2, -0.6, 1.1)
+  fillOcean.target.position.set(0, 0.6, 0)
+  const backGlow = new DirectionalLight(0xb48cf7, 0.25)
+  backGlow.position.set(-0.6, 0.9, -1.8)
+  backGlow.target.position.set(0, 0.7, 0)
+  scene.add(ambient, key, rim, fillOcean, backGlow)
 
   let vrm = null
   let disposed = false
@@ -134,6 +142,48 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
       scene.add(lookTarget)
       model.lookAt.target = lookTarget
     }
+  }
+
+  /**
+   * 海洋/生物发光主题色调覆盖：遍历所有材质，对 diffuse 做青蓝色调偏移，
+   * 并给衣服/头发类材质加低强度 emissive，让模型融入项目深海体系。
+   * 不换资产、不换贴图、只改材质数值，零合规风险。
+   */
+  const OCEAN_HUE_TARGET = 0.58 // 青蓝 hsl.h = 209° 左右
+  const OCEAN_HUE_DRIFT = 0.08  // 每个材质偏移幅度
+  const OCEAN_EMISSIVE_INTENSITY = 0.18
+  const OCEAN_EMISSIVE_SATURATION = 0.35
+
+  function applyOceanTone(model) {
+    model.scene.traverse((object) => {
+      const materials = Array.isArray(object.material)
+        ? object.material
+        : object.material
+          ? [object.material]
+          : []
+      for (const material of materials) {
+        if (!material || material.isMeshBasicMaterial) continue
+        // 1) diffuse color 青蓝偏移：用 hsl 不破坏明度，只转色相
+        if (material.color && material.color.isColor) {
+          const hsl = { h: 0, s: 0, l: 0 }
+          material.color.getHSL(hsl)
+          const drift = (hsl.h - OCEAN_HUE_TARGET + 1 + OCEAN_HUE_DRIFT) % 1
+          const targetHue = drift < OCEAN_HUE_DRIFT * 2 ? OCEAN_HUE_TARGET : hsl.h
+          const newSaturation = Math.min(0.6, hsl.s * 0.85 + 0.04)
+          const newLightness = Math.max(0.12, Math.min(0.88, hsl.l * 1.02))
+          material.color.setHSL(targetHue, newSaturation, newLightness)
+        }
+        // 2) emissive 给衣服/头发材质加低强度青蓝发光
+        if (!material.emissive) continue
+        const hsl = { h: 0, s: 0, l: 0 }
+        material.emissive.getHSL?.(hsl)
+        // 只有黑色/极低 emissive 才覆盖——已有自发光材质（如 UI 配件）不动
+        if (hsl.l > 0.02) continue
+        const tone = new Color().setHSL(OCEAN_HUE_TARGET, OCEAN_EMISSIVE_SATURATION, OCEAN_EMISSIVE_INTENSITY)
+        material.emissive.copy(tone)
+        material.emissiveIntensity = Math.max(material.emissiveIntensity ?? 0, 0.6)
+      }
+    })
   }
 
   function easeFactor(dt) {
@@ -322,6 +372,7 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
       })
       scene.add(loaded.scene)
       vrm = loaded
+      applyOceanTone(loaded)
       initialiseRig(loaded)
       frameCamera()
       resize()
