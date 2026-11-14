@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs'
 const base = 'http://127.0.0.1:5173'
 const out = 'test-artifacts/mosaic'
 mkdirSync(out, { recursive: true })
-const browser = await chromium.launch({ channel: 'msedge', headless: true })
+const browser = await chromium.launch({ channel: 'msedge', headless: true, args: ['--no-proxy-server', '--proxy-bypass-list=*'] })
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
 await page.route(url => new URL(url).pathname.startsWith('/api/'), route => {
   const p = new URL(route.request().url()).pathname
