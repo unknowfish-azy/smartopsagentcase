@@ -300,7 +300,7 @@ h1 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
   border: 1px solid var(--smart-primary-strong);
   border-radius: 8px;
   background: var(--smart-primary-strong);
-  color: #fff;
+  color: var(--smart-primary-foreground);
   font: 12px var(--font-cn);
   cursor: pointer;
 }

@@ -119,10 +119,10 @@ onBeforeUnmount(() => { clearInterval(timer); media?.removeEventListener('change
 :global([data-theme='light'] .orbit-card) {
   border-color: var(--smart-border);
   background: var(--smart-card);
-  box-shadow: 0 16px 34px rgba(16, 53, 70, .12);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--smart-text) 12%, transparent);
 }
-:global([data-theme='light'] .orbit-card::before) { background: linear-gradient(118deg, rgba(255, 255, 255, .72), rgba(255, 255, 255, 0) 46%); }
-:global([data-theme='light'] .card-body) { background: #f7fafb; }
+:global([data-theme='light'] .orbit-card::before) { background: linear-gradient(118deg, color-mix(in srgb, var(--smart-surface) 72%, transparent), rgba(255, 255, 255, 0) 46%); }
+:global([data-theme='light'] .card-body) { background: var(--smart-surface); }
 :global([data-theme='light'] .card-heading),
 :global([data-theme='light'] .card-description),
 :global([data-theme='light'] .card-links),

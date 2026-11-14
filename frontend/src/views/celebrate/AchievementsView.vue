@@ -211,17 +211,17 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--smart-primary-s
 .tier-state { text-align: right; }
 .achievement-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
 .achievement-card { border: 1px solid var(--smart-border); border-radius: 12px; background: var(--smart-surface); padding: 18px; min-width: 0; }
-.achievement-card.unlocked { border-left: 2px solid #F5C942; }
+.achievement-card.unlocked { border-left: 2px solid var(--ds-semantic-warning); }
 .achievement-card header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .achievement-card h3 { margin: 0; font-size: 14px; font-weight: 550; }
 .status-chip { font: 10px/1 var(--font-mono); letter-spacing: .06em; padding: 5px 9px; border-radius: 999px; border: 1px solid var(--smart-border); color: var(--smart-muted); white-space: nowrap; }
-.status-chip[data-state=unlocked] { color: #F5C942; border-color: rgba(245, 201, 66, .5); }
+.status-chip[data-state=unlocked] { color: var(--ds-semantic-warning); border-color: color-mix(in srgb, var(--ds-semantic-warning) 50%, transparent); }
 .status-chip[data-state=next] { color: var(--smart-primary-strong); border-color: var(--smart-primary-strong); }
 .value-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 14px 0 10px; font-size: 12px; color: var(--smart-muted); }
 .value-line strong { font-family: var(--font-mono); font-size: 18px; font-weight: 600; color: var(--smart-text); font-variant-numeric: tabular-nums; }
 .progress-track { height: 4px; background: var(--smart-border); border-radius: 2px; overflow: hidden; }
 .progress-bar { height: 100%; background: var(--smart-primary-strong); border-radius: 2px; transition: width 200ms; }
-.achievement-card.unlocked .progress-bar { background: #F5C942; }
+.achievement-card.unlocked .progress-bar { background: var(--ds-semantic-warning); }
 .basis { color: var(--smart-muted); font-size: 11px; line-height: 1.7; margin: 12px 0 0; }
 .celebrate-button { margin-top: 14px; }
 /* 演示实例：虚线框 + 「演示」芯片，与真实账本卡视觉隔离；不挂庆祝按钮 */

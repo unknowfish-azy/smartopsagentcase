@@ -1,3 +1,3 @@
 <template><div class="evidence"><article v-for="(item,index) in evidence" :key="index"><p>{{ item.content }}</p><small>{{ item.source || 'Unknown source' }} · {{ item.version || 'N/A' }} · {{ item.score ?? 'N/A' }}</small></article><AppEmpty v-if="!evidence.length" description="暂无证据"/></div></template>
 <script setup>import AppEmpty from '../common/AppEmpty.vue'; defineProps({evidence:{type:Array,default:()=>[]}})</script>
-<style scoped>.evidence{display:grid;gap:10px}.evidence article{padding:14px;border-left:3px solid var(--smart-primary);background:#f8fafc}.evidence p{margin:0 0 6px}.evidence small{color:var(--smart-muted)}</style>
+<style scoped>.evidence{display:grid;gap:10px}.evidence article{padding:14px;border-left:3px solid var(--smart-primary);background:var(--smart-surface)}.evidence p{margin:0 0 6px}.evidence small{color:var(--smart-muted)}</style>

@@ -98,27 +98,27 @@ const trainedAtText = computed(() => {
   justify-items: center;
   gap: 3px;
   padding: 7px 8px;
-  border: 1px solid var(--forecast-line-strong, rgba(159, 190, 207, .34));
+  border: 1px solid var(--forecast-line-strong, var(--smart-border));
   border-radius: 4px;
-  background: rgba(36, 150, 237, .06);
-  color: var(--forecast-text, #E8F2F7);
+  background: color-mix(in srgb, var(--smart-primary) 6%, transparent);
+  color: var(--forecast-text, var(--smart-text));
   font: 10px var(--forecast-font-mono);
   letter-spacing: .04em;
   white-space: nowrap;
 }
 
 .fc-layer small {
-  color: var(--forecast-muted, #92A6B5);
+  color: var(--forecast-muted, var(--smart-muted));
   font-size: 8px;
 }
 
 .fc-layer--io {
-  background: rgba(122, 215, 245, .08);
-  border-color: rgba(122, 215, 245, .35);
+  background: color-mix(in srgb, var(--smart-primary-strong) 8%, transparent);
+  border-color: color-mix(in srgb, var(--smart-primary-strong) 35%, transparent);
 }
 
 .fc-model__arrow {
-  color: var(--forecast-muted, #92A6B5);
+  color: var(--forecast-muted, var(--smart-muted));
   font-size: 10px;
 }
 
@@ -127,18 +127,18 @@ const trainedAtText = computed(() => {
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
   margin: 12px 15px 0;
-  background: var(--forecast-line, rgba(255, 255, 255, .06));
-  border: 1px solid var(--forecast-line, rgba(255, 255, 255, .06));
+  background: var(--forecast-line, var(--smart-border));
+  border: 1px solid var(--forecast-line, var(--smart-border));
 }
 
 .fc-model__metric {
-  background: var(--forecast-card, #151A21);
+  background: var(--forecast-card, var(--smart-surface));
   padding: 9px 10px;
 }
 
 .fc-model__metric span {
   display: block;
-  color: var(--forecast-muted, #92A6B5);
+  color: var(--forecast-muted, var(--smart-muted));
   font: 8.5px var(--forecast-font-mono);
   letter-spacing: .14em;
 }
@@ -149,12 +149,12 @@ const trainedAtText = computed(() => {
   font: 16px var(--forecast-font-mono);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--forecast-text, #E8F2F7);
+  color: var(--forecast-text, var(--smart-text));
 }
 
 .fc-model__metric em {
   font-style: normal;
-  color: var(--forecast-muted, #92A6B5);
+  color: var(--forecast-muted, var(--smart-muted));
   font-size: 10px;
 }
 
@@ -163,13 +163,13 @@ const trainedAtText = computed(() => {
   justify-content: space-between;
   gap: 10px;
   padding: 10px 15px 13px;
-  color: var(--forecast-muted, #92A6B5);
+  color: var(--forecast-muted, var(--smart-muted));
   font: 9px var(--forecast-font-mono);
   letter-spacing: .08em;
 }
 
 .fc-model__foot b {
-  color: var(--forecast-text, #E8F2F7);
+  color: var(--forecast-text, var(--smart-text));
   font-weight: 500;
 }
 </style>
