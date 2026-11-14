@@ -1,121 +1,414 @@
 <template>
-  <section class="review-workbench">
-    <header class="page-heading">
-      <div><p class="eyebrow">KNOWLEDGE REVIEW</p><h1>知识候选审核</h1><p>核对运行证据、适用环境与结论边界，再进入正式审核流程。</p></div>
-      <span class="pending-count">待人工审核 {{ page.total }}</span>
-    </header>
-
-    <div v-if="error" class="state error" role="alert"><strong>候选资料暂时无法加载</strong><p>{{ error }}</p><button @click="loadCandidates(page.page)">重新加载</button></div>
-    <div v-else class="review-layout">
-      <aside class="candidate-list" aria-label="知识候选列表">
-        <div v-if="guideMode" class="guide-banner" role="note">
-          <strong>当前显示演示数据</strong>
-          <span>示例仅用于引导审核流程，不写入数据库，也不计入待审核统计。</span>
+  <section class="kr-page" :class="{ 'kr-page--side-open': sideOpen }">
+    <div class="kr-main">
+      <header class="kr-head">
+        <div class="kr-head__text">
+          <p class="kr-head__overline">KNOWLEDGE REVIEW · ENTRY GRAPH</p>
+          <h1>知识候选审核</h1>
+          <p class="kr-head__desc">主视图是泳道图：每条候选的来源、归属与审核事件一眼看完；候选正文与证据退到右侧栏。</p>
         </div>
-        <header><div><p class="eyebrow">REVIEW QUEUE</p><h2>审核队列</h2></div><span>{{ page.total }} 条</span></header>
-        <p v-if="loading && !page.items.length" class="state">正在读取候选资料…</p>
-        <p v-else-if="!page.items.length" class="state">当前没有待审核知识候选。</p>
-        <button v-for="item in page.items" :key="item.id" class="candidate-row" :class="{ active: selectedId === item.id }" @click="selectCandidate(item.id)">
-          <span><b>{{ item.title }}</b><i>{{ item.isGuide ? '演示数据' : candidateStatusLabel(item.status) }}</i></span>
-          <p>{{ item.summary }}</p><code>{{ item.traceId }}</code><time>{{ formatTime(item.createdAt) }}</time>
-        </button>
-        <footer v-if="page.total > page.pageSize"><button :disabled="page.page <= 1" @click="loadCandidates(page.page - 1)">上一页</button><span>{{ page.page }} / {{ totalPages }}</span><button :disabled="page.page >= totalPages" @click="loadCandidates(page.page + 1)">下一页</button></footer>
-      </aside>
+        <span class="kr-head__pending">{{ pendingLabel }}</span>
+      </header>
 
-      <main class="candidate-detail" aria-live="polite">
-        <p v-if="detailLoading" class="state">正在加载 Markdown 资料…</p>
-        <div v-else-if="!detail" class="state"><strong>选择一条知识候选</strong><p>这里会展示完整中文笔记、来源 Trace 和审核边界。</p></div>
-        <template v-else>
-          <header class="detail-header"><div><p class="eyebrow">CANDIDATE DETAIL</p><h2>{{ detail.title }}</h2><p>{{ detail.summary }}</p></div><i>{{ detail.isGuide ? '虚拟引导资料' : candidateStatusLabel(detail.status) }}</i></header>
-          <dl class="facts"><div><dt>来源 Trace</dt><dd><DecodeText :value="detail.traceId" tag="code" /></dd></div><div><dt>来源工具</dt><dd>{{ detail.toolId }}</dd></div><div><dt>运行记录</dt><dd>#{{ detail.sourceRunId }}</dd></div><div><dt>生成时间</dt><dd>{{ formatTime(detail.createdAt) }}</dd></div></dl>
-          <div class="review-notice"><strong>人工审核要求</strong><span>区分事实、推测与待验证项；核对敏感信息、组件版本、风险、回滚和验证结果。</span></div>
-          <article class="markdown-document" aria-label="候选知识 Markdown 预览" v-html="renderedMarkdown"></article>
-        </template>
-      </main>
+      <ReviewGraph
+        :model="graph"
+        :library-name="libraryLabel"
+        :selected-id="selectedId"
+        :color-mode="colorMode"
+        :density="density"
+        :guide-mode="guideMode"
+        :entry-note="entryNote"
+        :truncated="truncated"
+        :total="total"
+        @select="toggleCandidate"
+        @update:color-mode="colorMode = $event"
+        @update:density="density = $event"
+        @load-more="loadMore"
+      />
+    </div>
+
+    <!-- 侧栏：证据 + 正文 + 操作 -->
+    <aside v-if="sideOpen" class="kr-side" aria-live="polite" aria-label="候选证据与正文">
+      <header class="kr-side__head">
+        <button class="kr-side__close" @click="closeSide" aria-label="关闭">×</button>
+        <p class="kr-side__overline">Candidate #{{ detail?.id ?? selectedId }}</p>
+        <h2>{{ detail?.title || '加载中…' }}</h2>
+        <div class="kr-side__tags">
+          <span v-if="detail" class="kr-tag" :class="'kr-tag--' + statusClass(detail.status)">{{ statusLabel(detail.status) }}</span>
+          <span class="kr-tag kr-tag--target">目标条目 · {{ detailEntry ? detailEntry.title : '待归类' }}</span>
+          <span v-if="detail?.isGuide" class="kr-tag kr-tag--demo">演示数据</span>
+        </div>
+      </header>
+
+      <template v-if="detail">
+        <dl class="kr-side__facts">
+          <div><dt>来源工具</dt><dd>{{ detail.toolId }}</dd></div>
+          <div><dt>来源 Trace</dt><dd><code>{{ detail.traceId }}</code></dd></div>
+          <div><dt>运行记录</dt><dd>#{{ detail.sourceRunId }}</dd></div>
+          <div><dt>生成时间</dt><dd>{{ formatTime(detail.createdAt) }}</dd></div>
+        </dl>
+
+        <div class="kr-side__notice">
+          <strong>待人工审核 · 人工审核要求</strong>
+          <span>区分事实、推测与待验证项；核对敏感信息、组件版本、风险、回滚与验证结果。</span>
+        </div>
+
+        <!-- ECharts 证据关系图（从主位挪到侧栏） -->
+        <div class="kr-side__graph">
+          <p class="kr-side__graph-label">证据关系</p>
+          <KnowledgeReviewGraph :candidate="detail" />
+        </div>
+
+        <article class="kr-side__doc" v-html="renderedMarkdown"></article>
+
+        <footer class="kr-side__foot">
+          <button
+            class="kr-btn kr-btn--primary"
+            :disabled="!canReview"
+            :title="adoptHint"
+            @click="onAdopt(detail)"
+          >采纳并新建条目</button>
+          <button class="kr-btn" :disabled="!canReview" @click="onReject(detail)">驳回并记录原因</button>
+        </footer>
+      </template>
+
+      <p v-else class="kr-side__loading">正在读取候选详情…</p>
+    </aside>
+
+    <!-- 驳回 popover -->
+    <div v-if="rejectPopover" class="kr-pop">
+      <h4>驳回并记录原因</h4>
+      <p>原因会追加到候选摘要，不可为空。<br>将执行：<code>POST /api/knowledge/candidates/{{ rejectPopover.id }}/reject</code></p>
+      <input v-model="rejectReason" placeholder="例：证据不足（缺上游日志）" @keydown.enter="confirmReject" />
+      <div class="kr-pop__acts">
+        <button class="kr-btn" @click="rejectPopover = null">取消</button>
+        <button class="kr-btn kr-btn--primary" @click="confirmReject">确认驳回</button>
+      </div>
+    </div>
+
+    <!-- toast -->
+    <div v-if="toast" class="kr-toast" :class="{ 'kr-toast--on': toast }">
+      {{ toast.msg }}
+      <span v-if="toast.req" class="kr-toast__req">{{ toast.req }}</span>
     </div>
   </section>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { getKnowledgeCandidate, getKnowledgeCandidates } from '../../api/operations.ts'
-import { candidateStatusLabel } from '../../components/operations/operationRunHistory.js'
+import { getKnowledgeCandidate, getKnowledgeCandidates, promoteKnowledgeCandidate, rejectKnowledgeCandidate } from '../../api/operations.ts'
+import { getKnowledgeEntries, listKnowledgeLibraries } from '../../api/personalKnowledge.ts'
 import { reviewQueueWithGuide } from '../../components/knowledge/knowledgeCandidateGuide.js'
 import { renderKnowledgeMarkdown } from '../../components/knowledge/renderKnowledgeMarkdown.js'
-import DecodeText from '../../components/common/DecodeText.vue'
+import KnowledgeReviewGraph from '../../components/knowledge/KnowledgeReviewGraph.vue'
+import ReviewGraph from './reviewGraph/ReviewGraph.vue'
+import { buildReviewGraph } from './reviewGraph/useReviewGraph.js'
 
-const page = ref({ items: [], total: 0, page: 1, pageSize: 20 })
+/* 后端把 pageSize 上限钳到 100（KnowledgeCandidateService#list），这里就用满上限。 */
+const PAGE_SIZE = 100
+
+const candidates = ref([])
+const libraries = ref([])
+const entries = ref([])
+const total = ref(0)
+const pagesLoaded = ref(1)
 const guideMode = ref(false)
-const selectedId = ref(null), detail = ref(null), loading = ref(false), detailLoading = ref(false), error = ref('')
-const totalPages = computed(() => Math.max(1, Math.ceil(page.value.total / page.value.pageSize)))
-const renderedMarkdown = computed(() => renderKnowledgeMarkdown(detail.value?.contentMarkdown))
-const unwrap = response => response?.data ?? response
-const formatTime = value => value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'medium', hour12: false }).format(new Date(value)) : '—'
+const entryNote = ref('')
+const colorMode = ref('tool')
+const density = ref('comfortable')
+const selectedId = ref(null)
+const detail = ref(null)
+const loadingMore = ref(false)
+const rejectPopover = ref(null)
+const rejectReason = ref('')
+const toast = ref(null)
+let toastTimer = null
 
-async function loadCandidates(targetPage = 1) {
-  loading.value = true; error.value = ''
-  try {
-    const result = reviewQueueWithGuide(unwrap(await getKnowledgeCandidates({ status: 'PENDING_REVIEW', page: targetPage, pageSize: page.value.pageSize })))
-    page.value = result
-    guideMode.value = result.guideMode
-    if (!page.value.items.some(item => item.id === selectedId.value)) { selectedId.value = page.value.items[0]?.id ?? null; detail.value = null }
-    if (selectedId.value) await loadDetail(selectedId.value)
-  } catch (cause) { error.value = cause.message || '请检查后端服务和数据库连接。' } finally { loading.value = false }
+const graph = computed(() => buildReviewGraph({
+  candidates: candidates.value,
+  entries: entries.value,
+  colorMode: colorMode.value,
+  density: density.value
+}))
+
+const sideOpen = computed(() => selectedId.value != null)
+const truncated = computed(() => !guideMode.value && total.value > candidates.value.length)
+const pendingLabel = computed(() => (guideMode.value
+  ? '演示数据 · 不计统计'
+  : `待人工审核 ${graph.value.stats.pending}`))
+
+const libraryLabel = computed(() => {
+  const list = libraries.value
+  if (!list.length) return '未建知识库'
+  if (list.length === 1) return list[0].name || `知识库 #${list[0].id}`
+  return `${list.length} 个知识库`
+})
+
+const detailEntry = computed(() => {
+  const candidate = detail.value
+  if (!candidate?.traceId) return null
+  return graph.value.entryByTrace.get(String(candidate.traceId)) || null
+})
+
+const adoptLibraryId = computed(() => libraries.value[0]?.id ?? null)
+const canReview = computed(() => Boolean(detail.value)
+  && detail.value.status === 'PENDING_REVIEW'
+  && !detail.value.isGuide
+  && adoptLibraryId.value != null)
+const adoptHint = computed(() => {
+  if (!detail.value) return ''
+  if (detail.value.isGuide) return '演示数据不写库'
+  if (detail.value.status !== 'PENDING_REVIEW') return statusLabel(detail.value.status)
+  if (adoptLibraryId.value == null) return '先创建知识库才能采纳（后端 promote 必须带 libraryId）'
+  return `写入知识库：${libraryLabel.value} · 新建条目 v1（未验证）`
+})
+
+const renderedMarkdown = computed(() => renderKnowledgeMarkdown(detail.value?.contentMarkdown))
+
+const unwrap = response => response?.data ?? response
+const formatTime = value => value
+  ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'medium', hour12: false }).format(new Date(value))
+  : '—'
+
+function statusClass(status) {
+  if (status === 'PENDING_REVIEW') return 'waiting'
+  if (status === 'PROMOTED') return 'done'
+  if (status === 'REJECTED') return 'rejected'
+  return 'quiet'
 }
-async function loadDetail(id) {
-  detailLoading.value = true
+
+/* 生成中状态拿不到候选列表（缺口 C），所以未知状态如实写「未知状态」，不伪造「生成中」。 */
+function statusLabel(status) {
+  return { PENDING_REVIEW: '待审', PROMOTED: '已采纳', REJECTED: '已驳回' }[status] || '未知状态'
+}
+
+function showToast(msg, req) {
+  toast.value = { msg, req }
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value = null }, 3600)
+}
+
+async function loadCandidates() {
+  /* 不传 status：后端把 status 当等值条件，传 'ALL' 会得到 WHERE status='ALL' 的空结果。 */
+  const result = reviewQueueWithGuide(unwrap(await getKnowledgeCandidates({
+    page: 1,
+    pageSize: PAGE_SIZE
+  })))
+  candidates.value = result.items || []
+  total.value = result.total || 0
+  guideMode.value = Boolean(result.guideMode)
+  pagesLoaded.value = 1
+}
+
+/* 条目泳道的数据源：每个知识库拉一页条目，按 source_ref 与候选 trace_id 回挂。 */
+async function loadEntries(libraryList) {
+  if (!libraryList.length) return []
+  const pages = await Promise.all(libraryList.map(library => getKnowledgeEntries(library.id, {
+    page: 1,
+    pageSize: 100
+  }).catch(cause => {
+    entryNote.value = `知识库「${library.name || library.id}」条目读取失败：${cause.message || '未知错误'}`
+    return null
+  })))
+  return pages.flatMap(result => {
+    const page = unwrap(result)
+    return Array.isArray(page?.items) ? page.items : []
+  })
+}
+
+async function loadLibraries() {
   try {
-    const selected = page.value.items.find(item => item.id === id)
-    detail.value = selected?.isGuide ? selected : unwrap(await getKnowledgeCandidate(id))
+    const data = unwrap(await listKnowledgeLibraries())
+    libraries.value = Array.isArray(data) ? data : (data?.items || [])
+    entries.value = await loadEntries(libraries.value)
+  } catch (cause) {
+    entryNote.value = `知识库读取失败：${cause.message || '未知错误'}，候选暂时全部落在「待归类」`
   }
-  catch (cause) { error.value = cause.message || '候选详情加载失败。'; detail.value = null }
-  finally { detailLoading.value = false }
 }
-function selectCandidate(id) { if (id !== selectedId.value) { selectedId.value = id; loadDetail(id) } }
-onMounted(() => loadCandidates(1))
+
+async function loadWorkspace() {
+  try {
+    await Promise.all([loadCandidates(), loadLibraries()])
+  } catch (cause) {
+    showToast('候选加载失败', cause.message || '请检查后端服务与数据库连接')
+  }
+}
+
+async function loadMore() {
+  if (loadingMore.value) return
+  loadingMore.value = true
+  try {
+    const nextPage = pagesLoaded.value + 1
+    const page = unwrap(await getKnowledgeCandidates({ page: nextPage, pageSize: PAGE_SIZE }))
+    const merged = new Map(candidates.value.map(candidate => [candidate.id, candidate]))
+    for (const candidate of page?.items || []) merged.set(candidate.id, candidate)
+    candidates.value = [...merged.values()]
+    pagesLoaded.value = nextPage
+  } catch (cause) {
+    showToast('加载更早的候选失败', cause.message)
+  } finally {
+    loadingMore.value = false
+  }
+}
+
+async function loadDetail(id) {
+  try {
+    const selected = candidates.value.find(candidate => candidate.id === id)
+    detail.value = selected?.isGuide ? selected : unwrap(await getKnowledgeCandidate(id))
+  } catch (cause) {
+    showToast('详情加载失败', cause.message)
+    detail.value = null
+  }
+}
+
+function toggleCandidate(id) {
+  if (selectedId.value === id) { closeSide(); return }
+  selectedId.value = id
+  detail.value = null
+  loadDetail(id)
+}
+
+function closeSide() {
+  detail.value = null
+  selectedId.value = null
+}
+
+async function onAdopt(candidate) {
+  if (candidate.isGuide) { showToast('演示数据不可写库', 'guideMode 候选不调用 promote'); return }
+  if (adoptLibraryId.value == null) { showToast('还没有知识库', 'POST /promote 需要 libraryId，请先创建知识库'); return }
+  try {
+    await promoteKnowledgeCandidate(candidate.id, {
+      libraryId: adoptLibraryId.value,
+      title: candidate.title,
+      contentMarkdown: candidate.contentMarkdown
+    })
+    showToast('采纳成功：已新建条目 v1（未验证）', `POST /api/knowledge/candidates/${candidate.id}/promote`)
+    await loadWorkspace()
+    await loadDetail(candidate.id)
+  } catch (cause) {
+    const conflicted = (cause.status ?? cause.response?.status) === 409
+    showToast(conflicted ? '该候选已被处理，正在刷新' : '采纳失败', conflicted ? '409 KNOWLEDGE_CANDIDATE_NOT_PENDING' : cause.message)
+    if (conflicted) await loadWorkspace()
+  }
+}
+
+function onReject(candidate) {
+  if (candidate.isGuide) { showToast('演示数据不可写库'); return }
+  rejectPopover.value = { id: candidate.id, cand: candidate }
+  rejectReason.value = ''
+}
+
+async function confirmReject() {
+  const reason = rejectReason.value.trim()
+  if (!reason) { showToast('请填写驳回原因'); return }
+  const { id } = rejectPopover.value
+  rejectPopover.value = null
+  try {
+    await rejectKnowledgeCandidate(id, reason)
+    showToast('已驳回，原因已写入摘要', `POST /api/knowledge/candidates/${id}/reject`)
+    await loadWorkspace()
+    if (detail.value?.id === id) await loadDetail(id)
+  } catch (cause) {
+    showToast('驳回失败', cause.message)
+  }
+}
+
+onMounted(loadWorkspace)
 </script>
 
 <style scoped>
-.review-workbench{max-width:1480px;margin:0 auto;padding:12px 0 40px;color:var(--smart-text);font-family:var(--font-cn)}.page-heading,.candidate-list>header,.detail-header,.candidate-row>span,.candidate-list>footer{display:flex;align-items:center;justify-content:space-between;gap:18px}.eyebrow{margin:0 0 8px;color:var(--smart-primary-strong);font:10px var(--font-mono);letter-spacing:.14em}.page-heading h1{margin:0;font-size:clamp(28px,3vw,38px);font-weight:560}.page-heading p:not(.eyebrow),.detail-header p{color:var(--smart-muted);font-size:12px}.pending-count,.detail-header>i,.candidate-row i{border:1px solid #d69a50;border-radius:999px;padding:6px 10px;color:#d69a50;font-size:10px;font-style:normal}.review-layout{display:grid;grid-template-columns:minmax(310px,390px) minmax(0,1fr);gap:18px;margin-top:24px;align-items:start}.candidate-list,.candidate-detail{min-width:0;border:1px solid var(--smart-border);border-radius:12px;background:var(--smart-surface);overflow:hidden}.candidate-list>header,.detail-header{padding:20px;border-bottom:1px solid var(--smart-border)}h2{margin:0;font-size:18px;font-weight:560}.candidate-list>header>span{color:var(--smart-muted);font-size:11px}.candidate-row{display:block;width:100%;padding:16px 20px;border:0;border-bottom:1px solid var(--smart-border);text-align:left;color:var(--smart-text);background:transparent;cursor:pointer}.candidate-row:hover,.candidate-row.active{background:color-mix(in srgb,var(--smart-primary-strong) 9%,transparent)}.candidate-row.active{box-shadow:inset 3px 0 var(--smart-primary-strong)}.candidate-row b{font-size:12px}.candidate-row p{margin:9px 0;color:var(--smart-muted);font-size:10px;line-height:1.6}.candidate-row code,.candidate-row time{display:block;color:var(--smart-muted);font:10px var(--font-mono)}.candidate-row time{margin-top:6px}.candidate-list>footer{padding:13px}.candidate-list button,.state button{border:1px solid var(--smart-border);border-radius:7px;padding:7px 10px;color:var(--smart-text);background:var(--smart-bg)}.candidate-list>footer span{font-size:10px;color:var(--smart-muted)}.candidate-detail{min-height:650px}.detail-header{align-items:flex-start}.detail-header p{max-width:760px;line-height:1.7}.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border-bottom:1px solid var(--smart-border)}.facts div{min-width:0;padding:15px 18px;border-right:1px solid var(--smart-border)}.facts dt{color:var(--smart-muted);font-size:10px}.facts dd{margin:7px 0 0;font-size:11px;overflow-wrap:anywhere}.review-notice{display:flex;gap:16px;padding:13px 20px;border-bottom:1px solid var(--smart-border);border-left:3px solid #d69a50;background:color-mix(in srgb,#d69a50 6%,var(--smart-surface));font-size:11px}.review-notice span{color:var(--smart-muted)}.markdown-document{max-width:860px;padding:30px 34px 44px;color:var(--smart-text);font:14px/1.85 var(--font-cn)}.markdown-document :deep(h1),.markdown-document :deep(h2),.markdown-document :deep(h3){margin:30px 0 12px;color:var(--smart-text);font-family:var(--font-cn);font-weight:620;line-height:1.35}.markdown-document :deep(h1){margin-top:0;font-size:26px}.markdown-document :deep(h2){padding-bottom:8px;border-bottom:1px solid var(--smart-border);font-size:19px}.markdown-document :deep(h3){font-size:16px}.markdown-document :deep(p){margin:0 0 14px;color:var(--smart-muted)}.markdown-document :deep(ul),.markdown-document :deep(ol){margin:0 0 18px;padding-left:25px;color:var(--smart-muted)}.markdown-document :deep(li){margin:7px 0;padding-left:3px}.markdown-document :deep(code){padding:2px 6px;border:1px solid var(--smart-border);border-radius:4px;background:color-mix(in srgb,var(--smart-primary-strong) 8%,transparent);color:var(--smart-primary-strong);font:12px/1.6 var(--font-mono)}.markdown-document :deep(pre){overflow:auto;margin:18px 0;padding:17px 19px;border:1px solid var(--smart-border);border-radius:8px;background:color-mix(in srgb,var(--smart-bg) 84%,#000);box-shadow:inset 3px 0 var(--smart-primary-strong)}.markdown-document :deep(pre code){padding:0;border:0;background:transparent;color:var(--smart-text);white-space:pre}.markdown-document :deep(blockquote){margin:18px 0;padding:14px 17px;border-left:3px solid #d69a50;background:color-mix(in srgb,#d69a50 7%,transparent)}.markdown-document :deep(blockquote p){margin:0;color:var(--smart-text)}.markdown-document :deep(.task-list-item){display:flex;align-items:flex-start;gap:9px;list-style:none;margin-left:-22px}.markdown-document :deep(.task-list-item input){margin-top:6px;accent-color:var(--smart-primary-strong)}.state{padding:60px 24px;text-align:center;color:var(--smart-muted);font-size:12px}.error{margin-top:24px;border:1px solid var(--smart-border);border-left:3px solid #e06b72;border-radius:12px;background:var(--smart-surface)}
-.guide-banner{display:grid;gap:5px;padding:13px 20px;border-bottom:1px solid color-mix(in srgb,#d69a50 45%,var(--smart-border));background:color-mix(in srgb,#d69a50 8%,var(--smart-surface));font-size:11px}.guide-banner strong{color:#d69a50}.guide-banner span{color:var(--smart-muted);line-height:1.55}
-@media(max-width:980px){.review-layout{grid-template-columns:1fr}.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.page-heading,.detail-header{align-items:flex-start;flex-direction:column}.facts{grid-template-columns:1fr}.review-notice{flex-direction:column}.markdown-document{padding:18px 14px}}
+.kr-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 
-/* 两栏独立滚动：审核队列与候选详情各自一条滚动条，头部吸顶 */
-.review-workbench {
-  padding-bottom: 0;
-  /* 抵消 .content 的底部留白，避免整页多出一条滚动条 */
-  margin-bottom: -96px;
+.kr-main { min-width: 0; }
+
+.kr-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 28px 0 16px; }
+.kr-head__text { min-width: 0; }
+.kr-head__overline { margin: 0 0 6px; font: 11px/1 var(--ds-font-mono); letter-spacing: .12em; color: var(--ds-semantic-neutral); text-transform: uppercase; }
+.kr-head h1 { margin: 0 0 6px; font-size: var(--ds-type-h2-size, 26px); font-weight: 500; color: var(--ds-color-text); }
+.kr-head__desc { margin: 0; max-width: 62ch; font-size: 12.5px; line-height: 1.6; color: var(--ds-color-muted); }
+.kr-head__pending { flex: none; padding: 4px 10px; border-radius: var(--ds-radius-pill); background: var(--ds-pill-warning-bg); border: 1px solid color-mix(in srgb, var(--ds-semantic-warning) 34%, transparent); color: var(--ds-semantic-warning); font-size: 11.5px; white-space: nowrap; }
+
+/* 侧栏 */
+.kr-page--side-open { grid-template-columns: minmax(0, 1fr) 400px; }
+.kr-side { position: sticky; top: 72px; max-height: calc(100dvh - 96px); border: 1px solid var(--ds-color-border); border-radius: var(--ds-radius-lg); background: var(--ds-surface-raised); display: flex; flex-direction: column; overflow: hidden; }
+.kr-side__head { position: relative; padding: 16px 18px 14px; border-bottom: 1px solid var(--ds-hairline); }
+.kr-side__head,
+.kr-side__facts,
+.kr-side__notice,
+.kr-side__graph,
+.kr-side__foot { flex: none; }
+.kr-side__close { position: absolute; top: 12px; right: 14px; width: 28px; height: 28px; border: 0; border-radius: var(--ds-radius-sm); background: none; color: var(--ds-color-muted); font-size: 20px; cursor: pointer; }
+.kr-side__close:hover { background: var(--ds-surface-base); color: var(--ds-color-text); }
+.kr-side__overline { margin: 0 0 6px; font: 11px/1 var(--ds-font-mono); letter-spacing: .12em; color: var(--ds-semantic-neutral); }
+.kr-side__head h2 { margin: 0 0 10px; font-size: var(--ds-type-h3-size, 18px); font-weight: 500; line-height: 1.35; color: var(--ds-color-text); }
+.kr-side__tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.kr-side__loading { margin: 0; padding: 20px 18px; font-size: 12px; color: var(--ds-color-muted); }
+.kr-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: var(--ds-radius-sm); border: 1px solid color-mix(in srgb, var(--ds-color-text) 10%, transparent); font-size: 11.5px; color: var(--ds-color-muted); }
+.kr-tag--waiting { color: var(--ds-semantic-warning); border-color: color-mix(in srgb, var(--ds-semantic-warning) 42%, transparent); background: var(--ds-pill-warning-bg); }
+.kr-tag--done { color: var(--ds-semantic-success); border-color: color-mix(in srgb, var(--ds-semantic-success) 38%, transparent); background: var(--ds-pill-success-bg); }
+.kr-tag--rejected { color: var(--ds-semantic-neutral); border-color: var(--ds-hairline); background: color-mix(in srgb, var(--ds-semantic-neutral) 10%, transparent); }
+.kr-tag--quiet { color: var(--ds-color-muted); }
+.kr-tag--target { color: var(--ds-color-muted); border-color: var(--ds-hairline); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kr-tag--demo { color: var(--ds-semantic-info); border-color: color-mix(in srgb, var(--ds-semantic-info) 32%, transparent); }
+
+.kr-side__facts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px 18px; border-bottom: 1px solid var(--ds-hairline); font-size: 12px; }
+.kr-side__facts > div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.kr-side__facts dt { color: var(--ds-semantic-neutral); }
+.kr-side__facts dd { margin: 0; color: var(--ds-color-text); font-family: var(--ds-font-mono); font-size: 11.5px; overflow-wrap: anywhere; }
+.kr-side__facts code { font-family: var(--ds-font-mono); }
+
+.kr-side__notice { margin: 12px 18px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--ds-semantic-warning) 34%, transparent); border-radius: var(--ds-radius-md); background: color-mix(in srgb, var(--ds-semantic-warning) 7%, transparent); font-size: 11.5px; color: var(--ds-color-muted); line-height: 1.6; }
+.kr-side__notice strong { display: block; color: var(--ds-semantic-warning); font-weight: 500; margin-bottom: 4px; }
+
+.kr-side__graph { margin: 0 18px 12px; border: 1px solid var(--ds-color-border); border-radius: var(--ds-radius-md); overflow: hidden; background: var(--ds-surface-base); }
+.kr-side__graph-label { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--ds-hairline); font: 11px/1 var(--ds-font-mono); letter-spacing: .12em; color: var(--ds-semantic-neutral); text-transform: uppercase; }
+.kr-side__graph :deep(.kr-graph) { height: 200px; min-height: 0; }
+
+.kr-side__doc { flex: 1; overflow: auto; padding: 6px 18px 24px; font-size: 12.5px; line-height: 1.7; color: var(--ds-color-muted); }
+.kr-side__doc :deep(h1) { font-size: 15px; color: var(--ds-color-text); font-weight: 500; margin: 14px 0 8px; }
+.kr-side__doc :deep(h2) { font-size: 13px; color: var(--ds-color-text); font-weight: 500; margin: 14px 0 6px; }
+.kr-side__doc :deep(h3) { font-size: 12.5px; color: var(--ds-color-text); font-weight: 500; margin: 12px 0 6px; }
+.kr-side__doc :deep(p) { margin: 0 0 10px; }
+.kr-side__doc :deep(ul), .kr-side__doc :deep(ol) { margin: 6px 0; padding-left: 18px; }
+.kr-side__doc :deep(li) { margin: 3px 0; }
+.kr-side__doc :deep(blockquote) { margin: 8px 0; padding: 8px 10px; border-left: 2px solid var(--ds-color-border-strong); background: color-mix(in srgb, var(--ds-color-text) 8%, var(--ds-surface-base)); color: var(--ds-color-muted); }
+.kr-side__doc :deep(code) { background: color-mix(in srgb, var(--ds-color-text) 8%, var(--ds-surface-base)); padding: 1px 5px; border-radius: var(--ds-radius-sm); color: var(--ds-color-text); font-family: var(--ds-font-mono); }
+.kr-side__doc :deep(pre) { margin: 8px 0; padding: 10px; background: color-mix(in srgb, var(--ds-color-text) 8%, var(--ds-surface-base)); border-radius: var(--ds-radius-md); overflow: auto; font-size: 11px; line-height: 1.6; }
+.kr-side__doc :deep(pre code) { background: none; padding: 0; }
+
+.kr-side__foot { display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--ds-hairline); background: var(--ds-surface-base); }
+.kr-side__foot .kr-btn { flex: 1; height: 32px; }
+
+.kr-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: var(--ds-radius-md); font-size: 12px; border: 1px solid var(--ds-color-border); color: var(--ds-color-text); background: none; cursor: pointer; transition: background var(--ds-duration-micro) var(--ds-ease-out); }
+.kr-btn:hover:not(:disabled) { background: var(--ds-surface-base); border-color: var(--ds-color-border-strong); }
+.kr-btn--primary { background: var(--ds-semantic-warning); border-color: transparent; color: var(--ds-surface-base); font-weight: 500; }
+.kr-btn--primary:hover:not(:disabled) { background: color-mix(in srgb, var(--ds-semantic-warning) 82%, var(--ds-color-text)); }
+.kr-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* popover */
+.kr-pop { position: fixed; z-index: 70; width: 300px; padding: 12px; border: 1px solid var(--ds-color-border); border-radius: var(--ds-radius-md); background: var(--ds-surface-raised); box-shadow: var(--ds-elevation-3); top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.kr-pop h4 { margin: 0 0 8px; font-size: 12.5px; font-weight: 500; color: var(--ds-color-text); }
+.kr-pop p { margin: 0 0 8px; color: var(--ds-semantic-neutral); font-size: 11px; line-height: 1.5; }
+.kr-pop code { font-family: var(--ds-font-mono); }
+.kr-pop input { width: 100%; height: 30px; padding: 0 8px; border-radius: var(--ds-radius-md); border: 1px solid var(--ds-color-border); background: var(--ds-surface-base); color: var(--ds-color-text); font: 12px var(--ds-font-cn); }
+.kr-pop__acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+
+/* toast */
+.kr-toast { position: fixed; right: 18px; bottom: 18px; z-index: 80; max-width: 420px; padding: 10px 12px; border-radius: var(--ds-radius-md); border: 1px solid var(--ds-color-border); background: var(--ds-surface-raised); box-shadow: var(--ds-elevation-3); font-size: 12px; line-height: 1.55; color: var(--ds-color-text); opacity: 0; transform: translateY(6px); transition: opacity var(--ds-duration-spring) var(--ds-ease-out), transform var(--ds-duration-spring) var(--ds-ease-out); }
+.kr-toast--on { opacity: 1; transform: none; }
+.kr-toast__req { display: block; margin-top: 4px; font: 10.5px/1.5 var(--ds-font-mono); color: var(--ds-semantic-neutral); }
+
+@media (max-width: 1439px) {
+  .kr-page--side-open { grid-template-columns: minmax(0, 1fr); }
 }
-@media (max-width: 1023px) { .review-workbench { margin-bottom: -64px; } }
-@media (max-width: 767px) { .review-workbench { margin-bottom: -56px; } }
-.review-layout {
-  height: clamp(440px, calc(100dvh - 320px), 880px);
-  align-items: stretch;
+
+@media (max-width: 1279px) {
+  .kr-side { position: fixed; right: 0; top: 0; bottom: 0; z-index: 40; max-height: none; width: 400px; border-radius: 0; box-shadow: var(--ds-elevation-3); }
 }
-.candidate-list,
-.candidate-detail {
-  min-height: 0;
-  overflow: hidden auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-}
-.candidate-list > header,
-.detail-header {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--smart-surface);
-}
-.candidate-list > footer {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-  border-top: 1px solid var(--smart-border);
-  background: var(--smart-surface);
-}
-@media (max-width: 980px) {
-  .review-layout { height: auto; }
-  .candidate-list, .candidate-detail { overflow: visible; }
-  .candidate-list > header, .detail-header, .candidate-list > footer { position: static; }
+
+@media (max-width: 767px) {
+  .kr-side { width: 100%; }
+  .kr-head { padding-top: 18px; }
+  .kr-head h1 { font-size: 21px; }
 }
 </style>

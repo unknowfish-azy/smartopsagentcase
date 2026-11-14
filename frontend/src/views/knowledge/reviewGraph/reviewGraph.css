@@ -1,0 +1,726 @@
+/* 知识审核泳道图。类名统一 rg- 前缀，只新增，不改全局样式。 */
+
+.rg {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rg-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 9px 12px;
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--ds-color-border);
+}
+
+.rg-bar__scope {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rg-bar__name {
+  font-size: var(--ds-type-body-size);
+  color: var(--ds-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.rg-bar__counts {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.rg-overline {
+  font-size: var(--ds-type-overline-size);
+  font-weight: var(--ds-type-overline-weight);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ds-color-muted);
+}
+
+.rg-hint,
+.rg-meta,
+.rg-note {
+  font-size: var(--ds-type-caption-size);
+  color: var(--ds-color-muted);
+}
+
+.rg-meta {
+  flex: none;
+  white-space: nowrap;
+}
+
+.rg-note--strong {
+  color: var(--ds-color-text);
+}
+
+.rg-spacer {
+  flex: 1 1 auto;
+}
+
+.rg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.rg-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--ds-radius-sm);
+  background: transparent;
+  color: var(--ds-color-muted);
+  font-size: var(--ds-type-caption-size);
+  cursor: pointer;
+  transition: background var(--ds-duration-micro) var(--ds-ease-out), color var(--ds-duration-micro) var(--ds-ease-out);
+}
+
+.rg-count:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ds-color-text) 6%, transparent);
+  color: var(--ds-color-text);
+}
+
+.rg-count:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.rg-count--waiting {
+  color: var(--ds-semantic-warning);
+}
+
+.rg-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--ds-radius-pill);
+  background: color-mix(in srgb, var(--ds-semantic-warning) 14%, transparent);
+  color: var(--ds-semantic-warning);
+  font-size: var(--ds-type-caption-size);
+}
+
+.rg-seg {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--ds-radius-sm);
+  background: color-mix(in srgb, var(--ds-color-text) 6%, transparent);
+}
+
+.rg-seg button {
+  height: 22px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: calc(var(--ds-radius-sm) - 1px);
+  background: transparent;
+  color: var(--ds-color-muted);
+  font-size: var(--ds-type-caption-size);
+  cursor: pointer;
+  transition: background var(--ds-duration-micro) var(--ds-ease-out), color var(--ds-duration-micro) var(--ds-ease-out);
+}
+
+.rg-seg button[aria-pressed='true'] {
+  background: var(--ds-surface-base);
+  color: var(--ds-color-text);
+  box-shadow: inset 0 0 0 1px var(--ds-color-border);
+}
+
+/* 图例与筛选：一条可换行的细带，不与主图争高度。 */
+.rg-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px 16px;
+  flex-wrap: wrap;
+  padding: 7px 12px;
+  border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-surface-base) 88%, transparent);
+  box-shadow: inset 0 0 0 1px var(--ds-hairline);
+}
+
+.rg-legend__group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.rg-legend__label {
+  font-size: var(--ds-type-overline-size);
+  font-weight: var(--ds-type-overline-weight);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ds-color-muted);
+}
+
+.rg-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 148px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ds-type-caption-size);
+  color: var(--ds-color-muted);
+}
+
+.rg-legend__mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ds-surface-raised);
+  font-size: 9px;
+  line-height: 1;
+  box-shadow: inset 0 0 0 1.5px var(--ds-semantic-neutral);
+}
+
+.rg-legend__mark--waiting {
+  color: var(--ds-semantic-warning);
+  box-shadow:
+    inset 0 0 0 1.5px var(--ds-semantic-warning),
+    0 0 0 3px color-mix(in srgb, var(--ds-semantic-warning) 14%, transparent);
+}
+
+.rg-legend__mark--done {
+  color: var(--ds-semantic-success);
+  box-shadow: inset 0 0 0 1.5px var(--ds-semantic-success);
+}
+
+.rg-legend__mark--rejected {
+  color: var(--ds-semantic-neutral);
+  box-shadow: inset 0 0 0 1.5px var(--ds-semantic-neutral);
+}
+
+.rg-legend__line {
+  flex: none;
+  color: var(--ds-semantic-neutral);
+}
+
+.rg-legend__swatch {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.rg-legend__more {
+  font-size: var(--ds-type-caption-size);
+  color: var(--ds-color-muted);
+}
+
+.rg-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--ds-radius-sm);
+  background: transparent;
+  color: var(--ds-color-muted);
+  font-size: var(--ds-type-caption-size);
+  cursor: pointer;
+  transition: background var(--ds-duration-micro) var(--ds-ease-out), color var(--ds-duration-micro) var(--ds-ease-out);
+}
+
+.rg-filter:hover {
+  background: color-mix(in srgb, var(--ds-color-text) 6%, transparent);
+  color: var(--ds-color-text);
+}
+
+.rg-filter[aria-pressed='true'] {
+  background: var(--ds-surface-raised);
+  color: var(--ds-color-text);
+  box-shadow: inset 0 0 0 1px var(--ds-color-border);
+}
+
+.rg-filter__count {
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--ds-color-muted);
+}
+
+.rg-band {
+  border-radius: var(--ds-radius-lg);
+  background: color-mix(in srgb, var(--ds-surface-raised) 96%, transparent);
+  box-shadow: inset 0 0 0 1px var(--ds-color-border);
+  overflow: hidden;
+}
+
+.rg-history {
+  border-radius: var(--ds-radius-lg);
+  background: color-mix(in srgb, var(--ds-surface-base) 92%, transparent);
+  box-shadow: inset 0 0 0 1px var(--ds-hairline);
+  overflow: hidden;
+}
+
+.rg-band__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px 8px;
+}
+
+.rg-band__foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-top: 1px solid var(--ds-hairline);
+}
+
+.rg-empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: var(--ds-type-caption-size);
+  color: var(--ds-color-muted);
+}
+
+.rg-empty--slim {
+  padding: 16px;
+}
+
+.rg-empty p {
+  margin: 0;
+}
+
+.rg-rows {
+  position: relative;
+  width: 100%;
+}
+
+.rg-lanes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.rg-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  padding-left: var(--rg-pad-left, 0px);
+  padding-right: 12px;
+  min-width: 0;
+}
+
+.rg-row:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: calc(var(--ds-focus-ring-offset) * -1);
+}
+
+.rg-row--entry {
+  gap: 6px;
+  scroll-margin: 80px;
+}
+
+.rg-entry-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ds-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46%;
+}
+
+.rg-row--entry.is-unassigned .rg-entry-name {
+  color: var(--ds-color-muted);
+}
+
+.rg-row--cand,
+.rg-row--commit {
+  cursor: pointer;
+  transition: background var(--ds-duration-micro) var(--ds-ease-out);
+}
+
+.rg-row--cand:hover,
+.rg-row--commit:hover {
+  background: color-mix(in srgb, var(--ds-color-text) 4%, transparent);
+}
+
+.rg-row.is-selected {
+  background: color-mix(in srgb, var(--ds-color-primary) 9%, transparent);
+  box-shadow: inset 2px 0 0 var(--ds-color-primary);
+}
+
+/* 待审行：琥珀从左向右渐隐，暗示「等一个决定」，不给整行铺色。 */
+.rg-row--cand.rg-row--waiting {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ds-semantic-warning) 8%, transparent), transparent 62%);
+}
+
+.rg-row--cand.rg-row--waiting:hover {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ds-semantic-warning) 12%, transparent), transparent 62%);
+}
+
+.rg-row--cand.rg-row--waiting.is-selected {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--ds-semantic-warning) 8%, transparent), transparent 62%),
+    color-mix(in srgb, var(--ds-color-primary) 9%, transparent);
+}
+
+/* 筛选不匹配的行只降透明度，保留行位，泳道长度不变。 */
+.rg-row.is-dimmed {
+  opacity: .4;
+}
+
+.rg-row {
+  transition: background var(--ds-duration-micro) var(--ds-ease-out), opacity var(--ds-duration-micro) var(--ds-ease-out);
+}
+
+.rg-row--rejected .rg-cand__title {
+  color: var(--ds-color-muted);
+}
+
+.rg-avatar {
+  position: absolute;
+  top: 50%;
+  margin-top: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ds-surface-raised);
+  color: var(--ds-color-muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  box-shadow: inset 0 0 0 1.5px var(--ds-semantic-neutral);
+  pointer-events: none;
+}
+
+.rg-avatar--waiting {
+  color: var(--ds-semantic-warning);
+  box-shadow:
+    inset 0 0 0 1.5px var(--ds-semantic-warning),
+    0 0 0 3px color-mix(in srgb, var(--ds-semantic-warning) 16%, transparent);
+}
+
+.rg-avatar--done {
+  color: var(--ds-semantic-success);
+  box-shadow: inset 0 0 0 1.5px var(--ds-semantic-success);
+}
+
+.rg-avatar--rejected {
+  opacity: .55;
+  box-shadow: inset 0 0 0 1.5px var(--ds-semantic-neutral);
+}
+
+.rg-avatar--unknown {
+  box-shadow: inset 0 0 0 1.5px var(--ds-color-border-strong);
+}
+
+/* 待审呼吸环：只有「等决定」的节点在动，已决策是静止的。 */
+.rg-avatar--waiting::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--ds-semantic-warning) 58%, transparent);
+  animation: rg-pending-breathe 2.6s var(--ds-ease-out) infinite;
+  pointer-events: none;
+}
+
+@keyframes rg-pending-breathe {
+  0%, 100% {
+    opacity: .6;
+    transform: scale(1);
+  }
+  55% {
+    opacity: 0;
+    transform: scale(1.26);
+  }
+}
+
+.rg-avatar__badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
+  border-radius: 50%;
+  background: var(--ds-surface-base);
+  box-shadow: inset 0 0 0 1px var(--ds-color-border);
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.rg-avatar--waiting .rg-avatar__badge {
+  color: var(--ds-semantic-warning);
+}
+
+.rg-avatar--done .rg-avatar__badge {
+  color: var(--ds-semantic-success);
+}
+
+.rg-cand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rg-cand__line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rg-tool {
+  flex: none;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--ds-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11px;
+  color: var(--ds-color-muted);
+}
+
+.rg-cand__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--ds-color-text);
+}
+
+.rg-cand__note {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--ds-color-muted);
+}
+
+.rg-tag {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--ds-radius-sm);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--ds-color-muted);
+  box-shadow: inset 0 0 0 1px var(--ds-color-border);
+  white-space: nowrap;
+}
+
+.rg-tag--pending {
+  color: var(--ds-semantic-warning);
+  background: color-mix(in srgb, var(--ds-semantic-warning) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-semantic-warning) 42%, transparent);
+}
+
+.rg-tag--done {
+  color: var(--ds-semantic-success);
+  background: color-mix(in srgb, var(--ds-semantic-success) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-semantic-success) 38%, transparent);
+}
+
+.rg-tag--rejected {
+  color: var(--ds-semantic-danger);
+  background: color-mix(in srgb, var(--ds-semantic-danger) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-semantic-danger) 34%, transparent);
+}
+
+.rg-tag--quiet {
+  color: var(--ds-color-muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rg-tag--target {
+  color: var(--ds-color-muted);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rg-commit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.rg-commit__kind {
+  flex: none;
+  font-size: 11px;
+  padding: 0 6px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--ds-radius-sm);
+}
+
+.rg-commit__kind--adopt {
+  color: var(--ds-semantic-success);
+  background: color-mix(in srgb, var(--ds-semantic-success) 12%, transparent);
+}
+
+.rg-commit__kind--reject {
+  color: var(--ds-semantic-neutral);
+  background: color-mix(in srgb, var(--ds-semantic-neutral) 12%, transparent);
+}
+
+.rg-commit__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--ds-color-text);
+}
+
+.rg-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ds-color-primary-strong);
+  font-size: var(--ds-type-caption-size);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 紧凑密度：只收紧文字与间隙；行高与头像尺寸由行模型的 DENSITY 决定，CSS 不重复定义。 */
+.rg--compact .rg-cand {
+  gap: 1px;
+}
+
+.rg--compact .rg-cand__title {
+  font-size: 12.5px;
+}
+
+.rg--compact .rg-cand__note {
+  font-size: 11px;
+}
+
+.rg--compact .rg-tag {
+  height: 17px;
+  font-size: 10.5px;
+}
+
+/* 动效降级：三档模式的 reduced-motion 与运行时降级标记都必须停掉呼吸环。 */
+.app-layout[data-visual-mode='reduced-motion'] .rg-avatar--waiting::after,
+[data-motion-degraded='true'] .rg-avatar--waiting::after {
+  animation: none;
+  opacity: .5;
+  transform: none;
+}
+
+@media (max-width: 900px) {
+  .rg-tool {
+    max-width: 128px;
+  }
+}
+
+@media (max-width: 768px) {
+  .rg {
+    gap: 8px;
+  }
+
+  .rg-bar {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  /* 小屏收掉纯说明性图例，筛选与来源色保留。 */
+  .rg-legend {
+    gap: 6px 10px;
+    padding: 6px 10px;
+  }
+
+  .rg-legend__group[aria-label='状态编码'],
+  .rg-legend__group[aria-label='线条虚实'] {
+    display: none;
+  }
+
+  .rg-band__head .rg-hint {
+    display: none;
+  }
+
+  .rg-cand__line > .rg-meta {
+    display: none;
+  }
+
+  .rg-tool {
+    max-width: 96px;
+  }
+
+  .rg-tag--target,
+  .rg-tag--quiet {
+    max-width: 96px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rg-tool {
+    max-width: 78px;
+  }
+
+  .rg-tag--target {
+    display: none;
+  }
+
+  .rg-legend__group[aria-label='着色来源'] {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rg-row,
+  .rg-count,
+  .rg-seg button,
+  .rg-filter {
+    transition: none;
+  }
+
+  .rg-avatar--waiting::after {
+    animation: none;
+    opacity: .5;
+    transform: none;
+  }
+}

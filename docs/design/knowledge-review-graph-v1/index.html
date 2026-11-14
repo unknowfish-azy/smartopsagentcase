@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识审核 · 图谱工作台（参考原型）</title>
+<style>
+  :root{
+    color-scheme: dark;
+    /* ==== 项目令牌（取自 frontend/src/assets/styles/variables.css，此处展开成字面值） ==== */
+    --bg:#0E1116; --panel:#151A21; --overlay:#1B212A; --sunk:rgba(0,0,0,.28);
+    --text:#e8f2f7; --muted:#92a6b5; --muted3:#8b949e;
+    --border:rgba(159,190,207,.18); --hair:rgba(255,255,255,.06);
+    --border-strong:rgba(159,190,207,.34); --focus:#7ad7f5;
+    --hover:rgba(232,242,247,.05); --active:rgba(122,215,245,.10);
+    /* 泳道色（DESIGN §11.2） */
+    --lane-1:#2496ed; --lane-2:#7ad7f5; --lane-3:#8bcfb4; --lane-4:#9b8cf0;
+    --lane-trunk:#8b949e; --lane-quiet:rgba(146,166,181,.45); --lane-retired:rgba(159,190,207,.34);
+    /* 状态色：只表达状态，永不进入泳道 */
+    --waiting:#d29922; --done:#3fb950; --danger:#f85149; --info:#58a6ff;
+    --font:"Noto Sans SC","Source Han Sans SC","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+    --r-sm:4px; --r-md:8px; --r-lg:12px; --r-pill:999px;
+    --t-micro:150ms; --ease:cubic-bezier(.22,1,.36,1); --t-enter:200ms;
+    --lane-w:22px; --gutter:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font:13px/1.5 var(--font);-webkit-font-smoothing:antialiased;overflow:hidden}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+  code,kbd,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
+
+  /* ================= 顶栏 ================= */
+  .bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;height:52px;padding:0 16px;white-space:nowrap;
+       background:var(--bg);border-bottom:1px solid var(--border)}
+  .bar > *{flex:0 0 auto}
+  .lib{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--r-md);color:var(--muted);font-size:13px}
+  .lib b{color:var(--text);font-weight:500}
+  .lib:hover{background:var(--hover)}
+  .sum{display:flex;align-items:center;gap:2px}
+  .sum button{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:var(--r-md);color:var(--muted);font-size:12px}
+  .sum button:hover{background:var(--hover);color:var(--text)}
+  .sum i{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .sep{width:1px;height:18px;margin:0 6px;background:var(--border)}
+  .chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--r-md);color:var(--muted);font-size:12px}
+  .chip:hover{background:var(--hover);color:var(--text)}
+  .chip[aria-pressed="true"]{color:var(--text);background:var(--active)}
+  .seg{display:inline-flex;padding:2px;border-radius:var(--r-md);background:var(--hover);gap:2px}
+  .seg button{height:24px;padding:0 10px;border-radius:var(--r-sm);color:var(--muted3);font-size:12px}
+  .seg button[aria-pressed="true"]{background:var(--overlay);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .spacer{flex:1}
+  .overline{font:11px/1 var(--mono);letter-spacing:.12em;color:var(--muted3);text-transform:uppercase}
+
+  /* ================= 主体 ================= */
+  .app{display:flex;height:calc(100% - 52px);overflow:hidden}
+  .stage{flex:1;min-width:0;overflow:auto;scrollbar-gutter:stable}
+  .wrap{max-width:1180px;margin:0 auto;padding:14px 18px 80px}
+  .note{margin:0 0 12px;color:var(--muted3);font-size:11.5px;display:flex;gap:8px;align-items:flex-start}
+  .note code{background:var(--sunk);padding:1px 5px;border-radius:var(--r-sm);color:var(--muted)}
+
+  /* 上段面板 */
+  .band{border:1px solid var(--border);border-radius:var(--r-lg);background:var(--panel);overflow:hidden}
+  .band > header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--hair)}
+  .band > header .overline{color:var(--muted)}
+  .band .rows{padding:0;margin:6px 0 8px}
+  .band-foot{display:flex;align-items:center;gap:8px;padding:7px 14px;border-top:1px solid var(--hair);color:var(--muted3);font-size:11.5px}
+
+  .history{margin-top:18px}
+  .history > header{display:flex;align-items:center;gap:10px;padding:0 14px 6px}
+  .history .rows{padding:0}
+
+  /* ================= 行 ================= */
+  .rows{position:relative;z-index:1}
+  .row{position:relative;z-index:2;display:flex;align-items:center;gap:10px;padding:0 12px 0 var(--pad-left);overflow:hidden;
+       border-radius:var(--r-md);transition:background var(--t-micro) var(--ease)}
+  .row .l1 .title,.row .l1 .tool{flex:0 1 auto;min-width:0}
+  .row + .row{margin-top:0}
+  .row:hover{background:var(--hover)}
+  .row.focus{background:var(--active);box-shadow:inset 0 0 0 1px var(--border-strong)}
+  .row.dim{opacity:.4}
+  .row.entry{font-size:14px}
+  .row.entry .name{font-weight:500}
+  .row.cand{flex-direction:column;align-items:stretch;justify-content:center;gap:4px;padding-top:6px;padding-bottom:6px}
+  .row.cand .l1,.row.cand .l2{display:flex;align-items:center;gap:8px;min-width:0}
+  .row.sub{color:var(--muted);font-size:12.5px}
+  .row.commit{font-size:13px;color:var(--muted)}
+  .row.commit .msg{color:var(--text)}
+  .row.commit:hover .msg{color:var(--text)}
+  .row.waiting{background:linear-gradient(90deg,rgba(210,153,34,.09),transparent 58%)}
+  .row.waiting:hover{background-image:linear-gradient(var(--hover),var(--hover)),linear-gradient(90deg,rgba(210,153,34,.09),transparent 58%)}
+  .row-gap{border-top:1px solid var(--hair);box-sizing:border-box}
+  .grow{flex:1;min-width:0}
+  .ellip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .tool{color:var(--text);font-weight:500}
+  .age,.meta{color:var(--muted3);font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .title{color:var(--text)}
+  .op{color:var(--muted);font-size:12px}
+  .op .mono{background:var(--sunk);padding:1px 5px;border-radius:var(--r-sm);color:var(--muted)}
+
+  /* chip / pill */
+  .tag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;flex:0 0 auto;border-radius:var(--r-sm);
+       border:1px solid var(--ds-tag-border,rgba(255,255,255,.1));font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .tag.branch{font-family:var(--mono);font-size:11px}
+  .tag.st{color:var(--waiting);border-color:rgba(210,153,34,.42);background:rgba(210,153,34,.10)}
+  .tag.done{color:var(--done);border-color:rgba(63,185,80,.38);background:rgba(63,185,80,.10)}
+  .tag.rej{color:var(--muted3);border-color:var(--hair);background:rgba(139,148,158,.10)}
+  .tag.gen{color:var(--info);border-color:rgba(88,166,255,.38);background:rgba(88,166,255,.10)}
+  .tag.ver{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tag.target{color:var(--muted);border-color:var(--hair)}
+  .tag.demo{color:var(--info);border-color:rgba(88,166,255,.32)}
+  .dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto}
+
+  /* 按钮 */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:26px;padding:0 10px;
+       border-radius:var(--r-md);font-size:12px;border:1px solid var(--border);color:var(--text);white-space:nowrap;
+       transition:background var(--t-micro) var(--ease),border-color var(--t-micro) var(--ease)}
+  .btn:hover{background:var(--hover);border-color:var(--border-strong)}
+  .btn.primary{background:rgba(210,153,34,.90);border-color:transparent;color:#1a1405;font-weight:500}
+  .btn.primary:hover{background:#e0a836}
+  .btn.ghost{color:var(--muted)}
+  .btn.small{height:24px;padding:0 8px;font-size:11.5px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+
+  /* ================= 泳道覆盖层 ================= */
+  .lanes,.nodes{position:absolute;left:0;top:0;pointer-events:none}
+  .lanes{overflow:visible;z-index:3}
+  .nodes{z-index:4}
+  .avatar{position:absolute;width:28px;height:28px;border-radius:var(--r-pill);display:grid;place-items:center;
+          background:var(--overlay);color:var(--text);font:600 11px var(--mono);letter-spacing:0;
+          box-shadow:0 0 0 2px rgba(159,190,207,.28)}
+  .avatar .ini{transform:translateY(.5px)}
+  .avatar.waiting{box-shadow:0 0 0 2px var(--waiting),0 0 0 7px rgba(210,153,34,.14);animation:breathe 2.6s var(--ease) infinite}
+  .avatar.generating::after{content:"";position:absolute;inset:-3px;border-radius:inherit;
+        background:conic-gradient(from 0turn,rgba(88,166,255,0) 0deg,rgba(88,166,255,.05) 90deg,var(--info) 320deg,rgba(88,166,255,0) 360deg);
+        -webkit-mask:radial-gradient(closest-side,transparent 81%,#000 83%);mask:radial-gradient(closest-side,transparent 81%,#000 83%);
+        animation:spin 1.5s linear infinite}
+  .avatar.done{box-shadow:0 0 0 1.5px rgba(159,190,207,.24);filter:saturate(.28);opacity:.9}
+  .avatar.rejected{box-shadow:0 0 0 1.5px rgba(159,190,207,.16);filter:saturate(.18);opacity:.55}
+  .badge{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;border-radius:50%;display:grid;place-items:center;
+         font:700 8px/1 var(--mono);color:#141416;border:1.5px solid var(--bg)}
+  .badge.w{background:var(--waiting)}
+  .badge.d{background:var(--done);color:#07110a}
+  .badge.r{background:var(--muted3)}
+  @keyframes breathe{0%,100%{box-shadow:0 0 0 2px var(--waiting),0 0 0 7px rgba(210,153,34,.10)}50%{box-shadow:0 0 0 2px var(--waiting),0 0 0 10px rgba(210,153,34,.18)}}
+  @keyframes spin{to{transform:rotate(1turn)}}
+
+  /* ================= 侧栏 ================= */
+  .side{width:400px;flex:0 0 400px;border-left:1px solid var(--border);background:var(--overlay);
+        display:flex;flex-direction:column;overflow:hidden;transition:margin-right var(--t-enter) var(--ease)}
+  .side[hidden]{display:none}
+  .side header{padding:16px 18px 14px;border-bottom:1px solid var(--hair)}
+  .side header .overline{margin-bottom:6px}
+  .side h2{margin:0 0 6px;font-size:18px;font-weight:500;line-height:1.35}
+  .facts{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;padding:14px 18px;border-bottom:1px solid var(--hair);font-size:12px}
+  .facts dt{color:var(--muted3)}
+  .facts dd{margin:0;color:var(--text);font-family:var(--mono);font-size:11.5px;overflow:hidden;text-overflow:ellipsis}
+  .notice{margin:12px 18px;padding:10px 12px;border:1px solid rgba(210,153,34,.34);border-radius:var(--r-md);
+          background:rgba(210,153,34,.07);font-size:11.5px;color:var(--muted);line-height:1.6}
+  .notice b{color:var(--waiting);font-weight:500}
+  .doc{flex:1;overflow:auto;padding:6px 18px 24px;font-size:12.5px;line-height:1.7;color:var(--muted)}
+  .doc h1{font-size:15px;color:var(--text);font-weight:500;margin:14px 0 8px}
+  .doc h2{font-size:13px;color:var(--text);font-weight:500;margin:14px 0 6px}
+  .doc blockquote{margin:8px 0;padding:8px 10px;border-left:2px solid var(--border-strong);background:var(--sunk);color:var(--muted)}
+  .doc code{background:var(--sunk);padding:1px 5px;border-radius:var(--r-sm);color:var(--text)}
+  .doc pre{margin:8px 0;padding:10px;background:var(--sunk);border-radius:var(--r-md);overflow:auto;font-size:11px;line-height:1.6}
+  .doc pre code{background:none;padding:0}
+  .doc ul{margin:6px 0;padding-left:18px}
+  .doc li{margin:3px 0}
+  .side footer{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--hair);background:var(--overlay)}
+  .side footer .btn{flex:1;height:32px}
+  .side .close{position:absolute}
+
+  /* ================= 浮层：菜单 / popover / toast / 图例 ================= */
+  .menu{position:fixed;z-index:60;min-width:280px;padding:6px;border:1px solid var(--border);border-radius:var(--r-md);
+        background:var(--overlay);box-shadow:0 12px 32px rgba(0,0,0,.42)}
+  .menu .head{padding:7px 10px 8px;border-bottom:1px solid var(--hair);margin-bottom:4px}
+  .menu .head b{display:block;font-size:12.5px;font-weight:500}
+  .menu .head span{display:block;color:var(--muted3);font-size:11px;margin-top:3px}
+  .menu button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:var(--r-sm);font-size:12.5px}
+  .menu button:hover:not([disabled]){background:var(--hover)}
+  .menu button[disabled]{color:var(--muted3);cursor:not-allowed;opacity:.75}
+  .menu button .req{display:block;margin-top:2px;font:10.5px/1.4 var(--mono);color:var(--muted3)}
+  .menu button .why{display:block;margin-top:2px;font-size:11px;color:var(--muted3);opacity:.9}
+
+  .pop{position:fixed;z-index:70;width:300px;padding:12px;border:1px solid var(--border);border-radius:var(--r-md);
+       background:var(--overlay);box-shadow:0 12px 32px rgba(0,0,0,.42)}
+  .pop h4{margin:0 0 8px;font-size:12.5px;font-weight:500}
+  .pop p{margin:0 0 8px;color:var(--muted3);font-size:11px;line-height:1.5}
+  .pop select,.pop input{width:100%;height:30px;padding:0 8px;border-radius:var(--r-md);border:1px solid var(--border);
+        background:var(--bg);color:var(--text);font:12px var(--font)}
+  .pop .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+
+  .toast{position:fixed;right:18px;bottom:18px;z-index:80;max-width:420px;padding:10px 12px;border-radius:var(--r-md);
+         border:1px solid var(--border);background:var(--overlay);box-shadow:0 12px 32px rgba(0,0,0,.42);
+         font-size:12px;line-height:1.55;opacity:0;transform:translateY(6px);transition:opacity var(--t-enter) var(--ease),transform var(--t-enter) var(--ease)}
+  .toast.on{opacity:1;transform:none}
+  .toast .req{display:block;margin-top:4px;font:10.5px/1.5 var(--mono);color:var(--muted3)}
+  /* 侧栏打开时把提示条让到图那一侧，避免盖住底部操作条 */
+  body.has-side .toast{right:418px}
+
+  .legend{position:fixed;left:18px;bottom:18px;z-index:50;width:262px;padding:10px 12px;border:1px solid var(--border);
+          border-radius:var(--r-md);background:var(--overlay);box-shadow:0 12px 32px rgba(0,0,0,.42);font-size:11.5px}
+  .legend[hidden]{display:none}
+  .legend h5{margin:0 0 8px;font:11px/1 var(--mono);letter-spacing:.12em;color:var(--muted3);text-transform:uppercase}
+  .legend .line{display:flex;align-items:center;gap:8px;margin:6px 0;color:var(--muted)}
+  .legend svg{flex:0 0 auto}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important}
+  }
+  @media (max-width:1279px){
+    .app{position:relative}
+    .side{position:fixed;right:0;top:52px;bottom:0;z-index:40;box-shadow:0 0 0 1px var(--border)}
+  }
+  /* 1024 以下：侧栏改为整屏抽屉；顶栏按优先级丢次要控件 */
+  @media (max-width:1023px){
+    .side{width:100%;flex:0 0 100%;border-left:0}
+    #filterTool,.bar .seg{display:none}
+  }
+  @media (max-width:880px){
+    .sum button:nth-child(n+3){display:none}
+  }
+  @media (max-width:767px){
+    .wrap{padding:10px 10px 60px}
+    .side{width:100%;flex-basis:100%;top:52px}
+    /* 行高必须固定（泳道坐标依赖它），窄屏靠丢次要信息而不是换行 */
+    .row.cand .l1 .tag.target{display:none}
+    .row.cand .l1 .age{display:none}
+    .row.cand .l2 .op{display:none}
+    .row.entry .meta{display:none}
+    .row.commit .tag.branch{display:none}
+    .tool{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+    .row.entry .name{max-width:56%;min-width:0}
+    .row.entry .tag.ver{display:none}
+  }
+  @media (max-width:560px){
+    .bar{overflow:hidden;padding:0 10px}
+    .sum button:nth-child(n+2){display:none}
+    .lib b{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <button class="lib" id="libBtn">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.2 1.6h4.3A1.5 1.5 0 0 1 13 6.1v5.4A1.5 1.5 0 0 1 11.5 13h-8A1.5 1.5 0 0 1 2 11.5z"/></svg>
+    知识库 <b>基础设施排障</b>
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l3 3 3-3"/></svg>
+  </button>
+  <span class="sep"></span>
+  <div class="sum">
+    <button data-jump="waiting"><i style="background:var(--waiting)"></i>3 待审</button>
+    <button data-jump="generating"><i style="background:var(--info)"></i>1 生成中</button>
+    <button data-jump="done"><i style="background:var(--done)"></i>5 已采纳</button>
+    <button data-jump="all"><i style="background:var(--muted3)"></i>12 条目</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="chip" id="filterTool" aria-pressed="false">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 3.5h10M4 7h6M5.5 10.5h3"/></svg>
+    全部来源工具
+  </button>
+  <span class="sep"></span>
+  <div class="seg" role="group" aria-label="着色方式">
+    <button aria-pressed="true" data-color="tool">按来源</button>
+    <button aria-pressed="false" data-color="entry">按条目</button>
+  </div>
+  <button class="chip" id="legendBtn" aria-pressed="false">图例 <kbd style="color:var(--muted3)">?</kbd></button>
+</div>
+
+<div class="app">
+  <main class="stage" id="stage">
+    <div class="wrap">
+      <p class="note">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--info)" stroke-width="1.5" style="flex:0 0 auto;margin-top:1px"><circle cx="7" cy="7" r="5.6"/><path d="M7 6v3.4M7 4.4v.6"/></svg>
+        <span>参考原型 · 播种数据。假设缺口 A 已按 <code>A2</code> 落地（候选带 <code>target_entry_id</code>），仍保留一条 <code>待归类</code> 候选演示 A1 兜底；「生成中」行假设缺口 C 已补 <code>runStatus</code>。</span>
+      </p>
+
+      <section class="band" aria-label="待审工作台">
+        <header>
+          <span class="overline">待审</span>
+          <span class="meta">按最需要你的排序：待审 → 生成中 → 已采纳 → 已驳回</span>
+        </header>
+        <div class="rows" id="nowRows"></div>
+        <div class="band-foot">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 1v10M1 6h10" opacity=".0"/><path d="M3 8.5l3 2 3-2M3 3.5l3-2 3 2"/></svg>
+          <span>虚线连到该条目当前的版本位置；点行打开右侧证据，右键打开审核菜单</span>
+        </div>
+      </section>
+
+      <section class="history" aria-label="演化史">
+        <header><span class="overline">演化史</span><span class="meta">审核事件与入库快照，从新到旧</span></header>
+        <div class="rows" id="histRows"></div>
+      </section>
+    </div>
+  </main>
+
+  <aside class="side" id="side" hidden aria-live="polite"></aside>
+</div>
+
+<div class="legend" id="legend" hidden></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   播种数据：字段与 knowledge_candidate / personal_knowledge_entry
+   / operation_run_record 现有列一一对应
+   ============================================================ */
+const LIB = { id: 1, name: '基础设施排障' }
+
+const ENTRIES = [
+  { id:'trunk',  lane:0, name:'已入库', version:null, trunk:true, color:'var(--lane-trunk)' },
+  { id:'e-k8s',  lane:1, name:'K8s Service 无可用 Endpoint', version:3, color:'var(--lane-1)' },
+  { id:'e-mysql',lane:2, name:'MySQL 连接池耗尽',            version:1, color:'var(--lane-4)' },
+  { id:'e-nginx',lane:3, name:'Nginx 502 上游超时',           version:2, color:'var(--lane-quiet)', quiet:true },
+  { id:'e-stage',lane:4, name:'待归类',                       version:null, staging:true, color:'var(--lane-quiet)' },
+]
+const E = Object.fromEntries(ENTRIES.map(e => [e.id, e]))
+const laneOf = id => E[id].lane
+
+const CANDS = [
+  { id:1042, entry:'e-k8s', tool:'k8s.service.diagnose', status:'waiting', age:'12 分钟', title:'Service 无可用 Endpoint：Selector 与 Pod Label 不匹配',
+    target:'e-k8s', trace:'a1b2c3d4e5f60718', run:8821, createdAt:'2026-11-10 09:12',
+    op:'→ 采纳到「K8s Service 无可用 Endpoint」',
+    evidence:[{ name:'证据 3 项 · EndpointSlice 无可用地址', ref:'kubectl get endpointslice -n demo' }],
+    md:`# 运维知识候选
+
+> 本文由 SmartOpsAgent 根据真实运行记录生成，当前为待人工审核状态，不代表已确认根因。
+
+## 现象与环境
+
+- Namespace：\`demo\`，Service：\`web-service\`，Deployment：\`web\`
+- 访问 \`web-service\` 超时，Service 已创建但没有可用后端
+
+## 已确认事实
+
+1. Service 存在，ClusterIP 已分配
+2. EndpointSlice 中没有可用地址
+3. Deployment 期望副本数为 2
+
+## 当前推测
+
+Service \`spec.selector\` 与 Pod 实际 Labels 可能不匹配。该判断仍需两侧标签对照验证，不能直接当作根因。
+
+## 待验证项
+
+- \`kubectl get svc web-service -o jsonpath='{.spec.selector}'\`
+- \`kubectl get pod -l app=web --show-labels\`` },
+  { id:1039, entry:'e-k8s', tool:'k8s.deployment.inspect', status:'waiting', age:'34 分钟', title:'Deployment 副本就绪但 Pod 全部 NotReady',
+    target:'e-k8s', trace:'b7c8d9e0f1a2b3c4', run:8814, createdAt:'2026-11-10 08:50',
+    op:'→ 采纳到「K8s Service 无可用 Endpoint」',
+    md:`# 运维知识候选
+
+## 现象与环境
+
+Deployment \`web\` 的 \`readyReplicas\` 为 0，Pod 处于 \`Running\` 但 \`Ready=False\`。
+
+## 已确认事实
+
+- 就绪探针 \`/healthz\` 连续返回 500
+- 容器日志出现数据库连接超时
+
+## 待验证项
+
+- 探针路径与端口是否与实际监听一致
+- 依赖的数据库连接是否可达` },
+  { id:1031, entry:'e-mysql', tool:'mysql.pool.inspect', status:'waiting', age:'3 小时', title:'连接池耗尽：max_connections 与 HikariCP 上限矛盾',
+    target:'e-mysql', trace:'c3d4e5f6a7b8c9d0', run:8790, createdAt:'2026-11-10 06:20',
+    op:'→ 采纳到「MySQL 连接池耗尽」',
+    md:`# 运维知识候选
+
+## 现象与环境
+
+应用侧出现 \`HikariPool-1 - Connection is not available, request timed out\`。
+
+## 已确认事实
+
+- \`max_connections = 150\`，当前 \`Threads_connected = 148\`
+- 应用实例 6 个，单实例池上限 32 → 理论峰值 192
+
+## 当前推测
+
+实例扩容后未同步调整池上限或数据库上限。需要按实例数重算配额。
+
+## 修复与验证
+
+- 单实例池上限 → \`max_connections / 实例数 × 0.8\`
+- 验证：\`SHOW STATUS LIKE 'Threads_connected'\` 在压测下不再贴顶` },
+  { id:1018, entry:'e-stage', tool:'redis.cluster.check', status:'generating', age:'04:12', title:'Redis 集群槽位分布不均（草案生成中）',
+    target:null, trace:'d9e0f1a2b3c4d5e6', run:8844, createdAt:'2026-11-10 09:20',
+    op:'kubectl exec -n cache redis-0 -- redis-cli cluster slots', md:null },
+  { id:994, entry:'e-nginx', tool:'nginx.upstream.diagnose', status:'rejected', age:'昨天', title:'Nginx 502：上游 keepalive 配置不当',
+    target:'e-nginx', trace:'e5f6a7b8c9d0e1f2', run:8721, createdAt:'2026-11-09 15:02',
+    op:'驳回：证据不足（缺上游日志）',
+    md:`# 运维知识候选
+
+## 现象与环境
+
+Nginx 返回 502，上游 \`127.0.0.1:8080\` 连接被重置。
+
+## 已确认事实
+
+- error log 出现 \`upstream prematurely closed connection\`
+
+## 驳回说明
+
+缺少上游服务侧日志与 \`keepalive_timeout\` 配置快照，无法区分是上游超时还是 Nginx 主动断开。补齐证据后重新生成。` },
+]
+
+/* 演化史：审核事件 + 入库快照 */
+const EVENTS = [
+  { id:1, lane:'e-k8s',   kind:'adopt',  text:'采纳 v3 · 补充 Selector 核对步骤',      who:'k8s.service.diagnose', when:'2 小时', merge:true },
+  { id:2, lane:'trunk',   kind:'adopt',  text:'入库 v3 · K8s Service 无可用 Endpoint',  who:'你', when:'2 小时', merge:true },
+  { id:3, lane:'e-nginx', kind:'reject', text:'驳回 · 证据不足（缺上游日志）',          who:'nginx.upstream.diagnose', when:'昨天', merge:false },
+  { id:4, lane:'e-mysql', kind:'snap',   text:'快照 v1 · MySQL 连接池耗尽草案',          who:'mysql.pool.inspect', when:'昨天', merge:false },
+  { id:5, lane:'trunk',   kind:'adopt',  text:'入库 v1 · MySQL 连接池耗尽',              who:'你', when:'昨天', merge:true },
+  { id:6, lane:'e-k8s',   kind:'adopt',  text:'采纳 v2 · 增加 EndpointSlice 检查',        who:'k8s.service.diagnose', when:'2 天', merge:true },
+  { id:7, lane:'trunk',   kind:'adopt',  text:'入库 v2 · K8s Service 无可用 Endpoint',    who:'你', when:'2 天', merge:true },
+  { id:8, lane:'e-nginx', kind:'adopt',  text:'入库 v2 · Nginx 502 上游超时',             who:'你', when:'3 天', merge:true },
+]
+
+/* ============================================================ 行模型：DOM 与 SVG 共用一份 y ============================================================ */
+const H = { entry:34, cand:56, sub:28, commit:30 }
+const LANE_W = 22, PAD_X = 12, GAP_X = 12
+
+const TOOL_COLOR = new Map()
+const TOOL_PALETTE = ['var(--lane-1)','var(--lane-2)','var(--lane-3)','var(--lane-4)']
+function toolColor(tool){
+  if (!TOOL_COLOR.has(tool)){
+    TOOL_COLOR.set(tool, TOOL_PALETTE[TOOL_COLOR.size] || 'var(--lane-quiet)')
+  }
+  return TOOL_COLOR.get(tool)
+}
+const STATUS_ORDER = { waiting:0, generating:1, done:2, rejected:3 }
+let colorMode = 'tool'
+
+function laneColor(entryId, tool){
+  if (colorMode === 'entry') return E[entryId]?.color || 'var(--lane-quiet)'
+  if (entryId === 'trunk') return 'var(--lane-trunk)'
+  if (entryId === 'e-stage') return 'var(--lane-quiet)'
+  if (E[entryId]?.quiet) return 'var(--lane-quiet)'
+  return tool ? toolColor(tool) : (E[entryId]?.color || 'var(--lane-quiet)')
+}
+
+function buildRows(){
+  const now = []
+  const groups = ['e-k8s','e-mysql','e-stage','e-nginx']
+  groups.forEach((gid, gi) => {
+    /* 组间分隔：空行也计入行高，保证 DOM 与泳道坐标同源 */
+    if (gi > 0) now.push({ kind:'gap', id:'gap-'+gid, lane:null, h:10 })
+    const cands = CANDS.filter(c => c.entry === gid)
+    const waiting = cands.filter(c => c.status === 'waiting').length
+    now.push({ kind:'entry', id:'entry-'+gid, entry:gid, lane:E[gid].lane, h:H.entry, waiting })
+    for (const c of cands.slice().sort((a,b) => STATUS_ORDER[a.status]-STATUS_ORDER[b.status])){
+      now.push({ kind:'cand', id:'cand-'+c.id, cand:c, lane:E[gid].lane, h:H.cand })
+      for (const ev of (c.evidence || [])) now.push({ kind:'sub', id:'sub-'+c.id+'-'+ev.ref, ev, cand:c, lane:E[gid].lane, h:H.sub })
+    }
+  })
+  const hist = EVENTS.map(e => ({ kind:'commit', id:'ev-'+e.id, ev:e, lane:laneOf(e.lane), h:H.commit }))
+  return { now, hist }
+}
+
+const { now, hist } = buildRows()
+
+function layout(rows){
+  let y = 0
+  for (const r of rows){ r.y = y; y += r.h }
+  return y
+}
+const nowH = layout(now), histH = layout(hist)
+const laneX = lane => PAD_X + lane * LANE_W + LANE_W / 2
+
+/* ============================================================ 渲染：行 ============================================================ */
+const padLeft = PAD_X + (ENTRIES.length) * LANE_W + GAP_X
+document.documentElement.style.setProperty('--pad-left', padLeft + 'px')
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+
+function statusTag(status){
+  if (status === 'waiting')    return '<span class="tag st">待审</span>'
+  if (status === 'generating') return '<span class="tag gen">生成中</span>'
+  if (status === 'done')       return '<span class="tag done">已采纳</span>'
+  return '<span class="tag rej">已驳回</span>'
+}
+
+function renderEntryRow(r){
+  const e = E[r.entry]
+  const ver = e.version ? `<span class="tag ver">v${e.version}</span>` : ''
+  const st  = e.staging ? '<span class="tag rej">未归类</span>'
+            : r.waiting ? `<span class="tag st">待审 ${r.waiting}</span>` : `<span class="tag rej">无待审</span>`
+  const right = e.trunk ? '<span class="meta">主干 · 5 条入库条目</span>'
+              : e.staging ? '<span class="meta">采纳时必须指定目标条目</span>'
+              : `<span class="meta">${r.waiting ? r.waiting + ' 条候选 · +2 −1 段' : '无待审候选'}</span>`
+  return `<div class="row entry" data-id="${r.id}" data-kind="entry" data-entry="${r.entry}" tabindex="-1"
+            style="height:${r.h}px" role="listitem">
+      <span class="name ellip">${esc(e.name)}</span>${ver}${st}
+      <span class="grow"></span>${right}
+    </div>`
+}
+
+function renderCandRow(r){  const c = r.cand
+  const target = c.target ? E[c.target].name : '待归类'
+  const targetTag = `<span class="tag target" title="目标条目">${esc(target)}</span>`
+  let l2 = ''
+  if (c.status === 'waiting'){
+    l2 = `<span class="op ellip">${esc(c.op)}</span>
+          <button class="btn primary small" data-act="adopt" data-id="${c.id}">采纳</button>
+          <button class="btn small ghost" data-act="reject" data-id="${c.id}">驳回</button>`
+  } else if (c.status === 'generating'){
+    l2 = `<span class="op ellip">最近动作 <span class="mono">${esc(c.op)}</span></span>
+          <span class="age hide-sm">来源运行 #${c.run} 执行中</span>`
+  } else if (c.status === 'rejected'){
+    l2 = `<span class="op ellip">${esc(c.op)}</span>
+          <button class="btn small ghost" data-act="regen" data-id="${c.id}">重新生成</button>`
+  } else {
+    l2 = `<span class="op ellip">${esc(c.op)}</span>`
+  }
+  return `<div class="row cand ${c.status === 'waiting' ? 'waiting' : ''}" data-id="${r.id}" data-kind="cand" data-cand="${c.id}" tabindex="0"
+            style="height:${r.h}px" role="listitem">
+      <div class="l1">
+        <span class="tool">${esc(c.tool)}</span>${statusTag(c.status)}
+        <span class="age">${esc(c.age)}</span>
+        <span class="title ellip">${esc(c.title)}</span>
+        <span class="grow"></span>${targetTag}
+      </div>
+      <div class="l2">${l2}</div>
+    </div>`
+}
+
+function renderSubRow(r){
+  return `<div class="row sub" data-id="${r.id}" data-kind="sub" style="height:${r.h}px" role="listitem">
+      <span style="color:var(--border-strong);font-family:var(--mono)">└</span>
+      <span class="ellip">${esc(r.ev.name)}</span>
+      <span class="grow"></span><span class="meta mono ellip hide-sm">${esc(r.ev.ref)}</span>
+    </div>`
+}
+
+function renderCommitRow(r){
+  const e = r.ev
+  const tag = e.kind === 'reject' ? '<span class="tag rej">驳回</span>'
+            : e.kind === 'snap'   ? '<span class="tag ver">快照</span>'
+            : e.lane === 'trunk'  ? '<span class="tag done">入库</span>'
+            : '<span class="tag done">采纳</span>'
+  const author = e.who === '你' ? '你' : (e.who.split('.')[0] || e.who)
+  const c = eventColor(e)
+  return `<div class="row commit" data-id="${r.id}" data-kind="commit" data-ev="${e.id}" tabindex="-1" style="height:${r.h}px" role="listitem">
+      ${tag}<span class="msg ellip">${esc(e.text)}</span>
+      <span class="grow"></span>
+      <span class="tag branch" title="${esc(e.who)}" style="color:${c};border-color:${c}55">${esc(author)}</span>
+      <span class="age">${esc(e.when)}</span>
+    </div>`
+}
+
+const RENDER = { entry:renderEntryRow, cand:renderCandRow, sub:renderSubRow, commit:renderCommitRow,
+                 gap:r => `<div class="row-gap" style="height:${r.h}px" aria-hidden="true"></div>` }
+const nowRowsEl = document.getElementById('nowRows')
+const histRowsEl = document.getElementById('histRows')
+
+function renderRows(){
+  nowRowsEl.innerHTML = now.map(r => RENDER[r.kind](r)).join('')
+  histRowsEl.innerHTML = hist.map(r => RENDER[r.kind](r)).join('')
+  nowRowsEl.style.height = nowH + 'px'
+  histRowsEl.style.height = histH + 'px'
+}
+
+/* ============================================================ 渲染：泳道 SVG + 节点覆盖层 ============================================================ */
+const centers = rows => rows.map(r => ({ r, y: r.y + r.h / 2 }))
+const nowC = centers(now), histC = centers(hist)
+
+/* 一条泳道线：同一 x，从上面第一行连到下面最后一行 */
+function lanePath(cs, color, dashed){
+  if (!cs.length) return ''
+  const x = laneX(cs[0].r.lane)
+  const top = cs[0].y, bottom = cs[cs.length - 1].y
+  return `<path d="M${x},${top} L${x},${bottom}" stroke="${color}" stroke-width="1.5"
+           fill="none" stroke-linecap="round" ${dashed ? 'stroke-dasharray="4 3"' : ''}/>`
+}
+
+/* 泳道色：按条目或按来源工具（DESIGN §4、§11.2） */
+function entryLaneColor(entryId){
+  if (entryId === 'trunk') return 'var(--lane-trunk)'
+  const e = E[entryId]
+  if (!e || e.staging || e.quiet) return 'var(--lane-quiet)'
+  return colorMode === 'entry' ? e.color : e.color
+}
+function eventColor(ev){
+  if (ev.kind === 'reject') return 'var(--muted3)'
+  if (ev.lane === 'trunk') return 'var(--lane-trunk)'
+  return entryLaneColor(ev.lane)
+}
+
+function lanesSvgContent(which){
+  const cs = which === 'now' ? nowC : histC
+  const parts = []
+
+  for (const e of ENTRIES){
+    const inSeg = cs.filter(c => c.r.lane === e.lane)
+    if (!inSeg.length) continue
+    parts.push(lanePath(inSeg, entryLaneColor(e.id), which === 'now'))
+  }
+
+  if (which === 'now'){
+    for (const c of cs){
+      if (c.r.kind === 'entry'){
+        const e = E[c.r.entry]
+        const x = laneX(c.r.lane) - 6
+        parts.push(`<rect x="${x}" y="${c.y - 6}" width="12" height="12" rx="3"
+                     fill="${e.trunk ? 'var(--overlay)' : 'var(--panel)'}"
+                     stroke="${e.staging ? 'var(--border-strong)' : entryLaneColor(e.id)}"
+                     stroke-width="1.6" ${e.staging ? 'stroke-dasharray="3 2"' : ''}/>`)
+      }
+      if (c.r.kind === 'sub') parts.push(`<circle cx="${laneX(c.r.lane)}" cy="${c.y}" r="3" fill="var(--lane-quiet)"/>`)
+    }
+    /* 待归类：不画分叉弧（主干在待审段没有行，弧线无处可落），靠虚线 + 未归类标签说明 */
+  } else {
+    /* 历史段：泳道一路延伸到底部，再从底部弧回主干（上游原型的画法） */
+    const BOTTOM = histH - 10
+    for (const e of ENTRIES){
+      const inSeg = cs.filter(c => c.r.lane === e.lane)
+      if (!inSeg.length) continue
+      const x = laneX(e.lane)
+      parts.push(`<path d="M${x},${inSeg[inSeg.length - 1].y} L${x},${BOTTOM}" stroke="${entryLaneColor(e.id)}"
+                   stroke-width="1.5" fill="none" stroke-linecap="round"/>`)
+      if (e.lane !== 0){
+        const x0 = laneX(0)
+        parts.push(`<path d="M${x0},${BOTTOM + 8} C${x0},${BOTTOM} ${x},${BOTTOM + 2} ${x},${BOTTOM - 8}"
+                     fill="none" stroke="${entryLaneColor(e.id)}" stroke-width="1.5" stroke-linecap="round" opacity=".6"/>`)
+      }
+    }
+    for (const c of cs){
+      const ev = c.r.ev
+      const color = eventColor(ev)
+      if (ev.merge) parts.push(`<circle cx="${laneX(c.r.lane)}" cy="${c.y}" r="5" fill="var(--bg)" stroke="${color}" stroke-width="2"/>`)
+      else parts.push(`<circle cx="${laneX(c.r.lane)}" cy="${c.y}" r="4.5" fill="${color}"/>`)
+    }
+  }
+  return parts.join('')
+}
+
+/* 候选头像：状态环全部走 CSS，坐标由同一份 y 得出 */
+function avatarFor(c){
+  const badge = c.status === 'waiting' ? '<span class="badge w">!</span>'
+              : c.status === 'done'    ? '<span class="badge d">✓</span>'
+              : c.status === 'rejected'? '<span class="badge r">–</span>' : ''
+  const ini = c.tool.split('.')[0].slice(0, 2).toUpperCase()
+  return `<span class="avatar ${c.status}" title="${esc(c.tool)}"><span class="ini">${esc(ini)}</span>${badge}</span>`
+}
+
+function buildNodes(){
+  return nowC.filter(c => c.r.kind === 'cand').map(c => {
+    const left = laneX(c.r.lane) - 14, top = c.y - 14
+    return avatarFor(c.r.cand).replace('class="avatar', `style="left:${left}px;top:${top}px" class="avatar`)
+  }).join('')
+}
+
+/* 唯一渲染管线：先铺行，再把泳道层与头像层插到最前面 */
+function paint(){
+  renderRows()
+  const mk = (h, content, cls, style) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.setAttribute('class', cls); svg.setAttribute('width', padLeft); svg.setAttribute('height', h)
+    if (style) svg.setAttribute('style', style)
+    svg.innerHTML = content
+    return svg
+  }
+  nowRowsEl.prepend(mk(nowH, lanesSvgContent('now'), 'lanes'))
+  histRowsEl.prepend(mk(histH, lanesSvgContent('hist'), 'lanes'))
+
+  const nowNodes = document.createElement('div')
+  nowNodes.className = 'nodes'; nowNodes.style.height = nowH + 'px'
+  nowNodes.innerHTML = buildNodes()
+  nowRowsEl.prepend(nowNodes)
+}
+
+/* ============================================================ 侧栏 ============================================================ */
+const side = document.getElementById('side')
+let selected = null
+
+function mdToHtml(md){
+  if (!md) return '<p>正文尚未生成。来源运行结束后会自动出现候选正文。</p>'
+  const lines = md.split('\n')
+  let out = '', inCode = false, inList = false
+  const inline = s => esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+  for (const raw of lines){
+    const line = raw.trimEnd()
+    if (line.startsWith('```')){ inCode = !inCode; out += inCode ? '<pre><code>' : '</code></pre>'; continue }
+    if (inCode){ out += esc(line) + '\n'; continue }
+    if (/^\s*[-*]\s+/.test(line)){ if(!inList){ out += '<ul>'; inList = true } out += `<li>${inline(line.replace(/^\s*[-*]\s+/,''))}</li>`; continue }
+    if (inList){ out += '</ul>'; inList = false }
+    if (line.startsWith('### ')) out += `<h2>${inline(line.slice(4))}</h2>`
+    else if (line.startsWith('## ')) out += `<h2>${inline(line.slice(3))}</h2>`
+    else if (line.startsWith('# ')) out += `<h1>${inline(line.slice(2))}</h1>`
+    else if (line.startsWith('> ')) out += `<blockquote>${inline(line.slice(2))}</blockquote>`
+    else if (/^\d+\.\s/.test(line)) out += `<p>${inline(line)}</p>`
+    else if (line === '') out += ''
+    else out += `<p>${inline(line)}</p>`
+  }
+  if (inList) out += '</ul>'
+  if (inCode) out += '</code></pre>'
+  return out
+}
+
+function openSide(candId){
+  const c = CANDS.find(x => x.id === candId)
+  if (!c) return
+  selected = candId
+  const pending = c.status === 'waiting'
+  const footer = pending
+    ? `<button class="btn primary" data-act="adopt" data-id="${c.id}">采纳并新建条目</button>
+       <button class="btn" data-act="reject" data-id="${c.id}">驳回并记录原因</button>`
+    : `<button class="btn" disabled title="${c.status === 'done' ? '已采纳' : c.status === 'generating' ? '来源运行仍在执行' : '已驳回'}">
+         ${c.status === 'done' ? '已采纳' : c.status === 'generating' ? '生成中，暂不可操作' : '已驳回'}</button>`
+  side.innerHTML = `
+    <header>
+      <p class="overline">Candidate #${c.id}</p>
+      <h2>${esc(c.title)}</h2>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        ${statusTag(c.status)}<span class="age">${esc(c.age)}</span>
+        <span class="tag target">目标条目 · ${esc(c.target ? E[c.target].name : '待归类')}</span>
+        ${c.status === 'generating' ? '<span class="tag gen">来源运行 #' + c.run + ' 执行中</span>' : ''}
+      </div>
+    </header>
+    <dl class="facts">
+      <dt>来源工具</dt><dd>${esc(c.tool)}</dd>
+      <dt>来源 Trace</dt><dd>${esc(c.trace)}</dd>
+      <dt>运行记录</dt><dd>#${c.run}</dd>
+      <dt>生成时间</dt><dd>${esc(c.createdAt)}</dd>
+      <dt>知识库</dt><dd>${esc(LIB.name)}</dd>
+    </dl>
+    <div class="notice"><b>人工审核要求</b><br>区分事实、推测与待验证项；核对敏感信息脱敏、组件版本、风险、回滚与验证结果。完成审核前不得发布为正式知识。</div>
+    <div class="doc">${mdToHtml(c.md)}</div>
+    <footer>${footer}</footer>`
+  side.hidden = false
+  document.body.classList.add('has-side')
+  highlightSelection()
+}
+
+function closeSide(){ side.hidden = true; selected = null; document.body.classList.remove('has-side'); highlightSelection() }
+
+function highlightSelection(){
+  document.querySelectorAll('.row[data-cand]').forEach(el => {
+    el.classList.toggle('focus', Number(el.dataset.cand) === selected)
+    el.setAttribute('aria-selected', String(Number(el.dataset.cand) === selected))
+  })
+}
+
+/* ============================================================ 交互：行点击 / 就地动作 ============================================================ */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-act]')
+  if (btn){ e.stopPropagation(); const id = Number(btn.dataset.id)
+    if (btn.dataset.act === 'adopt') openPopover('adopt', id, btn)
+    else if (btn.dataset.act === 'reject') openPopover('reject', id, btn)
+    else if (btn.dataset.act === 'regen') toast('「重新生成」在原型中不执行', 'POST /api/knowledge/candidates/from-operation-run/8721 → 与 UNIQUE(user_id,source_run_id) 冲突，需后端支持覆盖')
+    return }
+
+  const jump = e.target.closest('button[data-jump]')
+  if (jump){ jumpTo(jump.dataset.jump); return }
+
+  const row = e.target.closest('.row')
+  if (row && !e.target.closest('.pop')){
+    if (row.dataset.kind === 'cand'){
+      const id = Number(row.dataset.cand)
+      if (selected === id) closeSide(); else openSide(id)
+    } else if (row.dataset.kind === 'entry'){
+      toggleFocus(row.dataset.entry)
+    } else if (row.dataset.kind === 'commit'){
+      toast('定位到该事件的条目', E[EVENTS.find(x => String(x.id) === row.dataset.ev)?.lane]?.name || '')
+    }
+    return
+  }
+  if (!e.target.closest('.pop') && !e.target.closest('.menu')) closePopovers()
+})
+
+let focusedEntry = null
+function toggleFocus(entryId){
+  focusedEntry = focusedEntry === entryId ? null : entryId
+  const active = focusedEntry || (selected ? CANDS.find(c => c.id === selected)?.entry : null)
+  document.querySelectorAll('.row').forEach(el => {
+    const e = el.dataset.entry || (el.dataset.cand ? CANDS.find(c => String(c.id) === el.dataset.cand)?.entry : null)
+                      || (el.dataset.ev ? EVENTS.find(x => String(x.id) === el.dataset.ev)?.lane : null)
+    el.classList.toggle('dim', Boolean(active) && e !== active)
+  })
+}
+
+function jumpTo(kind){
+  const targets = document.querySelectorAll('.row[data-kind="cand"]')
+  const first = [...targets].find(el => {
+    const c = CANDS.find(x => String(x.id) === el.dataset.cand)
+    return kind === 'all' ? true : c?.status === kind
+  })
+  if (!first) return toast('没有匹配的行')
+  openSide(Number(first.dataset.cand))
+  first.scrollIntoView({ block:'center', behavior:'smooth' })
+}
+
+/* ============================================================ popover：采纳 / 驳回 ============================================================ */
+let popEl = null
+function closePopovers(){ popEl?.remove(); popEl = null }
+
+function openPopover(kind, candId, anchor){
+  closePopovers()
+  const c = CANDS.find(x => x.id === candId)
+  const rect = anchor.getBoundingClientRect()
+  const el = document.createElement('div')
+  el.className = 'pop'
+  if (kind === 'adopt'){
+    el.innerHTML = `
+      <h4>采纳这条候选</h4>
+      <p>当前后端只支持新建条目；「并入已有条目」需要缺口 A2 / A3。<br>将执行：<code style="font-family:var(--mono)">POST /api/knowledge/candidates/${c.id}/promote</code></p>
+      <select id="targetSel">
+        <option value="new">新建条目「${esc(c.title.slice(0, 18))}…」</option>
+        ${ENTRIES.filter(e => !e.trunk && !e.staging).map(e => `<option value="${e.id}" disabled>并入「${esc(e.name)}」（需 target_entry_id）</option>`).join('')}
+      </select>
+      <div class="acts"><button class="btn" data-close>取消</button><button class="btn primary" data-ok="adopt">确认采纳</button></div>`
+  } else {
+    el.innerHTML = `
+      <h4>驳回并记录原因</h4>
+      <p>原因会追加到候选摘要，不可为空。<br>将执行：<code style="font-family:var(--mono)">POST /api/knowledge/candidates/${c.id}/reject</code></p>
+      <input id="reasonInput" placeholder="例：证据不足（缺上游日志）" autofocus>
+      <div class="acts"><button class="btn" data-close>取消</button><button class="btn primary" data-ok="reject">确认驳回</button></div>`
+  }
+  document.body.appendChild(el); popEl = el
+  const px = Math.min(rect.left, innerWidth - 320), py = Math.min(rect.bottom + 6, innerHeight - 190)
+  el.style.left = Math.max(12, px) + 'px'; el.style.top = Math.max(64, py) + 'px'
+  el.querySelector('[data-close]').onclick = closePopovers
+  el.querySelector('[data-ok]').onclick = () => {
+    if (kind === 'adopt'){
+      c.status = 'done'; c.op = '已新建条目 v1，等待复核'
+      toast('采纳成功：已新建条目 v1', `POST /api/knowledge/candidates/${c.id}/promote { libraryId: 1, title: "${c.title.slice(0,12)}…" }`)
+    } else {
+      const reason = (el.querySelector('#reasonInput').value || '').trim()
+      if (!reason){ el.querySelector('#reasonInput').focus(); el.querySelector('#reasonInput').style.borderColor = 'var(--danger)'; return }
+      c.status = 'rejected'; c.op = '驳回：' + reason
+      toast('已驳回，原因已写入摘要', `POST /api/knowledge/candidates/${c.id}/reject { reason: "${reason}" }`)
+    }
+    closePopovers(); rebuild(); if (selected) openSide(selected)
+  }
+}
+
+/* ============================================================ 快捷菜单 ============================================================ */
+let menuEl = null
+function closeMenu(){ menuEl?.remove(); menuEl = null }
+
+/* 菜单由三处调用：右键、Shift+F10（键盘）、原型调试钩子 */
+function openMenu(row, x, y){
+  if (!row) return
+  closeMenu(); closePopovers()
+  const items = menuItemsFor(row)
+  const el = document.createElement('div')
+  el.className = 'menu'
+  el.innerHTML = items.head + items.rows
+  document.body.appendChild(el); menuEl = el
+  el.style.left = Math.min(x, innerWidth - el.offsetWidth - 12) + 'px'
+  el.style.top  = Math.min(y, innerHeight - el.offsetHeight - 12) + 'px'
+  el.querySelectorAll('button[data-key]').forEach(b => b.onclick = () => {
+    if (b.disabled) return
+    const it = items.map.get(b.dataset.key)
+    closeMenu()
+    if (it.run) it.run(); else toast('已执行', it.req)
+  })
+}
+
+document.addEventListener('contextmenu', e => {
+  const row = e.target.closest('.row')
+  if (!row) return
+  e.preventDefault()
+  openMenu(row, e.clientX, e.clientY)
+})
+
+function menuItemsFor(row){
+  const map = new Map()
+  const add = (key, label, req, why, run) => map.set(key, { key, label, req, why, run })
+  let head = ''
+
+  if (row.dataset.kind === 'cand'){
+    const c = CANDS.find(x => String(x.id) === row.dataset.cand)
+    const pending = c.status === 'waiting'
+    head = `<div class="head"><b>${esc(c.tool)}</b><span>目标条目 · ${esc(c.target ? E[c.target].name : '待归类')} · ${esc(c.age)}</span></div>`
+    add('adopt','采纳并入库', pending ? `POST /api/knowledge/candidates/${c.id}/promote` : '',
+        pending ? '' : '状态不是 PENDING_REVIEW', pending ? () => openPopover('adopt', c.id, row) : null)
+    add('merge','并入已有条目','', '当前后端只支持新建条目：promote 无 target_entry_id')
+    add('reject','驳回并记录原因', pending ? `POST /api/knowledge/candidates/${c.id}/reject` : '',
+        pending ? '' : (c.status === 'done' ? '已采纳于本次会话' : '已驳回，无二次驳回'), pending ? () => openPopover('reject', c.id, row) : null)
+    add('regen','按新证据重新生成', c.status === 'generating' ? '' : `POST /api/knowledge/candidates/from-operation-run/${c.run}`,
+        c.status === 'generating' ? '来源运行 #' + c.run + ' 仍在执行，结束后可重新生成' : '与 UNIQUE(user_id, source_run_id) 冲突，需后端支持覆盖')
+    add('open','查看证据与正文', '本地：打开右侧栏', '', () => openSide(c.id))
+    add('copy','复制 Trace ID', `剪贴板：${c.trace}`, '', () => toast('已复制 Trace ID', c.trace))
+    add('drop','丢弃候选', '', '先驳回，再丢弃')
+  } else if (row.dataset.kind === 'entry'){
+    const e = E[row.dataset.entry]
+    const waiting = CANDS.filter(c => c.entry === e.id && c.status === 'waiting').length
+    head = `<div class="head"><b>${esc(e.name)}</b><span>${e.version ? 'v' + e.version : '主干'} · ${waiting} 条待审候选</span></div>`
+    add('focus','聚焦这条泳道','本地：变淡其余内容','', () => toggleFocus(e.id))
+    add('adoptAll','采纳这条泳道全部候选', `POST /promote × ${waiting}`, '', () => toast(`原型未批量执行（${waiting} 条）`))
+    add('archive','归档条目','', e.trunk ? '主干不可归档' : '条目归档接口尚未实现')
+    add('open','查看条目详情','本地：打开右侧栏', '', () => toast('打开展示用的条目详情'))
+  } else if (row.dataset.kind === 'commit'){
+    const ev = EVENTS.find(x => String(x.id) === row.dataset.ev)
+    head = `<div class="head"><b>${esc(ev.text)}</b><span>${esc(ev.who)} · ${esc(ev.when)}</span></div>`
+    add('focus','聚焦所属条目','本地：变淡其余内容','', () => toggleFocus(ev.lane))
+    add('revert','撤销这次采纳','', '撤销需要快照回滚接口，当前未实现')
+    add('copy','复制事件摘要', '剪贴板', '', () => toast('已复制', ev.text))
+  } else {
+    head = `<div class="head"><b>子行</b><span>证据/步骤</span></div>`
+    add('open','查看证据正文','本地：打开所属候选', '', () => {})
+  }
+  const rows = [...map.values()].map(it => {
+    const dis = it.why ? ' disabled' : ''
+    return `<button data-key="${it.key}"${dis} title="${esc(it.why || it.req)}">
+      ${esc(it.label)}${it.req ? `<span class="req">${esc(it.req)}</span>` : ''}${it.why ? `<span class="why">${esc(it.why)}</span>` : ''}
+    </button>`
+  }).join('')
+  return { head, rows, map }
+}
+
+/* ============================================================ toast / 图例 / 顶栏 ============================================================ */
+const toastEl = document.getElementById('toast')
+let toastTimer = null
+function toast(msg, req){
+  toastEl.innerHTML = esc(msg) + (req ? `<span class="req">${esc(req)}</span>` : '')
+  toastEl.classList.add('on')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => toastEl.classList.remove('on'), 3600)
+}
+
+const legend = document.getElementById('legend')
+function renderLegend(){
+  legend.innerHTML = `
+    <h5>图例</h5>
+    <div class="line"><svg width="16" height="16"><rect x="2" y="2" width="12" height="12" rx="3" fill="var(--panel)" stroke="var(--lane-1)" stroke-width="1.6"/></svg>知识条目（分支）</div>
+    <div class="line"><svg width="16" height="16"><rect x="2" y="2" width="12" height="12" rx="3" fill="none" stroke="var(--border-strong)" stroke-width="1.4" stroke-dasharray="3 2"/></svg>待归类（无 target_entry_id）</div>
+    <div class="line"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="var(--bg)" stroke="var(--waiting)" stroke-width="2"/></svg>待审：琥珀环 + 呼吸</div>
+    <div class="line"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="none" stroke="var(--info)" stroke-width="2" stroke-dasharray="8 6"/></svg>生成中：旋转弧</div>
+    <div class="line"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="var(--done)" opacity=".45"/></svg>已采纳：去饱和 + 对勾</div>
+    <div class="line"><svg width="16" height="16"><circle cx="8" cy="8" r="4.5" fill="var(--lane-trunk)"/></svg>事件点（实心）</div>
+    <div class="line"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="var(--bg)" stroke="var(--lane-3)" stroke-width="2"/></svg>入库/采纳（空心圈）</div>
+    <div class="line"><svg width="16" height="16"><path d="M8,1 L8,15" stroke="var(--lane-quiet)" stroke-width="1.5" stroke-dasharray="4 3"/></svg>待审段连线（虚线）</div>`
+}
+document.getElementById('legendBtn').onclick = e => {
+  const on = legend.hidden
+  legend.hidden = !on
+  e.currentTarget.setAttribute('aria-pressed', String(on))
+}
+
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', 'false'))
+  b.setAttribute('aria-pressed', 'true')
+  colorMode = b.dataset.color
+  rebuild()
+})
+document.getElementById('filterTool').onclick = e => {
+  const p = e.currentTarget.getAttribute('aria-pressed') === 'true'
+  e.currentTarget.setAttribute('aria-pressed', String(!p))
+  toast(p ? '已显示全部来源工具' : '已筛选：k8s.*（其余变淡，图结构不变）')
+  document.querySelectorAll('.row[data-cand]').forEach(el => {
+    const c = CANDS.find(x => String(x.id) === el.dataset.cand)
+    el.classList.toggle('dim', !p && !c.tool.startsWith('k8s'))
+  })
+}
+
+/* ============================================================ 键盘 ============================================================ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){
+    if (menuEl) return closeMenu()
+    if (popEl) return closePopovers()
+    if (!side.hidden) return closeSide()
+    if (focusedEntry) return toggleFocus(focusedEntry)
+    return
+  }
+  if (e.key === '?' || (e.key === '/' && e.shiftKey)){ legend.hidden = !legend.hidden; return }
+  const rowsEls = [...document.querySelectorAll('.row[data-kind="cand"]')]
+  const cur = rowsEls.findIndex(el => el.classList.contains('focus'))
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+    e.preventDefault()
+    const next = Math.max(0, Math.min(rowsEls.length - 1, cur + (e.key === 'ArrowDown' ? 1 : -1)))
+    rowsEls[next]?.focus(); rowsEls[next]?.scrollIntoView({ block:'nearest' })
+    return
+  }
+  const active = document.activeElement?.closest?.('.row')
+  if (!active || active.dataset.kind !== 'cand') return
+  const c = CANDS.find(x => String(x.id) === active.dataset.cand)
+  if (e.key === 'Enter'){ e.preventDefault(); selected === c.id ? closeSide() : openSide(c.id) }
+  if ((e.key === 'a' || e.key === 'A') && c.status === 'waiting'){ e.preventDefault(); openPopover('adopt', c.id, active) }
+  if ((e.key === 'r' || e.key === 'R') && c.status === 'waiting'){ e.preventDefault(); openPopover('reject', c.id, active) }
+  if (e.key === 'f' || e.key === 'F'){ e.preventDefault(); toggleFocus(c.entry) }
+})
+
+/* ============================================================ 组装 ============================================================ */
+function rebuild(){
+  paint()
+  highlightSelection()
+  if (focusedEntry){ const f = focusedEntry; focusedEntry = null; toggleFocus(f) }
+}
+
+function boot(){
+  paint()
+  renderLegend()
+  if (innerWidth >= 1024) openSide(1042)   /* 默认打开第一条待审：先看需要你的；窄屏不抢图的位置 */
+}
+boot()
+
+/* 原型调试钩子：便于截图或让 agent 直接看某个状态（?demo=adopt|reject|menu|legend|entry） */
+const demo = new URLSearchParams(location.search).get('demo')
+const rowOf = sel => document.querySelector(sel)
+if (demo === 'adopt')  openPopover('adopt', 1042, rowOf('.row[data-cand="1042"] [data-act="adopt"]'))
+if (demo === 'reject') openPopover('reject', 1042, rowOf('.row[data-cand="1042"] [data-act="reject"]'))
+if (demo === 'menu')   openMenu(rowOf('.row[data-cand="1042"]'), 470, 210)
+if (demo === 'legend') legend.hidden = false
+if (demo === 'entry')  toast('条目详情 / 归档接口尚未实现', 'POST /api/knowledge/entries/{id}/archive')
+if (demo === 'flow'){   /* 走真实按钮链路：采纳 → 确认 → 重绘 → 侧栏 */
+  document.querySelector('.row[data-cand="1039"] [data-act="adopt"]').click()
+  document.querySelector('[data-ok="adopt"]').click()
+}
+</script>
+</body>
+</html>

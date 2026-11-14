@@ -24,8 +24,9 @@ export default defineConfig({
     },
 
     server: {
-        host: '127.0.0.1',
+        host: true,
         port: 5173,
+        strictPort: true,
         // 用户层入口端口保持 5173；代理与管理员层共用 vite.shared.mjs，避免两端口语义分裂。
         proxy: devProxy(backendOrigin())
     }
