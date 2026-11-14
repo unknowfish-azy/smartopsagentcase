@@ -240,10 +240,42 @@ onBeforeUnmount(() => {
 }
 
 .persona-pet__stage {
+  position: relative;
   min-width: 0;
+  isolation: isolate;
+}
+
+/* 生物发光氛围层：canvas 四周柔光晕 + 底部微弱青蓝渐变 */
+.persona-pet__stage::before,
+.persona-pet__stage::after {
+  content: '';
+  position: absolute;
+  inset: -6% -4%;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.persona-pet__stage::before {
+  background:
+    radial-gradient(120% 90% at 50% 100%, rgba(36, 150, 237, .22), transparent 62%),
+    radial-gradient(90% 70% at 50% 30%, rgba(122, 215, 245, .12), transparent 60%);
+  filter: blur(1.2px);
+}
+
+.persona-pet__stage::after {
+  box-shadow: 0 0 24px rgba(36, 150, 237, .12), inset 0 0 18px rgba(36, 150, 237, .06);
+  animation: ocean-breath 4.8s ease-in-out infinite;
+}
+
+@keyframes ocean-breath {
+  0%, 100% { opacity: .7; transform: scale(1) }
+  50% { opacity: 1; transform: scale(1.02) }
 }
 
 .persona-pet__stage :deep(.persona) {
+  position: relative;
+  z-index: 1;
   padding: var(--ds-space-2);
   border: none;
   background: none;
@@ -269,9 +301,22 @@ onBeforeUnmount(() => {
   height: 44px;
   padding: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 34%, rgba(122, 215, 245, .5), rgba(36, 150, 237, .18) 58%, transparent 72%), var(--ds-color-surface-raised);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .3);
+  border: 1px solid rgba(122, 215, 245, .4);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(180, 235, 255, .7), rgba(122, 215, 245, .35) 38%, rgba(36, 150, 237, .18) 62%, transparent 78%),
+    var(--ds-color-surface-raised);
+  box-shadow:
+    0 0 0 1px rgba(36, 150, 237, .08),
+    0 0 14px rgba(36, 150, 237, .28),
+    0 0 36px rgba(36, 150, 237, .12),
+    0 6px 18px rgba(0, 0, 0, .3);
   cursor: pointer;
+  animation: orb-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes orb-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(36, 150, 237, .08), 0 0 14px rgba(36, 150, 237, .28), 0 0 36px rgba(36, 150, 237, .12), 0 6px 18px rgba(0, 0, 0, .3) }
+  50% { box-shadow: 0 0 0 1px rgba(122, 215, 245, .14), 0 0 22px rgba(122, 215, 245, .42), 0 0 52px rgba(36, 150, 237, .22), 0 6px 18px rgba(0, 0, 0, .3) }
 }
 
 .persona-pet__orb {
@@ -281,6 +326,27 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
+  position: relative;
+}
+
+/* 内部核心光点 */
+.persona-pet__orb::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(220, 247, 255, .92);
+  box-shadow: 0 0 8px 2px rgba(180, 235, 255, .7), 0 0 16px 4px rgba(122, 215, 245, .4);
+  animation: orb-core 3.2s ease-in-out infinite;
+}
+
+@keyframes orb-core {
+  0%, 100% { opacity: .6; transform: translate(-50%, -50%) scale(.9) }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) }
 }
 
 @media (prefers-reduced-motion: reduce) {
