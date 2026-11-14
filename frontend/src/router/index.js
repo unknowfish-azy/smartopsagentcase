@@ -86,6 +86,7 @@ const routes = [
             { path: 'sentinel/scripts', name: 'ScriptLibrary', component: () => import('../views/sentinel/ScriptLibraryView.vue'), meta: { section: 'SCRIPT LIBRARY / 脚本库' } },
             { path: 'sentinel/alerts', name: 'AlertCenter', component: () => import('../views/sentinel/AlertCenterView.vue'), meta: { section: 'ALERT CENTER / 告警中心' } },
             { path: 'sentinel/guardian', name: 'SentinelGuardian', component: () => import('../views/sentinel/SentinelGuardianView.vue'), meta: { section: 'SENTINEL / 守护 Agent' } },
+            { path: 'sentinel/forecast', name: 'ForecastPlane', component: () => import('../views/sentinel/ForecastPlaneView.vue'), meta: { ...routeMetaFor('ForecastPlane'), section: 'FORECAST / 预测面' } },
             { path: 'incidents', name: 'IncidentCenter', component: () => import('../views/incident/IncidentCenterView.vue'), meta: { section: 'INCIDENT CENTER / 工单中心' } },
             { path: 'incidents/:id', name: 'IncidentDetail', component: () => import('../views/incident/IncidentDetailView.vue'), meta: { section: 'INCIDENT CENTER / 工单详情' } },
             { path: 'connections', name: 'Connections', component: () => import('../views/operations/ConnectionsView.vue'), meta: { ...routeMetaFor('Connections'), section: '连接中心 / 远程运维' } },
