@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { knowledgeDomains, knowledgeEntries } from '../src/views/knowledge/knowledgeCatalog.js'
-import { computeLayout } from '../src/views/knowledge/space/useSpaceLayout.js'
+import { computeLayout, screenTier } from '../src/views/knowledge/space/useSpaceLayout.js'
 
 test('真实数据 10 域全覆盖，互不重叠', () => {
   const { zones } = computeLayout(knowledgeEntries, knowledgeDomains)
@@ -96,4 +96,19 @@ test('单域输入返回整块世界', () => {
   assert.equal(zones[0].w, 3200)
   assert.equal(zones[0].h, 2000)
   assert.equal(cards.length, 1)
+})
+
+test('卡片内容分档按屏幕像素判定，不看世界像素', () => {
+  const card = { w: 200, h: 124 }
+  // 同一张卡，缩放不同 → 档位不同
+  assert.equal(screenTier(card, 0.42), 'title', 'L1 起点 84×52 只够 2 行标题')
+  assert.equal(screenTier(card, 0.65), 'full', '130×81 刚过 full 下限')
+  assert.equal(screenTier(card, 2.2), 'full')
+  assert.equal(screenTier(card, 0.22), 'title', '44×27 正好落在 micro 边界之上')
+  assert.equal(screenTier(card, 0.2), 'micro', '40×25 宽不足 44')
+})
+
+test('分档两个门槛都生效：宽够但高不够仍是 title', () => {
+  assert.equal(screenTier({ w: 200, h: 100 }, 0.65), 'title', '130×65 高不足 80')
+  assert.equal(screenTier({ w: 50, h: 124 }, 2.2), 'title', '110×273 高很够但宽不足 124')
 })

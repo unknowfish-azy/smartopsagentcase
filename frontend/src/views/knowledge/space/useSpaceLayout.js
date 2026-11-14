@@ -11,6 +11,20 @@
 export const WORLD_DEFAULT = { w: 3200, h: 2000 }
 export const CARD_DEFAULT  = { w: 200, h: 124, gap: 12, headH: 40, pad: 12, maxCols: 6 }
 
+/* 卡片内容分档：判据是**屏幕像素**（世界尺寸 × 相机缩放 k），不是世界像素。
+ * 同一张卡在不同缩放下可读性不同，所以档位必须逐卡算，不能用全局 LOD 一刀切。
+ *   < 44×22            → micro：只剩色条
+ *   44×22 ~ 124×80     → title：2 行标题
+ *   ≥ 124×80           → full：标题 + 摘要 + 类型 chip
+ */
+export function screenTier (card, k) {
+  const wpx = card.w * k
+  const hpx = card.h * k
+  if (wpx < 44 || hpx < 22) return 'micro'
+  if (wpx >= 124 && hpx >= 80) return 'full'
+  return 'title'
+}
+
 // type 优先级：用于域内排序，RUNBOOK 类在前，ENGINEERING 其次，最后其余。
 const TYPE_PRIORITY = {
   RUNBOOK: 0, INCIDENT: 1, ENGINEERING: 2, 'ENGINEERING KNOWLEDGE': 2,
