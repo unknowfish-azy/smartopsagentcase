@@ -141,7 +141,7 @@ defineExpose({
   transition: background var(--ds-duration-micro) var(--ds-ease-out),
               color var(--ds-duration-micro) var(--ds-ease-out);
 }
-.hc-group-head:hover { background: rgba(232, 242, 247, .04); color: var(--ds-color-text); }
+.hc-group-head:hover { background: color-mix(in srgb, var(--smart-text) 4%, transparent); color: var(--ds-color-text); }
 .hc-caret {
   width: 10px; color: var(--ds-semantic-neutral);
   transition: transform var(--ds-duration-micro) var(--ds-ease-out);

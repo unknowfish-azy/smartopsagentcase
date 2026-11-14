@@ -165,7 +165,7 @@ const freshTooltip = computed(() => _fresh.value.tooltip)
 }
 .hc-v-count b { font-weight: 500; color: var(--ds-color-text); }
 .hc-v-count.zero { opacity: .55; }
-.hc-v-count:hover { background: rgba(232, 242, 247, .05); }
+.hc-v-count:hover { background: color-mix(in srgb, var(--smart-text) 5%, transparent); }
 .hc-v-count i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 
 .hc-v-grow { flex: 1; }
@@ -203,11 +203,11 @@ const freshTooltip = computed(() => _fresh.value.tooltip)
   transition: background var(--ds-duration-micro) var(--ds-ease-out),
               border-color var(--ds-duration-micro) var(--ds-ease-out);
 }
-.hc-btn:hover:not(:disabled) { background: rgba(232, 242, 247, .05); border-color: var(--ds-color-border-strong); }
+.hc-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--smart-text) 5%, transparent); border-color: var(--ds-color-border-strong); }
 .hc-btn.primary {
   background: color-mix(in srgb, var(--ds-color-primary-strong) 10%, transparent);
   border-color: color-mix(in srgb, var(--ds-color-primary-strong) 45%, transparent);
-  color: #cdefff;
+  color: color-mix(in srgb, var(--smart-primary-strong) 90%, var(--smart-text));
 }
 .hc-btn.primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--ds-color-primary-strong) 16%, transparent);

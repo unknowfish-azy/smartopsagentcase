@@ -88,7 +88,7 @@ const showAction = computed(() =>
   transition: background var(--ds-duration-micro) var(--ds-ease-out);
 }
 .hc-row:first-child { border-top: none; }
-.hc-row:hover { background: rgba(232, 242, 247, .04); }
+.hc-row:hover { background: color-mix(in srgb, var(--smart-text) 4%, transparent); }
 .hc-row--stale { filter: saturate(.35); opacity: .85; }
 
 .hc-row-main {
@@ -113,9 +113,9 @@ const showAction = computed(() =>
   font: 700 10px/1 var(--ds-font-mono);
   box-sizing: border-box;
 }
-.hc-st.hc-st-unhealthy { background: var(--ds-semantic-danger); color: #1a0a0c; }
-.hc-st.hc-st-unconfigured { background: var(--ds-semantic-warning); color: #1a1405; }
-.hc-st.hc-st-healthy { background: var(--ds-semantic-success); color: #07110a; }
+.hc-st.hc-st-unhealthy { background: var(--ds-semantic-danger); color: color-mix(in srgb, var(--smart-bg) 92%, var(--ds-semantic-danger)); }
+.hc-st.hc-st-unconfigured { background: var(--ds-semantic-warning); color: color-mix(in srgb, var(--smart-bg) 92%, var(--ds-semantic-warning)); }
+.hc-st.hc-st-healthy { background: var(--ds-semantic-success); color: color-mix(in srgb, var(--smart-bg) 92%, var(--ds-semantic-success)); }
 .hc-st.hc-st-not_checked { background: transparent; border: 1.5px dashed var(--ds-semantic-neutral); color: var(--ds-semantic-neutral); }
 .hc-st.hc-st-forbidden { background: transparent; border: 1.5px solid var(--ds-semantic-neutral); color: var(--ds-semantic-neutral); font-size: 9px; }
 
@@ -159,7 +159,7 @@ const showAction = computed(() =>
   margin: 9px 0 0 28px;
   padding: 9px 11px;
   border-radius: var(--ds-radius-md);
-  background: rgba(0,0,0,.28);
+  background: color-mix(in srgb, var(--smart-bg) 28%, transparent);
   color: var(--ds-semantic-neutral);
   font: 11px/1.6 var(--ds-font-mono);
   white-space: pre-wrap;
