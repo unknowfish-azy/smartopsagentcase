@@ -1,11 +1,11 @@
 <template>
   <section class="persona-view">
     <header class="persona-view__head">
-      <p class="persona-view__eyebrow">AGENT PERSONA / 人格化身</p>
-      <h1 class="persona-view__title">数字人</h1>
+      <p class="persona-view__eyebrow">AGENT PERSONA / 小鱼 · 3D 化身</p>
+      <h1 class="persona-view__title">小鱼</h1>
       <p class="persona-view__desc">
         继鲸（基础设施）、蛛（集群）、水母（Agent 觉察）之后的第四个生命体：Agent 的人格化身。
-        当前处于加载链路验证阶段，形象为 CC0 占位模型，不参与任何控制台决策。
+        当前处于加载链路验证阶段，形象为 CC0 sendagaya-shino 占位模型，不参与任何控制台决策。
       </p>
     </header>
 

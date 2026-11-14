@@ -4,7 +4,7 @@
     class="persona-pet"
     :class="{ 'persona-pet--collapsed': store.collapsed, 'persona-pet--dragging': dragging }"
     :style="positionStyle"
-    aria-label="数字人桌宠"
+    aria-label="小鱼桌宠"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
@@ -12,13 +12,13 @@
     @lostpointercapture="onPointerUp"
   >
     <template v-if="!store.collapsed">
-      <header class="persona-pet__bar" aria-label="数字人桌宠控制条">
-        <span class="persona-pet__title">数字人</span>
+      <header class="persona-pet__bar" aria-label="小鱼桌宠控制条">
+        <span class="persona-pet__title">小鱼</span>
         <span class="persona-pet__bar-actions">
           <button type="button" class="persona-pet__mini" :disabled="speaking" aria-label="播报一句问候（Web Speech）" title="播报一句问候" @click.stop="speakGreeting">说</button>
-          <button type="button" class="persona-pet__mini" aria-label="打开全页数字人" title="全页模式" @click.stop="openFullPage">↗</button>
-          <button type="button" class="persona-pet__mini" aria-label="收起桌宠" title="收起" @click.stop="store.setCollapsed(true, currentViewport)">—</button>
-          <button type="button" class="persona-pet__mini" aria-label="关闭桌宠" title="关闭" @click.stop="store.disable()">×</button>
+          <button type="button" class="persona-pet__mini" aria-label="打开小鱼全页" title="全页模式" @click.stop="openFullPage">↗</button>
+          <button type="button" class="persona-pet__mini" aria-label="收起小鱼" title="收起" @click.stop="store.setCollapsed(true, currentViewport)">—</button>
+          <button type="button" class="persona-pet__mini" aria-label="关闭小鱼" title="关闭" @click.stop="store.disable()">×</button>
         </span>
       </header>
       <div class="persona-pet__stage">
@@ -33,8 +33,8 @@
       v-else
       type="button"
       class="persona-pet__orb"
-      :aria-label="`展开数字人桌宠，当前状态：${agentStateLabel}`"
-      :title="`数字人（${agentStateLabel}）· 点击展开`"
+      :aria-label="`展开小鱼，当前状态：${agentStateLabel}`"
+      :title="`小鱼（${agentStateLabel}）· 点击展开`"
       @click.stop="store.setCollapsed(false, currentViewport)"
     />
   </aside>

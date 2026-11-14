@@ -38,7 +38,7 @@
           <p class="nav-label nav-label--system"><b>SYSTEM TOOLS</b><small>系统工具</small></p>
           <RouterLink v-for="item in systemNav" :key="item.to" :to="item.to" :aria-label="`${item.cn} / ${item.label}`" :title="`${item.cn} / ${item.label}`"><component :is="item.icon" class="nav-icon" aria-hidden="true" /><span class="nav-copy"><b>{{ item.label }}</b><small>{{ item.cn }}</small></span></RouterLink>
         </nav>
-        <div class="system-status"><div><span>SESSION / 登录会话</span><strong>{{ currentSession?.username || '未登录' }}</strong></div><div><span>AGENT / 智能体</span><strong>{{ whaleState.toUpperCase() }}</strong></div><time>{{ currentTime }}</time><button class="persona-pet-toggle" type="button" :aria-pressed="personaPetStore.enabled" :title="personaPetStore.enabled ? '关闭数字人桌宠' : '开启数字人桌宠'" @click="personaPetStore.toggle()">{{ personaPetStore.enabled ? '桌宠·开' : '桌宠·关' }}</button></div>
+        <div class="system-status"><div><span>SESSION / 登录会话</span><strong>{{ currentSession?.username || '未登录' }}</strong></div><div><span>AGENT / 智能体</span><strong>{{ whaleState.toUpperCase() }}</strong></div><time>{{ currentTime }}</time><button class="persona-pet-toggle" type="button" :aria-pressed="personaPetStore.enabled" :title="personaPetStore.enabled ? '关闭小鱼' : '开启小鱼'" @click="personaPetStore.toggle()">{{ personaPetStore.enabled ? '小鱼·开' : '小鱼·关' }}</button></div>
       </aside>
 
       <div class="main-area">

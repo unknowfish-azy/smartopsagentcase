@@ -6,6 +6,7 @@
         <button v-if="mobile" ref="historyTrigger" type="button" class="chat-page__history-toggle" aria-label="打开历史会话" :aria-expanded="historyOpen" @click="historyOpen = true"><Operation :size="18" aria-hidden="true" /></button>
         <div><p class="eyebrow">AI CONVERSATION</p><h1>{{ activeConversation?.title || 'AI 对话' }}</h1></div>
         <span class="chat-page__badge">{{ sending ? '正在回复…' : '智维 Agent' }}</span>
+        <XiaoyuChatAvatar />
       </header>
       <p v-if="storageWarning" class="chat-page__warning" role="alert">{{ storageWarning }}</p>
       <p v-if="remoteError" class="chat-page__warning" role="alert">{{ remoteError }} <button type="button" @click="retryAttachments">重试附件历史</button></p>
@@ -24,6 +25,7 @@ import { storeToRefs } from 'pinia'
 import { Operation } from '@element-plus/icons-vue'
 import AiChatPanel from '../../components/ai/AiChatPanel.vue'
 import ChatHistory from '../../components/ai/ChatHistory.vue'
+import XiaoyuChatAvatar from '../../components/chat/XiaoyuChatAvatar.vue'
 import { useAiChatStore } from '../../stores/aiChat.js'
 
 const store = useAiChatStore()
