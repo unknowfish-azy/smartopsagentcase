@@ -12,22 +12,22 @@
 
 .fable {
   /* 色板：墨 / 纸 / 陶土 / 杏 / 黄油 / 鼠尾草 / 梅 / 注视青 */
-  --fab-bg: #070a0e;
-  --fab-plane: #0b0f14;
-  --fab-plane-2: #10151b;
-  --fab-paper: #f4ecdc;
-  --fab-paper-72: rgba(244, 236, 220, 0.72);
-  --fab-paper-46: rgba(244, 236, 220, 0.46);
-  --fab-paper-26: rgba(244, 236, 220, 0.26);
-  --fab-rule: rgba(244, 236, 220, 0.12);
-  --fab-rule-2: rgba(244, 236, 220, 0.26);
-  --fab-clay: #da7452;
-  --fab-clay-deep: #8e3a24;
-  --fab-apricot: #f3b183;
-  --fab-butter: #ebcb6e;
-  --fab-sage: #a9be9f;
-  --fab-plum: #a383a6;
-  --fab-gaze: #8fdcf7;
+  --fab-bg: #0a0d10;
+  --fab-plane: #0e1217;
+  --fab-plane-2: #13181e;
+  --fab-paper: #f1e8d6;
+  --fab-paper-72: rgba(241, 232, 214, 0.72);
+  --fab-paper-46: rgba(241, 232, 214, 0.46);
+  --fab-paper-26: rgba(241, 232, 214, 0.26);
+  --fab-rule: rgba(241, 232, 214, 0.12);
+  --fab-rule-2: rgba(241, 232, 214, 0.26);
+  --fab-clay: #c76a48;
+  --fab-clay-deep: #7a3020;
+  --fab-apricot: #e6a275;
+  --fab-butter: #d4b25a;
+  --fab-sage: #8ea388;
+  --fab-plum: #947597;
+  --fab-gaze: #72c4e0;
 
   --fab-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --fab-ease-io: cubic-bezier(0.4, 0, 0.2, 1);
@@ -73,23 +73,23 @@
 }
 
 .fable[data-theme="light"] {
-  --fab-bg: #f6f1e6;
-  --fab-plane: #fbf7ee;
-  --fab-plane-2: #f1eadb;
-  --fab-paper: #14171b;
-  --fab-paper-72: rgba(20, 23, 27, 0.76);
-  --fab-paper-46: rgba(20, 23, 27, 0.54);
-  --fab-paper-26: rgba(20, 23, 27, 0.32);
-  --fab-rule: rgba(20, 23, 27, 0.12);
-  --fab-rule-2: rgba(20, 23, 27, 0.3);
-  --fab-clay: #b4522f;
-  --fab-clay-deep: #7c2f18;
-  --fab-apricot: #c07a44;
-  --fab-butter: #9c7a20;
-  --fab-sage: #57724f;
-  --fab-plum: #6f5276;
-  --fab-gaze: #17718f;
-  --fab-tonal: rgba(246, 241, 230, 0.5);
+  --fab-bg: #f3ede0;
+  --fab-plane: #f8f3e6;
+  --fab-plane-2: #eee6d5;
+  --fab-paper: #171a1e;
+  --fab-paper-72: rgba(23, 26, 30, 0.76);
+  --fab-paper-46: rgba(23, 26, 30, 0.54);
+  --fab-paper-26: rgba(23, 26, 30, 0.32);
+  --fab-rule: rgba(23, 26, 30, 0.12);
+  --fab-rule-2: rgba(23, 26, 30, 0.3);
+  --fab-clay: #a34a28;
+  --fab-clay-deep: #6c2815;
+  --fab-apricot: #ae6c3a;
+  --fab-butter: #8b6b1c;
+  --fab-sage: #4a6244;
+  --fab-plum: #604668;
+  --fab-gaze: #125f78;
+  --fab-tonal: rgba(243, 237, 224, 0.5);
 }
 
 .fable *,
@@ -190,14 +190,14 @@
   height: 8px;
   border-radius: 50%;
   background: var(--fab-clay);
-  box-shadow: 0 0 0 4px rgba(218, 116, 82, 0.16);
+  box-shadow: 0 0 0 4px rgba(199, 106, 72, 0.16);
 }
 
-.fable[data-state="idle"] .fable-seal b::before { background: var(--fab-sage); box-shadow: 0 0 0 4px rgba(169, 190, 159, 0.16); }
-.fable[data-state="analyze"] .fable-seal b::before { background: var(--fab-butter); box-shadow: 0 0 0 4px rgba(235, 203, 110, 0.16); }
-.fable[data-state="decide"] .fable-seal b::before { background: var(--fab-clay); box-shadow: 0 0 0 4px rgba(218, 116, 82, 0.18); }
-.fable[data-state="execute"] .fable-seal b::before { background: var(--fab-gaze); box-shadow: 0 0 0 4px rgba(143, 220, 247, 0.16); }
-.fable[data-state="reflect"] .fable-seal b::before { background: var(--fab-plum); box-shadow: 0 0 0 4px rgba(163, 131, 166, 0.18); }
+.fable[data-state="idle"] .fable-seal b::before { background: var(--fab-sage); box-shadow: 0 0 0 4px rgba(142, 163, 136, 0.16); }
+.fable[data-state="analyze"] .fable-seal b::before { background: var(--fab-butter); box-shadow: 0 0 0 4px rgba(212, 178, 90, 0.16); }
+.fable[data-state="decide"] .fable-seal b::before { background: var(--fab-clay); box-shadow: 0 0 0 4px rgba(199, 106, 72, 0.18); }
+.fable[data-state="execute"] .fable-seal b::before { background: var(--fab-gaze); box-shadow: 0 0 0 4px rgba(114, 196, 224, 0.16); }
+.fable[data-state="reflect"] .fable-seal b::before { background: var(--fab-plum); box-shadow: 0 0 0 4px rgba(148, 117, 151, 0.18); }
 
 .fable-seal span {
   color: var(--fab-paper-46);
@@ -239,7 +239,7 @@
   border: 1px solid var(--fab-rule-2);
   border-radius: var(--ds-radius-sm, 4px);
   background:
-    linear-gradient(180deg, rgba(244, 236, 220, 0.035), transparent 42%),
+    linear-gradient(180deg, rgba(241, 232, 214, 0.035), transparent 42%),
     var(--fab-plane);
 }
 
@@ -387,7 +387,7 @@
   right: 0;
   bottom: 22%;
   height: 1px;
-  background: linear-gradient(to right, var(--fab-rule-2), var(--fab-rule) 58%, rgba(244, 236, 220, 0));
+  background: linear-gradient(to right, var(--fab-rule-2), var(--fab-rule) 58%, rgba(241, 232, 214, 0));
 }
 
 /* 说明字幕 */
@@ -483,7 +483,7 @@
 }
 
 .state-strip button:hover {
-  background: rgba(244, 236, 220, 0.05);
+  background: rgba(241, 232, 214, 0.05);
   color: var(--fab-paper-72);
 }
 
@@ -570,12 +570,12 @@
 }
 
 .tag--live {
-  border-color: rgba(143, 220, 247, 0.5);
+  border-color: rgba(114, 196, 224, 0.5);
   color: var(--fab-gaze);
 }
 
 .tag--sample {
-  border-color: rgba(235, 203, 110, 0.45);
+  border-color: rgba(212, 178, 90, 0.45);
   color: var(--fab-butter);
 }
 
@@ -724,7 +724,7 @@
 .loop li.is-active .l-dot {
   background: var(--fab-clay);
   opacity: 1;
-  box-shadow: 0 0 0 4px rgba(218, 116, 82, 0.14);
+  box-shadow: 0 0 0 4px rgba(199, 106, 72, 0.14);
 }
 
 .runtime-rows {
@@ -828,7 +828,7 @@
 
 .btn:hover {
   border-color: var(--fab-paper-46);
-  background: rgba(244, 236, 220, 0.05);
+  background: rgba(241, 232, 214, 0.05);
 }
 
 .btn--primary {
