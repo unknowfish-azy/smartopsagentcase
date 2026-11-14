@@ -14,13 +14,13 @@ function onViewModeChange (mode) { viewMode.value = mode }
 const gridByDomain = computed(() => {
   return zones.map(z => ({
     zone: z,
-    items: cards.filter(c => c.zoneId === z.id && (!hitIds.value.size || hitIds.value.has(c.id))),
+    items: cards.filter(c => c.zoneId === z.id && (!hitIds.value.size || hitIds.value.has(c.entry.id))),
   }))
 })
 // 列表视图：全量平铺（检索命中时只显示命中集）
 const listItems = computed(() => {
   const src = hitIds.value.size
-    ? cards.filter(c => hitIds.value.has(c.id))
+    ? cards.filter(c => hitIds.value.has(c.entry.id))
     : cards
   return src.slice().sort((a, b) => {
     if (a.zoneId !== b.zoneId) return a.zoneId.localeCompare(b.zoneId)
@@ -271,7 +271,7 @@ const mountedZoneIds = computed(() => {
   // 搜索命中域强制挂载（L1/L2 也必须能看到命中卡）
   if (hitIds.value.size && cam.k.value >= 0.42) {
     const hitDomains = new Set()
-    for (const c of cards) if (hitIds.value.has(c.id)) hitDomains.add(c.zoneId)
+    for (const c of cards) if (hitIds.value.has(c.entry.id)) hitDomains.add(c.zoneId)
     for (const id of hitDomains) if (!out.includes(id)) out.push(id)
   }
   // 选中域强制挂载
@@ -632,8 +632,8 @@ onBeforeUnmount(() => {
             <button
               class="ks-card"
               :class="{
-                'ks-card--hit': hitIds.size && hitIds.has(c.id),
-                'ks-card--dim': hitIds.size && !hitIds.has(c.id),
+                'ks-card--hit': hitIds.size && hitIds.has(c.entry.id),
+                'ks-card--dim': hitIds.size && !hitIds.has(c.entry.id),
                 'ks-card--hover': hoverCardId === c.id,
                 'ks-card--offscreen': !mountedCards.has(c.id),
               }"
@@ -709,7 +709,7 @@ onBeforeUnmount(() => {
           <span class="ks-grid-count">{{ g.items.length }}</span>
         </header>
         <div v-if="g.items.length" class="ks-grid-row">
-          <button v-for="c in g.items" :key="c.id" class="ks-alter-card" :class="{ 'ks-card--hit': hitIds.size && hitIds.has(c.id), 'ks-card--dim': hitIds.size && !hitIds.has(c.id) }"
+          <button v-for="c in g.items" :key="c.id" class="ks-alter-card" :class="{ 'ks-card--hit': hitIds.size && hitIds.has(c.entry.id), 'ks-card--dim': hitIds.size && !hitIds.has(c.entry.id) }"
                   :data-card="c.id" @click="onCardClick($event, c)" @keydown="onCardKeydown($event, c)"
                   :aria-label="`${c.entry.title}，${c.entry.type || '未分类'}`" :aria-expanded="selectedCard?.id === c.id">
             <span class="ks-alter-title">{{ c.entry.title }}</span>
@@ -724,7 +724,7 @@ onBeforeUnmount(() => {
     <!-- ============ 列表视图：全量平铺 ============ -->
     <div v-else class="ks-alternate ks-list">
       <button v-for="c in listItems" :key="c.id" class="ks-list-row"
-              :class="{ 'ks-card--hit': hitIds.size && hitIds.has(c.id), 'ks-card--dim': hitIds.size && !hitIds.has(c.id), 'ks-list-row--open': selectedCard?.id === c.id }"
+              :class="{ 'ks-card--hit': hitIds.size && hitIds.has(c.entry.id), 'ks-card--dim': hitIds.size && !hitIds.has(c.entry.id), 'ks-list-row--open': selectedCard?.id === c.id }"
               :data-card="c.id" @click="onCardClick($event, c)" @keydown="onCardKeydown($event, c)"
               :aria-label="`${c.entry.title}，${c.entry.type || '未分类'}`" :aria-expanded="selectedCard?.id === c.id">
         <span class="ks-list-domain">{{ domainById.get(c.zoneId)?.label }}</span>
