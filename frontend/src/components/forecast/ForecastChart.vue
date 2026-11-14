@@ -16,7 +16,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { forecastAt, valueAt, bandAt, slopeAt, historySeries, forecastSeries, crossingEvents } from '../../domain/forecast/syntheticSeries.js'
+import { forecastAt, valueAt, bandAt } from '../../domain/forecast/syntheticSeries.js'
 
 const props = defineProps({
   sensor: { type: Object, required: true },
@@ -29,7 +29,7 @@ const props = defineProps({
   crossings: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['cursor-change', 'crossing-click'])
+defineEmits(['cursor-change', 'crossing-click'])
 
 const wrapRef = ref(null)
 const canvasRef = ref(null)

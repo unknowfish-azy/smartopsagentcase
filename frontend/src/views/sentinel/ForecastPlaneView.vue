@@ -245,12 +245,6 @@ const primarySensor = computed({
   set: v => { metric.value = v }
 })
 
-// horizon 本地包装
-const horizonLocal = computed({
-  get: () => horizon.value,
-  set: v => { horizon.value = v }
-})
-
 // ---------- 本地 UI 状态 ----------
 const shadowEnabled = ref(false)
 const playing = ref(false)

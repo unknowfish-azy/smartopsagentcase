@@ -158,20 +158,20 @@
 
 [data-theme='light'] {
   color-scheme: light;
-  --ds-color-canvas: #f4f7f9; --ds-color-surface: #ffffff; --ds-color-surface-raised: #fafdff; --ds-color-card: #ffffff;
-  --ds-color-text: #10212b; --ds-color-muted: #4d606c; --ds-color-primary: #0e5f92; --ds-color-primary-strong: #084b73;
+  --ds-color-canvas: #f6f8fa; --ds-color-surface: #ffffff; --ds-color-surface-raised: #ffffff; --ds-color-card: #ffffff;
+  --ds-color-text: #1f2329; --ds-color-muted: #57606a; --ds-color-primary: #0e5f92; --ds-color-primary-strong: #084b73;
   --ds-color-success: #176b50; --ds-color-warning: #8a5a08; --ds-color-danger: #a33f52;
-  --ds-color-border: rgba(16, 53, 70, .22); --ds-color-border-strong: rgba(16, 53, 70, .34);
-  --ds-shadow-1: 0 1px 2px rgba(16, 53, 70, .08); --ds-shadow-2: 0 8px 24px rgba(16, 53, 70, .1); --ds-shadow-3: 0 20px 56px rgba(16, 53, 70, .14);
+  --ds-color-border: rgba(31, 35, 40, .22); --ds-color-border-strong: rgba(31, 35, 40, .34);
+  --ds-shadow-1: 0 1px 2px rgba(31, 35, 40, .08); --ds-shadow-2: 0 8px 24px rgba(31, 35, 40, .1); --ds-shadow-3: 0 20px 56px rgba(31, 35, 40, .14);
 
   /* T18 亮色对应值（同暗色令牌名） */
-  --ds-surface-base: #F4F7FA;         /* 页面底 */
+  --ds-surface-base: #f6f8fa;         /* 页面底 */
   --ds-surface-raised: #FFFFFF;       /* 卡片 */
   --ds-surface-overlay: #FFFFFF;      /* 弹层 */
-  --ds-hairline: rgba(16, 53, 70, .08);
-  --ds-elevation-1: 0 1px 2px rgba(16, 53, 70, .08);
-  --ds-elevation-2: 0 4px 16px rgba(16, 53, 70, .10);
-  --ds-elevation-3: 0 12px 32px rgba(16, 53, 70, .14);
+  --ds-hairline: rgba(31, 35, 40, .08);
+  --ds-elevation-1: 0 1px 2px rgba(31, 35, 40, .08);
+  --ds-elevation-2: 0 4px 16px rgba(31, 35, 40, .10);
+  --ds-elevation-3: 0 12px 32px rgba(31, 35, 40, .14);
   --ds-semantic-success: #1a7f37;
   --ds-semantic-warning: #9a6700;
   --ds-semantic-danger: #cf222e;
@@ -181,30 +181,30 @@
   --ds-pill-warning-bg: rgba(154, 103, 0, .14);
   --ds-pill-danger-bg: rgba(207, 34, 46, .10);
   --ds-pill-info-bg: rgba(9, 105, 218, .10);
-  --smart-bg: #f4f7f9; --smart-surface-ghost: rgba(255,255,255,.72); --smart-signal-running: #0e5f92; --smart-signal-idle: #496679; --smart-focus-ring: #0e5f92; --smart-shadow-command: 0 20px 50px rgba(16,53,70,.15);
+  --smart-bg: #f6f8fa; --smart-surface-ghost: rgba(255,255,255,.72); --smart-signal-running: #0e5f92; --smart-signal-idle: #57606a; --smart-focus-ring: #0e5f92; --smart-shadow-command: 0 20px 50px rgba(31,35,40,.15);
   --smart-surface: #ffffff;
-  --smart-surface-raised: #fafdff;
+  --smart-surface-raised: #ffffff;
   --smart-card: #ffffff;
-  --smart-text: #10212b;
-  --smart-muted: #4d606c;
+  --smart-text: #1f2329;
+  --smart-muted: #57606a;
   --smart-primary: #0e5f92;
   --smart-primary-strong: #084b73;
   --smart-primary-soft: rgba(14, 95, 146, .08);
   --smart-primary-foreground: #ffffff;
-  --smart-border-strong: rgba(16, 53, 70, .34);
-  --smart-border: rgba(16, 53, 70, .22);
+  --smart-border-strong: rgba(31, 35, 40, .34);
+  --smart-border: rgba(31, 35, 40, .22);
   --smart-glass-bg: rgba(255, 255, 255, .96);
   --smart-glass-bg-strong: #ffffff;
-  --smart-glass-border: rgba(16, 53, 70, .22);
+  --smart-glass-border: rgba(31, 35, 40, .22);
   --smart-glass-highlight: rgba(255, 255, 255, .98);
-  --smart-glass-shadow: 0 12px 28px rgba(16, 53, 70, .10), inset 0 1px 0 rgba(255, 255, 255, .98);
+  --smart-glass-shadow: 0 12px 28px rgba(31, 35, 40, .10), inset 0 1px 0 rgba(255, 255, 255, .98);
   --smart-success: #176b50;
   --smart-warning: #8a5a08;
   --smart-danger: #a33f52;
   --smart-effect-primary: #355e78; --smart-effect-strong: #183c53; --smart-effect-muted: #496679; --smart-effect-star: #243e50;
   --smart-accent-foreground: #ffffff;
-  --pet-action-bg: #ffffff; --pet-action-text: #10212b; --pet-action-border: rgba(16, 53, 70, .22); --pet-action-shadow: 0 6px 16px rgba(16, 53, 70, .12);
-  --pet-panel-bg: rgba(255, 255, 255, .98); --pet-panel-border: rgba(16, 53, 70, .22); --pet-border: rgba(14, 95, 146, .38); --pet-core-bg: #ffffff; --pet-core-border: rgba(14, 95, 146, .42); --pet-core-text: #084b73;
+  --pet-action-bg: #ffffff; --pet-action-text: #1f2329; --pet-action-border: rgba(31, 35, 40, .22); --pet-action-shadow: 0 6px 16px rgba(31, 35, 40, .12);
+  --pet-panel-bg: rgba(255, 255, 255, .98); --pet-panel-border: rgba(31, 35, 40, .22); --pet-border: rgba(14, 95, 146, .38); --pet-core-bg: #ffffff; --pet-core-border: rgba(14, 95, 146, .42); --pet-core-text: #084b73;
 
   /* T20 亮色对应值 */
   --ds-chart-1: #0e5f92;
@@ -213,13 +213,13 @@
   --ds-chart-4: #9a6700;
   --ds-chart-5: #cf222e;
   --ds-chart-neutral: #57606a;
-  --ds-chart-grid: rgba(16, 53, 70, .08);
-  --ds-chart-axis: rgba(16, 53, 70, .12);
-  --ds-chart-text: #4d606c;
+  --ds-chart-grid: rgba(31, 35, 40, .08);
+  --ds-chart-axis: rgba(31, 35, 40, .12);
+  --ds-chart-text: #57606a;
   --ds-chart-tooltip-bg: #ffffff;
-  --ds-chart-tooltip-border: rgba(16, 53, 70, .18);
+  --ds-chart-tooltip-border: rgba(31, 35, 40, .18);
   --ds-chart-area-opacity: .10;
-  --ds-tag-border: rgba(16, 53, 70, .14);
+  --ds-tag-border: rgba(31, 35, 40, .14);
   --ds-pill-info-fg: #0969da;
   --ds-pill-success-fg: #1a7f37;
   --ds-pill-warning-fg: #9a6700;

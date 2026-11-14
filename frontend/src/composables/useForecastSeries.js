@@ -28,7 +28,7 @@ export function useForecastSeries(options = {}) {
   const errorReason = ref('')
 
   let abort = null
-  let demoCountdown = 0  // 防止竞态：demo 是同步的，接口是异步的
+  let _demoCountdown = 0  // 防止竞态：demo 是同步的，接口是异步的
 
   /**
    * 尝试从后端取数。接口不可用时进入 offline。

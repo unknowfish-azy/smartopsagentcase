@@ -214,7 +214,6 @@ onMounted(() => {
       const phase = cloud.phases[index]
       const flow = cloud.flows[index]
       const region = cloud.regions[index]
-      const localFluid = getGlobalFluidField(baseX, baseY, time, phase)
       let x = baseX
       let y = baseY
       let z = baseZ

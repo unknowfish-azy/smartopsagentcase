@@ -120,6 +120,8 @@
             <span class="en">{{ item.en }}</span>
           </button>
         </div>
+        <p class="state-reason" aria-live="polite">{{ stateReason }}</p>
+        <p class="state-shortcut">快捷键 1–5 切换状态 · 0 恢复自动</p>
       </section>
 
       <div class="fable-instruments">
@@ -140,6 +142,38 @@
               </span>
             </li>
           </ul>
+        </section>
+
+        <section class="fable-panel" aria-labelledby="fable-panel-field">
+          <div class="fable-panel-head">
+            <div>
+              <h3 id="fable-panel-field">构成场手动调节</h3>
+              <span class="en">MANUAL FIELD TUNE</span>
+            </div>
+            <button
+              v-if="manualOverride"
+              type="button"
+              class="field-reset"
+              @click="resetManualField"
+            >
+              重置 / RESET
+            </button>
+            <span v-else class="tag">DATA-DRIVEN</span>
+          </div>
+          <div class="field-sliders">
+            <label v-for="s in FIELD_SLIDERS" :key="s.key" class="slider-row">
+              <span class="s-label">{{ s.label }}</span>
+              <input
+                type="range"
+                :min="s.min"
+                :max="s.max"
+                :step="s.step"
+                :value="sliderVals[s.key]"
+                @input="onSliderInput(s.key, Number($event.target.value))"
+              />
+              <span class="s-val">{{ Number(sliderVals[s.key]).toFixed(2) }}</span>
+            </label>
+          </div>
         </section>
 
         <section class="fable-panel" aria-labelledby="fable-panel-loop">
@@ -368,6 +402,14 @@ const SAMPLE_MEMORIES = Object.freeze([
   { title: 'Redis 主从延迟 → 拆大 key、限制全量扫描', meta: 'SAMPLE · 记忆样例' }
 ])
 
+const FIELD_SLIDERS = Object.freeze([
+  { key: 'aperture', label: 'APERTURE 孔径', min: 0, max: 1, step: 0.01 },
+  { key: 'tilt', label: 'TILT 倾角', min: -90, max: 90, step: 1 },
+  { key: 'volume', label: 'VOLUME 体积', min: 0, max: 1, step: 0.01 },
+  { key: 'gaze', label: 'GAZE 注视', min: 0, max: 1, step: 0.01 },
+  { key: 'spin', label: 'SPIN 环速', min: 0, max: 1, step: 0.01 }
+])
+
 const theme = computed(() => resolvedTheme.value)
 const reduced = computed(
   () =>
@@ -461,7 +503,10 @@ const targetField = computed(() =>
 const { current: liveField, setTarget: setFieldTarget, setReduced: setFieldReduced, dispose: disposeFieldClock } =
   useCompositionFieldClock(targetField.value, reduced.value)
 
-watch(targetField, next => setFieldTarget(next), { immediate: true })
+watch(targetField, next => {
+  if (manualOverride.value) return // 手动覆盖期间跳过后端数据驱动
+  setFieldTarget(next)
+}, { immediate: true })
 // reduced 变化时同步给 clock：开启时立即落位，关闭时恢复 spring
 watch(reduced, setFieldReduced)
 
@@ -506,8 +551,76 @@ const profile = computed(
   () => STATES.find(item => item.key === compositionState.value) || STATES[0]
 )
 
+/** A2：当前状态的驱动原因文案 */
+const stateReason = computed(() => {
+  if (drillState.value) return '手动演练中 · 已脱离运行时数据'
+  const data = summary.value || {}
+  const highCritical = Number(data.high ?? 0) + Number(data.critical ?? 0)
+  const requiresHumanCount = loops.value.filter(l => Boolean(l && l.requiresHuman)).length
+  const stage = dominantStage(stats.value?.byStage)
+  switch (derivedState.value) {
+    case 'idle':
+      return highCritical === 0 && requiresHumanCount === 0 ? '无告警 · 无待审批闭环' : '运行时空闲'
+    case 'decide':
+      return `${requiresHumanCount} 个闭环等待人工审批`
+    case 'reflect':
+      return stage === 'LEARNED' ? '知识沉淀中 · 复盘闭环' : '复盘进行中'
+    case 'execute':
+      return stage ? `执行阶段 · ${stage}` : '决策/核查执行中'
+    case 'analyze':
+      return highCritical > 0 ? `${highCritical} 条告警待分析` : '现象解析中'
+    default:
+      return '—'
+  }
+})
+
 function selectState(key) {
   drillState.value = compositionState.value === key ? null : key
+  // 切换状态时清除手动参数覆盖，恢复数据驱动
+  if (manualOverride.value) resetManualField()
+}
+
+/** A3：键盘快捷键 1-5 切状态，0 恢复自动 */
+function onKeydown(e) {
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+  const map = { '1': 'idle', '2': 'analyze', '3': 'decide', '4': 'execute', '5': 'reflect' }
+  if (e.key in map) {
+    e.preventDefault()
+    selectState(map[e.key])
+  } else if (e.key === '0') {
+    e.preventDefault()
+    drillState.value = null
+    resetManualField()
+  }
+}
+
+/* ---------------------------- A1：手动参数覆盖 ---------------------------- */
+
+const manualOverride = ref(false)
+const sliderVals = reactive({ aperture: 0.5, tilt: 0, volume: 0.5, gaze: 0, spin: 0 })
+
+function applyManualField() {
+  const base = targetField.value
+  setFieldTarget({
+    ...base,
+    aperture: sliderVals.aperture,
+    tilt: sliderVals.tilt,
+    volume: sliderVals.volume,
+    gaze: sliderVals.gaze,
+    spin: sliderVals.spin
+  })
+}
+
+function onSliderInput(key, value) {
+  sliderVals[key] = value
+  manualOverride.value = true
+  applyManualField()
+}
+
+function resetManualField() {
+  manualOverride.value = false
+  setFieldTarget(targetField.value)
 }
 
 /* ---------------------------- 人工门演练 ---------------------------- */
@@ -668,6 +781,7 @@ onMounted(() => {
   }, 1000)
   pollTimer = window.setInterval(loadRuntime, 10000) // 10s 轮询
   loadRuntime()
+  window.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
@@ -676,6 +790,7 @@ onBeforeUnmount(() => {
   if (nowTimer) window.clearInterval(nowTimer)
   stopTrackingNow()
   disposeFieldClock()
+  window.removeEventListener('keydown', onKeydown)
 })
 </script>
 
@@ -759,5 +874,86 @@ onBeforeUnmount(() => {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* A2：状态原因文案 */
+.state-reason {
+  margin: 8px 0 2px;
+  color: var(--fab-gaze, #7ad7f5);
+  font: 11px/1.5 var(--fab-mono);
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+.state-shortcut {
+  margin: 0;
+  color: var(--fab-paper-46, rgba(232, 242, 247, 0.46));
+  font: 9px/1.4 var(--fab-mono);
+  letter-spacing: 0.12em;
+  opacity: 0.6;
+}
+
+/* A1：构成场手动调节滑杆 */
+.field-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.slider-row {
+  display: grid;
+  grid-template-columns: 86px 1fr 42px;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.slider-row .s-label {
+  color: var(--fab-paper, #e8f2f7);
+  font: 9px/1 var(--fab-mono);
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+.slider-row input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--fab-gaze) 22%, transparent);
+  outline: none;
+}
+.slider-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--fab-gaze, #7ad7f5);
+  cursor: pointer;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--fab-gaze) 60%, transparent);
+}
+.slider-row input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fab-gaze, #7ad7f5);
+  cursor: pointer;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--fab-gaze) 60%, transparent);
+}
+.slider-row .s-val {
+  text-align: right;
+  color: var(--fab-gaze, #7ad7f5);
+  font: 9px/1 var(--fab-mono);
+  letter-spacing: 0.04em;
+}
+.field-reset {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fab-gaze, #7ad7f5);
+  font: 8.5px/1.5 var(--fab-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 1px solid currentColor;
 }
 </style>

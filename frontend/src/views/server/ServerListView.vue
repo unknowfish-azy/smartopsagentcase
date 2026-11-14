@@ -480,7 +480,6 @@ import {
 } from '@element-plus/icons-vue'
 
 import {
-  getServers,
   createServer,
   updateServer,
   deleteServer

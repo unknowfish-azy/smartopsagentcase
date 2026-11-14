@@ -67,7 +67,7 @@ export function useServerDetail() {
     try {
       const result = await getLatestMetric(serverId)
       metric.value = result.data
-    } catch (_error) {
+    } catch {
       /*
        * 当前还没有监控数据时，
        * 页面仍然可以正常显示。

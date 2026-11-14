@@ -14,16 +14,18 @@
   - 文字全部屏幕空间 DOM
 -->
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { knowledgeDomains, knowledgeEntries } from '../knowledgeCatalog.js'
 import { computeField, FIELD } from './useFieldLayout.js'
 import { buildBindingIndex } from './bindingIndex.js'
-import { useFieldCamera, ORBIT, PRESET_NAMES } from './useFieldCamera.js'
+import { useFieldCamera } from './useFieldCamera.js'
 import FieldStage from './FieldStage.vue'
 import FieldPlane from './FieldPlane.vue'
 import EvidenceBed from './EvidenceBed.vue'
 import ThreadLayer from './ThreadLayer.vue'
 import InsightCanopy from './InsightCanopy.vue'
+import FieldPlaneDrawer from './FieldPlaneDrawer.vue'
+import FieldSearch from './FieldSearch.vue'
 
 // —— 空间场初始计算（Phase A 无洞察，先跑知识层 + 证据层）——
 const SP_NOW = Date.parse('2026-11-14T00:00:00Z')
@@ -46,6 +48,56 @@ const enrichStatusClass = computed(() => ({
   'sf-stat--bound': enrichStatus.value === 'ready',
   'sf-stat--stale': enrichStatus.value === 'error',
 }))
+
+/* ---------------------------- B1：选中平面详情 ---------------------------- */
+const selectedPlane = ref(null)
+function getEntryByPlane (plane) {
+  if (!plane?.atomId) return null
+  return knowledgeEntries.find(e => String(e.id) === String(plane.atomId)) || null
+}
+const selectedEntry = computed(() => getEntryByPlane(selectedPlane.value))
+const selectedDomain = computed(() =>
+  selectedPlane.value?.domainId
+    ? knowledgeDomains.find(d => d.id === selectedPlane.value.domainId)
+    : null
+)
+function closeDrawer () { selectedPlane.value = null }
+
+/* ---------------------------- B2：搜索 ---------------------------- */
+const searchOpen = ref(false)
+const searchQuery = ref('')
+const searchResults = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return []
+  return knowledgeEntries
+    .filter(e => {
+      const title = String(e.title || '').toLowerCase()
+      const domain = String(e.domain || '').toLowerCase()
+      const content = String(e.content || '').toLowerCase()
+      return title.includes(q) || domain.includes(q) || content.includes(q)
+    })
+    .slice(0, 20)
+})
+function focusEntry (entry) {
+  if (!entry) return
+  const plane = field.value.planes.find(p => String(p.atomId) === String(entry.id))
+  if (plane) {
+    cam.focusOn(plane)
+    selectedPlane.value = plane
+  }
+  searchOpen.value = false
+  searchQuery.value = ''
+}
+
+/* ---------------------------- B3：域名筛选 ---------------------------- */
+const selectedDomains = ref(new Set())
+function toggleDomain (id) {
+  const next = new Set(selectedDomains.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedDomains.value = next
+}
+const domainFilterActive = computed(() => selectedDomains.value.size > 0)
 
 /**
  * M2：挂载后批量拉取所有已 ingest 条目的 evidence-refs，
@@ -88,11 +140,13 @@ const currentLod = computed(() => computeLod(cam.dist.value))
 
 // —— 性能闸门（DESIGN §6.2）——
 const MAX_MOUNT = 480
-const MAX_VISIBLE = 180
 
-// 可见平面：按距相机 target 的距离升序排，取前 MAX_MOUNT
+// 可见平面：按域名筛选 + 距相机 target 距离升序排，取前 MAX_MOUNT
 const mountedPlanes = computed(() => {
-  const planes = field.value.planes
+  let planes = field.value.planes
+  if (domainFilterActive.value) {
+    planes = planes.filter(p => selectedDomains.value.has(p.domainId))
+  }
   if (planes.length <= MAX_MOUNT) return planes
   const tx = cam.target.x, ty = cam.target.y, tz = cam.target.z
   const sorted = [...planes].sort((a, b) =>
@@ -149,12 +203,24 @@ let dragStartX = 0, dragStartY = 0, dragStartYaw = 0, dragStartPitch = 0
 
 // —— 键盘（DESIGN §5.3）——
 function onKeyDown (e) {
+  // Ctrl+K 打开搜索
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault()
+    searchOpen.value = true
+    return
+  }
+  // 搜索打开时 Esc 关闭搜索
+  if (e.key === 'Escape' && searchOpen.value) {
+    searchOpen.value = false
+    return
+  }
   // 1/2/3 机位切换
   if (e.key === '1') { cam.setPreset('overlook'); return }
   if (e.key === '2') { cam.setPreset('shelf'); return }
   if (e.key === '3') { /* trace 需选中链条，暂留 */ return }
-  // Esc 回退
+  // Esc 回退 / 关抽屉
   if (e.key === 'Escape') {
+    if (selectedPlane.value) { selectedPlane.value = null; return }
     const result = cam.back()
     if (result === 'domain' && cam.focusDomainId.value) {
       // 跳回域中心（简化：用域锚点 x 作为 target.x）
@@ -163,16 +229,16 @@ function onKeyDown (e) {
     }
     return
   }
-  // Ctrl+K 检索（占位）
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); return }
 }
 
-// —— plane 点击 → focus 下钻 ——
+// —— plane 点击 → focus 下钻 + 打开详情抽屉 ——
 function onPlaneClick (plane) {
   cam.focusOn(plane)
+  selectedPlane.value = plane
 }
 function onPlaneKeydown (plane) {
   cam.focusOn(plane)
+  selectedPlane.value = plane
 }
 
 function onFieldClick (insight) {
@@ -233,6 +299,7 @@ defineExpose({ cam, field })
         <kbd class="sf-kbd">2</kbd><span>平视</span>
         <kbd class="sf-kbd">3</kbd><span>沿链</span>
         <kbd class="sf-kbd">Esc</kbd><span>回退</span>
+        <kbd class="sf-kbd">Ctrl K</kbd><span>搜索</span>
         <span class="sf-sep">·</span>
         <span>Yaw {{ Math.round(fieldStats.yaw) }}°</span>
         <span>Pitch {{ Math.round(fieldStats.pitch) }}°</span>
@@ -241,6 +308,29 @@ defineExpose({ cam, field })
         <span>LOD {{ fieldStats.lod }}</span>
       </div>
     </header>
+
+    <!-- B3：域名筛选 chip -->
+    <div class="sf-domain-filter field-hud" role="group" aria-label="域名筛选">
+      <button
+        v-for="d in field.axes.domains"
+        :key="d.id"
+        type="button"
+        class="sf-chip"
+        :class="{ 'sf-chip--on': selectedDomains.has(d.id) }"
+        @click="toggleDomain(d.id)"
+      >
+        {{ d.label }}
+        <span class="sf-chip-n">{{ d.n }}</span>
+      </button>
+      <button
+        v-if="domainFilterActive"
+        type="button"
+        class="sf-chip sf-chip--clear"
+        @click="selectedDomains = new Set()"
+      >
+        清除筛选
+      </button>
+    </div>
 
     <!-- FieldStage（CSS 3D 空间场容器） -->
     <FieldStage
@@ -292,6 +382,25 @@ defineExpose({ cam, field })
       <div><b>Y</b> 抽象层级：证据 0–140 / 知识 240–420 / 洞察 520–660</div>
       <div><b>Z</b> 版本时序：历史 ← 0 → 未来</div>
     </div>
+
+    <!-- B2：搜索浮层 -->
+    <FieldSearch
+      v-if="searchOpen"
+      :query="searchQuery"
+      :results="searchResults"
+      @update:query="searchQuery = $event"
+      @select="focusEntry"
+      @close="searchOpen = false"
+    />
+
+    <!-- B1：平面详情抽屉 -->
+    <FieldPlaneDrawer
+      v-if="selectedEntry"
+      :entry="selectedEntry"
+      :domain="selectedDomain"
+      :evidence-count="selectedEntry?.evidenceRefs?.length || 0"
+      @close="closeDrawer"
+    />
   </section>
 </template>
 
@@ -335,6 +444,42 @@ defineExpose({ cam, field })
 .sf-stat--bound  { color: var(--ds-accent, #7ad7f5); }
 .sf-stat--op     { color: var(--ds-semantic-neutral); font-style: italic; }
 .sf-stat--stale  { color: var(--ds-pill-warning-fg, #f5a623); }
+
+/* B3：域名筛选 chip */
+.sf-domain-filter {
+  top: 96px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: 12px;
+  background: rgba(14,17,22,.8);
+  color: var(--ds-color-muted);
+  font: 11px var(--ds-font-mono);
+  cursor: pointer;
+  transition: all .18s ease;
+  pointer-events: auto;
+}
+.sf-chip:hover { border-color: var(--ds-accent); color: var(--ds-color-text); }
+.sf-chip--on {
+  border-color: var(--ds-accent, #7ad7f5);
+  background: color-mix(in srgb, var(--ds-accent) 18%, transparent);
+  color: var(--ds-accent, #7ad7f5);
+}
+.sf-chip-n {
+  font-size: 9px;
+  opacity: 0.6;
+}
+.sf-chip--clear {
+  border-style: dashed;
+  color: var(--ds-pill-warning-fg, #f5a623);
+}
 
 .sf-kbd {
   display: inline-flex;

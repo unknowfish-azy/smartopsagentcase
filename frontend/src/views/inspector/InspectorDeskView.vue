@@ -124,6 +124,11 @@ const selectedStatsBin = computed(() => {
 /* ---------- 键盘 ---------- */
 function onKeydown(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+  const k = e.key.toLowerCase()
+  // C2：时间窗快捷键 H=24h, D=7d, W=30d
+  if (k === 'h') { setWindow('24h'); return }
+  if (k === 'd') { setWindow('7d'); return }
+  if (k === 'w') { setWindow('30d'); return }
   if (e.key === '1') setView('events')
   else if (e.key === '2') setView('stats')
   else if (e.key === '3') setView('runs')

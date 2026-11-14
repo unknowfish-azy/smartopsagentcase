@@ -114,7 +114,7 @@ test('freshInfo: checkedAt 是无效字符串 → 按 0 处理', () => {
 test('freshInfo: now 缺省 → Date.now()', () => {
   const before = Date.now()
   const info = freshInfo({ checkedAt: before - 1000 })
-  const after = Date.now()
+  const _after = Date.now()
   // fresh 必须是 true（刚检查过，没过期）
   assert.equal(info.ringText, '5′') // 刚检查过应该显示 5'
   assert.ok(info.ringDeg >= 0 && info.ringDeg <= 360)

@@ -117,7 +117,7 @@ report.solution = wanted.map(mark => mark.letter)
 await sleep(MIN_RESPONSE_MS + 250)
 const proof = await postVerify('admin_login', p.challenge, wanted.map(mark => ({ x: mark.x, y: mark.y })))
 report.proof = { status: proof.status, message: proof.data?.message, tokenPrefix: proof.data?.data?.token?.slice(0, 12), targets: proof.data?.data?.targets }
-const token = proof.data?.data?.token
+const _token = proof.data?.data?.token
 
 // 3) 重放同一挑战
 const replay = await postVerify('admin_login', p.challenge, wanted.map(mark => ({ x: mark.x, y: mark.y })))

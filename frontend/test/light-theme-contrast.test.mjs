@@ -22,9 +22,9 @@ test('effect theme selectors never dim the document root', async () => {
 })
 
 test('light theme uses opaque, high-contrast semantic tokens', () => {
-  assert.match(variables, /\[data-theme='light'\][\s\S]*--smart-text:\s*#10212b;/)
-  assert.match(variables, /\[data-theme='light'\][\s\S]*--smart-muted:\s*#4d606c;/)
-  assert.match(variables, /\[data-theme='light'\][\s\S]*--smart-border:\s*rgba\(16, 53, 70, \.22\);/)
+  assert.match(variables, /\[data-theme='light'\][\s\S]*--smart-text:\s*#1f2329;/)
+  assert.match(variables, /\[data-theme='light'\][\s\S]*--smart-muted:\s*#57606a;/)
+  assert.match(variables, /\[data-theme='light'\][\s\S]*--smart-border:\s*rgba\(31, 35, 40, \.22\);/)
   assert.match(variables, /\[data-theme='light'\][\s\S]*--smart-glass-bg:\s*rgba\(255, 255, 255, \.96\);/)
 })
 

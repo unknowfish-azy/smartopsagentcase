@@ -68,7 +68,7 @@ import AdminTabs from '../components/admin/AdminTabs.vue'
 import { adminNavigation, adminBreadcrumb } from '../adminNav.js'
 import { currentSession, logoutSession } from '../security/session.js'
 import { resolvePortalSwitch } from '../security/portalSwitch.js'
-import { themeMode, isDarkTheme, setThemeMode } from '../theme.js'
+import { isDarkTheme, setThemeMode } from '../theme.js'
 import '../assets/styles/admin.css'
 const router = useRouter()
 const route = useRoute()

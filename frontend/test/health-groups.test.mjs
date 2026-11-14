@@ -3,7 +3,7 @@ import test from 'node:test'
 import {
   groupOf, severityRank, sortChecks, partitionChecks,
   kindLabel, statusVisual, countByGroup,
-  STATUS_GROUP, GROUP_ORDER, GROUP_META
+  GROUP_ORDER, GROUP_META
 } from '../src/components/diagnostics/healthGroups.js'
 
 // ---- groupOf：五种状态各归到正确的组 ----

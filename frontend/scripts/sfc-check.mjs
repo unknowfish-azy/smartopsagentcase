@@ -4,10 +4,8 @@
  * 用法：node scripts/sfc-check.mjs [文件...]，不带参数则检查本清单。
  */
 import { readFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
 import { parse, compileScript, compileTemplate } from '@vue/compiler-sfc'
 
-const require = createRequire(import.meta.url)
 const files = process.argv.slice(2).length
   ? process.argv.slice(2)
   : [

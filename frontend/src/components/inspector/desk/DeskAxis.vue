@@ -45,7 +45,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
-  SEVERITIES, TOOLS, BIN_COUNTS, binEvents, fmtDateTime, fmtTime,
+  SEVERITIES, TOOLS, binEvents, fmtDateTime, fmtTime,
   runsByTraceMap, severityMeta, toolMeta
 } from './deskModel'
 
@@ -323,7 +323,6 @@ function runPositions(rect) {
 }
 
 function drawRuns(rect) {
-  const runs = props.runs
   const lanes = TOOLS
   const laneH = (rect.height - M.t - M.b) / lanes.length
 
@@ -418,16 +417,16 @@ function hitTest(px, py) {
 }
 
 /* ---------- 事件 ---------- */
-function onPointerMove(e) {
+function _onPointerMove(e) {
   const rect = canvasRef.value.getBoundingClientRect()
   hoverPos = { x: e.clientX - rect.left, y: e.clientY - rect.top }
   draw()
 }
-function onPointerLeave() {
+function _onPointerLeave() {
   hoverPos = null
   draw()
 }
-function onClick() {
+function _onClick() {
   if (!hoverPos) return
   const item = hitTest(hoverPos.x, hoverPos.y)
   if (item && item.__type !== 'bin') emit('select', item)

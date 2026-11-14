@@ -32,7 +32,19 @@
             <div><b>时长</b><span>{{ Number(selected.duration).toFixed(1) }}s</span></div>
             <div v-if="selected.exitCode != null"><b>退出码</b><span>{{ selected.exitCode }}</span></div>
           </template>
-          <div><b>traceId</b><span>{{ selected.traceId || '—（未关联，不做猜测）' }}</span></div>
+          <div class="evidence-row">
+            <b>traceId</b>
+            <span>{{ selected.traceId || '—（未关联，不做猜测）' }}</span>
+            <button
+              v-if="selected.traceId"
+              type="button"
+              class="copy-btn"
+              :aria-label="copied ? '已复制' : '复制 traceId'"
+              @click="copyTraceId"
+            >
+              {{ copied ? '已复制' : '复制' }}
+            </button>
+          </div>
         </div>
         <pre>{{ jsonPretty(selected) }}</pre>
       </template>
@@ -49,7 +61,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { fmtDateTime, severityMeta, toolMeta } from './deskModel'
 
 const props = defineProps({
@@ -61,6 +73,26 @@ defineEmits(['toggle', 'tab'])
 
 const isEvent = computed(() => props.selected?.__type === 'event')
 const typeLabel = computed(() => (isEvent.value ? '纠察事件' : '命令执行'))
+
+const copied = ref(false)
+function copyTraceId () {
+  const id = props.selected?.traceId
+  if (!id) return
+  navigator.clipboard?.writeText(id).then(() => {
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1500)
+  }).catch(() => {
+    // 降级：用临时 textarea
+    const ta = document.createElement('textarea')
+    ta.value = id
+    document.body.appendChild(ta)
+    ta.select()
+    try { document.execCommand('copy') } catch {}
+    document.body.removeChild(ta)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1500)
+  })
+}
 
 const outputText = computed(() => {
   if (!props.selected) return ''
@@ -98,6 +130,19 @@ function jsonPretty(obj) {
 .evidence { display: grid; gap: 6px; margin-bottom: 10px; }
 .evidence div { display: flex; gap: 10px; padding: 7px 9px; border-left: 2px solid var(--ds-surface-overlay); background: color-mix(in srgb, var(--smart-surface) 2%, transparent); color: var(--smart-muted); font-size: 12px; }
 .evidence div b { color: var(--smart-text); font: 11px Consolas, monospace; min-width: 74px; }
+.evidence-row { align-items: center; }
+.copy-btn {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ds-accent, #7ad7f5);
+  font: 10px var(--ds-font-mono);
+  cursor: pointer;
+  transition: all .15s;
+}
+.copy-btn:hover { background: color-mix(in srgb, var(--ds-accent) 14%, transparent); }
 .drawer-body pre { margin: 0; padding: 12px; border: 1px solid var(--ds-surface-overlay); border-radius: 4px; background: var(--smart-bg); color: var(--smart-text); font: 11px/1.7 Consolas, monospace; overflow: auto; max-height: 240px; }
 .muted { color: var(--smart-muted); font-size: 12px; }
 </style>

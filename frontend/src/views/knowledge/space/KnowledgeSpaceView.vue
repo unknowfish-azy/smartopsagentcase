@@ -8,17 +8,11 @@ import { useSpaceCamera } from './useSpaceCamera.js'
 
 /* —— 空间场新增（SP-01/02/03/04/06/07）—— 现有视图逻辑完全不动 */
 import SpaceFieldView from './SpaceFieldView.vue'
-import { computeField, FIELD as FIELD_CONSTANTS } from './useFieldLayout.js'
-import { buildBindingIndex } from './bindingIndex.js'
-import FieldStage from './FieldStage.vue'
-import FieldPlane from './FieldPlane.vue'
-import EvidenceBed from './EvidenceBed.vue'
-import ThreadLayer from './ThreadLayer.vue'
-import InsightCanopy from './InsightCanopy.vue'
+import { computeField } from './useFieldLayout.js'
 
 // 空间场一次计算（无洞察输入，先跑知识层 + 证据层）
 const SP_NOW = Date.parse('2026-11-14T00:00:00Z')
-const spField = computeField(knowledgeEntries, knowledgeDomains, [], { now: SP_NOW })
+computeField(knowledgeEntries, knowledgeDomains, [], { now: SP_NOW })
 
 const viewMode = ref('space')
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -322,7 +316,7 @@ function setupCardIO () {
 }
 
 // 当 mountedZoneIds 变化时：把这些域的候选卡 DOM 注册到 IO，同时立刻把已挂载的卡从 IO 里断开
-function watchMountedZones () {
+function _watchMountedZones () {
   // 把非 mountedZoneIds 的卡从 mountedCards 里立刻清掉（不需要 500ms 延迟）
   const allowed = new Set(mountedZoneIds.value)
   const next = new Set()
@@ -376,7 +370,7 @@ const hoverPlatform = computed(() => {
   return c ? String(c.entry.platform || '') : ''
 })
 
-function refreshWorldCamera () {
+function _refreshWorldCamera () {
   cam.apply(worldRef.value)
   renderHUD()
   renderMinimapViewport()
