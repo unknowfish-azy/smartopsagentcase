@@ -1,8 +1,37 @@
-﻿param(
-    # 真实平台段预检：任何 FAIL 都会以退出码 1 阻止继续。
-    # 默认 fixture 模式：只做探测与摘要，不阻断本地开发。
+﻿<#
+.SYNOPSIS
+    平台预检：探测各服务端口、运行时版本、模型就位情况，输出摘要表。
+
+.DESCRIPTION
+    检查 backend(8080) / ai-service(8001) / knowledge(8002) / ollama(11434)
+    端口监听、node/python 版本、git commit、Ollama 已安装模型列表。
+    默认 fixture 模式只输出摘要不阻断；加 -Real 后任何非 PASS 项都以
+    退出码 1 失败，用于真实平台段上线前阻断。
+
+    本脚本只做探测，不启动也不停止任何服务。需要启动服务请用
+    start-platform.ps1 或 handoff-kit/3-启动平台.bat。
+
+.PARAMETER Real
+    真实平台段预检模式：任何 FAIL 都以退出码 1 阻断。
+.PARAMETER BackendPort
+    后端端口，默认 8080。
+.PARAMETER AiServicePort
+    AI 服务端口，默认 8001。
+.PARAMETER KnowledgePort
+    知识服务端口，默认 8002。
+.PARAMETER OllamaPort
+    Ollama 端口，默认 11434。
+
+.EXAMPLE
+    # 日常只读探测
+    .\preflight-readiness.ps1
+
+.EXAMPLE
+    # 上线前阻断式预检
+    .\preflight-readiness.ps1 -Real
+#>
+param(
     [switch]$Real,
-    # 各服务端口可用环境变量覆盖，避免写死部署形态。
     [int]$BackendPort = 8080,
     [int]$AiServicePort = 8001,
     [int]$KnowledgePort = 8002,

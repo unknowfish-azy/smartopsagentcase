@@ -245,37 +245,55 @@ function Find-MySqlClient {
 }
 
 # ── 启动/停止 ─────────────────────────────────────────────────────────
+#
+# Start-ServiceProcess 是所有应用服务的统一启动入口（后端 / 知识 / AI / 前端等）。
+# 它做了四件事：① 端口预检（已在跑且健康则跳过，端口被占但不健康则报错）
+# ② 注入 ExtraEnv 环境变量（仅在 CreateProcess 那一刻生效，起完立即还原，不污染后续服务）
+# ③ 用 Start-Process 拉起进程并把 stdout/stderr 重定向到 .runtime/logs/
+# ④ 轮询健康端点直到就绪 / 进程退出 / 超时。
+#
+# Stop-ServiceProcess 是统一停止入口：优先读 pid 文件杀进程树，失败则按端口兜底找占用者。
+# 两路都杀不掉时只告警不误杀（端口可能被别的程序占用）。
+#
 function Start-ServiceProcess {
     param(
-        [Parameter(Mandatory = $true)][string]$Name,
-        [Parameter(Mandatory = $true)][int]$Port,
-        [Parameter(Mandatory = $true)][string]$WorkDir,
+        [Parameter(Mandatory = $true)][string]$Name,           # 服务名（用于日志、pid 文件名、输出）
+        [Parameter(Mandatory = $true)][int]$Port,             # 服务监听端口（用于预检和就绪等待）
+        [Parameter(Mandatory = $true)][string]$WorkDir,       # 进程工作目录
         # 两种启动方式二选一：
         #   -Exe + -ArgString  直接 CreateProcess（java / python 用，路径含空格也安全）
-        #   -CommandLine       经 cmd /c（npm 这类 .cmd 包装器用）
+        #   -CommandLine       经 cmd /c（npm 这类 .cmd 包装器用，必须走 shell 才能解析）
         [string]$Exe,
         [string]$ArgString,
         [string]$CommandLine,
-        [string]$HealthUrl,
-        [string]$Expect,
-        [hashtable]$ExtraEnv = @{},
-        [int]$TimeoutSeconds = 240
+        [string]$HealthUrl,                                   # 健康检查 URL（如 http://127.0.0.1:8080/actuator/health）
+        [string]$Expect,                                      # 健康响应体内需包含的字符串（如 'UP'），为空则只看 HTTP 状态码
+        [hashtable]$ExtraEnv = @{},                           # 仅本进程需要的环境变量（如 KNOWLEDGE_API_KEY），启动后还原
+        [int]$TimeoutSeconds = 240                            # 等待就绪的超时秒数
     )
 
-    Initialize-Runtime
-    Clear-ProxyVars   # 兜底：调用方忘了清也会被这里纠正
+    Initialize-Runtime       # 确保 .runtime/pids 与 .runtime/logs 目录存在
+    Clear-ProxyVars          # 兜底：调用方忘了清也会被这里纠正（防止系统代理劫持 localhost 健康检查）
 
+    # ── 端口预检：避免重复拉起 ──────────────────────────────────────
     if (Test-Port $Port) {
+        # 端口已被占用：如果健康检查也通过，说明服务已经在跑，直接跳过（幂等）
         if (Test-Health $HealthUrl $Expect) { Write-Ok "$Name 已在 $Port 运行，跳过"; return $true }
+        # 端口被占但健康检查不过：多半是上一次的残留进程半死不活，让用户先停掉
         Write-Warn "$Name 端口 $Port 被占用但健康检查不过，可能残留进程；先运行 4-停止平台.bat"
         return $false
     }
     if (-not (Test-Path -LiteralPath $WorkDir)) { Write-Fail "$Name 工作目录不存在：$WorkDir"; return $false }
 
+    # ── 准备日志文件（按服务名 + 时间戳命名，便于排查）──────────────
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $log = Join-Path $script:LogDir ("$Name-$stamp.log")
-    $errLog = Join-Path $script:LogDir ("$Name-$stamp.err.log")
+    $log = Join-Path $script:LogDir ("$Name-$stamp.log")        # stdout
+    $errLog = Join-Path $script:LogDir ("$Name-$stamp.err.log") # stderr
 
+    # ── 注入环境变量（仅在子进程创建那一刻生效）────────────────────
+    # 为什么用"先保存→设置→finally 还原"而不是拼在命令行里？
+    # 因为口令里可能含 & " % 等字符，拼在 cmd /c 里会被 shell 解析错乱。
+    # 父子进程环境继承发生在 CreateProcess 瞬间，起完立刻还原，不影响后续启动的其它服务。
     $saved = @{}
     foreach ($k in $ExtraEnv.Keys) {
         $saved[$k] = [Environment]::GetEnvironmentVariable($k, 'Process')
@@ -284,22 +302,29 @@ function Start-ServiceProcess {
     Write-Step "启动 $Name（端口 $Port）"
     try {
         if ($Exe) {
+            # 直接启动可执行文件（java / python / ollama 等）
             $proc = Start-Process -FilePath $Exe -ArgumentList $ArgString -WorkingDirectory $WorkDir `
                 -WindowStyle Hidden -PassThru -RedirectStandardOutput $log -RedirectStandardError $errLog
         } else {
+            # 走 cmd /c 启动（npm 是 .cmd 包装器，必须经 shell 解析）
             $proc = Start-Process -FilePath $env:ComSpec -WorkingDirectory $WorkDir `
                 -ArgumentList @('/c', $CommandLine) -WindowStyle Hidden -PassThru `
                 -RedirectStandardOutput $log -RedirectStandardError $errLog
         }
     } finally {
+        # 无论成功失败都还原环境变量，避免污染后续服务
         foreach ($k in $saved.Keys) { [Environment]::SetEnvironmentVariable($k, $saved[$k], 'Process') }
     }
+    # 记录 PID 到 .runtime/pids/<Name>.pid，供 Stop-ServiceProcess 读取
     [System.IO.File]::WriteAllText((Join-Path $script:PidDir "$Name.pid"), [string]$proc.Id)
 
+    # ── 等待就绪：轮询健康端点 ─────────────────────────────────────
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
         Start-Sleep -Milliseconds 1200
+        # 健康检查通过 → 服务就绪
         if (Test-Health $HealthUrl $Expect) { Write-Ok "$Name 就绪（PID $($proc.Id)）"; return $true }
+        # 进程已经退出 → 启动失败，打印日志末尾帮助排查
         if ($proc.HasExited) {
             Write-Fail "$Name 启动失败（进程已退出），日志末尾："
             Get-Content -LiteralPath $log -Tail 15 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
@@ -307,24 +332,33 @@ function Start-ServiceProcess {
             return $false
         }
     }
+    # 超时：进程还活着但健康检查一直不过（可能在加载索引 / 编译等）
     Write-Warn "$Name 在 $TimeoutSeconds 秒内未通过健康检查（日志：$log）"
     return $false
 }
 
+# Stop-ServiceProcess：停止单个服务，采用"PID 文件优先 + 端口兜底"双保险。
 function Stop-ServiceProcess {
     param([string]$Name, [int]$Port)
     $pidFile = Join-Path $script:PidDir "$Name.pid"
     $killed = $false
+    # ── 第一优先：读 pid 文件杀进程树 ─────────────────────────────
     if (Test-Path -LiteralPath $pidFile) {
         $procId = (Get-Content -LiteralPath $pidFile | Select-Object -First 1)
         if ($procId) {
+            # taskkill /T = 杀整个进程树（cmd → mvn → java 一并回收）
+            # /F = 强制结束。临时降级 ErrorActionPreference 是因为 taskkill
+            # 对"进程已不存在"会往 stderr 写错误，在 Stop 模式下会中断整个停止流程。
             $prev = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
             try { & taskkill.exe /PID $procId /T /F 2>&1 | Out-Null } catch { }
             $ErrorActionPreference = $prev
             if ($LASTEXITCODE -eq 0) { $killed = $true }
         }
+        # 无论是否杀掉，都删掉 pid 文件（避免下次读到失效 PID）
         Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
     }
+    # ── 第二优先：按端口找占用者兜底 ─────────────────────────────
+    # pid 文件丢失 / 被手动改过 / 杀进程树失败时，用端口反查监听进程。
     if (-not $killed -and $Port -gt 0 -and (Test-Port $Port)) {
         $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($conn) {
@@ -334,6 +368,7 @@ function Stop-ServiceProcess {
             $killed = ($LASTEXITCODE -eq 0)
         }
     }
+    # ── 结果汇报 ─────────────────────────────────────────────────
     if ($killed) { Write-Ok "$Name 已停止" }
     elseif ($Port -gt 0 -and (Test-Port $Port)) { Write-Warn "$Name 仍在 $Port 监听" }
     else { Write-Ok "$Name 未在运行" }

@@ -1,9 +1,34 @@
+<#
+.SYNOPSIS
+    安全重启知识服务（:8002），只杀属于 knowledge.server 的进程树。
+
+.DESCRIPTION
+    先定位 8002 端口的监听进程，向上追溯最多 4 层父进程，找到顶层的
+    knowledge.server 启动进程后整树杀掉（避免只杀 worker 被 reloader 拉起）。
+    如果端口被非 knowledge 进程占用，拒绝停止并报错，不误杀其它程序。
+    然后启动新的 knowledge.server，等待 /api/ready 返回 READY。
+
+.PARAMETER HostAddress
+    监听地址，默认 127.0.0.1。
+.PARAMETER Port
+    监听端口，默认 8002。
+.PARAMETER TimeoutSeconds
+    等待就绪超时秒数，默认 40。
+.PARAMETER Reload
+    开发态热重载：knowledge/ 下 .py 改动后自动换 worker。
+    换版本或换配置时用默认（不带 reload）的稳定启动。
+
+.EXAMPLE
+    .\restart-knowledge.ps1
+
+.EXAMPLE
+    # 开发时改代码自动生效
+    .\restart-knowledge.ps1 -Reload
+#>
 param(
     [string]$HostAddress = '127.0.0.1',
     [int]$Port = 8002,
     [int]$TimeoutSeconds = 40,
-    # 开发态热重载：父进程常驻，knowledge/ 下 .py 改动后自动换 worker。
-    # 需要换版本或换配置时用默认（不带 reload）的稳定启动。
     [switch]$Reload
 )
 

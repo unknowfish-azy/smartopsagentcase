@@ -108,17 +108,51 @@ SmartOpsAgent/
 
 ## 6. 安装与运行
 
+> **新手强烈推荐**：使用 `scripts/handoff-kit/` 下的四个一键脚本，双击即可完成环境检查、安装、启动、停止，无需手动敲命令或配置密钥。详见下方「一键脚本（新手首选）」。
+
 ### 前置依赖
 - Node.js ≥ 18（构建/运行）；执行 `npm test` 需 Node ≥ 22.18（测试直接加载共享层 `.ts`）
-- Python ≥ 3.11
+- Python ≥ 3.11（推荐 3.12，3.13+ 部分依赖可能无预编译包）
 - JDK 17（后端）
 - MySQL 8、Redis 7
 - Ollama（可选，本地模型；不装则使用 `mock` 提供方）
 
-### 步骤
+### 一键脚本（新手首选，Windows）
+
+进入 `scripts/handoff-kit/` 目录，按顺序双击四个 `.bat` 文件即可：
+
+| 步骤 | 脚本 | 作用 |
+|---|---|---|
+| 1 | `1-检查环境.bat` | 体检 Node/Python/JDK/MySQL/Redis 是否齐全，缺什么直接给出 `winget` 安装命令 |
+| 2 | `2-安装环境.bat` | **只需跑一次**：装 Python 依赖、生成 `.env`（自动随机生成所有安全密钥）、建 `smartops` 库、装前端依赖；结束时打印管理员账号密码 |
+| 3 | `3-启动平台.bat` | 依次拉起 Redis → 后端(8080) → 知识服务(8002) → AI 服务(8001) → 用户前端(5173) → 管理前端(5174)，每个服务过健康检查才算成功 |
+| 4 | `4-停止平台.bat` | 按进程号回收全部应用服务，再按端口兜底核对 |
+
+常用参数（在 `.bat` 后加，或在该目录开 PowerShell 调用 `.ps1`）：
+
+```powershell
+.\2-安装环境.bat -Lite                    # 不装 torch/sentence-transformers，知识库降级为 hash 向量（省 2-3GB 下载）
+.\2-安装环境.bat -MysqlRootPassword 口令   # root 口令不是默认值时指定
+.\2-安装环境.bat -ReinstallNpm            # 强制重装前端依赖
+.\3-启动平台.bat -Open                    # 启动完成后自动打开浏览器
+.\3-启动平台.bat -SkipAdmin               # 不起管理端（省内存）
+.\4-停止平台.bat -All                     # 连 Redis 一起停
+```
+
+- 用户层入口：`http://127.0.0.1:5173/login`
+- 管理员层入口：`http://127.0.0.1:5174/login`
+- 首次管理员由 `2-安装环境.bat` 自动生成并打印账号密码（可在 `.env` 的 `SMARTOPS_BOOTSTRAP_USERNAME` / `SMARTOPS_BOOTSTRAP_PASSWORD` 修改）。
+
+### 手动启动（高级 / Linux / macOS）
+
+如果不用一键脚本，也可按以下步骤手动启动：
+
 ```bash
-# 1) 环境变量：复制模板并填入（密钥仅在 .env 中，绝不入库）
+# 1) 环境变量：复制模板并按需填入（密钥仅在 .env 中，绝不入库）
 cp .env.example .env
+#    注意：SMARTOPS_CHAT_RUN_TOKEN_SECRET、SMARTOPS_INTERNAL_TOKEN、
+#    KNOWLEDGE_API_KEY、SMARTOPS_API_KEY_ENCRYPTION_KEY 等安全字段必须设置，
+#    否则后端 / 知识服务会拒绝启动（fail-closed）。一键脚本会自动生成这些值。
 
 # 2) 启动 AI 服务（默认 mock 提供方，无需任何密钥即可跑通）
 cd ai-service && pip install -r requirements.txt && uvicorn app.main:app --port 8001
@@ -137,13 +171,10 @@ cd frontend && npm install && npm run dev
 cd frontend && npm test && npm run typecheck && npm run build
 ```
 
-- 用户层入口：`http://127.0.0.1:5173/login`
-- 管理员层入口：`http://127.0.0.1:5174/login?portal=admin`
-- 首次管理员由 `SMARTOPS_BOOTSTRAP_USERNAME` / `SMARTOPS_BOOTSTRAP_PASSWORD` 引导创建（仅账户表为空时生效）。
-
 ### 安全说明
 - 所有密钥经环境变量注入，**绝不出现在代码或公开仓库**。
 - `.env`、`.runtime/`、密钥文件均已被 `.gitignore` 屏蔽。
+- 知识服务、模型出站连接等采用 fail-closed 策略：未配置必需密钥时服务拒绝启动，绝不静默降级。
 - 管理入口有会话/CSRF/频率限制；生产部署需另行配置 TLS 与共享限流。
 
 ---

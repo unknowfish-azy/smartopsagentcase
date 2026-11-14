@@ -6,6 +6,11 @@ REM ============================================================
 REM  SmartOpsAgent Windows 一键启动脚本
 REM  位置：scripts\windows\start-dev.bat
 REM  功能：依次启动 Docker、Backend、AI Service、Frontend
+REM
+REM  新手提示：第一次跑项目请先用 scripts\handoff-kit\ 下的
+REM    1-检查环境.bat → 2-安装环境.bat → 3-启动平台.bat
+REM  它们会自动生成 .env 安全密钥、建库、装依赖。
+REM  本脚本适合已装好环境、想快速拉起服务的场景。
 REM ============================================================
 
 REM 脚本所在目录为 scripts\windows，向上两级即项目根目录

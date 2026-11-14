@@ -150,18 +150,21 @@ function Get-Python {
     throw '未找到 python（ai-service / knowledge 需要）'
 }
 
+# Start-Service4：本脚本的统一服务启动函数（与 handoff-kit 的 Start-ServiceProcess 思路一致）。
+# 流程：端口预检 → 注入 ExtraEnv → cmd /c 启动 → 记录 PID → 轮询健康端点。
 function Start-Service4 {
     param(
-        [string]$Name,
-        [int]$Port,
-        [string]$WorkDir,
-        [string]$Command,
-        [string]$HealthUrl,
-        [string]$Expect,
-        [string]$PidFile,
-        [hashtable]$ExtraEnv = @{}
+        [string]$Name,           # 服务名
+        [int]$Port,              # 监听端口
+        [string]$WorkDir,        # 工作目录
+        [string]$Command,        # 经 cmd /c 执行的命令字符串
+        [string]$HealthUrl,      # 健康检查 URL
+        [string]$Expect,         # 健康响应体需包含的字符串
+        [string]$PidFile,        # PID 写入路径（.runtime/pids/<name>.pid）
+        [hashtable]$ExtraEnv = @{}  # 仅本进程需要的环境变量
     )
 
+    # ── 端口预检：已在跑且健康则跳过；被占但不健康则不强行启动 ────────
     if (Test-Port $Port) {
         if (Test-Health $HealthUrl $Expect) {
             Write-Ok "$Name 已在 $Port 运行（跳过）"
@@ -173,6 +176,7 @@ function Start-Service4 {
 
     if (-not (Test-Path -LiteralPath $WorkDir -PathType Container)) { throw "$Name 工作目录不存在: $WorkDir" }
 
+    # 日志文件：stdout 写 .log，stderr 写 .err.log（用正则替换后缀）
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $log = Join-Path $LogDir ("{0}-{1}.log" -f $Name, $stamp)
 
@@ -185,15 +189,19 @@ function Start-Service4 {
         [Environment]::SetEnvironmentVariable($k, [string]$ExtraEnv[$k], 'Process')
     }
     try {
+        # 统一走 cmd /c（兼容 java -jar / python -m uvicorn / npm run dev 等各种启动方式）
         $proc = Start-Process -FilePath 'cmd.exe' -WorkingDirectory $WorkDir `
             -ArgumentList @('/c', $Command) -WindowStyle Hidden -PassThru `
             -RedirectStandardOutput $log -RedirectStandardError ($log -replace '\.log$', '.err.log')
     }
     finally {
+        # 无论成功失败都还原环境变量
         foreach ($k in $saved.Keys) { [Environment]::SetEnvironmentVariable($k, $saved[$k], 'Process') }
     }
+    # 记录 PID，供 Stop-Service4 读取
     Set-Content -LiteralPath $PidFile -Value $proc.Id -Encoding ASCII
 
+    # ── 轮询健康端点直到就绪 / 进程退出 / 超时 ─────────────────────
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
         Start-Sleep -Milliseconds 1200
@@ -201,6 +209,7 @@ function Start-Service4 {
             Write-Ok "$Name 就绪（PID $($proc.Id)，日志 $log）"
             return
         }
+        # 进程提前退出 → 启动失败，打印日志末尾 15 行帮助排查
         if ($proc.HasExited) {
             Write-Warn2 "$Name 进程已退出，查看日志: $log"
             Get-Content -LiteralPath $log -Tail 15 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "    $_" }
@@ -210,25 +219,29 @@ function Start-Service4 {
     Write-Warn2 "$Name 在 $TimeoutSeconds 秒内未通过健康检查（日志 $log）"
 }
 
+# Stop-Service4：停止单个服务，PID 文件优先 + 端口兜底双保险。
 function Stop-Service4 {
     param([string]$Name, [int]$Port, [string]$PidFile)
 
     $killed = $false
+    # ── 第一优先：读 pid 文件杀进程树 ─────────────────────────────
     if (Test-Path -LiteralPath $PidFile) {
         $procId = (Get-Content -LiteralPath $PidFile -ErrorAction SilentlyContinue | Select-Object -First 1)
         if ($procId) {
-            # taskkill 对"进程已不存在"会往 stderr 写错误；在 $ErrorActionPreference='Stop'
-            # 下这会被提升成 NativeCommandError 直接中断整个停止流程（重复执行 -Stop 必踩）。
-            # 这里临时降级 + 包 try，退出码仍以 $LASTEXITCODE 为准。
+            # taskkill /T = 杀整个进程树（cmd → mvn → java 一并回收）；/F = 强制。
+            # 临时降级 ErrorActionPreference：taskkill 对"进程已不存在"会往 stderr 写错误，
+            # 在 $ErrorActionPreference='Stop' 下会被提升成 NativeCommandError 中断停止流程。
             $prev = $ErrorActionPreference
             $ErrorActionPreference = 'Continue'
             try { & taskkill.exe /PID $procId /T /F *>&1 | Out-Null } catch { }
             $ErrorActionPreference = $prev
             if ($LASTEXITCODE -eq 0) { $killed = $true }
         }
+        # 删掉 pid 文件，避免下次读到失效 PID
         Remove-Item -LiteralPath $PidFile -Force -ErrorAction SilentlyContinue
     }
-    # 兜底：按端口找占用者
+    # ── 第二优先：按端口找占用者兜底 ─────────────────────────────
+    # pid 文件丢失 / 失效时，用端口反查监听进程。
     if (-not $killed -and (Test-Port $Port)) {
         $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($conn) {

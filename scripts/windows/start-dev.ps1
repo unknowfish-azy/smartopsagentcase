@@ -1,6 +1,11 @@
 # ============================================================
 # SmartOpsAgent Development Startup
 # ============================================================
+# 新手提示：如果你是第一次跑这个项目，请先用 scripts/handoff-kit/ 下的
+#   1-检查环境.bat → 2-安装环境.bat → 3-启动平台.bat
+# 一键脚本会自动生成 .env 安全密钥、建库、装依赖，比手动跑本脚本省心。
+# 本脚本适合已装好环境、想快速拉起各服务（各服务独立 cmd 窗口看日志）的场景。
+# ============================================================
 
 $ErrorActionPreference = "Stop"
 
@@ -8,6 +13,19 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 
 $ProjectRoot = Split-Path -Parent $ProjectRoot
+
+# 新手保护：.env 不存在时提醒，避免启动后因缺密钥报错
+$envFile = Join-Path $ProjectRoot '.env'
+if (-not (Test-Path -LiteralPath $envFile)) {
+    Write-Host ""
+    Write-Host "[!!] 未找到 .env 文件。" -ForegroundColor Yellow
+    Write-Host "     首次运行请先执行 scripts\handoff-kit\2-安装环境.bat" -ForegroundColor Yellow
+    Write-Host "     （它会自动生成 .env 并填入随机密钥），或手动 copy .env.example .env 后填写必需安全字段。" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "     仍要继续？服务可能因缺少 SMARTOPS_CHAT_RUN_TOKEN_SECRET / KNOWLEDGE_API_KEY 等启动失败。" -ForegroundColor Yellow
+    $reply = Read-Host "     输入 Y 继续，其它键退出"
+    if ($reply -notmatch '^[Yy]$') { exit 1 }
+}
 
 
 $BackendDir = Join-Path $ProjectRoot "backend"

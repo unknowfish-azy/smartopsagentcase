@@ -1,3 +1,25 @@
+<#
+.SYNOPSIS
+    启动本地 Mini 推理运行时（Ollama，仅回环地址 127.0.0.1:11434）。
+
+.DESCRIPTION
+    使用项目内置的 Ollama 运行时（.runtime/mini/runtime/ollama.exe），
+    绑定 OLLAMA_HOST=127.0.0.1:11434、OLLAMA_NO_CLOUD=1 等安全参数，
+    确保模型只在本机、不联网。启动前检查 11434 是否被其它程序占用，
+    被非 Ollama 占用时拒绝启动（不误杀）。已在运行且健康时直接返回。
+
+    前置条件：.runtime/mini/runtime/ollama.exe 存在（由安装脚本下载）。
+    模型 qwen3:1.7b 未安装时会给出警告但不阻断启动。
+
+.PARAMETER Restart
+    即使已在运行也先停掉再重启。
+
+.EXAMPLE
+    .\start-mini.ps1
+
+.EXAMPLE
+    .\start-mini.ps1 -Restart
+#>
 param([switch]$Restart)
 
 $ErrorActionPreference = 'Stop'

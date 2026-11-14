@@ -1,3 +1,24 @@
+<#
+.SYNOPSIS
+    安全重启后端服务（Spring Boot jar），加载 .env 与私有 bootstrap.env。
+
+.DESCRIPTION
+    从 backend/target 复制最新 jar 到 .runtime/backend/ 带时间戳目录，
+    合并根 .env 与 .runtime/secrets/bootstrap.env 注入进程环境，
+    停掉 8080 上属于本项目的 java 进程（非本项目进程拒绝停止），
+    再用封顶 JVM 参数启动新实例。日志写入 .runtime/logs/。
+
+    前置条件：
+      - backend/target/smartops-backend-0.0.1-SNAPSHOT.jar 已构建
+      - .runtime/secrets/bootstrap.env 存在（含生产级安全凭据）
+    不满足时脚本直接抛出异常，不会半启动。
+
+.PARAMETER Java
+    java.exe 路径，默认 scoop 的 openjdk17。
+
+.EXAMPLE
+    .\restart-local-backend.ps1
+#>
 param([string]$Java = "$env:USERPROFILE\scoop\apps\openjdk17\current\bin\java.exe")
 
 $ErrorActionPreference = 'Stop'

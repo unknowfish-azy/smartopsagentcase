@@ -11,6 +11,9 @@ Write-Head 'SmartOpsAgent 停止'
 Write-Host "包目录：$script:Root"
 Write-Blank
 
+# 停止顺序：前端 → AI 服务 → 知识服务 → 后端（与启动相反）。
+# 先停依赖方（前端）再停被依赖方（后端），避免请求打到已关闭的后端报错。
+# MySQL 是系统服务，不在这里停止；Redis 默认也不停止（可能是共享实例），加 -All 才停。
 $targets = @(
     @{ Name = 'frontend';   Port = 5173 },
     @{ Name = 'admin';      Port = 5174 },
@@ -20,19 +23,22 @@ $targets = @(
 )
 foreach ($t in $targets) { Stop-ServiceProcess -Name $t.Name -Port $t.Port }
 
+# Redis：默认保留（可能是系统服务或被其它项目共用），-All 时才停
 if ($All) {
     Stop-ServiceProcess -Name 'redis' -Port 6379
 } elseif (Test-Port 6379) {
     Write-Blank
     Write-Host '[--] Redis 仍在运行（系统服务/共享实例，未停止）' -ForegroundColor DarkGray
 }
+# MySQL：始终不停止（系统服务，停掉会影响其它应用）
 if (Test-Port 3306) {
     Write-Host '[--] MySQL 仍在运行（系统服务，未停止）' -ForegroundColor DarkGray
 }
 
-# 清掉残留 pid 文件
+# 清掉残留 pid 文件（避免下次启动读到失效 PID）
 Get-ChildItem -Path $script:PidDir -Filter '*.pid' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 
+# 最终核对：应用端口应全部释放，仍在监听说明可能被别的程序占用
 Write-Blank
 $left = @()
 foreach ($p in 5173, 5174, 8001, 8002, 8080) { if (Test-Port $p) { $left += $p } }

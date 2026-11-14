@@ -1,6 +1,22 @@
-﻿# 本地运行环境体检：端口占用、进程内存、依赖服务、Docker 容器、磁盘与可用内存。
-# 用法：.\status-local.ps1          只读查看
-#       .\status-local.ps1 -Clean   顺带清理 .runtime 里的旧构建快照与已退出的容器
+﻿<#
+.SYNOPSIS
+    本地运行环境体检：端口、进程内存、Docker 容器、磁盘与可用内存。
+
+.DESCRIPTION
+    显示各服务端口监听情况与占用进程、knowledge 服务 HTTP 就绪状态、
+    相关进程（java/node/mysqld/redis/ollama）内存占用、Docker 容器状态、
+    系统可用内存与磁盘空间。只读，不修改任何状态。
+    加 -Clean 会顺带清理 .runtime 里的旧构建快照与已退出的容器。
+
+.PARAMETER Clean
+    顺带清理 .runtime\backend 旧 jar 快照、mini 安装包缓存、已退出容器。
+
+.EXAMPLE
+    .\status-local.ps1
+
+.EXAMPLE
+    .\status-local.ps1 -Clean
+#>
 param([switch]$Clean)
 
 $ErrorActionPreference = 'Continue'

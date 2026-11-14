@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    启动本地可观测性组件（windows-exporter / Prometheus / Loki / Promtail）。
+
+.DESCRIPTION
+    从 data/local/observability/bin/ 启动四个可观测性组件，等待各自就绪端点
+    返回 200。需要先按 docs/OBSERVABILITY_SETUP.md 下载对应二进制到 bin/。
+    启动完成后需在后端进程环境设置 SMARTOPS_PROMETHEUS_URL 与
+    SMARTOPS_LOKI_URL 并重启后端。
+
+    本脚本为高级运维脚本，新手一般不需要运行。
+
+.EXAMPLE
+    .\start-local.ps1
+#>
 $ErrorActionPreference = 'Stop'
 
 # Some Windows shells expose both Path and PATH; Start-Process rejects that environment.
