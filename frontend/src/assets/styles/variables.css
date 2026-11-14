@@ -174,13 +174,13 @@
   --ds-elevation-3: 0 12px 32px rgba(31, 35, 40, .14);
   --ds-semantic-success: #176b30;
   --ds-semantic-warning: #8a5a00;
-  --ds-semantic-danger: #cf222e;
-  --ds-semantic-info: #0969da;
+  --ds-semantic-danger: #bd1f29;
+  --ds-semantic-info: #085fc4;
   --ds-semantic-neutral: #57606a;
   --ds-pill-success-bg: rgba(23, 107, 48, .10);
   --ds-pill-warning-bg: rgba(138, 90, 0, .14);
-  --ds-pill-danger-bg: rgba(207, 34, 46, .10);
-  --ds-pill-info-bg: rgba(9, 105, 218, .10);
+  --ds-pill-danger-bg: rgba(189, 31, 41, .10);
+  --ds-pill-info-bg: rgba(8, 95, 196, .10);
   --smart-bg: #f6f8fa; --smart-surface-ghost: rgba(255,255,255,.72); --smart-signal-running: #0e5f92; --smart-signal-idle: #57606a; --smart-focus-ring: #0e5f92; --smart-shadow-command: 0 20px 50px rgba(31,35,40,.15);
   --smart-surface: #ffffff;
   --smart-surface-raised: #ffffff;
@@ -211,7 +211,7 @@
   --ds-chart-2: #2b8fb8;
   --ds-chart-3: #176b30;
   --ds-chart-4: #8a5a00;
-  --ds-chart-5: #cf222e;
+  --ds-chart-5: #bd1f29;
   --ds-chart-neutral: #57606a;
   --ds-chart-grid: rgba(31, 35, 40, .08);
   --ds-chart-axis: rgba(31, 35, 40, .12);
@@ -220,10 +220,10 @@
   --ds-chart-tooltip-border: rgba(31, 35, 40, .18);
   --ds-chart-area-opacity: .10;
   --ds-tag-border: rgba(31, 35, 40, .14);
-  --ds-pill-info-fg: #0969da;
+  --ds-pill-info-fg: #085fc4;
   --ds-pill-success-fg: #176b30;
   --ds-pill-warning-fg: #8a5a00;
-  --ds-pill-danger-fg: #cf222e;
+  --ds-pill-danger-fg: #bd1f29;
   --ds-pill-neutral-bg: rgba(87, 96, 106, .10);
   --ds-focus-ring-color: #0e5f92;
 

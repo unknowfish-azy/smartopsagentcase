@@ -64,8 +64,10 @@ const selectedDomain = computed(() =>
 function closeDrawer () { selectedPlane.value = null }
 
 /* ---------------------------- B2：搜索 ---------------------------- */
-const searchOpen = ref(false)
+const isSearchOpen = ref(false)
 const searchQuery = ref('')
+function openSearch () { isSearchOpen.value = true }
+function closeSearch () { isSearchOpen.value = false; searchQuery.value = '' }
 const searchResults = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) return []
@@ -85,8 +87,7 @@ function focusEntry (entry) {
     cam.focusOn(plane)
     selectedPlane.value = plane
   }
-  searchOpen.value = false
-  searchQuery.value = ''
+  closeSearch()
 }
 
 /* ---------------------------- B3：域名筛选 ---------------------------- */
@@ -130,10 +131,11 @@ async function enrichEvidenceRefs() {
 }
 
 // LOD 判断（DESIGN §6.1：按相机 dist）
+// 排练墙优化：shelf(760) → near 全卡片；overlook(1500) → mid 含摘要
 function computeLod (dist) {
   if (cam.focusPlaneId.value) return 'focus'
-  if (dist <= 620) return 'near'
-  if (dist <= 1200) return 'mid'
+  if (dist <= 900) return 'near'
+  if (dist <= 1500) return 'mid'
   return 'far'
 }
 const currentLod = computed(() => computeLod(cam.dist.value))
@@ -159,18 +161,21 @@ const mountedPlanes = computed(() => {
 
 // —— 线程屏幕空间坐标换算（简化版：先用世界坐标占位，ThreadLayer 后续接）——
 // 线程从 field.threads 里取，ScreenThread 是 ThreadLayer 需要的格式
-const screenThreads = computed(() =>
-  field.value.threads.map(t => ({
+const screenThreads = computed(() => {
+  const all = [...field.value.threads, ...(field.value.knowledgeThreads || [])]
+  return all.map(t => ({
     ...t,
     from: { x: t.from.x, y: t.from.y },
     to:   { x: t.to.x,   y: t.to.y },
   }))
-)
+})
 
 // —— 轨道拖拽 & 滚轮 ——
 function onWheel (e) {
   e.preventDefault()
-  cam.zoom(Math.exp(-e.deltaY * 0.0015))
+  // 滚轮向上（deltaY<0）→ factor<1 → dist 减小 → 拉近；向下反之
+  // 正方形卡片更小，缩放系数 0.002 让响应更快
+  cam.zoom(Math.exp(e.deltaY * 0.002))
 }
 function onPointerDown (e) {
   if (e.target.closest('.field-hud')) return
@@ -203,15 +208,16 @@ let dragStartX = 0, dragStartY = 0, dragStartYaw = 0, dragStartPitch = 0
 
 // —— 键盘（DESIGN §5.3）——
 function onKeyDown (e) {
-  // Ctrl+K 打开搜索
+  // Ctrl+K 打开搜索（捕获阶段 + stopImmediatePropagation 阻止全局 CommandPalette）
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault()
-    searchOpen.value = true
+    e.stopImmediatePropagation()
+    openSearch()
     return
   }
   // 搜索打开时 Esc 关闭搜索
-  if (e.key === 'Escape' && searchOpen.value) {
-    searchOpen.value = false
+  if (e.key === 'Escape' && isSearchOpen.value) {
+    closeSearch()
     return
   }
   // 1/2/3 机位切换
@@ -261,12 +267,14 @@ const fieldStats = computed(() => ({
 }))
 
 onMounted(() => {
-  cam.setPreset('overlook')
-  window.addEventListener('keydown', onKeyDown)
+  // 初始机位：平视（shelf）—— 卡片像排练墙一样正面朝向用户，方便扫描搜索
+  cam.setPreset('shelf')
+  // 捕获阶段监听，确保场域 Ctrl+K 先于全局 CommandPalette 触发
+  window.addEventListener('keydown', onKeyDown, true)
   enrichEvidenceRefs()
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('keydown', onKeyDown, true)
 })
 
 // 导出 camera + planes 给外部 slot 扩展
@@ -295,11 +303,11 @@ defineExpose({ cam, field })
         <span class="sf-stat sf-stat--stale" v-if="fieldStats.staleAtoms">过期 {{ fieldStats.staleAtoms }}</span>
       </div>
       <div class="sf-hud-group sf-hud-group--right">
-        <kbd class="sf-kbd sf-kbd--on">1</kbd><span>总览</span>
-        <kbd class="sf-kbd">2</kbd><span>平视</span>
+        <kbd class="sf-kbd" :class="{ 'sf-kbd--on': cam.preset.value === 'overlook' }">1</kbd><span>总览</span>
+        <kbd class="sf-kbd" :class="{ 'sf-kbd--on': cam.preset.value === 'shelf' }">2</kbd><span>平视</span>
         <kbd class="sf-kbd">3</kbd><span>沿链</span>
         <kbd class="sf-kbd">Esc</kbd><span>回退</span>
-        <kbd class="sf-kbd">Ctrl K</kbd><span>搜索</span>
+        <button type="button" class="sf-kbd sf-kbd--btn" @click.stop="openSearch" title="搜索知识条目（Ctrl+K）">Ctrl K</button><span>搜索</span>
         <span class="sf-sep">·</span>
         <span>Yaw {{ Math.round(fieldStats.yaw) }}°</span>
         <span>Pitch {{ Math.round(fieldStats.pitch) }}°</span>
@@ -336,7 +344,7 @@ defineExpose({ cam, field })
     <FieldStage
       class="sf-stage"
       :camera="cam"
-      :world-size="{ w: 7200, h: 660, d: 2000 }"
+      :world-size="{ w: 12000, h: 660, d: 3000 }"
       @wheel.passive="onWheel"
       @pointerdown="onPointerDown"
     >
@@ -344,7 +352,7 @@ defineExpose({ cam, field })
       <EvidenceBed
         :bands="field.evidenceBands"
         :world-transform="''"
-        :world-size="{ w: 7200, h: 2000 }"
+        :world-size="{ w: 12000, h: 3000 }"
       />
 
       <!-- FieldPlane × N（知识/洞察平面，translate3d 3D 定位） -->
@@ -385,12 +393,12 @@ defineExpose({ cam, field })
 
     <!-- B2：搜索浮层 -->
     <FieldSearch
-      v-if="searchOpen"
+      v-if="isSearchOpen"
       :query="searchQuery"
       :results="searchResults"
       @update:query="searchQuery = $event"
       @select="focusEntry"
-      @close="searchOpen = false"
+      @close="closeSearch"
     />
 
     <!-- B1：平面详情抽屉 -->
@@ -400,6 +408,7 @@ defineExpose({ cam, field })
       :domain="selectedDomain"
       :evidence-count="selectedEntry?.evidenceRefs?.length || 0"
       @close="closeDrawer"
+      @navigate="focusEntry"
     />
   </section>
 </template>
@@ -495,6 +504,15 @@ defineExpose({ cam, field })
   font: 10px var(--ds-font-mono);
 }
 .sf-kbd--on { border-color: var(--ds-accent, #7ad7f5); color: var(--ds-accent, #7ad7f5); }
+.sf-kbd--btn {
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.sf-kbd--btn:hover {
+  border-color: var(--ds-accent, #7ad7f5);
+  color: var(--ds-accent, #7ad7f5);
+  background: color-mix(in srgb, var(--ds-accent) 12%, transparent);
+}
 
 .sf-stage {
   position: absolute;

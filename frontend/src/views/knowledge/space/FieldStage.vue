@@ -34,11 +34,10 @@ const worldTransform = computed(() => {
   ].join(' ')
 })
 
-// stage 的 perspective 值：相机 dist 越大 → 透视影响越小 → perspective 值越大
+// stage 的 perspective 值：照片墙需要近正交投影，远近卡片大小差异 <10%
 const perspective = computed(() => {
-  // perspective ≈ dist × 1.2，clamp 到合理范围
   const d = props.camera.dist.value
-  return `${Math.round(d * 1.2)}px`
+  return `${Math.round(d * 12)}px`
 })
 
 defineSlots()

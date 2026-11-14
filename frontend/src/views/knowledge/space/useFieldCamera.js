@@ -26,11 +26,12 @@ export function useFieldCamera (options = {}) {
   const { reducedMotion = false } = options
 
   // —— 状态 ——
+  // 默认 shelf 平视视角：卡片像排练墙正面朝向用户，方便扫描搜索
   const yaw   = ref(0)    // deg
-  const pitch = ref(28)   // deg（overlook 是 28°）
-  const dist  = ref(1500) // px
-  const target = reactive({ x: 0, y: 300, z: 0 })
-  const preset = ref('overlook')
+  const pitch = ref(18)   // deg（shelf 平视）
+  const dist  = ref(760)  // px（shelf 距离，LOD near → 全卡片）
+  const target = reactive({ x: 0, y: 330, z: 0 })
+  const preset = ref('shelf')
   const focusPlaneId = ref(null)     // 当前 focus 的平面 id（用于 Esc 回退）
   const focusDomainId = ref(null)    // focus 平面所在域（回退中间站）
 
@@ -55,10 +56,11 @@ export function useFieldCamera (options = {}) {
   })
 
   // —— LOD 判断（§6.1）：按 dist ——
+  // 排练墙优化：shelf(760) → near 全卡片；overlook(1500) → mid 含摘要
   function lodOf () {
     if (focusPlaneId.value) return 'focus'
-    if (dist.value <= 620) return 'near'
-    if (dist.value <= 1200) return 'mid'
+    if (dist.value <= 900) return 'near'
+    if (dist.value <= 1500) return 'mid'
     return 'far'
   }
 

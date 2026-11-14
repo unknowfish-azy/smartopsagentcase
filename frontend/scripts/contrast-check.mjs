@@ -62,8 +62,8 @@ const PRIMARY_FG = '#ffffff'
 
 const DS_SUCCESS = '#176b30'
 const DS_WARNING = '#8a5a00'
-const DS_DANGER = '#cf222e'
-const DS_INFO = '#0969da'
+const DS_DANGER = '#bd1f29'
+const DS_INFO = '#085fc4'
 const DS_NEUTRAL = '#57606a'
 
 const SMART_SUCCESS = '#176b50'
@@ -73,8 +73,8 @@ const SMART_DANGER = '#a33f52'
 // pill 背景（与白底合成）
 const PILL_SUCCESS_BG = rgbaOnWhite(hexToRgb('#176b30'), 0.10)
 const PILL_WARNING_BG = rgbaOnWhite(hexToRgb('#8a5a00'), 0.14)
-const PILL_DANGER_BG = rgbaOnWhite(hexToRgb('#cf222e'), 0.10)
-const PILL_INFO_BG = rgbaOnWhite(hexToRgb('#0969da'), 0.10)
+const PILL_DANGER_BG = rgbaOnWhite(hexToRgb('#bd1f29'), 0.10)
+const PILL_INFO_BG = rgbaOnWhite(hexToRgb('#085fc4'), 0.10)
 
 // 边框（与白底合成）
 const BORDER = rgbaOnWhite(hexToRgb('#1f2329'), 0.22)

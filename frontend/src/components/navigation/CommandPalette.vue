@@ -38,6 +38,7 @@ const results = computed(() => {
 let origin
 watch(results, () => { selected.value = 0 })
 async function open() {
+  if (router.currentRoute.value.path.startsWith('/knowledge/space')) return
   if (dialog.value.open) return
   origin = document.activeElement
   query.value = ''; failure.value = ''; selected.value = 0
@@ -67,6 +68,8 @@ async function keys(event) {
 }
 function shortcut(event) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k' && !event.isComposing) {
+    // 知识空间场页面有自己的 Ctrl+K 条目搜索，让场域搜索优先
+    if (router.currentRoute.value.path.startsWith('/knowledge/space')) return
     // 只拦"可见"的遮罩/对话框：聊天页的 Element Plus 抽屉常驻 DOM（display:none），
     // 若只看 aria-modal 属性存在会永远打不开命令面板。
     const blocker = document.querySelector('dialog[open], [aria-modal="true"]')

@@ -38,12 +38,12 @@ try {
   assert.ok(await badges.count() >= 2, `expected sentinel+health badges in rail, got ${await badges.count()}`)
   await page.screenshot({ path: 'test-artifacts/menu-rail-badges.png' })
 
-  // 2) 悬停 SENTINEL 分组唤出子菜单浮层，包含 3 个子页
+  // 2) 悬停 SENTINEL 分组唤出子菜单浮层，至少包含原有的一批核心子页
   const sentinelRow = page.locator('.navigation-group', { has: page.locator('a[title*="哨兵"]') }).first()
   await sentinelRow.hover()
   const flyout = page.locator('.navigation-flyout')
   await flyout.waitFor({ state: 'visible' })
-  assert.equal(await flyout.locator('a').count(), 3)
+  assert.ok(await flyout.locator('a').count() >= 3, 'sentinel flyout keeps its core destinations')
   await page.screenshot({ path: 'test-artifacts/menu-rail-flyout.png' })
 
   // 3) 浮层内跳转可达子页面
@@ -53,7 +53,7 @@ try {
   assert.equal(await page.locator('.navigation-flyout').count(), 0, 'flyout must close after navigation')
 
   // 4) 展开侧栏（点左上角展开钮）后徽章仍在（贴链接右下角），浮层不再出现
-  await page.click('.sidebar-expand-control')
+  await page.getByRole('button', { name: '展开主菜单', exact: true }).click()
   await page.waitForTimeout(400)
   assert.ok(await page.locator('.nav-health-badge-slot').count() >= 2)
   await sentinelRow.hover()

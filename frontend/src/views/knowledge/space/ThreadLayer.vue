@@ -44,6 +44,7 @@ const hoverThreadId = ref(null)
 
 function strokeColor (thread) {
   if (thread.relation === 'contradicts') return 'var(--ds-semantic-danger, #f56c6c)'
+  if (thread.relation === 'related') return 'rgba(122,215,245,.3)'  // 知识关联：低透明蓝
   // 普通 derived/corroborates 用 accent
   if (thread.stale) return 'rgba(159,190,207,.28)'  // stale → 虚化
   return 'var(--ds-accent, #7ad7f5)'
@@ -51,22 +52,29 @@ function strokeColor (thread) {
 
 function strokeDash (thread) {
   if (thread.relation === 'contradicts') return '6 4'
-  return undefined  // 实线
+  if (thread.relation === 'related') return undefined  // 实线
+  return undefined
 }
 
 function strokeWidth (thread, isHover) {
+  if (thread.relation === 'related') return isHover ? 1.5 : 0.6
   return isHover ? 2 : 1
 }
 
 const sortedThreads = computed(() =>
-  [...props.threads].sort((a, b) =>
-    a.insightId !== b.insightId ? a.insightId.localeCompare(b.insightId)
-    : a.atomId.localeCompare(b.atomId)
-  )
+  [...props.threads].sort((a, b) => {
+    const ka = a.id || `${a.insightId || ''}:${a.atomId || ''}`
+    const kb = b.id || `${b.insightId || ''}:${b.atomId || ''}`
+    return ka.localeCompare(kb)
+  })
 )
 
+function threadKey (t) {
+  return t.id || `${t.insightId || ''}:${t.atomId || ''}`
+}
+
 function onMouseEnter (thread) {
-  hoverThreadId.value = `${thread.insightId}:${thread.atomId}`
+  hoverThreadId.value = threadKey(thread)
   emit('hover', thread)
 }
 function onMouseLeave () { hoverThreadId.value = null }
@@ -82,13 +90,14 @@ function onMouseLeave () { hoverThreadId.value = null }
       </linearGradient>
     </defs>
 
-    <!-- 普通 threads -->
-    <g v-for="t in sortedThreads" :key="`${t.insightId}-${t.atomId}`"
-       :data-thread="`${t.insightId}:${t.atomId}`"
+    <!-- 普通 threads + 知识间关联 threads -->
+    <g v-for="t in sortedThreads" :key="threadKey(t)"
+       :data-thread="threadKey(t)"
        class="thread"
        :class="{ 'thread--contradicts': t.relation === 'contradicts',
+                 'thread--related': t.relation === 'related',
                  'thread--stale': t.stale,
-                 'thread--hover': hoverThreadId === `${t.insightId}:${t.atomId}` }"
+                 'thread--hover': hoverThreadId === threadKey(t) }"
        @mouseenter="onMouseEnter(t)"
        @mouseleave="onMouseLeave">
 
@@ -96,7 +105,7 @@ function onMouseLeave () { hoverThreadId.value = null }
         :x1="t.from?.x ?? 0" :y1="t.from?.y ?? 0"
         :x2="t.to?.x ?? 0"   :y2="t.to?.y ?? 0"
         :stroke="strokeColor(t)"
-        :stroke-width="strokeWidth(t, hoverThreadId === `${t.insightId}:${t.atomId}`)"
+        :stroke-width="strokeWidth(t, hoverThreadId === threadKey(t))"
         :stroke-dasharray="strokeDash(t)"
         stroke-linecap="round"
         fill="none"
@@ -141,5 +150,7 @@ function onMouseLeave () { hoverThreadId.value = null }
 }
 .thread { pointer-events: stroke; }  /* 允许 hover */
 .thread--stale line { opacity: .35; }
+.thread--related line { opacity: .5; transition: opacity .2s ease, stroke-width .2s ease; }
+.thread--related:hover line { opacity: 1; }
 .thread--hover line { filter: drop-shadow(0 0 3px var(--ds-accent, #7ad7f5)); }
 </style>

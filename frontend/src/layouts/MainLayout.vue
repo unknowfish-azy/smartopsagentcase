@@ -12,12 +12,10 @@
       <button v-if="opsSpider.hidden && !isTeamSpace && !isKnowledgeSpace" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
       <SmartInquiryDrawer v-if="!isTeamSpace" />
 
-      <button class="sidebar-expand-control" type="button" aria-label="展开主菜单" title="展开主菜单" :aria-expanded="!appStore.sidebarCollapsed" @click="expandSidebar">
-        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
-      </button>
-      <button v-if="!appStore.sidebarCollapsed" class="sidebar-collapse-control" type="button" aria-label="收起主菜单" @click="collapseSidebar"><span aria-hidden="true">&lt;&lt;&lt;</span> 收起</button>
-
       <aside ref="navigationPanel" class="sidebar" :class="{ collapsed: appStore.sidebarCollapsed, 'sidebar--expanded': !appStore.sidebarCollapsed, 'sidebar--mobile-open': appStore.mobileNavigationOpen, lggc: !isToolsPage }">
+        <button class="sidebar-toggle" type="button" :aria-label="appStore.sidebarCollapsed ? '展开主菜单' : '收起主菜单'" :title="appStore.sidebarCollapsed ? '展开主菜单' : '收起主菜单'" :aria-expanded="!appStore.sidebarCollapsed" @click="appStore.toggleSidebar()">
+          <svg class="sidebar-toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" /></svg>
+        </button>
         <RouterLink class="wordmark" :to="isTeamSpace ? '/teams' : '/'"><span>SMARTOPS AGENT</span><small>{{ isTeamSpace ? '团队空间 · 成员与协作' : '个人空间 · 我的工作台' }}</small></RouterLink>
         <CommandPalette :entries="discoveryEntries" />
         <PersonalSystemNavigation
@@ -38,7 +36,7 @@
           <p class="nav-label nav-label--system"><b>SYSTEM TOOLS</b><small>系统工具</small></p>
           <RouterLink v-for="item in systemNav" :key="item.to" :to="item.to" :aria-label="`${item.cn} / ${item.label}`" :title="`${item.cn} / ${item.label}`"><component :is="item.icon" class="nav-icon" aria-hidden="true" /><span class="nav-copy"><b>{{ item.label }}</b><small>{{ item.cn }}</small></span></RouterLink>
         </nav>
-        <div class="system-status"><div><span>SESSION / 登录会话</span><strong>{{ currentSession?.username || '未登录' }}</strong></div><div><span>AGENT / 智能体</span><strong>{{ whaleState.toUpperCase() }}</strong></div><time>{{ currentTime }}</time><button class="persona-pet-toggle" type="button" :aria-pressed="personaPetStore.enabled" :title="personaPetStore.enabled ? '关闭小鱼' : '开启小鱼'" @click="personaPetStore.toggle()">{{ personaPetStore.enabled ? '小鱼·开' : '小鱼·关' }}</button></div>
+        <div class="system-status"><div><span>SESSION / 登录会话</span><strong>{{ currentSession?.username || '未登录' }}</strong></div><div><span>AGENT / 智能体</span><strong>{{ whaleState.toUpperCase() }}</strong></div><time>{{ currentTime }}</time></div>
       </aside>
 
       <div class="main-area">
@@ -58,6 +56,10 @@
               <button type="button" :disabled="leaving" @click="logout">退出登录</button>
             </div>
           </div>
+          <button v-if="!isTeamSpace" class="persona-pet-toggle persona-pet-toggle--topbar" type="button" :aria-pressed="personaPetStore.enabled" :title="personaPetStore.enabled ? '关闭小鱼' : '开启小鱼'" @click="personaPetStore.toggle()">
+            <span class="persona-pet-toggle__dot" aria-hidden="true"></span>
+            <span>{{ personaPetStore.enabled ? '小鱼·开' : '小鱼·关' }}</span>
+          </button>
           <div v-if="!isTeamSpace" class="tools-menu"><button type="button" class="tools-trigger" @click="toggleToolsMenu">TOOLS / 工具</button><div v-if="toolsOpen" class="tools-dropdown"><section v-for="group in toolGroups" :key="group.label"><strong>{{ group.label }}</strong><RouterLink v-for="tool in group.items" :key="tool.id" :to="`/tools/${tool.id}`" @click="toolsOpen = false">{{ tool.label }}</RouterLink></section></div></div>
           <div class="topbar-right">
             <div v-if="!isTeamSpace" class="ops-statusbar" aria-label="全局运行状态">
@@ -228,8 +230,6 @@ function toggleToolsMenu() {
 
 function openOpsSpiderAction(destination) { router.push(destination) }
 function closeMobileNavigation() { appStore.closeMobileNavigation() }
-function expandSidebar() { appStore.expandSidebar() }
-function collapseSidebar() { appStore.collapseSidebar() }
 function togglePersonalSystemGroup(groupId) { appStore.togglePersonalSystemGroup(groupId, route.name?.toString()) }
 async function toggleNavigation() {
   if (!isNarrowViewport.value) { appStore.toggleSidebar(); return }
@@ -247,6 +247,42 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
 </script>
 
 <style scoped>
+/* 主菜单收起/展开：克制的小图标按钮，不抢品牌行；sticky 保证长菜单滚到底仍能点。 */
+.sidebar-toggle {
+  position: sticky; top: 0; z-index: 3;
+  flex: 0 0 auto; align-self: flex-start;
+  display: grid; place-items: center;
+  width: 28px; height: 28px; margin: 0 0 6px; padding: 0;
+  border: 0; border-radius: var(--ds-radius-sm, 4px);
+  /* 与侧栏同底色：平时看不出方块，滚动时又能遮住从下方经过的导航项 */
+  background: var(--ds-surface-raised, var(--smart-surface));
+  color: var(--ds-color-muted, var(--smart-muted));
+  cursor: pointer;
+  transition: color var(--ds-duration-micro, 150ms) var(--ds-ease-out, ease),
+              background-color var(--ds-duration-micro, 150ms) var(--ds-ease-out, ease);
+}
+.sidebar-toggle__icon { width: 16px; height: 16px; }
+.sidebar-toggle:hover {
+  color: var(--smart-primary-strong);
+  background: color-mix(in srgb, var(--smart-primary-strong) 12%, var(--ds-surface-raised, var(--smart-surface)));
+}
+.sidebar-toggle:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
+.app-layout--sidebar-collapsed .sidebar-toggle { align-self: center; margin-inline: auto; }
+/* 顶部菜单栏的小鱼开关：常驻 TOOLS 左侧，一点即开关，不必滚到侧栏底部。 */
+.persona-pet-toggle--topbar {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 26px; padding: 2px 10px; white-space: nowrap;
+  border: 1px solid var(--ds-hairline); border-radius: var(--ds-radius-pill, 999px);
+  background: transparent; color: var(--ds-color-muted, var(--smart-muted));
+  font: 10px var(--font-mono); letter-spacing: .08em;
+  transition: color var(--ds-duration-micro, 150ms) var(--ds-ease-out, ease),
+              border-color var(--ds-duration-micro, 150ms) var(--ds-ease-out, ease);
+}
+.persona-pet-toggle__dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: currentColor; opacity: .5; }
+.persona-pet-toggle--topbar:hover { color: var(--smart-text); border-color: var(--smart-border-strong); }
+.persona-pet-toggle--topbar[aria-pressed='true'] { color: var(--smart-primary-strong); border-color: var(--smart-primary-strong); }
+.persona-pet-toggle--topbar[aria-pressed='true'] .persona-pet-toggle__dot { opacity: 1; }
+@media (max-width: 767px) { .sidebar-toggle { display: none; } }
 .topbar-right { flex-wrap: wrap; }
 .app-layout[data-visual-mode='reduced-motion'] :deep(*) { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 .home-galaxy { position: fixed; opacity: .7; }
@@ -353,31 +389,11 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
   .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded .system-status {
     display: grid; opacity: 1; pointer-events: auto;
   }
-  .sidebar-expand-control {
-    position: fixed; z-index: 20; top: 34px; left: 45px; display: grid; gap: 4px;
-    width: 34px; height: 34px; place-content: center; padding: 0; border: 1px solid var(--smart-border);
-    border-radius: 8px; background: var(--smart-surface); color: var(--smart-primary-strong); cursor: pointer;
-  }
-  .sidebar-expand-control span { display: block; width: 16px; height: 2px; border-radius: 2px; background: currentColor; }
-  .sidebar-collapse-control {
-    position: fixed; z-index: 20; left: calc(var(--ds-sidebar-width-collapsed, 64px) + var(--ds-space-5, 20px) + 112px); bottom: 34px; width: auto; min-width: 66px; margin: 0; padding: 6px 9px;
-    border: 1px solid var(--smart-border); border-radius: 7px; background: color-mix(in srgb, var(--smart-surface) 92%, transparent);
-    color: var(--smart-muted); font: 10px var(--font-cn); line-height: 1; text-align: center; cursor: pointer;
-  }
-  .sidebar-expand-control:hover, .sidebar-expand-control:focus-visible,
-  .sidebar-collapse-control:hover, .sidebar-collapse-control:focus-visible {
-    border-color: var(--smart-primary-strong); color: var(--smart-primary-strong); outline: none;
-    box-shadow: 0 0 0 3px var(--smart-primary-soft, rgba(122,215,245,.12));
-  }
-  .app-layout:not(.app-layout--sidebar-collapsed) .sidebar-expand-control {
-    left: 225px;
-  }
 }
 @media (max-width: 767px) { .app-jellyfish { width: 230px; height: 280px; top: 54px; right: -44px; opacity: .24; }.app-jellyfish--agent { top: 62px; right: -18px; opacity: .4; }.app-jellyfish--operations, .app-jellyfish--memory { top: auto; bottom: 20px; right: -54px; }.section-nav { display: none; }.theme-control__label { display: none; }.theme-control select { min-height: 26px; } }
 @media (max-width: 767px) { .spider-restore-control { right: 16px; bottom: 16px; } }
 @media (prefers-reduced-motion: reduce) { .app-jellyfish { opacity: .12; } }
 @media (max-width: 767px) {
-  .sidebar-expand-control, .sidebar-collapse-control { display: none; }
   .topbar { justify-content: flex-start; flex-wrap: wrap; gap: 8px; padding-block: 6px; overflow: visible; }
   .menu-button { flex: 0 0 44px; min-height: 44px; white-space: nowrap; }
   .route-context { flex: 1; min-width: 0; }

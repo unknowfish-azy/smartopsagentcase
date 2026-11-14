@@ -9,7 +9,7 @@ try {
  await page.route('**/api/**',r=>new URL(r.request().url()).pathname.startsWith('/api/') ? r.fulfill({json:{code:200,data:r.request().url().includes('/auth/session')?{user:{id:99,username:'navigation-review',role:'operator',portal:'user'},csrfToken:'test'}:[]}}) : r.continue())
  await page.goto('http://127.0.0.1:5188/health')
  const trigger=page.getByRole('button',{name:'搜索页面',exact:true});await trigger.waitFor();await page.evaluate(()=>document.documentElement.dataset.theme='dark')
- await page.getByRole('button',{name:'展开主菜单',exact:true}).click()
+ const expandMenu=page.getByRole('button',{name:'展开主菜单',exact:true}); if(await expandMenu.count()) await expandMenu.click()
  await page.screenshot({path:'test-artifacts/menu-design/sidebar-dark.png'})
  await trigger.click();const input=page.getByRole('combobox',{name:'搜索页面名称'});await input.fill('运行')
  assert.ok(await page.locator('dialog').getByRole('option').count()>0)

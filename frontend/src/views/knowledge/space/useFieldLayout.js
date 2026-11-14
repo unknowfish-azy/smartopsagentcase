@@ -14,20 +14,21 @@
  */
 
 export const FIELD = {
-  domainPitch: 720,
-  domainSpread: 260,
+  domainPitch: 1200,      // 域锚点间距（10 列 + 50px 域间分隔）
+  domainSpread: 575,      // 域内 X 方向散布半径（±575 → 总宽 1150，容纳 10 列）
   evidence: { y0: 0,   y1: 140 },
   knowledge: { y0: 240, y1: 420 },
   insight:  { y0: 520, y1: 660 },
   zCurrent: 0,
   zHistoryMin: -1400,
   zFutureMax: 600,
-  planeW: 260,
-  planeH: 150,
-  planeGap: 28,
+  planeW: 112,
+  planeH: 112,
+  planeGap: 3,
   staleAfterDays: 365,
-  staleDepth: 900,      // 过期知识沿 -Z 后退的最大像素
+  staleDepth: 200,      // 过期知识沿 -Z 后退的最大像素（缩小以匹配小卡片）
   insightLift: 70,      // 洞察层交替高度
+  maxCols: 10,           // 域内最大列数（密集照片墙）
 }
 
 // 复用 useSpaceLayout.js 的 type 优先级 —— RUNBOOK/DIAGNOSIS 在前，ENGINEERING 其次
@@ -117,12 +118,13 @@ function layoutKnowledgePlanes (atomsInDomain, anchorX, yBase, zByAtomId) {
     })
   const count = sorted.length
   if (count === 0) return []
-  // cols = 域内 x 方向可排的列数：受 domainSpread 限制（±260px → 总宽 520px）
-  // 260px 平面 + 28px gap = 288px/列 → 最多 2 列（2×288 = 576 > 520）
-  const cols = Math.max(1, Math.min(2, Math.floor((FIELD.domainSpread * 2 + FIELD.planeGap) /
+  // cols = 域内 x 方向可排的列数：受 domainSpread 限制（±575px → 总宽 1150px）
+  // 112px 平面 + 3px gap = 115px/列 → 最多 10 列（10×115 = 1150）
+  const cols = Math.max(1, Math.min(FIELD.maxCols, Math.floor((FIELD.domainSpread * 2 + FIELD.planeGap) /
     (FIELD.planeW + FIELD.planeGap))))
   const rows = Math.ceil(count / cols)
-  const rowDepthStep = FIELD.planeW + FIELD.planeGap  // z 方向平面间距 ≈ 288px
+  // z 方向行间距：正方形卡片行高匹配
+  const rowDepthStep = 36
 
   const planes = []
   for (let i = 0; i < count; i++) {
@@ -150,6 +152,13 @@ function layoutKnowledgePlanes (atomsInDomain, anchorX, yBase, zByAtomId) {
       h: FIELD.planeH,
       domainId: String(atom.domain || 'undefined'),
       lodHint: 'mid',
+      // 多模态"照片式"卡片内容（排练墙扫描用）
+      title: String(atom.title || atom.id || ''),
+      type: String(atom.type || 'KNOWLEDGE'),
+      summary: String(atom.summary || atom.problem || atom.scenario || ''),
+      tags: Array.isArray(atom.tags) ? atom.tags.slice(0, 3) : [],
+      risk: String(atom.risk || atom.risk_level || '').toUpperCase(),
+      staleness: zByAtomId.get(atom.id)?.staleness || 'UNKNOWN',
     })
   }
   return planes
@@ -288,6 +297,47 @@ function buildThreads (bindingThreads, knowledgePlanes, insightPlanes) {
   return out
 }
 
+/**
+ * 知识间关联 thread：用 atom.relatedIds 构建知识↔知识连线（网状）。
+ * 每条线 = 平面 A 中心 → 平面 B 中心。
+ * 限制：每平面最多 5 条线，避免视觉过载；去重（A→B 与 B→A 只保留一条）。
+ */
+function buildKnowledgeThreads (atoms, knowledgePlanes) {
+  const kpById = new Map()
+  for (const p of knowledgePlanes) {
+    if (p.atomId) kpById.set(p.atomId, p)
+  }
+  const out = []
+  const seen = new Set()  // 去重："atomIdA|atomIdB" 小的在前
+  const MAX_PER_ATOM = 5
+  for (const a of atoms) {
+    const refs = Array.isArray(a?.relatedIds) ? a.relatedIds : []
+    if (refs.length === 0) continue
+    const fromPlane = kpById.get(a.id)
+    if (!fromPlane) continue
+    let count = 0
+    for (const rid of refs) {
+      if (count >= MAX_PER_ATOM) break
+      const toPlane = kpById.get(rid)
+      if (!toPlane || toPlane.id === fromPlane.id) continue
+      const key = a.id < rid ? `${a.id}|${rid}` : `${rid}|${a.id}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push({
+        id: `kt-${key}`,
+        relation: 'related',
+        weight: 1,
+        stale: false,
+        from: { x: fromPlane.x, y: fromPlane.y, z: fromPlane.z },
+        to:   { x: toPlane.x,   y: toPlane.y,   z: toPlane.z },
+      })
+      count++
+    }
+  }
+  out.sort((a, b) => a.id.localeCompare(b.id))
+  return out
+}
+
 function buildAxes (anchors) {
   const domains = anchors.map(a => ({ id: a.id, label: a.label, x: a.x }))
   const layers = [
@@ -357,8 +407,8 @@ export function computeField (atoms, domains, insights, options = {}) {
     // 每个 atom 的 z（版本时序偏移）单独算
     const zByAtom = new Map()
     for (const a of domainAtoms) {
-      const { z } = computeKnowledgeZ(a, nowMs, staleAfterDays)
-      zByAtom.set(a.id, z)
+      const zInfo = computeKnowledgeZ(a, nowMs, staleAfterDays)
+      zByAtom.set(a.id, zInfo)  // { z, staleness }
     }
     const domainPlanes = layoutKnowledgePlanes(domainAtoms, anchor.x, yMid, zByAtom)
     knowledgePlanes.push(...domainPlanes)
@@ -382,6 +432,9 @@ export function computeField (atoms, domains, insights, options = {}) {
   // 6) 绑定 thread → 世界坐标
   const threads = buildThreads(bindingThreads, knowledgePlanes, insightPlanes)
 
+  // 6.5) 知识间关联 thread（网状连线）
+  const knowledgeThreads = buildKnowledgeThreads(atoms, knowledgePlanes)
+
   // 7) 轴定义 + 统计
   const axes = buildAxes(anchors)
   const stats = computeStats(atoms, insights, allPlanes, evidenceBands, threads)
@@ -390,6 +443,7 @@ export function computeField (atoms, domains, insights, options = {}) {
     planes: allPlanes,
     evidenceBands,
     threads,
+    knowledgeThreads,
     axes,
     stats,
   }

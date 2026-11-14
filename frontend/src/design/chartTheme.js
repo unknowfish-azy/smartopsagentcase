@@ -17,7 +17,7 @@ const FALLBACK = {
     areaOpacity: 0.14
   },
   light: {
-    colors: ['#0e5f92', '#2b8fb8', '#176b30', '#8a5a00', '#cf222e'],
+    colors: ['#0e5f92', '#2b8fb8', '#176b30', '#8a5a00', '#bd1f29'],
     grid: 'rgba(31, 35, 40, .08)',
     axis: 'rgba(31, 35, 40, .12)',
     text: '#57606a',

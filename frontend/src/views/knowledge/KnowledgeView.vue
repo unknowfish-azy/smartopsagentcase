@@ -131,8 +131,8 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { getKnowledgePath, knowledgeDomains, knowledgeTree, searchKnowledgeEntries } from './knowledgeCatalog.js'
 import { knowledgeEntryView } from './knowledgeLibrary.js'
 import KnowledgeTreeNode from './KnowledgeTreeNode.vue'
@@ -141,6 +141,16 @@ import { readCloudContext, cloudContextQuery, cloudEnvironments } from '../cloud
 
 const filters = reactive({ query: '', domain: '', platform: '' })
 const route = useRoute()
+const router = useRouter()
+
+// 默认进入知识空间场：若无搜索/定位类查询参数，直接跳转到空间场视图
+const SEARCH_QUERY_KEYS = ['query', 'domain', 'entry', 'highlight', 'source', 'platform']
+onMounted(() => {
+  const hasSearchIntent = SEARCH_QUERY_KEYS.some(k => route.query[k] !== undefined)
+  if (!hasSearchIntent) {
+    router.replace('/knowledge/space')
+  }
+})
 const cloudIntent = computed(() => readCloudContext(route.query))
 const searched = ref(false)
 const results = ref(searchKnowledgeEntries())

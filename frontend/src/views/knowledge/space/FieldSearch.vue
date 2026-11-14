@@ -45,7 +45,7 @@ function onKeyDown (e) {
 </script>
 
 <template>
-  <div class="fs-overlay" @click.self="emit('close')">
+  <div class="fs-overlay" aria-modal="true" role="dialog" aria-label="搜索知识条目" @click.self="emit('close')">
     <div class="fs-panel" role="dialog" aria-label="搜索知识">
       <div class="fs-input-wrap">
         <span class="fs-icon" aria-hidden="true">⌕</span>
