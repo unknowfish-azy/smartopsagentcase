@@ -26,7 +26,7 @@ const CONTRADICTED_KEYWORDS = {
 function tokenize (text) {
   const t = String(text || '').toLowerCase().trim()
   if (!t) return []
-  return [...new Set(t.split(/[\s,.;:!?()\[\]{}"'\-_/\\|]+/).filter(Boolean))]
+  return [...new Set(t.split(/[\s,.;:!?()[\]{}"'_/\\|-]+/).filter(Boolean))]
 }
 
 /** 两个 source 是否同域（取第一个 . 前的段，或 URL 的 host） */
@@ -244,7 +244,7 @@ export function enrichInsightBinding (insight, atoms) {
 function generateInsightId (insight) {
   const badge = String(insight?.badge || 'insight').toLowerCase()
   const title = tokenize(insight?.title || insight?.question || '')
-    .slice(0, 3).join('-').replace(/[^a-z0-9\-]/g, '')
+    .slice(0, 3).join('-').replace(/[^a-z0-9-]/g, '')
   return `insight.${badge}.${title || 'unidentified'}`
 }
 
