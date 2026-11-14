@@ -398,14 +398,14 @@ button:disabled{cursor:wait;opacity:.65}
 .agent-shell[data-theme='light']{background:radial-gradient(ellipse at 80% 10%,color-mix(in srgb,var(--smart-primary) 7%,transparent) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,color-mix(in srgb,var(--ds-semantic-success) 4%,transparent) 0%,transparent 50%),var(--smart-bg)}
 .agent-ambient{position:absolute;inset:0;z-index:0;opacity:.48;pointer-events:none}
 .agent-meteors{position:absolute;inset:0;z-index:0;opacity:.35;pointer-events:none}
-.agent-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 75% 15%,rgba(122,215,245,.22) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(63,185,80,.16) 0%,transparent 45%);filter:blur(24px);background-size:240% 240%;animation:agent-drift 22s ease-in-out infinite alternate}
-.agent-aurora::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 30% 20% at 15% 50%,rgba(122,215,245,.35),transparent 70%);filter:blur(18px);animation:agent-sweep 32s ease-in-out infinite}
-.agent-shell[data-theme='light'] .agent-aurora{background:radial-gradient(ellipse at 75% 15%,rgba(26,110,154,.14) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(26,127,55,.10) 0%,transparent 45%)}
-.agent-shell[data-theme='light'] .agent-aurora::after{background:radial-gradient(ellipse 30% 20% at 15% 50%,rgba(26,110,154,.22),transparent 70%)}
+.agent-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 75% 15%,color-mix(in srgb,var(--smart-primary-strong) 22%,transparent) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,color-mix(in srgb,var(--ds-semantic-success) 16%,transparent) 0%,transparent 45%);filter:blur(24px);background-size:240% 240%;animation:agent-drift 22s ease-in-out infinite alternate}
+.agent-aurora::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 30% 20% at 15% 50%,color-mix(in srgb,var(--smart-primary-strong) 35%,transparent),transparent 70%);filter:blur(18px);animation:agent-sweep 32s ease-in-out infinite}
+.agent-shell[data-theme='light'] .agent-aurora{background:radial-gradient(ellipse at 75% 15%,color-mix(in srgb,var(--smart-primary) 14%,transparent) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,color-mix(in srgb,var(--ds-semantic-success) 10%,transparent) 0%,transparent 45%)}
+.agent-shell[data-theme='light'] .agent-aurora::after{background:radial-gradient(ellipse 30% 20% at 15% 50%,color-mix(in srgb,var(--smart-primary) 22%,transparent),transparent 70%)}
 @keyframes agent-drift{0%{background-position:0% 0%,100% 100%;transform:translate3d(0,0,0)}100%{background-position:30% 10%,70% 90%;transform:translate3d(-2%,2%,0)}}
 @keyframes agent-sweep{0%,100%{opacity:.55;transform:translate3d(0,0,0)}50%{opacity:1;transform:translate3d(-8%,4%,0)}}
 @media(prefers-reduced-motion:reduce){.agent-aurora,.agent-aurora::after{animation:none}}
-.agent-mask{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(4,11,22,.42) 100%)}
-.agent-shell[data-theme='light'] .agent-mask{background:radial-gradient(ellipse at center,transparent 40%,rgba(234,243,250,.42) 100%)}
+.agent-mask{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,color-mix(in srgb,var(--smart-bg) 42%,transparent) 100%)}
+.agent-shell[data-theme='light'] .agent-mask{background:radial-gradient(ellipse at center,transparent 40%,color-mix(in srgb,var(--smart-bg) 42%,transparent) 100%)}
 .agent-shell>.agent-page,.agent-shell>AgentSkillGuidance{position:relative;z-index:1}
 </style>

@@ -295,9 +295,9 @@ header p { color: var(--smart-muted); font-size: 13px; margin: 0; }
   padding: 4px 10px; border-radius: 6px;
   align-self: center;
 }
-.trace-step.done .trace-status { background: rgba(63, 185, 80, .15); color: var(--ds-semantic-success); }
-.trace-step.check .trace-status { background: rgba(231, 197, 109, .15); color: var(--ds-semantic-warning); }
-.trace-step.pending .trace-status { background: rgba(107, 114, 128, .15); color: var(--smart-muted); }
+.trace-step.done .trace-status { background: color-mix(in srgb, var(--ds-semantic-success) 15%, transparent); color: var(--ds-semantic-success); }
+.trace-step.check .trace-status { background: color-mix(in srgb, var(--ds-semantic-warning) 15%, transparent); color: var(--ds-semantic-warning); }
+.trace-step.pending .trace-status { background: color-mix(in srgb, var(--smart-muted) 15%, transparent); color: var(--smart-muted); }
 
 .trace-empty-hint {
   margin-top: 20px; padding-top: 16px;
@@ -348,7 +348,7 @@ header p { color: var(--smart-muted); font-size: 13px; margin: 0; }
   backdrop-filter: blur(10px);
   transition: border-color .3s;
 }
-.grid article:hover { border-color: rgba(122, 215, 245, .35); }
+.grid article:hover { border-color: color-mix(in srgb, var(--smart-primary-strong) 35%, transparent); }
 .grid article:nth-child(1) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: 0s; }
 .grid article:nth-child(2) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: .4s; }
 .grid article:nth-child(3) strong { animation: trace-digit-pulse 3.6s ease-in-out infinite; animation-delay: .8s; }
