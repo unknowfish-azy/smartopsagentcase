@@ -5,8 +5,8 @@
       <CanvasAmbientField v-else-if="route.name === 'Dashboard'" />
       <MeteorShower v-if="showEnhancedHomeVisuals" />
       <ParticleWhale v-if="showEnhancedHomeVisuals && !personaPetActive" :placement="whalePlacement" :state="whaleState" />
-      <CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace && !personaPetActive" :placement="whalePlacement" :state="whaleState" />
-      <LivingJellyfish v-if="!isConnectionWorkspace && visualMode === 'balanced'" class="app-jellyfish" :class="`app-jellyfish--${whalePlacement}`" :state="jellyfishState" ecosystem="protected" />
+      <CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace && !isCompositionPlate && !personaPetActive" :placement="whalePlacement" :state="whaleState" />
+      <LivingJellyfish v-if="!isConnectionWorkspace && !isCompositionPlate && visualMode === 'balanced'" class="app-jellyfish" :class="`app-jellyfish--${whalePlacement}`" :state="jellyfishState" ecosystem="protected" />
       <OpsSpiderPet v-if="!isTeamSpace && !isKnowledgeSpace" :state="opsSpiderState" :agent-state="whaleState" :compact="route.name === 'Connections'" @navigate="openOpsSpiderAction" />
       <PersonaPet v-if="personaPetStore.enabled && route.name !== 'AgentPersona'" />
       <button v-if="opsSpider.hidden && !isTeamSpace && !isKnowledgeSpace" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
@@ -136,6 +136,8 @@ const isTeamSpace = computed(() => route.meta.space === 'team')
 const isKnowledgeSpace = computed(() => route.path.startsWith('/knowledge'))
 const router = useRouter()
 const isConnectionWorkspace = computed(() => route.name === 'Connections')
+/* 智能体模块是一张完整的构成版面，环境鲸/水母会穿过版面正文，因此该区只保留桌宠。 */
+const isCompositionPlate = computed(() => route.name === 'AgentModule')
 const isToolsPage = computed(() => route.name === 'Tools')
 const currentTime = ref('')
 const toolsOpen = ref(false)

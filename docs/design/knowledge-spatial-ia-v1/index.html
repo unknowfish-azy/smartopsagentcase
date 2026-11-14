@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识空间 · 立体信息架构参考原型</title>
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0E1116; --raised:#151A21; --overlay:#1B212A; --sunk:rgba(0,0,0,.28);
+    --text:#e8f2f7; --muted:#92a6b5; --neutral:#8b949e;
+    --border:rgba(159,190,207,.18); --hair:rgba(255,255,255,.06); --border-strong:rgba(159,190,207,.34);
+    --focus:#7ad7f5; --danger:#f85149; --warning:#d29922; --success:#3fb950;
+    --chart1:#2496ed; --chart2:#7ad7f5; --chart3:#3fb950; --chart4:#d29922; --chart5:#f85149;
+    --font:"Noto Sans SC","Source Han Sans SC","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+    --r-sm:4px; --r-md:8px; --r-lg:12px; --r-pill:999px;
+    --t:150ms; --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
+
+  /* ===== 顶栏 ===== */
+  .bar{display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;border-bottom:1px solid var(--border);background:var(--bg);position:relative;z-index:20}
+  .brand{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+  .brand b{font-size:14px;font-weight:500}
+  .brand span{font:11px/1 var(--mono);letter-spacing:.12em;color:var(--neutral);text-transform:uppercase}
+  .stat{font:11.5px var(--mono);color:var(--neutral);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .stat b{color:var(--muted);font-weight:500}
+  .grow{flex:1}
+  .search{display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;min-width:240px;
+          border:1px solid var(--border);border-radius:var(--r-md);background:var(--sunk);color:var(--muted)}
+  .search input{width:100%;border:0;background:none;color:var(--text);font:12.5px var(--font);outline:none}
+  .search kbd{font:10px var(--mono);color:var(--neutral);border:1px solid var(--hair);border-radius:3px;padding:1px 4px}
+  .seg{display:inline-flex;padding:2px;border-radius:var(--r-md);background:rgba(232,242,247,.05);gap:2px}
+  .seg button{height:26px;padding:0 10px;border-radius:var(--r-sm);color:var(--neutral);font-size:12px}
+  .seg button[aria-pressed="true"]{background:var(--overlay);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .pill{height:30px;padding:0 11px;border:1px solid var(--border);border-radius:var(--r-md);color:var(--muted);font-size:12.5px;white-space:nowrap}
+  .pill:hover{background:rgba(232,242,247,.05);border-color:var(--border-strong);color:var(--text)}
+
+  /* ===== 舞台与相机 ===== */
+  .stage{position:relative;height:calc(100% - 56px);overflow:hidden;cursor:grab;
+         background:radial-gradient(120% 90% at 50% 0%,#10161d 0%,#0a0e13 60%,#070a0e 100%)}
+  .stage.dragging{cursor:grabbing}
+  .world{position:absolute;left:0;top:0;width:3200px;height:2000px;transform-origin:0 0;will-change:transform}
+  .links{position:absolute;left:0;top:0;width:3200px;height:2000px;pointer-events:none;overflow:visible}
+
+  .zone{position:absolute;border:1px solid var(--border);border-radius:var(--r-lg);background:rgba(21,26,33,.72);
+        box-shadow:0 1px 2px rgba(0,0,0,.3);transition:border-color var(--t) var(--ease),background var(--t) var(--ease)}
+  .zone:hover{border-color:var(--border-strong);background:rgba(27,33,42,.82)}
+  .zone-head{position:absolute;left:0;top:0;right:0;display:flex;align-items:center;gap:8px;padding:10px 12px;
+             border-bottom:1px solid var(--hair);cursor:pointer}
+  .zone-bar{width:3px;height:14px;border-radius:2px;flex:0 0 auto}
+  .zone-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .zone-count{margin-left:auto;font:11px var(--mono);color:var(--neutral);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .card{position:absolute;width:200px;height:124px;border-radius:var(--r-md);border:1px solid var(--border);
+        background:var(--raised);box-shadow:0 1px 2px rgba(0,0,0,.30);overflow:hidden;text-align:left;
+        transition:box-shadow var(--t) var(--ease),border-color var(--t) var(--ease),transform var(--t) var(--ease);
+        will-change:transform}
+  .card:hover{box-shadow:0 4px 16px rgba(0,0,0,.35);border-color:var(--border-strong);z-index:5}
+  .card.dim{opacity:.25}
+  .card.hit{border-color:rgba(122,215,245,.55);box-shadow:0 0 0 1px rgba(122,215,245,.35),0 4px 16px rgba(0,0,0,.35)}
+  .card-bar{position:absolute;left:0;top:0;bottom:0;width:3px}
+  .card-body{padding:11px 12px 10px 15px;height:100%;display:flex;flex-direction:column;gap:6px}
+  .card-title{font-size:13px;font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card-sum{font-size:11.5px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card-foot{margin-top:auto;display:flex;align-items:center;gap:6px}
+  .chip{font:10px/1 var(--mono);letter-spacing:.04em;color:var(--neutral);border:1px solid var(--hair);
+        border-radius:var(--r-sm);padding:3px 5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+
+  /* LOD：L0 只留色块，L1 标题+chip，L2 加摘要 */
+  .world[data-lod="0"] .card-title,.world[data-lod="0"] .card-sum,.world[data-lod="0"] .card-foot{display:none}
+  .world[data-lod="0"] .card{background:rgba(232,242,247,.05);border-color:rgba(159,190,207,.10)}
+  .world[data-lod="1"] .card-sum{display:none}
+  .world[data-lod="0"] .zone-head{border-bottom-color:transparent}
+
+  /* ===== 标签 HUD：屏幕空间，永不随相机缩小 ===== */
+  .labels{position:absolute;inset:0;pointer-events:none;z-index:12;overflow:hidden}
+  .lbl{position:absolute;display:flex;align-items:center;gap:6px;transform:translate(-1px,-50%);overflow:hidden;max-width:100%;
+       padding:2px 6px;border-radius:var(--r-sm);background:rgba(10,14,19,.72);white-space:nowrap}
+  .lbl i{width:3px;height:11px;border-radius:2px}
+  .lbl b{font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lbl em{font:10.5px var(--mono);font-style:normal;color:var(--neutral)}
+
+  /* ===== 迷你地图 ===== */
+  .minimap{position:absolute;right:16px;bottom:16px;width:148px;height:96px;border:1px solid var(--border);
+           border-radius:var(--r-md);background:rgba(14,17,22,.92);z-index:15;cursor:pointer;overflow:hidden}
+  .minimap i{position:absolute;border-radius:2px;opacity:.5}
+  .minimap .vp{position:absolute;border:1px solid var(--focus);border-radius:2px;background:rgba(122,215,245,.08);pointer-events:none}
+  .legend{position:absolute;left:16px;bottom:16px;z-index:15;max-width:330px;padding:9px 11px;border:1px solid var(--border);
+          border-radius:var(--r-md);background:rgba(14,17,22,.92);font-size:11px;color:var(--neutral);line-height:1.6}
+  .legend b{color:var(--muted);font-weight:500}
+
+  /* ===== 侧栏 ===== */
+  .side{position:absolute;right:0;top:0;bottom:0;width:392px;z-index:25;border-left:1px solid var(--border);
+        background:var(--overlay);display:flex;flex-direction:column;transform:translateX(100%);
+        transition:transform 220ms var(--ease)}
+  .side.open{transform:none}
+  .side header{padding:16px 18px 12px;border-bottom:1px solid var(--hair)}
+  .side h2{margin:6px 0 8px;font-size:17px;font-weight:500;line-height:1.35}
+  .side .meta{display:flex;gap:6px;flex-wrap:wrap}
+  .side .body{flex:1;overflow:auto;padding:14px 18px 28px;font-size:12.5px;color:var(--muted);line-height:1.7}
+  .side .body h3{margin:14px 0 6px;font:11px/1 var(--mono);letter-spacing:.12em;color:var(--neutral);text-transform:uppercase}
+  .side .rel{display:flex;flex-direction:column;gap:6px}
+  .side .rel a{color:var(--muted);text-decoration:none;border-left:2px solid var(--border);padding-left:8px;font-size:12px}
+  .side .rel a:hover{color:var(--text);border-color:var(--focus)}
+  .close{position:absolute;right:12px;top:12px;width:28px;height:28px;border-radius:var(--r-md);color:var(--neutral);font-size:16px}
+  .close:hover{background:rgba(232,242,247,.06);color:var(--text)}
+
+  /* ===== 列表视图 ===== */
+  .listview{position:absolute;inset:0;z-index:18;background:var(--bg);overflow:auto;padding:16px 18px 60px;display:none}
+  .listview.on{display:block}
+  .listview table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .listview th{position:sticky;top:0;background:var(--bg);text-align:left;font:11px var(--mono);letter-spacing:.1em;
+               color:var(--neutral);text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--border)}
+  .listview td{padding:9px 10px;border-bottom:1px solid var(--hair);color:var(--muted)}
+  .listview td:nth-child(2){color:var(--text)}
+  .listview tr:hover td{background:rgba(232,242,247,.03)}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+  @media (max-width:900px){
+    .brand span,.stat{display:none}
+    .search{min-width:120px}
+    .side{width:100%}
+    .legend{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="brand"><b>知识空间</b><span>SPATIAL IA</span></div>
+  <div class="stat" id="stat"></div>
+  <span class="grow"></span>
+  <label class="search">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5.5" r="4"/><path d="M8.6 8.6 11.5 11.5"/></svg>
+    <input id="q" placeholder="检索条目…" aria-label="检索知识条目">
+    <kbd>/</kbd>
+  </label>
+  <div class="seg" role="group" aria-label="视图">
+    <button data-view="space" aria-pressed="true">空间</button>
+    <button data-view="list" aria-pressed="false">列表</button>
+  </div>
+  <button class="pill" data-jump="overview">总览 0</button>
+</div>
+
+<div class="stage" id="stage">
+  <div class="world" id="world" data-lod="0">
+    <svg class="links" id="links" aria-hidden="true"></svg>
+    <div id="zones"></div>
+  </div>
+
+  <div class="labels" id="labels" aria-hidden="true"></div>
+
+  <div class="minimap" id="minimap" role="button" tabindex="0" aria-label="迷你地图，点击跳转"></div>
+  <div class="legend">
+    <b>连线是推断关系</b>：同一 platform 的条目连线，不是人工确认的依赖。<br>
+    缩放即导航 · 滚轮缩放 / 拖拽平移 / 点域块进分区 / <b>Esc</b> 逐级回退 / <b>0</b> 总览<br>原型每域只放 3–4 张示例卡；域的面积按真实条目数（√n）分配，生产实现按域内条目铺满 737 条。
+  </div>
+
+  <aside class="side" id="side" aria-live="polite">
+    <button class="close" id="sideClose" aria-label="关闭">×</button>
+    <header>
+      <div class="meta" id="sideMeta"></div>
+      <h2 id="sideTitle"></h2>
+    </header>
+    <div class="body" id="sideBody"></div>
+  </aside>
+
+  <div class="listview" id="listview"><table id="listTable"></table></div>
+</div>
+
+<script>
+/* ============================================================
+   数据：域与条目数取自 knowledgeCatalog.js 的真实统计；
+   卡片标题/类型/摘要为真实条目采样。生产实现应为 737 条全量 + 虚拟化。
+   ============================================================ */
+const DOMAINS = [
+  { id:'linux',            name:'Linux 基础',      n:225, c:'var(--chart1)' },
+  { id:'network',          name:'网络基础',        n:195, c:'var(--chart2)' },
+  { id:'web-lamp',         name:'Linux Web / LAMP',n:104, c:'var(--chart3)' },
+  { id:'linux-services',   name:'Linux 服务',      n:88,  c:'var(--chart4)' },
+  { id:'cloud-operations', name:'CLOUD OPERATIONS',n:73,  c:'var(--chart5)' },
+  { id:'mysql',            name:'MySQL',           n:34,  c:'var(--chart1)' },
+  { id:'nginx',            name:'Nginx',           n:14,  c:'var(--chart2)' },
+  { id:'docker',           name:'Docker',          n:2,   c:'var(--chart3)' },
+  { id:'ubuntu',           name:'Ubuntu',          n:1,   c:'var(--chart4)' },
+  { id:'centos',           name:'CentOS',          n:1,   c:'var(--chart5)' }
+]
+
+const ENTRIES = [
+  { d:'linux', t:'HostIdentity：主机身份不是 IP', ty:'ENGINEERING KNOWLEDGE', p:'Linux', s:'课程摘要包含 IP、网关、DNS、网卡名、主机名和连接 UUID。' },
+  { d:'linux', t:'Linux 接口命名与实际设备发现', ty:'ENGINEERING KNOWLEDGE', p:'Linux', s:'传统 eth0/eth1；可预测名称 eno1、enp2s0、ens33；en 表示 Ethernet。' },
+  { d:'linux', t:'NetworkManager 与 CentOS 7/9 配置路径', ty:'ENGINEERING KNOWLEDGE', p:'Linux', s:'NetworkManager 管理 device、connection、IP、DNS、route 与 autoconnect。' },
+  { d:'linux', t:'网络证据与诊断阶梯', ty:'ENGINEERING KNOWLEDGE', p:'Linux', s:'ip a 看地址，ip route 看路由，ip neigh 看邻居，resolv.conf 看 DNS。' },
+  { d:'network', t:'OSI model and evidence boundaries', ty:'ENGINEERING KNOWLEDGE', p:'Network', s:'OSI layers organize evidence, but incidents should use the service chain.' },
+  { d:'network', t:'TCP/IP model', ty:'ENGINEERING KNOWLEDGE', p:'Network', s:'Link, internet, transport and application concerns map to distinct evidence.' },
+  { d:'network', t:'CIDR subnetting and ranges', ty:'ENGINEERING KNOWLEDGE', p:'Network', s:'CIDR expresses the network prefix length; calculate network and broadcast.' },
+  { d:'network', t:'Private IPv4 ranges', ty:'ENGINEERING KNOWLEDGE', p:'Network', s:'RFC 1918 ranges are 10/8, 172.16/12 and 192.168/16.' },
+  { d:'web-lamp', t:'Unified Web Dependency Chain', ty:'ENGINEERING KNOWLEDGE', p:'Linux Web/LAMP', s:'Browser → DNS/hosts → IP → TCP → port → HTTP/HTTPS → App.' },
+  { d:'web-lamp', t:'Operations Evidence Vocabulary', ty:'ENGINEERING KNOWLEDGE', p:'Linux Web/LAMP', s:'FACT / OBSERVATION / EVIDENCE / INFERENCE / HYPOTHESIS 分层。' },
+  { d:'web-lamp', t:'Browser/Server Architecture', ty:'ENGINEERING KNOWLEDGE', p:'Linux Web/LAMP', s:'The browser issues an HTTP request; the server returns a response.' },
+  { d:'linux-services', t:'Unified Linux Service Evidence Model', ty:'ENGINEERING KNOWLEDGE', p:'Linux', s:'Service → Process → Systemd → Config → Listener → Network。' },
+  { d:'linux-services', t:'Service State is not Service Health', ty:'ENGINEERING KNOWLEDGE', p:'Linux', s:'systemctl is-active 只证明服务状态，不证明功能可用。' },
+  { d:'linux-services', t:'FTP Control and Data Connections', ty:'ENGINEERING KNOWLEDGE', p:'Linux', s:'控制连接认证成功，不代表数据连接可用。' },
+  { d:'cloud-operations', t:'Helm 云原生工具路线', ty:'CLOUD NATIVE TOOL ROADMAP', p:'Cloud Native', s:'Kubernetes 应用包管理与发布。' },
+  { d:'cloud-operations', t:'Prometheus 云原生工具路线', ty:'CLOUD NATIVE TOOL ROADMAP', p:'Cloud Native', s:'指标采集与 PromQL 查询。' },
+  { d:'cloud-operations', t:'Grafana 云原生工具路线', ty:'CLOUD NATIVE TOOL ROADMAP', p:'Cloud Native', s:'监控看板与运维可视化。' },
+  { d:'mysql', t:'MySQL 8.0 安装方式与版本选择', ty:'MYSQL 8.0 KNOWLEDGE', p:'CentOS Stream 9 / MySQL 8.0', s:'yum、binary/glibc、源码安装的复杂度与可定制性不同。' },
+  { d:'mysql', t:'my.cnf、Unix Socket 与 ERROR 2002', ty:'MYSQL 8.0 KNOWLEDGE', p:'CentOS Stream 9 / MySQL 8.0', s:'本地 socket 路径与服务端配置必须一致。' },
+  { d:'mysql', t:'mysqld 初始化与临时密码', ty:'MYSQL 8.0 KNOWLEDGE', p:'CentOS Stream 9 / MySQL 8.0', s:'--initialize 结束不等于初始化成功，必须检查日志与数据目录。' },
+  { d:'nginx', t:'location 匹配优先级与 root/alias', ty:'NGINX OPERATIONS', p:'Nginx', s:'精确匹配优先，其次前缀与正则；末尾斜杠影响结果。' },
+  { d:'nginx', t:'upstream 负载均衡与 keepalive', ty:'NGINX OPERATIONS', p:'Nginx', s:'max_fails/fail_timeout 提供被动健康检查。' },
+  { d:'nginx', t:'TLS 证书链、协议与安全配置', ty:'NGINX OPERATIONS', p:'Nginx', s:'证书必须包含完整链；变更后必须验证到期时间与兼容性。' },
+  { d:'docker', t:'Container Up vs Application Ready', ty:'DIAGNOSIS RUNBOOK', p:'Docker', s:'区分容器存活、进程监听、健康检查与依赖就绪。' },
+  { d:'docker', t:'Docker 容器异常退出', ty:'DIAGNOSIS RUNBOOK', p:'Docker', s:'通过日志、退出码、配置、依赖与资源限制定位启动失败。' },
+  { d:'ubuntu', t:'Ubuntu Disk And Inode Pressure', ty:'DIAGNOSIS RUNBOOK', p:'Ubuntu', s:'结合容量、inode、日志增长与挂载状态判断故障边界。' },
+  { d:'centos', t:'Permission Denied Is Not A Reason For chmod 777', ty:'ANTI-PATTERN', p:'CentOS', s:'先检查 owner、ACL 与 SELinux context，再决定是否需要变更。' }
+]
+
+const TOTAL = DOMAINS.reduce((a, d) => a + d.n, 0)
+const WORLD = { w: 3200, h: 2000 }
+const CARD = { w: 200, h: 124, gap: 12, headH: 40, pad: 12 }
+const K_MIN = 0.16, K_MAX = 2.2
+
+/* ============================================================ 布局：√n 面积 + 递归切块 ============================================================ */
+function layoutZones () {
+  const weight = DOMAINS.map(d => Math.sqrt(d.n))
+  const sum = weight.reduce((a, b) => a + b, 0)
+  const items = DOMAINS.map((d, i) => ({ d, w: weight[i] / sum * WORLD.w * WORLD.h })).sort((a, b) => b.w - a.w)
+  const rects = []
+  split(items, { x: 0, y: 0, w: WORLD.w, h: WORLD.h }, rects, true)
+  return rects
+}
+
+function split (items, box, out, horizontal) {
+  if (items.length === 1) { out.push({ ...items[0], ...box }); return }
+  const total = items.reduce((a, b) => a + b.w, 0)
+  let acc = 0, cut = 1
+  for (let i = 0; i < items.length - 1; i++) { acc += items[i].w; if (acc >= total / 2) { cut = i + 1; break } }
+  const leftItems = items.slice(0, cut), rightItems = items.slice(cut)
+  const leftW = leftItems.reduce((a, b) => a + b.w, 0)
+  const ratio = leftW / total
+  if (horizontal) {
+    const wl = Math.round(box.w * ratio)
+    split(leftItems,  { x: box.x, y: box.y, w: wl, h: box.h }, out, false)
+    split(rightItems, { x: box.x + wl, y: box.y, w: box.w - wl, h: box.h }, out, false)
+  } else {
+    const hl = Math.round(box.h * ratio)
+    split(leftItems,  { x: box.x, y: box.y, w: box.w, h: hl }, out, true)
+    split(rightItems, { x: box.x, y: box.y + hl, w: box.w, h: box.h - hl }, out, true)
+  }
+}
+
+const zones = layoutZones()
+const zoneById = new Map(zones.map(z => [z.d.id, z]))
+
+/* 卡片位置：域内网格 */
+const cards = []
+for (const z of zones) {
+  const inner = { x: z.x + CARD.pad, y: z.y + CARD.headH, w: z.w - CARD.pad * 2, h: z.h - CARD.headH - CARD.pad }
+  const cols = Math.max(1, Math.min(4, Math.floor((inner.w + CARD.gap) / (CARD.w + CARD.gap))))
+  z.cols = cols
+  z.rows = Math.max(1, Math.ceil((inner.h + CARD.gap) / (CARD.h + CARD.gap)))
+  ENTRIES.filter(e => e.d === z.d.id).forEach((e, i) => {
+    const c = i % cols, r = Math.floor(i / cols)
+    cards.push({ ...e, x: inner.x + c * (CARD.w + CARD.gap), y: inner.y + r * (CARD.h + CARD.gap), id: `${z.d.id}-${i}`, zone: z })
+  })
+}
+
+/* ============================================================ 相机 ============================================================ */
+const stage = document.getElementById('stage')
+const world = document.getElementById('world')
+const cam = { k: 0.28, tx: 0, ty: 0 }
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
+const lodOf = k => k < 0.42 ? 0 : k < 1.05 ? 1 : 2
+
+function applyCamera () {
+  world.style.transform = `translate3d(${cam.tx}px,${cam.ty}px,0) scale(${cam.k})`
+  const lod = lodOf(cam.k)
+  if (world.dataset.lod !== String(lod)) { world.dataset.lod = String(lod); refreshStat() }
+  document.querySelectorAll('.links line').forEach(l => l.setAttribute('stroke-width', (1 / cam.k).toFixed(2)))
+  renderLabels(); renderMinimap()
+}
+
+function fitOverview () {
+  const w = stage.clientWidth, h = stage.clientHeight
+  cam.k = Math.min(w / WORLD.w, h / WORLD.h) * 0.94
+  cam.tx = (w - WORLD.w * cam.k) / 2
+  cam.ty = (h - WORLD.h * cam.k) / 2
+  applyCamera()
+}
+
+function zoomAt (mx, my, factor) {
+  const k2 = clamp(cam.k * factor, K_MIN, K_MAX)
+  cam.tx = mx - (mx - cam.tx) * (k2 / cam.k)
+  cam.ty = my - (my - cam.ty) * (k2 / cam.k)
+  cam.k = k2
+  applyCamera()
+}
+
+function flyTo (zone, targetK) {
+  const k = targetK ?? clamp(Math.min(stage.clientWidth / zone.w, stage.clientHeight / zone.h) * 1.4, 0.62, 1.05)
+  const cx = zone.x + zone.w / 2, cy = zone.y + zone.h / 2
+  cam.k = k
+  cam.tx = stage.clientWidth / 2 - cx * k
+  cam.ty = stage.clientHeight / 2 - cy * k
+  applyCamera()
+}
+
+/* 把某个世界坐标对到视口中心 */
+function centerOn (wx, wy, k) {
+  cam.k = clamp(k, K_MIN, K_MAX)
+  cam.tx = stage.clientWidth / 2 - wx * cam.k
+  cam.ty = stage.clientHeight / 2 - wy * cam.k
+  applyCamera()
+}
+
+/* ============================================================ 渲染 ============================================================ */
+function renderZones () {
+  const host = document.getElementById('zones')
+  host.innerHTML = zones.map(z => `
+    <div class="zone" data-zone="${z.d.id}" style="left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px">
+      <div class="zone-head" data-zone-head="${z.d.id}">
+        <span class="zone-bar" style="background:${z.d.c}"></span>
+        <span class="zone-name">${z.d.name}</span>
+        <span class="zone-count">${z.d.n}</span>
+      </div>
+    </div>`).join('')
+
+  host.insertAdjacentHTML('beforeend', cards.map(c => `
+    <button class="card" data-card="${c.id}" style="left:${c.x}px;top:${c.y}px" aria-label="${esc(c.t)}，${esc(c.ty)}">
+      <span class="card-bar" style="background:${c.zone.d.c}"></span>
+      <span class="card-body">
+        <span class="card-title">${esc(c.t)}</span>
+        <span class="card-sum">${esc(c.s)}</span>
+        <span class="card-foot"><span class="chip">${esc(c.ty)}</span></span>
+      </span>
+    </button>`).join(''))
+}
+
+/* 连线：同 platform 的条目连接（推断关系） */
+function renderLinks () {
+  const svg = document.getElementById('links')
+  const byPlatform = new Map()
+  cards.forEach(c => {
+    const key = c.p
+    if (!byPlatform.has(key)) byPlatform.set(key, [])
+    byPlatform.get(key).push(c)
+  })
+  const parts = []
+  for (const list of byPlatform.values()) {
+    if (list.length < 2) continue
+    for (let i = 0; i < list.length - 1; i++) {
+      const a = list[i], b = list[i + 1]
+      const ax = a.x + CARD.w / 2, ay = a.y + CARD.h / 2
+      const bx = b.x + CARD.w / 2, by = b.y + CARD.h / 2
+      const cross = a.d !== b.d
+      parts.push(`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="${cross ? 'rgba(159,190,207,.10)' : 'rgba(159,190,207,.18)'}"
+        stroke-width="1" ${cross ? 'stroke-dasharray="6 5"' : ''} data-link="${esc(a.p)}"/>`)
+    }
+  }
+  svg.innerHTML = parts.join('')
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]))
+
+/* 标签 HUD：屏幕空间定位，字号恒定，不随相机缩小 */
+function renderLabels () {
+  const host = document.getElementById('labels')
+  const parts = []
+  for (const z of zones) {
+    const x = z.x * cam.k + cam.tx
+    const y = z.y * cam.k + cam.ty + (CARD.headH * cam.k) / 2
+    const w = z.w * cam.k
+    if (w < 92) continue                                   // 太小就不标，避免相邻标签打架
+    if (x + w < 0 || x > stage.clientWidth) continue
+    if (y < 8 || y > stage.clientHeight - 8) continue
+    parts.push(`<span class="lbl" style="left:${Math.max(2, x + 4)}px;top:${y}px;max-width:${Math.max(48, w - 12)}px">
+      <i style="background:${z.d.c}"></i><b>${esc(z.d.name)}</b><em>${z.d.n}</em></span>`)
+  }
+  host.innerHTML = parts.join('')
+}
+
+/* ============================================================ 迷你地图 ============================================================ */
+function renderMinimap () {
+  const mm = document.getElementById('minimap')
+  if (!mm.dataset.init) {
+    mm.innerHTML = zones.map(z => `<i style="left:${z.x / WORLD.w * 100}%;top:${z.y / WORLD.h * 100}%;
+      width:${z.w / WORLD.w * 100}%;height:${z.h / WORLD.h * 100}%;background:${z.d.c}"></i>`).join('')
+      + '<div class="vp" id="vp"></div>'
+    mm.dataset.init = '1'
+  }
+  const vp = document.getElementById('vp')
+  if (!vp) return
+  const vw = stage.clientWidth / cam.k, vh = stage.clientHeight / cam.k
+  const vx = -cam.tx / cam.k, vy = -cam.ty / cam.k
+  vp.style.left = clamp(vx / WORLD.w * 100, 0, 100) + '%'
+  vp.style.top = clamp(vy / WORLD.h * 100, 0, 100) + '%'
+  vp.style.width = clamp(vw / WORLD.w * 100, 2, 100) + '%'
+  vp.style.height = clamp(vh / WORLD.h * 100, 2, 100) + '%'
+}
+
+/* ============================================================ 侧栏 ============================================================ */
+const side = document.getElementById('side')
+let opened = null
+
+function openCard (c) {
+  opened = c
+  document.getElementById('sideMeta').innerHTML =
+    `<span class="chip">${esc(c.ty)}</span><span class="chip">${esc(c.p)}</span><span class="chip">${esc(c.zone.d.name)}</span>`
+  document.getElementById('sideTitle').textContent = c.t
+  const rel = cards.filter(x => x.id !== c.id && (x.p === c.p || x.zone === c.zone)).slice(0, 5)
+  document.getElementById('sideBody').innerHTML = `
+    <h3>摘要</h3><p>${esc(c.s)}</p>
+    <h3>推断关系 · ${rel.length}</h3>
+    <div class="rel">${rel.map(r => `<a href="#" data-card="${r.id}">${esc(r.t)}</a>`).join('') || '<span>无</span>'}</div>
+    <h3>位置</h3><p>${esc(c.zone.d.name)} · 世界坐标 ${Math.round(c.x)}, ${Math.round(c.y)}</p>`
+  side.classList.add('open')
+}
+function closeCard () { side.classList.remove('open'); opened = null }
+
+/* ============================================================ 交互 ============================================================ */
+stage.addEventListener('wheel', e => {
+  if (document.getElementById('listview').classList.contains('on')) return
+  e.preventDefault()
+  const r = stage.getBoundingClientRect()
+  zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0015))
+}, { passive: false })
+
+let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0, moved = 0
+stage.addEventListener('pointerdown', e => {
+  if (e.target.closest('.side,.minimap,.legend')) return
+  dragging = true; moved = 0
+  sx = e.clientX; sy = e.clientY; stx = cam.tx; sty = cam.ty
+  stage.classList.add('dragging')
+})
+window.addEventListener('pointermove', e => {
+  if (!dragging) return
+  const dx = e.clientX - sx, dy = e.clientY - sy
+  moved = Math.max(moved, Math.abs(dx) + Math.abs(dy))
+  cam.tx = stx + dx; cam.ty = sty + dy
+  applyCamera()
+})
+window.addEventListener('pointerup', () => { dragging = false; stage.classList.remove('dragging') })
+
+document.addEventListener('click', e => {
+  const head = e.target.closest('[data-zone-head]')
+  if (head) { flyTo(zoneById.get(head.dataset.zoneHead)); return }
+
+  const cardEl = e.target.closest('[data-card]')
+  if (cardEl) {
+    if (moved > 4) return                       // 拖拽结束不触发点击
+    const c = cards.find(x => x.id === cardEl.dataset.card)
+    if (c) { openCard(c); cardEl.focus() }
+    return
+  }
+  if (e.target.closest('#sideClose')) { closeCard(); return }
+
+  const view = e.target.closest('[data-view]')
+  if (view) {
+    document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b === view)))
+    document.getElementById('listview').classList.toggle('on', view.dataset.view === 'list')
+    return
+  }
+  if (e.target.closest('[data-jump]')) { document.getElementById('q').value = ''; filter(''); fitOverview(); return }
+})
+
+document.getElementById('minimap').addEventListener('click', e => {
+  const r = e.currentTarget.getBoundingClientRect()
+  const wx = (e.clientX - r.left) / r.width * WORLD.w
+  const wy = (e.clientY - r.top) / r.height * WORLD.h
+  const k = Math.max(cam.k, 0.5)
+  cam.k = k
+  cam.tx = stage.clientWidth / 2 - wx * k
+  cam.ty = stage.clientHeight / 2 - wy * k
+  applyCamera()
+})
+
+/* 检索 */
+function filter (q) {
+  const term = q.trim().toLowerCase()
+  let hits = 0
+  document.querySelectorAll('[data-card]').forEach(el => {
+    const c = cards.find(x => x.id === el.dataset.card)
+    const hit = term && (c.t.toLowerCase().includes(term) || c.s.toLowerCase().includes(term) || c.ty.toLowerCase().includes(term))
+    el.classList.toggle('hit', Boolean(hit))
+    el.classList.toggle('dim', Boolean(term) && !hit)
+    if (hit) hits++
+  })
+  if (term && hits) {
+    const first = cards.find(c => c.t.toLowerCase().includes(term) || c.s.toLowerCase().includes(term) || c.ty.toLowerCase().includes(term))
+    if (first && cam.k < 0.5) flyTo(first.zone)
+  }
+  refreshStat(hits, term)
+}
+document.getElementById('q').addEventListener('input', e => filter(e.target.value))
+
+/* 键盘 */
+document.addEventListener('keydown', e => {
+  if (e.target.id === 'q') { if (e.key === 'Escape') { e.target.value = ''; filter(''); e.target.blur() } return }
+  if (e.key === '/') { e.preventDefault(); document.getElementById('q').focus(); return }
+  if (e.key === '0') { fitOverview(); return }
+  if (e.key === 'Escape') {
+    if (side.classList.contains('open')) return closeCard()
+    if (cam.k > 1.05) return flyTo(zoneOfNearest(), 0.75)
+    return fitOverview()
+  }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    const els = [...document.querySelectorAll('[data-card]')]
+    const i = els.indexOf(document.activeElement)
+    if (i < 0) { if (els.length) { e.preventDefault(); els[0].focus() } return }
+    e.preventDefault()
+    const next = clamp(i + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1), 0, els.length - 1)
+    els[next].focus()
+    return
+  }
+  if (e.key === 'Enter' && document.activeElement?.dataset.card) {
+    const c = cards.find(x => x.id === document.activeElement.dataset.card)
+    if (c) { e.preventDefault(); openCard(c) }
+  }
+})
+
+function zoneOfNearest () {
+  // 视口中心落在哪个域
+  const cx = (-cam.tx + stage.clientWidth / 2) / cam.k
+  const cy = (-cam.ty + stage.clientHeight / 2) / cam.k
+  return zones.find(z => cx >= z.x && cx <= z.x + z.w && cy >= z.y && cy <= z.y + z.h) || zones[0]
+}
+
+/* 状态行 */
+function refreshStat (hits, term) {
+  const cz = zoneOfNearest()
+  const lod = world.dataset.lod
+  document.getElementById('stat').innerHTML =
+    `<b>${TOTAL}</b> 条 · <b>${DOMAINS.length}</b> 个域 · 当前 <b>${esc(cz?.d.name ?? '—')}</b>` +
+    (term ? ` · 命中 <b>${hits ?? 0}</b>` : ` · L${lod} · ${Math.round(cam.k * 100)}%`)
+}
+
+/* 列表视图 */
+function renderList () {
+  document.getElementById('listTable').innerHTML = `
+    <thead><tr><th>域</th><th>标题</th><th>类型</th><th>平台</th></tr></thead>
+    <tbody>${cards.map(c => `<tr><td>${esc(c.zone.d.name)}</td><td>${esc(c.t)}</td><td>${esc(c.ty)}</td><td>${esc(c.p)}</td></tr>`).join('')}</tbody>`
+}
+
+/* ============================================================ 启动 ============================================================ */
+renderZones()
+renderLinks()
+renderList()
+fitOverview()
+refreshStat()
+
+/* demo 钩子：?demo=zone 钻进 linux，?demo=card 打开一张卡，?demo=list 列表视图 */
+const demo = new URLSearchParams(location.search).get('demo')
+if (demo === 'zone') flyTo(zoneById.get('linux'))
+if (demo === 'card') { centerOn(cards[0].x + CARD.w / 2, cards[0].y + CARD.h / 2, 1.25); setTimeout(() => openCard(cards[0]), 60) }
+if (demo === 'list') { document.querySelector('[data-view="list"]').click() }
+
+window.addEventListener('resize', () => { applyCamera() })
+</script>
+</body>
+</html>

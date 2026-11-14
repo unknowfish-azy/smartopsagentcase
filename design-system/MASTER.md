@@ -97,3 +97,15 @@ The 0-4px radius rule above described the original editorial prototype. The prod
 - Typography is a local system stack (`--ds-font-cn`, `--ds-font-mono`); external Google Fonts `@import` is removed to unblock first paint and offline use.
 - Motion budget: one shared rAF scheduler (`src/visual/motionScheduler.js`), 30fps default, 15fps on sustained slow frames, off-screen pause, static single frame under reduced motion. `src/design/surfacePolicy.js` exposes the adaptive recommendation and its human-readable reason.
 - Evidence rule still applies: every visual/performance claim (FCP, LCP, frame time, rAF count, blur radius) must state its measurement basis and before/after baseline. See `docs/development/前端整改-企业级控制台与果冻登录方案-20261112.md`.
+
+## Revision 2026-11-19 — Agent module plate (scoped exception inside the tool surface)
+
+`/agent/module`（`views/agent/AgentModuleView.vue`）是工具层里的一张"版面"，不是新的 surface 类型；其余路由不受影响。
+
+- **Allowed:** a scoped warm-paper palette (`--fab-*` in `assets/styles/fable-agent.css`), constructivist geometry, one SVG "gaze" organ, and soft fat-volume blobs. Selectors stay inside `.fable-*`; the global `.panel` / light-theme card rules must not reach them (verified in `test/agent-module.browser.mjs`).
+- **Still forbidden here:** `backdrop-filter`, WebGL, canvas particles, bitmap imagery, and per-frame framework state. The page draws with SVG, CSS gradients, and CSS transitions only.
+- **Radius and rules:** `--ds-radius-sm` for plates and panels, 1px hairlines, no gradient card borders. Breakpoints remain 375 / 768 / 1024 / 1440 / 1920.
+- **Motion:** composition transforms 900-1200ms, aperture 900ms, gaze 620-700ms, fat-blob breathing 7.4s at ≤1.6% scale. Pointer tracking uses the shared `motionScheduler` at 30fps and unsubscribes on pointer leave; reduced motion keeps a static frame.
+- **Ambient organisms:** `MainLayout` skips the whale and jellyfish on this route (`isCompositionPlate`) because their particles cross the plate copy; the desktop pet stays and remains user-dismissible.
+- **Evidence rule:** the page renders only live runtime signals or explicitly tagged `SAMPLE` / `REHEARSAL` content; missing data renders `—`, never an estimate. Structural parameters (aperture / tilt / volume) are drawing parameters, labelled as such, and never presented as model or operational metrics.
+- Spec and acceptance: `docs/design/agent-module-v1/DESIGN.md`, `frontend/test/agent-module.browser.mjs`.

@@ -5,7 +5,8 @@ export const pageFlows = Object.freeze([
     id: 'agent',
     steps: Object.freeze([
       step('AgentCommandCenter', '/agent', 'COMMAND CENTER'),
-      step('ExecutionTrace', '/agent/trace', 'EXECUTION TRACE')
+      step('ExecutionTrace', '/agent/trace', 'EXECUTION TRACE'),
+      step('AgentModule', '/agent/module', 'AGENT MODULE')
     ])
   }),
   Object.freeze({
