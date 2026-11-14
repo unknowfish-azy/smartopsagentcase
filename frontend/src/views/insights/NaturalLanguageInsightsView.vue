@@ -86,6 +86,7 @@ import { getInspectorEvents, getInspectorSummary } from '../../api/inspector'
 import { getServers } from '../../api/server'
 import { listKnowledgeLibraries } from '../../api/personalKnowledge.ts'
 import { loadSentinel, sentinelState } from '../sentinel/sentinelStore.js'
+import { enrichInsight } from './insightBinding.js'
 import OpsChart from '../../components/dashboard/OpsChart.vue'
 
 /* 规则匹配：只识别四类可落到真实接口的问题，不做自由生成，避免编造指标。 */
@@ -250,6 +251,9 @@ async function analyze() {
       return
     }
     result.value = await builders[intent.id](question)
+    // enrich 绑定：补 id / confidence / binding（纯函数，低成本）
+    const enriched = enrichInsight(result.value)
+    result.value = enriched.enriched
   } finally {
     loading.value = false
   }
