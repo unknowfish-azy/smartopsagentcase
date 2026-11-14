@@ -36,21 +36,36 @@
         <div class="xiaoyu-chat-drawer__head">
           <span class="xiaoyu-chat-drawer__eyebrow">XIAOYU</span>
           <strong>小鱼</strong>
-          <span class="xiaoyu-chat-drawer__pill">{{ stateLabel }}</span>
+          <button type="button" class="xiaoyu-chat-drawer__pill" :title="`点击切换状态（演示） · ${stateLabel}`" @click="cycleDemoState">{{ stateLabel }}</button>
         </div>
       </template>
 
       <div class="xiaoyu-chat-drawer__body">
-        <!-- 半身 220px，Drawer 打开时才挂载 AgentPersona，关闭时自动 dispose -->
-        <AgentPersona
-          v-if="drawerOpen"
-          ref="personaRef"
-          :state="personaState"
-          mode="vrm"
-          class="xiaoyu-chat-drawer__stage"
-        />
+        <!-- 半身 220px，Drawer 打开时才挂载 AgentPersona，点击让小鱼开口说话 -->
+        <button type="button" class="xiaoyu-chat-drawer__stage" :title="点击让小鱼说话" @click="speakGreeting">
+          <AgentPersona
+            v-if="drawerOpen"
+            ref="personaRef"
+            :state="personaState"
+            mode="vrm"
+          />
+        </button>
 
         <p class="xiaoyu-chat-drawer__bubble">{{ bubbleText }}</p>
+
+        <!-- 快捷对话输入（发完跳到 Chat 主区，让小鱼接话） -->
+        <form class="xiaoyu-chat-drawer__input" @submit.prevent="onSend">
+          <input
+            v-model="input"
+            type="text"
+            maxlength="100"
+            placeholder="跟小鱼说点什么…（回车发送）"
+            @keydown.enter.exact.prevent="onSend"
+          />
+          <button type="submit" class="xiaoyu-chat-drawer__send" :disabled="!input.trim() || sending">
+            {{ sending ? '…' : '发送' }}
+          </button>
+        </form>
 
         <div class="xiaoyu-chat-drawer__quicks">
           <RouterLink to="/health" class="xiaoyu-chat-drawer__link">
@@ -75,13 +90,21 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElDrawer } from 'element-plus'
 import { useCompanionStore } from '../../stores/companion.js'
+import { useAiChatStore } from '../../stores/aiChat.js'
 import AgentPersona from '../persona/AgentPersona.vue'
 
+const router = useRouter()
 const companion = useCompanionStore()
+const aiChat = useAiChatStore()
+
 const drawerOpen = ref(false)
+const personaRef = ref(null)
+const input = ref('')
+const sending = ref(false)
 
 const companionStates = computed(() => companion.states ?? { whale: 'IDLE' })
 
@@ -108,6 +131,55 @@ const bubbleText = computed(() => {
 
 const ragTotal = ref(284)
 const agentStats = ref({ conversations: 156, skills: 8 })
+
+/** 演示模式：点击 pill cycle 状态 */
+const DEMO_STATE_ORDER = ['idle', 'thinking', 'observing', 'executing', 'warning', 'error', 'recovering']
+const demoIdx = ref(0)
+function cycleDemoState() {
+  demoIdx.value = (demoIdx.value + 1) % DEMO_STATE_ORDER.length
+  const next = DEMO_STATE_ORDER[demoIdx.value]
+  personaRef.value?.setState?.(next, { fade: 350 })
+  personaRef.value?.speakText?.(STATE_LABELS[next] ?? next)
+}
+
+/** 点击 3D 舞台让小鱼开口说话 */
+const GREETINGS = {
+  idle: ['我在，说吧。', '系统正常，随时待命。', '嗨～'],
+  warning: ['有活跃告警。', '需要你关注一下。', '我注意到了异常。'],
+  error: ['故障排查中。', '正在定位。', '需要协助吗？'],
+  observing: ['观察中。', '巡检进行中。', '一切还好。'],
+  thinking: ['让我想想。', '分析中…', '稍等。'],
+  executing: ['执行中…', '处理中。', '马上好。'],
+  recovering: ['恢复中…', '快好了。', '清理现场。']
+}
+function speakGreeting() {
+  const pool = GREETINGS[personaState.value] ?? GREETINGS.idle
+  const text = pool[Math.floor(Math.random() * pool.length)]
+  personaRef.value?.speakText?.(text)
+}
+
+/** Drawer 里发完快捷对话 → 跳到 Chat 主区 */
+async function onSend() {
+  const text = input.value.trim()
+  if (!text || sending.value) return
+  sending.value = true
+  try {
+    await aiChat.sendMessage(text)
+    input.value = ''
+    drawerOpen.value = false
+    router.push('/chat')
+  } finally {
+    sending.value = false
+  }
+}
+
+/** Drawer 关闭时 dispose canvas，省资源 */
+function disposePersona() {
+  personaRef.value?.dispose?.()
+}
+
+watch(drawerOpen, (open) => { if (!open) disposePersona() })
+onBeforeUnmount(disposePersona)
 </script>
 
 <style scoped>
@@ -192,12 +264,20 @@ const agentStats = ref({ conversations: 156, skills: 8 })
   letter-spacing: .1em;
   background: var(--ds-pill-info-bg, rgba(36,150,237,.12));
   color: var(--ds-color-primary, #2496ed);
+  border: 1px solid transparent;
   border-radius: 999px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.xiaoyu-chat-drawer__pill:hover {
+  border-color: var(--ds-color-primary, #2496ed);
+  background: color-mix(in srgb, var(--ds-color-primary) 14%, transparent);
 }
 
 .xiaoyu-chat-drawer__body { padding: 20px; display: grid; gap: 14px; }
 
 .xiaoyu-chat-drawer__stage {
+  display: block;
   aspect-ratio: 9 / 11;
   max-height: 220px;
   border-radius: var(--ds-radius-md, 10px);
@@ -206,7 +286,15 @@ const agentStats = ref({ conversations: 156, skills: 8 })
     var(--ds-color-surface-base, #1a1f2e);
   overflow: hidden;
   position: relative;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: box-shadow .15s, transform .15s;
 }
+.xiaoyu-chat-drawer__stage:hover {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ds-color-primary) 40%, transparent);
+}
+.xiaoyu-chat-drawer__stage:active { transform: scale(.98); }
 
 .xiaoyu-chat-drawer__bubble {
   margin: 0;
@@ -217,6 +305,42 @@ const agentStats = ref({ conversations: 156, skills: 8 })
   font-size: var(--ds-type-body-caption-size, 13px);
   line-height: var(--ds-line-height-base, 1.5);
   color: var(--ds-color-text, #e8e8ee);
+}
+
+/* Drawer 内快捷对话输入 */
+.xiaoyu-chat-drawer__input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+.xiaoyu-chat-drawer__input input {
+  padding: 8px 10px;
+  border: 1px solid var(--ds-hairline, rgba(255,255,255,.08));
+  border-radius: var(--ds-radius-md, 10px);
+  background: var(--ds-color-surface-base, #1a1f2e);
+  color: var(--ds-color-text, #e8e8ee);
+  font-size: 12.5px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+}
+.xiaoyu-chat-drawer__input input:focus {
+  border-color: var(--ds-color-primary, #2496ed);
+}
+.xiaoyu-chat-drawer__send {
+  padding: 0 14px;
+  border: 1px solid var(--ds-color-primary, #2496ed);
+  border-radius: var(--ds-radius-md, 10px);
+  background: var(--ds-color-primary, #2496ed);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.xiaoyu-chat-drawer__send:disabled {
+  opacity: .4;
+  cursor: not-allowed;
 }
 
 .xiaoyu-chat-drawer__quicks {
