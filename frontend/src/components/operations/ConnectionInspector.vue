@@ -107,7 +107,7 @@ const {
 }
 
 .context-error {
-  color: #fca5a5;
+  color: var(--smart-danger);
   font-size: 12px;
 }
 
@@ -115,7 +115,7 @@ const {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #aab8be;
+  color: var(--smart-muted);
   font-size: 11px;
 }
 
@@ -123,16 +123,16 @@ const {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #64717a;
+  background: var(--smart-muted);
   content: '';
 }
 
 .inspector-state.online::before {
-  background: #22c55e;
+  background: var(--smart-success);
 }
 
 .inspector-state.online {
-  color: #86d6a7;
+  color: var(--ds-semantic-success);
 }
 
 .inspector-content {
@@ -148,7 +148,7 @@ const {
   grid-template-columns: 64px minmax(0, 1fr);
   gap: 8px;
   padding: 9px 0;
-  border-top: 1px solid #18222d;
+  border-top: 1px solid var(--smart-border);
 }
 
 .session-details dt {
@@ -159,7 +159,7 @@ const {
 .session-details dd {
   min-width: 0;
   margin: 0;
-  color: #c9d5da;
+  color: var(--smart-text);
   font-size: 11px;
   overflow-wrap: anywhere;
 }
@@ -168,7 +168,7 @@ const {
 .capability-list {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid #263541;
+  border-top: 1px solid var(--smart-border-strong);
 }
 
 .subsection-heading h3 {
@@ -176,13 +176,13 @@ const {
 }
 
 .subsection-heading span {
-  color: #86d6a7;
+  color: var(--ds-semantic-success);
   font-size: 10px;
 }
 
 .agent-context > p {
   margin: 10px 0 0;
-  color: #91a0a8;
+  color: var(--smart-muted);
   font-size: 11px;
   line-height: 1.55;
 }
@@ -198,13 +198,13 @@ const {
 
 .allowed-actions li {
   padding: 4px 6px;
-  border: 1px solid #263541;
-  color: #b9c7cd;
+  border: 1px solid var(--smart-border-strong);
+  color: var(--smart-muted);
   font-size: 10px;
 }
 
 .agent-context .approval-boundary {
-  color: #f4c879;
+  color: var(--smart-warning);
 }
 
 .capability-list {
@@ -216,25 +216,25 @@ const {
   justify-content: space-between;
   gap: 8px;
   padding: 8px 0;
-  border-bottom: 1px solid #18222d;
-  color: #c9d5da;
+  border-bottom: 1px solid var(--smart-border);
+  color: var(--smart-text);
   font: 10px var(--font-mono);
 }
 
 .capability-row small {
-  color: #b6a06b;
+  color: var(--smart-warning);
   font: 10px var(--font-cn);
   text-align: right;
 }
 
 .capability-row small.supported {
-  color: #86d6a7;
+  color: var(--ds-semantic-success);
 }
 
 @media (max-width: 1180px) {
   .server-inspector {
     grid-column: 1 / -1;
-    border-top: 1px solid #18222d;
+    border-top: 1px solid var(--smart-border);
     border-left: 0;
   }
 
@@ -255,7 +255,7 @@ const {
 
 @media (max-width: 700px) {
   .server-inspector {
-    border-bottom: 1px solid #18222d;
+    border-bottom: 1px solid var(--smart-border);
   }
 
   .inspector-content {
