@@ -72,6 +72,7 @@ const routes = [
             { path: 'inspector/statistics', name: 'InspectorStatistics', component: () => import('../views/inspector/InspectorStatisticsView.vue'), meta: routeMetaFor('InspectorStatistics') },
             { path: 'agent', name: 'AgentCommandCenter', component: () => import('../views/agent/AgentCommandCenterView.vue'), meta: routeMetaFor('AgentCommandCenter') },
             { path: 'agent/trace', name: 'ExecutionTrace', component: () => import('../views/agent/ExecutionTraceView.vue'), meta: routeMetaFor('ExecutionTrace') },
+            { path: 'agent/persona', name: 'AgentPersona', component: () => import('../views/agent/AgentPersonaView.vue'), meta: { ...routeMetaFor('AgentPersona'), section: 'AGENT PERSONA / 人格化身' } },
             { path: 'knowledge', name: 'Knowledge', component: () => import('../views/knowledge/KnowledgeView.vue'), meta: routeMetaFor('Knowledge') },
             { path: 'knowledge/personal', name: 'PersonalKnowledge', component: () => import('../views/knowledge/PersonalKnowledgeView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'PERSONAL KNOWLEDGE / 个人知识库' } },
             { path: 'knowledge/quiz', name: 'KnowledgeQuiz', component: () => import('../views/knowledge/QuizView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'QUIZ BANK / 运维题库' } },

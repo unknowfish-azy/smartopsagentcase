@@ -768,6 +768,12 @@ api/generated/
 # 本地代理工作区（Trae 等 AI agent 在仓库根下建的工作目录）
 /.trae/
 
+# 数字人取证的原始下载目录（可复现，不入库；许可快照与 manifest 照常提交）
+/docs/design/agent-avatar-3d-v1/inbox/
+
+# 占位数字人模型（15MB，可由 acquire.mjs 复现；LICENSE/SOURCE 回执照常入库）
+/frontend/public/avatar/**/*.vrm
+
 # ============================================================
 # End
 # ============================================================

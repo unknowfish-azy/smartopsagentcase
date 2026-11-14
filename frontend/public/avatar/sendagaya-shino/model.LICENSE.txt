@@ -1,0 +1,19 @@
+# 人工转录快照（非脚本抓取）
+source: https://vroid.pixiv.help/hc/en-us/articles/360013482714-Sendagaya-Shino
+retrievedAt: 2026-11-14
+method: 浏览器渲染读取（该站点对脚本/非交互请求返回 HTTP 403，acquire.mjs 无法直接抓取）
+scope: 仅转录与本资产许可直接相关的段落，未改动措辞；模型简介等非许可内容未收录
+modelTitleInFile: Sendagaya Shino
+
+--- 原文（CC License 段） ---
+
+The CC license* for this model is CC0. This model can be edited and used freely.
+(Please use this model appropriately, within the scope of common sense.)
+
+To the extent possible under law, pixiv Inc. has waived all copyright and related or
+neighboring rights to this model. This work is published from: Japan.
+
+* CC license: Creative Commons license.
+
+About CC0: http://creativecommons.org/publicdomain/zero/1.0/
+CC0 FAQ: https://creativecommons.jp/sciencecommons/cc0-faq/

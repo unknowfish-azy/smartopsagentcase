@@ -1,0 +1,91 @@
+{
+  "$schema": "./sources.schema.json",
+  "note": "人工审核过的来源清单。allow=false 的一律不抓；改这一行等于承担责任，评审结论要同步写进 reports/。",
+  "checkedAt": "2026-11-14",
+  "entries": [
+    {
+      "id": "three-vrm",
+      "repo": "pixiv/three-vrm",
+      "kind": "reference-code",
+      "spdx": "MIT",
+      "allow": true,
+      "runtime": true,
+      "use": "前端运行时依赖 + 逆向学习对象：VRM 加载、表情/口型/视线 API",
+      "note": "唯一允许进 package.json 的 3D 相关依赖"
+    },
+    {
+      "id": "chatvrm",
+      "repo": "pixiv/ChatVRM",
+      "kind": "reference-code",
+      "spdx": "MIT",
+      "allow": true,
+      "runtime": false,
+      "use": "逆向学习对象：语音→口型链路、相机与光照参数",
+      "note": "仓库已归档(2025-05)。只读代码，不复制其示例模型资产；资产条款独立于代码许可"
+    },
+    {
+      "id": "vmc",
+      "repo": "sh-akira/VirtualMotionCapture",
+      "kind": "reference-code",
+      "spdx": "MIT",
+      "allow": true,
+      "runtime": false,
+      "use": "可选参考：摄像头面部驱动（本项目默认不启用，避免采集摄像头）",
+      "note": "仅作技术参考；启用摄像头需用户显式授权"
+    },
+    {
+      "id": "mpfb2",
+      "repo": "makehumancommunity/mpfb2",
+      "kind": "offline-tool",
+      "spdx": "GPL-3.0-only AND CC0-1.0",
+      "allow": true,
+      "runtime": false,
+      "use": "离线生成自建形象的 Blender 插件：代码 GPLv3，资产 CC0，导出物归使用者",
+      "note": "GPL 只约束再分发 addon 代码。只在本地/CI 的 Blender 环境用，绝不进前端仓库。原清单指向 cfcohen/mpfb2（fork，末次推送 2022-11，0 star），已改指正仓以保证取证可复现"
+    },
+    {
+      "id": "makehuman",
+      "repo": "makehumancommunity/makehuman",
+      "kind": "rejected",
+      "spdx": "NOASSERTION",
+      "allow": false,
+      "runtime": false,
+      "use": "",
+      "note": "仓库许可未声明（代码 AGPL 系，资产 CC0 但边界不清）。改走 mpfb2 更干净的许可路径"
+    },
+    {
+      "id": "rocketbox",
+      "repo": "microsoft/Microsoft-Rocketbox",
+      "kind": "rejected",
+      "spdx": "MIT",
+      "allow": false,
+      "runtime": false,
+      "use": "",
+      "note": "仓库已归档(2022)；MIT 主要覆盖工具脚本，模型资产授权需单独确认，不作为基础形象"
+    },
+    {
+      "id": "vrm-spec",
+      "repo": "vrm-c/vrm-specification",
+      "kind": "reference-doc",
+      "spdx": null,
+      "allow": false,
+      "runtime": false,
+      "use": "仅读规范文档",
+      "note": "仓库未声明 SPDX。只读文档理解 VRM 1.0 结构，不落地其代码与示例资产"
+    },
+    {
+      "id": "vroid-sendagaya-shino",
+      "repo": null,
+      "kind": "model-asset",
+      "spdx": "CC0-1.0",
+      "allow": true,
+      "runtime": false,
+      "licenseUrl": "https://vroid.pixiv.help/hc/en-us/articles/360013482714-Sendagaya-Shino",
+      "urls": [
+        "https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/Sendagaya_Shino.vrm"
+      ],
+      "use": "占位形象：阶段 2 只用来打通「加载 → 站立 → 眨眼/呼吸 → 释放」链路，不作为最终形象",
+      "note": "许可依据有二：① VRoid FAQ 该模型页明确写 CC0，pixiv Inc. 已放弃著作权；② 文件内 VRM meta 自证 licenseName=CC0、allowedUserName=Everyone、commercialUssageName=Allow、title=Sendagaya Shino。资产托管在 madjin/vrm-samples 镜像仓，镜像仓本身不声明许可，所以必须靠 licenseUrl 快照 + SHA256 固定。实测 sha256=1E177C1A7B14F783A9C48395831DB8616260D3BDDD4154CB2784B779ADCA49B5，15,074,328 B，VRM 0.x，17 材质/30 贴图/3 mesh —— 超 6MB 与 draw call≤12 预算，仅因占位接受，阶段 2 结束后必须替换"
+    }
+  ]
+}

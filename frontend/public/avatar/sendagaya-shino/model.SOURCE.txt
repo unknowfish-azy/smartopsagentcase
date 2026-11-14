@@ -1,0 +1,5 @@
+source: https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/Sendagaya_Shino.vrm
+fetchedAt: 2026-11-14T02:00:12.422Z
+bytes: 15074328
+sha256: 1e177c1a7b14f783a9c48395831db8616260d3bddd4154cb2784b779adca49b5
+license: 见 manifest.generated.json 与 license-snapshots/（本文件只是出处回执）
