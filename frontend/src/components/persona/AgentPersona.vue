@@ -188,15 +188,15 @@ onBeforeUnmount(teardown)
 
 /* 状态色只做第三通道：灰度下靠姿态/节奏区分，颜色仅用于强化 */
 .persona[data-state='warning'] {
-  border-color: rgba(217, 185, 109, .5);
+  border-color: color-mix(in srgb, var(--smart-warning) 50%, transparent);
 }
 
 .persona[data-state='error'] {
-  border-color: rgba(220, 132, 144, .55);
+  border-color: color-mix(in srgb, var(--smart-danger) 55%, transparent);
 }
 
 .persona[data-state='recovering'] {
-  border-color: rgba(139, 207, 180, .45);
+  border-color: color-mix(in srgb, var(--smart-success) 45%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -427,7 +427,7 @@ const trendIcon = computed(() => {
 
 
 .stat-card-info .stat-icon {
-  color: #64748b;
+  color: var(--smart-muted);
 }
 
 

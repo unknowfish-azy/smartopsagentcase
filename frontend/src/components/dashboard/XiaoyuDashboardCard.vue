@@ -268,7 +268,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--ds-color-primary);
   border-radius: var(--ds-radius-md);
   background: var(--ds-color-primary);
-  color: #fff;
+  color: var(--smart-primary-foreground);
   font-size: var(--ds-type-caption-size);
   font-weight: 500;
   cursor: pointer;
@@ -353,9 +353,9 @@ onBeforeUnmount(() => {
   background: var(--ds-pill-info-bg);
   color: var(--ds-color-primary);
 }
-.xiaoyu-state-pill[data-state="warning"] { background: color-mix(in srgb, #ffb454 16%, transparent); color: #ffb454; }
-.xiaoyu-state-pill[data-state="error"]    { background: color-mix(in srgb, #ff6b6b 16%, transparent); color: #ff6b6b; }
-.xiaoyu-state-pill[data-state="recovering"] { background: color-mix(in srgb, #5fd3a5 16%, transparent); color: #5fd3a5; }
+.xiaoyu-state-pill[data-state="warning"] { background: color-mix(in srgb, var(--smart-warning) 16%, transparent); color: var(--smart-warning); }
+.xiaoyu-state-pill[data-state="error"]    { background: color-mix(in srgb, var(--smart-danger) 16%, transparent); color: var(--smart-danger); }
+.xiaoyu-state-pill[data-state="recovering"] { background: color-mix(in srgb, var(--smart-success) 16%, transparent); color: var(--smart-success); }
 
 @media (max-width: 1024px) {
   .xiaoyu-body { grid-template-columns: 140px minmax(0, 1fr); }

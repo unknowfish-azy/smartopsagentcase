@@ -354,8 +354,8 @@ async function finishLogin(user) {
   --smart-primary-soft: rgba(122, 215, 245, .14);
   --smart-text: #E8F2F7;
   --smart-muted: #6B8BA4;
-  --smart-border: rgba(122, 215, 245, .14);
-  --smart-border-strong: rgba(122, 215, 245, .28);
+  --smart-border: color-mix(in srgb, var(--smart-primary-strong) 14%, transparent);
+  --smart-border-strong: color-mix(in srgb, var(--smart-primary-strong) 28%, transparent);
   --smart-surface-raised: #0B1A2C;
   /* effect-* 令牌：青绿星云 */
   --smart-effect-primary: #3FB950;
@@ -394,8 +394,8 @@ async function finishLogin(user) {
   --smart-primary-strong: #0E4F7A;
   --smart-text: #0C2535;
   --smart-muted: #46687A;
-  --smart-border: rgba(14, 79, 122, .18);
-  --smart-border-strong: rgba(14, 79, 122, .30);
+  --smart-border: color-mix(in srgb, var(--smart-primary-strong) 18%, transparent);
+  --smart-border-strong: color-mix(in srgb, var(--smart-primary-strong) 30%, transparent);
   --smart-surface-raised: #F2F8FC;
   --smart-effect-primary: #1A7F37;
   --smart-effect-strong: #0E4F7A;

@@ -459,24 +459,24 @@ onBeforeUnmount(stop)
 </script>
 
 <style scoped>
-.axis-card { background: #151A21; border: 1px solid #1E2630; border-radius: 12px; padding: 16px; min-height: 480px; display: flex; flex-direction: column; }
+.axis-card { background: var(--ds-surface-raised); border: 1px solid var(--ds-surface-overlay); border-radius: 12px; padding: 16px; min-height: 480px; display: flex; flex-direction: column; }
 .axis-title { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
 .axis-title h2 { margin: 0; font-size: 16px; }
-.view-name { color: #2496ed; }
-.axis-count { color: #6B7D8C; font-size: 12px; }
+.view-name { color: var(--smart-primary); }
+.axis-count { color: var(--smart-muted); font-size: 12px; }
 .axis-canvas-wrap { width: 100%; height: 420px; position: relative; flex: 1; }
 .axis-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
-.axis-empty, .axis-error { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #6B7D8C; font-size: 13px; }
-.axis-error button { background: #1E2630; border: 0; color: #E8F2F7; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-.tip { position: absolute; z-index: 5; min-width: 186px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.14); border-radius: 5px; background: #1b212a; color: #E8F2F7; font: 10.5px/1.65 Consolas, monospace; pointer-events: none; transform: translate(-50%, -110%); }
-.tip b { display: block; margin-bottom: 4px; color: #7ad7f5; }
-.tip span { display: flex; justify-content: space-between; gap: 14px; color: #92a6b5; }
-.tip span i { font-style: normal; color: #E8F2F7; }
-.axis-foot { display: flex; flex-wrap: wrap; gap: 12px 18px; padding-top: 10px; border-top: 1px solid #1E2630; color: #92a6b5; font: 10px Consolas, monospace; letter-spacing: .06em; margin-top: 10px; }
+.axis-empty, .axis-error { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--smart-muted); font-size: 13px; }
+.axis-error button { background: var(--ds-surface-overlay); border: 0; color: var(--smart-text); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.tip { position: absolute; z-index: 5; min-width: 186px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--smart-surface) 14%, transparent); border-radius: 5px; background: var(--smart-surface-raised); color: var(--smart-text); font: 10.5px/1.65 Consolas, monospace; pointer-events: none; transform: translate(-50%, -110%); }
+.tip b { display: block; margin-bottom: 4px; color: var(--smart-primary-strong); }
+.tip span { display: flex; justify-content: space-between; gap: 14px; color: var(--smart-muted); }
+.tip span i { font-style: normal; color: var(--smart-text); }
+.axis-foot { display: flex; flex-wrap: wrap; gap: 12px 18px; padding-top: 10px; border-top: 1px solid var(--ds-surface-overlay); color: var(--smart-muted); font: 10px Consolas, monospace; letter-spacing: .06em; margin-top: 10px; }
 .axis-foot i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 2px; vertical-align: -1px; }
-.dot-linked { background: #7ad7f5; border-radius: 50% !important; }
-.dot-ok { background: #3fb950; }
-.dot-warn { background: #d29922; }
-.dot-bad { background: #f85149; }
+.dot-linked { background: var(--smart-primary-strong); border-radius: 50% !important; }
+.dot-ok { background: var(--ds-semantic-success); }
+.dot-warn { background: var(--ds-semantic-warning); }
+.dot-bad { background: var(--ds-semantic-danger); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 </style>

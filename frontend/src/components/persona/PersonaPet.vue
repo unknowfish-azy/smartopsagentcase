@@ -339,8 +339,8 @@ onBeforeUnmount(() => {
   height: 6px;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(220, 247, 255, .92);
-  box-shadow: 0 0 8px 2px rgba(180, 235, 255, .7), 0 0 16px 4px rgba(122, 215, 245, .4);
+  background: color-mix(in srgb, var(--smart-primary-strong) 92%, var(--smart-text));
+  box-shadow: 0 0 8px 2px color-mix(in srgb, var(--smart-primary-strong) 70%, transparent), 0 0 16px 4px color-mix(in srgb, var(--smart-primary-strong) 40%, transparent);
   animation: orb-core 3.2s ease-in-out infinite;
 }
 
