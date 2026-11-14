@@ -5,19 +5,19 @@
         <span class="u-overline">XIAOYU · 智能体化身</span>
         <h3 class="u-section">小鱼</h3>
       </div>
-      <span class="xiaoyu-state-pill" :data-state="personaState">{{ personaStateLabel }}</span>
+      <button type="button" class="xiaoyu-state-pill" :data-state="personaState" :title="`点击切换状态（演示） · 当前：${personaStateLabel}`" @click="cycleDemoState">{{ personaStateLabel }}</button>
     </header>
 
     <div class="xiaoyu-body">
-      <!-- 3D 半身舞台：竖版 16:10 裁剪，只露上半身 -->
-      <div class="xiaoyu-stage" aria-label="小鱼 3D 形象">
+      <!-- 3D 半身舞台：点击小鱼开口说话 -->
+      <button type="button" class="xiaoyu-stage" aria-label="小鱼 3D 形象 · 点击让小鱼说话" @click="speakGreeting">
         <AgentPersona
           ref="personaRef"
           :state="personaState"
           mode="vrm"
           quality="auto"
         />
-      </div>
+      </button>
 
       <div class="xiaoyu-side">
         <!-- 当前状态 + 情境一句话 -->
@@ -44,23 +44,23 @@
           <button type="button" class="xiaoyu-quick" @click="goExplainAlerts">解释告警</button>
         </div>
 
-        <!-- RAG + Agent 训练 双行指标 -->
+        <!-- RAG + Agent 训练 双行指标：可点击跳转对应详情 -->
         <div class="xiaoyu-metrics">
-          <div class="xiaoyu-metric">
+          <button type="button" class="xiaoyu-metric" @click="router.push('/knowledge?highlight=rag')">
             <span class="xiaoyu-metric-label">RAG</span>
             <strong>{{ ragTotal }}</strong>
-            <span class="xiaoyu-metric-hint">知识条目</span>
-          </div>
-          <div class="xiaoyu-metric">
+            <span class="xiaoyu-metric-hint">知识条目 · 点击查看</span>
+          </button>
+          <button type="button" class="xiaoyu-metric" @click="router.push('/agent/module#loop')">
             <span class="xiaoyu-metric-label">训练</span>
             <strong>{{ agentStats.conversations }}</strong>
-            <span class="xiaoyu-metric-hint">对话历史</span>
-          </div>
-          <div class="xiaoyu-metric">
+            <span class="xiaoyu-metric-hint">对话历史 · 点击查看</span>
+          </button>
+          <button type="button" class="xiaoyu-metric" @click="router.push('/model/strength')">
             <span class="xiaoyu-metric-label">技能</span>
             <strong>{{ agentStats.skills }}</strong>
-            <span class="xiaoyu-metric-hint">可用</span>
-          </div>
+            <span class="xiaoyu-metric-hint">可用 · 点击查看</span>
+          </button>
         </div>
       </div>
     </div>
@@ -117,6 +117,34 @@ const ragTotal = ref(0)
 /** Agent 训练统计 — mock，真实接入后替换成 modelGovernance 接口 */
 const agentStats = ref({ conversations: 156, skills: 8, lastFineTune: '3 天前' })
 
+/** 演示模式：手动 cycle 状态（点击状态 pill 触发） */
+const DEMO_STATE_ORDER = ['idle', 'thinking', 'observing', 'executing', 'warning', 'error', 'recovering']
+const demoIdx = ref(0)
+const demoMode = ref(false)
+function cycleDemoState() {
+  demoMode.value = true
+  demoIdx.value = (demoIdx.value + 1) % DEMO_STATE_ORDER.length
+  const next = DEMO_STATE_ORDER[demoIdx.value]
+  personaRef.value?.setState?.(next, { fade: 350 })
+  personaRef.value?.speakText?.(STATE_LABELS[next] ?? next)
+}
+
+/** 点击 3D 舞台让小鱼开口说话 */
+const GREETINGS = {
+  idle: ['你好，今天想让我做什么？', '系统一切正常，随时待命。', '嗨，有什么可以帮你的？'],
+  warning: ['有活跃告警，我来帮你看看。', '注意：需要你关注。', '我注意到了一些异常。'],
+  error: ['故障正在排查中。', '我正在定位问题。', '需要协助吗？'],
+  observing: ['正在观察系统运行。', '巡检进行中。', '一切看起来还好。'],
+  thinking: ['嗯，让我想想。', '正在分析…', '稍等。'],
+  executing: ['执行中，请稍等。', '正在处理。', '马上就好。'],
+  recovering: ['恢复中…', '快好了。', '正在清理现场。']
+}
+function speakGreeting() {
+  const pool = GREETINGS[personaState.value] ?? GREETINGS.idle
+  const text = pool[Math.floor(Math.random() * pool.length)]
+  personaRef.value?.speakText?.(text)
+}
+
 async function loadRag() {
   try {
     const raw = localStorage.getItem('smartops_rag_stats')
@@ -172,8 +200,11 @@ onBeforeUnmount(() => {
   align-items: start;
 }
 
-/* 3D 半身舞台：竖版裁剪，只露上半身 */
+/* 3D 半身舞台：竖版裁剪，只露上半身 — button 加可点击态 */
 .xiaoyu-stage {
+  display: block;
+  cursor: pointer;
+  outline: none;
   aspect-ratio: 9 / 12;
   border-radius: var(--ds-radius-md);
   overflow: hidden;
@@ -182,7 +213,13 @@ onBeforeUnmount(() => {
     var(--ds-color-surface-base);
   position: relative;
   isolation: isolate;
+  transition: box-shadow var(--ds-duration-micro) var(--ds-ease-out),
+              transform var(--ds-duration-micro) var(--ds-ease-out);
 }
+.xiaoyu-stage:hover {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ds-color-primary) 40%, transparent);
+}
+.xiaoyu-stage:active { transform: scale(.98); }
 .xiaoyu-stage :deep(.persona) {
   padding: 0;
   border: none;
@@ -280,7 +317,16 @@ onBeforeUnmount(() => {
   padding: 6px 8px;
   border-radius: var(--ds-radius-sm);
   background: color-mix(in srgb, var(--ds-color-text) 3%, transparent);
+  border: 1px solid transparent;
   text-align: left;
+  cursor: pointer;
+  transition: border-color var(--ds-duration-micro) var(--ds-ease-out),
+              background var(--ds-duration-micro) var(--ds-ease-out);
+  font: inherit;
+}
+.xiaoyu-metric:hover {
+  border-color: var(--ds-color-primary);
+  background: color-mix(in srgb, var(--ds-color-primary) 8%, transparent);
 }
 .xiaoyu-metric-label {
   font: 9px/1 var(--ds-font-mono);
