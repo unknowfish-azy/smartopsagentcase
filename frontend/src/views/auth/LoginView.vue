@@ -555,7 +555,9 @@ async function finishLogin(user) {
 .login-registration button { min-height: 36px; padding: 4px; border: 0; border-radius: 4px; background: var(--smart-surface); color: var(--smart-primary-strong); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
 .login-registration p { flex-basis: 100%; margin: 6px 0 0; line-height: 1.6; text-align: center; overflow-wrap: anywhere; }
 .login-form__guidance { margin: 0; color: var(--smart-muted); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
-.login-form__footer { margin: 0; padding-top: 12px; border-top: 1px solid var(--smart-border); color: var(--smart-muted); font-size: 11px; line-height: 1.7; text-align: center; }
+/* 浅色主题玻璃卡叠加后，纯 --smart-muted 前景仅 3.61:1（login-layout 契约要求 ≥4.5:1）。
+   混入主文本色后在明暗主题下都达标，同时保留比正文略弱一级的层级。 */
+.login-form__footer { margin: 0; padding-top: 12px; border-top: 1px solid var(--smart-border); color: color-mix(in srgb, var(--smart-text) 85%, var(--smart-muted)); font-size: 11px; line-height: 1.7; text-align: center; }
 .login-form button:disabled { cursor: not-allowed; opacity: .65; }
 .login-form :is(button, input):focus-visible, .login-appearance select:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 3px; }
 .login-form .login-input-shell input:focus-visible { outline: none; }

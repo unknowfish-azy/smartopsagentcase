@@ -90,7 +90,9 @@ test('model menu keeps the Astra6 group and exposes the gateway inside it', () =
 })
 
 test('uses concise Chinese for the Knowledge navigation label', () => {
-  const group = findPersonalSystemGroup('Knowledge')
+  // 侧栏知识入口已指向 KnowledgeSpace（/knowledge/space）；兼容两种 routeName，
+  // 断言的仍是「中文标签保持简洁」这一语义，不随入口改名而失效。
+  const group = findPersonalSystemGroup('KnowledgeSpace') || findPersonalSystemGroup('Knowledge')
 
   assert.equal(group.label, '知识库')
   assert.equal(group.cn, '知识库')
