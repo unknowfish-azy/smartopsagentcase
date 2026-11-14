@@ -80,8 +80,8 @@ const {
   display: grid;
   min-height: min(660px, calc(100vh - 190px));
   grid-template-columns: 236px minmax(0, 1fr) 250px;
-  border: 1px solid #18222d;
-  background: #080e14;
+  border: 1px solid var(--smart-border);
+  background: var(--smart-surface);
 }
 .operations-workspace.session-tree-hidden { grid-template-columns: minmax(0, 1fr) 250px; }
 .operations-workspace.server-inspector-hidden { grid-template-columns: 236px minmax(0, 1fr); }

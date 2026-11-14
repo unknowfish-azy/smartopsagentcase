@@ -363,8 +363,8 @@ button:disabled{cursor:wait;opacity:.65}
 .loop-title{font-weight:600;overflow-wrap:anywhere}
 .loop-meta{display:flex;gap:6px;flex-wrap:wrap}
 .loop-meta em{font-style:normal;font-size:11px;padding:2px 6px;border-radius:5px;background:var(--smart-primary-soft);color:var(--smart-muted)}
-.loop-meta .src-auto{color:#2f7b5f}
-.loop-meta .sev-HIGH,.loop-meta .sev-CRITICAL{color:#b4452f}
+.loop-meta .src-auto{color:var(--smart-success)}
+.loop-meta .sev-HIGH,.loop-meta .sev-CRITICAL{color:var(--smart-danger)}
 .loop-item small{color:var(--smart-muted);font-size:11px}
 .detail{padding:18px;background:var(--smart-surface);border:1px solid var(--smart-border);border-radius:12px;display:grid;gap:14px}
 .detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
@@ -374,14 +374,14 @@ button:disabled{cursor:wait;opacity:.65}
 .trace-link{font-size:12px;color:var(--smart-primary-strong);text-decoration:none;border-bottom:1px dashed currentColor}
 .trace-link:hover{opacity:.8}
 .outcome{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--smart-primary-soft);color:var(--smart-muted);white-space:nowrap}
-.outcome-RESOLVED{color:#2f7b5f}
-.outcome-UNRESOLVED{color:#b4452f}
+.outcome-RESOLVED{color:var(--smart-success)}
+.outcome-UNRESOLVED{color:var(--smart-danger)}
 .block{border-top:1px solid var(--smart-border);padding-top:12px;display:grid;gap:8px}
 .block h3{margin:0;font-size:15px}
 .block p{margin:0;line-height:1.6;overflow-wrap:anywhere}
 .block .key{display:inline-block;min-width:52px;color:var(--smart-muted);font-size:12px;margin-right:8px}
 .muted{color:var(--smart-muted)}
-.warn{color:#b4452f;font-size:13px}
+.warn{color:var(--smart-warning);font-size:13px}
 .outcome-line{color:var(--smart-text)}
 .evidence,.memories{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .evidence li,.memories li{padding:10px 12px;border:1px solid var(--smart-border);border-radius:8px;background:var(--smart-primary-soft);display:grid;gap:4px}
@@ -394,8 +394,8 @@ button:disabled{cursor:wait;opacity:.65}
 @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.pipeline{grid-template-columns:repeat(2,1fr)}.workspace{grid-template-columns:1fr}}
 
 /* === 启佑风格背景层 === */
-.agent-shell{position:relative;min-height:calc(100vh - 64px);overflow:hidden;background:radial-gradient(ellipse at 80% 10%,rgba(122,215,245,.10) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,rgba(63,185,80,.07) 0%,transparent 50%),#040B16}
-.agent-shell[data-theme='light']{background:radial-gradient(ellipse at 80% 10%,rgba(26,110,154,.07) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,rgba(26,127,55,.04) 0%,transparent 50%),#EAF3FA}
+.agent-shell{position:relative;min-height:calc(100vh - 64px);overflow:hidden;background:radial-gradient(ellipse at 80% 10%,color-mix(in srgb,var(--smart-primary-strong) 10%,transparent) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,color-mix(in srgb,var(--ds-semantic-success) 7%,transparent) 0%,transparent 50%),var(--smart-bg)}
+.agent-shell[data-theme='light']{background:radial-gradient(ellipse at 80% 10%,color-mix(in srgb,var(--smart-primary) 7%,transparent) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,color-mix(in srgb,var(--ds-semantic-success) 4%,transparent) 0%,transparent 50%),var(--smart-bg)}
 .agent-ambient{position:absolute;inset:0;z-index:0;opacity:.48;pointer-events:none}
 .agent-meteors{position:absolute;inset:0;z-index:0;opacity:.35;pointer-events:none}
 .agent-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 75% 15%,rgba(122,215,245,.22) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(63,185,80,.16) 0%,transparent 45%);filter:blur(24px);background-size:240% 240%;animation:agent-drift 22s ease-in-out infinite alternate}
