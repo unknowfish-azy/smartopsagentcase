@@ -1,5 +1,5 @@
 <script setup>
-/* ===== 三视图：space（默认 3D 地图）/ grid（域内行）/ list（全量平铺） ===== */
+/* ===== 五视图：mosaic（照片墙，默认）/ space（3D 地图）/ field（场域）/ grid（域内行）/ list（全量平铺） ===== */
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { knowledgeDomains, knowledgeEntries } from '../knowledgeCatalog.js'
 import { knowledgeReadApi } from '../knowledgeLibrary.js'
@@ -8,14 +8,18 @@ import { useSpaceCamera } from './useSpaceCamera.js'
 
 /* —— 空间场新增（SP-01/02/03/04/06/07）—— 现有视图逻辑完全不动 */
 import SpaceFieldView from './SpaceFieldView.vue'
+import MosaicWallView from './mosaic/MosaicWallView.vue'
 import { computeField } from './useFieldLayout.js'
 
 // 空间场一次计算（无洞察输入，先跑知识层 + 证据层）
 const SP_NOW = Date.parse('2026-11-14T00:00:00Z')
 computeField(knowledgeEntries, knowledgeDomains, [], { now: SP_NOW })
 
-const viewMode = ref('space')
+const viewMode = ref('mosaic') // 默认照片墙模式（D5 确认）；场域保留为 pill
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+// 照片墙简化统计（MosaicWallView 内部另算全量，这里只给顶栏占位）
+const mosaicTotal = knowledgeEntries.length
+const mosaicDomainCount = knowledgeDomains.length
 function onViewModeChange (mode) { viewMode.value = mode }
 
 // 网格视图：按域分组平铺，每个域一个 section，域内按 type 优先级 + 标题排序
@@ -514,6 +518,8 @@ function onZoneHeadClick (e, zone) {
 
 /* ===== 键盘 ===== */
 function onKeyDown (e) {
+  // 照片墙自管键盘（Ctrl+K / Esc / 方向键 / Enter）；避免 Esc 切回 space、`/` 聚焦旧搜索框、`0` 调用旧相机
+  if (viewMode.value === 'mosaic') return
   // 检索输入框内部走独立逻辑
   if (e.target.id === 'ks-query') {
     if (e.key === 'Escape') { e.target.value = ''; applySearch(''); e.target.blur() }
@@ -567,19 +573,20 @@ function init () {
 
 let ro = null
 onMounted(() => {
-  init()
-  ro = new ResizeObserver(() => {
-    renderMinimapViewport()
-    renderHUD()
-  })
-  ro.observe(stageRef.value)
+  // init() 仅用于 space（3D 地图）模式；field 模式下跳过，避免空引用错误
+  if (viewMode.value === 'space') {
+    init()
+    ro = new ResizeObserver(() => {
+      renderMinimapViewport()
+      renderHUD()
+    })
+    if (stageRef.value) ro.observe(stageRef.value)
+    watch(mountedZoneIds, async () => {
+      await nextTick()
+      flushMountedVisibleNow()
+    }, { immediate: false })
+  }
   window.addEventListener('keydown', onKeyDown)
-
-  // mountedZoneIds 变 → nextTick 让 Vue 渲染出新域的全部卡 DOM → flushMountedVisibleNow 同步判定视口内可见卡
-  watch(mountedZoneIds, async () => {
-    await nextTick()
-    flushMountedVisibleNow()
-  }, { immediate: false })
 })
 onBeforeUnmount(() => {
   ro?.disconnect()
@@ -592,17 +599,21 @@ onBeforeUnmount(() => {
   <article class="ks-root">
     <header class="ks-bar">
       <div class="ks-brand"><b>知识空间</b><span>SPATIAL IA</span></div>
-      <div class="ks-stat">
+      <div class="ks-stat" v-if="viewMode !== 'mosaic'">
         <b>{{ stat.total }}</b> 条 · <b>{{ stat.domains }}</b> 个域 · 当前 <b>{{ stat.domainLabel }}</b>
         <span class="ks-stat-lod">· L{{ stat.lod }} · {{ stat.scale }}% · {{ stat.mountedCards }} 卡 · 肌理 {{ stat.bulk }}</span>
       </div>
+      <div class="ks-stat" v-else>
+        <b>{{ mosaicTotal }}</b> 格 · <b>{{ mosaicDomainCount }}</b> 个域 · 照片墙
+      </div>
       <span class="ks-grow"></span>
-      <label class="ks-search">
+      <label class="ks-search" v-if="viewMode !== 'mosaic'">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5.5" r="4"/><path d="M8.6 8.6 11.5 11.5"/></svg>
         <input id="ks-query" :value="queryText" @input="onQueryInput" placeholder="检索条目…" aria-label="检索知识条目">
         <kbd>/</kbd>
         <span v-if="hitCount > 0" class="ks-hit-badge">{{ hitCount }}</span>
       </label>
+      <button class="ks-pill" type="button" :class="{ 'ks-pill--on': viewMode === 'mosaic' }" @click="onViewModeChange('mosaic')">照片墙</button>
       <button class="ks-pill" type="button" :class="{ 'ks-pill--on': viewMode === 'space' }" @click="onViewModeChange('space')">空间</button>
       <button class="ks-pill" type="button" :class="{ 'ks-pill--on': viewMode === 'field' }" @click="onViewModeChange('field')">场域</button>
       <button class="ks-pill" type="button" :class="{ 'ks-pill--on': viewMode === 'grid' }" @click="onViewModeChange('grid')">网格</button>
@@ -736,6 +747,9 @@ onBeforeUnmount(() => {
       </aside>
     </div>
 
+    <!-- ============ 照片墙视图（新增第 5 视图，默认） ============ -->
+    <MosaicWallView v-else-if="viewMode === 'mosaic'" />
+
     <!-- ============ 三层空间场视图（CSS 3D / FieldStage + FieldPlane） ============ -->
     <SpaceFieldView v-else-if="viewMode === 'field'" />
 
@@ -775,8 +789,8 @@ onBeforeUnmount(() => {
       <p v-if="!listItems.length" class="ks-grid-empty">检索无结果，或知识库暂无命中条目。</p>
     </div>
 
-    <!-- 三视图共用侧栏（grid / list 也支持） -->
-    <aside v-if="selectedCard && viewMode !== 'space'" class="ks-side ks-side--alt" role="dialog" aria-modal="true" aria-label="知识条目详情">
+    <!-- 三视图共用侧栏（grid / list 也支持；照片墙自管详情，排除以免双弹） -->
+    <aside v-if="selectedCard && viewMode !== 'space' && viewMode !== 'mosaic'" class="ks-side ks-side--alt" role="dialog" aria-modal="true" aria-label="知识条目详情">
       <button class="ks-side-close" aria-label="关闭侧栏" @click="closeCard">×</button>
       <header class="ks-side-header">
         <div class="ks-side-meta">
