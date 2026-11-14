@@ -62,7 +62,7 @@ export function scoreAtom (atom, insight) {
   const aService = String(atom?.service || '').toLowerCase()
   const aDomain  = String(atom?.domain || '').toLowerCase()
   const aTags    = Array.isArray(atom?.tags) ? atom.tags.map(t => String(t).toLowerCase()) : []
-  const aPlatform = String(atom?.platform || '').toLowerCase()
+  const _aPlatform = String(atom?.platform || '').toLowerCase()
 
   const iService = String(insight?.service || '').toLowerCase()
   const iDomain  = String(insight?.domain || '').toLowerCase()
