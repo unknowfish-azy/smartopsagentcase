@@ -56,6 +56,27 @@ IntersectionObserver（root=stage, rootMargin=120px, threshold=0）
 | **世界变换后 getBoundingClientRect 判定** | IO 判定基于 transform 后的视觉位置，Chrome 和 headless Chromium 表现一致 | 已在 headless 实测：L1 mountedCards=16、L2=3 与视觉一致 |
 | **IO callback 异步** | flushMountedVisibleNow 同步初始化后，IO 回调在下一帧触发，mountedCards 在初始化后约 16ms 内更新 | 对用户不可感知（首帧 CSS paint 已过，16ms 内 mountedCards 完成填充） |
 
+## L0 密度肌理（本轮新增）
+
+按 [REVIEW.md](REVIEW.md) 的结论 ① 落地：L0 时每域一个 `<svg>` 画出该域全部卡片矩形，一次绘制，**DOM 卡片仍为 0**。
+
+| 实测 | 值 |
+| --- | --- |
+| L0 状态行 | `737 条 · 10 个域 · 当前 网络基础 · L0 · 18% · 0 卡 · 肌理 737` |
+| L0 肌理 rect 数 | 737（一域一个 svg，不是 737 个 DOM 卡片） |
+| L0 DOM 卡片 | 0 |
+| L1 进入后 | 肌理归 0，改为真卡片（网络基础 90 卡 / MySQL 16 卡，均在域块内） |
+
+**只在 L0 渲染**：L1/L2 域内已挂真卡片，两套视觉并存会互相干扰。
+
+## 本轮顺带修掉的三个实现缺陷
+
+| # | 现象 | 根因 | 修法 |
+| --- | --- | --- | --- |
+| 1 | 除 Linux 外的域，L1 卡片整体偏移到域块外 | 布局产出的是**世界绝对坐标**，而卡片挂在 `position:absolute` 的域块内，`left:c.x` 等于二次叠加了域原点 | 卡片与肌理矩形统一用 `c.x - z.x` / `c.y - z.y` 的域内相对坐标 |
+| 2 | 地图区高度为 0，整块空白 | `.ks-root{height:100%}` 的父级 `.content` 是自动高度块，百分比高度解析为 auto | 按项目既有惯例补 `min-height:calc(100vh - 64px)` |
+| 3 | L0 肌理层不渲染 | 模板写 `cam.lod === 0`，但 `cam.lod` 是 computed ref，`cam` 是普通对象不会被模板解包，比较恒 false | 改 `cam.lod.value === 0`（`:data-lod` 同步修正） |
+
 ## 性能预算对 DESIGN 验收清单的覆盖
 
 | DESIGN §11 条目 | 覆盖 |

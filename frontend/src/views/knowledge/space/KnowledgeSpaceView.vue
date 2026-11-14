@@ -427,6 +427,18 @@ function renderHUD () {
   host.innerHTML = parts.join('')
 }
 
+/* ===== 域色（只用于 3px 竖条、L0 肌理与迷你地图，不作卡片底色） ===== */
+const ZONE_COLORS = [
+  'var(--ds-chart-1)', 'var(--ds-chart-2)', 'var(--ds-chart-3)',
+  'var(--ds-chart-4)', 'var(--ds-chart-5)',
+]
+const zoneColors = computed(() => {
+  const m = new Map()
+  zones.forEach((z, i) => m.set(z.id, ZONE_COLORS[i % ZONE_COLORS.length]))
+  return m
+})
+function zoneColor (z) { return zoneColors.value.get(z.id) || ZONE_COLORS[0] }
+
 /* ===== 状态行 ===== */
 const stat = computed(() => {
   const st = stageRef.value
@@ -439,6 +451,7 @@ const stat = computed(() => {
     lod: cam.lod.value,
     scale: Math.round(cam.k.value * 100),
     mountedCards: mountedCards.value.size,
+    bulk: cam.lod.value === 0 ? cards.length : 0,
   }
 })
 
@@ -575,7 +588,7 @@ onBeforeUnmount(() => {
       <div class="ks-brand"><b>知识空间</b><span>SPATIAL IA</span></div>
       <div class="ks-stat">
         <b>{{ stat.total }}</b> 条 · <b>{{ stat.domains }}</b> 个域 · 当前 <b>{{ stat.domainLabel }}</b>
-        <span class="ks-stat-lod">· L{{ stat.lod }} · {{ stat.scale }}% · {{ stat.mountedCards }} 卡</span>
+        <span class="ks-stat-lod">· L{{ stat.lod }} · {{ stat.scale }}% · {{ stat.mountedCards }} 卡 · 肌理 {{ stat.bulk }}</span>
       </div>
       <span class="ks-grow"></span>
       <label class="ks-search">
@@ -592,7 +605,7 @@ onBeforeUnmount(() => {
 
     <!-- ============ 空间视图（默认） ============ -->
     <div v-if="viewMode === 'space'" ref="stageRef" class="ks-stage" :class="{ dragging }" @wheel.passive="onWheel" @pointerdown="onPointerDown">
-      <div ref="worldRef" class="ks-world" :style="worldStyle" :data-lod="cam.lod">
+      <div ref="worldRef" class="ks-world" :style="worldStyle" :data-lod="cam.lod.value">
         <!-- 关系连线（推断，不是人工确认的依赖）
              L0 只画跨域主 platform 粗线帮助认布局；L1/L2 画视口域内完整集 -->
         <svg class="ks-links" aria-hidden="true">
@@ -622,10 +635,26 @@ onBeforeUnmount(() => {
           :aria-label="`${z.label} 域，${z.n} 条`"
         >
           <div class="ks-zone-head" @click.stop="onZoneHeadClick($event, z)">
-            <span class="ks-zone-bar"></span>
+            <span class="ks-zone-bar" :style="{ background: zoneColor(z) }"></span>
             <span class="ks-zone-name">{{ z.label }}</span>
             <span class="ks-zone-count">{{ z.n }}</span>
           </div>
+          <!-- L0 密度肌理：一域一个 svg 画该域全部卡片矩形，一次绘制，DOM 卡片仍为 0。
+               只在 L0 渲染（L1/L2 域内已挂真卡片，两套视觉并存会互相干扰）。 -->
+          <svg
+            v-if="cam.lod.value === 0"
+            class="ks-bulk"
+            :width="z.w" :height="z.h"
+            aria-hidden="true"
+          >
+            <rect
+              v-for="c in cards.filter(cc => cc.zoneId === z.id)" :key="c.id"
+              :x="c.x - z.x" :y="c.y - z.y" :width="c.w" :height="c.h" rx="2"
+              :style="{ fill: zoneColor(z), stroke: zoneColor(z) }"
+              fill-opacity=".16"
+              stroke-opacity=".28" stroke-width=".6"
+            />
+          </svg>
           <!-- L0（mountedZoneIds 为空）零卡片；L1/L2 域级挂载 → 域内所有卡 DOM 都挂（IO 只控制 mountedCards 状态：内容完整度 + 可见性） -->
           <template v-if="mountedZoneIds.includes(z.id)">
             <template v-for="c in cards.filter(cc => cc.zoneId === z.id)" :key="c.id">
@@ -638,7 +667,7 @@ onBeforeUnmount(() => {
                 'ks-card--offscreen': !mountedCards.has(c.id),
               }"
               :data-card="c.id"
-              :style="{ left: c.x + 'px', top: c.y + 'px', width: c.w + 'px', height: c.h + 'px' }"
+              :style="{ left: (c.x - z.x) + 'px', top: (c.y - z.y) + 'px', width: c.w + 'px', height: c.h + 'px' }"
               :aria-label="`${c.entry.title}，${c.entry.type || '未分类'}`"
               :aria-expanded="selectedCard?.id === c.id"
               @click="onCardClick($event, c)"
@@ -760,7 +789,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.ks-root{position:relative;isolation:isolate;height:100%;display:flex;flex-direction:column;background:var(--ds-surface-base);color:var(--ds-color-text);overflow:hidden}
+.ks-root{position:relative;isolation:isolate;height:100%;min-height:calc(100vh - 64px);display:flex;flex-direction:column;background:var(--ds-surface-base);color:var(--ds-color-text);overflow:hidden}
 
 .ks-bar{display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;border-bottom:1px solid var(--ds-color-border);background:var(--ds-surface-base);flex:0 0 auto}
 .ks-brand{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
@@ -790,6 +819,8 @@ onBeforeUnmount(() => {
 .ks-zone:hover{border-color:var(--ds-color-border-strong);background:rgba(27,33,42,.82)}
 .ks-zone-head{position:absolute;left:0;top:0;right:0;display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--ds-hairline);cursor:pointer}
 .ks-zone-bar{width:3px;height:14px;border-radius:2px;flex:0 0 auto;background:var(--ds-chart-1)}
+/* L0 密度肌理：737 个 rect 共用一次绘制，DOM 卡片仍为 0 */
+.ks-bulk{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
 .ks-zone-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ks-zone-count{margin-left:auto;font:11px var(--ds-font-mono);color:var(--ds-color-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 
