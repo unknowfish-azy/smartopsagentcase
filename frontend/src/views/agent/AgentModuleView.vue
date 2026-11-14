@@ -31,6 +31,8 @@
           <em>{{ profile.en }}</em>
         </b>
         <span class="seal-time">RUNTIME {{ runtimeLabel }} · {{ clock }}</span>
+        <span v-if="stale" class="seal-badge seal-badge--stale">STALE · 数据冻结</span>
+        <span v-if="isRehearsal" class="seal-badge seal-badge--rehearsal">REHEARSAL · 演练锁定</span>
         <button
           v-if="drillState"
           type="button"
@@ -60,10 +62,11 @@
         <div
           ref="fieldRef"
           class="stage-field"
+          :class="{ 'is-stale': stale, 'is-rehearsal': isRehearsal }"
           @pointermove="onPointerMove"
           @pointerleave="onPointerLeave"
         >
-          <FableComposition :state="compositionState" />
+          <FableComposition :field="liveField" :attractor="compositionState" :stale="stale" :reduced="reduced" />
 
           <span class="crop crop--tl" aria-hidden="true"></span>
           <span class="crop crop--tr" aria-hidden="true"></span>
@@ -72,7 +75,7 @@
           <span class="stage-meta" aria-hidden="true">SCALE 1:1 · SVG · REV 5.2</span>
 
           <div class="stage-gaze">
-            <FableGaze :look-x="look.x" :look-y="look.y" />
+            <FableGaze :look-x="look.x" :look-y="look.y" :field="liveField" :stale="stale" :reduced="reduced" />
           </div>
 
           <span class="stage-body-line" aria-hidden="true"></span>
@@ -82,7 +85,9 @@
                 :seed="7.2"
                 tone="clay"
                 :size="164"
-                :breathe="!reduced"
+                :breathe="!reduced && !stale"
+                :volume="liveField.volume"
+                :pulse="liveField.pulse"
                 label="肥波：智能体的体积"
               />
             </span>
@@ -95,9 +100,9 @@
             <p class="cap-en">{{ profile.en }}</p>
             <p class="cap-desc">{{ profile.desc }}</p>
             <dl class="cap-params" aria-label="构成参数">
-              <div><dt>APERTURE</dt><dd>{{ profile.params.aperture }}</dd></div>
-              <div><dt>TILT</dt><dd>{{ profile.params.tilt }}</dd></div>
-              <div><dt>VOLUME</dt><dd>{{ profile.params.volume }}</dd></div>
+              <div><dt>APERTURE</dt><dd>{{ formatAperture(liveField.aperture) }}</dd></div>
+              <div><dt>TILT</dt><dd>{{ formatTilt(liveField.tilt) }}</dd></div>
+              <div><dt>VOLUME</dt><dd>{{ formatVolume(liveField.volume) }}</dd></div>
             </dl>
           </div>
         </div>
@@ -270,9 +275,11 @@ import FatBlob from '../../components/agent/fable/FatBlob.vue'
 import { resolvedTheme } from '../../theme.js'
 import { visualMode } from '../../visual/visualMode.js'
 import { subscribe } from '../../visual/motionScheduler.js'
-import { getDecisionLoops } from '../../api/decisionLoop'
+import { getDecisionLoops, getDecisionLoopStats } from '../../api/decisionLoop'
 import { getInspectorSummary } from '../../api/inspector'
 import { useCompanionStore } from '../../stores/companion.js'
+import { computeField } from './fable/useCompositionField.js'
+import { useCompositionFieldClock } from './fable/useCompositionFieldClock.js'
 import '../../assets/styles/fable-agent.css'
 
 const companion = useCompanionStore()
@@ -384,6 +391,18 @@ const runtimeLabel = computed(() => (runtimeState.value === 'warning' ? 'WARNING
 const summary = ref(null)
 const loops = ref([])
 const loopsStatus = ref('loading')
+const stats = ref(null)
+
+/* ---------------------------- 数据新鲜度（DESIGN §5） ---------------------------- */
+
+/** 最近一次成功获取数据的时间戳（ms）。请求失败时不更新，保持旧值。 */
+const fetchedAt = ref(0)
+/** 当前时间戳，每秒刷新一次，用于 stale 判定。 */
+const now = ref(Date.now())
+/** stale：距上次成功获取 ≥ 30s。此时冻结形状、停 pulse、读数显示「—」。 */
+const stale = computed(() => fetchedAt.value > 0 && now.value - fetchedAt.value > 30_000)
+/** 演练模式：drillState 不为 null。视觉上加 REHEARSAL 角标 + 锁定环。 */
+const isRehearsal = computed(() => drillState.value !== null)
 
 const health = computed(() => {
   const data = summary.value
@@ -397,6 +416,21 @@ const alerts = computed(() => {
   if (!summary.value) return null
   return Number(summary.value.high ?? 0) + Number(summary.value.critical ?? 0)
 })
+
+/* ---------------------------- 构成场参数（数据驱动） ---------------------------- */
+
+/** 由后端数据算出的 target field（每帧 spring 插值前的值）。 */
+const targetField = computed(() =>
+  computeField(loops.value, stats.value || {}, summary.value || {}, companion)
+)
+
+/** spring 插值后的当前 field（传给组件渲染的就是这个）。 */
+const { current: liveField, setTarget: setFieldTarget, setReduced: setFieldReduced, dispose: disposeFieldClock } =
+  useCompositionFieldClock(targetField.value, reduced.value)
+
+watch(targetField, next => setFieldTarget(next), { immediate: true })
+// reduced 变化时同步给 clock：开启时立即落位，关闭时恢复 spring
+watch(reduced, setFieldReduced)
 
 /* ---------------------------- 构成状态 ---------------------------- */
 
@@ -447,6 +481,12 @@ function formatDate(value) {
     ? '—'
     : date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
+
+/* ---------------------------- 构成参数格式化 ---------------------------- */
+
+const formatAperture = v => (stale.value || v == null ? '—' : Number(v).toFixed(2))
+const formatTilt = v => (stale.value || v == null ? '—' : `${Number(v).toFixed(0)}°`)
+const formatVolume = v => (stale.value || v == null ? '—' : Number(v).toFixed(2))
 
 /* ---------------------------- 注视指针 ---------------------------- */
 
@@ -523,11 +563,14 @@ const announcement = computed(
 /* ---------------------------- 生命周期 ---------------------------- */
 
 let clockTimer = 0
+let pollTimer = 0
+let nowTimer = 0
 
 async function loadRuntime() {
-  const [inspectorResult, loopsResult] = await Promise.allSettled([
+  const [inspectorResult, loopsResult, statsResult] = await Promise.allSettled([
     getInspectorSummary(),
-    getDecisionLoops(8)
+    getDecisionLoops(8),
+    getDecisionLoopStats()
   ])
 
   summary.value = inspectorResult.status === 'fulfilled' ? inspectorResult.value?.data || null : null
@@ -536,24 +579,81 @@ async function loadRuntime() {
     loops.value = Array.isArray(loopsResult.value?.data) ? loopsResult.value.data : []
     loopsStatus.value = 'live'
   } else {
-    loops.value = []
+    // 请求失败：保留上一帧形状（不清空 loops），只标记状态
     loopsStatus.value = 'offline'
+  }
+
+  stats.value = statsResult.status === 'fulfilled' ? statsResult.value?.data || null : null
+
+  // 只有全部成功才更新 fetchedAt；任一失败则保持旧值，stale 会在 30s 后触发
+  if (
+    inspectorResult.status === 'fulfilled' &&
+    loopsResult.status === 'fulfilled' &&
+    statsResult.status === 'fulfilled'
+  ) {
+    fetchedAt.value = Date.now()
   }
 }
 
 onMounted(() => {
   syncClock()
   clockTimer = window.setInterval(syncClock, 30000)
+  nowTimer = window.setInterval(() => {
+    now.value = Date.now()
+  }, 1000)
+  pollTimer = window.setInterval(loadRuntime, 10000) // 10s 轮询
   loadRuntime()
 })
 
 onBeforeUnmount(() => {
   if (clockTimer) window.clearInterval(clockTimer)
+  if (pollTimer) window.clearInterval(pollTimer)
+  if (nowTimer) window.clearInterval(nowTimer)
   stopTrackingNow()
+  disposeFieldClock()
 })
 </script>
 
 <style scoped>
+/* stale：整场降饱和 40%（DESIGN §5：数据陈旧时冻结并标注） */
+.stage-field.is-stale {
+  filter: saturate(0.6);
+}
+
+/* rehearsal：锁定虚线环（DESIGN §3.1：演练必须可见） */
+.stage-field.is-rehearsal::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px dashed var(--fab-plum, #a383a6);
+  border-radius: var(--ds-radius-sm, 4px);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* STALE / REHEARSAL 角标 */
+.seal-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 2px;
+  font: 9px/1 var(--fab-mono);
+  letter-spacing: 0.1em;
+}
+
+.seal-badge--stale {
+  color: var(--fab-clay, #c76a48);
+  border: 1px solid color-mix(in srgb, var(--fab-clay) 50%, transparent);
+  background: color-mix(in srgb, var(--fab-clay) 12%, transparent);
+}
+
+.seal-badge--rehearsal {
+  color: var(--fab-plum, #a383a6);
+  border: 1px solid color-mix(in srgb, var(--fab-plum) 50%, transparent);
+  background: color-mix(in srgb, var(--fab-plum) 12%, transparent);
+}
+
 .seal-reset {
   justify-self: start;
   padding: 0;

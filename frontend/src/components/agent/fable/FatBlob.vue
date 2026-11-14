@@ -3,7 +3,7 @@
     class="fat-blob"
     :class="{ 'fat-blob--breathe': breathe }"
     :viewBox="'0 0 200 210'"
-    :style="{ width: sizePx, height: 'auto' }"
+    :style="[blobStyle, { width: sizePx, height: 'auto' }]"
     :data-tone="tone"
     :role="label ? 'img' : 'presentation'"
     :aria-label="label || undefined"
@@ -61,11 +61,21 @@ const props = defineProps({
   tone: { type: String, default: 'clay' },
   size: { type: [Number, String], default: 96 },
   label: { type: String, default: '' },
-  breathe: { type: Boolean, default: true }
+  breathe: { type: Boolean, default: true },
+  /** 体积缩放，来自 field.volume（0.85 – 1.15）。 */
+  volume: { type: Number, default: 1 },
+  /** 呼吸周期（秒），来自 field.pulse（2.4 – 6.0）。默认 4.0。 */
+  pulse: { type: Number, default: 4 }
 })
 
 const uid = `blob${(counter += 1).toString(36)}${Math.abs(Math.round(props.seed * 13)).toString(36)}`
 const sizePx = computed(() => (typeof props.size === 'number' ? `${props.size}px` : props.size))
+
+/** 体积缩放 + 呼吸周期通过 CSS 变量传入（DESIGN §4：每个形变指回一个参数）。 */
+const blobStyle = computed(() => ({
+  '--blob-volume': String(props.volume ?? 1),
+  '--breathe-duration': `${Math.max(0.1, props.pulse ?? 4).toFixed(2)}s`
+}))
 
 /**
  * 肥波轮廓：极坐标半径按低阶谐波起伏（k=2..5），再转成闭合三次贝塞尔。
@@ -135,6 +145,7 @@ const path = computed(() => blobPath(props.seed))
   display: block;
   overflow: visible;
   transform-origin: 50% 92%;
+  transform: scale(var(--blob-volume, 1));
 }
 
 .fat-blob[data-tone='apricot'] { --b-hi: #fce0c4; --b-mid: #f0a06e; --b-lo: #96502f; }
@@ -150,13 +161,13 @@ const path = computed(() => blobPath(props.seed))
 .b-stop-rim { stop-color: var(--b-rim); stop-opacity: .5; }
 
 .fat-blob--breathe {
-  animation: fat-breathe 7.4s var(--fab-ease-io, cubic-bezier(.4, 0, .2, 1)) infinite;
+  animation: fat-breathe var(--breathe-duration, 7.4s) var(--fab-ease-io, cubic-bezier(.4, 0, .2, 1)) infinite;
 }
 
 @keyframes fat-breathe {
-  0%, 100% { transform: scale(1, 1); }
-  38% { transform: scale(1.016, 0.982); }
-  62% { transform: scale(0.994, 1.008); }
+  0%, 100% { transform: scale(var(--blob-volume, 1)); }
+  38% { transform: scale(calc(var(--blob-volume, 1) * 1.016), calc(var(--blob-volume, 1) * 0.982)); }
+  62% { transform: scale(calc(var(--blob-volume, 1) * 0.994), calc(var(--blob-volume, 1) * 1.008)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

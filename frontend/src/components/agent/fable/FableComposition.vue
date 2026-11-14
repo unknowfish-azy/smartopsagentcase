@@ -1,5 +1,5 @@
 <template>
-  <div class="comp" aria-hidden="true">
+  <div class="comp" :style="compStyle" :data-state="attractor" aria-hidden="true">
     <span class="comp-diag"></span>
     <span class="comp-diag comp-diag--soft"></span>
 
@@ -30,8 +30,39 @@
 </template>
 
 <script setup>
-defineProps({
-  state: { type: String, default: 'idle' }
+import { computed } from 'vue'
+
+const props = defineProps({
+  /** 构成场参数（来自后端数据，经 spring 插值后的值）。几何形状由此驱动。 */
+  field: {
+    type: Object,
+    default: () => ({ aperture: 1, tilt: -12, volume: 1, spin: 0, grain: 0.5 })
+  },
+  /** 主导吸引子（仅用于高亮/语义，不决定形变）。 */
+  attractor: { type: String, default: 'idle' },
+  /** 数据陈旧：降饱和（由父容器 filter 处理），此处仅用于语义标记。 */
+  stale: { type: Boolean, default: false },
+  /** reduced-motion：无过渡动画，直接落位。 */
+  reduced: { type: Boolean, default: false }
+})
+
+/**
+ * 把 field 映射到 CSS 变量（DESIGN §4：每个形变指回一个参数）。
+ * - tilt → 斜规倾角
+ * - aperture → 方框缩放
+ * - volume → 地尺长度
+ * - spin → 弧规旋转
+ * - grain → 量规缩放
+ */
+const compStyle = computed(() => {
+  const f = props.field || {}
+  return {
+    '--fab-diag-rot': `${f.tilt ?? -12}deg`,
+    '--fab-square-scale': String(f.aperture ?? 1),
+    '--fab-ground-scale': String(f.volume ?? 1),
+    '--fab-arc-rot': `${((f.spin ?? 0) * 30).toFixed(2)}deg`,
+    '--fab-vernier-scale': String(0.85 + (f.grain ?? 0.5) * 0.3)
+  }
 })
 </script>
 
