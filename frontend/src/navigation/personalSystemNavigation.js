@@ -81,7 +81,8 @@ export const personalSystemGroups = Object.freeze([
     to: '/agent',
     children: [
       { label: 'COMMAND CENTER', cn: '控制中心', routeName: 'AgentCommandCenter', to: '/agent' },
-      { label: 'EXECUTION TRACE', cn: '执行轨迹', routeName: 'ExecutionTrace', to: '/agent/trace' }
+      { label: 'EXECUTION TRACE', cn: '执行轨迹', routeName: 'ExecutionTrace', to: '/agent/trace' },
+      { label: 'AGENT MODULE', cn: '智能体模块', routeName: 'AgentModule', to: '/agent/module' }
     ]
   }),
   expandableGroup({

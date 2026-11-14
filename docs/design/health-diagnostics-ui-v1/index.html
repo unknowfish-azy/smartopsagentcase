@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>健康诊断 · 参考原型</title>
+<style>
+  :root{
+    color-scheme: dark;
+    /* 项目令牌（frontend/src/assets/styles/variables.css 的字面展开） */
+    --bg:#0E1116; --raised:#151A21; --overlay:#1B212A; --sunk:rgba(0,0,0,.28);
+    --text:#e8f2f7; --muted:#92a6b5; --neutral:#8b949e;
+    --border:rgba(159,190,207,.18); --hair:rgba(255,255,255,.06); --border-strong:rgba(159,190,207,.34);
+    --danger:#f85149; --warning:#d29922; --success:#3fb950; --info:#58a6ff; --focus:#7ad7f5;
+    --danger-bg:rgba(248,81,73,.15); --warning-bg:rgba(210,153,34,.18); --success-bg:rgba(63,185,80,.15); --neutral-bg:rgba(139,148,158,.14);
+    --font:"Noto Sans SC","Source Han Sans SC","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+    --r-sm:4px; --r-md:8px; --r-lg:12px; --r-pill:999px;
+    --t:150ms; --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+  code,kbd{font-family:var(--mono)}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 20px 72px}
+  .overline{font:11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--neutral)}
+
+  /* ============ ① 结论带 ============ */
+  .verdict{display:flex;align-items:center;gap:18px;min-height:72px;padding:14px 18px;
+           border:1px solid var(--border);border-radius:var(--r-lg);background:var(--raised)}
+  .verdict.is-good{border-color:rgba(63,185,80,.32)}
+  .verdict.is-stale{border-color:rgba(210,153,34,.32)}
+  .v-main{display:flex;align-items:baseline;gap:10px;min-width:0}
+  .v-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;align-self:center}
+  .v-title{font-size:18px;font-weight:500;white-space:nowrap}
+  .v-sub{color:var(--muted);font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .v-counts{display:flex;align-items:center;gap:2px;margin-left:4px}
+  .v-count{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:var(--r-md);
+           font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .v-count b{font-weight:500;color:var(--text)}
+  .v-count.zero{opacity:.55}
+  .v-count:hover{background:rgba(232,242,247,.05)}
+  .v-count i{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .v-sep{width:1px;height:22px;background:var(--border);flex:0 0 auto}
+  .grow{flex:1}
+  .fresh{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .ring{--deg:180deg;width:34px;height:34px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+        background:conic-gradient(var(--neutral) var(--deg),rgba(255,255,255,.08) 0)}
+  .ring span{width:26px;height:26px;border-radius:50%;background:var(--raised);display:grid;place-items:center;
+             font:10px/1 var(--mono);color:var(--muted)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;padding:0 14px;flex:0 0 auto;white-space:nowrap;
+       border:1px solid var(--border);border-radius:var(--r-md);font-size:13px;transition:background var(--t) var(--ease),border-color var(--t) var(--ease)}
+  .btn:hover{background:rgba(232,242,247,.05);border-color:var(--border-strong)}
+  .btn.primary{background:rgba(122,215,245,.10);border-color:rgba(122,215,245,.45);color:#cdefff}
+  .btn.primary:hover{background:rgba(122,215,245,.16)}
+  .btn.small{height:28px;padding:0 10px;font-size:12px}
+  .btn.ghost{color:var(--muted);border-color:transparent}
+  .btn.ghost:hover{border-color:var(--border)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+
+  .stale-bar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 14px;border-radius:var(--r-md);
+             border:1px solid rgba(210,153,34,.34);background:rgba(210,153,34,.08);color:var(--muted);font-size:12.5px}
+  .stale-bar[hidden]{display:none}
+  .stale-bar b{color:var(--warning);font-weight:500}
+
+  /* ============ 主体两栏 ============ */
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;margin-top:18px;align-items:start}
+  .card{border:1px solid var(--border);border-radius:var(--r-lg);background:var(--raised);overflow:hidden}
+  .card > header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--hair)}
+  .card > header h2{margin:0;font-size:14px;font-weight:500}
+  .card > header .overline{margin:0}
+
+  /* ============ ② 检查分组 ============ */
+  .group + .group{border-top:1px solid var(--hair)}
+  .group-head{display:flex;align-items:center;gap:8px;width:100%;padding:11px 16px;text-align:left;color:var(--muted);font-size:12.5px}
+  .group-head:hover{background:rgba(232,242,247,.04);color:var(--text)}
+  .group-head .caret{width:10px;color:var(--neutral);transition:transform var(--t) var(--ease);font-family:var(--mono)}
+  .group.is-collapsed .caret{transform:rotate(-90deg)}
+  .group.is-collapsed .row{display:none}
+  .group-head b{color:var(--text);font-weight:500}
+  .group-head .count{margin-left:auto;color:var(--neutral);font-variant-numeric:tabular-nums}
+
+  .row{display:block;width:100%;text-align:left;padding:12px 16px;border-top:1px solid var(--hair);color:var(--text)}
+  .row:hover{background:rgba(232,242,247,.04)}
+  .row-main{display:flex;align-items:center;gap:10px;min-width:0}
+  .st{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;
+      border-radius:50%;font:700 10px/1 var(--mono)}
+  .st.healthy{background:var(--success);color:#07110a}
+  .st.unhealthy{background:var(--danger);color:#1a0a0c}
+  .st.unconfigured{background:var(--warning);color:#1a1405}
+  .st.not_checked{background:transparent;border:1.5px dashed var(--neutral);color:var(--neutral)}
+  .st.forbidden{background:transparent;border:1.5px solid var(--neutral);color:var(--neutral);font-size:9px}
+  .row-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row-meta{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--neutral);font-size:11.5px;
+            white-space:nowrap;font-variant-numeric:tabular-nums}
+  .kind{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:var(--r-sm);
+        border:1px solid var(--hair);color:var(--muted);font-size:11px}
+  .kind svg{width:11px;height:11px}
+  .row-sum{margin:7px 0 0 28px;color:var(--muted);font-size:12.5px;line-height:1.55;
+           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .row.is-open .row-sum{-webkit-line-clamp:unset;display:block}
+  .row-next{margin:7px 0 0 28px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--neutral)}
+  .row-next .act{margin-left:auto;color:var(--focus)}
+  .row-next .act:hover{text-decoration:underline}
+  .row-raw{margin:9px 0 0 28px;padding:9px 11px;border-radius:var(--r-md);background:var(--sunk);
+           color:var(--neutral);font:11px/1.6 var(--mono);display:none;word-break:break-all;white-space:pre-wrap}
+  .row.is-open .row-raw{display:block}
+  .row.is-stale{filter:saturate(.35);opacity:.85}
+
+  .forbidden-line{padding:10px 16px;border-top:1px solid var(--hair);color:var(--neutral);font-size:12px}
+
+  /* ============ ③ 能力边界 + 工具 ============ */
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:9px 12px;padding:14px 16px;font-size:12.5px}
+  .kv dt{color:var(--neutral);white-space:nowrap}
+  .kv dd{margin:0;color:var(--text);font-variant-numeric:tabular-nums}
+  .kv dd small{color:var(--neutral)}
+  .flags{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 14px}
+  .flag{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:var(--r-pill);font-size:11px;
+        border:1px solid var(--hair);color:var(--muted)}
+  .flag.on{border-color:rgba(63,185,80,.38);background:var(--success-bg);color:var(--success)}
+
+  .tools{padding:14px 16px;display:flex;flex-wrap:wrap;gap:8px;border-top:1px solid var(--hair)}
+  .chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:var(--r-md);
+        border:1px solid var(--border);color:var(--muted);font-size:12.5px;white-space:nowrap;
+        transition:background var(--t) var(--ease),border-color var(--t) var(--ease)}
+  .chip:hover{background:rgba(232,242,247,.05);color:var(--text)}
+  .chip[aria-pressed="true"]{background:rgba(122,215,245,.10);border-color:rgba(122,215,245,.45);color:#cdefff}
+  .tools-note{padding:0 16px 14px;color:var(--neutral);font-size:11.5px;line-height:1.55}
+
+  /* ============ ④ 诊断结果面板 ============ */
+  .result{margin-top:18px}
+  .result > header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
+  .result h3{margin:0;font-size:14px;font-weight:500}
+  .result .scope{color:var(--muted);font:12px var(--mono)}
+  .result .verdict-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:var(--r-pill);
+        font-size:11.5px;border:1px solid rgba(210,153,34,.38);background:var(--warning-bg);color:var(--warning)}
+
+  .evidence{margin:14px 16px;padding:11px 13px;border-radius:var(--r-md);border:1px solid rgba(210,153,34,.34);
+            background:rgba(210,153,34,.07);color:var(--muted);font-size:12px;line-height:1.6}
+  .evidence b{color:var(--warning);font-weight:500}
+  .evidence ul{margin:6px 0 0;padding-left:16px}
+  .evidence li{margin:2px 0}
+
+  .layer{border-top:1px solid var(--hair)}
+  .layer-head{display:flex;align-items:center;gap:10px;width:100%;padding:11px 16px;text-align:left}
+  .layer-head:hover{background:rgba(232,242,247,.04)}
+  .layer-name{font-size:13px;font-weight:500;white-space:nowrap}
+  .layer-sum{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .layer-head .row-meta{margin-left:auto}
+  .layer.is-collapsed .layer-body{display:none}
+  .layer-body{padding:0 16px 12px}
+  .check{display:grid;grid-template-columns:18px 150px minmax(0,1fr) auto;gap:10px;align-items:baseline;
+         padding:7px 0;border-top:1px dashed rgba(255,255,255,.06);font-size:12.5px}
+  .check:first-child{border-top:0}
+  .check .cmd{font:11.5px var(--mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .check .ev{color:var(--neutral);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .check.pass .cmd{color:var(--neutral)}
+  .blocked{margin:0 0 10px;padding:9px 11px;border-radius:var(--r-md);background:var(--sunk);
+           border-left:2px solid var(--neutral);color:var(--muted);font-size:12px}
+  .blocked b{color:var(--text);font-weight:500}
+  .findings{padding:12px 16px;border-top:1px solid var(--hair)}
+  .findings h4{margin:0 0 8px;font:11px/1 var(--mono);letter-spacing:.12em;color:var(--neutral);text-transform:uppercase}
+  .finding{display:grid;grid-template-columns:56px 1fr;gap:10px;padding:8px 10px;margin-bottom:6px;border-radius:var(--r-md);
+           background:rgba(248,81,73,.06);border-left:2px solid var(--danger);font-size:12.5px}
+  .finding .sev{color:var(--danger);font:11px var(--mono);text-transform:uppercase}
+  .finding .res{color:var(--muted);font:11.5px var(--mono)}
+
+  .toast{position:fixed;right:18px;bottom:18px;max-width:380px;padding:10px 12px;border-radius:var(--r-md);
+         border:1px solid var(--border);background:var(--overlay);font-size:12px;opacity:0;transform:translateY(6px);
+         transition:opacity var(--t) var(--ease),transform var(--t) var(--ease)}
+  .toast.on{opacity:1;transform:none}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+  @media (max-width:1023px){
+    .grid{grid-template-columns:1fr}
+    .side{order:2}
+  }
+  /* 结论带在 880 以下就换行，避免动作按钮被挤出边界 */
+  @media (max-width:880px){
+    .verdict{flex-wrap:wrap;gap:10px}
+    .verdict .grow{display:none}
+    .v-main{order:1;flex:1 1 auto}
+    #recheck{order:2}
+    .v-counts{order:3;width:100%;flex-wrap:wrap}
+    .fresh{order:4;margin-left:0}
+  }
+  @media (max-width:767px){
+    .wrap{padding:14px 12px 56px}
+    /* 结论带压成三行：结论+动作 / 计数 / 新鲜度 */
+    .verdict{flex-wrap:wrap;gap:10px}
+    .verdict .grow{display:none}
+    .v-main{order:1;flex:1 1 auto}
+    #recheck{order:2}
+    .v-counts{order:3;width:100%;flex-wrap:wrap}
+    .fresh{order:4;margin-left:0}
+    .row-sum,.row-next,.row-raw{margin-left:0}
+    .check{grid-template-columns:18px 1fr;gap:6px}
+    .check .cmd,.check .ev{grid-column:2;white-space:normal;word-break:break-all}
+    .row-meta{flex-wrap:wrap;justify-content:flex-end}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ① 结论带 -->
+  <section class="verdict" id="verdict" role="status" aria-live="polite">
+    <div class="v-main">
+      <span class="v-dot" id="vDot" style="background:var(--danger)"></span>
+      <span class="v-title" id="vTitle">1 项需要处理</span>
+    </div>
+    <div class="v-counts" id="vCounts"></div>
+    <span class="grow"></span>
+    <div class="fresh">
+      <span class="ring" id="ring"><span id="ringText">5′</span></span>
+      <span id="freshText">最近 1 分钟前获取 · 5 分钟内有效</span>
+    </div>
+    <button class="btn primary" id="recheck">重新检查</button>
+  </section>
+  <div class="stale-bar" id="staleBar" hidden>
+    <b>结果可能已过期</b><span id="staleText">正在显示 14:02:11 的快照，请重新检查确认当前状态。</span>
+    <span class="grow"></span><button class="btn small" id="staleRecheck">重新检查</button>
+  </div>
+
+  <div class="grid">
+    <!-- ② 检查分组 -->
+    <section class="card" aria-labelledby="checksTitle">
+      <header><h2 id="checksTitle">检查项</h2><span class="overline" style="margin-left:auto">7 项 · 2 个来源范围</span></header>
+      <div id="groups"></div>
+      <div class="forbidden-line" id="forbidden"></div>
+    </section>
+
+    <!-- ③ 能力边界 + 工具 -->
+    <aside class="side">
+      <section class="card" aria-labelledby="policyTitle">
+        <header><h2 id="policyTitle">探测能力边界</h2><span class="overline" style="margin-left:auto">POLICY</span></header>
+        <dl class="kv" id="policy"></dl>
+        <div class="flags" id="flags"></div>
+      </section>
+      <section class="card" style="margin-top:14px" aria-labelledby="toolsTitle">
+        <header><h2 id="toolsTitle">主动诊断</h2><span class="overline" style="margin-left:auto">TOOLS</span></header>
+        <div class="tools" id="tools"></div>
+        <p class="tools-note">每次探测受上面的限额约束；超时或权限不足会显示在结果里，<b style="color:var(--text)">不代表目标服务不健康</b>。</p>
+      </section>
+    </aside>
+  </div>
+
+  <!-- ④ 诊断结果面板 -->
+  <section class="card result" id="result" aria-labelledby="resultTitle"></section>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   播种数据：字段与 /api/diagnostics/admin/health、
+   /api/diagnostics/network/diagnose 的真实返回一一对应
+   ============================================================ */
+const HEALTH = {
+  scope: 'admin',
+  checks: [
+    { id:'database', label:'数据库连接', status:'HEALTHY', scope:'admin', checkKind:'ACTIVE_PROBE', checkedAt:'2026-11-14T14:02:11+08:00', durationMs:12,
+      summary:'数据库连接检查通过', nextAction:'检查数据库服务、连接池和凭据' },
+    { id:'schema', label:'关键业务表', status:'UNHEALTHY', scope:'admin', checkKind:'ACTIVE_PROBE', checkedAt:'2026-11-14T14:02:11+08:00', durationMs:34,
+      summary:'部分关键表不可访问：knowledge_candidate、operation_run_record',
+      nextAction:'检查数据库迁移和表权限' },
+    { id:'mini', label:'智维 Mini', status:'HEALTHY', scope:'admin', checkKind:'ACTIVE_PROBE', checkedAt:'2026-11-14T14:02:11+08:00', durationMs:3,
+      summary:'本地 Mini 运行时可用', nextAction:'检查本地 Mini 运行时' },
+    { id:'observability', label:'观测数据源', status:'UNCONFIGURED', scope:'admin', checkKind:'CONFIGURATION', checkedAt:'2026-11-14T14:02:11+08:00', durationMs:0,
+      summary:'prometheus 未配置；loki 已配置', nextAction:'在观测数据源中完成配置' },
+    { id:'harbor', label:'Harbor 镜像仓库', status:'NOT_CHECKED', scope:'admin', checkKind:'CONFIGURATION', checkedAt:'2026-11-14T14:02:11+08:00', durationMs:0,
+      summary:'已配置，尚未主动探测', nextAction:'从 Harbor 工作台执行只读检查' },
+    { id:'targets', label:'服务诊断目标', status:'HEALTHY', scope:'admin', checkKind:'CONFIGURATION', checkedAt:'2026-11-14T14:02:11+08:00', durationMs:0,
+      summary:'已配置管理员授权目标', nextAction:'在配置文件中维护固定地址和授权用户' },
+    { id:'session', label:'服务端会话', status:'HEALTHY', scope:'admin', checkKind:'LOCAL_CHECK', checkedAt:'2026-11-14T14:02:11+08:00', durationMs:1,
+      summary:'当前请求已通过服务端会话和 CSRF 边界', nextAction:'无需处理' },
+    { id:'billing', label:'计费快照表', status:'FORBIDDEN', scope:'admin', checkKind:'ACTIVE_PROBE', checkedAt:null, durationMs:0,
+      summary:'当前账号无权读取计费库元数据', nextAction:'用管理员账号重新检查' }
+  ],
+  policy: { targetCount:3, perUserConcurrency:2, globalConcurrency:4, connectTimeoutMs:3000, readTimeoutMs:8000,
+            maxResponseBytes:262144, miniConfigured:true, observabilityConfigured:false, harborConfigured:true }
+}
+
+/* 网络路径诊断结果（真实字段：layers[].blockedBy、permissionDenied、unverified…） */
+const NETWORK = {
+  scope: { context:'prod-sh', namespace:'demo', host:'web-service.demo.svc', port:8080, service:'web-service' },
+  startedAt:'2026-11-14T14:05:02+08:00', endedAt:'2026-11-14T14:05:04+08:00', durationMs:2413,
+  permissionDenied:true, dataMissing:false, unverified:true, truncated:false,
+  layers: [
+    { name:'DNS 解析', status:'HEALTHY', summary:'web-service.demo.svc → 10.96.12.31 · 1.2ms', blockedBy:null,
+      checks:[
+        { name:'集群内解析', status:'HEALTHY', command:'kubectl exec -n demo web-0 -- getent hosts web-service', evidence:'10.96.12.31 web-service.demo.svc.cluster.local' },
+        { name:'Service 记录', status:'HEALTHY', command:'nslookup web-service.demo.svc', evidence:'Server: 10.96.0.10' }
+      ] },
+    { name:'TCP 连接', status:'BLOCKED', summary:'缺少 NET_ADMIN 权限，未执行抓包与连通性测试',
+      blockedBy:'容器缺少 NET_ADMIN capability（tcpdump 无法启动）',
+      checks:[
+        { name:'端口连通', status:'UNVERIFIED', command:'nc -zv 10.96.12.31 8080', evidence:'未执行：权限不足' },
+        { name:'抓包重传', status:'UNVERIFIED', command:'tcpdump -i any port 8080 -c 50', evidence:'未执行：权限不足' }
+      ] },
+    { name:'TLS 握手', status:'HEALTHY', summary:'TLS 1.3 · 握手 38ms · 证书 61 天有效期', blockedBy:null,
+      checks:[
+        { name:'证书链', status:'HEALTHY', command:'openssl s_client -connect web-service.demo.svc:8080', evidence:'verify return:1' }
+      ] }
+  ],
+  findings: [
+    { type:'MISCONFIG', severity:'high', resourceKind:'Service', resourceName:'web-service', message:'selector 与 Pod 标签不匹配，EndpointSlice 中无可用地址' },
+    { type:'RISK', severity:'medium', resourceKind:'Deployment', resourceName:'web', message:'就绪探针路径 /healthz 返回 500' }
+  ]
+}
+
+/* ============================================================ 状态语义 ============================================================ */
+const STATUS = {
+  HEALTHY:      { group:'pass',      icon:'✓', text:'正常' },
+  UNHEALTHY:    { group:'action',    icon:'✕', text:'异常' },
+  UNCONFIGURED: { group:'config',    icon:'!', text:'未配置' },
+  NOT_CHECKED:  { group:'unknown',   icon:'',  text:'未检查' },
+  FORBIDDEN:    { group:'forbidden', icon:'⌾', text:'无权限' },
+  UNVERIFIED:   { group:'unknown',   icon:'',  text:'未验证' },
+  BLOCKED:      { group:'config',    icon:'!', text:'被阻断' }
+}
+const GROUPS = [
+  { id:'action',    title:'需要处理', hint:'先看这里，通常意味着真实故障' },
+  { id:'config',    title:'需要配置', hint:'你还没给它条件，不是它坏了' },
+  { id:'unknown',   title:'缺证据',   hint:'没有证据不等于正常' },
+  { id:'pass',      title:'通过',     hint:'默认折叠' }
+]
+const KIND_TEXT = {
+  ACTIVE_PROBE:{ text:'主动探测', icon:'<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h2.2l1.3-3 1.6 6 1.4-3H11"/></svg>', tip:'真的连了一次下游' },
+  LOCAL_CHECK:{ text:'本地检查', icon:'<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1.2 10 2.6v3.1c0 2.4-1.7 4.2-4 5.1-2.3-.9-4-2.7-4-5.1V2.6z"/></svg>', tip:'只证明请求链路活着，不证明下游健康' },
+  CONFIGURATION:{ text:'配置读取', icon:'<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 1.5h5l2 2v7h-7z"/><path d="M7.5 1.5v2h2"/></svg>', tip:'只读了配置，没有建立连接' }
+}
+const groupOf = s => STATUS[s]?.group ?? 'unknown'
+/* 状态 → 样式类：五个语义组各自一种形状，避免多状态值缺样式时静默变透明 */
+const stClass = s => {
+  const g = STATUS[s]?.group
+  return g === 'action' ? 'unhealthy' : g === 'config' ? 'unconfigured'
+       : g === 'pass' ? 'healthy' : g === 'forbidden' ? 'forbidden' : 'not_checked'
+}
+const rank = c => (c.checkKind === 'ACTIVE_PROBE' ? 0 : c.checkKind === 'LOCAL_CHECK' ? 1 : 2)
+
+let HEALTH_NOW = Date.parse(HEALTH.checks[0].checkedAt)
+let checkedAt = HEALTH_NOW
+let now = HEALTH_NOW + 60_000          // 页面初始「1 分钟前」
+let stale = false
+
+/* demo 钩子 */
+const demo = new URLSearchParams(location.search).get('demo')
+if (demo === 'stale') { now = checkedAt + 7 * 60_000; stale = true }
+if (demo === 'allgood') {
+  HEALTH.checks.forEach(c => { if (c.status !== 'HEALTHY' && c.status !== 'FORBIDDEN') c.status = 'HEALTHY' })
+}
+if (demo === 'empty') { HEALTH.checks = [] }
+
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('zh-CN', { hour12:false }) : '—'
+const fmtAgo = ms => {
+  const m = Math.round(ms / 60000)
+  if (m < 1) return '刚刚'
+  if (m < 60) return `${m} 分钟前`
+  return `${Math.round(m / 60)} 小时前`
+}
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+const FIVE = 5 * 60_000
+
+/* ============================================================ ① 结论带 ============================================================ */
+function renderVerdict () {
+  const counts = { action:0, config:0, unknown:0, pass:0 }
+  HEALTH.checks.forEach(c => counts[groupOf(c.status)]++)
+
+  const v = document.getElementById('verdict')
+  const bad = counts.action + counts.config
+  v.classList.toggle('is-good', bad === 0 && counts.pass > 0)
+  v.classList.toggle('is-stale', stale)
+
+  const dot = document.getElementById('vDot')
+  const title = document.getElementById('vTitle')
+  dot.style.background = counts.action ? 'var(--danger)' : bad ? 'var(--warning)' : counts.unknown ? 'var(--neutral)' : counts.pass ? 'var(--success)' : 'var(--neutral)'
+  title.textContent = !HEALTH.checks.length ? '尚未检查 · 没有证据'
+    : counts.action ? `${counts.action} 项需要处理`
+    : counts.config ? `${counts.config} 项等待配置`
+    : counts.unknown ? `${counts.unknown} 项缺少证据`
+    : `全部通过 · ${counts.pass} 项检查`
+
+  const items = [
+    { k:'action', label:'需要处理', color:'var(--danger)' },
+    { k:'config', label:'需要配置', color:'var(--warning)' },
+    { k:'unknown', label:'缺证据', color:'var(--neutral)' },
+    { k:'pass', label:'通过', color:'var(--success)' }
+  ]
+  document.getElementById('vCounts').innerHTML = items.map(it =>
+    `<button class="v-count ${counts[it.k] ? '' : 'zero'}" data-jump="${it.k}" title="跳到「${it.label}」">
+       <i style="background:${it.color}"></i><b>${counts[it.k]}</b> ${it.label}
+     </button>`).join('')
+
+  const remain = Math.max(0, FIVE - (now - checkedAt))
+  const deg = Math.round(remain / FIVE * 360)
+  const ring = document.getElementById('ring')
+  ring.style.setProperty('--deg', deg + 'deg')
+  ring.style.background = `conic-gradient(${remain > 0 && !stale ? 'var(--info)' : 'var(--warning)'} ${deg}deg, rgba(255,255,255,.08) 0)`
+  document.getElementById('ringText').textContent = remain > 0 && !stale ? `${Math.ceil(remain / 60000)}′` : '过期'
+  document.getElementById('freshText').textContent = `最近 ${fmtAgo(now - checkedAt)}获取 · 5 分钟内有效`
+
+  document.getElementById('staleBar').hidden = !stale
+  document.getElementById('staleText').textContent = `正在显示 ${fmtTime(new Date(checkedAt).toISOString())} 的快照，请重新检查确认当前状态。`
+}
+
+/* ============================================================ ② 检查分组 ============================================================ */
+const collapsed = new Set(['pass'])
+const openRows = new Set()
+
+function renderChecks () {
+  const byGroup = { action:[], config:[], unknown:[], pass:[] }
+  const forbidden = []
+  HEALTH.checks.forEach(c => {
+    const g = groupOf(c.status)
+    if (g === 'forbidden') forbidden.push(c)
+    else (byGroup[g] ??= []).push(c)
+  })
+  Object.values(byGroup).forEach(list => list.sort((a, b) => rank(a) - rank(b) || b.durationMs - a.durationMs))
+
+  document.getElementById('groups').innerHTML = GROUPS.map(g => {
+    const list = byGroup[g.id] ?? []
+    if (!list.length) return ''
+    const isCollapsed = collapsed.has(g.id)
+    return `<section class="group ${isCollapsed ? 'is-collapsed' : ''}" data-group="${g.id}">
+      <button class="group-head" data-toggle-group="${g.id}" aria-expanded="${!isCollapsed}">
+        <span class="caret">▾</span><b>${g.title}</b><span>${g.hint}</span>
+        <span class="count">${list.length}</span>
+      </button>
+      ${list.map(c => renderRow(c)).join('')}
+    </section>`
+  }).join('')
+
+  document.getElementById('forbidden').innerHTML = forbidden.length
+    ? `<div style="display:flex;align-items:center;gap:8px">
+         <span class="st forbidden">⌾</span>
+         ${forbidden.length} 项无权查看（需要更高权限）：${forbidden.map(f => esc(f.label)).join('、')}
+       </div>`
+    : ''
+  document.getElementById('forbidden').hidden = !forbidden.length
+}
+
+function renderRow (c) {
+  const s = STATUS[c.status] ?? STATUS.NOT_CHECKED
+  const kind = KIND_TEXT[c.checkKind] ?? KIND_TEXT.CONFIGURATION
+  const isOpen = openRows.has(c.id)
+  const timeText = c.checkedAt ? fmtTime(c.checkedAt) : '无时间戳'
+  return `<button class="row ${isOpen ? 'is-open' : ''} ${stale ? 'is-stale' : ''}" data-row="${c.id}" aria-expanded="${isOpen}">
+    <span class="row-main">
+      <span class="st ${stClass(c.status)}" aria-hidden="true">${s.icon}</span>
+      <span class="row-name">${esc(c.label)}</span>
+      <span class="row-meta">
+        <span class="kind" title="${esc(kind.tip)}">${kind.icon}${kind.text}</span>
+        <span>${c.durationMs}ms</span>
+        <span>${timeText}</span>
+      </span>
+    </span>
+    <span class="row-sum">${esc(c.summary)}</span>
+    <span class="row-next">
+      <span>下一步：${esc(c.nextAction)}</span>
+      ${c.status === 'UNCONFIGURED' || c.status === 'NOT_CHECKED' || c.status === 'UNHEALTHY' ? '<span class="act">去处理 →</span>' : ''}
+    </span>
+    <span class="row-raw">id=${esc(c.id)} · scope=${esc(c.scope)} · checkKind=${esc(c.checkKind)}\nstatus=${esc(c.status)} · checkedAt=${esc(c.checkedAt ?? 'null')} · durationMs=${c.durationMs}</span>
+  </button>`
+}
+
+/* ============================================================ ③ 能力边界 + 工具 ============================================================ */
+function renderPolicy () {
+  const p = HEALTH.policy
+  if (!p) { document.querySelector('.side').hidden = true; return }
+  document.getElementById('policy').innerHTML = `
+    <dt>并发</dt><dd>${p.perUserConcurrency} <small>（全局 ${p.globalConcurrency}）</small></dd>
+    <dt>超时</dt><dd>连接 ${p.connectTimeoutMs / 1000}s / 读取 ${p.readTimeoutMs / 1000}s</dd>
+    <dt>响应上限</dt><dd>${Math.round(p.maxResponseBytes / 1024)} KB</dd>
+    <dt>授权目标</dt><dd>${p.targetCount} 个</dd>`
+  const flags = [
+    ['Mini 运行时', p.miniConfigured],
+    ['观测数据源', p.observabilityConfigured],
+    ['Harbor', p.harborConfigured]
+  ]
+  document.getElementById('flags').innerHTML = flags.map(([label, on]) =>
+    `<span class="flag ${on ? 'on' : ''}">${on ? '●' : '○'} ${label}${on ? ' 已配置' : ' 未配置'}</span>`).join('')
+}
+
+const TOOLS = [
+  { id:'host', label:'主机' }, { id:'database', label:'数据库' },
+  { id:'kubernetes', label:'Kubernetes' }, { id:'network', label:'网络路径' },
+  { id:'http', label:'HTTP 探针' }, { id:'certificate', label:'证书' }, { id:'config', label:'配置差异' }
+]
+let activeTool = demo === 'empty' ? null : 'network'
+
+function renderTools () {
+  document.getElementById('tools').innerHTML = TOOLS.map(t =>
+    `<button class="chip" aria-pressed="${activeTool === t.id}" data-tool="${t.id}">${t.label}</button>`).join('')
+}
+
+/* ============================================================ ④ 诊断结果面板 ============================================================ */
+function renderResult () {
+  const host = document.getElementById('result')
+  if (!activeTool) { host.hidden = true; return }
+  host.hidden = false
+
+  if (activeTool !== 'network') {
+    host.innerHTML = `<header><h3>${TOOLS.find(t => t.id === activeTool).label}诊断</h3>
+      <span class="overline" style="margin-left:auto">尚未运行</span></header>
+      <div class="findings" style="border-top:0;color:var(--muted);font-size:12.5px">
+        选择授权目标后运行。结果会在这里就地展开，失败时只报「检查未完成」，不改写服务健康状态。
+      </div>`
+    return
+  }
+
+  const r = NETWORK
+  const flags = [
+    r.permissionDenied && ['权限不足，部分检查没有执行', '换用带该能力的账号或管理员目标；这不代表目标服务不健康'],
+    r.dataMissing && ['部分数据缺失，结论基于不完整的数据', '补采集或放宽采集范围'],
+    r.unverified && ['未验证：结果只反映采集到的部分', '看待结论时保留余地'],
+    r.truncated && ['输出被截断（超过 256 KB 上限）', '缩小查询范围后重跑']
+  ].filter(Boolean)
+
+  host.innerHTML = `
+    <header>
+      <h3>网络路径诊断</h3>
+      <span class="scope">${esc(r.scope.context)} / ${esc(r.scope.namespace)} · ${esc(r.scope.host)}:${r.scope.port}</span>
+      <span class="verdict-chip">${r.findings.length} 处发现 · 1 层未完成</span>
+      <span class="grow"></span>
+      <span class="row-meta"><span>${(r.durationMs / 1000).toFixed(1)}s</span><span>${fmtTime(r.endedAt)}</span></span>
+      <button class="btn small" onclick="toast('原型：重新诊断网络路径')">重新诊断</button>
+    </header>
+    ${flags.length ? `<div class="evidence">
+        <b>证据不完整</b> · 下面的结论基于不完整的数据
+        <ul>${flags.map(([t, why]) => `<li>${t} — <span style="color:var(--neutral)">${why}</span></li>`).join('')}</ul>
+      </div>` : ''}
+    ${r.layers.map((l, i) => renderLayer(l, i)).join('')}
+    <div class="findings">
+      <h4>发现 ${r.findings.length}</h4>
+      ${r.findings.map(f => `<div class="finding">
+          <span class="sev">${esc(f.severity)}</span>
+          <span>${esc(f.message)}<br><span class="res">${esc(f.resourceKind)}/${esc(f.resourceName)} · ${esc(f.type)}</span></span>
+        </div>`).join('')}
+    </div>`
+}
+
+function renderLayer (l, i) {
+  const s = STATUS[l.status] ?? STATUS.NOT_CHECKED
+  return `<section class="layer" data-layer="${i}">
+    <button class="layer-head" data-toggle-layer="${i}" aria-expanded="true">
+      <span class="st ${stClass(l.status)}">${s.icon}</span>
+      <span class="layer-name">${esc(l.name)}</span>
+      <span class="layer-sum">${esc(l.summary)}</span>
+      <span class="row-meta"><span>${l.checks.length} 项检查</span></span>
+    </button>
+    <div class="layer-body">
+      ${l.blockedBy ? `<div class="blocked"><b>被阻断（不是故障）</b>：${esc(l.blockedBy)}</div>` : ''}
+      ${l.checks.map(c => {
+        const cs = STATUS[c.status] ?? STATUS.NOT_CHECKED
+        return `<div class="check ${stClass(c.status)}">
+          <span class="st ${stClass(c.status)}">${cs.icon}</span>
+          <span>${esc(c.name)}</span>
+          <span class="cmd" title="${esc(c.command)}">${esc(c.command)}</span>
+          <span class="ev" title="${esc(c.evidence)}">${esc(c.evidence)}</span>
+        </div>`
+      }).join('')}
+    </div>
+  </section>`
+}
+
+/* ============================================================ 交互 ============================================================ */
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-toggle-group]')
+  if (g) { const id = g.dataset.toggleGroup
+    collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id); renderChecks(); return }
+
+  const r = e.target.closest('[data-row]')
+  if (r) { const id = r.dataset.row
+    openRows.has(id) ? openRows.delete(id) : openRows.add(id); renderChecks(); return }
+
+  const l = e.target.closest('[data-toggle-layer]')
+  if (l) { const sec = l.closest('.layer'); sec.classList.toggle('is-collapsed')
+    l.setAttribute('aria-expanded', String(!sec.classList.contains('is-collapsed'))); return }
+
+  const jump = e.target.closest('[data-jump]')
+  if (jump) { const el = document.querySelector(`[data-group="${jump.dataset.jump}"]`)
+    if (el) { collapsed.delete(jump.dataset.jump); renderChecks()
+      document.querySelector(`[data-group="${jump.dataset.jump}"]`).scrollIntoView({ block:'nearest', behavior:'smooth' }) } return }
+
+  const t = e.target.closest('[data-tool]')
+  if (t) { activeTool = activeTool === t.dataset.tool ? null : t.dataset.tool; renderTools(); renderResult(); return }
+
+  if (e.target.closest('#recheck') || e.target.closest('#staleRecheck')) recheck()
+})
+
+function recheck () {
+  const btn = document.getElementById('recheck')
+  let n = 0
+  btn.disabled = true
+  const timer = setInterval(() => {
+    n++
+    btn.textContent = `检查中… ${n}/${HEALTH.checks.length || 1}`
+    if (n >= (HEALTH.checks.length || 1)) {
+      clearInterval(timer)
+      checkedAt = Date.now(); now = checkedAt; stale = false
+      btn.disabled = false; btn.textContent = '重新检查'
+      renderAll(); toast('检查完成 · 结果已刷新（原型未真正请求后端）')
+    }
+  }, 130)
+}
+
+let toastTimer
+function toast (msg) {
+  const el = document.getElementById('toast')
+  el.textContent = msg; el.classList.add('on')
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 3200)
+}
+
+function renderAll () { renderVerdict(); renderChecks(); renderPolicy(); renderTools(); renderResult() }
+renderAll()
+
+/* 每 5s 走一次新鲜度（真实实现同 healthState.js 的 freshnessTimer） */
+setInterval(() => { now += 5000; if (now - checkedAt > FIVE) stale = true; renderVerdict(); if (stale) renderChecks() }, 5000)
+</script>
+</body>
+</html>

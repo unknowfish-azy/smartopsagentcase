@@ -21,8 +21,16 @@ test('filters built-in knowledge by platform without relying on an AI provider',
 
 test('keeps the Personal System knowledge domains in their intended order', () => {
   assert.deepEqual(knowledgeDomains.map(domain => domain.id), [
-    'linux', 'cloud-operations', 'docker', 'mysql', 'nginx', 'ubuntu', 'centos'
+    'linux', 'cloud-operations', 'docker', 'mysql', 'nginx', 'ubuntu', 'centos',
+    'network', 'web-lamp', 'linux-services'
   ])
+})
+
+test('every entry.domain is registered in knowledgeDomains', () => {
+  const ids = new Set(knowledgeDomains.map(d => d.id))
+  for (const entry of knowledgeEntries) {
+    assert.ok(ids.has(entry.domain), `entry ${entry.id} has domain "${entry.domain}" not registered`)
+  }
 })
 
 test('searches the built-in Cloud Operations knowledge pack by full-text content', () => {

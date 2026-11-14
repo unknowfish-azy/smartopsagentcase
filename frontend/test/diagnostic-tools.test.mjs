@@ -33,7 +33,11 @@ test('health center and route stay lazy', async () => {
   const view = await source('src/views/diagnostics/HealthCenterView.vue')
   assert.match(router, /path: 'health'/)
   assert.match(router, /import\('\.\.\/views\/diagnostics\/HealthCenterView\.vue'\)/)
-  assert.match(view, /HealthCheckList/)
+  // 阶段 1-5 重构后，HealthCenterView 使用 ConclusionBar + CheckGroupList + PolicyPanel + ToolBar
+  assert.match(view, /ConclusionBar/)
+  assert.match(view, /CheckGroupList/)
+  assert.match(view, /PolicyPanel/)
+  assert.match(view, /ToolBar/)
 })
 
 test('admin readiness renders a safe manual policy summary without sensitive fields', async () => {
