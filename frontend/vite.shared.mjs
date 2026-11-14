@@ -21,6 +21,13 @@ export function devProxy(target) {
             changeOrigin: true,
             // 去掉 /ai 前缀：ai-service 的路由是 /api/chat/stream
             rewrite: path => path.replace(/^\/ai/, '')
+        },
+        // 知识服务（Python FastAPI，端口 8002）的空间场只读端点
+        '/ks': {
+            target: 'http://127.0.0.1:8002',
+            changeOrigin: true,
+            // /ks/api/knowledge/evidence-refs → /api/knowledge/evidence-refs
+            rewrite: path => path.replace(/^\/ks/, '')
         }
     }
 }

@@ -73,7 +73,7 @@ const {
   display: grid;
   gap: 18px;
   padding-bottom: 28px;
-  color: #dce5e9;
+  color: var(--smart-text);
 }
 
 .operations-workspace {

@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import threading
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 from uuid import uuid4
@@ -273,6 +274,7 @@ class KnowledgeService:
 
         n_chunks = self.add_documents(documents)
         self._catalog_ingested = True
+        self._catalog_ingested_at = datetime.utcnow().isoformat() + "Z"
         logging.getLogger(__name__).info(
             "[spatial-field] ingest_catalog: entries=%d → documents=%d → chunks=%d",
             len(entries), len(documents), n_chunks,
@@ -293,6 +295,29 @@ class KnowledgeService:
         """当前已 ingest 的全部 document_id 集合（HUD / 诊断用）。"""
         with self._lock:
             return {getattr(c, "document_id", "") for c in self._chunks if getattr(c, "document_id", None)}
+
+    def all_evidence_refs(self) -> dict[str, list[dict]]:
+        """批量返回所有已 ingest 条目的 evidence refs，按 entry_id 分组。
+
+        M2 前端批量 enrich 用：一次调用拿到全量，避免 N 次单条请求。
+        返回 { entry_id: [ {evidenceId, chunkId, source, version, capturedAt, note}, ... ] }
+        """
+        ingested_at = getattr(self, "_catalog_ingested_at", "") or ""
+        grouped: dict[str, list[dict]] = {}
+        with self._lock:
+            for c in self._chunks:
+                entry_id = getattr(c, "document_id", None)
+                if not entry_id:
+                    continue
+                grouped.setdefault(entry_id, []).append({
+                    "evidenceId": f"ev-{c.chunk_id}",
+                    "chunkId": c.chunk_id,
+                    "source": getattr(c, "source", ""),
+                    "version": getattr(c, "version", "latest"),
+                    "capturedAt": ingested_at,
+                    "note": "知识条目原始内容切块后直接作为证据锚点",
+                })
+        return grouped
 
     # ------------------------------------------------------------------
     # RAG-P1-01：持久化 / 恢复

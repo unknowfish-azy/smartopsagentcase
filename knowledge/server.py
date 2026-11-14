@@ -514,6 +514,33 @@ async def get_entry_evidence_refs(entry_id: str) -> EvidenceRefsResponse:
     )
 
 
+class AllEvidenceRefsResponse(BaseModel):
+    """批量返回所有已 ingest 条目的 evidence refs，按 entry_id 分组。"""
+    refsByEntry: dict[str, list[EvidenceRefOut]]
+    ingestedAt: str
+    count: int  # 有 evidence 的 entry 数
+
+
+@app.get(
+    "/api/knowledge/evidence-refs",
+    response_model=AllEvidenceRefsResponse,
+    summary="只读：批量返回所有已 ingest 条目的 EvidenceRef（按 entry_id 分组）",
+)
+async def get_all_evidence_refs() -> AllEvidenceRefsResponse:
+    """M2 前端批量 enrich 用：一次调用拿到全量 evidence refs，
+    避免对 737 条 entry 各发一次请求。
+
+    返回 { refsByEntry: { entry_id: [EvidenceRefOut, ...] }, ingestedAt, count }
+    """
+    grouped = service.all_evidence_refs()
+    ingested_at = STARTED_AT
+    return AllEvidenceRefsResponse(
+        refsByEntry=grouped,
+        ingestedAt=ingested_at,
+        count=len(grouped),
+    )
+
+
 @app.get(
     "/api/knowledge/index-stats",
     summary="只读：catalog ingest 状态 + 已对齐的 document_id 数",

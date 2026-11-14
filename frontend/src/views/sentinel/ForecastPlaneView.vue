@@ -341,18 +341,18 @@ if (typeof window !== 'undefined') {
 
 <style scoped>
 .forecast-plane {
-  --forecast-bg: var(--ds-surface-base, #0E1116);
-  --forecast-card: var(--ds-surface-raised, #151A21);
-  --forecast-overlay: var(--ds-surface-overlay, #1B212A);
-  --forecast-line: var(--ds-hairline, rgba(255, 255, 255, .06));
-  --forecast-line-strong: var(--ds-color-border-strong, rgba(159, 190, 207, .34));
-  --forecast-text: var(--ds-color-text, #E8F2F7);
-  --forecast-muted: var(--ds-color-muted, #92A6B5);
-  --forecast-accent: var(--ds-color-primary, #2496ED);
-  --forecast-cyan: var(--ds-color-primary-strong, #7AD7F5);
-  --forecast-ok: var(--ds-color-success, #8bcfb4);
-  --forecast-warn: #D29922;
-  --forecast-bad: #F85149;
+  --forecast-bg: var(--ds-surface-base, var(--smart-bg));
+  --forecast-card: var(--ds-surface-raised, var(--smart-card));
+  --forecast-overlay: var(--ds-surface-overlay, var(--smart-surface-raised));
+  --forecast-line: var(--ds-hairline, var(--smart-border));
+  --forecast-line-strong: var(--ds-color-border-strong, var(--smart-border-strong));
+  --forecast-text: var(--ds-color-text, var(--smart-text));
+  --forecast-muted: var(--ds-color-muted, var(--smart-muted));
+  --forecast-accent: var(--ds-color-primary, var(--smart-primary));
+  --forecast-cyan: var(--ds-color-primary-strong, var(--smart-primary-strong));
+  --forecast-ok: var(--ds-color-success, var(--smart-success));
+  --forecast-warn: var(--ds-semantic-warning);
+  --forecast-bad: var(--ds-semantic-danger);
   --forecast-radius: var(--ds-radius-md, 8px);
   --forecast-font-mono: Consolas, 'Cascadia Mono', ui-monospace, monospace;
 
@@ -425,7 +425,7 @@ if (typeof window !== 'undefined') {
 }
 
 .forecast-chip--demo {
-  border-color: rgba(210, 153, 34, .5);
+  border-color: color-mix(in srgb, var(--ds-semantic-warning) 50%, transparent);
   color: var(--forecast-warn);
 }
 
@@ -438,7 +438,7 @@ if (typeof window !== 'undefined') {
 
 .forecast-chip__dot--live {
   background: var(--forecast-ok);
-  box-shadow: 0 0 0 3px rgba(63, 185, 80, .16);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-semantic-success) 16%, transparent);
 }
 
 /* ---------- 工具栏 ---------- */
@@ -487,7 +487,7 @@ if (typeof window !== 'undefined') {
 }
 
 .forecast-seg__btn[aria-pressed="true"] {
-  background: rgba(36, 150, 237, .16);
+  background: color-mix(in srgb, var(--forecast-accent) 16%, transparent);
   color: var(--forecast-text);
 }
 
@@ -512,7 +512,7 @@ if (typeof window !== 'undefined') {
 .forecast-sensor[aria-pressed="true"] {
   border-color: var(--forecast-cyan);
   color: var(--forecast-text);
-  background: rgba(122, 215, 245, .08);
+  background: color-mix(in srgb, var(--forecast-cyan) 8%, transparent);
 }
 
 .forecast-btn {
@@ -538,7 +538,7 @@ if (typeof window !== 'undefined') {
 .forecast-btn--on {
   border-color: var(--forecast-accent);
   color: var(--forecast-text);
-  background: rgba(36, 150, 237, .12);
+  background: color-mix(in srgb, var(--forecast-accent) 12%, transparent);
 }
 
 /* ---------- 网格 ---------- */

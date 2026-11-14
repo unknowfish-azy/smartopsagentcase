@@ -25,9 +25,11 @@ import EvidenceBed from './EvidenceBed.vue'
 import ThreadLayer from './ThreadLayer.vue'
 import InsightCanopy from './InsightCanopy.vue'
 
-// —— 空间场一次计算（Phase A 无洞察，先跑知识层 + 证据层）——
+// —— 空间场初始计算（Phase A 无洞察，先跑知识层 + 证据层）——
 const SP_NOW = Date.parse('2026-11-14T00:00:00Z')
-const field = computeField(knowledgeEntries, knowledgeDomains, [], { now: SP_NOW })
+
+// field 改为 ref：evidence-refs 到达后重新计算，让 EvidenceBed 渲染真实证据带
+const field = ref(computeField(knowledgeEntries, knowledgeDomains, [], { now: SP_NOW }))
 
 // bindingIndex（无洞察 → 全 operational → 无 threads，但接口先预留）
 const bindingIndex = buildBindingIndex(knowledgeEntries, [])
@@ -35,6 +37,45 @@ const bindingIndex = buildBindingIndex(knowledgeEntries, [])
 // —— 相机（受限轨道 + 三机位预设）——
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const cam = useFieldCamera({ reducedMotion })
+
+// evidence enrich 状态
+const enrichStatus = ref('idle') // idle | loading | ready | error
+const enrichError = ref('')
+const enrichedCount = ref(0)
+const enrichStatusClass = computed(() => ({
+  'sf-stat--bound': enrichStatus.value === 'ready',
+  'sf-stat--stale': enrichStatus.value === 'error',
+}))
+
+/**
+ * M2：挂载后批量拉取所有已 ingest 条目的 evidence-refs，
+ * 合并到 knowledgeEntries 后重算 field，让 EvidenceBed / ThreadLayer / InsightCanopy 有真实内容。
+ *
+ * 后端批量端点：GET /api/knowledge/evidence-refs → { refsByEntry, ingestedAt, count }
+ * 开发环境通过 vite 代理 /ks → 知识服务（8002）。
+ */
+async function enrichEvidenceRefs() {
+  enrichStatus.value = 'loading'
+  enrichError.value = ''
+  try {
+    const res = await fetch('/ks/api/knowledge/evidence-refs')
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    const refsByEntry = data?.refsByEntry || {}
+    const enriched = knowledgeEntries.map(e => {
+      const refs = refsByEntry[e.id]
+      if (!Array.isArray(refs) || refs.length === 0) return e
+      return { ...e, evidenceRefs: refs }
+    })
+    enrichedCount.value = Object.keys(refsByEntry).length
+    field.value = computeField(enriched, knowledgeDomains, [], { now: SP_NOW })
+    enrichStatus.value = 'ready'
+  } catch (err) {
+    enrichStatus.value = 'error'
+    enrichError.value = err.message || '证据加载失败'
+    // 失败不阻塞：field 保持初始计算（无证据带）
+  }
+}
 
 // LOD 判断（DESIGN §6.1：按相机 dist）
 function computeLod (dist) {
@@ -51,7 +92,7 @@ const MAX_VISIBLE = 180
 
 // 可见平面：按距相机 target 的距离升序排，取前 MAX_MOUNT
 const mountedPlanes = computed(() => {
-  const planes = field.planes
+  const planes = field.value.planes
   if (planes.length <= MAX_MOUNT) return planes
   const tx = cam.target.x, ty = cam.target.y, tz = cam.target.z
   const sorted = [...planes].sort((a, b) =>
@@ -65,7 +106,7 @@ const mountedPlanes = computed(() => {
 // —— 线程屏幕空间坐标换算（简化版：先用世界坐标占位，ThreadLayer 后续接）——
 // 线程从 field.threads 里取，ScreenThread 是 ThreadLayer 需要的格式
 const screenThreads = computed(() =>
-  field.threads.map(t => ({
+  field.value.threads.map(t => ({
     ...t,
     from: { x: t.from.x, y: t.from.y },
     to:   { x: t.to.x,   y: t.to.y },
@@ -117,7 +158,7 @@ function onKeyDown (e) {
     const result = cam.back()
     if (result === 'domain' && cam.focusDomainId.value) {
       // 跳回域中心（简化：用域锚点 x 作为 target.x）
-      const anchor = field.axes.domains.find(d => d.id === cam.focusDomainId.value)
+      const anchor = field.value.axes.domains.find(d => d.id === cam.focusDomainId.value)
       if (anchor) cam.orbitTo({ tx: anchor.x, ty: FIELD.knowledge.y0 + 80 })
     }
     return
@@ -141,8 +182,8 @@ function onFieldClick (insight) {
 
 // —— 状态（HUD 用）——
 const fieldStats = computed(() => ({
-  planes: field.planes.length,
-  evidenceBands: field.evidenceBands.length,
+  planes: field.value.planes.length,
+  evidenceBands: field.value.evidenceBands.length,
   threads: bindingIndex.threads.length,
   bound: bindingIndex.stats.bound,
   operational: bindingIndex.stats.operational,
@@ -156,6 +197,7 @@ const fieldStats = computed(() => ({
 onMounted(() => {
   cam.setPreset('overlook')
   window.addEventListener('keydown', onKeyDown)
+  enrichEvidenceRefs()
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDown)
@@ -174,6 +216,13 @@ defineExpose({ cam, field })
         <span class="sf-sep">·</span>
         <span>{{ fieldStats.planes }} 平面</span>
         <span>{{ fieldStats.evidenceBands }} 证据带</span>
+        <span class="sf-sep">·</span>
+        <span class="sf-stat" :class="enrichStatusClass">
+          <template v-if="enrichStatus === 'loading'">证据加载中…</template>
+          <template v-else-if="enrichStatus === 'ready'">证据已载入 {{ enrichedCount }} 条</template>
+          <template v-else-if="enrichStatus === 'error'">证据加载失败</template>
+          <template v-else>证据待载入</template>
+        </span>
         <span class="sf-sep">·</span>
         <span class="sf-stat sf-stat--bound">已绑定 {{ fieldStats.bound }}</span>
         <span class="sf-stat sf-stat--op">纯运行态 {{ fieldStats.operational }}</span>
