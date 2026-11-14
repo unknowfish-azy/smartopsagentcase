@@ -13,6 +13,7 @@ test('maps Inspector statistics to the existing Memory parent group', () => {
   assert.equal(group.id, 'memory')
   assert.equal(group.label, 'MEMORY')
   assert.deepEqual(group.children.map(item => item.routeName), [
+    'InspectorDesk',
     'InspectorCenter',
     'InspectorStatistics',
     'OperationRunHistory',
