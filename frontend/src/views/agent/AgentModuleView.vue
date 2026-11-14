@@ -503,6 +503,10 @@ const targetField = computed(() =>
 const { current: liveField, setTarget: setFieldTarget, setReduced: setFieldReduced, dispose: disposeFieldClock } =
   useCompositionFieldClock(targetField.value, reduced.value)
 
+/* A1：手动参数覆盖 —— 必须在 watch(targetField) 之前定义，否则 immediate 回调引用未初始化变量 */
+const manualOverride = ref(false)
+const sliderVals = reactive({ aperture: 0.5, tilt: 0, volume: 0.5, gaze: 0, spin: 0 })
+
 watch(targetField, next => {
   if (manualOverride.value) return // 手动覆盖期间跳过后端数据驱动
   setFieldTarget(next)
@@ -595,10 +599,7 @@ function onKeydown(e) {
   }
 }
 
-/* ---------------------------- A1：手动参数覆盖 ---------------------------- */
-
-const manualOverride = ref(false)
-const sliderVals = reactive({ aperture: 0.5, tilt: 0, volume: 0.5, gaze: 0, spin: 0 })
+/* ---------------------------- A1：手动参数覆盖（ref 已在上方 watch 前定义） ---------------------------- */
 
 function applyManualField() {
   const base = targetField.value
