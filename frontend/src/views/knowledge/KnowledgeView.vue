@@ -16,6 +16,17 @@
       </div>
     </header>
 
+    <!-- 知识空间场入口横幅：避免用户在旧列表页错过新空间场视图 -->
+    <a class="space-entry-banner" href="/knowledge/space" role="link">
+      <span class="space-entry-banner__icon" aria-hidden="true">◈</span>
+      <span class="space-entry-banner__text">
+        <strong>知识空间场</strong>
+        <em>KNOWLEDGE SPACE</em>
+        <small>737 条知识以空间场域可视化呈现，支持证据带、轨迹线、洞察冠层</small>
+      </span>
+      <span class="space-entry-banner__cta" aria-hidden="true">进入空间场 →</span>
+    </a>
+
     <nav class="knowledge-zone-tabs" aria-label="Knowledge zones">
       <RouterLink class="knowledge-zone-tab active" to="/knowledge">系统知识库</RouterLink>
       <RouterLink class="knowledge-zone-tab" to="/knowledge/personal">我的知识库</RouterLink>
@@ -241,6 +252,16 @@ function renderMarkdown(source) {
 .knowledge-space > * { position: relative; z-index: 1; }
 .knowledge-breadcrumb { margin: 0 0 18px; color: var(--smart-muted); font: 10px/1.6 var(--font-mono); overflow-wrap: anywhere; }
 .knowledge-hero { padding: 64px 0 48px; border-bottom: 1px solid var(--smart-border); }
+/* 知识空间场入口横幅：醒目但不喧宾夺主，契合项目主题色 */
+.space-entry-banner{display:flex;align-items:center;gap:16px;margin:20px 0;padding:16px 20px;border:1px solid color-mix(in srgb,var(--smart-primary-strong) 30%,transparent);border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--smart-primary) 12%,transparent),color-mix(in srgb,var(--smart-primary-strong) 6%,transparent));color:var(--smart-text);text-decoration:none;transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.space-entry-banner:hover{border-color:var(--smart-primary-strong);box-shadow:0 0 0 1px color-mix(in srgb,var(--smart-primary-strong) 20%,transparent),0 8px 24px color-mix(in srgb,var(--smart-primary) 12%,transparent);transform:translateY(-1px)}
+.space-entry-banner__icon{font-size:24px;color:var(--smart-primary-strong);flex-shrink:0}
+.space-entry-banner__text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.space-entry-banner__text strong{font:15px/1.4 var(--font-cn);font-weight:600;color:var(--smart-text)}
+.space-entry-banner__text em{font-style:normal;font:10px var(--font-mono);color:var(--smart-primary-strong);letter-spacing:.12em}
+.space-entry-banner__text small{font-size:12px;color:var(--smart-muted);line-height:1.5}
+.space-entry-banner__cta{flex-shrink:0;padding:8px 14px;border-radius:8px;background:var(--smart-primary-strong);color:var(--smart-bg);font:12px/1 var(--font-cn);font-weight:600;white-space:nowrap}
+@media(max-width:640px){.space-entry-banner{flex-wrap:wrap}.space-entry-banner__cta{width:100%;text-align:center}}
 .editorial-label { margin: 0 0 16px; color: var(--smart-primary-strong); font: var(--label-size) var(--font-mono); letter-spacing: .13em; }
 .editorial-label span { margin-left: 10px; color: var(--smart-muted); font-family: var(--font-cn); letter-spacing: 0; }
 .knowledge-rule { width: min(100%, 620px); margin-bottom: 24px; border-top: 1px solid var(--smart-border); }

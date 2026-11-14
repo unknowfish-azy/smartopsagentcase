@@ -419,7 +419,7 @@ fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); fo
   border: 1px solid var(--smart-border);
   border-radius: 8px;
   background:
-    radial-gradient(120% 150% at 78% 24%, rgba(36, 150, 237, .22), transparent 62%),
+    radial-gradient(120% 150% at 78% 24%, color-mix(in srgb, var(--smart-primary) 22%, transparent), transparent 62%),
     linear-gradient(155deg, #061725 0%, #0a2336 58%, #0d3350 100%);
   isolation: isolate;
 }
@@ -435,14 +435,14 @@ fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); fo
   pointer-events: none;
 }
 
-.sentinel-crawler-copy .sentinel-eyebrow { color: #7AD7F5; }
+.sentinel-crawler-copy .sentinel-eyebrow { color: var(--smart-primary-strong); }
 
 .sentinel-crawler-copy h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
   letter-spacing: .02em;
-  color: #E6F6FF;
+  color: var(--smart-text);
 }
 
 .sentinel-crawler-desc {
@@ -450,7 +450,7 @@ fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); fo
   max-width: 42ch;
   font-size: 12px;
   line-height: 1.75;
-  color: rgba(214, 236, 248, .78);
+  color: color-mix(in srgb, var(--smart-text) 78%, transparent);
 }
 
 .sentinel-crawler-legend {
@@ -461,7 +461,7 @@ fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); fo
   padding: 0;
   list-style: none;
   font-size: 12px;
-  color: rgba(214, 236, 248, .88);
+  color: color-mix(in srgb, var(--smart-text) 88%, transparent);
 }
 
 .sentinel-crawler-legend li { display: inline-flex; align-items: center; gap: 6px; }
@@ -474,16 +474,16 @@ fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); fo
   flex: none;
 }
 
-.dot--online { background: #7AD7F5; }
-.dot--offline { background: #FF6B6B; }
-.dot--error { background: #FFB347; }
-.dot--none { background: #5A6B7B; }
+.dot--online { background: var(--smart-primary-strong); }
+.dot--offline { background: var(--smart-danger); }
+.dot--error { background: var(--smart-warning); }
+.dot--none { background: var(--ds-semantic-neutral); }
 
 .sentinel-crawler-note {
   margin: 2px 0 0;
   font-size: 12px;
   line-height: 1.7;
-  color: rgba(214, 236, 248, .62);
+  color: color-mix(in srgb, var(--smart-text) 62%, transparent);
 }
 
 /* 右侧画布容器：蛛网动画的领地，文字不进入 */

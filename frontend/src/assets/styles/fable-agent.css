@@ -495,7 +495,7 @@
 }
 
 .state-strip button:hover {
-  background: rgba(241, 232, 214, 0.05);
+  background: color-mix(in srgb, var(--fab-paper) 5%, transparent);
   color: var(--fab-paper-72);
 }
 
@@ -582,12 +582,12 @@
 }
 
 .tag--live {
-  border-color: rgba(114, 196, 224, 0.5);
+  border-color: color-mix(in srgb, var(--fab-gaze) 50%, transparent);
   color: var(--fab-gaze);
 }
 
 .tag--sample {
-  border-color: rgba(212, 178, 90, 0.45);
+  border-color: color-mix(in srgb, var(--fab-butter) 45%, transparent);
   color: var(--fab-butter);
 }
 
@@ -840,13 +840,13 @@
 
 .btn:hover {
   border-color: var(--fab-paper-46);
-  background: rgba(241, 232, 214, 0.05);
+  background: color-mix(in srgb, var(--fab-paper) 5%, transparent);
 }
 
 .btn--primary {
   border-color: var(--fab-clay);
   background: var(--fab-clay);
-  color: #12100e;
+  color: var(--smart-primary-foreground);
 }
 
 .btn--primary:hover {

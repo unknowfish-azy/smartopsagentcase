@@ -430,17 +430,14 @@ onBeforeUnmount(() => {
 .ai-chat-message p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--smart-text); font-size: 13px; line-height: 1.65; }
 /* 逐行揭示：每行作为块级堆叠，继承 ml-stream-lines 的错峰淡入。 */
 .ai-chat-message__line { display: block; min-height: 1.65em; }
-.ai-chat-message__error, .ai-chat-error { color: var(--smart-danger, #f08d9c) !important; }
-/* 浅色主题下原错误色 #f08d9c 对比度不足，改用深红以满足 AA。 */
-[data-theme='light'] .ai-chat-message__error, [data-theme='light'] .ai-chat-error { color: #b42318 !important; }
+.ai-chat-message__error, .ai-chat-error { color: var(--ds-semantic-danger) !important; }
 .ai-chat-retry-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .ai-chat-retry-hint { font-size: 11px; color: var(--smart-muted); }
 .ai-chat-retry { min-height: 30px; padding: 4px 12px; border: 1px solid var(--smart-border-strong); border-radius: 7px; background: var(--smart-surface); color: var(--smart-text); font: inherit; font-size: 12px; cursor: pointer; }
 .ai-chat-retry:hover { border-color: var(--smart-primary-strong); color: var(--smart-primary-strong); }
 .ai-chat-retry:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
 .ai-chat-retry:disabled { cursor: not-allowed; opacity: .6; }
-.ai-chat-status--recovered { color: #4fb58b; }
-[data-theme='light'] .ai-chat-status--recovered { color: #0f7b52; }
+.ai-chat-status--recovered { color: var(--ds-semantic-success); }
 .ai-chat-status { margin: 8px 0 0 !important; padding: 6px 8px; border-radius: 6px; font-size: 11px !important; }
 .ai-chat-status--degraded { color: var(--smart-warning, #d8ad67) !important; background: color-mix(in srgb, var(--smart-warning, #d8ad67) 12%, transparent); }
 .ai-chat-status--rejected { color: var(--smart-danger, #f08d9c) !important; background: color-mix(in srgb, var(--smart-danger, #f08d9c) 12%, transparent); }

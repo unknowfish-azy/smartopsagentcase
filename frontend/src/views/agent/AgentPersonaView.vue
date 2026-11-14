@@ -387,17 +387,17 @@ function buildDemoAudioUrl(seconds = 10, sampleRate = 22050) {
 
 .persona-view__pill[data-tone='success'] {
   color: var(--ds-color-success);
-  border-color: rgba(139, 207, 180, .45);
+  border-color: color-mix(in srgb, var(--smart-success) 45%, transparent);
 }
 
 .persona-view__pill[data-tone='warning'] {
   color: var(--ds-color-warning);
-  border-color: rgba(217, 185, 109, .45);
+  border-color: color-mix(in srgb, var(--smart-warning) 45%, transparent);
 }
 
 .persona-view__pill[data-tone='danger'] {
   color: var(--ds-color-danger);
-  border-color: rgba(220, 132, 144, .45);
+  border-color: color-mix(in srgb, var(--smart-danger) 45%, transparent);
 }
 
 .persona-view__note {

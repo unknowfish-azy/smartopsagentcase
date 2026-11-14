@@ -230,7 +230,7 @@ onBeforeUnmount(disposePersona)
   transition: border-color .3s;
 }
 .xiaoyu-chat-avatar__pulse[data-active="true"] {
-  border-color: rgba(255, 180, 84, .5);
+  border-color: color-mix(in srgb, var(--smart-warning) 50%, transparent);
   animation: pulse 2s ease-in-out infinite;
 }
 @keyframes pulse {
@@ -332,7 +332,7 @@ onBeforeUnmount(disposePersona)
   border: 1px solid var(--ds-color-primary, #2496ed);
   border-radius: var(--ds-radius-md, 10px);
   background: var(--ds-color-primary, #2496ed);
-  color: #fff;
+  color: var(--smart-primary-foreground);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;

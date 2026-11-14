@@ -279,7 +279,7 @@ function askExample(example) {
 .insights-query input:focus-visible { border-color: var(--ds-color-primary); outline: 2px solid var(--ds-pill-info-bg); outline-offset: 1px; }
 .insights-query button {
   height: 40px; padding: 0 18px; border: 1px solid transparent; border-radius: var(--ds-radius-md);
-  background: var(--ds-color-primary); color: #ffffff; font-size: var(--ds-type-body-size); font-weight: 500;
+  background: var(--ds-color-primary); color: var(--smart-primary-foreground); font-size: var(--ds-type-body-size); font-weight: 500;
   transition: opacity var(--ds-motion-duration) var(--ds-ease-out);
 }
 .insights-query button:hover:not(:disabled) { opacity: .88; }

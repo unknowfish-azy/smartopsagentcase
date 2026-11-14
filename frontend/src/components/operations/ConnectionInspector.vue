@@ -71,8 +71,8 @@ const {
 .server-inspector {
   min-width: 0;
   padding: 16px;
-  background: #0b1118;
-  border-left: 1px solid #18222d;
+  background: var(--smart-surface);
+  border-left: 1px solid var(--smart-border);
 }
 
 .panel-heading,
@@ -87,7 +87,7 @@ const {
 .panel-heading h2,
 .subsection-heading h3 {
   margin: 0;
-  color: #e2eaed;
+  color: var(--smart-text);
   font-size: 13px;
   font-weight: 550;
 }
@@ -96,13 +96,13 @@ const {
 .subsection-heading small {
   display: block;
   margin-top: 4px;
-  color: #84939d;
+  color: var(--smart-muted);
   font-size: 11px;
 }
 
 .inspector-empty {
   padding: 14px 0;
-  color: #a8b5bc;
+  color: var(--smart-muted);
   font-size: 12px;
 }
 
@@ -152,7 +152,7 @@ const {
 }
 
 .session-details dt {
-  color: #84939d;
+  color: var(--smart-muted);
   font-size: 11px;
 }
 
