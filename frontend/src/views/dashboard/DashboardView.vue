@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <DashboardBento />
 </template>
 
