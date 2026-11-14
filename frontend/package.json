@@ -20,6 +20,7 @@
     "personal-navigation-check": "node test/personal-navigation-visual-check.mjs",
     "test:visual": "node test/visual-suite.mjs",
     "perf:baseline": "node test/performance-baseline.browser.mjs",
+    "persona:device": "node test/persona-device-acceptance.mjs",
     "test:a11y": "node test/accessibility.browser.mjs"
   },
   "dependencies": {

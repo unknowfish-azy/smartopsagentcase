@@ -10,6 +10,7 @@ import {
   AmbientLight,
   Box3,
   DirectionalLight,
+  LinearFilter,
   Object3D,
   PerspectiveCamera,
   Scene,
@@ -20,6 +21,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm'
 import { subscribe } from '../../visual/motionScheduler.js'
 import { PERSONA_POSE_BASE } from './personaStates.js'
+import { createFrameBudget, frameDeltaSeconds } from './frameBudget.js'
 import { createLipSync, VISEMES } from './useLipSync.js'
 
 const FPS = 30
@@ -28,6 +30,9 @@ const BLINK_DURATION = 0.24
 const BREATH_SPEED = 1.35
 const BREATH_AMPLITUDE = 0.012
 const POSE_BONES = ['head', 'chest', 'leftUpperArm', 'rightUpperArm']
+
+// 降级门槛见 frameBudget.js：CPU 成本 > 20ms，或真实渲染间隔 ≥ 60ms，连续 2s
+const FRAME_SAMPLES = 90
 
 const TAU = Math.PI * 2
 
@@ -86,6 +91,16 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
 
   const lipSync = createLipSync()
   const visemeValues = { aa: 0, ih: 0, ou: 0, ee: 0, oh: 0 }
+
+  const now = () => globalThis.performance?.now?.() ?? Date.now()
+  const createdAt = now()
+  let firstFrameMs = 0
+  let renderedFrames = 0
+  let lastStepAt = 0
+  const frameSamples = []
+  const frameBudget = createFrameBudget()
+  let degraded = false
+  let modelBytes = 0
 
   function resize() {
     const width = Math.max(container.clientWidth, 1)
@@ -205,13 +220,50 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
     }
   }
 
-  function step(frameMs) {
+  /**
+   * 降级：关阴影、降贴图、停发丝物理，并把渲染分辨率降回 1x。
+   * 只做一次，之后的帧时不再触发。
+   */
+  function degrade() {
+    if (degraded) return
+    degraded = true
+    renderer.shadowMap.enabled = false
+    renderer.setPixelRatio(1)
+    if (vrm) {
+      vrm.scene.traverse((object) => {
+        const materials = Array.isArray(object.material)
+          ? object.material
+          : object.material
+            ? [object.material]
+            : []
+        for (const material of materials) {
+          for (const key of ['map', 'normalMap', 'emissiveMap', 'alphaMap']) {
+            const texture = material[key]
+            if (!texture) continue
+            texture.anisotropy = 1
+            texture.minFilter = LinearFilter
+            texture.needsUpdate = true
+          }
+        }
+      })
+      // 发丝/裙摆的 spring bone 解算约占一帧的一小半，降级时直接停掉
+      if (vrm.springBoneManager) vrm.springBoneManager.update = () => {}
+    }
+    resize()
+  }
+
+  function step() {
     if (!vrm || disposed) return
-    // motionScheduler 回调给的是毫秒，这里统一换成秒（three / 插值都按秒）
-    const dt = Math.min(frameMs, 100) / 1000
+    // 用两次渲染的真实间隔做 dt：调度器跳帧时，它给的回调参数只是 rAF 间隔，
+    // 拿它推进动画会让动作变慢；看门狗也必须看这个间隔，否则 GPU 瓶颈下永不降级。
+    const timestamp = now()
+    const interval = lastStepAt ? timestamp - lastStepAt : 16
+    lastStepAt = timestamp
+    const dt = frameDeltaSeconds(interval)
     elapsed += dt
     const motion = activeProfile?.motion ?? {}
     const k = easeFactor(dt)
+    const frameStart = timestamp
 
     applyPose(k, motion)
     applyGaze(k)
@@ -221,7 +273,16 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
 
     vrm.update(dt)
     renderer.render(scene, camera)
+
+    const cost = now() - frameStart
+    renderedFrames += 1
+    frameSamples.push(cost)
+    if (frameSamples.length > FRAME_SAMPLES) frameSamples.shift()
+    // 门槛判定在 frameBudget.js；这里传真实渲染间隔，不能用调度器回调的 rAF 间隔
+    if (frameBudget.sample(cost, interval)) degrade()
+
     if (onFirstFrame) {
+      firstFrameMs = now() - createdAt
       onFirstFrame()
       onFirstFrame = null
     }
@@ -308,12 +369,55 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
     renderer.forceContextLoss()
   }
 
+  /** 从资源计时里取模型的实际传输体积，没有就退回文件大小 */
+  function readModelBytes() {
+    if (modelBytes) return modelBytes
+    try {
+      const absolute = new URL(modelUrl, globalThis.location?.href ?? 'http://localhost/').href
+      const entry = globalThis.performance?.getEntriesByName?.(absolute)?.pop()
+      if (entry?.encodedBodySize) modelBytes = entry.encodedBodySize
+      else if (entry?.decodedBodySize) modelBytes = entry.decodedBodySize
+    } catch {
+      // 拿不到就返回 0，不阻塞
+    }
+    return modelBytes
+  }
+
+  function frameSummary() {
+    if (!frameSamples.length) return { avg: 0, max: 0, p50: 0, p90: 0 }
+    let sum = 0
+    let max = 0
+    for (const sample of frameSamples) {
+      sum += sample
+      if (sample > max) max = sample
+    }
+    const sorted = [...frameSamples].sort((a, b) => a - b)
+    return {
+      avg: sum / frameSamples.length,
+      max,
+      p50: sorted[Math.floor(sorted.length * 0.5)],
+      p90: sorted[Math.floor(sorted.length * 0.9)]
+    }
+  }
+
   function stats() {
+    const frame = frameSummary()
+    const heap = globalThis.performance?.memory?.usedJSHeapSize
     return {
       drawCalls: renderer.info.render.calls,
       geometries: renderer.info.memory.geometries,
       textures: renderer.info.memory.textures,
-      expressions: vrm?.expressionManager?.expressions?.map((item) => item.expressionName) ?? []
+      expressions: vrm?.expressionManager?.expressions?.map((item) => item.expressionName) ?? [],
+      firstFrameMs: Math.round(firstFrameMs),
+      frameAvgMs: Number(frame.avg.toFixed(2)),
+      frameMaxMs: Number(frame.max.toFixed(2)),
+      frameP50Ms: Number(frame.p50.toFixed(2)),
+      frameP90Ms: Number(frame.p90.toFixed(2)),
+      pixelRatio: renderer.getPixelRatio(),
+      degraded,
+      frames: renderedFrames,
+      modelBytes: readModelBytes(),
+      heapMB: heap ? Number((heap / 1048576).toFixed(1)) : null
     }
   }
 
@@ -326,6 +430,7 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
     attachAudio: (element) => lipSync.attachAudio(element),
     resumeAudio: () => lipSync.resume(),
     speakText: (text, options) => lipSync.speak(text, options),
+    seekSpeech: (charIndex) => lipSync.seek(charIndex),
     stopSpeaking: () => lipSync.silence()
   }
 }
