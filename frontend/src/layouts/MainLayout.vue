@@ -4,10 +4,11 @@
       <MilkyWay v-if="showEnhancedHomeVisuals" class="home-galaxy" :particle-size="0.45" :rotation-speed="0.3" :viewport-coverage="0.78" :center-x="0.36" mouse-influence />
       <CanvasAmbientField v-else-if="route.name === 'Dashboard'" />
       <MeteorShower v-if="showEnhancedHomeVisuals" />
-      <ParticleWhale v-if="showEnhancedHomeVisuals" :placement="whalePlacement" :state="whaleState" />
-      <CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace" :placement="whalePlacement" :state="whaleState" />
+      <ParticleWhale v-if="showEnhancedHomeVisuals && !personaPetActive" :placement="whalePlacement" :state="whaleState" />
+      <CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace && !personaPetActive" :placement="whalePlacement" :state="whaleState" />
       <LivingJellyfish v-if="!isConnectionWorkspace && visualMode === 'balanced'" class="app-jellyfish" :class="`app-jellyfish--${whalePlacement}`" :state="jellyfishState" ecosystem="protected" />
       <OpsSpiderPet v-if="!isTeamSpace && !isKnowledgeSpace" :state="opsSpiderState" :agent-state="whaleState" :compact="route.name === 'Connections'" @navigate="openOpsSpiderAction" />
+      <PersonaPet v-if="personaPetStore.enabled && route.name !== 'AgentPersona'" />
       <button v-if="opsSpider.hidden && !isTeamSpace && !isKnowledgeSpace" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
       <SmartInquiryDrawer v-if="!isTeamSpace" />
 
@@ -37,7 +38,7 @@
           <p class="nav-label nav-label--system"><b>SYSTEM TOOLS</b><small>系统工具</small></p>
           <RouterLink v-for="item in systemNav" :key="item.to" :to="item.to" :aria-label="`${item.cn} / ${item.label}`" :title="`${item.cn} / ${item.label}`"><component :is="item.icon" class="nav-icon" aria-hidden="true" /><span class="nav-copy"><b>{{ item.label }}</b><small>{{ item.cn }}</small></span></RouterLink>
         </nav>
-        <div class="system-status"><div><span>SESSION / 登录会话</span><strong>{{ currentSession?.username || '未登录' }}</strong></div><div><span>AGENT / 智能体</span><strong>{{ whaleState.toUpperCase() }}</strong></div><time>{{ currentTime }}</time></div>
+        <div class="system-status"><div><span>SESSION / 登录会话</span><strong>{{ currentSession?.username || '未登录' }}</strong></div><div><span>AGENT / 智能体</span><strong>{{ whaleState.toUpperCase() }}</strong></div><time>{{ currentTime }}</time><button class="persona-pet-toggle" type="button" :aria-pressed="personaPetStore.enabled" :title="personaPetStore.enabled ? '关闭数字人桌宠' : '开启数字人桌宠'" @click="personaPetStore.toggle()">{{ personaPetStore.enabled ? '桌宠·开' : '桌宠·关' }}</button></div>
       </aside>
 
       <div class="main-area">
@@ -101,6 +102,7 @@ import PageStepper from '../components/navigation/PageStepper.vue'
 import MeteorShower from '../components/common/MeteorShower.vue'
 import { useCompanionStore } from '../stores/companion.js'
 import { useOpsSpiderStore } from '../stores/opsSpider.js'
+import { usePersonaPetStore } from '../stores/personaPet.js'
 import { useAiChatStore } from '../stores/aiChat.js'
 import { currentSession, logoutSession } from '../security/session.js'
 import { isAdminSession } from '../security/portalPolicy.js'
@@ -117,10 +119,14 @@ const CanvasAmbientField = defineAsyncComponent(() => import('../components/comm
 const ParticleWhale = defineAsyncComponent({ loader: () => import('../components/common/ParticleWhale.vue'), loadingComponent: CanvasParticleWhale, errorComponent: CanvasParticleWhale })
 const MilkyWay = defineAsyncComponent({ loader: () => import('../components/ui/milky-way.vue'), loadingComponent: CanvasAmbientField, errorComponent: CanvasAmbientField })
 const SmartInquiryDrawer = defineAsyncComponent(() => import('../components/investigation/SmartInquiryDrawer.vue'))
+const PersonaPet = defineAsyncComponent(() => import('../components/persona/PersonaPet.vue'))
 
 const appStore = useAppStore()
 const companion = useCompanionStore()
 const opsSpider = useOpsSpiderStore()
+const personaPetStore = usePersonaPetStore()
+// 桌宠展开期间鲸让位（同屏 WebGL 主体 ≤ 1，PET.md §2）；收起小球与关闭后恢复
+const personaPetActive = computed(() => personaPetStore.enabled && !personaPetStore.collapsed && route.name !== 'AgentPersona')
 const aiChat = useAiChatStore()
 aiChat.syncAccount()
 let disconnectCompanion

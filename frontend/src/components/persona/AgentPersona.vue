@@ -106,14 +106,16 @@ watch(
 )
 
 /**
- * 口型相关的命令式接口：调用方自己持有 <audio> 与文案，
- * 组件只负责把声音/文字变成嘴型。
+ * 命令式接口：口型由调用方驱动（自己持有 <audio> 与文案），
+ * readStats 供页面轮询帧时 / 降级状态。
  */
 defineExpose({
   attachAudio: (element) => stage?.attachAudio(element),
   resumeAudio: () => stage?.resumeAudio(),
   speakText: (text, options) => stage?.speakText(text, options),
-  stopSpeaking: () => stage?.stopSpeaking()
+  seekSpeech: (charIndex) => stage?.seekSpeech(charIndex),
+  stopSpeaking: () => stage?.stopSpeaking(),
+  readStats: () => stage?.stats() ?? null
 })
 
 onBeforeUnmount(teardown)

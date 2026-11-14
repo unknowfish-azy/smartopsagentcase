@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <link rel="icon" href="data:," />
+    <title>数字人 · 真机验收</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1219;
+        --panel: #121c26;
+        --border: #24333f;
+        --text: #e6f1f7;
+        --muted: #8ba0ad;
+        --accent: #4fc3f7;
+        --pass: #7bd8a4;
+        --fail: #f08c9a;
+        --exempt: #d9b96d;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 20px 16px 40px;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+        -webkit-text-size-adjust: 100%;
+      }
+      h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: .02em; }
+      .device { margin: 0 0 16px; color: var(--muted); font-size: 12px; word-break: break-all; }
+      .stage {
+        position: relative;
+        width: 100%;
+        max-width: 360px;
+        aspect-ratio: 3 / 4;
+        margin: 0 auto 16px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: radial-gradient(120% 90% at 50% 0%, rgba(36, 150, 237, .16), transparent 62%), var(--panel);
+      }
+      .stage canvas { display: block; width: 100%; height: 100%; }
+      .static {
+        display: grid;
+        place-content: center;
+        gap: 8px;
+        width: 100%;
+        height: 100%;
+        padding: 24px;
+        color: var(--muted);
+        text-align: center;
+        font-size: 13px;
+      }
+      .static[hidden] { display: none; }
+      .log { display: grid; gap: 6px; margin: 0 0 16px; padding: 0; list-style: none; font-size: 13px; }
+      .log li { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+      .log em { color: var(--accent); font-style: normal; }
+      .summary { margin: 0 0 16px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); overflow-x: auto; }
+      .summary[hidden] { display: none; }
+      .summary p { margin: 0 0 8px; font-weight: 600; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th, td { padding: 5px 6px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+      th { color: var(--muted); font-weight: 500; }
+      td:first-child { white-space: nowrap; }
+      tr[data-verdict="pass"] td:nth-child(4) { color: var(--pass); }
+      tr[data-verdict="fail"] td:nth-child(4) { color: var(--fail); }
+      tr[data-verdict="exempt"] td:nth-child(4) { color: var(--exempt); }
+      details { font-size: 12px; color: var(--muted); }
+      pre { overflow-x: auto; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); }
+      .hint { margin: 0 0 16px; color: var(--muted); font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>数字人 · 真机验收</h1>
+    <p class="device" id="device-line">正在读取设备信息…</p>
+    <p class="hint">
+      本页直接挂载生产同款渲染舞台，绕过「移动端默认静态替身」的产品开关，只验收渲染链路。
+      请保持屏幕点亮、页面在前台，约 20–40 秒出结果。
+    </p>
+    <div class="stage" id="stage">
+      <div class="static" id="static-panel" hidden>
+        <strong>WebGL 上下文丢失，已降级为静态替身</strong>
+        <span>页面仍在，未白屏</span>
+      </div>
+    </div>
+    <ol class="log" id="log"></ol>
+    <section class="summary" id="summary" hidden></section>
+    <details>
+      <summary>原始 JSON</summary>
+      <pre id="raw">{}</pre>
+    </details>
+    <script type="module" src="/test/persona-device-harness.js"></script>
+  </body>
+</html>

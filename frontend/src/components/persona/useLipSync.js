@@ -125,6 +125,7 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
   /**
    * 按文字排一条近似口型时间线，返回总时长（毫秒）。
    * 标点留停顿、空格留间隙，其余字符按 cps 匀速推进。
+   * entry 记录 UTF-16 字符索引，供 speechSynthesis boundary 事件校正时间线。
    */
   function speak(text, { cps = DEFAULT_CPS } = {}) {
     const spoken = String(text ?? '').trim()
@@ -136,13 +137,16 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     const charMs = 1000 / speed
     const entries = []
     let clock = 0
+    let charIndex = 0
     for (const char of spoken) {
       if (SPACE_PATTERN.test(char)) {
         clock += CHAR_GAP_MS
+        charIndex += char.length
         continue
       }
       if (PAUSE_PATTERN.test(char)) {
         clock += PAUSE_MS
+        charIndex += char.length
         continue
       }
       const primary = visemeForChar(char)
@@ -150,13 +154,32 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
         start: clock,
         end: clock + charMs,
         primary,
-        secondary: neighbourViseme(primary)
+        secondary: neighbourViseme(primary),
+        charIndex
       })
       clock += charMs
+      charIndex += char.length
     }
     timeline = entries.length ? { entries, duration: clock } : null
     timelineClock = 0
     return clock
+  }
+
+  /**
+   * speechSynthesis boundary 校正：把时间线跳到第 charIndex 个字符（UTF-16 索引）
+   * 所在音段的起点。TTS 实际语速与 cps 时间线有漂移，靠词边界回调周期性对齐。
+   * 跳过未发音字符（空格/标点）取其后的第一个音段。
+   */
+  function seek(charIndex) {
+    if (!timeline) return
+    const next = timeline.entries.find((entry) => entry.charIndex >= charIndex)
+    if (next) {
+      timelineClock = next.start
+      return
+    }
+    // 索引已越过最后一个音段：播报收尾，直接清时间线归零
+    timeline = null
+    timelineClock = 0
   }
 
   function silence({ immediate = false } = {}) {
@@ -260,5 +283,5 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     detachAudio()
   }
 
-  return { attachAudio, detachAudio, resume, speak, silence, update, isActive, dispose }
+  return { attachAudio, detachAudio, resume, speak, seek, silence, update, isActive, dispose }
 }

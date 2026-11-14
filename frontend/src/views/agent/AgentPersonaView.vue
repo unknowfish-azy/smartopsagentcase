@@ -68,6 +68,30 @@
         <dd>{{ stats ? `${stats.geometries} / ${stats.textures}` : '—' }}</dd>
       </div>
       <div class="persona-view__stat">
+        <dt>帧时（P50 / P90）</dt>
+        <dd>{{ stats ? `${stats.frameP50Ms} / ${stats.frameP90Ms} ms` : '—' }}</dd>
+      </div>
+      <div class="persona-view__stat">
+        <dt>首帧</dt>
+        <dd>{{ stats ? `${stats.firstFrameMs} ms` : '—' }}</dd>
+      </div>
+      <div class="persona-view__stat">
+        <dt>模型传输</dt>
+        <dd>{{ stats?.modelBytes ? `${(stats.modelBytes / 1048576).toFixed(1)} MB` : '—' }}</dd>
+      </div>
+      <div class="persona-view__stat">
+        <dt>JS 堆</dt>
+        <dd>{{ stats?.heapMB ? `${stats.heapMB} MB` : '不可读' }}</dd>
+      </div>
+      <div class="persona-view__stat">
+        <dt>像素比</dt>
+        <dd>{{ stats?.pixelRatio ?? '—' }}</dd>
+      </div>
+      <div class="persona-view__stat">
+        <dt>降级</dt>
+        <dd>{{ stats?.degraded ? '已降级（慢帧持续 2s）' : '正常' }}</dd>
+      </div>
+      <div class="persona-view__stat">
         <dt>状态通道</dt>
         <dd>文本 + 色彩（非仅 3D）</dd>
       </div>
@@ -96,6 +120,7 @@ const speechSource = ref('静默')
 
 let demoAudioUrl = ''
 let textTimer = 0
+let statsTimer = 0
 
 const statusText = computed(() => {
   if (status.value === 'ready') return '加载完成'
@@ -114,15 +139,32 @@ const statusTone = computed(() => {
 function onReady(payload) {
   status.value = 'ready'
   stats.value = payload
+  startStatsPolling()
 }
 
 function onError(error) {
+  stopStatsPolling()
   status.value = 'error'
   errorMessage.value = error?.message ?? '未知错误'
 }
 
 function onLost() {
+  stopStatsPolling()
   status.value = 'lost'
+}
+
+/** 每秒拉一次遥测：帧时 / 降级是持续变化的，只在 ready 时取一次会失真 */
+function startStatsPolling() {
+  stopStatsPolling()
+  statsTimer = setInterval(() => {
+    const snapshot = personaRef.value?.readStats?.()
+    if (snapshot) stats.value = snapshot
+  }, 1000)
+}
+
+function stopStatsPolling() {
+  if (statsTimer) clearInterval(statsTimer)
+  statsTimer = 0
 }
 
 /** 页面内合成 10 秒元音序列，接进真实的 <audio> → AnalyserNode 链路 */
@@ -161,6 +203,7 @@ function stopSpeech() {
 }
 
 onBeforeUnmount(() => {
+  stopStatsPolling()
   clearTimeout(textTimer)
   if (demoAudioUrl) URL.revokeObjectURL(demoAudioUrl)
 })
