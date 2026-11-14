@@ -82,6 +82,14 @@ export function getKnowledgeCandidate(id) {
   return http.get(`/api/knowledge/candidates/${id}`)
 }
 
+export function promoteKnowledgeCandidate(id, payload) {
+  return http.post(`/api/knowledge/candidates/${id}/promote`, payload)
+}
+
+export function rejectKnowledgeCandidate(id, reason) {
+  return http.post(`/api/knowledge/candidates/${id}/reject`, { reason })
+}
+
 export function startOperationTunnel(runtimeId, payload) {
   return http.post(`/api/operations/runtimes/${runtimeId}/tunnels`, null, { params: payload })
 }
