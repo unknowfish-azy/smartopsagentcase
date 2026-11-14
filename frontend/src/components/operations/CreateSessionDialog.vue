@@ -32,7 +32,7 @@ const {
 <style scoped>
 .eyebrow {
   margin: 0;
-  color: #8c9ba5;
+  color: var(--smart-muted);
   font: 10px var(--font-mono);
   letter-spacing: .08em;
 }
@@ -44,20 +44,20 @@ const {
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(3, 7, 13, .78);
+  background: color-mix(in srgb, var(--smart-bg) 78%, transparent);
 }
 
 .create-session {
   width: min(100%, 500px);
   padding: 24px;
-  border: 1px solid #263541;
-  background: #0b1118;
-  box-shadow: 0 22px 70px rgba(0, 0, 0, .4);
+  border: 1px solid var(--smart-border-strong);
+  background: var(--smart-surface);
+  box-shadow: 0 22px 70px color-mix(in srgb, var(--smart-bg) 40%, transparent);
 }
 
 .create-session h2 {
   margin: 6px 0 24px;
-  color: #eef4f6;
+  color: var(--smart-text);
   font-size: 22px;
   font-weight: 550;
 }
@@ -66,7 +66,7 @@ const {
   display: grid;
   gap: 7px;
   margin: 15px 0;
-  color: #a8b5bc;
+  color: var(--smart-muted);
   font-size: 11px;
 }
 
@@ -74,24 +74,24 @@ const {
 .create-session select {
   min-height: 36px;
   padding: 7px 9px;
-  border: 1px solid #263541;
+  border: 1px solid var(--smart-border-strong);
   border-radius: 3px;
   outline: none;
-  background: #080e14;
-  color: #e2eaed;
+  background: var(--smart-bg);
+  color: var(--smart-text);
   font: 12px var(--font-cn);
   resize: vertical;
 }
 
 .create-session input:focus,
 .create-session select:focus {
-  border-color: #38bdf8;
+  border-color: var(--smart-primary-strong);
 }
 
 .capability-warning {
   padding: 10px;
-  border-left: 2px solid #f59e0b;
-  color: #f4c879;
+  border-left: 2px solid var(--ds-semantic-warning);
+  color: var(--smart-warning);
   font-size: 11px;
 }
 
@@ -106,10 +106,10 @@ const {
 .form-actions button {
   min-height: 34px;
   padding: 0 10px;
-  border: 1px solid #263541;
+  border: 1px solid var(--smart-border-strong);
   border-radius: 3px;
-  background: #0d151d;
-  color: #b9c7cd;
+  background: var(--smart-surface-raised);
+  color: var(--smart-muted);
   font: 11px var(--font-cn);
   cursor: pointer;
 }
