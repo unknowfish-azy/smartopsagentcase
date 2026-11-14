@@ -7,7 +7,8 @@
     <div class="axis-canvas-wrap" ref="wrapRef">
       <canvas ref="canvasRef" role="img" :aria-label="`洞察台时间轴 · ${viewLabel} 投影`"></canvas>
       <div v-if="emptyState" class="axis-empty">{{ emptyState }}</div>
-      <div v-if="errorState" class="axis-error"><span>{{ errorState }}</span><button @click="$emit('retry')">重试</button></div>
+      <div v-else-if="errorState" class="axis-error"><span>{{ errorState }}</span><button @click="$emit('retry')">重试</button></div>
+      <div v-else-if="loadingState" class="axis-empty">加载中…</div>
       <div v-show="tip.visible" class="tip" :style="tip.style" v-html="tip.html"></div>
     </div>
     <div class="axis-foot">
@@ -83,6 +84,10 @@ const errorState = computed(() => {
   if (props.view === 'runs' && props.runsStatus === 'error') return props.runsError
   if ((props.view === 'events' || props.view === 'stats') && props.eventsStatus === 'error') return props.eventsError
   return ''
+})
+const loadingState = computed(() => {
+  if (props.view === 'runs') return props.runsStatus === 'loading'
+  return props.eventsStatus === 'loading'
 })
 
 const runsByTrace = computed(() => runsByTraceMap(props.runs))
