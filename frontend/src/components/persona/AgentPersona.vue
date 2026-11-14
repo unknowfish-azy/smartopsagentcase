@@ -17,6 +17,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import WebGLHost from './WebGLHost.vue'
 import { createVrmStage } from './useVrmModel.js'
+import { createProgrammaticAvatar } from './useProgrammaticAvatar.js'
 import {
   PERSONA_STATES,
   PERSONA_STATE_LABELS,
@@ -39,6 +40,11 @@ const props = defineProps({
   modelUrl: {
     type: String,
     default: `${import.meta.env.BASE_URL}avatar/sendagaya-shino/model.vrm`
+  },
+  mode: {
+    type: String,
+    default: 'vrm',
+    validator: (value) => ['vrm', 'programmatic'].includes(value)
   }
 })
 
@@ -69,25 +75,26 @@ function teardown() {
 
 function onHostMount({ canvas, container }) {
   teardown()
-  stage = createVrmStage({
-    canvas,
-    container,
-    modelUrl: props.modelUrl,
-    id: `agent-persona-${hostGeneration.value}`,
-    onContextLost: () => {
-      teardown()
-      fallbackReason.value = 'WebGL 上下文丢失，已降级为静态替身'
-      webglEnabled.value = false
-      emit('context-lost')
-    }
-  })
+  const factory = props.mode === 'programmatic' ? createProgrammaticAvatar : createVrmStage
+  const options =
+    props.mode === 'programmatic'
+      ? { canvas, container, id: `agent-persona-pgm-${hostGeneration.value}` }
+      : { canvas, container, modelUrl: props.modelUrl, id: `agent-persona-${hostGeneration.value}` }
+  stage = factory(options)
+  // context-lost 降级回调统一处理
+  stage.onContextLost = () => {
+    teardown()
+    fallbackReason.value = 'WebGL 上下文丢失，已降级为静态替身'
+    webglEnabled.value = false
+    emit('context-lost')
+  }
 
   // 首个状态直接上屏，不做淡入，避免「先站直再变成目标姿态」的抖动
   stage.setState(personaProfile(props.state), { fade: 0 })
 
   stage.ready
-    .then((vrm) => {
-      if (!vrm || !stage) return
+    .then((result) => {
+      if (!result || !stage) return
       emit('ready', stage.stats())
     })
     .catch((error) => {

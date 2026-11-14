@@ -137,7 +137,7 @@ test('non-home surfaces use Canvas fallbacks and keep Three.js on the dashboard'
   const theme = await source('src/components/common/canvasTheme.js')
 
   assert.match(mainLayout, /ParticleWhale v-if="showEnhancedHomeVisuals && !personaPetActive"/)
-  assert.match(mainLayout, /CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace && !personaPetActive"/)
+  assert.match(mainLayout, /CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace && !isCompositionPlate && !personaPetActive"/)
   assert.ok(mainLayout.includes('\u9009\u62e9\u89c6\u89c9\u6a21\u5f0f'))
   assert.match(mainLayout, /isLightweightVisualMode/)
   assert.match(mainLayout, /route.name === 'Dashboard' && !isLightweightVisualMode.value/)
