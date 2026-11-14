@@ -68,21 +68,8 @@
           </ol>
         </article>
 
-        <!-- 快捷入口 -->
-        <article class="ops-card bento-actions">
-          <header class="ops-card__head">
-            <div class="ops-card__titles">
-              <span class="u-overline">SHORTCUTS</span>
-              <h3 class="u-section">常用入口</h3>
-            </div>
-          </header>
-          <div class="quick-grid ml-stagger">
-            <RouterLink v-for="link in quickLinks" :key="link.to" class="quick-link" :to="link.to">
-              <strong>{{ link.label }}</strong>
-              <span class="u-caption">{{ link.desc }}</span>
-            </RouterLink>
-          </div>
-        </article>
+        <!-- 小鱼面板（快捷对话 + RAG/训练状态 + 快捷入口） -->
+        <XiaoyuDashboardCard class="bento-xiaoyu" />
       </div>
 
       <!-- 图表：巡检结果分布 + 近 7 日事件 -->
@@ -133,7 +120,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, reactive, ref } from 'vue'
 import { getInspectorEvents, getInspectorSummary } from '../../api/inspector'
 import { getServers } from '../../api/server'
 import { listKnowledgeLibraries } from '../../api/personalKnowledge.ts'
@@ -141,6 +128,7 @@ import { loadSentinel, sentinelState } from '../../views/sentinel/sentinelStore.
 import { ALERT_STATUSES } from '../../views/sentinel/sentinelModel.js'
 import OpsChart from './OpsChart.vue'
 import KpiNumber from './KpiNumber.vue'
+const XiaoyuDashboardCard = defineAsyncComponent(() => import('./XiaoyuDashboardCard.vue'))
 
 /* 全部数据来自真实接口；任一来源失败即标记失败并显示「—」，绝不回填看起来像真的假数据。 */
 const ACTIVE_ALERT_STATUSES = new Set(['OPEN', 'PENDING_APPROVAL', 'REMEDIATING'])
@@ -152,13 +140,6 @@ const servers = ref([])
 const libraries = ref([])
 const summary = ref(null)
 const events = ref([])
-
-const quickLinks = [
-  { to: '/sentinel/alerts', label: '告警中心', desc: '研判 · 通知 · 沉淀' },
-  { to: '/health', label: '健康诊断', desc: '服务自检与故障定位' },
-  { to: '/connections', label: '连接中心', desc: '远程资产与运行通道' },
-  { to: '/chat', label: 'AI 对话', desc: '一句话发起排障' }
-]
 
 const num = value => Number(value ?? 0) || 0
 
@@ -331,8 +312,8 @@ onMounted(load)
 .kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .kpi-card .ops-kpi__value { color: var(--ds-color-text); }
 
-.bento-alerts { grid-column: span 8; }
-.bento-actions { grid-column: span 4; }
+.bento-alerts { grid-column: span 6; }
+.bento-xiaoyu { grid-column: span 6; }
 .bento-distribution { grid-column: span 7; }
 .bento-trend { grid-column: span 5; }
 
