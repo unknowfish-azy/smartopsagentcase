@@ -2,7 +2,7 @@
   <svg
     class="gaze"
     viewBox="0 0 560 560"
-    :style="lookStyle"
+    :style="[lookStyle, apertureStyle, ticksStyle]"
     aria-hidden="true"
     focusable="false"
   >
@@ -59,11 +59,11 @@
       />
     </g>
 
-    <g class="gaze-rays">
+    <g class="gaze-rays" v-if="!isLowEnd">
       <line v-for="ray in rays" :key="`r${ray.angle}`" :x1="ray.x1" :y1="ray.y1" :x2="ray.x2" :y2="ray.y2" />
     </g>
 
-    <g class="gaze-spiral">
+    <g class="gaze-spiral" v-if="!isLowEnd">
       <path :d="spiral" />
     </g>
 
@@ -123,9 +123,16 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  /** 归一化注视偏移，-1..1，由舞台指针位置换算。 */
+  /** 归一化注视偏移，-1..1，由舞台指针位置换算（次要输入，数据焦点优先）。 */
   lookX: { type: Number, default: 0 },
-  lookY: { type: Number, default: 0 }
+  lookY: { type: Number, default: 0 },
+  /** 构成场参数（来自后端数据）。孔径/刻线/瞳孔位移由此驱动。 */
+  field: {
+    type: Object,
+    default: () => ({ aperture: 1, groove: 8, spin: 0, gaze: { x: 0, y: 0 } })
+  },
+  stale: { type: Boolean, default: false },
+  reduced: { type: Boolean, default: false }
 })
 
 const rad = deg => (deg * Math.PI) / 180
@@ -133,18 +140,32 @@ const cx = 280
 const cy = 280
 const round = value => Number(value.toFixed(2))
 
-const ticks = Array.from({ length: 36 }, (_, index) => {
-  const angle = index * 10
-  const major = angle % 90 === 0
-  const outer = major ? 198 : 188
-  return {
-    angle,
-    major,
-    x1: round(cx + Math.cos(rad(angle)) * 172),
-    y1: round(cy + Math.sin(rad(angle)) * 172),
-    x2: round(cx + Math.cos(rad(angle)) * outer),
-    y2: round(cy + Math.sin(rad(angle)) * outer)
-  }
+/**
+ * 刻线数由 field.groove 驱动（DESIGN §4：外刻度环三档密度）。
+ * groove ∈ [8, 48]，刻线条数 = round(groove)。
+ * reduced-motion 或低端设备时固定 8 条（DESIGN §8）。
+ */
+const isLowEnd = typeof window !== 'undefined' &&
+  window.matchMedia &&
+  window.matchMedia('(pointer: coarse)').matches
+
+const ticks = computed(() => {
+  const n = props.reduced || isLowEnd
+    ? 8
+    : Math.max(4, Math.round(props.field?.groove ?? 8))
+  return Array.from({ length: n }, (_, index) => {
+    const angle = (index / n) * 360
+    const major = angle % 90 < (360 / n) || index % Math.max(1, Math.floor(n / 4)) === 0
+    const outer = major ? 198 : 188
+    return {
+      angle,
+      major,
+      x1: round(cx + Math.cos(rad(angle)) * 172),
+      y1: round(cy + Math.sin(rad(angle)) * 172),
+      x2: round(cx + Math.cos(rad(angle)) * outer),
+      y2: round(cy + Math.sin(rad(angle)) * outer)
+    }
+  })
 })
 
 const rays = [16, 72, 128, 196, 244, 308].map(angle => ({
@@ -190,11 +211,33 @@ const spiral = (() => {
   return path
 })()
 
-const lookStyle = computed(() => ({
-  '--look-x': `${(props.lookX * 10).toFixed(2)}px`,
-  '--look-y': `${(props.lookY * 8).toFixed(2)}px`,
-  '--look-x-soft': `${(props.lookX * 4).toFixed(2)}px`,
-  '--look-y-soft': `${(props.lookY * 3).toFixed(2)}px`
+/**
+ * 瞳孔位移：数据焦点优先（field.gaze），指针跟随叠加（lookX/lookY）。
+ * DESIGN §6.1 优先级：数据焦点 > 指针 > 游移。
+ */
+const lookStyle = computed(() => {
+  const dataGazeX = props.field?.gaze?.x ?? 0
+  const dataGazeY = props.field?.gaze?.y ?? 0
+  // 数据焦点有偏移时完全以数据为准；否则用指针
+  const hasDataFocus = Math.abs(dataGazeX) > 0.01 || Math.abs(dataGazeY) > 0.01
+  const x = hasDataFocus ? dataGazeX * 10 : props.lookX * 10
+  const y = hasDataFocus ? dataGazeY * 8 : props.lookY * 8
+  return {
+    '--look-x': `${x.toFixed(2)}px`,
+    '--look-y': `${y.toFixed(2)}px`,
+    '--look-x-soft': `${(x * 0.4).toFixed(2)}px`,
+    '--look-y-soft': `${(y * 0.375).toFixed(2)}px`
+  }
+})
+
+/** 孔径由 field.aperture 驱动（同一组 shape 供遮罩+描边共用）。 */
+const apertureStyle = computed(() => ({
+  '--aperture': String(props.field?.aperture ?? 1)
+}))
+
+/** 刻线旋转由 field.spin 驱动（弧度→角度，spin ∈ [0,1]）。 */
+const ticksStyle = computed(() => ({
+  '--gaze-rot-ticks': `${(props.field?.spin ?? 0) * 45}deg`
 }))
 </script>
 

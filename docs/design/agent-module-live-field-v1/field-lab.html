@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>构成场实验台 · 参数 → 形状</title>
+<style>
+  :root{
+    --paper:#f1efe9; --paper2:#e9e6de; --ink:#1c1c1a; --ink2:#4a4a44; --ink3:#8a877d;
+    --rule:rgba(28,28,26,.16); --rule2:rgba(28,28,26,.08);
+    --clay:#c9784f; --olive:#6f6a3f; --teal:#2f6f6a; --plum:#6b4a5e;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+    --font:"Noto Sans SC","Source Han Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--paper);color:var(--ink);font:13px/1.5 var(--font);display:flex;overflow:hidden}
+  .stage{flex:1;position:relative;min-width:0;display:flex;flex-direction:column}
+  .head{display:flex;align-items:baseline;gap:12px;padding:18px 22px 0}
+  .head h1{margin:0;font-size:22px;font-weight:400;letter-spacing:-.01em}
+  .head .en{font:10px/1 var(--mono);letter-spacing:.14em;color:var(--ink3);text-transform:uppercase}
+  .head .badge{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;
+    border:1px solid var(--rule);border-radius:3px;font:10px var(--mono);letter-spacing:.1em;color:var(--ink3)}
+  .head .badge.stale{color:#8a4a2f;border-color:rgba(201,120,79,.5);background:rgba(201,120,79,.08)}
+  .head .badge[hidden]{display:none}
+  .head .badge.reh{color:var(--plum);border-color:rgba(107,74,94,.45);background:rgba(107,74,94,.07)}
+  svg{flex:1;width:100%;min-height:0}
+  .tick{stroke:var(--ink);stroke-width:.8}
+  .ring{fill:none;stroke:var(--ink);stroke-width:.8}
+  .wedge{fill:none;stroke:var(--ink2);stroke-width:2.4;stroke-linecap:round}
+  .wedge.lead{stroke:var(--clay);stroke-width:5}
+  .iris{fill:none;stroke:var(--ink);stroke-width:10;stroke-linecap:round}
+  .iris-in{fill:none;stroke:var(--olive);stroke-width:3;stroke-linecap:round}
+  .body-line{stroke:var(--ink);stroke-width:2}
+  .pupil{fill:var(--ink)}
+  .spiral{fill:none;stroke:var(--teal);stroke-width:1;fill-opacity:0}
+  .label{font:9px var(--mono);fill:var(--ink3);letter-spacing:.1em}
+
+  aside{width:392px;flex:0 0 392px;border-left:1px solid var(--rule);background:var(--paper2);
+        overflow:auto;padding:16px 18px 40px}
+  aside h2{margin:0 0 4px;font:10px/1 var(--mono);letter-spacing:.14em;color:var(--ink3);text-transform:uppercase}
+  .row{display:grid;grid-template-columns:96px 1fr 52px;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule2)}
+  .row .k{font-size:12px}
+  .row .k em{display:block;font:9.5px var(--mono);font-style:normal;color:var(--ink3);letter-spacing:.04em}
+  .row output{font:11px var(--mono);color:var(--ink2);text-align:right}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent}
+  input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--rule)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;margin-top:-4.5px;
+    border-radius:50%;background:var(--ink);border:0;cursor:grab}
+  .src{font:9.5px/1.5 var(--mono);color:var(--ink3);padding:10px 0 0}
+  .src b{color:var(--ink2);font-weight:400}
+  .acts{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  button{font:11px var(--mono);letter-spacing:.06em;height:26px;padding:0 9px;border:1px solid var(--rule);
+         border-radius:3px;background:transparent;color:var(--ink2);cursor:pointer}
+  button:hover{background:rgba(28,28,26,.05);color:var(--ink)}
+  button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="head">
+    <h1>构成场</h1>
+    <span class="en">COMPOSITION FIELD · PARAM LAB</span>
+    <span class="badge" id="staleBadge" hidden>STALE · 数据冻结</span>
+    <span class="badge reh" id="rehBadge" hidden>REHEARSAL · 演练锁定</span>
+  </div>
+
+  <svg id="svg" viewBox="0 0 900 620" preserveAspectRatio="xMidYMid meet" aria-label="构成场：孔径、倾角、体积、刻线、瞳孔由参数驱动">
+    <g id="rings" transform="translate(450,310)"></g>
+    <g id="wedges" transform="translate(450,310)"></g>
+    <g id="spiralG" transform="translate(450,310)"></g>
+    <g id="irisG" transform="translate(450,310)"></g>
+    <line id="bodyLine" class="body-line" x1="0" y1="310" x2="0" y2="310"/>
+    <g id="pupilG" transform="translate(450,310)"><circle class="pupil" r="7"/><circle class="pupil" r="2.6" fill="var(--paper)" cx="-2"/></g>
+    <text class="label" id="readout" x="450" y="600" text-anchor="middle">APERTURE 1.00 · TILT −12° · VOLUME 1.00 · GROOVE 8 · GRAIN 0.50</text>
+  </svg>
+</div>
+
+<aside>
+  <h2>参数 · 每条都对一个后端字段</h2>
+  <div id="controls"></div>
+  <p class="src">
+    右边每个参数都对应后端一个字段；字段变了形状就变，字段不变画面完全静止。<br>
+    <b>拖滑杆 = 模拟数据变化</b>。点「冻结」看 STALE 行为。
+  </p>
+  <div class="acts">
+    <button id="btnRandom">模拟数据变化</button>
+    <button id="btnStale">冻结 / STALE</button>
+    <button id="btnReh">演练锁定</button>
+    <button id="btnReset">复位</button>
+  </div>
+</aside>
+
+<script>
+/* ============================================================
+   参数定义：每个参数都写明它绑定的后端字段（DESIGN §2）
+   ============================================================ */
+const PARAMS = [
+  { k:'aperture', cn:'孔径',   en:'APERTURE', min:0.40, max:1.20, step:0.01, src:'inspector/summary → high + critical' },
+  { k:'tilt',     cn:'倾角',   en:'TILT',     min:-34,  max:-6,   step:0.5,  src:'agent/loops/stats → byStage 主导相位' },
+  { k:'volume',   cn:'体积',   en:'VOLUME',   min:0.85, max:1.15, step:0.01, src:'loops/stats → total（log 压缩）' },
+  { k:'spin',     cn:'环速',   en:'SPIN',     min:0,    max:1,    step:0.01, src:'inspector/summary → warning' },
+  { k:'groove',   cn:'刻线',   en:'GROOVE',   min:8,    max:48,   step:1,    src:'loops/stats → learnedCount' },
+  { k:'grain',    cn:'噪声',   en:'GRAIN',    min:0,    max:1,    step:0.01, src:'loops/stats → 1 - resolveRate' },
+  { k:'gazeX',    cn:'瞳孔 X', en:'GAZE X',   min:-1,   max:1,    step:0.01, src:'焦点对象（选中 loop / 最新 high）' },
+  { k:'gazeY',    cn:'瞳孔 Y', en:'GAZE Y',   min:-1,   max:1,    step:0.01, src:'同上' },
+  { k:'pulse',    cn:'心跳',   en:'PULSE',    min:2.4,  max:6.0,  step:0.1,  src:'loops[] → 最近闭环时长均值' }
+]
+const DEFAULTS = { aperture:1.0, tilt:-12, volume:1.0, spin:0, groove:8, grain:0.5, gazeX:0, gazeY:0, pulse:4.0 }
+
+const target = { ...DEFAULTS }          // 数据到达时更新
+const cur = { ...DEFAULTS }             // 每帧向 target 靠拢
+const opt = { stale:false, rehearsal:false }
+
+let staleTimer = null
+
+/* ---------- 控件 ---------- */
+const controls = document.getElementById('controls')
+controls.innerHTML = PARAMS.map(p => `
+  <div class="row">
+    <span class="k">${p.cn}<em>${p.en}</em></span>
+    <input type="range" id="s-${p.k}" min="${p.min}" max="${p.max}" step="${p.step}" value="${DEFAULTS[p.k]}"
+           aria-label="${p.cn}">
+    <output id="o-${p.k}"></output>
+  </div>`).join('')
++ `<p class="src">${PARAMS.map(p => `<b>${p.en}</b> ← ${p.src}`).join('<br>')}</p>`
+
+for (const p of PARAMS) {
+  const el = document.getElementById('s-' + p.k)
+  el.addEventListener('input', () => {
+    if (opt.stale){ opt.stale = false; document.getElementById('staleBadge').hidden = true }
+    target[p.k] = Number(el.value)
+    paintOutputs()
+  })
+}
+function paintOutputs () {
+  for (const p of PARAMS) {
+    const v = target[p.k]
+    document.getElementById('o-' + p.k).textContent =
+      p.k === 'tilt' ? v + '°' : (p.step < 1 ? v.toFixed(2) : String(Math.round(v)))
+    document.getElementById('s-' + p.k).value = v
+  }
+}
+paintOutputs()
+
+document.getElementById('btnRandom').onclick = () => {
+  if (opt.stale) toggleStale()
+  const r = (a, b) => a + Math.random() * (b - a)
+  Object.assign(target, {
+    aperture: +r(0.45, 1.15).toFixed(2), tilt: +r(-34, -6).toFixed(1), volume: +r(0.9, 1.12).toFixed(2),
+    spin: +r(0, 1).toFixed(2), groove: Math.round(r(8, 48)), grain: +r(0, 1).toFixed(2),
+    gazeX: +r(-1, 1).toFixed(2), gazeY: +r(-0.6, 0.6).toFixed(2), pulse: +r(2.4, 6).toFixed(1)
+  })
+  paintOutputs()
+}
+document.getElementById('btnStale').onclick = toggleStale
+function toggleStale () {
+  opt.stale = !opt.stale
+  document.getElementById('staleBadge').hidden = !opt.stale
+}
+document.getElementById('btnReh').onclick = e => {
+  opt.rehearsal = !opt.rehearsal
+  e.currentTarget.setAttribute('aria-pressed', String(opt.rehearsal))
+  document.getElementById('rehBadge').hidden = !opt.rehearsal
+}
+document.getElementById('btnReset').onclick = () => {
+  Object.assign(target, DEFAULTS); paintOutputs()
+  opt.stale = false; opt.rehearsal = false
+  document.getElementById('staleBadge').hidden = true
+  document.getElementById('rehBadge').hidden = true
+  document.getElementById('btnReh').setAttribute('aria-pressed', 'false')
+}
+
+/* ---------- 渲染 ---------- */
+const NS = 'http://www.w3.org/2000/svg'
+const el = (tag, attrs) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); return n }
+const ringsG = document.getElementById('rings')
+const wedgesG = document.getElementById('wedges')
+const spiralG = document.getElementById('spiralG')
+const irisG = document.getElementById('irisG')
+const bodyLine = document.getElementById('bodyLine')
+const pupilG = document.getElementById('pupilG')
+const root = document.getElementById('svg')
+
+/* 刻度环：三档密度，条数由 groove 决定 */
+function drawRings (t) {
+  ringsG.innerHTML = ''
+  const g = Math.round(t.groove)
+  const tiers = [
+    { r: 268, n: g },                                  // 外圈：完整刻线条数
+    { r: 240, n: Math.round(g / 2), show: g >= 14 },
+    { r: 214, n: Math.round(g / 4), show: g >= 24 }
+  ]
+  for (const tier of tiers) {
+    if (tier.show === false) continue
+    const n = Math.max(4, tier.n)
+    ringsG.appendChild(el('circle', { class: 'ring', r: tier.r, 'stroke-opacity': .3 }))
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + spinPhase
+      const r1 = tier.r, r2 = tier.r + (i % 4 === 0 ? 12 : 6)
+      ringsG.appendChild(el('line', {
+        class: 'tick', 'stroke-opacity': .72,
+        x1: Math.cos(a) * r1, y1: Math.sin(a) * r1, x2: Math.cos(a) * r2, y2: Math.sin(a) * r2
+      }))
+    }
+  }
+}
+
+/* 相位楔：受 tilt 旋转；主导段靠弧长而不是颜色 */
+function drawWedges (t, lead) {
+  wedgesG.innerHTML = ''
+  wedgesG.setAttribute('transform', `translate(450,310) rotate(${t.tilt})`)
+  const segs = 4
+  for (let i = 0; i < segs; i++) {
+    const start = -Math.PI / 2 + (i / segs) * Math.PI * 2 + 0.12
+    const end = start + (Math.PI * 2 / segs) * (i === lead ? 0.86 : 0.34)
+    const r = 176
+    const p = `M${Math.cos(start) * r},${Math.sin(start) * r} A${r},${r} 0 0 1 ${Math.cos(end) * r},${Math.sin(end) * r}`
+    wedgesG.appendChild(el('path', { class: i === lead ? 'wedge lead' : 'wedge', d: p }))
+  }
+}
+
+/* 内螺旋：抖动幅度 = grain */
+function drawSpiral (t, time) {
+  spiralG.innerHTML = ''
+  const pts = []
+  const turns = 3.2, steps = 132
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps
+    const a = u * turns * Math.PI * 2 + spinPhase * 0.6
+    const r = 18 + u * 118
+    const wob = Math.sin(u * 22 + time * 1.4) * t.grain * 7
+    pts.push(`${(Math.cos(a) * (r + wob)).toFixed(1)},${(Math.sin(a) * (r + wob)).toFixed(1)}`)
+  }
+  spiralG.appendChild(el('polyline', {
+    class: 'spiral', points: pts.join(' '), 'stroke-opacity': (0.12 + t.grain * 0.5).toFixed(2)
+  }))
+}
+
+/* 虹膜：开合角 = aperture；心跳缩放 = pulse */
+function drawIris (t, pulseScale) {
+  irisG.innerHTML = ''
+  irisG.setAttribute('transform', `translate(450,310) scale(${pulseScale.toFixed(4)})`)
+  const openDeg = 14 + t.aperture * 30         // 半角，度：孔径越大开得越大
+  const arc = (centerDeg, R) => {
+    const a0 = (centerDeg - openDeg) * Math.PI / 180
+    const a1 = (centerDeg + openDeg) * Math.PI / 180
+    return `M${Math.cos(a0) * R},${Math.sin(a0) * R} A${R},${R} 0 0 1 ${Math.cos(a1) * R},${Math.sin(a1) * R}`
+  }
+  irisG.appendChild(el('path', { class: 'iris', d: arc(-90, 76) }))      // 上睑
+  irisG.appendChild(el('path', { class: 'iris', d: arc(90, 76) }))       // 下睑
+  irisG.appendChild(el('path', { class: 'iris-in', d: arc(-90, 62) }))   // 内层刻线
+  irisG.appendChild(el('path', { class: 'iris-in', d: arc(90, 62) }))
+  irisG.appendChild(el('line', { class: 'iris-in', x1: -76, y1: 0, x2: -62, y2: 0 }))
+  irisG.appendChild(el('line', { class: 'iris-in', x1: 62, y1: 0, x2: 76, y2: 0 }))
+}
+
+/* 躯体线长度 = volume */
+function drawBody (t) {
+  const half = 232 * t.volume
+  bodyLine.setAttribute('x1', 450 - half); bodyLine.setAttribute('x2', 450 + half)
+}
+
+/* 瞳孔位移 = gaze */
+function drawPupil (t) {
+  pupilG.setAttribute('transform', `translate(${450 + t.gazeX * 30},${310 + t.gazeY * 22})`)
+}
+
+/* ---------- 主循环：spring 插值 ---------- */
+const TAU = 0.28
+let last = performance.now()
+let spinPhase = 0
+let pulseT = 0
+
+function frame (now) {
+  const dt = Math.min(0.05, (now - last) / 1000)
+  last = now
+  const k = 1 - Math.exp(-dt / TAU)
+
+  for (const key in target) cur[key] += (target[key] - cur[key]) * k
+
+  /* 迟滞：小于阈值视为不变（DESIGN §4.2）——这里只影响是否推进相位 */
+  const moving = !opt.stale && (opt.rehearsal || Math.abs(target.spin - cur.spin) > 0.001 || true)
+
+  if (!opt.stale) {
+    spinPhase += dt * cur.spin * 1.1
+    pulseT += dt
+  }
+  const pulseScale = opt.stale ? 1 : 1 + Math.sin(pulseT * (Math.PI * 2 / Math.max(1, cur.pulse))) * 0.012
+
+  const lead = Math.max(0, Math.min(3, Math.round((Math.abs(cur.tilt) - 6) / 7)))
+  drawRings(cur)
+  drawWedges(cur, lead)
+  drawSpiral(cur, now / 1000)
+  drawIris(cur, pulseScale)
+  drawBody(cur)
+  drawPupil(cur)
+
+  root.style.opacity = opt.stale ? '.62' : '1'
+  root.style.filter = opt.stale ? 'saturate(.35)' : 'none'
+  document.getElementById('readout').textContent =
+    `APERTURE ${cur.aperture.toFixed(2)} · TILT ${cur.tilt.toFixed(0)}° · VOLUME ${cur.volume.toFixed(2)} · ` +
+    `GROOVE ${Math.round(cur.groove)} · GRAIN ${cur.grain.toFixed(2)} · SPIN ${cur.spin.toFixed(2)}`
+
+  requestAnimationFrame(frame)
+
+/* demo 钩子：证明「数据变了形状就变」——同一份代码，两组参数 */
+const demo = new URLSearchParams(location.search).get('demo')
+if (demo === 'busy') {
+  Object.assign(target, { aperture: 0.52, tilt: -30, volume: 1.12, spin: 0.8, groove: 38, grain: 0.26, gazeX: -0.55, gazeY: 0.3, pulse: 2.8 })
+  paintOutputs()
+}
+if (demo === 'stale') toggleStale()
+if (demo === 'reh') document.getElementById('btnReh').click()
+}
+requestAnimationFrame(frame)
+
+/* demo 钩子：证明「数据变了形状就变」——同一份代码，两组参数 */
+const demo = new URLSearchParams(location.search).get('demo')
+if (demo === 'busy') {
+  Object.assign(target, { aperture: 0.52, tilt: -30, volume: 1.12, spin: 0.8, groove: 38, grain: 0.26, gazeX: -0.55, gazeY: 0.3, pulse: 2.8 })
+  paintOutputs()
+}
+if (demo === 'stale') toggleStale()
+if (demo === 'reh') document.getElementById('btnReh').click()
+</script>
+</body>
+</html>
