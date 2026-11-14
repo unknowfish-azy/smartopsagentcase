@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { knowledgeDomains, knowledgeEntries } from '../src/views/knowledge/knowledgeCatalog.js'
-import { computeLayout, screenTier } from '../src/views/knowledge/space/useSpaceLayout.js'
+import { computeLayout, screenTier, GRID_DEFAULT } from '../src/views/knowledge/space/useSpaceLayout.js'
 
 test('真实数据 10 域全覆盖，互不重叠', () => {
   const { zones } = computeLayout(knowledgeEntries, knowledgeDomains)
@@ -111,4 +111,42 @@ test('卡片内容分档按屏幕像素判定，不看世界像素', () => {
 test('分档两个门槛都生效：宽够但高不够仍是 title', () => {
   assert.equal(screenTier({ w: 200, h: 100 }, 0.65), 'title', '130×65 高不足 80')
   assert.equal(screenTier({ w: 50, h: 124 }, 2.2), 'title', '110×273 高很够但宽不足 124')
+})
+
+test('域内卡片尺寸一致，且不越出所属域块', () => {
+  const { zones, cards } = computeLayout(knowledgeEntries, knowledgeDomains)
+  for (const z of zones) {
+    const own = cards.filter(c => c.zoneId === z.id)
+    for (const c of own) {
+      assert.equal(c.w, z.cw, `${z.id} 卡片宽度与域网格不一致`)
+      assert.equal(c.h, z.ch, `${z.id} 卡片高度与域网格不一致`)
+      assert.ok(c.col < z.cols && c.row < z.rows, `${c.id} 的 col/row 超出网格 ${z.cols}×${z.rows}`)
+      assert.ok(c.x >= z.x && c.x + c.w <= z.x + z.w + 0.001, `${c.id} 水平越出 ${z.id}`)
+      assert.ok(c.y >= z.y && c.y + c.h <= z.y + z.h + 0.001, `${c.id} 垂直越出 ${z.id}`)
+    }
+  }
+})
+
+test('列数取「宽高比 + 空格率」评分的最小值（REVIEW ③）', () => {
+  const { zones, cards } = computeLayout(knowledgeEntries, knowledgeDomains)
+  const { gap, headH, pad, maxCols } = GRID_DEFAULT
+  for (const z of zones) {
+    const n = cards.filter(c => c.zoneId === z.id).length
+    if (!n) continue
+    const innerW = z.w - pad * 2
+    const innerH = z.h - headH - pad * 2
+    const scoreOf = cols => {
+      const rows = Math.ceil(n / cols)
+      const cw = (innerW - gap * (cols - 1)) / cols
+      const ch = (innerH - gap * (rows - 1)) / rows
+      if (cw < 8 || ch < 8) return Infinity
+      return Math.abs(cw / ch - 1.5) + Math.abs((cols * rows - n) / n) * 1.5
+    }
+    let bestCols = 1, bestScore = Infinity
+    for (let cols = 1; cols <= maxCols; cols++) {
+      const s = scoreOf(cols)
+      if (s < bestScore) { bestScore = s; bestCols = cols }
+    }
+    assert.equal(z.cols, bestCols, `${z.id}（n=${n}）：期望 ${bestCols} 列，实际 ${z.cols}`)
+  }
 })

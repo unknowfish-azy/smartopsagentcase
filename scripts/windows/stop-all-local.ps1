@@ -42,22 +42,33 @@ try {
         $protectedIds += $ancestor.ParentProcessId
         $ancestor = $processes | Where-Object ProcessId -eq $ancestor.ParentProcessId | Select-Object -First 1
     }
+    # ── 进程筛选：按进程名 + 命令行 + 项目路径匹配 ─────────────────
+    # 只有"命令行含项目根路径"且"进程名/命令行匹配特定特征"的进程才会被选中，
+    # 避免误杀系统里其它 java/node/python 进程（比如 IDE、其它项目）。
     $selected = @{}
     foreach ($process in $processes) {
-        if ($process.ProcessId -in $protectedIds) { continue }
+        if ($process.ProcessId -in $protectedIds) { continue }   # 跳过受保护的祖先进程
         $command = [string]$process.CommandLine
-        $projectPath = $command -match $rootPattern
+        $projectPath = $command -match $rootPattern               # 命令行是否含项目根路径
         $match = switch -Regex ($process.Name) {
+            # java：后端 jar 或 maven 进程（smartops/spring-boot/plexus 是 maven 类加载器）
             '^java(w)?\.exe$' { $projectPath -and ($command -match 'smartops|spring-boot|org\.codehaus\.plexus'); break }
+            # node：Vite dev server 或 npm 进程
             '^node\.exe$' { $projectPath -and ($command -match 'vite|npm'); break }
+            # python：uvicorn（知识/AI 服务）或 multiprocessing worker
             '^python(w|[0-9.]*)?\.exe$' { $projectPath -and ($command -match 'uvicorn|multiprocessing'); break }
+            # ollama：只杀项目内置的 ollama.exe（.runtime/mini/runtime/），不碰用户自己装的
             '^ollama\.exe$' { [string]$process.ExecutablePath -ieq (Join-Path $ProjectRoot '.runtime\mini\runtime\ollama.exe'); break }
+            # cmd：由 start-dev 等脚本拉起的日志窗口（含 -live.log 重定向）
             '^cmd\.exe$' { $projectPath -and ($command -match '(backend|frontend|ai-service)-live\.log'); break }
+            # powershell：start-mini.ps1 的宿主进程
             '^(powershell|pwsh)\.exe$' { $projectPath -and ($command -match 'start-mini\.ps1'); break }
             default { $false }
         }
         if ($match) { $selected[$process.ProcessId] = $process }
     }
+    # ── 递归加入子进程：把已选中进程的所有子孙也纳入回收范围 ─────────
+    # 例如 cmd → mvn → java 三层进程树，只匹配到了 java，但 cmd 和 mvn 也要一起停。
     do {
         $added = $false
         foreach ($process in $processes) {
@@ -68,10 +79,13 @@ try {
         }
     } while ($added)
 
-    # Stop launchers first so reload supervisors cannot restart their workers.
+    # 先杀启动器（父进程），再杀 worker（子进程）：
+    # 如果先杀 worker，reload 监控器（如 uvicorn --reload 的父进程）会立刻重新拉起 worker，
+    # 导致停不掉。按 CreationDate 排序（父进程先创建）保证先停父再停子。
     foreach ($process in @($selected.Values | Sort-Object CreationDate)) {
         if ($PSCmdlet.ShouldProcess("$($process.Name) PID $($process.ProcessId)", 'Stop project process')) {
             try {
+                # 二次确认：PID 仍存在且创建时间一致（防止 PID 被复用后杀错进程）
                 $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($process.ProcessId)"
                 if ($current -and $current.CreationDate -eq $process.CreationDate) {
                     Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop

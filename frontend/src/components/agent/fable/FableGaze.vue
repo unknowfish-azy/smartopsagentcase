@@ -235,10 +235,22 @@ const apertureStyle = computed(() => ({
   '--aperture': String(props.field?.aperture ?? 1)
 }))
 
-/** 刻线旋转由 field.spin 驱动（弧度→角度，spin ∈ [0,1]）。 */
-const ticksStyle = computed(() => ({
-  '--gaze-rot-ticks': `${(props.field?.spin ?? 0) * 45}deg`
-}))
+/**
+ * spin 是「环速」而非静态角度（DESIGN §4）。
+ * 通过 CSS animation 的 duration 控制转速：spin 越大 duration 越小（转得越快）。
+ * spin=0 → 暂停；spin=1 → 约 4s 一圈（最快）。
+ * 与 field-lab.html 中 spinPhase += dt * cur.spin * 1.1 的语义对齐。
+ */
+const SPIN_BASE_PERIOD = 4 // spin=1 时一圈 4 秒
+const ticksStyle = computed(() => {
+  const spin = props.field?.spin ?? 0
+  const active = spin > 0.001
+  const duration = active ? (SPIN_BASE_PERIOD / spin).toFixed(2) : '0'
+  return {
+    '--gaze-spin-duration': `${duration}s`,
+    '--gaze-spin-state': active ? 'running' : 'paused'
+  }
+})
 </script>
 
 <style scoped>
@@ -291,8 +303,12 @@ const ticksStyle = computed(() => ({
 
 .gaze-ticks {
   transform-origin: 280px 280px;
-  transform: rotate(var(--gaze-rot-ticks, 0deg));
-  transition: transform 1000ms var(--fab-ease);
+  animation: gaze-ticks-spin var(--gaze-spin-duration, 0s) linear infinite;
+  animation-play-state: var(--gaze-spin-state, paused);
+}
+
+@keyframes gaze-ticks-spin {
+  to { transform: rotate(360deg); }
 }
 
 .gaze-ticks line {

@@ -293,8 +293,7 @@ const STATES = Object.freeze([
     desc: '构成收拢成一条水平线。瞳孔散开，孔径最宽 —— 它在看，但什么都不抓。',
     risk: 1,
     loop: 0,
-    weights: [0.18, 0.3, 0.42, 0.24, 0.1],
-    params: { aperture: '1.00', tilt: '−12°', volume: '1.00' }
+    weights: [0.18, 0.3, 0.42, 0.24, 0.1]
   },
   {
     key: 'analyze',
@@ -304,8 +303,7 @@ const STATES = Object.freeze([
     desc: '环裂成弧，径向刻线展开。目光开始切片，把现象分成几块可以证伪的东西。',
     risk: 2,
     loop: 0,
-    weights: [0.52, 0.78, 0.6, 0.38, 0.16],
-    params: { aperture: '0.90', tilt: '−21°', volume: '0.96' }
+    weights: [0.52, 0.78, 0.6, 0.38, 0.16]
   },
   {
     key: 'decide',
@@ -315,8 +313,7 @@ const STATES = Object.freeze([
     desc: '楔形升起，孔径收窄。构图只剩下两个选项，风险刻度被迫显形。',
     risk: 4,
     loop: 1,
-    weights: [0.58, 0.46, 0.72, 0.44, 0.9],
-    params: { aperture: '0.62', tilt: '−7°', volume: '0.90' }
+    weights: [0.58, 0.46, 0.72, 0.44, 0.9]
   },
   {
     key: 'execute',
@@ -326,8 +323,7 @@ const STATES = Object.freeze([
     desc: '横杆加速，弧线沉入重力。动作被切成节拍，每一步都要留下可回看的痕迹。',
     risk: 5,
     loop: 2,
-    weights: [0.66, 0.4, 0.34, 0.88, 0.5],
-    params: { aperture: '0.78', tilt: '−32°', volume: '1.05' }
+    weights: [0.66, 0.4, 0.34, 0.88, 0.5]
   },
   {
     key: 'reflect',
@@ -337,8 +333,7 @@ const STATES = Object.freeze([
     desc: '圆重新合拢，内侧长出螺旋。把这一轮折回自身，写进下一次的注视。',
     risk: 2,
     loop: 3,
-    weights: [0.4, 0.36, 0.66, 0.3, 0.34],
-    params: { aperture: '0.94', tilt: '−16°', volume: '0.98' }
+    weights: [0.4, 0.36, 0.66, 0.3, 0.34]
   }
 ])
 
@@ -393,6 +388,44 @@ const loops = ref([])
 const loopsStatus = ref('loading')
 const stats = ref(null)
 
+/* ---------------------------- 吸引子判定辅助（DESIGN §3） ---------------------------- */
+
+/**
+ * 取 byStage 中 count 最大的阶段（大写）。无有效数据返回 null。
+ * 真实后端 stage：ANALYZE → MEMORIZE → DECIDE → REVIEW → LEARNED
+ */
+function dominantStage(byStage) {
+  if (!Array.isArray(byStage) || byStage.length === 0) return null
+  let best = null
+  for (const entry of byStage) {
+    const count = Number(entry && entry.count ? entry.count : 0)
+    if (count <= 0) continue
+    if (!best || count > best.count) {
+      best = { stage: String(entry.stage || 'ANALYZE').toUpperCase(), count }
+    }
+  }
+  return best ? best.stage : null
+}
+
+/**
+ * reflect 吸引子需要 learnedCount 增长中。
+ * 每次 stats 到达时与上一次比较，记录是否增长。
+ */
+const learnedCountGrowing = ref(false)
+let lastLearnedCount = null
+watch(
+  stats,
+  next => {
+    const lc = next?.learnedCount
+    if (lc == null) return
+    if (lastLearnedCount != null) {
+      learnedCountGrowing.value = lc > lastLearnedCount
+    }
+    lastLearnedCount = lc
+  },
+  { flush: 'sync' }
+)
+
 /* ---------------------------- 数据新鲜度（DESIGN §5） ---------------------------- */
 
 /** 最近一次成功获取数据的时间戳（ms）。请求失败时不更新，保持旧值。 */
@@ -435,7 +468,39 @@ watch(reduced, setFieldReduced)
 /* ---------------------------- 构成状态 ---------------------------- */
 
 const drillState = ref(null)
-const derivedState = computed(() => (runtimeState.value === 'warning' ? 'decide' : 'idle'))
+/**
+ * 五吸引子判定（DESIGN §3）。
+ * 不再是 warning ? decide : idle 两分支，而是按数据条件判定：
+ *   idle    — high+critical=0 且无 requiresHuman
+ *   decide  — 存在 requiresHuman=true 的 loop（最高优先级，需人工介入）
+ *   reflect — byStage 主导 LEARNED 且 learnedCount 增长中
+ *   execute — byStage 主导 DECIDE / REVIEW
+ *   analyze — byStage 主导 ANALYZE / MEMORIZE，或有告警待分析
+ * 判定结果只作为「主导吸引子」提示，视觉位置仍由 liveField 参数决定。
+ */
+const derivedState = computed(() => {
+  const data = summary.value || {}
+  const high = Number(data.high ?? 0)
+  const critical = Number(data.critical ?? 0)
+  const highCritical = high + critical
+
+  const hasRequiresHuman = loops.value.some(l => Boolean(l && l.requiresHuman))
+
+  // idle：无告警且无人工审批
+  if (highCritical === 0 && !hasRequiresHuman) return 'idle'
+
+  // decide：存在需要人工审批的闭环（最高优先级）
+  if (hasRequiresHuman) return 'decide'
+
+  // 按主导阶段判定 analyze / execute / reflect
+  const stage = dominantStage(stats.value?.byStage)
+
+  if (stage === 'LEARNED' && learnedCountGrowing.value) return 'reflect'
+  if (stage === 'DECIDE' || stage === 'REVIEW') return 'execute'
+
+  // ANALYZE / MEMORIZE 主导，或有告警需要分析
+  return 'analyze'
+})
 const compositionState = computed(() => drillState.value ?? derivedState.value)
 const profile = computed(
   () => STATES.find(item => item.key === compositionState.value) || STATES[0]

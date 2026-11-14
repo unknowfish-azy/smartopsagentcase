@@ -289,6 +289,68 @@ def _seed_reference_corpus() -> dict:
 SEED_SUMMARY = _seed_reference_corpus()
 
 
+# ---------------------------------------------------------------------------
+# Spatial Field Phase B：catalog.json ingest（启动时）
+# ---------------------------------------------------------------------------
+
+# catalog.json 位置：backend resources（Phase A knowledge:export 产出）
+_CATALOG_PATH_DEFAULT = (
+    Path(__file__).resolve().parents[2]
+    / "backend" / "src" / "main" / "resources"
+    / "knowledge" / "catalog.json"
+)
+
+
+def _seed_catalog_snapshot() -> dict:
+    """启动时把 catalog.json（前端 737 条 knowledgeEntries 快照）ingest 进服务。
+
+    关键：document_id 强制 = entry.id，保证 KnowledgeService chunk 与前端
+    knowledgeEntry 连接键硬对齐（Phase B HC-1）。
+
+    失败降级：返回空 summary，不影响服务启动（Phase B HC-4）。
+    """
+    summary = {
+        "status": "disabled",
+        "entries": 0,
+        "documents": 0,
+        "chunks": 0,
+        "errors": 0,
+    }
+    if os.getenv("KNOWLEDGE_AUTO_INGEST_CATALOG", "1") == "0":
+        summary["status"] = "disabled_by_env"
+        return summary
+
+    catalog_path = Path(
+        os.getenv("KNOWLEDGE_CATALOG_PATH", str(_CATALOG_PATH_DEFAULT))
+    )
+    if not catalog_path.is_file():
+        summary["status"] = "missing"
+        logger.info(
+            "catalog.json 不存在（跳过 ingest_catalog）：%s", catalog_path
+        )
+        return summary
+
+    try:
+        n_chunks = service.ingest_catalog(catalog_path)
+        summary["entries"] = n_chunks  # entries → documents → chunks 三步
+        summary["chunks"] = n_chunks
+        summary["documents"] = service.chunk_count - SEED_SUMMARY.get("documents", 0)
+        summary["status"] = "ingested" if n_chunks > 0 else "empty"
+        logger.info(
+            "[spatial-field] catalog.json ingest 完成：%s chunks, 总计 %s chunks",
+            n_chunks, service.chunk_count,
+        )
+    except Exception:
+        logger.exception("catalog.json ingest 失败（不影响服务）")
+        summary["status"] = "error"
+        summary["errors"] = 1
+
+    return summary
+
+
+CATALOG_SUMMARY = _seed_catalog_snapshot()
+
+
 def _embedding_status() -> dict:
     """RAG-P1-01/02：暴露真实向量后端，避免 BGE 静默回退到 hash 无法察觉。"""
     status = getattr(service.embedding, "backend_status", None)
@@ -340,8 +402,130 @@ async def ready():
         "instance_id": INSTANCE_ID,
         "started_at": STARTED_AT,
         "corpus": SEED_SUMMARY,
+        "catalog": CATALOG_SUMMARY,
         "embedding": _embedding_status(),
     })
+
+
+# ---------------------------------------------------------------------------
+# Spatial Field Phase B：chunk 查询端点（只读，Pydantic 契约）
+# ---------------------------------------------------------------------------
+
+class ChunkRef(BaseModel):
+    chunkId: str
+    documentId: str
+    content: str
+    chunkIndex: int = 0
+    source: str = ""
+    version: str = "latest"
+    metadata: dict = {}
+
+
+class ChunkListResponse(BaseModel):
+    entryId: str
+    documentId: str
+    chunks: list[ChunkRef]
+    count: int
+
+
+class EvidenceRefOut(BaseModel):
+    evidenceId: str
+    chunkId: str
+    source: str
+    version: str
+    capturedAt: str = ""
+    note: str = ""
+
+
+class EvidenceRefsResponse(BaseModel):
+    entryId: str
+    evidenceRefs: list[EvidenceRefOut]
+    source: str  # "ingested-from-catalog" | "not-ingested"
+    ingestedAt: str
+
+
+@app.get(
+    "/api/knowledge/{entry_id}/chunks",
+    response_model=ChunkListResponse,
+    summary="只读：按 knowledgeEntry.id 返回已 ingest 的 chunks",
+)
+async def get_entry_chunks(entry_id: str) -> ChunkListResponse:
+    """Phase B 只读端点：返回 catalog ingest 后某个 knowledgeEntry 对应的全部 chunks。
+
+    不引入新表，运行时从内存索引过滤。未 ingest 时返回空 list（不报错）。
+    """
+    chunks = service.find_chunks_for_document(entry_id)
+    chunk_refs = [
+        ChunkRef(
+            chunkId=c.chunk_id,
+            documentId=getattr(c, "document_id", entry_id),
+            content=c.content,
+            chunkIndex=getattr(c, "chunk_index", 0),
+            source=getattr(c, "source", ""),
+            version=getattr(c, "version", "latest"),
+            metadata=dict(getattr(c, "metadata", {}) or {}),
+        )
+        for c in chunks
+    ]
+    return ChunkListResponse(
+        entryId=entry_id,
+        documentId=entry_id,  # catalog.json ingest 强制 document_id = entry_id
+        chunks=chunk_refs,
+        count=len(chunk_refs),
+    )
+
+
+@app.get(
+    "/api/knowledge/{entry_id}/evidence-refs",
+    response_model=EvidenceRefsResponse,
+    summary="只读：按 knowledgeEntry.id 返回 EvidenceRef 列表",
+)
+async def get_entry_evidence_refs(entry_id: str) -> EvidenceRefsResponse:
+    """Phase B 只读端点：把 chunks 拼装成 EvidenceRef 格式返回给前端。
+
+    设计（KNOWLEDGE-INSIGHT-BINDING.md §2.1 的 EvidenceRef）：
+      evidenceId = "ev-<chunk_id>"（稳定可追溯）
+      capturedAt = ingested_at（启动 ingest 的时间戳）
+      note = "知识条目原始内容切块后直接作为证据锚点"
+
+    未 ingest 时返回空 list（不报错），让前端渲染为 Phase A 真实状态。
+    """
+    chunks = service.find_chunks_for_document(entry_id)
+    ingested_at = STARTED_AT  # 模块级启动时间（catalog ingest 即启动时）
+    source_label = (
+        "ingested-from-catalog" if chunks else "not-ingested"
+    )
+    refs = [
+        EvidenceRefOut(
+            evidenceId=f"ev-{c.chunk_id}",
+            chunkId=c.chunk_id,
+            source=getattr(c, "source", ""),
+            version=getattr(c, "version", "latest"),
+            capturedAt=ingested_at,
+            note="知识条目原始内容切块后直接作为证据锚点",
+        )
+        for c in chunks
+    ]
+    return EvidenceRefsResponse(
+        entryId=entry_id,
+        evidenceRefs=refs,
+        source=source_label,
+        ingestedAt=ingested_at,
+    )
+
+
+@app.get(
+    "/api/knowledge/index-stats",
+    summary="只读：catalog ingest 状态 + 已对齐的 document_id 数",
+)
+async def get_index_stats() -> dict:
+    """Phase B HUD 辅助端点：让前端看到 catalog ingest 是否完成、对齐了多少 entry。"""
+    return {
+        "catalog": CATALOG_SUMMARY,
+        "reference": SEED_SUMMARY,
+        "chunks_total": service.chunk_count,
+        "document_ids_total": len(service.document_ids()),
+    }
 
 
 @app.post("/api/search")

@@ -100,6 +100,10 @@ Write-Host "[OK] Environment ready."
 # ============================================================
 # Docker
 # ============================================================
+# MySQL + Redis 通过 docker compose 拉起（需要 Docker Desktop 已运行）。
+# 与 start-platform.ps1 不同：本脚本直接在当前 shell 前台执行 docker compose，
+# 不做健康检查等待——容器拉起后立刻进入下一步，后端启动时 MySQL 可能还没就绪，
+# 后端会自动重试连接（Spring Boot 的 datasource 初始化有重试机制）。
 
 Write-Host ""
 Write-Host "[2/5] Starting MySQL and Redis..."
@@ -131,6 +135,12 @@ else {
 # ============================================================
 # Backend
 # ============================================================
+# 启动策略：先 mvn package 打 jar，再用 java -jar 跑（而非 mvn spring-boot:run）。
+# 原因：mvn spring-boot:run 会额外驻留一个 Maven 启动器 JVM（约 343MB），
+# 加上应用 JVM（约 249MB）合计约 590MB；直接跑 jar 只需一个 JVM，省一半内存。
+#
+# /k 表示命令执行完后保留 cmd 窗口（与 start-platform.ps1 的 Hidden 窗口不同），
+# 方便开发者实时看后端日志、Ctrl+C 停止。
 
 Write-Host ""
 Write-Host "[3/5] Starting Backend..."
@@ -138,9 +148,6 @@ Write-Host "[3/5] Starting Backend..."
 
 if (Test-Path $BackendDir) {
 
-    # 不要再使用 mvn spring-boot:run：它会额外驻留一个 Maven 启动器 JVM
-    # （实测 343MB），与应用 JVM（249MB）合计约 590MB。
-    # 改为「先打包，再用封顶参数的 JVM 直接跑 jar」，与算卦平台（HTLB）一致。
     $BackendJvmOptions = "-Xms64m -Xmx512m -XX:MaxMetaspaceSize=192m " +
         "-XX:ReservedCodeCacheSize=96m -XX:MaxDirectMemorySize=128m " +
         "-XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError"
@@ -160,6 +167,8 @@ else {
 # ============================================================
 # AI Service
 # ============================================================
+# uvicorn 单进程启动，不加 --reload（演示时不需要热重载，省一个 reloader 父进程）。
+# /k 保留窗口看实时日志。
 
 Write-Host ""
 Write-Host "[4/5] Starting AI Service..."
@@ -167,8 +176,6 @@ Write-Host "[4/5] Starting AI Service..."
 
 if (Test-Path $AIServiceDir) {
 
-    # 开发期不加 --reload：它会常驻一个 reloader 父进程 + 一个 worker，
-    # 演示时不需要热重载，直接单进程运行即可。
     Start-Process `
         -FilePath "cmd.exe" `
         -ArgumentList "/k", "cd /d `"$AIServiceDir`" && python -m uvicorn app.main:app --host 0.0.0.0 --port 8001"
@@ -184,14 +191,14 @@ else {
 # ============================================================
 # Frontend
 # ============================================================
+# 用户层（5173）与管理员层（5174）是两个独立的 Vite dev server：
+#   5173 用户层   -> vite.config.js
+#   5174 管理员层 -> vite.config.admin.mjs
+# 两者共用同一后端与同一套会话 / CSRF。
+# NODE_OPTIONS 限制 Vite 内存上限（512MB），避免大项目 OOM。
 
 Write-Host ""
 Write-Host "[5/5] Starting Frontend..."
-
-# 用户层与管理层是两个独立前端服务：
-#   5173 用户层   -> vite.config.js        （理念与外观保持不变）
-#   5174 管理员层 -> vite.config.admin.mjs （独立入口，不与用户层抢端口）
-# 两者共用同一后端与同一套会话 / CSRF。
 
 if (Test-Path $FrontendDir) {
 
