@@ -22,7 +22,7 @@
         </span>
       </header>
       <div class="persona-pet__stage">
-        <AgentPersona ref="personaRef" :state="agentState" @ready="onReady" />
+        <AgentPersona ref="personaRef" mode="vrm" :state="agentState" @ready="onReady" />
       </div>
       <p class="persona-pet__note" aria-live="polite">
         {{ speechLabel }}

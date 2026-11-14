@@ -9,21 +9,21 @@ import { networkL1L2VlanEntries, networkL1L2VlanIncidents, networkL1L2VlanRunboo
 import { networkRoutingEntries, networkRoutingIncidents, networkRoutingRunbooks, networkRoutingQuestions, networkRoutingWrongAnswers, networkRoutingRules, networkRoutingSchemas, resolveRoute, explainRoute } from '../../../../knowledge/linux/networkRoutingKnowledge.js'
 import { linuxServiceEntries, linuxServiceIncidents, linuxServiceRunbooks, linuxServiceQuestions, linuxServiceWrongAnswers, linuxServiceRules, linuxServiceSchema, serviceEvidencePath } from '../../../../knowledge/linux/linuxServiceKnowledge.js'
 import { webLampEntries, webLampIncidents, webLampRunbooks, webLampQuestions, webLampWrongAnswers, webLampRules, webLampSchema, parseServiceUrl, webEvidencePath, verificationLevelForEvidence } from '../../../../knowledge/linux/webLampKnowledge.js'
-import { dnsBindEntries, dnsBindRules } from '../../../../knowledge/linux/dnsBindKnowledge.js'
-import { fileSyncEntries, fileSyncRules } from '../../../../knowledge/linux/fileSyncKnowledge.js'
-import { sambaEntries, sambaRules } from '../../../../knowledge/linux/sambaKnowledge.js'
-import { mysql80Entries, mysql80Rules } from '../../../../knowledge/linux/mysql80Knowledge.js'
-import { mysqlSqlEntries, mysqlSqlRules } from '../../../../knowledge/linux/mysqlSqlKnowledge.js'
-import { shellCoreEntries, shellCoreRules } from '../../../../knowledge/linux/shellCoreKnowledge.js'
-import { shellFlowEntries, shellFlowRules } from '../../../../knowledge/linux/shellFlowAutomationKnowledge.js'
-import { shellAdvancedEntries, shellAdvancedRules } from '../../../../knowledge/linux/shellAdvancedAutomationKnowledge.js'
-import { containerdHarborEntries, containerdHarborRules } from '../../../../knowledge/linux/containerdHarborKnowledge.js'
-import { kubernetesFoundationEntries, kubernetesFoundationRules } from '../../../../knowledge/linux/kubernetesFoundationKnowledge.js'
-import { dockerOperationsEntries, dockerOperationsRules } from '../../../../knowledge/linux/dockerOperationsKnowledge.js'
-import { kubernetesResourceEntries, kubernetesResourceRules } from '../../../../knowledge/linux/kubernetesResourceOperationsKnowledge.js'
-import { kubernetesSchedulingLifecycleEntries, kubernetesSchedulingLifecycleRules } from '../../../../knowledge/linux/kubernetesSchedulingLifecycleKnowledge.js'
-import { kubernetesControllerServiceEntries, kubernetesControllerServiceRules } from '../../../../knowledge/linux/kubernetesControllerServiceKnowledge.js'
-import { kubernetesIngressEntries, kubernetesIngressRules } from '../../../../knowledge/linux/kubernetesIngressKnowledge.js'
+import { dnsBindEntries } from '../../../../knowledge/linux/dnsBindKnowledge.js'
+import { fileSyncEntries } from '../../../../knowledge/linux/fileSyncKnowledge.js'
+import { sambaEntries } from '../../../../knowledge/linux/sambaKnowledge.js'
+import { mysql80Entries } from '../../../../knowledge/linux/mysql80Knowledge.js'
+import { mysqlSqlEntries } from '../../../../knowledge/linux/mysqlSqlKnowledge.js'
+import { shellCoreEntries } from '../../../../knowledge/linux/shellCoreKnowledge.js'
+import { shellFlowEntries } from '../../../../knowledge/linux/shellFlowAutomationKnowledge.js'
+import { shellAdvancedEntries } from '../../../../knowledge/linux/shellAdvancedAutomationKnowledge.js'
+import { containerdHarborEntries } from '../../../../knowledge/linux/containerdHarborKnowledge.js'
+import { kubernetesFoundationEntries } from '../../../../knowledge/linux/kubernetesFoundationKnowledge.js'
+import { dockerOperationsEntries } from '../../../../knowledge/linux/dockerOperationsKnowledge.js'
+import { kubernetesResourceEntries } from '../../../../knowledge/linux/kubernetesResourceOperationsKnowledge.js'
+import { kubernetesSchedulingLifecycleEntries } from '../../../../knowledge/linux/kubernetesSchedulingLifecycleKnowledge.js'
+import { kubernetesControllerServiceEntries } from '../../../../knowledge/linux/kubernetesControllerServiceKnowledge.js'
+import { kubernetesIngressEntries } from '../../../../knowledge/linux/kubernetesIngressKnowledge.js'
 import { cloudNativeToolEntries } from '../../../../knowledge/cloud_ops/cloudNativeToolCatalog.js'
 import { cloudNativeToolRunbookEntries } from '../../../../knowledge/cloud_ops/cloudNativeToolRunbooks.js'
 import { cloudNativeLabEntries } from '../../../../knowledge/cloud_ops/cloudNativeLabCatalog.js'
@@ -42,7 +42,10 @@ export const knowledgeDomains = [
   { id: 'mysql', label: 'MYSQL', detail: '连接 / 锁 / 复制 / 性能 / 备份恢复' },
   { id: 'nginx', label: 'NGINX', detail: 'HTTP / Upstream / TLS / 缓存 / 网关排障' },
   { id: 'ubuntu', label: 'UBUNTU', detail: 'Systemd / 磁盘 / 进程 / DNS' },
-  { id: 'centos', label: 'CENTOS', detail: 'SELinux / Yum / 网络 / 权限' }
+  { id: 'centos', label: 'CENTOS', detail: 'SELinux / Yum / 网络 / 权限' },
+  { id: 'network', label: '网络基础', detail: 'OSI / TCP-IP / 交换 / 路由 / VLAN / 防火墙' },
+  { id: 'web-lamp', label: 'Linux Web / LAMP', detail: 'Apache/httpd / PHP / VirtualHost / 依赖链' },
+  { id: 'linux-services', label: 'Linux 服务', detail: 'systemd / FTP vsftpd / NFS / SSH / 权限模型' }
 ]
 
 export const knowledgeEntries = [
