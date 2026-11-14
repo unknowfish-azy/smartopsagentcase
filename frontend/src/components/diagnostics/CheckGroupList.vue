@@ -64,7 +64,9 @@ defineEmits(['go-tool'])
 
 const collapsedGroups = ref(new Set(['pass']))
 
-const { buckets, forbidden } = computed(() => partitionChecks(props.checks))
+const partitioned = computed(() => partitionChecks(props.checks))
+const buckets = computed(() => partitioned.value.buckets)
+const forbidden = computed(() => partitioned.value.forbidden)
 
 // 只渲染非空的组，保持 GROUP_ORDER 顺序
 const visibleGroupKeys = computed(() =>
