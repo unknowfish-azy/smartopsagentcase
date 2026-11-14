@@ -3,7 +3,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { knowledgeDomains, knowledgeEntries } from '../knowledgeCatalog.js'
 import { knowledgeReadApi } from '../knowledgeLibrary.js'
-import { computeLayout, WORLD_DEFAULT } from './useSpaceLayout.js'
+import { computeLayout, WORLD_DEFAULT, screenTier } from './useSpaceLayout.js'
 import { useSpaceCamera } from './useSpaceCamera.js'
 
 /* —— 空间场新增（SP-01/02/03/04/06/07）—— 现有视图逻辑完全不动 */
@@ -682,6 +682,7 @@ onBeforeUnmount(() => {
                 'ks-card--offscreen': !mountedCards.has(c.id),
               }"
               :data-card="c.id"
+              :data-tier="screenTier(c, cam.k.value)"
               :style="{ left: (c.x - z.x) + 'px', top: (c.y - z.y) + 'px', width: c.w + 'px', height: c.h + 'px' }"
               :aria-label="`${c.entry.title}，${c.entry.type || '未分类'}`"
               :aria-expanded="selectedCard?.id === c.id"
@@ -851,10 +852,12 @@ onBeforeUnmount(() => {
 .ks-card-foot{margin-top:auto;display:flex;align-items:center;gap:6px}
 .ks-chip{font:10px/1 var(--ds-font-mono);letter-spacing:.04em;color:var(--ds-semantic-neutral);border:1px solid var(--ds-hairline);border-radius:var(--ds-radius-sm);padding:3px 5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 
-/* LOD：L0 卡片不挂正文；L1 不显示摘要；L2 全显示 */
-.ks-world[data-lod="0"] .ks-card-title,.ks-world[data-lod="0"] .ks-card-sum,.ks-world[data-lod="0"] .ks-card-foot{display:none}
-.ks-world[data-lod="0"] .ks-card{background:rgba(232,242,247,.05);border-color:rgba(159,190,207,.10)}
-.ks-world[data-lod="1"] .ks-card-sum{display:none}
+/* 卡片内容按屏幕像素分档（世界宽高 × 相机 k）：同一屏里不同卡可以处在不同档，
+   不再用全局 data-lod 一刀切。micro 只剩色条，title 只留 2 行标题，full 才显示摘要与 chip。 */
+.ks-card[data-tier="micro"] .ks-card-title,.ks-card[data-tier="micro"] .ks-card-sum,.ks-card[data-tier="micro"] .ks-card-foot{display:none}
+.ks-card[data-tier="title"] .ks-card-sum,.ks-card[data-tier="title"] .ks-card-foot{display:none}
+.ks-card[data-tier="title"] .ks-card-title{font-size:11.5px}
+.ks-card[data-tier="title"] .ks-card-body{padding:7px 8px 6px 10px;gap:0}
 
 .ks-hud-labels{position:absolute;inset:0;pointer-events:none;z-index:12;overflow:hidden}
 .ks-lbl{position:absolute;display:flex;align-items:center;gap:6px;transform:translate(-1px,-50%);overflow:hidden;max-width:100%;padding:2px 6px;border-radius:var(--ds-radius-sm);background:rgba(10,14,19,.72);white-space:nowrap}
