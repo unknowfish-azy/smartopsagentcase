@@ -261,7 +261,7 @@ const sortedFindings = computed(() => {
   border: none; background: transparent; cursor: pointer;
   transition: background var(--ds-duration-micro) var(--ds-ease-out);
 }
-.hc-layer-head:hover { background: rgba(232, 242, 247, .04); }
+.hc-layer-head:hover { background: color-mix(in srgb, var(--smart-text) 4%, transparent); }
 .hc-layer-name { font-size: 13px; font-weight: 500; white-space: nowrap; }
 .hc-layer-sum { color: var(--ds-color-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hc-layer--collapsed .hc-layer-body { display: none; }
@@ -273,7 +273,7 @@ const sortedFindings = computed(() => {
   grid-template-columns: 18px 150px minmax(0, 1fr) auto;
   gap: 10px; align-items: baseline;
   padding: 7px 0;
-  border-top: 1px dashed rgba(255, 255, 255, .06);
+  border-top: 1px dashed color-mix(in srgb, var(--smart-surface) 6%, transparent);
   font-size: 12.5px;
 }
 .hc-check:first-child { border-top: none; }
@@ -297,7 +297,7 @@ const sortedFindings = computed(() => {
   margin: 0 0 10px;
   padding: 9px 11px;
   border-radius: var(--ds-radius-md);
-  background: rgba(0, 0, 0, .28);
+  background: color-mix(in srgb, var(--smart-bg) 28%, transparent);
   border-left: 2px solid var(--ds-semantic-neutral);
   color: var(--ds-color-muted);
   font-size: 12px;

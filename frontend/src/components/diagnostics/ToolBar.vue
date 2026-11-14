@@ -67,13 +67,13 @@ const tools = Object.freeze([
               color var(--ds-duration-micro) var(--ds-ease-out);
 }
 .hc-chip:hover {
-  background: rgba(232, 242, 247, .05);
+  background: color-mix(in srgb, var(--smart-text) 5%, transparent);
   color: var(--ds-color-text);
 }
 .hc-chip[aria-pressed="true"] {
   background: color-mix(in srgb, var(--ds-color-primary-strong) 10%, transparent);
   border-color: color-mix(in srgb, var(--ds-color-primary-strong) 45%, transparent);
-  color: #cdefff;
+  color: color-mix(in srgb, var(--smart-primary-strong) 90%, var(--smart-text));
 }
 
 .hc-tools-note {
