@@ -59,9 +59,9 @@
 .admin-surface button:active:not(:disabled) { transform: translateY(1px); }
 .admin-surface button:disabled { opacity: .55; cursor: not-allowed; }
 .admin-surface :focus-visible { outline: var(--admin-focus) solid var(--admin-accent); outline-offset: 3px; }
-.admin-surface .admin-primary { background: var(--admin-accent); border-color: var(--admin-accent); color: #ffffff; font-weight: 600; }
+.admin-surface .admin-primary { background: var(--admin-accent); border-color: var(--admin-accent); color: var(--smart-primary-foreground); font-weight: 600; }
 :root[data-theme='dark'] .admin-surface .admin-primary { color: var(--admin-bg); }
-.admin-surface .admin-primary:hover:not(:disabled) { background: var(--admin-accent); border-color: var(--admin-accent); color: #ffffff; filter: brightness(.94); }
+.admin-surface .admin-primary:hover:not(:disabled) { background: var(--admin-accent); border-color: var(--admin-accent); color: var(--smart-primary-foreground); filter: brightness(.94); }
 :root[data-theme='dark'] .admin-surface .admin-primary:hover:not(:disabled) { color: var(--admin-bg); }
 
 /* --- koi-ui 着色按钮（Element Plus plain 风格：浅底 + 彩色边框文字，hover 转实底） --- */
@@ -71,15 +71,14 @@
   transition-property: background-color, border-color, color; transition-duration: .18s;
 }
 .admin-surface .admin-btn--primary { border-color: color-mix(in srgb, var(--admin-accent) 45%, var(--admin-panel)); background: color-mix(in srgb, var(--admin-accent) 8%, var(--admin-panel)); color: var(--admin-accent-text); }
-.admin-surface .admin-btn--primary:hover:not(:disabled) { background: var(--admin-accent); border-color: var(--admin-accent); color: #fff; }
+.admin-surface .admin-btn--primary:hover:not(:disabled) { background: var(--admin-accent); border-color: var(--admin-accent); color: var(--smart-primary-foreground); }
 :root[data-theme='dark'] .admin-surface .admin-btn--primary:hover:not(:disabled) { color: var(--admin-bg); }
-.admin-surface .admin-btn--success { border-color: #c2e7b0; background: #f0f9eb; color: #529b2e; }
-.admin-surface .admin-btn--success:hover:not(:disabled) { background: #67c23a; border-color: #67c23a; color: #fff; }
-.admin-surface .admin-btn--danger { border-color: #fbc4c4; background: #fef0f0; color: #c45656; }
-.admin-surface .admin-btn--danger:hover:not(:disabled) { background: #f56c6c; border-color: #f56c6c; color: #fff; }
-.admin-surface .admin-btn--info { border-color: #d3d4d6; background: #f4f4f5; color: #6b7280; }
-.admin-surface .admin-btn--info:hover:not(:disabled) { background: #909399; border-color: #909399; color: #fff; }
-:root[data-theme='dark'] .admin-surface .admin-btn--success, :root[data-theme='dark'] .admin-surface .admin-btn--danger, :root[data-theme='dark'] .admin-surface .admin-btn--info { background: transparent; }
+.admin-surface .admin-btn--success { border-color: color-mix(in srgb, var(--ds-semantic-success) 45%, var(--admin-panel)); background: var(--ds-pill-success-bg); color: var(--ds-semantic-success); }
+.admin-surface .admin-btn--success:hover:not(:disabled) { background: var(--ds-semantic-success); border-color: var(--ds-semantic-success); color: var(--smart-primary-foreground); }
+.admin-surface .admin-btn--danger { border-color: color-mix(in srgb, var(--ds-semantic-danger) 45%, var(--admin-panel)); background: var(--ds-pill-danger-bg); color: var(--ds-semantic-danger); }
+.admin-surface .admin-btn--danger:hover:not(:disabled) { background: var(--ds-semantic-danger); border-color: var(--ds-semantic-danger); color: var(--smart-primary-foreground); }
+.admin-surface .admin-btn--info { border-color: color-mix(in srgb, var(--ds-semantic-neutral) 45%, var(--admin-panel)); background: var(--ds-pill-neutral-bg); color: var(--ds-semantic-neutral); }
+.admin-surface .admin-btn--info:hover:not(:disabled) { background: var(--ds-semantic-neutral); border-color: var(--ds-semantic-neutral); color: var(--smart-primary-foreground); }
 
 /* --- 状态标签（启用/停用/成功/失败） --- */
 .admin-status-tag {
@@ -87,10 +86,9 @@
   font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
 }
 .admin-status-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.admin-status-tag--on, .admin-status-tag--ok { border-color: #c2e7b0; background: #f0f9eb; color: #529b2e; }
-.admin-status-tag--off { border-color: #d3d4d6; background: #f4f4f5; color: #909399; }
-.admin-status-tag--fail { border-color: #fbc4c4; background: #fef0f0; color: #c45656; }
-:root[data-theme='dark'] .admin-status-tag--on, :root[data-theme='dark'] .admin-status-tag--ok, :root[data-theme='dark'] .admin-status-tag--off, :root[data-theme='dark'] .admin-status-tag--fail { background: transparent; }
+.admin-status-tag--on, .admin-status-tag--ok { border-color: color-mix(in srgb, var(--ds-semantic-success) 45%, var(--admin-panel)); background: var(--ds-pill-success-bg); color: var(--ds-semantic-success); }
+.admin-status-tag--off { border-color: color-mix(in srgb, var(--ds-semantic-neutral) 45%, var(--admin-panel)); background: var(--ds-pill-neutral-bg); color: var(--ds-semantic-neutral); }
+.admin-status-tag--fail { border-color: color-mix(in srgb, var(--ds-semantic-danger) 45%, var(--admin-panel)); background: var(--ds-pill-danger-bg); color: var(--ds-semantic-danger); }
 
 /* --- 骨架：侧栏 + 头部 + 标签页 + 内容区（koi-ui 纵向布局）---------------- */
 /* T19：管理端侧栏与用户端用同一令牌体系，保持 256px 展开 / 64px 收起 + 150ms ease-out */
@@ -107,7 +105,7 @@
   display: flex; align-items: center; gap: 10px; height: 56px; flex: 0 0 auto; padding: 0 8px;
   border-bottom: 1px solid var(--admin-border); color: var(--admin-text); white-space: nowrap; overflow: hidden;
 }
-.admin-brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 8px; background: var(--admin-accent); color: #fff; font-size: 16px; font-weight: 700; }
+.admin-brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 8px; background: var(--admin-accent); color: var(--smart-primary-foreground); font-size: 16px; font-weight: 700; }
 .admin-brand-name { font: 600 16px/1 var(--font-display, system-ui, sans-serif); }
 .admin-sidebar__brand small { margin-left: auto; font-size: 10px; font-weight: 500; color: var(--admin-muted); letter-spacing: .12em; text-transform: uppercase; }
 .admin-sidebar__nav { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 8px 0; }
@@ -133,7 +131,7 @@
 .admin-user-trigger:hover, .admin-user-trigger[aria-expanded='true'] { background: var(--admin-hover); }
 .admin-user-caret { color: var(--admin-muted); font-size: 10px; line-height: 1; transition: transform 160ms; }
 .admin-user-trigger[aria-expanded='true'] .admin-user-caret { transform: rotate(180deg); }
-.admin-user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%; background: var(--admin-accent); color: #fff; font-size: 13px; font-weight: 600; }
+.admin-user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%; background: var(--admin-accent); color: var(--smart-primary-foreground); font-size: 13px; font-weight: 600; }
 .admin-user-name { font-size: 13px; font-weight: 500; color: var(--admin-text); }
 .admin-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border: 1px solid var(--admin-border); border-radius: var(--admin-radius-pill); background: var(--admin-soft); color: var(--admin-accent-text); font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap; }
 .admin-user-menu {
@@ -201,7 +199,7 @@
 .admin-filters strong { flex: 1 1 100%; color: var(--admin-text); font-size: 15px; }
 .admin-filters button { flex: 0 0 auto; }
 .admin-filters button[type='submit'] { border-color: color-mix(in srgb, var(--admin-accent) 45%, var(--admin-panel)); background: color-mix(in srgb, var(--admin-accent) 8%, var(--admin-panel)); color: var(--admin-accent-text); }
-.admin-filters button[type='submit']:hover:not(:disabled) { background: var(--admin-accent); border-color: var(--admin-accent); color: #fff; }
+.admin-filters button[type='submit']:hover:not(:disabled) { background: var(--admin-accent); border-color: var(--admin-accent); color: var(--smart-primary-foreground); }
 :root[data-theme='dark'] .admin-filters button[type='submit']:hover:not(:disabled) { color: var(--admin-bg); }
 
 /* --- 表格 --------------------------------------------------------------- */
@@ -258,7 +256,7 @@
   border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-panel); color: var(--admin-text);
   box-shadow: 0 24px 80px rgb(0 0 0 / 32%);
 }
-.admin-dialog::backdrop { background: rgb(7 16 31 / 62%); }
+.admin-dialog::backdrop { background: rgba(0, 0, 0, .62); }
 .admin-dialog > .admin-page-header { align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--admin-border); }
 .admin-dialog > .admin-page-header h2 { padding: 0; font-size: 16px; }
 .admin-dialog > .admin-page-header h2::after, .admin-dialog > .admin-page-header h2::before { display: none; }
@@ -372,12 +370,12 @@
 .admin-list { list-style: none; margin: 0; padding: 0; }
 .admin-list li { margin-bottom: 4px; }
 .admin-list li button { width: 100%; text-align: left; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.admin-list li.is-current button { background: rgba(61, 106, 255, .08); border-color: var(--admin-accent, #3D6AFF); }
+.admin-list li.is-current button { background: color-mix(in srgb, var(--admin-accent) 8%, transparent); border-color: var(--admin-accent); }
 .admin-menu-tree { max-height: 420px; overflow: auto; border: 1px solid var(--admin-border, rgba(128,128,128,.25)); border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
 .admin-tree-node { display: inline-flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 13px; }
 .admin-tree-node--btn code { font-size: 11px; opacity: .75; }
 .admin-secondary { background: transparent; border: 1px solid var(--admin-border, rgba(128,128,128,.3)); }
-.admin-badge--warn { background: rgba(255, 152, 0, .15); color: #b26a00; }
+.admin-badge--warn { background: var(--ds-pill-warning-bg); color: var(--ds-semantic-warning); }
 .admin-check { display: inline-flex; align-items: center; gap: 6px; }
 .admin-check-group { border: 1px solid var(--admin-border, rgba(128,128,128,.25)); border-radius: 6px; padding: 8px 10px; }
 .admin-check-group legend { padding: 0 4px; font-size: 11px; color: var(--admin-muted, #888); }

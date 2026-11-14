@@ -341,8 +341,8 @@ h2,h3 {
   margin: 0;
   padding: 14px;
   overflow: auto;
-  background: #090d12;
-  color: #d8e4ec;
+  background: var(--ds-surface-overlay);
+  color: var(--smart-text);
   font: 12px/1.7 var(--font-mono);
 }
 .outputs {

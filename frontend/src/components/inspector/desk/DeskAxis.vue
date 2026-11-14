@@ -5,7 +5,7 @@
       <span class="axis-count">{{ windowKey }} · {{ countLabel }}</span>
     </div>
     <div class="axis-canvas-wrap" ref="wrapRef">
-      <canvas ref="canvasRef" role="img" :aria-label="`洞察台时间轴 · ${viewLabel} 投影`"></canvas>
+      <canvas ref="canvasRef" role="img" :aria-label="`洞察台时间轴 · ${viewLabel} 投影 · ${countLabel}`"></canvas>
       <div v-if="emptyState" class="axis-empty">{{ emptyState }}</div>
       <div v-else-if="errorState" class="axis-error"><span>{{ errorState }}</span><button @click="$emit('retry')">重试</button></div>
       <div v-else-if="loadingState" class="axis-empty">加载中…</div>
