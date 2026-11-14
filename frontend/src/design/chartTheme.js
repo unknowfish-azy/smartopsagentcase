@@ -17,12 +17,12 @@ const FALLBACK = {
     areaOpacity: 0.14
   },
   light: {
-    colors: ['#0e5f92', '#2b8fb8', '#1a7f37', '#9a6700', '#cf222e'],
-    grid: 'rgba(16, 53, 70, .08)',
-    axis: 'rgba(16, 53, 70, .12)',
-    text: '#4d606c',
+    colors: ['#0e5f92', '#2b8fb8', '#176b30', '#8a5a00', '#cf222e'],
+    grid: 'rgba(31, 35, 40, .08)',
+    axis: 'rgba(31, 35, 40, .12)',
+    text: '#57606a',
     tooltipBg: '#ffffff',
-    tooltipBorder: 'rgba(16, 53, 70, .18)',
+    tooltipBorder: 'rgba(31, 35, 40, .18)',
     areaOpacity: 0.10
   }
 }
@@ -98,7 +98,7 @@ export function chartTooltip(root, unit = '', valueFormatter) {
     confine: true,
     backgroundColor: t.tooltipBg,
     borderColor: t.tooltipBorder,
-    textStyle: { color: resolvedTheme.value === 'light' ? '#10212b' : '#e8f2f7', fontSize: 12 },
+    textStyle: { color: resolvedTheme.value === 'light' ? '#1f2329' : '#e8f2f7', fontSize: 12 },
     valueFormatter: valueFormatter || (value => value == null ? '未上报' : `${value}${unit ? ` ${unit}` : ''}`)
   }
 }
