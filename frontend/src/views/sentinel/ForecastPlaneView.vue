@@ -617,7 +617,7 @@ if (typeof window !== 'undefined') {
 }
 
 .forecast-tag--demo {
-  border-color: rgba(210, 153, 34, .45);
+  border-color: color-mix(in srgb, var(--ds-semantic-warning) 45%, transparent);
   color: var(--forecast-warn);
 }
 
@@ -659,7 +659,7 @@ if (typeof window !== 'undefined') {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: rgba(14, 17, 22, .92);
+  background: color-mix(in srgb, var(--forecast-bg) 92%, transparent);
   color: var(--forecast-muted);
   font-size: 13px;
   text-align: center;
