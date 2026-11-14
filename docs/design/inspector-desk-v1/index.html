@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>洞察台 · INSPECTOR DESK — 设计稿（纠察 / 统计 / 运行记录 三视图联动）</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:#151a21; --card-2:#1b212a; --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.14);
+    --text:#e8f2f7; --muted:#92a6b5; --dim:#5d6b78;
+    --accent:#2496ed; --cyan:#7ad7f5;
+    --ok:#3fb950; --warn:#d29922; --high:#f0883e; --bad:#f85149;
+    --mono:Consolas,"Cascadia Mono",ui-monospace,monospace;
+    --cn:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --r:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font-family:var(--cn);font-size:14px;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  .mono{font-family:var(--mono);letter-spacing:.07em}
+
+  /* 侧栏（标明落位：MEMORY 组三项合成一台） */
+  .rail{position:fixed;inset:0 auto 0 0;width:236px;padding:18px 14px;border-right:1px solid var(--line);background:#0b0f14;display:flex;flex-direction:column;gap:10px;overflow:auto}
+  .wordmark{display:grid;gap:3px;padding:2px 6px 14px;border-bottom:1px solid var(--line)}
+  .wordmark b{font-size:13px;letter-spacing:.14em}
+  .wordmark span{font-size:11px;color:var(--muted)}
+  .nav-label{margin:8px 6px 2px;color:var(--dim);font:9.5px var(--mono);letter-spacing:.16em}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:4px;color:var(--muted);font-size:12.5px;text-decoration:none}
+  .nav-item i{width:13px;height:13px;border:1px solid currentColor;border-radius:3px;opacity:.45;flex:none}
+  .nav-group{padding-left:8px;border-left:1px solid var(--line);display:grid;gap:1px}
+  .nav-item.is-on{background:rgba(36,150,237,.14);color:var(--text);box-shadow:inset 2px 0 0 var(--accent)}
+  .nav-item.is-sub{font-size:11.5px;color:var(--dim)}
+  .nav-item.is-sub b{color:var(--muted);font-weight:400}
+
+  .main{margin-left:236px;min-height:100%}
+  .topbar{display:flex;align-items:center;gap:14px;padding:12px 24px;border-bottom:1px solid var(--line);color:var(--muted);font:10.5px var(--mono);letter-spacing:.12em}
+  .topbar .env{margin-left:auto;display:flex;gap:16px}
+  .topbar b{color:var(--text);font-weight:500}
+  .page{max-width:1560px;padding:22px 24px 40px}
+
+  .page-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  .eyebrow{margin:0 0 10px;color:var(--cyan);font:10px var(--mono);letter-spacing:.2em}
+  h1{margin:0;font-size:clamp(30px,3.2vw,42px);font-weight:500;line-height:1.05}
+  .lede{max-width:74ch;margin:12px 0 0;color:var(--muted);font-size:13px;line-height:1.8}
+  .head-right{display:grid;gap:8px;justify-items:end}
+  .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:999px;overflow:hidden}
+  .seg button{padding:5px 11px;color:var(--muted);font:10.5px var(--mono)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:rgba(36,150,237,.16);color:var(--text)}
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border:1px solid var(--line-2);border-radius:999px;color:var(--muted);font:9.5px var(--mono);letter-spacing:.06em}
+  .chip b{color:var(--text);font-weight:500}
+  .chip--demo{border-color:rgba(210,153,34,.5);color:var(--warn)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(63,185,80,.16)}
+
+  /* 视图切换：三个投影共用一条轴 */
+  .views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin-top:16px;border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden;background:var(--line)}
+  .view{display:grid;gap:4px;padding:12px 14px;text-align:left;background:var(--card);color:var(--muted)}
+  .view strong{display:flex;align-items:baseline;gap:8px;color:var(--text);font-size:14px;font-weight:500}
+  .view strong em{font-style:normal;color:var(--dim);font:10px var(--mono)}
+  .view small{color:var(--dim);font-size:11px;line-height:1.5}
+  .view[aria-selected="true"]{background:rgba(36,150,237,.12);box-shadow:inset 0 -2px 0 var(--accent)}
+  .view[aria-selected="true"] small{color:var(--muted)}
+  .view:hover{background:var(--card-2)}
+
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .tool{display:flex;align-items:center;gap:8px}
+  .tool>span{color:var(--dim);font:9px var(--mono);letter-spacing:.14em}
+  .sensor{padding:4px 9px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font:10px var(--mono)}
+  .sensor[aria-pressed="true"]{border-color:var(--cyan);color:var(--text);background:rgba(122,215,245,.08)}
+  .toggle{display:inline-flex;align-items:center;gap:7px;min-height:28px;padding:4px 10px;border:1px solid var(--line-2);border-radius:999px;color:var(--muted);font-size:11.5px}
+  .toggle .box{width:12px;height:12px;border:1px solid var(--current);border-radius:3px}
+  .toggle[aria-pressed="true"]{color:var(--text);border-color:var(--accent)}
+  .toggle[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent)}
+  .tool--right{margin-left:auto}
+
+  .desk{display:grid;grid-template-columns:minmax(0,1fr) 344px;gap:16px;margin-top:16px;align-items:stretch}
+  .card{border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .card-head h2{margin:0;font-size:13.5px;font-weight:500}
+  .card-head .en{display:block;margin-top:4px;color:var(--dim);font:8.5px var(--mono);letter-spacing:.18em}
+  .card-head .aside{color:var(--muted);font:9.5px var(--mono);white-space:nowrap}
+
+  .axis-card{display:flex;flex-direction:column;min-width:0}
+  .axis-wrap{position:relative;flex:1;min-height:440px}
+  #axis{display:block;width:100%;height:100%}
+  .axis-foot{display:flex;flex-wrap:wrap;gap:12px 18px;padding:10px 14px;border-top:1px solid var(--line);color:var(--muted);font:10px var(--mono);letter-spacing:.06em}
+  .axis-foot i{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:2px;vertical-align:-1px}
+  .tip{position:absolute;z-index:5;min-width:186px;padding:8px 10px;border:1px solid var(--line-2);border-radius:5px;background:var(--card-2);color:var(--text);font:10.5px/1.65 var(--mono);pointer-events:none;opacity:0;transform:translate(-50%,-110%);transition:opacity .12s}
+  .tip.is-on{opacity:1}
+  .tip b{display:block;margin-bottom:4px;color:var(--cyan)}
+  .tip span{display:flex;justify-content:space-between;gap:14px;color:var(--muted)}
+  .tip span i{font-style:normal;color:var(--text)}
+
+  .side{display:grid;gap:16px;align-content:start}
+  .sel{padding:14px}
+  .sel-type{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--dim);font:9px var(--mono);letter-spacing:.14em}
+  .sel h3{margin:8px 0 4px;font-size:15px;font-weight:500}
+  .sel p{margin:0;color:var(--muted);font-size:11.5px;line-height:1.6}
+  .sel dl{display:grid;grid-template-columns:64px minmax(0,1fr);gap:5px 8px;margin:12px 0 0;font:10.5px var(--mono)}
+  .sel dt{color:var(--dim)}
+  .sel dd{margin:0;color:var(--text);overflow-wrap:anywhere}
+  .sel .link-row{display:flex;align-items:center;gap:7px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
+  .sel .link-row b{color:var(--text);font-weight:500}
+  .sel .link-row.is-off{color:var(--warn)}
+  .kind{padding:2px 7px;border:1px solid var(--line-2);border-radius:3px;color:var(--dim);font:8px var(--mono);letter-spacing:.12em}
+  .kind--warn{border-color:rgba(210,153,34,.45);color:var(--warn)}
+  .kind--ok{border-color:rgba(63,185,80,.4);color:var(--ok)}
+  .kind--bad{border-color:rgba(248,81,73,.45);color:var(--bad)}
+
+  .projections{padding:12px 14px;display:grid;gap:9px}
+  .projection{display:grid;gap:3px;padding:8px 9px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-size:11px}
+  .projection b{color:var(--text);font:10px var(--mono);letter-spacing:.06em}
+  .projection.is-on{border-color:rgba(36,150,237,.45);background:rgba(36,150,237,.07)}
+
+  .total-list{padding:10px 14px 14px;display:grid;gap:7px}
+  .total-row{display:grid;grid-template-columns:minmax(0,1fr) 92px 34px;align-items:center;gap:8px;color:var(--muted);font-size:11px}
+  .total-row b{color:var(--text);font-weight:400}
+  .total-track{height:3px;background:var(--line)}
+  .total-fill{display:block;height:100%;background:var(--accent)}
+  .total-row em{font-style:normal;text-align:right;color:var(--dim);font:9.5px var(--mono)}
+  .total-note{padding:0 14px 12px;color:var(--dim);font-size:10.5px;line-height:1.6}
+
+  /* 证据抽屉 */
+  .drawer{margin-top:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  .drawer-head{display:flex;align-items:center;gap:12px;padding:11px 14px;color:var(--muted)}
+  .drawer-head strong{color:var(--text);font-size:12.5px;font-weight:500}
+  .drawer-head .tabs{display:inline-flex;gap:2px;margin-left:6px}
+  .drawer-head .tabs button{padding:3px 9px;border-radius:3px;color:var(--dim);font:10px var(--mono)}
+  .drawer-head .tabs button[aria-selected="true"]{background:rgba(36,150,237,.14);color:var(--text)}
+  .drawer-head .spacer{margin-left:auto;font:9.5px var(--mono)}
+  .drawer-body{display:none;padding:0 14px 14px}
+  .drawer.is-open .drawer-body{display:block}
+  .drawer-body pre{margin:0;padding:12px;border:1px solid var(--line);border-radius:4px;background:#0b0f14;color:#cddbe6;font:11px/1.7 var(--mono);overflow:auto;max-height:220px}
+  .drawer-body .evidence{display:grid;gap:6px;margin-bottom:10px}
+  .drawer-body .evidence div{display:flex;gap:10px;padding:7px 9px;border-left:2px solid var(--line-2);background:rgba(255,255,255,.02);color:var(--muted);font-size:11.5px}
+  .drawer-body .evidence div b{color:var(--text);font:10px var(--mono);min-width:74px}
+
+  .page-foot{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid var(--line);color:var(--dim);font:9px var(--mono);letter-spacing:.12em}
+  .page-foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:1180px){
+    .rail{display:none}
+    .main{margin-left:0}
+    .desk{grid-template-columns:minmax(0,1fr)}
+    .side{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:760px){
+    .topbar{flex-wrap:wrap;gap:6px 12px}
+    .topbar .env{margin-left:0;flex-wrap:wrap;gap:10px}
+    .topbar .env span:first-child{display:none}
+    .drawer-head{flex-wrap:wrap;gap:8px}
+    .drawer-head .spacer{display:none}
+    .drawer-head .tabs{order:3;width:100%;margin-left:0}
+    .page{padding:16px 14px 28px}
+    .page-head{grid-template-columns:minmax(0,1fr)}
+    .head-right{justify-items:start}
+    .views{grid-template-columns:minmax(0,1fr)}
+    .side{grid-template-columns:minmax(0,1fr)}
+    .axis-wrap{min-height:320px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+  }
+</style>
+</head>
+<body>
+<aside class="rail" aria-label="侧栏示意">
+  <div class="wordmark"><b>SMARTOPS AGENT</b><span>个人空间 · 我的工作台</span></div>
+  <span class="nav-label">PERSONAL SYSTEM</span>
+  <a class="nav-item"><i></i>HOME</a>
+  <a class="nav-item"><i></i>AI CHAT</a>
+  <a class="nav-item"><i></i>知识库</a>
+  <a class="nav-item"><i></i>OPERATIONS</a>
+  <a class="nav-item"><i></i>AGENT</a>
+  <a class="nav-item" style="color:var(--text)"><i></i>MEMORY</a>
+  <div class="nav-group">
+    <a class="nav-item is-sub">纠察中心 <b>12</b></a>
+    <a class="nav-item is-sub">统计 <b>4 类</b></a>
+    <a class="nav-item is-sub">运行记录 <b>38</b></a>
+    <a class="nav-item is-on" style="margin-top:4px">洞察台 · INSPECTOR DESK</a>
+  </div>
+  <span class="nav-label" style="margin-top:12px">SENTINEL</span>
+  <a class="nav-item"><i></i>SENTINEL</a>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <span>MEMORY / INSPECTOR DESK</span>
+    <span class="env"><span>SOURCE <b>inspector · runs</b></span><span>WINDOW <b id="topWindow">24h</b></span><span>MODE <b>DEMO</b></span></span>
+  </header>
+
+  <main class="page">
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">MEMORY · INSPECTOR DESK · 同一份证据的三种投影</p>
+        <h1>洞察台</h1>
+        <p class="lede">
+          纠察中心、统计、运行记录不再是三个页面，而是同一条时间轴上的三种看法：
+          <b>点</b>是纠察事件，<b>柱</b>是它的聚合，<b>条</b>是它落到的命令执行。切视图不换轴，选中不丢上下文，
+          证据只在右下角一个抽屉里打开。
+        </p>
+      </div>
+      <div class="head-right">
+        <div class="seg" id="window" role="group" aria-label="时间窗">
+          <button aria-pressed="true" data-w="24h">24h</button>
+          <button aria-pressed="false" data-w="7d">7d</button>
+          <button aria-pressed="false" data-w="30d">30d</button>
+        </div>
+        <span class="chip"><span class="dot"></span>数据源 <b>正常</b></span>
+        <span class="chip chip--demo">DEMO · 虚构示例，非真实纠察</span>
+      </div>
+    </header>
+
+    <div class="views" role="tablist" aria-label="投影视图">
+      <button class="view" role="tab" aria-selected="true" data-view="events">
+        <strong>纠察 <em>INSPECTIONS</em></strong>
+        <small>每个事件是一个点：等级 · 目标 · 时间</small>
+      </button>
+      <button class="view" role="tab" aria-selected="false" data-view="stats">
+        <strong>统计 <em>AGGREGATES</em></strong>
+        <small>同一批事件按时间分箱堆叠，类别/目标另算</small>
+      </button>
+      <button class="view" role="tab" aria-selected="false" data-view="runs">
+        <strong>运行 <em>RUNS</em></strong>
+        <small>命令执行是横条：工具 · 时长 · 退出码</small>
+      </button>
+    </div>
+
+    <div class="toolbar">
+      <div class="tool"><span>等级</span><div id="severities" style="display:flex;gap:6px"></div></div>
+      <div class="tool"><span>工具</span><div id="tools" style="display:flex;gap:6px"></div></div>
+      <div class="tool"><button class="toggle" id="linkedOnly" aria-pressed="false"><span class="box"></span>只看已关联</button></div>
+      <div class="tool tool--right"><span id="windowSummary">窗口 12 条纠察 · 38 条运行 · 9 条已关联</span></div>
+    </div>
+
+    <div class="desk">
+      <section class="card axis-card" aria-labelledby="axis-title">
+        <div class="card-head">
+          <div><h2 id="axis-title">共享时间轴 · <span id="viewLabel">纠察</span></h2><span class="en">ONE AXIS · THREE PROJECTIONS</span></div>
+          <span class="aside" id="axisAside">24h · 12 条纠察</span>
+        </div>
+        <div class="axis-wrap">
+          <canvas id="axis" role="img" aria-label="时间轴：纠察事件、统计柱与运行条"></canvas>
+          <div class="tip" id="tip"></div>
+        </div>
+        <div class="axis-foot" id="legend"></div>
+      </section>
+
+      <aside class="side">
+        <section class="card" aria-labelledby="sel-title">
+          <div class="card-head"><div><h2 id="sel-title">选中对象</h2><span class="en">SELECTION</span></div><span class="aside" id="selAside">—</span></div>
+          <div class="sel" id="sel"></div>
+        </section>
+
+        <section class="card" aria-labelledby="proj-title">
+          <div class="card-head"><div><h2 id="proj-title">在另外两个视图里</h2><span class="en">CROSS-PROJECTION</span></div><span class="aside" id="projAside">—</span></div>
+          <div class="projections" id="projections"></div>
+        </section>
+
+        <section class="card" aria-labelledby="total-title">
+          <div class="card-head"><div><h2 id="total-title">全量统计</h2><span class="en">ALL TIME · SERVER</span></div><span class="kind">全量</span></div>
+          <div class="total-list" id="totals"></div>
+          <p class="total-note">来自 <span class="mono">/api/inspector/statistics</span> 的全量聚合，不受上方时间窗影响；窗口内的聚合请看「统计」视图。</p>
+        </section>
+      </aside>
+    </div>
+
+    <section class="card drawer" id="drawer" aria-labelledby="drawer-title">
+      <div class="drawer-head">
+        <strong id="drawer-title">证据抽屉</strong>
+        <span class="chip mono" id="drawerSubject">未选择</span>
+        <div class="tabs" role="tablist" aria-label="证据分页">
+          <button role="tab" aria-selected="true" data-tab="evidence">证据</button>
+          <button role="tab" aria-selected="false" data-tab="output">输出</button>
+          <button role="tab" aria-selected="false" data-tab="trace">轨迹</button>
+        </div>
+        <span class="spacer" id="drawerHint">点击图上任意标记 / 按 Enter 打开</span>
+        <button class="chip" id="drawerToggle" aria-expanded="false">展开</button>
+      </div>
+      <div class="drawer-body" id="drawerBody"></div>
+    </section>
+
+    <footer class="page-foot">
+      <span><b>INSPECTOR DESK · MEMORY</b></span>
+      <span>演示数据：确定性合成序列，不代表任何真实纠察或命令</span>
+      <span>关联只在 traceId 命中时成立；未命中显示「未关联」，不做时间邻近猜测</span>
+      <span>REDUCED MOTION → 关闭视图切换形变</span>
+    </footer>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   洞察台设计稿：一条时间轴 + 三种投影 + 一个证据抽屉。
+   数据全部为确定性合成（DEMO），不读真实接口。
+   ============================================================ */
+const SEVERITIES = [
+  { key: 'CRITICAL', cn: '严重', color: '#f85149' },
+  { key: 'HIGH', cn: '高', color: '#f0883e' },
+  { key: 'WARN', cn: '警告', color: '#d29922' },
+  { key: 'PASS', cn: '通过', color: '#3fb950' }
+]
+const TOOLS = [
+  { key: 'mysql-query', cn: 'MySQL 查询', color: '#2496ed' },
+  { key: 'docker-compose-status', cn: 'Compose 巡检', color: '#7ad7f5' },
+  { key: 'prometheus-query', cn: '指标查询', color: '#3fb950' },
+  { key: 'k8s-storage', cn: '存储巡检', color: '#f0883e' },
+  { key: 'loki-log-query', cn: '日志查询', color: '#a383a6' }
+]
+const TASKS = ['mysql-conn', 'compose-ps', 'prom-mem', 'k8s-pvc', 'loki-502', 'redis-latency', 'disk-inode', 'nginx-upstream']
+const CATEGORIES = ['DATABASE', 'CLOUD_NATIVE', 'OBSERVABILITY', 'STABILITY']
+
+const state = {
+  view: 'events',
+  previous: null,
+  transitionStart: 0,
+  window: '24h',
+  severity: 'ALL',
+  tool: 'ALL',
+  linkedOnly: false,
+  selected: null,
+  hover: null,
+  drawer: { open: false, tab: 'evidence' }
+}
+
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/* ---------- 确定性数据 ---------- */
+function rng(seed) {
+  let s = seed >>> 0
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0
+    return s / 4294967296
+  }
+}
+
+const WINDOW_MS = { '24h': 864e5, '7d': 6048e5, '30d': 2592e6 }
+
+function buildData(windowKey) {
+  const span = WINDOW_MS[windowKey]
+  const end = Date.now() - 6e5
+  const start = end - span
+  const random = rng(windowKey === '24h' ? 20261119 : windowKey === '7d' ? 7719 : 3019)
+
+  const events = []
+  const eventCount = windowKey === '24h' ? 12 : windowKey === '7d' ? 34 : 96
+  for (let i = 0; i < eventCount; i += 1) {
+    const at = start + random() * span
+    const roll = random()
+    const severity = roll > 0.78 ? 'PASS' : roll > 0.46 ? 'WARN' : roll > 0.2 ? 'HIGH' : 'CRITICAL'
+    const task = TASKS[Math.floor(random() * TASKS.length)]
+    events.push({
+      id: `EV-${1040 + i}`,
+      at,
+      severity,
+      taskId: task,
+      category: CATEGORIES[Math.floor(random() * CATEGORIES.length)],
+      target: `${task.split('-')[0]}-${Math.floor(random() * 3) + 1}`,
+      traceId: random() > 0.35 ? `tr_${Math.floor(random() * 1e6).toString(16).padStart(6, '0')}` : null
+    })
+  }
+  events.sort((a, b) => a.at - b.at)
+
+  const runs = []
+  const runCount = windowKey === '24h' ? 38 : windowKey === '7d' ? 98 : 240
+  for (let i = 0; i < runCount; i += 1) {
+    const at = start + random() * span
+    const roll = random()
+    const status = roll > 0.82 ? 'FAILED' : roll > 0.74 ? 'TIMEOUT' : 'SUCCESS'
+    const tool = TOOLS[Math.floor(random() * TOOLS.length)]
+    const linked = events.find(event => event.traceId && Math.abs(event.at - at) < span * 0.02 && random() > 0.55)
+    runs.push({
+      id: `RUN-${5400 + i}`,
+      at,
+      tool: tool.key,
+      toolCn: tool.cn,
+      status,
+      duration: 2 + random() * 34,
+      traceId: linked ? linked.traceId : random() > 0.6 ? `tr_${Math.floor(random() * 1e6).toString(16).padStart(6, '0')}` : null,
+      exitCode: status === 'SUCCESS' ? 0 : status === 'FAILED' ? 1 : null
+    })
+  }
+  runs.sort((a, b) => a.at - b.at)
+
+  return { start, end, events, runs }
+}
+
+let data = buildData(state.window)
+
+/* ---------- 工具函数 ---------- */
+const fmtTime = ts => new Date(ts).toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' })
+const fmtDate = ts => new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+const severityMeta = key => SEVERITIES.find(item => item.key === key)
+const toolMeta = key => TOOLS.find(item => item.key === key) || { cn: key, color: '#5d6b78' }
+
+function linkedRunOf(event) {
+  if (!event?.traceId) return null
+  return data.runs.find(run => run.traceId === event.traceId) || null
+}
+function linkedEventOf(run) {
+  if (!run?.traceId) return null
+  return data.events.find(event => event.traceId === run.traceId) || null
+}
+
+/* ---------- 控件 ---------- */
+const windowGroup = document.getElementById('window')
+windowGroup.addEventListener('click', event => {
+  const button = event.target.closest('button[data-w]')
+  if (!button) return
+  state.window = button.dataset.w
+  ;[...windowGroup.children].forEach(node => node.setAttribute('aria-pressed', String(node === button)))
+  data = buildData(state.window)
+  document.getElementById('topWindow').textContent = state.window
+  state.selected = null
+  renderAll()
+})
+
+document.querySelectorAll('.view').forEach(button => {
+  button.addEventListener('click', () => setView(button.dataset.view))
+})
+
+function setView(view) {
+  if (view === state.view) return
+  state.previous = state.view
+  state.view = view
+  state.transitionStart = performance.now()
+  document.querySelectorAll('.view').forEach(node => node.setAttribute('aria-selected', String(node.dataset.view === view)))
+  document.getElementById('viewLabel').textContent = { events: '纠察', stats: '统计', runs: '运行' }[view]
+  renderAll()
+}
+
+/* 等级 / 工具筛选 */
+const severityHost = document.getElementById('severities')
+const toolHost = document.getElementById('tools')
+function buildChips() {
+  severityHost.innerHTML = ''
+  const all = document.createElement('button')
+  all.className = 'sensor'
+  all.textContent = '全部'
+  all.setAttribute('aria-pressed', String(state.severity === 'ALL'))
+  all.addEventListener('click', () => { state.severity = 'ALL'; refreshChips(); renderAll() })
+  severityHost.appendChild(all)
+  SEVERITIES.forEach(item => {
+    const button = document.createElement('button')
+    button.className = 'sensor'
+    button.textContent = item.cn
+    button.setAttribute('aria-pressed', String(state.severity === item.key))
+    button.addEventListener('click', () => { state.severity = state.severity === item.key ? 'ALL' : item.key; refreshChips(); renderAll() })
+    severityHost.appendChild(button)
+  })
+
+  toolHost.innerHTML = ''
+  const allTools = document.createElement('button')
+  allTools.className = 'sensor'
+  allTools.textContent = '全部'
+  allTools.setAttribute('aria-pressed', String(state.tool === 'ALL'))
+  allTools.addEventListener('click', () => { state.tool = 'ALL'; refreshChips(); renderAll() })
+  toolHost.appendChild(allTools)
+  TOOLS.slice(0, 4).forEach(item => {
+    const button = document.createElement('button')
+    button.className = 'sensor'
+    button.textContent = item.key.split('-')[0]
+    button.title = item.cn
+    button.setAttribute('aria-pressed', String(state.tool === item.key))
+    button.addEventListener('click', () => { state.tool = state.tool === item.key ? 'ALL' : item.key; refreshChips(); renderAll() })
+    toolHost.appendChild(button)
+  })
+}
+function refreshChips() {
+  ;[...severityHost.children].forEach((node, index) => {
+    const key = index === 0 ? 'ALL' : SEVERITIES[index - 1].key
+    node.setAttribute('aria-pressed', String(state.severity === key))
+  })
+  ;[...toolHost.children].forEach((node, index) => {
+    const key = index === 0 ? 'ALL' : TOOLS[index - 1].key
+    node.setAttribute('aria-pressed', String(state.tool === key))
+  })
+}
+
+const linkedToggle = document.getElementById('linkedOnly')
+linkedToggle.addEventListener('click', () => {
+  state.linkedOnly = !state.linkedOnly
+  linkedToggle.setAttribute('aria-pressed', String(state.linkedOnly))
+  renderAll()
+})
+
+/* 抽屉 */
+const drawer = document.getElementById('drawer')
+const drawerToggle = document.getElementById('drawerToggle')
+const drawerBody = document.getElementById('drawerBody')
+drawerToggle.addEventListener('click', () => toggleDrawer())
+document.querySelectorAll('.drawer-head .tabs button').forEach(button => {
+  button.addEventListener('click', () => {
+    state.drawer.tab = button.dataset.tab
+    document.querySelectorAll('.drawer-head .tabs button').forEach(node => node.setAttribute('aria-selected', String(node === button)))
+    renderDrawer()
+  })
+})
+function toggleDrawer(force) {
+  state.drawer.open = force === undefined ? !state.drawer.open : force
+  drawer.classList.toggle('is-open', state.drawer.open)
+  drawerToggle.setAttribute('aria-expanded', String(state.drawer.open))
+  drawerToggle.textContent = state.drawer.open ? '收起' : '展开'
+  renderDrawer()
+}
+
+/* 键盘 */
+document.addEventListener('keydown', event => {
+  if (event.key === '1') setView('events')
+  if (event.key === '2') setView('stats')
+  if (event.key === '3') setView('runs')
+  if (event.key === 'Escape') { toggleDrawer(false); state.selected = null; renderAll() }
+  if (event.key === 'Enter' && state.selected) { event.preventDefault(); toggleDrawer(true) }
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    const list = visibleItems()
+    if (!list.length) return
+    const index = list.findIndex(item => item.id === state.selected?.id)
+    const next = list[Math.max(0, Math.min(list.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)))]
+    selectItem(next)
+  }
+})
+
+/* ---------- 选择 ---------- */
+function selectItem(item) {
+  state.selected = item
+  renderAll()
+}
+
+function visibleItems() {
+  if (state.view === 'runs') return filteredRuns()
+  return filteredEvents()
+}
+
+function filteredEvents() {
+  return data.events.filter(event => {
+    if (state.severity !== 'ALL' && event.severity !== state.severity) return false
+    if (state.linkedOnly && !event.traceId) return false
+    return true
+  })
+}
+function filteredRuns() {
+  return data.runs.filter(run => {
+    if (state.tool !== 'ALL' && run.tool !== state.tool) return false
+    if (state.linkedOnly && !run.traceId) return false
+    return true
+  })
+}
+
+/* ---------- 绘制 ---------- */
+const canvas = document.getElementById('axis')
+const ctx = canvas.getContext('2d')
+const tip = document.getElementById('tip')
+const M = { l: 64, r: 20, t: 18, b: 30 }
+
+function layout() {
+  const rect = canvas.getBoundingClientRect()
+  return { rect, plotW: rect.width - M.l - M.r, plotH: rect.height - M.t - M.b }
+}
+
+function xOf(ts, rect) {
+  const { start, end } = data
+  return M.l + ((ts - start) / (end - start)) * (rect.width - M.l - M.r)
+}
+
+function draw() {
+  const { rect, plotW, plotH } = layout()
+  if (!rect.width) return
+  const dpr = window.devicePixelRatio || 1
+  if (canvas.width !== Math.round(rect.width * dpr) || canvas.height !== Math.round(rect.height * dpr)) {
+    canvas.width = Math.round(rect.width * dpr)
+    canvas.height = Math.round(rect.height * dpr)
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, rect.width, rect.height)
+
+  drawGrid(rect)
+  drawSelectionBand(rect)
+
+  const now = performance.now()
+  const progress = state.previous ? Math.min(1, (now - state.transitionStart) / (reduced ? 1 : 420)) : 1
+  if (state.previous && progress < 1) {
+    drawProjection(state.previous, 1 - progress, -6, rect)
+    drawProjection(state.view, progress, 6 * (1 - progress), rect)
+  } else {
+    state.previous = null
+    drawProjection(state.view, 1, 0, rect)
+  }
+
+  drawHover(rect)
+}
+
+function drawGrid(rect) {
+  const { start, end } = data
+  const span = end - start
+  const wide = rect.width >= 640
+  const steps = wide ? (state.window === '24h' ? 6 : state.window === '7d' ? 7 : 6) : 3
+  ctx.font = '10px Consolas, monospace'
+  ctx.textBaseline = 'middle'
+  for (let i = 0; i <= steps; i += 1) {
+    const t = start + (span / steps) * i
+    const x = xOf(t, rect)
+    ctx.strokeStyle = 'rgba(255,255,255,.055)'
+    ctx.beginPath()
+    ctx.moveTo(x, M.t)
+    ctx.lineTo(x, rect.height - M.b)
+    ctx.stroke()
+    ctx.fillStyle = '#5d6b78'
+    ctx.textAlign = i === 0 ? 'left' : i === steps ? 'right' : 'center'
+    const date = new Date(t)
+    const md = date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+    const label = state.window === '24h'
+      ? (wide ? `${md} ${date.getHours()}时` : `${date.getHours()}时`)
+      : md
+    ctx.fillText(label, x, rect.height - 13)
+  }
+  ctx.textAlign = 'left'
+}
+
+function drawSelectionBand(rect) {
+  if (!state.selected) return
+  const x = xOf(state.selected.at, rect)
+  ctx.fillStyle = 'rgba(122,215,245,.07)'
+  ctx.fillRect(x - 1, M.t, 2, rect.height - M.t - M.b)
+  ctx.strokeStyle = 'rgba(122,215,245,.35)'
+  ctx.setLineDash([3, 4])
+  ctx.beginPath()
+  ctx.moveTo(x, M.t)
+  ctx.lineTo(x, rect.height - M.b)
+  ctx.stroke()
+  ctx.setLineDash([])
+}
+
+function drawProjection(view, alpha, dy, rect) {
+  ctx.save()
+  ctx.globalAlpha = alpha
+  ctx.translate(0, dy)
+  if (view === 'events') drawEvents(rect)
+  if (view === 'stats') drawStats(rect)
+  if (view === 'runs') drawRuns(rect)
+  ctx.restore()
+}
+
+function drawEvents(rect) {
+  const events = filteredEvents()
+  const lanes = SEVERITIES
+  const laneH = (rect.height - M.t - M.b - 40) / lanes.length
+
+  lanes.forEach((lane, index) => {
+    const y = M.t + laneH * (index + 0.5)
+    ctx.fillStyle = '#5d6b78'
+    ctx.font = '10px Consolas, monospace'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(lane.cn, 8, y)
+    ctx.strokeStyle = 'rgba(255,255,255,.04)'
+    ctx.beginPath()
+    ctx.moveTo(M.l, y)
+    ctx.lineTo(rect.width - M.r, y)
+    ctx.stroke()
+  })
+
+  events.forEach(event => {
+    const lane = lanes.findIndex(item => item.key === event.severity)
+    const y = M.t + laneH * (lane + 0.5)
+    const x = xOf(event.at, rect)
+    const selected = state.selected?.id === event.id
+    const linked = linkedRunOf(event)
+
+    ctx.strokeStyle = 'rgba(255,255,255,.16)'
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(x, y + (linked ? 12 : 6))
+    ctx.stroke()
+
+    ctx.beginPath()
+    ctx.arc(x, y, selected ? 6 : 4, 0, Math.PI * 2)
+    ctx.fillStyle = severityMeta(event.severity).color
+    ctx.fill()
+    if (selected) {
+      ctx.beginPath()
+      ctx.arc(x, y, 10, 0, Math.PI * 2)
+      ctx.strokeStyle = severityMeta(event.severity).color
+      ctx.stroke()
+    }
+    if (linked) {
+      ctx.beginPath()
+      ctx.arc(x, y + 14, 2, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(122,215,245,.85)'
+      ctx.fill()
+    }
+  })
+
+  /* 密度带：同一批事件按时间分箱，和「统计」视图用的是同一组箱 */
+  const list = bins()
+  const maxBin = Math.max(1, ...list.map(bin => bin.CRITICAL + bin.HIGH + bin.WARN + bin.PASS))
+  const binW = (rect.width - M.l - M.r) / list.length
+  const top = rect.height - M.b - 30
+  ctx.fillStyle = '#5d6b78'
+  ctx.font = '9px Consolas, monospace'
+  ctx.fillText('密度', 14, top + 8)
+  list.forEach((bin, index) => {
+    const total = bin.CRITICAL + bin.HIGH + bin.WARN + bin.PASS
+    if (!total) return
+    const x = xOf(bin.from, rect) + 2
+    const h = Math.max(2, (total / maxBin) * 18)
+    ctx.fillStyle = 'rgba(36,150,237,.4)'
+    ctx.fillRect(x, top + 22 - h, Math.max(2, binW - 4), h)
+  })
+}
+
+function bins() {
+  const count = state.window === '24h' ? 12 : state.window === '7d' ? 14 : 15
+  const span = data.end - data.start
+  const list = Array.from({ length: count }, (_, index) => ({
+    from: data.start + (span / count) * index,
+    to: data.start + (span / count) * (index + 1),
+    CRITICAL: 0, HIGH: 0, WARN: 0, PASS: 0
+  }))
+  filteredEvents().forEach(event => {
+    const index = Math.min(count - 1, Math.floor(((event.at - data.start) / span) * count))
+    list[index][event.severity] += 1
+  })
+  return list
+}
+
+function drawStats(rect) {
+  const list = bins()
+  const max = Math.max(1, ...list.map(bin => bin.CRITICAL + bin.HIGH + bin.WARN + bin.PASS))
+  const base = rect.height - M.b
+  const usable = rect.height - M.t - M.b - 26
+  const gap = 4
+  const barW = Math.max(6, Math.min(26, (rect.width - M.l - M.r) / list.length - gap))
+
+  const binW = (rect.width - M.l - M.r) / list.length
+  list.forEach((bin, index) => {
+    const x = xOf(bin.from, rect) + (binW - barW) / 2
+    let y = base
+    SEVERITIES.slice().reverse().forEach(lane => {
+      const value = bin[lane.key]
+      if (!value) return
+      const h = (value / max) * usable
+      ctx.fillStyle = lane.color
+      ctx.globalAlpha = 0.82
+      ctx.fillRect(x, y - h, barW, h)
+      ctx.globalAlpha = 1
+      y -= h
+    })
+  })
+
+  ctx.fillStyle = '#5d6b78'
+  ctx.font = '10px Consolas, monospace'
+  const tickStep = Math.max(1, Math.ceil(max / 4))
+  const tickCount = Math.max(1, Math.ceil(max / tickStep))
+  for (let i = 0; i <= tickCount; i += 1) {
+    const value = tickStep * i
+    const y = base - (usable / tickCount) * i
+    ctx.fillText(String(value), 24, y)
+    ctx.strokeStyle = 'rgba(255,255,255,.05)'
+    ctx.beginPath()
+    ctx.moveTo(M.l, y)
+    ctx.lineTo(rect.width - M.r, y)
+    ctx.stroke()
+  }
+
+  if (state.selected) {
+    const index = list.findIndex(bin => state.selected.at >= bin.from && state.selected.at < bin.to)
+    if (index >= 0) {
+      const x = xOf(list[index].from, rect)
+      ctx.strokeStyle = 'rgba(122,215,245,.7)'
+      ctx.strokeRect(x + 1, M.t, binW - 2, base - M.t)
+    }
+  }
+}
+
+function runPositions(rect) {
+  const runs = filteredRuns()
+  const laneH = (rect.height - M.t - M.b) / TOOLS.length
+  const seen = {}
+  return runs.map(run => {
+    const lane = TOOLS.findIndex(item => item.key === run.tool)
+    const count = (seen[run.tool] = (seen[run.tool] || 0) + 1) - 1
+    const row = count % 3
+    const y = M.t + laneH * lane + laneH * 0.5 + (row - 1) * 11
+    return { run, x: xOf(run.at, rect), y, width: Math.max(4, (run.duration / 40) * 54) }
+  })
+}
+
+function drawRuns(rect) {
+  const runs = filteredRuns()
+  const lanes = TOOLS
+  const laneH = (rect.height - M.t - M.b) / lanes.length
+
+  lanes.forEach((lane, index) => {
+    const y = M.t + laneH * (index + 0.5)
+    ctx.fillStyle = '#5d6b78'
+    ctx.font = '10px Consolas, monospace'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(lane.key.split('-')[0], 8, y)
+    ctx.strokeStyle = 'rgba(255,255,255,.04)'
+    ctx.beginPath()
+    ctx.moveTo(M.l, y)
+    ctx.lineTo(rect.width - M.r, y)
+    ctx.stroke()
+  })
+
+  runPositions(rect).forEach(({ run, x, y, width }) => {
+    const selected = state.selected?.id === run.id
+    const color = run.status === 'SUCCESS' ? '#3fb950' : run.status === 'FAILED' ? '#f85149' : '#d29922'
+    ctx.fillStyle = color
+    ctx.globalAlpha = selected ? 1 : 0.78
+    ctx.fillRect(x, y - 3, width, 6)
+    ctx.globalAlpha = 1
+    if (selected) {
+      ctx.strokeStyle = '#e8f2f7'
+      ctx.strokeRect(x - 1, y - 5, width + 2, 10)
+    }
+    if (run.traceId) {
+      ctx.fillStyle = 'rgba(122,215,245,.9)'
+      ctx.fillRect(x, y + 5, 2, 2)
+    }
+  })
+}
+
+function drawHover(rect) {
+  if (!state.hover) { tip.classList.remove('is-on'); return }
+  const item = hitTest(state.hover.x, state.hover.y)
+  if (!item) { tip.classList.remove('is-on'); return }
+
+  const x = xOf(item.at, rect)
+  ctx.strokeStyle = 'rgba(232,242,247,.3)'
+  ctx.setLineDash([2, 3])
+  ctx.beginPath()
+  ctx.moveTo(x, M.t)
+  ctx.lineTo(x, rect.height - M.b)
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  const isRun = item.__type === 'run'
+  tip.innerHTML = `<b>${item.id}</b>` +
+    `<span><i>时间</i><i>${fmtDate(item.at)}</i></span>` +
+    (isRun
+      ? `<span><i>工具</i><i>${toolMeta(item.tool).cn}</i></span><span><i>结果</i><i>${item.status}${item.exitCode === null ? '' : ` · exit ${item.exitCode}`}</i></span><span><i>时长</i><i>${item.duration.toFixed(1)}s</i></span>`
+      : `<span><i>等级</i><i>${severityMeta(item.severity).cn}</i></span><span><i>任务</i><i>${item.taskId}</i></span><span><i>目标</i><i>${item.target}</i></span>`) +
+    `<span><i>关联</i><i>${item.traceId ? '已关联 trace' : '未关联'}</i></span>`
+  tip.style.left = `${Math.min(rect.width - 110, Math.max(110, x))}px`
+  tip.style.top = `${Math.max(84, state.hover.y - 10)}px`
+  tip.classList.add('is-on')
+}
+
+function hitTest(px, py) {
+  const rect = canvas.getBoundingClientRect()
+  if (px < M.l || px > rect.width - M.r) return null
+  if (state.view === 'events') {
+    const laneH = (rect.height - M.t - M.b) / SEVERITIES.length
+    let best = null
+    filteredEvents().forEach(event => {
+      const lane = SEVERITIES.findIndex(item => item.key === event.severity)
+      const x = xOf(event.at, rect)
+      const y = M.t + laneH * (lane + 0.5)
+      if (Math.hypot(px - x, py - y) < 12) best = { ...event, __type: 'event' }
+    })
+    return best
+  }
+  if (state.view === 'runs') {
+    let best = null
+    runPositions(rect).forEach(({ run, x, y, width }) => {
+      if (px >= x - 4 && px <= x + width + 4 && Math.abs(py - y) < 7) best = { ...run, __type: 'run' }
+    })
+    return best
+  }
+  const list = bins()
+  const index = Math.floor(((px - M.l) / (rect.width - M.l - M.r)) * list.length)
+  const bin = list[Math.max(0, Math.min(list.length - 1, index))]
+  if (!bin) return null
+  const total = bin.CRITICAL + bin.HIGH + bin.WARN + bin.PASS
+  if (!total) return null
+  return { __type: 'bin', id: `BIN ${fmtTime(bin.from)}–${fmtTime(bin.to)}`, at: (bin.from + bin.to) / 2, severity: 'WARN', taskId: `${total} 条`, target: '聚合', traceId: null }
+}
+
+canvas.addEventListener('pointermove', event => {
+  const rect = canvas.getBoundingClientRect()
+  state.hover = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  draw()
+})
+canvas.addEventListener('pointerleave', () => { state.hover = null; tip.classList.remove('is-on'); draw() })
+canvas.addEventListener('click', () => {
+  const item = state.hover ? hitTest(state.hover.x, state.hover.y) : null
+  if (item && item.__type !== 'bin') selectItem(item)
+})
+
+/* ---------- 渲染侧栏 ---------- */
+function renderAll() {
+  renderSelection()
+  renderProjections()
+  renderTotals()
+  renderLegend()
+  renderDrawer()
+  renderSummary()
+  draw()
+}
+
+function renderSummary() {
+  const linked = data.events.filter(event => event.traceId).length
+  document.getElementById('windowSummary').textContent =
+    `窗口 ${data.events.length} 条纠察 · ${data.runs.length} 条运行 · ${linked} 条已关联`
+  document.getElementById('axisAside').textContent =
+    `${state.window} · ${state.view === 'runs' ? `${filteredRuns().length} 条运行` : `${filteredEvents().length} 条纠察`}`
+}
+
+function renderSelection() {
+  const host = document.getElementById('sel')
+  const aside = document.getElementById('selAside')
+  if (!state.selected) {
+    aside.textContent = '—'
+    host.innerHTML = `<p style="color:var(--muted);font-size:11.5px;line-height:1.7">在上方任意视图点一个标记，或按 ←/→ 逐个走。切视图不丢选中。</p>`
+    return
+  }
+  const item = state.selected
+  const isRun = item.__type === 'run' || String(item.id).startsWith('RUN')
+  aside.textContent = isRun ? 'RUN' : 'EVENT'
+  if (isRun) {
+    const linked = linkedEventOf(item)
+    host.innerHTML = `
+      <div class="sel-type"><span>运行记录 · ${fmtDate(item.at)}</span><span class="kind ${item.status === 'SUCCESS' ? 'kind--ok' : item.status === 'FAILED' ? 'kind--bad' : 'kind--warn'}">${item.status}</span></div>
+      <h3>${item.id}</h3>
+      <p>${item.toolCn} · 时长 ${item.duration.toFixed(1)}s · 退出码 ${item.exitCode ?? '—'}</p>
+      <dl>
+        <dt>traceId</dt><dd>${item.traceId || '—'}</dd>
+        <dt>纠察</dt><dd>${linked ? `${linked.id} · ${severityMeta(linked.severity).cn}` : '未找到对应纠察'}</dd>
+      </dl>
+      <div class="link-row ${linked ? '' : 'is-off'}">${linked ? `已关联 <b>${linked.id}</b> · 切到「纠察」可看到高亮` : item.traceId ? '有 traceId，但纠察里没有命中（可能超出窗口）' : '没有 traceId · 无法定位纠察，不做时间邻近猜测'}</div>`
+  } else {
+    const linked = linkedRunOf(item)
+    host.innerHTML = `
+      <div class="sel-type"><span>纠察事件 · ${fmtDate(item.at)}</span><span class="kind kind--${item.severity === 'PASS' ? 'ok' : item.severity === 'CRITICAL' ? 'bad' : 'warn'}">${severityMeta(item.severity).cn}</span></div>
+      <h3>${item.id}</h3>
+      <p>${item.taskId} · ${item.category} · ${item.target}</p>
+      <dl>
+        <dt>traceId</dt><dd>${item.traceId || '—'}</dd>
+        <dt>运行</dt><dd>${linked ? `${linked.id} · ${linked.status}` : '未找到对应命令'}</dd>
+      </dl>
+      <div class="link-row ${linked ? '' : 'is-off'}">${linked ? `已关联 <b>${linked.id}</b> · 切到「运行」可看到高亮` : item.traceId ? `有 traceId（${item.traceId}），但运行记录里没有命中——可能超出窗口或未被采集` : '没有 traceId · 无法定位运行记录'}</div>`
+  }
+}
+
+function renderProjections() {
+  const host = document.getElementById('projections')
+  const aside = document.getElementById('projAside')
+  if (!state.selected) {
+    aside.textContent = '—'
+    host.innerHTML = `<p style="margin:0;color:var(--muted);font-size:11.5px;line-height:1.7">选中对象后，这里显示它在另外两个视图里落在哪里，以及「有没有对应物」。</p>`
+    return
+  }
+  const item = state.selected
+  const isRun = item.__type === 'run' || String(item.id).startsWith('RUN')
+  const event = isRun ? linkedEventOf(item) : item
+  const run = isRun ? item : linkedRunOf(item)
+  aside.textContent = '2 / 3'
+  const bin = event ? bins().find(b => event.at >= b.from && event.at < b.to) : null
+  host.innerHTML = `
+    <div class="projection ${state.view === 'events' ? 'is-on' : ''}">
+      <b>纠察</b>
+      ${event ? `${event.id} · ${severityMeta(event.severity).cn} · ${event.taskId}` : '没有对应事件'}
+    </div>
+    <div class="projection ${state.view === 'stats' ? 'is-on' : ''}">
+      <b>统计</b>
+      ${bin ? `${fmtTime(bin.from)}–${fmtTime(bin.to)} 这一箱：${bin.CRITICAL + bin.HIGH + bin.WARN + bin.PASS} 条` : '窗口内没有可归入的分箱'}
+    </div>
+    <div class="projection ${state.view === 'runs' ? 'is-on' : ''}">
+      <b>运行</b>
+      ${run ? `${run.id} · ${toolMeta(run.tool).cn} · ${run.status}` : '没有对应命令（未关联 traceId）'}
+    </div>`
+}
+
+function renderTotals() {
+  const host = document.getElementById('totals')
+  const seed = state.window === '24h' ? 11 : state.window === '7d' ? 23 : 31
+  const random = rng(seed)
+  const rows = CATEGORIES.map(category => ({ label: category, count: Math.round(8 + random() * 34) }))
+  const max = Math.max(...rows.map(row => row.count))
+  host.innerHTML = rows.map(row => `
+    <div class="total-row">
+      <span><b>${row.label}</b></span>
+      <span class="total-track"><span class="total-fill" style="width:${(row.count / max) * 100}%"></span></span>
+      <em>${row.count}</em>
+    </div>`).join('')
+}
+
+function renderLegend() {
+  const host = document.getElementById('legend')
+  if (state.view === 'stats') {
+    const items = SEVERITIES.map(item => '<span><i style="background:' + item.color + '"></i>' + item.cn + '</span>').join('')
+    host.innerHTML = items + '<span>同一批纠察按时间分箱 · 窗口内前端聚合</span>'
+    return
+  }
+  if (state.view === 'runs') {
+    host.innerHTML = `
+      <span><i style="background:#3fb950"></i>SUCCESS</span>
+      <span><i style="background:#d29922"></i>TIMEOUT</span>
+      <span><i style="background:#f85149"></i>FAILED</span>
+      <span><i style="background:#7ad7f5;width:3px"></i>已关联 trace</span>`
+    return
+  }
+  host.innerHTML = `
+    ${SEVERITIES.map(item => `<span><i style="background:${item.color}"></i>${item.cn}</span>`).join('')}
+    <span><i style="background:#7ad7f5;width:3px"></i>带小点 = 已关联运行</span>`
+}
+
+function renderDrawer() {
+  const item = state.selected
+  const subject = document.getElementById('drawerSubject')
+  document.getElementById('drawerHint').textContent = item ? '按 Enter 展开 / Esc 关闭' : '点击图上任意标记 / 按 Enter 打开'
+  if (!item) {
+    subject.textContent = '未选择'
+    drawerBody.innerHTML = `<p style="margin:0;color:var(--muted);font-size:11.5px">先在时间轴上选一个对象。</p>`
+    return
+  }
+  subject.textContent = item.id
+  if (state.drawer.tab === 'evidence') {
+    drawerBody.innerHTML = `
+      <div class="evidence">
+        <div><b>${item.id}</b><span>${item.__type === 'run' || String(item.id).startsWith('RUN') ? '命令执行记录' : '纠察事件'} · ${fmtDate(item.at)}</span></div>
+        <div><b>traceId</b><span>${item.traceId || '—（未关联，不做猜测）'}</span></div>
+        <div><b>证据链</b><span>${item.__type === 'run' || String(item.id).startsWith('RUN') ? '命令 · 退出码 · 标准输出' : '任务 · 目标 · 等级 · 关联命令'}</span></div>
+      </div>
+      <pre>${JSON.stringify({
+        id: item.id,
+        traceId: item.traceId,
+        at: new Date(item.at).toISOString(),
+        ...(item.__type === 'run' || String(item.id).startsWith('RUN')
+          ? { tool: item.tool, status: item.status, exitCode: item.exitCode, durationSeconds: Number(item.duration.toFixed(1)) }
+          : { taskId: item.taskId, severity: item.severity, target: item.target, category: item.category })
+      }, null, 2)}</pre>`
+    return
+  }
+  if (state.drawer.tab === 'output') {
+    drawerBody.innerHTML = `<pre>$ ${
+      item.tool ? `${item.tool} --target ${item.target || 'db-1'}` : `inspector check ${item.taskId}`
+    }
+connecting…
+[ok] handshake 12ms
+[ok] query 240ms
+${item.status === 'FAILED' || item.severity === 'CRITICAL' ? '[err] upstream refused connection (exit 1)' : '[ok] rows 128, checks passed'}
+elapsed ${(item.duration || 1.2).toFixed(1)}s</pre>`
+    return
+  }
+  drawerBody.innerHTML = `<pre>${[
+    `span ${item.id} @ ${fmtDate(item.at)}`,
+    `├─ inspector: ${item.taskId || item.tool}`,
+    `├─ severity/status: ${item.severity || item.status}`,
+    `└─ trace: ${item.traceId || 'unlinked (no guess)'}`
+  ].join('\n')}</pre>`
+}
+
+/* ---------- 启动 ---------- */
+buildChips()
+renderAll()
+requestAnimationFrame(function loop(now) {
+  draw()
+  if (state.previous && now - state.transitionStart > 460) { state.previous = null; draw() }
+  requestAnimationFrame(loop)
+})
+window.addEventListener('resize', draw)
+if (typeof ResizeObserver === 'function') new ResizeObserver(() => draw()).observe(document.querySelector('.axis-wrap'))
+</script>
+</body>
+</html>

@@ -18,6 +18,7 @@ const routeMetadata = Object.freeze({
   ExecutionTrace: Object.freeze({ personalGroup: 'agent', pageFlow: 'agent' }),
   AgentPersona: Object.freeze({ personalGroup: 'agent', pageFlow: null }),
   AgentModule: Object.freeze({ personalGroup: 'agent', pageFlow: 'agent' }),
+  InspectorDesk: Object.freeze({ personalGroup: 'memory', pageFlow: null }),
   InspectorCenter: Object.freeze({ personalGroup: 'memory', pageFlow: 'memory' }),
   InspectorStatistics: Object.freeze({ personalGroup: 'memory', pageFlow: 'memory' }),
   OperationRunHistory: Object.freeze({ personalGroup: 'memory', pageFlow: null }),

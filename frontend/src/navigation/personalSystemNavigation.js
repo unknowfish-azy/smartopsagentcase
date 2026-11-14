@@ -93,6 +93,7 @@ export const personalSystemGroups = Object.freeze([
     routeName: 'InspectorCenter',
     to: '/inspector',
     children: [
+      { label: 'INSPECTOR DESK', cn: '洞察台', routeName: 'InspectorDesk', to: '/inspector/desk' },
       { label: 'INSPECTOR CENTER', cn: '纠察中心', routeName: 'InspectorCenter', to: '/inspector' },
       { label: 'STATISTICS', cn: '统计', routeName: 'InspectorStatistics', to: '/inspector/statistics' },
       { label: 'RUN HISTORY', cn: '运行记录', routeName: 'OperationRunHistory', to: '/operations/runs' }

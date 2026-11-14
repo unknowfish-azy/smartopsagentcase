@@ -67,6 +67,7 @@ const routes = [
             },
             { path: 'health', name: 'HealthCenter', component: () => import('../views/diagnostics/HealthCenterView.vue'), meta: { ...routeMetaFor('HealthCenter'), section: 'SERVICE DIAGNOSTICS / 健康诊断' } },
             { path: 'milestones', name: 'MilestoneHall', component: () => import('../views/celebrate/AchievementsView.vue'), meta: { ...routeMetaFor('MilestoneHall'), section: 'MILESTONE HALL / 里程碑战报' } },
+            { path: 'inspector/desk', name: 'InspectorDesk', component: () => import('../views/inspector/InspectorDeskView.vue'), meta: { ...routeMetaFor('InspectorDesk'), section: 'INSPECTOR DESK / 洞察台' } },
             { path: 'inspector', name: 'InspectorCenter', component: () => import('../views/inspector/InspectorCenterView.vue'), meta: routeMetaFor('InspectorCenter') },
             { path: 'inspector/events/:id', name: 'InspectorDetail', component: () => import('../views/inspector/InspectorDetailView.vue'), meta: routeMetaFor('InspectorDetail') },
             { path: 'inspector/statistics', name: 'InspectorStatistics', component: () => import('../views/inspector/InspectorStatisticsView.vue'), meta: routeMetaFor('InspectorStatistics') },
