@@ -86,18 +86,18 @@ function jsonPretty(obj) {
 </script>
 
 <style scoped>
-.drawer { background: #151A21; border: 1px solid #1E2630; border-radius: 12px; padding: 12px 16px; }
+.drawer { background: var(--ds-surface-raised); border: 1px solid var(--ds-surface-overlay); border-radius: 12px; padding: 12px 16px; }
 .drawer-head { display: flex; gap: 16px; align-items: center; }
-.drawer-id { color: #E8F2F7; font: 12px Consolas, monospace; }
+.drawer-id { color: var(--smart-text); font: 12px Consolas, monospace; }
 .drawer-tabs { display: flex; gap: 2px; margin-left: auto; }
-.drawer-tabs button { background: transparent; border: 0; color: #6B7D8C; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-.drawer-tabs button[aria-selected="true"] { background: #1E2630; color: #E8F2F7; }
-.drawer-hint { color: #6B7D8C; font-size: 12px; }
-.drawer-toggle { background: #1E2630; border: 0; color: #E8F2F7; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.drawer-tabs button { background: transparent; border: 0; color: var(--smart-muted); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.drawer-tabs button[aria-selected="true"] { background: var(--ds-surface-overlay); color: var(--smart-text); }
+.drawer-hint { color: var(--smart-muted); font-size: 12px; }
+.drawer-toggle { background: var(--ds-surface-overlay); border: 0; color: var(--smart-text); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
 .drawer-body { padding-top: 12px; }
 .evidence { display: grid; gap: 6px; margin-bottom: 10px; }
-.evidence div { display: flex; gap: 10px; padding: 7px 9px; border-left: 2px solid #1E2630; background: rgba(255,255,255,.02); color: #92A6B5; font-size: 12px; }
-.evidence div b { color: #E8F2F7; font: 11px Consolas, monospace; min-width: 74px; }
-.drawer-body pre { margin: 0; padding: 12px; border: 1px solid #1E2630; border-radius: 4px; background: #0b0f14; color: #cddbe6; font: 11px/1.7 Consolas, monospace; overflow: auto; max-height: 240px; }
-.muted { color: #6B7D8C; font-size: 12px; }
+.evidence div { display: flex; gap: 10px; padding: 7px 9px; border-left: 2px solid var(--ds-surface-overlay); background: color-mix(in srgb, var(--smart-surface) 2%, transparent); color: var(--smart-muted); font-size: 12px; }
+.evidence div b { color: var(--smart-text); font: 11px Consolas, monospace; min-width: 74px; }
+.drawer-body pre { margin: 0; padding: 12px; border: 1px solid var(--ds-surface-overlay); border-radius: 4px; background: var(--smart-bg); color: var(--smart-text); font: 11px/1.7 Consolas, monospace; overflow: auto; max-height: 240px; }
+.muted { color: var(--smart-muted); font-size: 12px; }
 </style>

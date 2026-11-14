@@ -67,13 +67,13 @@ const projections = computed(() => {
 </script>
 
 <style scoped>
-.side-card { background: #151A21; border: 1px solid #1E2630; border-radius: 12px; padding: 16px; }
+.side-card { background: var(--ds-surface-raised); border: 1px solid var(--ds-surface-overlay); border-radius: 12px; padding: 16px; }
 .side-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .side-head h3 { margin: 0; font-size: 14px; }
-.muted { color: #6B7D8C; font-size: 12px; }
+.muted { color: var(--smart-muted); font-size: 12px; }
 .proj-list { display: grid; gap: 8px; }
-.projection { display: grid; gap: 3px; padding: 10px; border: 1px solid #1E2630; border-radius: 6px; color: #92A6B5; font-size: 12px; }
-.projection b { color: #E8F2F7; font-size: 12px; letter-spacing: .04em; }
-.projection.is-on { border-color: rgba(36,150,237,.45); background: rgba(36,150,237,.07); }
-.projection.is-linked { color: #E8F2F7; }
+.projection { display: grid; gap: 3px; padding: 10px; border: 1px solid var(--ds-surface-overlay); border-radius: 6px; color: var(--smart-muted); font-size: 12px; }
+.projection b { color: var(--smart-text); font-size: 12px; letter-spacing: .04em; }
+.projection.is-on { border-color: color-mix(in srgb, var(--smart-primary) 45%, transparent); background: color-mix(in srgb, var(--smart-primary) 7%, transparent); }
+.projection.is-linked { color: var(--smart-text); }
 </style>
