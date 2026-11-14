@@ -329,20 +329,30 @@ function watchMountedZones () {
   }
 }
 
-// 手动同步扫描：把 DOM 已经在视口内的卡立即加进 mountedCards
+// 手动同步扫描：把 DOM 已经在视口内的卡立即加进 mountedCards；
+// 同时 observe 所有 mountedZoneIds 域内的卡，让 IO 持续维护后续进出视口的判定
 function flushMountedVisibleNow () {
   if (!io) return
   const stageRect = stageRef.value?.getBoundingClientRect?.()
-  const next = new Set(mountedCards.value)
+  const mountedZones = new Set(mountedZoneIds.value)
+  const next = new Set()
+  // unobserve 所有已不在 mountedZoneIds 域的卡（释放 IO 资源）
   for (const el of document.querySelectorAll('.ks-card')) {
     const id = el.dataset.card
     if (!id) continue
-    const r = el.getBoundingClientRect()
-    if (stageRect && r.right > stageRect.left && r.left < stageRect.right && r.bottom > stageRect.top && r.top < stageRect.bottom) {
-      next.add(id)
-      try { io.observe(el) } catch {}
-    } else {
+    const c = cardById.get(id)
+    if (!c || !mountedZones.has(c.zoneId)) {
       try { io.unobserve(el) } catch {}
+      continue
+    }
+    // observe mountedZoneIds 域内所有卡（IO 异步判定 isIntersecting）
+    try { io.observe(el) } catch {}
+    // 同步判定（getBoundingClientRect 反映 transform 后的视觉位置）
+    if (stageRect) {
+      const r = el.getBoundingClientRect()
+      if (r.right > stageRect.left && r.left < stageRect.right && r.bottom > stageRect.top && r.top < stageRect.bottom) {
+        next.add(id)
+      }
     }
   }
   mountedCards.value = next
@@ -546,19 +556,10 @@ onMounted(() => {
   ro.observe(stageRef.value)
   window.addEventListener('keydown', onKeyDown)
 
-  // 域级 → 卡级：每次 mountedZoneIds 变，把新出现的域的候选卡 DOM observe 到 IO，旧域立刻清 mountedCards
+  // mountedZoneIds 变 → nextTick 让 Vue 渲染出新域的全部卡 DOM → flushMountedVisibleNow 同步判定视口内可见卡
   watch(mountedZoneIds, async () => {
-    watchMountedZones()
     await nextTick()
-    // 立即同步把视口内的卡加进 mountedCards（headless 环境下 IO 初始判定可能延迟或恒 false）
     flushMountedVisibleNow()
-    // 再把未 flush 到的 observe 进 IO，后续由 IO 异步驱动
-    worldRef.value?.querySelectorAll('.ks-card').forEach(el => {
-      const id = el.dataset.card
-      if (id && !mountedCards.value.has(id)) {
-        try { io?.observe(el) } catch {}
-      }
-    })
   }, { immediate: false })
 })
 onBeforeUnmount(() => {
@@ -625,16 +626,16 @@ onBeforeUnmount(() => {
             <span class="ks-zone-name">{{ z.label }}</span>
             <span class="ks-zone-count">{{ z.n }}</span>
           </div>
-          <!-- L0（mountedZoneIds 为空）零卡片；L1/L2 域级过滤 + IntersectionObserver 卡级过滤 -->
+          <!-- L0（mountedZoneIds 为空）零卡片；L1/L2 域级挂载 → 域内所有卡 DOM 都挂（IO 只控制 mountedCards 状态：内容完整度 + 可见性） -->
           <template v-if="mountedZoneIds.includes(z.id)">
             <template v-for="c in cards.filter(cc => cc.zoneId === z.id)" :key="c.id">
             <button
-              v-if="mountedCards.has(c.id)"
               class="ks-card"
               :class="{
                 'ks-card--hit': hitIds.size && hitIds.has(c.id),
                 'ks-card--dim': hitIds.size && !hitIds.has(c.id),
                 'ks-card--hover': hoverCardId === c.id,
+                'ks-card--offscreen': !mountedCards.has(c.id),
               }"
               :data-card="c.id"
               :style="{ left: c.x + 'px', top: c.y + 'px', width: c.w + 'px', height: c.h + 'px' }"

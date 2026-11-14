@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>预测面 · FORECAST — 设计稿（MLP + GRU 引擎传感器时序预测）</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:#151a21; --card-2:#1b212a; --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.14);
+    --text:#e8f2f7; --muted:#92a6b5; --dim:#5d6b78;
+    --accent:#2496ed; --cyan:#7ad7f5; --ok:#3fb950; --warn:#d29922; --bad:#f85149;
+    --mono:Consolas,"Cascadia Mono",ui-monospace,monospace;
+    --cn:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --r:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font-family:var(--cn);font-size:14px;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  .mono{font-family:var(--mono);letter-spacing:.08em}
+
+  /* ---------- 侧栏（静态示意，用于标明落位） ---------- */
+  .rail{position:fixed;inset:0 auto 0 0;width:236px;padding:18px 14px;border-right:1px solid var(--line);background:#0b0f14;display:flex;flex-direction:column;gap:14px;overflow:auto}
+  .wordmark{display:grid;gap:3px;padding:2px 6px 14px;border-bottom:1px solid var(--line)}
+  .wordmark b{font-size:13px;letter-spacing:.14em}
+  .wordmark span{font-size:11px;color:var(--muted)}
+  .nav-group{display:grid;gap:2px}
+  .nav-label{display:flex;justify-content:space-between;margin:10px 6px 4px;color:var(--dim);font:10px var(--mono);letter-spacing:.16em}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:4px;color:var(--muted);font-size:12.5px}
+  .nav-item i{width:14px;height:14px;border:1px solid currentColor;border-radius:3px;opacity:.5;flex:none}
+  .nav-item small{margin-left:auto;color:var(--dim);font:9px var(--mono)}
+  .nav-item.is-active{background:rgba(36,150,237,.14);color:var(--text);box-shadow:inset 2px 0 0 var(--accent)}
+  .nav-child{padding-left:26px;font-size:12px}
+  .nav-child.is-on{color:var(--cyan);background:rgba(122,215,245,.08);box-shadow:inset 2px 0 0 var(--cyan)}
+
+  /* ---------- 主区 ---------- */
+  .main{margin-left:236px;min-height:100%}
+  .topbar{display:flex;align-items:center;gap:14px;padding:12px 24px;border-bottom:1px solid var(--line);color:var(--muted);font:11px var(--mono);letter-spacing:.12em}
+  .topbar .env{margin-left:auto;display:flex;gap:16px}
+  .topbar b{color:var(--text);font-weight:500}
+  .page{max-width:1560px;padding:22px 24px 40px}
+
+  .page-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .eyebrow{margin:0 0 10px;color:var(--cyan);font:10px var(--mono);letter-spacing:.22em}
+  h1{margin:0;font-size:clamp(30px,3.4vw,44px);font-weight:500;letter-spacing:.01em;line-height:1.05}
+  .lede{max-width:70ch;margin:12px 0 0;color:var(--muted);font-size:13px;line-height:1.8}
+  .state-chips{display:grid;gap:6px;justify-items:end;min-width:230px}
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border:1px solid var(--line-2);border-radius:999px;color:var(--muted);font:10px var(--mono);letter-spacing:.08em}
+  .chip b{color:var(--text);font-weight:500}
+  .chip--demo{border-color:rgba(210,153,34,.5);color:var(--warn)}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .dot--live{background:var(--ok);box-shadow:0 0 0 3px rgba(63,185,80,.16)}
+
+  /* ---------- 工具栏 ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .tool{display:flex;align-items:center;gap:8px}
+  .tool > span{color:var(--dim);font:9.5px var(--mono);letter-spacing:.14em}
+  .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:999px;overflow:hidden}
+  .seg button{padding:5px 11px;color:var(--muted);font:11px var(--mono);letter-spacing:.06em}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:rgba(36,150,237,.16);color:var(--text)}
+  .btn{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:5px 12px;border:1px solid var(--line-2);border-radius:999px;color:var(--muted);font-size:12px}
+  .btn:hover{color:var(--text);border-color:var(--muted)}
+  .btn--on{border-color:var(--accent);color:var(--text);background:rgba(36,150,237,.12)}
+  .sensors{display:flex;flex-wrap:wrap;gap:6px}
+  .sensor{padding:4px 9px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font:10.5px var(--mono);letter-spacing:.05em}
+  .sensor[aria-pressed="true"]{border-color:var(--cyan);color:var(--text);background:rgba(122,215,245,.08)}
+
+  /* ---------- 网格 ---------- */
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 344px;gap:16px;margin-top:18px;align-items:stretch}
+  .left-stack{display:grid;grid-template-rows:minmax(0,1fr);gap:16px;min-width:0}
+  .left-stack > .card{display:flex;flex-direction:column}
+  .bottom-row{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;margin-top:16px;align-items:start}
+  .card{border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}
+  .card-head h2{margin:0;font-size:14px;font-weight:500;letter-spacing:.03em}
+  .card-head .en{display:block;margin-top:4px;color:var(--dim);font:8.5px var(--mono);letter-spacing:.2em}
+  .card-head .aside{color:var(--muted);font:9.5px var(--mono);letter-spacing:.1em;white-space:nowrap}
+  .tag{padding:2px 7px;border:1px solid var(--line-2);border-radius:3px;color:var(--dim);font:8px var(--mono);letter-spacing:.14em}
+  .tag--demo{border-color:rgba(210,153,34,.45);color:var(--warn)}
+
+  /* 图表卡 */
+  .chart-wrap{position:relative;flex:1;min-height:460px}
+  #chart{display:block;width:100%;height:100%}
+  .chart-legend{display:flex;flex-wrap:wrap;gap:14px;padding:0 15px 12px;color:var(--muted);font-size:11px}
+  .chart-legend i{display:inline-block;width:14px;height:0;margin-right:6px;vertical-align:middle;border-top:2px solid currentColor}
+  .legend--hist{color:var(--accent)}
+  .legend--pred{color:var(--cyan)}
+  .legend--shadow{color:var(--muted)}
+  .legend--band{color:var(--cyan);opacity:.55}
+  .legend--warn{color:var(--warn)}
+  .legend--bad{color:var(--bad)}
+  .tooltip{position:absolute;z-index:5;min-width:150px;padding:9px 11px;border:1px solid var(--line-2);border-radius:5px;background:var(--card-2);color:var(--text);font:11px/1.6 var(--mono);pointer-events:none;opacity:0;transform:translate(-50%,-110%);transition:opacity .12s}
+  .tooltip.is-on{opacity:1}
+  .tooltip b{color:var(--cyan)}
+  .tooltip span{display:flex;justify-content:space-between;gap:12px;color:var(--muted)}
+
+  .residual{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding:12px 15px;border-top:1px solid var(--line);color:var(--muted);font:10px var(--mono);letter-spacing:.08em}
+  #residual{display:block;width:100%;height:44px}
+
+  /* 侧栏卡片 */
+  .side{display:grid;gap:16px}
+  .arch{display:flex;align-items:center;gap:6px;padding:14px 15px 4px;overflow:auto}
+  .layer{display:grid;justify-items:center;gap:3px;padding:7px 8px;border:1px solid var(--line-2);border-radius:4px;background:rgba(36,150,237,.06);color:var(--text);font:10px var(--mono);letter-spacing:.04em;white-space:nowrap}
+  .layer small{color:var(--dim);font-size:8px}
+  .layer--io{background:rgba(122,215,245,.08);border-color:rgba(122,215,245,.35)}
+  .arrow{color:var(--dim);font-size:10px}
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:12px 15px 0;background:var(--line);border:1px solid var(--line)}
+  .metric{background:var(--card);padding:9px 10px}
+  .metric span{display:block;color:var(--dim);font:8.5px var(--mono);letter-spacing:.14em}
+  .metric b{display:block;margin-top:5px;font:16px var(--mono);font-weight:500;font-variant-numeric:tabular-nums}
+  .metric em{font-style:normal;color:var(--dim);font-size:10px}
+  .model-foot{display:flex;justify-content:space-between;gap:10px;padding:10px 15px 13px;color:var(--dim);font:9px var(--mono);letter-spacing:.08em}
+  .model-foot b{color:var(--muted);font-weight:500}
+
+  .gates{display:grid;gap:9px;padding:13px 15px 15px}
+  .gate{display:grid;grid-template-columns:64px minmax(0,1fr) 34px;align-items:center;gap:9px;color:var(--muted);font-size:11px}
+  .gate.is-on{color:var(--text)}
+  .gate-track{position:relative;height:4px;background:var(--line)}
+  .gate-fill{position:absolute;inset:0;background:var(--accent);transform-origin:0 50%;transition:transform .5s cubic-bezier(.22,1,.36,1)}
+  .gate.is-on .gate-fill{background:var(--cyan)}
+  .gate b{text-align:right;color:var(--dim);font:10px var(--mono);font-variant-numeric:tabular-nums}
+  .gate.is-on b{color:var(--text)}
+
+  .crossings{display:grid;gap:1px;background:var(--line)}
+  .crossing{display:grid;gap:3px;padding:11px 15px;background:var(--card)}
+  .crossing .row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .crossing b{font:12px var(--cn);font-weight:500}
+  .crossing .when{color:var(--warn);font:10px var(--mono)}
+  .crossing.is-crit .when{color:var(--bad)}
+  .crossing small{color:var(--dim);font:9.5px var(--mono);letter-spacing:.06em}
+  .crossing:hover{background:var(--card-2)}
+  .crossing-empty{padding:16px 15px;color:var(--muted);font-size:12px;line-height:1.7}
+
+  .sources{width:100%;border-collapse:collapse;font-size:11.5px}
+  .sources th,.sources td{padding:7px 15px;text-align:left;border-top:1px solid var(--line);color:var(--muted)}
+  .sources th{color:var(--dim);font:8.5px var(--mono);letter-spacing:.12em;border-top:0}
+  .sources td b{color:var(--text);font-weight:500}
+  .sources td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  .sources tr:hover td{background:var(--card-2)}
+
+  /* 训练条 */
+  .train-strip{display:grid;grid-template-columns:minmax(0,1fr) 220px auto;gap:18px;align-items:center;padding:14px 16px}
+  .train-copy h2{margin:0 0 4px;font-size:13px;font-weight:500}
+  .train-copy p{margin:0;color:var(--muted);font-size:11.5px;line-height:1.7}
+  #loss{display:block;width:100%;height:56px}
+  .gate-state{display:grid;gap:4px;justify-items:end;color:var(--muted);font:10px var(--mono);letter-spacing:.08em}
+  .gate-state b{color:var(--ok);font-weight:500}
+  .gate-state b.is-warn{color:var(--warn)}
+
+  .page-foot{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid var(--line);color:var(--dim);font:9px var(--mono);letter-spacing:.12em}
+  .page-foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:1180px){
+    .rail{display:none}
+    .main{margin-left:0}
+    .grid{grid-template-columns:minmax(0,1fr)}
+    .side{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .side > .card:last-child{grid-column:1 / -1}
+    .train-strip{grid-template-columns:minmax(0,1fr)}
+    .gate-state{grid-auto-flow:column;justify-items:start;gap:16px}
+  }
+  @media (max-width:900px){
+    .bottom-row{grid-template-columns:minmax(0,1fr)}
+  }
+  @media (max-width:760px){
+    .page{padding:16px 14px 28px}
+    .page-head{grid-template-columns:minmax(0,1fr)}
+    .state-chips{justify-items:start}
+    .side{grid-template-columns:minmax(0,1fr)}
+    .chart-wrap{height:340px}
+    .train-strip{grid-template-columns:minmax(0,1fr)}
+    .gate-state{justify-items:start}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+  }
+</style>
+</head>
+<body>
+<aside class="rail" aria-label="侧栏示意">
+  <div class="wordmark"><b>SMARTOPS AGENT</b><span>个人空间 · 我的工作台</span></div>
+  <div class="nav-group">
+    <span class="nav-label"><i>PERSONAL SYSTEM</i><i>01</i></span>
+    <a class="nav-item"><i></i>HOME<small>01</small></a>
+    <a class="nav-item"><i></i>AI CHAT<small>02</small></a>
+    <a class="nav-item"><i></i>INSIGHTS<small>03</small></a>
+    <a class="nav-item"><i></i>知识库<small>05</small></a>
+    <a class="nav-item"><i></i>HARBOR<small>10</small></a>
+    <a class="nav-item"><i></i>OPERATIONS<small>11</small></a>
+    <a class="nav-item"><i></i>MODELS<small>14</small></a>
+    <a class="nav-item"><i></i>AGENT<small>15</small></a>
+    <a class="nav-item"><i></i>MEMORY<small>16</small></a>
+    <a class="nav-item"><i></i>SENTINEL<small>17</small></a>
+    <a class="nav-child">监控台</a>
+    <a class="nav-child">脚本库</a>
+    <a class="nav-child">告警中心</a>
+    <a class="nav-child">工单中心</a>
+    <a class="nav-child">守护 Agent</a>
+    <a class="nav-child is-on">预测面 · FORECAST</a>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <span>SENTINEL / FORECAST</span>
+    <span class="env"><span>MODEL <b>v3.2</b></span><span>FRESH <b>3s</b></span><span>MODE <b>DEMO</b></span></span>
+  </header>
+
+  <main class="page">
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">PREDICTIVE SENTINEL · MLP + GRU · 引擎传感器</p>
+        <h1>预测面</h1>
+        <p class="lede">
+          用 12 步传感器窗口预测未来 15–120 秒的读数与越界概率。图上同时给出历史、
+          中位数预测与 p10–p90 区间；右侧说明模型、门控权重与"还有多久会越线"。
+          预测只是证据，越界仍需人工确认后才进入告警与工单链路。
+        </p>
+      </div>
+      <div class="state-chips">
+        <span class="chip"><span class="dot dot--live"></span>数据流 <b>正常</b></span>
+        <span class="chip">模型 <b>v3.2</b> · 影子 <b>v3.3</b></span>
+        <span class="chip chip--demo">DEMO · 虚构示例，非真实读数</span>
+      </div>
+    </header>
+
+    <div class="toolbar" role="toolbar" aria-label="预测面控制">
+      <div class="tool"><span>视野</span>
+        <div class="seg" id="horizon" role="group" aria-label="预测视野">
+          <button aria-pressed="false" data-h="15">15s</button>
+          <button aria-pressed="true" data-h="30">30s</button>
+          <button aria-pressed="false" data-h="60">60s</button>
+          <button aria-pressed="false" data-h="120">120s</button>
+        </div>
+      </div>
+      <div class="tool"><span>传感器</span>
+        <div class="sensors" id="sensors" role="group" aria-label="主序列传感器"></div>
+      </div>
+      <div class="tool"><span>对比</span>
+        <button class="btn" id="shadowBtn" aria-pressed="false">影子 v3.3</button>
+      </div>
+      <div class="tool"><span>回放</span>
+        <button class="btn btn--on" id="playBtn" aria-pressed="true">暂停</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="left-stack">
+      <section class="card" aria-labelledby="chart-title">
+        <div class="card-head">
+          <div>
+            <h2 id="chart-title">预测面 · <span id="chartSensor">冷却液温度 ECT</span></h2>
+            <span class="en">FORECAST PLANE · HISTORY / MEDIAN / p10–p90</span>
+          </div>
+          <span class="aside" id="chartAside">窗口 −120s → +30s</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart" role="img" aria-label="历史序列与预测区间示意图"></canvas>
+          <div class="tooltip" id="tooltip"></div>
+        </div>
+        <div class="chart-legend">
+          <span class="legend--hist"><i></i>历史</span>
+          <span class="legend--pred"><i style="border-top-style:dashed"></i>预测中位数</span>
+          <span class="legend--band"><i style="border-top:6px solid"></i>p10–p90</span>
+          <span class="legend--shadow"><i style="border-top-style:dotted"></i>影子模型</span>
+          <span class="legend--warn"><i style="border-top-style:dashed"></i>预警阈值</span>
+          <span class="legend--bad"><i style="border-top-style:dashed"></i>越界阈值</span>
+        </div>
+        <div class="residual">
+          <span>残差 / RÉSIDU</span>
+          <canvas id="residual" aria-label="残差条"></canvas>
+          <span id="residualLabel">MAE 1.84</span>
+        </div>
+      </section>
+      </div>
+
+      <aside class="side">
+        <section class="card" aria-labelledby="model-title">
+          <div class="card-head">
+            <div><h2 id="model-title">模型</h2><span class="en">MODEL · MLP + GRU</span></div>
+            <span class="tag tag--demo">DEMO</span>
+          </div>
+          <div class="arch" aria-label="网络结构">
+            <div class="layer layer--io">输入<small>12×6</small></div><span class="arrow">→</span>
+            <div class="layer">GRU<small>64</small></div><span class="arrow">→</span>
+            <div class="layer">GRU<small>32</small></div><span class="arrow">→</span>
+            <div class="layer">MLP<small>16→1</small></div>
+          </div>
+          <div class="metrics">
+            <div class="metric"><span>MAE</span><b>1.84</b><em>°C</em></div>
+            <div class="metric"><span>RMSE</span><b>2.61</b><em>°C</em></div>
+            <div class="metric"><span>MAPE</span><b>2.3</b><em>%</em></div>
+          </div>
+          <div class="model-foot"><span>参数 <b>28,417</b></span><span>训练 <b>11-18 21:40</b></span><span>42 epochs</span></div>
+        </section>
+
+        <section class="card" aria-labelledby="gate-title">
+          <div class="card-head">
+            <div><h2 id="gate-title">门控权重</h2><span class="en">GRU UPDATE GATE</span></div>
+            <span class="tag">STRUCTURAL</span>
+          </div>
+          <div class="gates" id="gates"></div>
+        </section>
+
+        <section class="card" aria-labelledby="cross-title">
+          <div class="card-head">
+            <div><h2 id="cross-title">越界预测</h2><span class="en">PREDICTED CROSSINGS</span></div>
+            <span class="aside" id="crossAside">2 条</span>
+          </div>
+          <div class="crossings" id="crossings"></div>
+        </section>
+      </aside>
+    </div>
+
+    <div class="bottom-row">
+      <section class="card train-strip" aria-labelledby="train-title">
+        <div class="train-copy">
+          <h2 id="train-title">训练与评估</h2>
+          <p>验证集损失随 epoch 下降，第 38 轮后不再改善即早停；门禁只看验证集，不看训练集。</p>
+        </div>
+        <canvas id="loss" aria-label="损失曲线"></canvas>
+        <div class="gate-state">
+          <span>门禁 <b id="gateState">通过</b></span>
+          <span>最佳 epoch <b>38</b></span>
+          <span>下次重训 <b>6h</b></span>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="src-title">
+        <div class="card-head">
+            <div><h2 id="src-title">数据源</h2><span class="en">SOURCES · QUALITY</span></div>
+            <span class="tag">DEMO</span>
+          </div>
+          <table class="sources">
+            <thead><tr><th scope="col">传感器</th><th scope="col">采样</th><th scope="col" class="num">缺失</th><th scope="col" class="num">延迟</th></tr></thead>
+            <tbody id="sources"></tbody>
+          </table>
+        </section>
+
+    </div>
+
+    <footer class="page-foot">
+      <span><b>FORECAST · SENTINEL</b></span>
+      <span>演示数据：曲线为确定性合成序列，不代表任何真实发动机</span>
+      <span>预测 ≠ 事实：越界需人工确认后才进入告警</span>
+      <span>REDUCED MOTION → 关闭自动回放</span>
+    </footer>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   预测面设计稿：确定性合成数据 + Canvas 绘制。
+   所有数值均为演示用虚构示例，页面上有 DEMO 标注。
+   ============================================================ */
+const SENSORS = [
+  { key: 'ect', cn: '冷却液温度', en: 'ECT', unit: '°C', base: 89, amp: 3.6, period: 96, phase: 0.4, warn: 96, crit: 101, digits: 1 },
+  { key: 'rpm', cn: '曲轴转速', en: 'RPM', unit: 'rpm', base: 2140, amp: 180, period: 41, phase: 2.1, warn: 2450, crit: 2600, digits: 0 },
+  { key: 'egt', cn: '排气温度', en: 'EGT', unit: '°C', base: 545, amp: 34, period: 63, phase: 1.2, warn: 600, crit: 640, digits: 0 },
+  { key: 'oilp', cn: '机油压力', en: 'OILP', unit: 'bar', base: 3.4, amp: 0.34, period: 77, phase: 3.4, warn: 2.6, crit: 2.2, digits: 2, low: true },
+  { key: 'iat', cn: '进气温度', en: 'IAT', unit: '°C', base: 36, amp: 4.2, period: 128, phase: 0.9, warn: 48, crit: 54, digits: 1 },
+  { key: 'vbat', cn: '电池电压', en: 'VBAT', unit: 'V', base: 13.6, amp: 0.42, period: 88, phase: 5.0, warn: 12.9, crit: 12.4, digits: 2, low: true }
+]
+
+const state = {
+  primary: 'ect',
+  horizon: 30,
+  shadow: false,
+  playing: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  now: 0,            // 绝对时间（秒），回放游标
+  hover: null,
+  pinned: null
+}
+
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+if (reduced) state.playing = false
+
+/* ---------- 确定性序列 ---------- */
+function noise(t, seed) {
+  return (
+    Math.sin(t * 1.7 + seed * 1.3) * 0.5 +
+    Math.sin(t * 0.61 + seed * 2.7) * 0.3 +
+    Math.sin(t * 0.23 + seed * 4.1) * 0.2
+  )
+}
+
+function valueAt(sensor, t) {
+  const drift = Math.sin(t / 420 + sensor.phase) * sensor.amp * 0.9
+  const wave = Math.sin((t / sensor.period) * Math.PI * 2 + sensor.phase) * sensor.amp
+  const ripple = Math.sin((t / (sensor.period * 0.37)) * Math.PI * 2 + sensor.phase * 2) * sensor.amp * 0.18
+  return sensor.base + drift + wave + ripple + noise(t * 0.7, sensor.base) * sensor.amp * 0.16
+}
+
+function slopeAt(sensor, t) {
+  return (valueAt(sensor, t + 1) - valueAt(sensor, t - 1)) / 2
+}
+
+/* 预测：当前值 + 阻尼趋势 + 收敛到均值；不确定性随时域开方增长 */
+function forecastAt(sensor, t, h, modelBias = 0) {
+  const v0 = valueAt(sensor, t)
+  const slope = slopeAt(sensor, t)
+  const damp = 1 - Math.exp(-h / 18)
+  const pull = (sensor.base - v0) * 0.12 * (1 - Math.exp(-h / 40))
+  return v0 + slope * damp * h * 0.55 + pull + modelBias
+}
+
+function bandAt(sensor, t, h) {
+  const sigma = sensor.amp * 0.16 + Math.sqrt(h) * sensor.amp * 0.045
+  return sigma * 1.64
+}
+
+function format(v, digits) {
+  return v.toLocaleString('zh-CN', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+}
+
+/* ---------- DOM ---------- */
+const chart = document.getElementById('chart')
+const ctx = chart.getContext('2d')
+const residualCanvas = document.getElementById('residual')
+const rctx = residualCanvas.getContext('2d')
+const lossCanvas = document.getElementById('loss')
+const lctx = lossCanvas.getContext('2d')
+const tooltip = document.getElementById('tooltip')
+
+function sensor() { return SENSORS.find(s => s.key === state.primary) }
+
+/* ---------- 控件 ---------- */
+const horizonGroup = document.getElementById('horizon')
+horizonGroup.addEventListener('click', event => {
+  const button = event.target.closest('button[data-h]')
+  if (!button) return
+  state.horizon = Number(button.dataset.h)
+  ;[...horizonGroup.children].forEach(node => node.setAttribute('aria-pressed', String(node === button)))
+  document.getElementById('chartAside').textContent = `窗口 −120s → +${state.horizon}s`
+  updateCrossings()
+  draw()
+})
+
+const sensorGroup = document.getElementById('sensors')
+SENSORS.forEach(item => {
+  const button = document.createElement('button')
+  button.className = 'sensor'
+  button.type = 'button'
+  button.dataset.key = item.key
+  button.textContent = item.en
+  button.title = `${item.cn} ${item.en}`
+  button.setAttribute('aria-pressed', String(item.key === state.primary))
+  sensorGroup.appendChild(button)
+})
+sensorGroup.addEventListener('click', event => {
+  const button = event.target.closest('button[data-key]')
+  if (!button) return
+  state.primary = button.dataset.key
+  ;[...sensorGroup.children].forEach(node => node.setAttribute('aria-pressed', String(node === button)))
+  document.getElementById('chartSensor').textContent = `${sensor().cn} ${sensor().en}`
+  renderGates()
+  updateCrossings()
+  draw()
+})
+
+const shadowButton = document.getElementById('shadowBtn')
+shadowButton.addEventListener('click', () => {
+  state.shadow = !state.shadow
+  shadowButton.setAttribute('aria-pressed', String(state.shadow))
+  shadowButton.classList.toggle('btn--on', state.shadow)
+  draw()
+})
+
+const playButton = document.getElementById('playBtn')
+playButton.addEventListener('click', () => {
+  state.playing = !state.playing
+  playButton.setAttribute('aria-pressed', String(state.playing))
+  playButton.classList.toggle('btn--on', state.playing)
+  playButton.textContent = state.playing ? '暂停' : '回放'
+})
+
+/* 悬停十字线与提示 */
+chart.addEventListener('pointermove', event => {
+  const rect = chart.getBoundingClientRect()
+  state.hover = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  draw()
+})
+chart.addEventListener('pointerleave', () => { state.hover = null; tooltip.classList.remove('is-on'); draw() })
+chart.addEventListener('click', () => {
+  state.pinned = state.hover ? { ...state.hover } : null
+  draw()
+})
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    state.playing = false
+    playButton.setAttribute('aria-pressed', 'false')
+    playButton.classList.remove('btn--on')
+    playButton.textContent = '回放'
+    state.now += event.key === 'ArrowLeft' ? -2 : 2
+    draw()
+  }
+  if (event.code === 'Space' && !event.repeat) {
+    event.preventDefault()
+    playButton.click()
+  }
+})
+
+/* ---------- 绘制 ---------- */
+const MARGIN = { l: 52, r: 18, t: 16, b: 28 }
+const HISTORY = 120
+
+function niceStep(raw) {
+  const power = Math.pow(10, Math.floor(Math.log10(Math.max(1e-6, raw))))
+  const norm = raw / power
+  const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10
+  return step * power
+}
+
+function bounds(sensor, t0, horizon) {
+  const values = []
+  for (let t = t0 - HISTORY; t <= t0; t += 2) values.push(valueAt(sensor, t))
+  for (let h = 0; h <= horizon; h += 1) {
+    values.push(forecastAt(sensor, t0, h), forecastAt(sensor, t0, h) + bandAt(sensor, t0, h), forecastAt(sensor, t0, h) - bandAt(sensor, t0, h))
+  }
+  const rawMin = Math.min(...values)
+  const rawMax = Math.max(...values)
+  const step = niceStep((rawMax - rawMin) / 4 || 1)
+  return {
+    min: Math.floor(rawMin / step) * step,
+    max: Math.ceil(rawMax / step) * step,
+    step
+  }
+}
+
+function scaleX(width, t0, horizon) {
+  const total = HISTORY + horizon
+  return v => MARGIN.l + ((v - (t0 - HISTORY)) / total) * (width - MARGIN.l - MARGIN.r)
+}
+
+function scaleY(height, range) {
+  return v => MARGIN.t + (1 - (v - range.min) / (range.max - range.min)) * (height - MARGIN.t - MARGIN.b)
+}
+
+function draw() {
+  const dpr = window.devicePixelRatio || 1
+  const rect = chart.getBoundingClientRect()
+  if (rect.width === 0) return
+  if (chart.width !== Math.round(rect.width * dpr) || chart.height !== Math.round(rect.height * dpr)) {
+    chart.width = Math.round(rect.width * dpr)
+    chart.height = Math.round(rect.height * dpr)
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, rect.width, rect.height)
+
+  const sensorNow = sensor()
+  const t0 = state.now
+  const horizon = state.horizon
+  const range = bounds(sensorNow, t0, horizon)
+  const sx = scaleX(rect.width, t0, horizon)
+  const sy = scaleY(rect.height, range)
+
+  /* 网格与轴标签 */
+  ctx.font = '10px Consolas, monospace'
+  ctx.textBaseline = 'middle'
+  const rows = Math.max(2, Math.round((range.max - range.min) / range.step))
+  for (let i = 0; i <= rows; i += 1) {
+    const y = MARGIN.t + ((rect.height - MARGIN.t - MARGIN.b) / rows) * i
+    const value = range.max - range.step * i
+    ctx.strokeStyle = 'rgba(255,255,255,.06)'
+    ctx.beginPath()
+    ctx.moveTo(MARGIN.l, y)
+    ctx.lineTo(rect.width - MARGIN.r, y)
+    ctx.stroke()
+    ctx.fillStyle = '#5d6b78'
+    ctx.fillText(`${format(value, sensorNow.digits)}`, 6, y)
+  }
+
+  /* 时间刻度 */
+  for (let offset = -HISTORY; offset <= horizon; offset += 30) {
+    const x = sx(t0 + offset)
+    if (x < MARGIN.l) continue
+    ctx.strokeStyle = 'rgba(255,255,255,.04)'
+    ctx.beginPath()
+    ctx.moveTo(x, MARGIN.t)
+    ctx.lineTo(x, rect.height - MARGIN.b)
+    ctx.stroke()
+    ctx.fillStyle = '#5d6b78'
+    ctx.textAlign = 'center'
+    ctx.fillText(offset === 0 ? '现在' : `${offset}s`, x, rect.height - 12)
+    ctx.textAlign = 'left'
+  }
+
+  /* 阈值线 */
+  const drawThreshold = (value, color, label) => {
+    if (value < range.min) {
+      ctx.fillStyle = color
+      ctx.textAlign = 'right'
+      ctx.fillText(`${label} ↓`, rect.width - MARGIN.r - 2, rect.height - MARGIN.b - 10)
+      ctx.textAlign = 'left'
+      return
+    }
+    if (value > range.max) {
+      ctx.fillStyle = color
+      ctx.textAlign = 'right'
+      ctx.fillText(`${label} ↑`, rect.width - MARGIN.r - 2, MARGIN.t + 10)
+      ctx.textAlign = 'left'
+      return
+    }
+    const y = sy(value)
+    ctx.strokeStyle = color
+    ctx.setLineDash([4, 4])
+    ctx.beginPath()
+    ctx.moveTo(MARGIN.l, y)
+    ctx.lineTo(rect.width - MARGIN.r, y)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.fillStyle = color
+    ctx.textAlign = 'right'
+    ctx.fillText(label, rect.width - MARGIN.r - 2, y - 8)
+    ctx.textAlign = 'left'
+  }
+  drawThreshold(sensorNow.warn, '#d29922', `预警 ${format(sensorNow.warn, sensorNow.digits)}`)
+  drawThreshold(sensorNow.crit, '#f85149', `越界 ${format(sensorNow.crit, sensorNow.digits)}`)
+
+  /* 不确定带 */
+  ctx.beginPath()
+  for (let h = 0; h <= horizon; h += 1) {
+    const v = forecastAt(sensorNow, t0, h) + bandAt(sensorNow, t0, h)
+    const x = sx(t0 + h), y = sy(v)
+    h === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+  }
+  for (let h = horizon; h >= 0; h -= 1) {
+    const v = forecastAt(sensorNow, t0, h) - bandAt(sensorNow, t0, h)
+    ctx.lineTo(sx(t0 + h), sy(v))
+  }
+  ctx.closePath()
+  ctx.fillStyle = 'rgba(122,215,245,.12)'
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(122,215,245,.28)'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  /* 历史序列 */
+  ctx.beginPath()
+  for (let t = t0 - HISTORY; t <= t0; t += 2) {
+    const x = sx(t), y = sy(valueAt(sensorNow, t))
+    t === t0 - HISTORY ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+  }
+  ctx.strokeStyle = '#2496ed'
+  ctx.lineWidth = 1.6
+  ctx.stroke()
+
+  /* 历史下方淡填充 */
+  ctx.lineTo(sx(t0), rect.height - MARGIN.b)
+  ctx.lineTo(sx(t0 - HISTORY), rect.height - MARGIN.b)
+  ctx.closePath()
+  ctx.fillStyle = 'rgba(36,150,237,.08)'
+  ctx.fill()
+
+  /* 预测中位数 */
+  ctx.beginPath()
+  for (let h = 0; h <= horizon; h += 1) {
+    const x = sx(t0 + h), y = sy(forecastAt(sensorNow, t0, h))
+    h === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+  }
+  ctx.setLineDash([6, 4])
+  ctx.strokeStyle = '#7ad7f5'
+  ctx.lineWidth = 1.7
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  /* 影子模型 */
+  if (state.shadow) {
+    ctx.beginPath()
+    for (let h = 0; h <= horizon; h += 1) {
+      const x = sx(t0 + h), y = sy(forecastAt(sensorNow, t0, h, sensorNow.amp * 0.05) - bandAt(sensorNow, t0, h) * 0.18)
+      h === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+    }
+    ctx.setLineDash([2, 3])
+    ctx.strokeStyle = '#92a6b5'
+    ctx.lineWidth = 1.3
+    ctx.stroke()
+    ctx.setLineDash([])
+  }
+
+  /* 现在线 */
+  const nowX = sx(t0)
+  ctx.strokeStyle = 'rgba(232,242,247,.45)'
+  ctx.setLineDash([3, 5])
+  ctx.beginPath()
+  ctx.moveTo(nowX, MARGIN.t)
+  ctx.lineTo(nowX, rect.height - MARGIN.b)
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  /* 当前读数：now 线上的小标签 */
+  {
+    const v0 = valueAt(sensorNow, t0)
+    const y0 = sy(v0)
+    ctx.beginPath()
+    ctx.arc(nowX, y0, 3, 0, Math.PI * 2)
+    ctx.fillStyle = '#7ad7f5'
+    ctx.fill()
+    const label = `${format(v0, sensorNow.digits)} ${sensorNow.unit}`
+    ctx.font = '10px Consolas, monospace'
+    const width = ctx.measureText(label).width + 14
+    const bx = Math.min(rect.width - MARGIN.r - width - 2, nowX + 10)
+    const by = Math.max(MARGIN.t + 2, y0 - 28)
+    ctx.beginPath()
+    ctx.roundRect(bx, by, width, 20, 4)
+    ctx.fillStyle = 'rgba(122,215,245,.14)'
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(122,215,245,.45)'
+    ctx.stroke()
+    ctx.fillStyle = '#e8f2f7'
+    ctx.fillText(label, bx + 7, by + 10)
+  }
+
+  /* 越界点 */
+  const crossings = findCrossings(sensorNow, t0, horizon)
+  crossings.forEach(crossing => {
+    const x = sx(t0 + crossing.h), y = sy(crossing.value)
+    ctx.beginPath()
+    ctx.arc(x, y, 4.5, 0, Math.PI * 2)
+    ctx.fillStyle = crossing.kind === 'crit' ? '#f85149' : '#d29922'
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(x, y, 8, 0, Math.PI * 2)
+    ctx.strokeStyle = crossing.kind === 'crit' ? 'rgba(248,81,73,.35)' : 'rgba(210,153,34,.35)'
+    ctx.stroke()
+  })
+
+  /* 悬停 / 固定游标 */
+  const cursor = state.pinned || state.hover
+  if (cursor) {
+    const total = HISTORY + horizon
+    const t = t0 - HISTORY + ((cursor.x - MARGIN.l) / (rect.width - MARGIN.l - MARGIN.r)) * total
+    const clamped = Math.max(t0 - HISTORY, Math.min(t0 + horizon, t))
+    const x = sx(clamped), y = sy(clamped <= t0 ? valueAt(sensorNow, clamped) : forecastAt(sensorNow, t0, clamped - t0))
+    ctx.strokeStyle = 'rgba(232,242,247,.25)'
+    ctx.setLineDash([2, 3])
+    ctx.beginPath()
+    ctx.moveTo(x, MARGIN.t)
+    ctx.lineTo(x, rect.height - MARGIN.b)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.beginPath()
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2)
+    ctx.fillStyle = '#e8f2f7'
+    ctx.fill()
+
+    const value = clamped <= t0 ? valueAt(sensorNow, clamped) : forecastAt(sensorNow, t0, clamped - t0)
+    const delta = clamped - t0
+    tooltip.innerHTML = `<b>${format(value, sensorNow.digits)} ${sensorNow.unit}</b>` +
+      `<span><i>时间</i><i>${delta === 0 ? '现在' : `${delta > 0 ? '+' : ''}${Math.round(delta)}s`}</i></span>` +
+      `<span><i>${delta > 0 ? 'p10–p90' : '来源'}</i><i>${delta > 0 ? `${format(forecastAt(sensorNow, t0, Math.max(delta, 0)) - bandAt(sensorNow, t0, Math.max(delta, 0)), sensorNow.digits)} – ${format(forecastAt(sensorNow, t0, Math.max(delta, 0)) + bandAt(sensorNow, t0, Math.max(delta, 0)), sensorNow.digits)}` : '采样'}</i></span>`
+    tooltip.style.left = `${Math.min(rect.width - 90, Math.max(90, x))}px`
+    tooltip.style.top = `${Math.max(60, y - 12)}px`
+    tooltip.classList.add('is-on')
+  } else {
+    tooltip.classList.remove('is-on')
+  }
+
+  drawResidual(sensorNow, t0, horizon)
+}
+
+function findCrossings(sensorNow, t0, horizon) {
+  const out = []
+  const first = forecastAt(sensorNow, t0, 0)
+  const low = Boolean(sensorNow.low)
+  for (const [kind, threshold] of [['warn', sensorNow.warn], ['crit', sensorNow.crit]]) {
+    for (let h = 1; h <= horizon; h += 1) {
+      const v = forecastAt(sensorNow, t0, h)
+      const hit = low ? v <= threshold : v >= threshold
+      const was = low ? forecastAt(sensorNow, t0, h - 1) <= threshold : forecastAt(sensorNow, t0, h - 1) >= threshold
+      if (hit && !was) { out.push({ kind, h, value: v }); break }
+    }
+  }
+  return out
+}
+
+function drawResidual(sensorNow, t0, horizon) {
+  const dpr = window.devicePixelRatio || 1
+  const rect = residualCanvas.getBoundingClientRect()
+  if (!rect.width) return
+  residualCanvas.width = Math.round(rect.width * dpr)
+  residualCanvas.height = Math.round(rect.height * dpr)
+  rctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  rctx.clearRect(0, 0, rect.width, rect.height)
+  const bars = 48
+  const step = rect.width / bars
+  let sum = 0
+  for (let i = 0; i < bars; i += 1) {
+    const t = t0 - HISTORY + (i / bars) * HISTORY
+    const err = Math.abs(valueAt(sensorNow, t) - (valueAt(sensorNow, t - 6) + slopeAt(sensorNow, t - 6) * 6))
+    sum += err
+    const h = Math.min(rect.height - 2, (err / (sensorNow.amp * 0.6)) * (rect.height - 4) + 2)
+    rctx.fillStyle = err > sensorNow.amp * 0.35 ? 'rgba(210,153,34,.7)' : 'rgba(36,150,237,.55)'
+    rctx.fillRect(i * step, rect.height - h, Math.max(1, step - 2), h)
+  }
+  const mae = (sum / bars) * 0.62
+  document.getElementById('residualLabel').textContent = `窗口 MAE ${format(mae, 2)} · 演示值`
+}
+
+function drawLoss() {
+  const dpr = window.devicePixelRatio || 1
+  const rect = lossCanvas.getBoundingClientRect()
+  if (!rect.width) return
+  lossCanvas.width = Math.round(rect.width * dpr)
+  lossCanvas.height = Math.round(rect.height * dpr)
+  lctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  lctx.clearRect(0, 0, rect.width, rect.height)
+  const epochs = 46
+  const line = (value, color, dash) => {
+    lctx.beginPath()
+    for (let i = 0; i < epochs; i += 1) {
+      const x = (i / (epochs - 1)) * (rect.width - 8) + 4
+      const y = rect.height - 6 - value(i) * (rect.height - 12)
+      i === 0 ? lctx.moveTo(x, y) : lctx.lineTo(x, y)
+    }
+    lctx.strokeStyle = color
+    lctx.lineWidth = 1.4
+    lctx.setLineDash(dash || [])
+    lctx.stroke()
+    lctx.setLineDash([])
+  }
+  line(i => Math.exp(-i / 11) * 0.92 + 0.05 + Math.sin(i / 3) * 0.012, 'rgba(36,150,237,.75)')
+  line(i => Math.exp(-i / 12) * 0.84 + 0.12 + Math.sin(i / 2.4) * 0.02, 'rgba(122,215,245,.9)', [4, 3])
+  lctx.fillStyle = '#5d6b78'
+  lctx.font = '9px Consolas, monospace'
+  lctx.fillText('train', 4, 10)
+  lctx.fillStyle = '#7ad7f5'
+  lctx.fillText('val', 40, 10)
+}
+
+/* ---------- 侧栏内容 ---------- */
+function renderGates() {
+  const host = document.getElementById('gates')
+  host.innerHTML = ''
+  SENSORS.forEach(item => {
+    const weight = 0.12 + (Math.abs(Math.sin(item.base)) * 0.32) + (item.key === state.primary ? 0.14 : 0)
+    const row = document.createElement('div')
+    row.className = `gate${item.key === state.primary ? ' is-on' : ''}`
+    row.innerHTML = `<span>${item.en}</span><span class="gate-track"><span class="gate-fill" style="transform:scaleX(${weight.toFixed(2)})"></span></span><b>${weight.toFixed(2)}</b>`
+    host.appendChild(row)
+  })
+}
+
+function updateCrossings() {
+  const sensorNow = sensor()
+  const list = []
+  for (const item of SENSORS) {
+    for (const crossing of findCrossings(item, state.now, state.horizon)) {
+      list.push({ sensor: item, ...crossing })
+    }
+  }
+  state.crossings = list
+  const host = document.getElementById('crossings')
+  host.innerHTML = ''
+  document.getElementById('crossAside').textContent = `${list.length} 条`
+
+  const primaryList = list.filter(item => item.sensor.key === state.primary)
+  if (!primaryList.length) {
+    const empty = document.createElement('p')
+    empty.className = 'crossing-empty'
+    empty.textContent = `${sensorNow.cn}在 ${state.horizon}s 视野内不会越过阈值；可把视野拉长到 120s 再看。`
+    host.appendChild(empty)
+  }
+
+  list.slice(0, 4).forEach(item => {
+    const threshold = item.kind === 'crit' ? item.sensor.crit : item.sensor.warn
+    const node = document.createElement('button')
+    node.type = 'button'
+    node.className = `crossing${item.kind === 'crit' ? ' is-crit' : ''}`
+    node.innerHTML = `
+      <span class="row"><b>${item.sensor.cn} ${item.sensor.en}</b><span class="when">+${item.h}s</span></span>
+      <small>${item.kind === 'crit' ? '越界' : '预警'} ${format(threshold, item.sensor.digits)} ${item.sensor.unit} · 置信 ${(0.9 - item.h / (state.horizon * 4)).toFixed(2)}</small>
+    `
+    node.addEventListener('click', () => {
+      state.primary = item.sensor.key
+      ;[...sensorGroup.children].forEach(child => child.setAttribute('aria-pressed', String(child.dataset.key === item.sensor.key)))
+      document.getElementById('chartSensor').textContent = `${item.sensor.cn} ${item.sensor.en}`
+      renderGates()
+      draw()
+    })
+    host.appendChild(node)
+  })
+  if (!list.length) {
+    const empty = document.createElement('p')
+    empty.className = 'crossing-empty'
+    empty.textContent = '当前所有传感器在视野内都不会越界。'
+    host.appendChild(empty)
+  }
+}
+
+function renderSources() {
+  const host = document.getElementById('sources')
+  SENSORS.forEach((item, index) => {
+    const row = document.createElement('tr')
+    row.innerHTML = `<td><b>${item.en}</b> ${item.cn}</td><td>1 s</td><td class="num">${(0.1 + index * 0.06).toFixed(2)}%</td><td class="num">${(0.8 + index * 0.2).toFixed(1)} s</td>`
+    host.appendChild(row)
+  })
+}
+
+/* ---------- 回放 ---------- */
+let last = performance.now()
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000)
+  last = now
+  if (state.playing) {
+    state.now += dt * 3
+    if (state.now % 1 < dt * 3) updateCrossings()
+  }
+  draw()
+  requestAnimationFrame(frame)
+}
+
+/* ---------- 启动 ---------- */
+renderGates()
+renderSources()
+updateCrossings()
+drawLoss()
+draw()
+requestAnimationFrame(frame)
+window.addEventListener('resize', () => { draw(); drawLoss() })
+if (typeof ResizeObserver === 'function') {
+  new ResizeObserver(() => draw()).observe(document.querySelector('.chart-wrap'))
+}
+</script>
+</body>
+</html>

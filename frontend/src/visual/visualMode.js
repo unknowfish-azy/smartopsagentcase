@@ -20,7 +20,8 @@ export const visualMode = ref(readStoredMode())
 export const visualModeExplicit = ref((() => {
   try { return VISUAL_MODES.includes(globalThis.localStorage?.getItem(STORAGE_KEY)) } catch { return false }
 })())
-export const isLightweightVisualMode = computed(() => visualMode.value !== 'balanced')
+export const isLightweightVisualMode = computed(() => visualMode.value === 'lightweight')
+export const isReducedMotionMode = computed(() => visualMode.value === 'reduced-motion')
 
 export function setVisualMode(value) {
   visualMode.value = normalizeVisualMode(value)
