@@ -48,6 +48,14 @@
       <section class="fable-stage" aria-labelledby="fable-state-title">
         <div class="stage-head">
           <span class="mono-label">α · COMPOSITION FIELD / 构成场</span>
+          <div class="view-pill" role="group" aria-label="构成场视图切换">
+            <button type="button" :aria-pressed="viewMode === 'composition'" @click="viewMode = 'composition'">
+              构成
+            </button>
+            <button type="button" :aria-pressed="viewMode === 'workshop'" @click="viewMode = 'workshop'">
+              工坊
+            </button>
+          </div>
           <button
             type="button"
             class="gaze-toggle"
@@ -66,7 +74,25 @@
           @pointermove="onPointerMove"
           @pointerleave="onPointerLeave"
         >
-          <FableComposition :field="liveField" :attractor="compositionState" :stale="stale" :reduced="reduced" />
+          <FableComposition
+            v-if="viewMode === 'composition'"
+            :field="liveField"
+            :attractor="compositionState"
+            :stale="stale"
+            :reduced="reduced"
+          />
+          <!-- 工坊视图（DESIGN：agent-workshop-iso-v1）：共享同一 loops/liveField 数据源，切视图不换轴 -->
+          <IsoWorkshopRoom
+            v-else
+            :tools="TOOLS"
+            :loop-steps="LOOP_STEPS"
+            :loops="loops"
+            :loops-status="loopsStatus"
+            :heartbeat-at="fetchedAt"
+            :reduced="reduced"
+            :stale="stale"
+            @select="onWorkshopDeskSelect"
+          />
 
           <span class="crop crop--tl" aria-hidden="true"></span>
           <span class="crop crop--tr" aria-hidden="true"></span>
@@ -74,37 +100,39 @@
           <span class="crop crop--br" aria-hidden="true"></span>
           <span class="stage-meta" aria-hidden="true">SCALE 1:1 · SVG · REV 5.2</span>
 
-          <div class="stage-gaze">
-            <FableGaze :look-x="look.x" :look-y="look.y" :field="liveField" :stale="stale" :reduced="reduced" />
-          </div>
+          <template v-if="viewMode === 'composition'">
+            <div class="stage-gaze">
+              <FableGaze :look-x="look.x" :look-y="look.y" :field="liveField" :stale="stale" :reduced="reduced" />
+            </div>
 
-          <span class="stage-body-line" aria-hidden="true"></span>
-          <div class="stage-body">
-            <span class="body-figure">
-              <FatBlob
-                :seed="7.2"
-                tone="clay"
-                :size="164"
-                :breathe="!reduced && !stale"
-                :volume="liveField.volume"
-                :pulse="liveField.pulse"
-                label="肥波：智能体的体积"
-              />
-            </span>
-            <p class="body-label">祂 · THE WATCHER</p>
-          </div>
+            <span class="stage-body-line" aria-hidden="true"></span>
+            <div class="stage-body">
+              <span class="body-figure">
+                <FatBlob
+                  :seed="7.2"
+                  tone="clay"
+                  :size="164"
+                  :breathe="!reduced && !stale"
+                  :volume="liveField.volume"
+                  :pulse="liveField.pulse"
+                  label="肥波：智能体的体积"
+                />
+              </span>
+              <p class="body-label">祂 · THE WATCHER</p>
+            </div>
 
-          <div class="stage-caption">
-            <p class="cap-index">{{ profile.num }} / 05</p>
-            <h2 id="fable-state-title">{{ profile.cn }}</h2>
-            <p class="cap-en">{{ profile.en }}</p>
-            <p class="cap-desc">{{ profile.desc }}</p>
-            <dl class="cap-params" aria-label="构成参数">
-              <div><dt>APERTURE</dt><dd>{{ formatAperture(liveField.aperture) }}</dd></div>
-              <div><dt>TILT</dt><dd>{{ formatTilt(liveField.tilt) }}</dd></div>
-              <div><dt>VOLUME</dt><dd>{{ formatVolume(liveField.volume) }}</dd></div>
-            </dl>
-          </div>
+            <div class="stage-caption">
+              <p class="cap-index">{{ profile.num }} / 05</p>
+              <h2 id="fable-state-title">{{ profile.cn }}</h2>
+              <p class="cap-en">{{ profile.en }}</p>
+              <p class="cap-desc">{{ profile.desc }}</p>
+              <dl class="cap-params" aria-label="构成参数">
+                <div><dt>APERTURE</dt><dd>{{ formatAperture(liveField.aperture) }}</dd></div>
+                <div><dt>TILT</dt><dd>{{ formatTilt(liveField.tilt) }}</dd></div>
+                <div><dt>VOLUME</dt><dd>{{ formatVolume(liveField.volume) }}</dd></div>
+              </dl>
+            </div>
+          </template>
         </div>
 
         <div class="state-strip" role="group" aria-label="构成演练：选择状态">
@@ -261,7 +289,12 @@
             </span>
           </div>
           <ol v-if="trail.length" class="trail">
-            <li v-for="(memory, index) in trail" :key="`${memory.title}-${index}`">
+            <li
+              v-for="(memory, index) in trail"
+              :key="`${memory.title}-${index}`"
+              :data-loop-id="trailIsSample ? null : loops[index]?.id || null"
+              :class="{ 'is-flash': !trailIsSample && loops[index]?.id && loops[index].id === highlightLoopId }"
+            >
               <span class="m-title">{{ memory.title }}</span>
               <span class="m-meta">{{ memory.meta }}</span>
             </li>
@@ -306,6 +339,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import FableComposition from '../../components/agent/fable/FableComposition.vue'
 import FableGaze from '../../components/agent/fable/FableGaze.vue'
 import FatBlob from '../../components/agent/fable/FatBlob.vue'
+import IsoWorkshopRoom from './fable/workshop/IsoWorkshopRoom.vue'
 import { resolvedTheme } from '../../theme.js'
 import { visualMode } from '../../visual/visualMode.js'
 import { subscribe } from '../../visual/motionScheduler.js'
@@ -739,6 +773,25 @@ const announcement = computed(
   () => `当前构成：${profile.value.cn}。运行时状态 ${runtimeLabel.value}。`
 )
 
+/* ---------------------------- 工坊视图（agent-workshop-iso-v1 · T30） ---------------------------- */
+
+/** D9 裁决：默认「构成」，省赛材料零破坏；「工坊」为国赛演示层。 */
+const viewMode = ref('composition')
+const highlightLoopId = ref('')
+let highlightTimer = 0
+
+/** 点击工位 → 滚动到「记忆尾迹」面板并高亮对应闭环条目（门禁 5：亮灯可溯源）。 */
+function onWorkshopDeskSelect({ info }) {
+  if (!info?.loopId) return
+  highlightLoopId.value = info.loopId
+  const panel = document.querySelector('.fable-panel--trail')
+  panel?.scrollIntoView({ behavior: reduced.value ? 'auto' : 'smooth', block: 'nearest' })
+  if (highlightTimer) window.clearTimeout(highlightTimer)
+  highlightTimer = window.setTimeout(() => {
+    highlightLoopId.value = ''
+  }, 2400)
+}
+
 /* ---------------------------- 生命周期 ---------------------------- */
 
 let clockTimer = 0
@@ -789,6 +842,7 @@ onBeforeUnmount(() => {
   if (clockTimer) window.clearInterval(clockTimer)
   if (pollTimer) window.clearInterval(pollTimer)
   if (nowTimer) window.clearInterval(nowTimer)
+  if (highlightTimer) window.clearTimeout(highlightTimer)
   stopTrackingNow()
   disposeFieldClock()
   window.removeEventListener('keydown', onKeydown)
@@ -796,6 +850,40 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* T30：构成 / 工坊 视图 pill（默认构成，D9） */
+.view-pill {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--fab-paper-26, rgba(232, 242, 247, 0.26));
+  border-radius: 2px;
+}
+
+.view-pill button {
+  padding: 3px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--fab-paper-46, rgba(232, 242, 247, 0.46));
+  font: 9px/1.4 var(--fab-mono);
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+
+.view-pill button + button {
+  border-left: 1px solid var(--fab-paper-26, rgba(232, 242, 247, 0.26));
+}
+
+.view-pill button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--fab-gaze, #7ad7f5) 18%, transparent);
+  color: var(--fab-gaze, #7ad7f5);
+}
+
+/* 工位点击 → 记忆尾迹对应闭环条目高亮（门禁 5 溯源） */
+.trail li.is-flash {
+  outline: 1px solid var(--fab-gaze, #7ad7f5);
+  background: color-mix(in srgb, var(--fab-gaze, #7ad7f5) 10%, transparent);
+  transition: background 0.4s var(--fab-ease-io, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
 /* stale：整场降饱和 40%（DESIGN §5：数据陈旧时冻结并标注） */
 .stage-field.is-stale {
   filter: saturate(0.6);
