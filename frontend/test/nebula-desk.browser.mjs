@@ -182,6 +182,51 @@ try {
   await page.waitForTimeout(400)
   await page.screenshot({ path: `${artifact}/nebula-light.png` })
 
+  /* ---------- 非 reduced 上下文：动画推进 / 抽样脚注 / 掉帧降采样 ---------- */
+  const page2 = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+  page2.setDefaultTimeout(10000)
+  page2.on('pageerror', e => errors.push(e.message))
+  await page2.route('**/api/inspector/events*', route => route.fulfill({ json: { code: 200, data: events } }))
+  await page2.route('**/api/inspector/summary*', route => route.fulfill({ json: { code: 200, data: {} } }))
+  await page2.route('**/api/inspector/statistics*', route => route.fulfill({ json: { code: 200, data: { byCategory: {} } } }))
+  await page2.route('**/api/operations/runs*', route => route.fulfill({ json: { code: 200, data: { items: runs, total: runs.length } } }))
+  await page2.route('**/api/auth/session*', route => route.fulfill({ json: { code: 200, data: { user: { id: 1, username: 't', role: 'operator' }, csrfToken: 'csrf' } } }))
+
+  // 11. 非 reduced：自转动画帧持续推进
+  await page2.goto(`${base}/inspector/desk?view=nebula`, { waitUntil: 'networkidle' })
+  await page2.waitForFunction(() => document.querySelector('.nebula-card canvas'))
+  await check('非 reduced：canvas 动画帧持续推进（自转/呼吸）', async () => {
+    const a = await page2.evaluate(() => document.querySelector('.nebula-card canvas').toDataURL())
+    await page2.waitForTimeout(600)
+    const b = await page2.evaluate(() => document.querySelector('.nebula-card canvas').toDataURL())
+    assert.notEqual(a, b, '600ms 前后 canvas 无变化，动画未运行')
+  })
+
+  // 12. 抽样脚注：1500 条事件 → 如实标注 1000/1500
+  const bigEvents = Array.from({ length: 1500 }, (_, i) => ({
+    id: `BG-${String(i).padStart(4, '0')}`,
+    createdAt: new Date(now - (i % 24) * 3600 * 1000).toISOString(),
+    severity: severities[i % 4],
+    taskId: `task-${i % 9}`,
+    category: categories[i % 8],
+    target: `node-${i % 5}`,
+    traceId: null
+  }))
+  await page2.route('**/api/inspector/events*', route => route.fulfill({ json: { code: 200, data: bigEvents } }))
+  await page2.reload({ waitUntil: 'networkidle' })
+  await check('抽样脚注如实标注 1000/1500', async () => {
+    await page2.getByText(/已抽样 1000 \/ 总数 1500/).waitFor()
+  })
+
+  // 13. 掉帧降采样：CPU 节流 12x → EMA < 22fps → 逐档降 + 脚注如实跟随
+  const cdp = await page2.context().newCDPSession(page2)
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 12 })
+  await check('掉帧降采样脚注出现且粒数如实', async () => {
+    await page2.getByText(/掉帧降采样至 \d+ 粒/).waitFor({ timeout: 30000 })
+  })
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 })
+  await page2.close()
+
   await check('控制台无 error', async () => assert.deepEqual(errors.filter(e => !e.includes('vite')), []))
 
   const passed = results.filter(r => r.pass).length

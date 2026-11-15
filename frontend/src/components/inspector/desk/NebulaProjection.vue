@@ -26,7 +26,7 @@
       <span v-for="s in severities" :key="s.key"><i :style="{ background: s.color }"></i>{{ s.cn }}</span>
       <span><i class="swatch" style="background: conic-gradient(#2496ed,#7ad7f5,#3fb950,#f0883e,#d29922,#58a6ff,#a383a6,#f85149)"></i>hover 按维度重着色</span>
       <span v-if="sampledInfo">已抽样 {{ sampledInfo.shown }} / 总数 {{ sampledInfo.total }}（超出 {{ cap }} 上限，均匀抽样）</span>
-      <span v-if="downsampled">掉帧降采样至 {{ cap }} 粒</span>
+      <span v-if="capReduced">掉帧降采样至 {{ cap }} 粒</span>
     </div>
     <!-- 屏幕阅读器列表：星云可见事件 -->
     <ul class="sr-only">
@@ -71,7 +71,6 @@ const wrapRef = ref(null)
 const tip = ref({ visible: false, html: '', style: {} })
 const cap = ref(NEBULA_CAP)
 const downsampled = ref(false)
-const sampledInfo = ref(null)
 
 const severities = SEVERITIES
 const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -83,6 +82,11 @@ const loadingState = computed(() => props.eventsStatus === 'loading')
 
 const nebula = computed(() => buildNebula(props.events, props.range, cap.value))
 const runsByTrace = computed(() => runsByTraceMap(props.runs))
+// 抽样脚注随 cap 联动重算（降档后如实显示当前粒数，不谎报旧值）
+const sampledInfo = computed(() => {
+  const info = nebula.value
+  return info.sampled ? { shown: info.particles.length, total: info.total } : null
+})
 
 const severityCount = computed(() => {
   const count = { CRITICAL: 0, HIGH: 0, WARN: 0, PASS: 0 }
@@ -225,6 +229,8 @@ function stepDownCap() {
   cap.value = next
   downsampled.value = next === NEBULA_DOWNSAMPLE[NEBULA_DOWNSAMPLE.length - 1]
 }
+// 脚注提示：只要降过档（cap < 上限）就如实标注；downsampled 仅表示底档（关闭转场）
+const capReduced = computed(() => cap.value < NEBULA_CAP)
 
 /* ---------- 命中检测与交互 ---------- */
 function hitTest(px, py) {
@@ -290,7 +296,6 @@ let ro = null
 function start() {
   ctx = canvasRef.value.getContext('2d')
   transStart = performance.now()
-  updateSampledInfo()
   draw(performance.now()) // 非 reduced 时 draw 末尾自调度持续帧循环
   ro = new ResizeObserver(() => { lastTime = 0; requestFrame() }) // 非 reduced 时主循环下一帧自动拾取新尺寸
   ro.observe(wrapRef.value)
@@ -301,13 +306,7 @@ function stop() {
   if (ro) ro.disconnect()
 }
 
-function updateSampledInfo() {
-  const info = nebula.value
-  sampledInfo.value = info.sampled ? { shown: info.particles.length, total: info.total } : null
-}
-
 watch([() => props.events, () => props.range, () => props.runs], () => {
-  updateSampledInfo()
   hoverId = null
   tip.value = { visible: false, html: '', style: {} }
   requestFrame()
