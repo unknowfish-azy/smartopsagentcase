@@ -155,7 +155,7 @@ function draw(now) {
     }
     const isSelected = props.selected?.__type === 'event' && props.selected.id === p.id
     const isHover = hoverId === p.id
-    const ageAlpha = 0.35 + (1 - p.age) * 0.65
+    const ageAlpha = 0.5 + (1 - p.age) * 0.5 // 亮度下限 0.5：远端/旧粒子仍可见
     let alpha = Math.min(1, ageAlpha * breath)
     if (hovering && !isHover) alpha *= 0.15
 

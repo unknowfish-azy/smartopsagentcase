@@ -29,8 +29,8 @@ export const PHI_BANDS = Object.freeze({
 })
 const BAND_HALF = 0.12
 
-/** 等级 → 粒子基础尺寸（严重更大） */
-const SIZE_BY_SEVERITY = { PASS: 1.6, WARN: 1.9, HIGH: 2.2, CRITICAL: 2.6 }
+/** 等级 → 粒子基础尺寸（严重更大；视觉调校：半径放大 ~40% 保证投影仪/录屏下可见） */
+const SIZE_BY_SEVERITY = { PASS: 2.2, WARN: 2.6, HIGH: 3.0, CRITICAL: 3.6 }
 
 /** 维度八色带（hover「色环扫描」重着色用；色值取自代码库既有令牌色系） */
 export const DIMENSION_COLORS = Object.freeze({
