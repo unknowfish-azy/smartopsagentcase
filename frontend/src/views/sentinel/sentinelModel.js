@@ -124,6 +124,46 @@ export const SCRIPT_RISKS = Object.freeze([
 ])
 
 /**
+ * 内置脚本模板。
+ *
+ * 新手最大的障碍不是界面，而是"不知道该写什么"——所以给出 6 个最常用场景的起点，
+ * 每个模板都尽量短、带一句"改哪里"的注释。模板风险级别不做静态标注，
+ * 由 inferRiskLevel 按内容推断，保证模板改动后风险展示不会漂移。
+ */
+export const SCRIPT_TEMPLATES = Object.freeze([
+  {
+    id: 'disk-usage', name: '磁盘空间检查', language: 'shell',
+    description: '查看各挂载点使用率，排查"磁盘满了"的第一步。',
+    body: '#!/usr/bin/env bash\n# 查看磁盘使用率（只读，不修改任何东西）\ndf -h\n'
+  },
+  {
+    id: 'service-status', name: '服务状态巡检', language: 'shell',
+    description: '检查 systemd 服务是否在运行；把 nginx 换成你的服务名。',
+    body: '#!/usr/bin/env bash\n# 检查服务状态（只读）；把 nginx 换成你的服务名\nsystemctl status nginx --no-pager\n'
+  },
+  {
+    id: 'port-probe', name: '端口探活', language: 'shell',
+    description: '确认端口是否在监听；把 8080 换成你的端口。',
+    body: '#!/usr/bin/env bash\n# 检查端口是否在监听；把 8080 换成你的端口\nss -tlnp | grep \':8080 \' && echo \'端口正常\' || echo \'端口未监听\'\n'
+  },
+  {
+    id: 'memory-top', name: '内存占用 Top10', language: 'shell',
+    description: '按内存排序列出前 10 个进程，定位内存占用大户。',
+    body: '#!/usr/bin/env bash\n# 按内存排序列出前 10 个进程\nps aux --sort=-%mem | head -n 11\n'
+  },
+  {
+    id: 'log-cleanup', name: '过期日志清理（预览）', language: 'shell',
+    description: '先列出 7 天前的旧日志；确认后去掉注释才会真正删除。中危示例。',
+    body: '#!/usr/bin/env bash\n# 第一步：只列出会被清理的文件（这一步不删除，安全）\nfind /var/log -name \'*.log\' -mtime +7 -type f -print\n# 第二步：确认列表无误后，去掉下一行行首的 # 才会真正删除\n# find /var/log -name \'*.log\' -mtime +7 -type f -delete\n'
+  },
+  {
+    id: 'http-probe', name: 'HTTP 接口健康探测', language: 'python',
+    description: '请求健康检查接口验证服务可用；把 URL 换成你的地址。',
+    body: '# 检查接口是否 200；把 URL 换成你的服务地址\nimport urllib.request\n\nurl = "http://127.0.0.1:8080/health"\ntry:\n    with urllib.request.urlopen(url, timeout=3) as resp:\n        print("HTTP", resp.status)\nexcept Exception as exc:\n    print("探测失败:", exc)\n'
+  }
+])
+
+/**
  * 平台变量。
  *
  * ⚠️ 这份清单必须与服务端 `SentinelVariables.SUPPORTED` 一致 —— 服务端才是权威，
@@ -173,6 +213,23 @@ export const DANGEROUS_PATTERNS = Object.freeze([
 ])
 
 /**
+ * 中危规则：写入类但通常可逆的操作（重启服务、删单个文件、装包、改权限）。
+ * 与 DANGEROUS_PATTERNS 一样是防御性预检，不是沙箱；命中即把风险级别升到"中"。
+ */
+export const MEDIUM_RISK_PATTERNS = Object.freeze([
+  { pattern: /\brm\b|\bdel\b|\berase\b/i, label: '删除文件或目录' },
+  { pattern: /\bfind\b[^\n]*\s-delete\b/i, label: 'find 批量删除文件' },
+  { pattern: /\bsystemctl\s+(restart|stop|try-restart|reload)\b|\bservice\s+\S+\s+(restart|stop|reload)\b/i, label: '重启或停止服务' },
+  { pattern: /\b(Stop|Restart)-(Service|Process|Computer)\b/i, label: '停止服务或进程（PowerShell）' },
+  { pattern: /\b(kill|pkill|killall|taskkill)\b/i, label: '终止进程' },
+  { pattern: /\b(apt|apt-get|yum|dnf|pip3?|npm|choco)\s+(install|remove|purge|uninstall|erase)\b/i, label: '安装或卸载软件包' },
+  { pattern: /\b(chmod|chown|icacls)\b/i, label: '修改文件权限' },
+  { pattern: /\bmv\b|\bMove-Item\b/i, label: '移动或覆盖文件' },
+  { pattern: /(^|\n)[^\n#]*>\s*\/(etc|var|usr|opt|boot)\//i, label: '写入系统目录' },
+  { pattern: /\bformat\b|\brd\s+\/s\b|\bRemove-Item\b/i, label: '删除或格式化（Windows）' }
+])
+
+/**
  * 脚本高危预检。
  *
  * @returns {{verdict:'ok'|'blocked'|'syntax_error', matches:Array, detail:string}}
@@ -203,6 +260,27 @@ export function lintScript(body, language = 'shell') {
 /** 按风险级别推断脚本是否需要管理员审批。 */
 export function requiresApproval(riskLevel) {
   return riskLevel === 'HIGH'
+}
+
+/**
+ * 根据脚本内容自动判定风险级别。
+ *
+ * 让用户从"出题人"变成"确认人"：不用自己猜 df -h 算不算高危——
+ * 只读内容判低危；命中中危规则升级到"中"；命中高危黑名单直接判"高"。
+ * 每次升级都带命中原因，界面上如实展示"为什么"。
+ * 注释里的危险写法同样计入：宁可误判升级，也不放过真正的危险操作。
+ *
+ * @returns {{riskLevel:'LOW'|'MEDIUM'|'HIGH', reasons:string[]}}
+ */
+export function inferRiskLevel(body) {
+  if (typeof body !== 'string' || body.trim() === '') {
+    return { riskLevel: 'LOW', reasons: [] }
+  }
+  const high = DANGEROUS_PATTERNS.filter(entry => entry.pattern.test(body)).map(entry => entry.label)
+  if (high.length > 0) return { riskLevel: 'HIGH', reasons: high }
+  const medium = MEDIUM_RISK_PATTERNS.filter(entry => entry.pattern.test(body)).map(entry => entry.label)
+  if (medium.length > 0) return { riskLevel: 'MEDIUM', reasons: medium }
+  return { riskLevel: 'LOW', reasons: ['未命中删除、重启、装包等写入类规则，按只读查询处理'] }
 }
 
 /** 用平台变量替换脚本中的占位符；未提供的变量保持原样以便界面提示未替换项。 */

@@ -11,7 +11,9 @@ import {
   canAutoDispatch,
   debounceDecision,
   describeRules,
+  inferRiskLevel,
   lintScript,
+  SCRIPT_TEMPLATES,
   requiresApproval,
   requiresHumanBeforeRemediation,
   rulesBreached,
@@ -126,6 +128,50 @@ test('high risk scripts require administrator approval', () => {
   assert.equal(requiresApproval('HIGH'), true)
   assert.equal(requiresApproval('MEDIUM'), false)
   assert.equal(requiresApproval('LOW'), false)
+})
+
+test('inferRiskLevel: read-only bodies stay LOW and empty bodies do not explode', () => {
+  assert.equal(inferRiskLevel('df -h\nps aux\n').riskLevel, 'LOW')
+  assert.equal(inferRiskLevel('systemctl status nginx --no-pager\n').riskLevel, 'LOW')
+  assert.equal(inferRiskLevel('   ').riskLevel, 'LOW')
+  assert.equal(inferRiskLevel(null).riskLevel, 'LOW')
+})
+
+test('inferRiskLevel: write-style operations upgrade to MEDIUM with reasons', () => {
+  const restart = inferRiskLevel('systemctl restart nginx\n')
+  assert.equal(restart.riskLevel, 'MEDIUM')
+  assert.ok(restart.reasons.some(label => label.includes('重启或停止服务')))
+
+  const remove = inferRiskLevel('rm /tmp/x.log\n')
+  assert.equal(remove.riskLevel, 'MEDIUM')
+  assert.ok(remove.reasons.some(label => label.includes('删除')))
+
+  const findDelete = inferRiskLevel('find /var/log -name "*.log" -delete\n')
+  assert.equal(findDelete.riskLevel, 'MEDIUM')
+})
+
+test('inferRiskLevel: high-risk blacklist wins over medium patterns', () => {
+  const result = inferRiskLevel('rm -rf /\nsystemctl restart nginx\n')
+  assert.equal(result.riskLevel, 'HIGH')
+  assert.ok(result.reasons.length > 0)
+})
+
+test('inferRiskLevel: dangerous lines count even inside comments', () => {
+  // 宁可误判升级也不放过：注释里的删除写法同样计入
+  const commented = inferRiskLevel('echo start\n# find /var/log -name "*.log" -delete\n')
+  assert.equal(commented.riskLevel, 'MEDIUM')
+})
+
+test('built-in templates pass lint and infer to LOW or MEDIUM, never HIGH', () => {
+  assert.ok(SCRIPT_TEMPLATES.length >= 6, 'template gallery should stay useful')
+  for (const tpl of SCRIPT_TEMPLATES) {
+    assert.equal(lintScript(tpl.body, tpl.language).verdict, 'ok', `template ${tpl.id} must not be blocked`)
+    const risk = inferRiskLevel(tpl.body)
+    assert.ok(['LOW', 'MEDIUM'].includes(risk.riskLevel), `template ${tpl.id} must not infer HIGH`)
+  }
+  // 日志清理模板含注释中的 -delete，应被判为中危（教学示例的预期行为）
+  const cleanup = SCRIPT_TEMPLATES.find(tpl => tpl.id === 'log-cleanup')
+  assert.equal(inferRiskLevel(cleanup.body).riskLevel, 'MEDIUM')
 })
 
 test('platform variables are substituted and unreplaced tokens are reported', () => {

@@ -8,23 +8,45 @@
       <button type="button" :disabled="state.loading" @click="reload">刷新</button>
     </header>
     <p class="sentinel-lede">
-      在线编写 Shell / Python / Bat / PowerShell 脚本，带版本、标签与风险级别。
-      执行仍然走既有的受控链路：<strong>预览 → 二次确认 → 执行 → 记录 → 审计</strong>，本模块不新增执行通路。
+      不会写脚本也能上手：从<strong>常用模板</strong>一键开始，改改参数就能用；
+      <strong>风险级别由系统自动判定</strong>，并告诉你为什么。执行仍走受控链路：
+      <strong>预览 → 二次确认 → 执行 → 记录 → 审计</strong>，本模块不新增执行通路。
     </p>
 
     <SentinelNotice v-if="state.status === 'unavailable'" tone="warn" title="后端未接入" :detail="state.reason" />
 
     <dl class="sentinel-stats">
       <div class="sentinel-stat"><dt>脚本总数</dt><dd>{{ state.scripts.length }}</dd></div>
-      <div class="sentinel-stat"><dt>高危待审批</dt><dd>{{ pendingApproval }}</dd></div>
+      <div class="sentinel-stat"><dt title="命中高危规则且未通过管理员审批的脚本数量">高危待审批</dt><dd>{{ pendingApproval }}</dd></div>
       <div class="sentinel-stat"><dt>已启用</dt><dd>{{ enabledCount }}</dd></div>
       <div class="sentinel-stat"><dt>最近执行</dt><dd>{{ state.runs.length }}</dd></div>
     </dl>
 
+    <section class="sentinel-panel" aria-labelledby="scripts-tpl-title">
+      <h2 id="scripts-tpl-title">常用模板</h2>
+      <p class="sentinel-hint">
+        新手从这里开始最快：<strong>使用此模板</strong>会把内容填进下方编辑器，
+        改改注释里提示的参数、试运行之后再保存。
+      </p>
+      <div class="sentinel-tpl-grid">
+        <article v-for="tpl in templates" :key="tpl.id" class="sentinel-tpl">
+          <div class="sentinel-tpl__head">
+            <strong>{{ tpl.name }}</strong>
+            <span class="sentinel-tag" :class="riskClass(tpl.risk)" :title="`自动判定：${riskLabel(tpl.risk)}`">{{ riskLabel(tpl.risk) }}</span>
+          </div>
+          <p class="sentinel-tpl__desc">{{ tpl.description }}</p>
+          <div class="sentinel-tpl__meta">
+            <span class="sentinel-muted">{{ languageLabel(tpl.language) }}</span>
+            <button type="button" @click="useTemplate(tpl)">使用此模板</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <SentinelEmpty
       v-if="state.loaded && state.scripts.length === 0"
       title="还没有脚本"
-      description="脚本保存后即产生 v1 版本。高危脚本需要管理员审批后才可用于告警联动。后端 /api/sentinel/scripts 接入后，这里会列出真实脚本与执行记录。"
+      description="从上面的「常用模板」开始最快：点「使用此模板」→ 改参数 → 试运行。脚本保存后即产生 v1 版本，高风险脚本需管理员审批后才可用于告警联动。后端 /api/sentinel/scripts 接入后，这里会列出真实脚本与执行记录。"
     />
 
     <div v-else-if="state.scripts.length" class="sentinel-table-wrap">
@@ -56,10 +78,11 @@
     </div>
 
     <section class="sentinel-panel" aria-labelledby="scripts-editor-title">
-      <h2 id="scripts-editor-title">在线编辑器与高危预检</h2>
+      <h2 id="scripts-editor-title">在线编辑器与安全检查</h2>
       <p class="sentinel-hint">
-        保存或执行前会做一次高危预检。这是<strong>防御性预检，不是沙箱</strong>：
-        它拦住明显误操作，真正的边界在服务端（固定命令、参数校验、最小权限、超时与审批）。
+        保存或执行前会做一次<strong>安全检查（高危预检）</strong>：拦截明显危险的写法，
+        并自动判定风险级别。这是<strong>防御性预检，不是沙箱</strong>——
+        真正的边界在服务端（固定命令、参数校验、最小权限、超时与审批）。
       </p>
       <div class="sentinel-editor">
         <label class="sentinel-field">
@@ -68,20 +91,23 @@
             <option v-for="item in SCRIPT_LANGUAGES" :key="item.id" :value="item.id">{{ item.label }}</option>
           </select>
         </label>
-        <label class="sentinel-field">
-          <span>风险级别</span>
-          <select v-model="draft.riskLevel">
-            <option v-for="item in SCRIPT_RISKS" :key="item.id" :value="item.id">{{ item.label }}（{{ item.cn }}）</option>
-          </select>
-        </label>
+        <div class="sentinel-field">
+          <span>风险级别（自动判定，无需手选）</span>
+          <div class="sentinel-risk-auto">
+            <span class="sentinel-tag" :class="riskClass(draftRisk.riskLevel)">{{ riskLabel(draftRisk.riskLevel) }}</span>
+            <span class="sentinel-muted">{{ draftRiskReasons }}</span>
+          </div>
+        </div>
         <label class="sentinel-field sentinel-field--wide">
           <span>脚本内容</span>
-          <textarea v-model="draft.body" rows="9" spellcheck="false" placeholder="# 例如：df -h&#10;systemctl status nginx"></textarea>
+          <textarea v-model="draft.body" rows="9" spellcheck="false" placeholder="不知道写什么？从上面的「常用模板」一键开始"></textarea>
         </label>
       </div>
       <div class="sentinel-editor__actions">
         <button type="button" @click="runLint">运行高危预检</button>
-        <span v-if="requiresApproval(draft.riskLevel)" class="sentinel-muted">高 RISK 脚本保存后需管理员审批才可用于告警联动</span>
+        <span v-if="requiresApproval(draftRisk.riskLevel)" class="sentinel-muted">
+          该脚本被判为高风险，保存后需管理员审批才可用于告警联动（原因见上）
+        </span>
       </div>
       <SentinelNotice
         v-if="lint"
@@ -96,25 +122,32 @@
       </ul>
     </section>
 
-    <section class="sentinel-panel" aria-labelledby="scripts-var-title">
-      <h2 id="scripts-var-title">支持的平台变量</h2>
-      <p class="sentinel-hint">告警联动执行时由平台注入，脚本里直接使用即可。未提供的变量会保持原样并在界面上提示未替换项。</p>
-      <ul class="sentinel-list">
-        <li v-for="variable in PLATFORM_VARIABLES" :key="variable.key">
-          <code class="sentinel-mono">{{ variable.token }}</code>
-          <span class="sentinel-muted">{{ variable.description }}</span>
-        </li>
-      </ul>
-    </section>
+    <details class="sentinel-details">
+      <summary>什么是平台变量？什么时候用得上</summary>
+      <div class="sentinel-details__body">
+        <p class="sentinel-hint">
+          脚本里写 <code class="sentinel-mono">${'{'}主机IP{'}'}</code> 这样的占位符，
+          告警联动执行时由平台自动替换成真实值；手动执行时也可以在下方「发起执行」表单里填。未提供的变量会保持原样并在界面上提示。
+        </p>
+        <ul class="sentinel-list">
+          <li v-for="variable in PLATFORM_VARIABLES" :key="variable.key">
+            <code class="sentinel-mono">{{ variable.token }}</code>
+            <span class="sentinel-muted">{{ variable.description }}</span>
+          </li>
+        </ul>
+      </div>
+    </details>
 
-    <section class="sentinel-panel" aria-labelledby="scripts-modes-title">
-      <h2 id="scripts-modes-title">三种执行模式</h2>
-      <ul class="sentinel-list">
-        <li><strong>手动执行</strong><span class="sentinel-muted">选择目标资产后执行，实时输出并落执行记录</span></li>
-        <li><strong>定时执行</strong><span class="sentinel-muted">按 cron 计划执行，记录与手动执行同构</span></li>
-        <li><strong>告警联动</strong><span class="sentinel-muted">由告警规则触发；P0/P1 与高危脚本必须人工确认</span></li>
-      </ul>
-    </section>
+    <details class="sentinel-details">
+      <summary>有哪几种执行方式？分别什么时候用</summary>
+      <div class="sentinel-details__body">
+        <ul class="sentinel-list">
+          <li><strong>手动执行</strong><span class="sentinel-muted">选择目标资产后执行，实时输出并落执行记录——新手建议先用这个</span></li>
+          <li><strong>定时执行</strong><span class="sentinel-muted">按 cron 计划执行，记录与手动执行同构</span></li>
+          <li><strong>告警联动</strong><span class="sentinel-muted">由告警规则触发；P0/P1 与高风险脚本必须人工确认</span></li>
+        </ul>
+      </div>
+    </details>
 
     <section class="sentinel-panel" aria-labelledby="scripts-upload-title">
       <h2 id="scripts-upload-title">从文件导入脚本</h2>
@@ -127,12 +160,13 @@
           <span>选择脚本文件</span>
           <input type="file" accept=".sh,.bash,.py,.bat,.cmd,.ps1,.psm1" @change="pickFile" />
         </label>
-        <label class="sentinel-field">
-          <span>风险级别</span>
-          <select v-model="upload.riskLevel">
-            <option v-for="item in SCRIPT_RISKS" :key="item.id" :value="item.id">{{ item.label }}（{{ item.cn }}）</option>
-          </select>
-        </label>
+        <div class="sentinel-field">
+          <span>风险级别（读入文件后自动判定）</span>
+          <div class="sentinel-risk-auto">
+            <span class="sentinel-tag" :class="riskClass(uploadRisk.riskLevel)">{{ riskLabel(uploadRisk.riskLevel) }}</span>
+            <span class="sentinel-muted">{{ uploadRiskReasons }}</span>
+          </div>
+        </div>
         <label class="sentinel-field">
           <span>标签</span>
           <input v-model.trim="upload.tags" placeholder="可选，逗号分隔" />
@@ -307,12 +341,36 @@ import SentinelEmpty from './SentinelEmpty.vue'
 import { loadSentinel, prepareScriptRun, sentinelState as state } from './sentinelStore.js'
 import { addSchedule, deleteSchedule, loadRunDetail, uploadScript } from './sentinelStore.js'
 import {
-  PLATFORM_VARIABLES, SCRIPT_LANGUAGES, SCRIPT_RISKS, TRIGGER_MODES, lintScript, requiresApproval
+  PLATFORM_VARIABLES, SCRIPT_LANGUAGES, SCRIPT_RISKS, SCRIPT_TEMPLATES, TRIGGER_MODES,
+  inferRiskLevel, lintScript, requiresApproval
 } from './sentinelModel.js'
 import './sentinel.css'
 
-const draft = reactive({ language: 'shell', riskLevel: 'LOW', body: '' })
+const draft = reactive({ language: 'shell', body: '' })
 const lint = ref(null)
+
+/** 模板卡片区：风险不做静态标注，按内容推断，避免模板改动后展示漂移。 */
+const templates = SCRIPT_TEMPLATES.map(tpl => ({ ...tpl, risk: inferRiskLevel(tpl.body).riskLevel }))
+
+/** 编辑器与文件导入的风险级别均由 inferRiskLevel 自动判定，用户只做确认。 */
+const draftRisk = computed(() => inferRiskLevel(draft.body))
+const draftRiskReasons = computed(() => draftRisk.value.reasons.length
+  ? draftRisk.value.reasons.join('；')
+  : '输入脚本内容后自动判定')
+
+const uploadRisk = computed(() => inferRiskLevel(upload.content))
+const uploadRiskReasons = computed(() => uploadRisk.value.reasons.length
+  ? uploadRisk.value.reasons.join('；')
+  : '读入文件后自动判定')
+
+/** 使用模板：填入编辑器、跑一次预检给出即时反馈，并滚动到编辑器。 */
+function useTemplate(tpl) {
+  draft.body = tpl.body
+  draft.language = tpl.language
+  runLint()
+  document.getElementById('scripts-editor-title')
+    ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const pendingApproval = computed(() => state.scripts.filter(script => requiresApproval(script.riskLevel) && !script.approved).length)
 const enabledCount = computed(() => state.scripts.filter(script => script.enabled !== false).length)
@@ -414,7 +472,7 @@ async function replay(runId) {
 
 /* ── 文件导入 ──────────────────────────────────────────────────────── */
 
-const upload = reactive({ fileName: '', content: '', riskLevel: 'LOW', tags: '' })
+const upload = reactive({ fileName: '', content: '', tags: '' })
 const uploading = ref(false)
 const uploadMessage = ref('')
 
@@ -444,7 +502,7 @@ async function submitUpload() {
   try {
     const result = await uploadScript({
       fileName: upload.fileName, content: upload.content,
-      riskLevel: upload.riskLevel, tags: upload.tags
+      riskLevel: uploadRisk.value.riskLevel, tags: upload.tags
     })
     uploadMessage.value = result.ok
       ? `已导入脚本「${result.script.name}」（${languageLabel(result.script.language)}，v${result.script.currentVersion}）`

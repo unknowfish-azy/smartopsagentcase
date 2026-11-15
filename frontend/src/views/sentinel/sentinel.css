@@ -175,6 +175,52 @@
 .sentinel-empty p { margin: 0; color: var(--smart-muted); font-size: 13px; line-height: 1.7; }
 .sentinel-empty__links a { color: var(--smart-primary-strong); font-size: 13px; }
 
+/* 常用模板卡片 */
+.sentinel-tpl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.sentinel-tpl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--smart-border);
+  border-radius: 10px;
+}
+
+.sentinel-tpl__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sentinel-tpl__head strong { font-size: 14px; }
+.sentinel-tpl__desc { margin: 0; color: var(--smart-muted); font-size: 13px; line-height: 1.6; flex: 1; }
+.sentinel-tpl__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+}
+
+/* 自动判定风险展示 */
+.sentinel-risk-auto {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px dashed var(--smart-border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
 /* 列表 */
 .sentinel-list {
   display: grid;
