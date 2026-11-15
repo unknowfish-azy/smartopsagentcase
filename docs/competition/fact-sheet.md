@@ -9,8 +9,8 @@
 | 编号 | 事实 | 核实值（以此为准） | 来源 / 复现方式 | 旧值处理 |
 |---|---|---|---|---|
 | F01 | Python 代码规模 | **22,048 非空行 / 278 文件**（agent 187=14,751；knowledge 53=4,162；ai-service 38=3,135；backend 为 Java，无 Python） | 对四目录 `rglob("*.py")` 统计非空行，2026-11-13 | 旧 16,536 行/244 文件 **废弃** |
-| F02 | 前端代码规模 | TS **52 文件 / 2,509 行**（无 .tsx）；实际主体为 **Vue 177 文件 / 22,569 行 + JS 78 文件 / 8,413 行** | `frontend/src` 按扩展名统计，2026-11-13 | 旧 2,245 行/49 文件仅指 TS 且已过期；引用时必须注明语种口径 |
-| F03 | 自动化测试 | 后端/Agent **pytest 收集 622 用例**；前端 **503 用例通过** | `python -m pytest tests --collect-only -q`（67.73s，2026-11-13）；`frontend/npm test`（2026-11-12，503 passed / 0 failed） | 旧 108 用例/8 域 **废弃** |
+| F02 | 前端代码规模 | TS **52 文件 / 2,643 行**（无 .tsx）；实际主体为 **Vue 234 文件 / 38,998 行 + JS 109 文件 / 13,696 行** | `frontend/src` 按扩展名统计（Python rglob+splitlines），2026-11-15 | 旧 Vue 177 文件/22,569 行、JS 78/8,413（2026-11-13）**已过期**；引用时必须注明语种口径 |
+| F03 | 自动化测试 | 后端/Agent **pytest 收集 622 用例**；前端 **733 用例通过**（116 个 .test.mjs）；Java 后端 **774 项执行 / 0 失败 / 0 错误 / 1 跳过**（131 测试类） | `frontend/npm test`（2026-11-15，733 passed / 0 failed）；`cd backend && mvn test`（2m31s，2026-11-15，surefire 汇总）；pytest 收集数沿用 2026-11-13 实测（其后 Python 测试文件零改动，`git log --since=2026-11-13 -- agent/tests/ tests/ knowledge/tests/ ai-service/tests/` 为空） | 旧 前端 503（2026-11-12）、后端 671 执行数与 126/131 类口径演进；**671 与 126 均废弃，以本行为准** |
 | F04 | 领域数据集 | **7 类场景 / 14 条样本**（network 6、job_scheduling 2、storage 2、其余 4 类各 1） | `SmartOps-Dataset/Linux/*.jsonl` 逐行解析 | 与旧值一致 |
 | F05 | 数据状态 | **14/14 全部 DRAFT**，未经专家复核 | 同上，`status` 字段计数 | 与旧值一致，红线①继续有效 |
 | F06 | 技术文档 | **14 页**已复核；8 章沿用原文未独立复核 | `pypdf.PdfReader("docs/competition/technical-document.pdf")` → 14 pages | 页数一致 |
@@ -20,6 +20,7 @@
 | F10（新增） | 风险分级实现形态 | **工具级声明式分级**：`RiskClassifier.classify(tool_name)` 仅按工具名映射 LOW/MEDIUM/HIGH/CRITICAL；各工具以 `risk_level` 类属性声明 | `agent/policies/risk.py:15-45`、`agent/tools/shell.py:14`、`agent/policies/policy_engine.py:23` | **不存在自然语言指令级风险分级器**，材料不得写"AI 识别指令风险" |
 | F11（新增） | 前端整改入库状态 | 已提交并推送：`864683c`（P0–P3）→ `d8f5148`（执行记录）→ `4046f53`（交付件）→ `fb17361`（口令轮换）；origin/main 一致、工作区干净 | `git log --oneline`、`git status -sb`，2026-11-13 | 总方案 §3.1/§9 的"未 commit"表述 **作废** |
 | F12（新增） | 演示账号口令 | `demo_ops` 已轮换，明文不入库，由本机 `.env` 的 `SMARTOPS_DEMO_PASSWORD` 提供；旧口令 401 失效 | `scripts/e2e/ui_pages_snapshot.py:30-46`；2026-11-13 实测新口令登录 200、旧口令 401 | 讲解稿中旧明文已清除 |
+| F13（新增） | Java 后端规模与接口数 | main **331 文件 / 36,863 行**；接口 **477 个**（`@*Mapping` 注解）；迁移表 **119 张**（不变） | `backend/src/main` rglob("*.java") 统计；`grep -rE "@(Get|Post|Put|Delete|Patch|Request)Mapping" backend/src/main --include="*.java" | wc -l`；迁移 SQL `CREATE TABLE` 去重计数，2026-11-15 | 旧 321 文件/3.4 万行/422 接口（FCT 快照）**已过期**；119 表与旧值一致 |
 
 ## 2. 评测结果摘要（明细见 `docs/competition/eval_results.csv`）
 
