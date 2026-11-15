@@ -21,7 +21,7 @@
 
 ### b. 渲染组件
 - 新增 `frontend/src/components/inspector/desk/NebulaProjection.vue`：
-  - Canvas 2D + 手写旋转矩阵透视投影；自转 ≈40s/圈 + 呼吸微光；不引 three.js；
+  - Canvas 2D + 手写旋转矩阵透视投影；自转 ≈28s/圈（视觉调校自 40s） + 呼吸微光；不引 three.js；
   - `reduced` prop → 静态单帧；掉帧降采样 1000→500→250；`<768px` 由视图层隐藏 tab；
   - 等级四色/维度八色全部经令牌取色；背景 hairline 圆环 + 等级刻度，无渐变科幻底。
 - `InspectorDeskView.vue`：`projections` 追加 `{ key: 'nebula', cn: '星云', en: 'NEBULA', desc: '每个事件是一颗星：等级是纬度 · 时间是经度' }`（排第 4，默认仍 events——D13）；`DeskProjections.vue` 加 nebula 渲染分支。

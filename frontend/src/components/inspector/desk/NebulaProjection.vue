@@ -101,7 +101,7 @@ let rafId = null
 let lastTime = 0
 let rotY = 0.6
 const TILT_X = 0.35
-const ROT_PERIOD_MS = 40000
+const ROT_PERIOD_MS = 28000 // 视觉调校：40s→28s，录屏下运动感更明显
 let transStart = 0
 let fpsEma = 60
 let lastProjected = []
@@ -137,7 +137,7 @@ function draw(now) {
   lastProjected = projected
 
   // 呼吸微光
-  const breath = reduced ? 1 : 0.78 + 0.14 * Math.sin(now / 700)
+  const breath = reduced ? 1 : 0.8 + 0.2 * Math.sin(now / 700) // 呼吸幅度 ±0.20
   // 转场：600ms 从平面位置汇聚成球（reduced 静态单帧直接成球；掉帧降采样到底档后关闭）
   const transMs = (reduced || downsampled.value) ? 0 : 600
   const transProgress = transMs ? Math.min(1, (now - transStart) / transMs) : 1
