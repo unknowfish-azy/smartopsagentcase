@@ -210,7 +210,7 @@
     <!-- 页脚 -->
     <footer class="forecast-page-foot">
       <span>FORECAST · SENTINEL</span>
-      <span>{{ dataState === 'demo' ? '演示数据：曲线为确定性合成序列，不代表任何真实发动机' : '数据来自接口' }}</span>
+      <span>{{ dataState === 'demo' ? '演示数据：曲线为确定性合成序列，属虚构示例，不代表任何真实发动机' : '数据来自接口' }}</span>
       <span>预测 · 事实：越界人工确认后才进入告警</span>
       <span>REDUCED MOTION · <b>{{ reducedMotion ? '关闭自动回放' : '自动回放可用' }}</b></span>
     </footer>
