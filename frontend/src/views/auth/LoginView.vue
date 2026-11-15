@@ -23,20 +23,20 @@
       <defs>
         <linearGradient id="login-trace-fade-cyan" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
-          <stop offset=".35" style="stop-color: var(--smart-primary-strong)" stop-opacity=".55" />
-          <stop offset=".65" style="stop-color: var(--smart-primary-strong)" stop-opacity=".55" />
+          <stop offset=".35" style="stop-color: var(--smart-primary-strong)" stop-opacity=".8" />
+          <stop offset=".65" style="stop-color: var(--smart-primary-strong)" stop-opacity=".8" />
           <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
         </linearGradient>
         <linearGradient id="login-trace-fade-green" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
-          <stop offset=".35" style="stop-color: var(--smart-effect-primary)" stop-opacity=".48" />
-          <stop offset=".65" style="stop-color: var(--smart-effect-primary)" stop-opacity=".48" />
+          <stop offset=".35" style="stop-color: var(--smart-effect-primary)" stop-opacity=".72" />
+          <stop offset=".65" style="stop-color: var(--smart-effect-primary)" stop-opacity=".72" />
           <stop offset="1" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
         </linearGradient>
         <linearGradient id="login-trace-wire-fade" gradientUnits="userSpaceOnUse" x1="140" y1="46" x2="580" y2="46">
           <stop offset="0" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
-          <stop offset=".25" style="stop-color: var(--smart-primary-strong)" stop-opacity=".32" />
-          <stop offset=".75" style="stop-color: var(--smart-primary-strong)" stop-opacity=".32" />
+          <stop offset=".25" style="stop-color: var(--smart-primary-strong)" stop-opacity=".5" />
+          <stop offset=".75" style="stop-color: var(--smart-primary-strong)" stop-opacity=".5" />
           <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
         </linearGradient>
         <radialGradient id="login-trace-core-cyan">
@@ -690,17 +690,17 @@ async function finishLogin(user) {
 /* 边缘荧光链路：左右神经走线 + 底部服务拓扑（呼应"维系上下文"）。
    柔和渐变风：走线两端淡出（linearGradient）+ 模糊光晕底层（aura）+ 径向渐变光点，
    无 drop-shadow 硬光。颜色走令牌：明暗主题自动切换（青 = primary-strong，绿 = effect-primary）。 */
-.login-traces { position: absolute; z-index: 0; pointer-events: none; opacity: .42; }
+.login-traces { position: absolute; z-index: 0; pointer-events: none; opacity: .62; }
 .login-traces-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
 .login-traces--left { left: 0; top: 0; bottom: 72px; width: clamp(56px, 6vw, 104px); }
 .login-traces--right { right: 0; top: 0; bottom: 72px; width: clamp(56px, 6vw, 104px); }
 .login-traces--bottom { left: 0; right: 0; bottom: 26px; height: 72px; margin-inline: auto; }
 /* aura：宽笔触 + blur(8px) 的柔光晕，垫在走线下替代 drop-shadow */
-.login-traces__aura { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; filter: blur(8px); opacity: .16; }
+.login-traces__aura { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; filter: blur(8px); opacity: .24; }
 .login-traces__aura--green { stroke: url('#login-trace-fade-green'); opacity: .13; }
-.login-traces__base { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 1.1; stroke-linejoin: round; opacity: .3; }
+.login-traces__base { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 1.1; stroke-linejoin: round; opacity: .5; }
 .login-traces__base--green { stroke: url('#login-trace-fade-green'); }
-.login-traces__glow { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 12 150; filter: blur(1.8px); opacity: .55; animation: login-trace-flow var(--flow-dur, 5s) linear infinite; }
+.login-traces__glow { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 12 150; filter: blur(1.8px); opacity: .75; animation: login-trace-flow var(--flow-dur, 5s) linear infinite; }
 .login-traces__glow--green { stroke: url('#login-trace-fade-green'); }
 .login-traces__node { fill: url('#login-trace-core-cyan'); animation: login-trace-breathe 3s ease-in-out infinite alternate; }
 .login-traces__node--green { fill: url('#login-trace-core-green'); animation-duration: 3.8s; }
@@ -708,7 +708,7 @@ async function finishLogin(user) {
 .login-traces__pulse { fill: url('#login-trace-pulse-cyan'); }
 .login-traces__pulse--green { fill: url('#login-trace-pulse-green'); }
 .login-traces__wire { stroke: url('#login-trace-wire-fade'); stroke-width: 1.1; }
-.login-traces__chip { fill: color-mix(in srgb, var(--smart-bg) 82%, transparent); stroke: color-mix(in srgb, var(--smart-primary-strong) 34%, transparent); stroke-width: 1; }
+.login-traces__chip { fill: color-mix(in srgb, var(--smart-bg) 82%, transparent); stroke: color-mix(in srgb, var(--smart-primary-strong) 50%, transparent); stroke-width: 1; }
 .login-traces__chip-label { font: 9px var(--font-mono); letter-spacing: .08em; fill: var(--smart-muted); }
 @keyframes login-trace-flow { to { stroke-dashoffset: -162; } }
 @keyframes login-trace-breathe { from { opacity: .45; } to { opacity: 1; } }
