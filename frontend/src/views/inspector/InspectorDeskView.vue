@@ -2,9 +2,9 @@
   <div class="inspector-desk" :data-view="view">
     <header class="desk-header">
       <div>
-        <p class="eyebrow">MEMORY · INSPECTOR DESK · 同一份证据的三种投影</p>
+        <p class="eyebrow">MEMORY · INSPECTOR DESK · 同一份证据的四种投影</p>
         <h1>洞察台</h1>
-        <p class="lede">纠察中心、统计、运行记录不再是三个页面，而是同一条时间轴上的三种看法：点是纠察事件，柱是它的聚合，条是它落到的命令执行。切视图不换轴，选中不丢上下文，证据只在右下角一个抽屉里打开。</p>
+        <p class="lede">纠察中心、统计、运行记录不再是三个页面，而是同一条时间轴上的三种看法：点是纠察事件，柱是它的聚合，条是它落到的命令执行，星云则把同一批事件聚成按等级分层的粒子球。切视图不换轴，选中不丢上下文，证据只在右下角一个抽屉里打开。</p>
       </div>
       <div class="desk-header-meta">
         <div class="window-switch" role="tablist" aria-label="时间窗">
@@ -17,7 +17,7 @@
     </header>
 
     <section class="projection-tabs" role="tablist" aria-label="投影">
-      <button v-for="p in projections" :key="p.key" role="tab" :aria-selected="view === p.key" @click="setView(p.key)">
+      <button v-for="p in projections" :key="p.key" role="tab" :aria-selected="view === p.key" :class="{ 'tab-nebula': p.key === 'nebula' }" @click="setView(p.key)">
         <span>{{ p.cn }}</span>
         <small>{{ p.en }} · {{ p.desc }}</small>
       </button>
@@ -37,7 +37,20 @@
     </section>
 
     <div class="desk-body">
+      <NebulaProjection
+        v-if="view === 'nebula'"
+        :events="visibleEvents"
+        :runs="visibleRuns"
+        :range="range"
+        :selected="selected"
+        :events-status="eventsState.status"
+        :events-error="eventsState.error"
+        :demo="demo"
+        :window-key="windowKey"
+        @select="selectFromNebula"
+      />
       <DeskAxis
+        v-else
         :view="view"
         :window-key="windowKey"
         :events="visibleEvents"
@@ -81,6 +94,7 @@ import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useInspectorDesk } from '../../composables/useInspectorDesk'
 import { SEVERITIES, TOOLS, binEvents } from '../../components/inspector/desk/deskModel'
 import DeskAxis from '../../components/inspector/desk/DeskAxis.vue'
+import NebulaProjection from '../../components/inspector/desk/NebulaProjection.vue'
 import DeskSelection from '../../components/inspector/desk/DeskSelection.vue'
 import DeskProjections from '../../components/inspector/desk/DeskProjections.vue'
 import DeskTotals from '../../components/inspector/desk/DeskTotals.vue'
@@ -104,7 +118,8 @@ const tools = TOOLS
 const projections = [
   { key: 'events', cn: '纠察', en: 'INSPECTIONS', desc: '每个事件是一个点：等级 · 目标 · 时间' },
   { key: 'stats', cn: '统计', en: 'AGGREGATES', desc: '同一批事件按时间分箱堆叠，类别/目标另算' },
-  { key: 'runs', cn: '运行', en: 'RUNS', desc: '命令执行是横条：工具 · 时长 · 退出码' }
+  { key: 'runs', cn: '运行', en: 'RUNS', desc: '命令执行是横条：工具 · 时长 · 退出码' },
+  { key: 'nebula', cn: '星云', en: 'NEBULA', desc: '每个事件是一颗星：等级是纬度 · 时间是经度' }
 ]
 
 const dataSourceLabel = computed(() => {
@@ -121,6 +136,12 @@ const selectedStatsBin = computed(() => {
   return bins.find(b => selected.value.at >= b.from && selected.value.at < b.to) || null
 })
 
+/* ---------- 星云：点击粒子 = 选中 + 打开既有证据抽屉（零新契约） ---------- */
+function selectFromNebula(item) {
+  selectItem(item)
+  openDrawer()
+}
+
 /* ---------- 键盘 ---------- */
 function onKeydown(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
@@ -132,6 +153,7 @@ function onKeydown(e) {
   if (e.key === '1') setView('events')
   else if (e.key === '2') setView('stats')
   else if (e.key === '3') setView('runs')
+  else if (e.key === '4') setView('nebula')
   else if (e.key === 'ArrowLeft') { e.preventDefault(); moveSelection(-1) }
   else if (e.key === 'ArrowRight') { e.preventDefault(); moveSelection(1) }
   else if (e.key === 'Enter') { if (selected.value) openDrawer() }
@@ -166,7 +188,7 @@ h1 { font-size: 40px; margin: 0 0 8px; font-weight: 700; }
 .demo-toggle { background: var(--ds-surface-raised); border: 1px solid var(--ds-surface-overlay); color: var(--smart-muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
 .demo-toggle:hover { border-color: var(--smart-primary); color: var(--smart-text); }
 
-.projection-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.projection-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .projection-tabs button { text-align: left; background: var(--ds-surface-raised); border: 1px solid var(--ds-surface-overlay); border-radius: 10px; padding: 14px 16px; cursor: pointer; color: var(--smart-muted); }
 .projection-tabs button[aria-selected="true"] { border-color: var(--smart-primary); color: var(--smart-text); background: linear-gradient(145deg, var(--ds-surface-raised), var(--smart-surface)); }
 .projection-tabs span { display: block; font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--smart-text); }
@@ -197,6 +219,8 @@ h1 { font-size: 40px; margin: 0 0 8px; font-weight: 700; }
   .desk-header { flex-direction: column; }
   .desk-header-meta { justify-items: start; }
   .projection-tabs { grid-template-columns: 1fr; }
+  /* 星云是加分项：窄屏隐藏 tab，回落三视图（列表已够用） */
+  .projection-tabs .tab-nebula { display: none; }
   .side { grid-template-columns: 1fr; }
 }
 </style>

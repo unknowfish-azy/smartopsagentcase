@@ -19,7 +19,7 @@ import {
   runsByTraceMap, windowRange
 } from '../components/inspector/desk/deskModel'
 
-const VIEWS = ['events', 'stats', 'runs']
+const VIEWS = ['events', 'stats', 'runs', 'nebula']
 const WINDOWS = ['24h', '7d', '30d']
 
 export function useInspectorDesk() {

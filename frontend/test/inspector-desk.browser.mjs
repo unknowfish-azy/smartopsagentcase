@@ -47,10 +47,10 @@ try {
 
   await page.goto(`${base}/inspector/desk`, { waitUntil: 'networkidle' })
 
-  // 1. 路由可达 + 三个 tab
+  // 1. 路由可达 + 四个 tab（T32 新增星云，默认仍纠察）
   await page.getByRole('tablist', { name: '投影' }).waitFor()
   const tabs = page.getByRole('tablist', { name: '投影' }).getByRole('tab')
-  await check('三个投影 tab 存在', async () => assert.equal(await tabs.count(), 3))
+  await check('四个投影 tab 存在（含星云）', async () => assert.equal(await tabs.count(), 4))
   await check('默认选中纠察', async () => {
     const first = tabs.first()
     assert.equal(await first.getAttribute('aria-selected'), 'true')
