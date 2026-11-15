@@ -278,6 +278,16 @@
   </table>
 
   <p><b>知识空间 · 照片墙视图</b>：将全部个人知识（运行时约 737 条、覆盖 10 个域）以「手机相册式」正交密铺呈现——零 3D / 零 WebGL / 零位图，全部为 DOM 网格，单屏即可缩放浏览全量。四档缩放（s0 约 28px 缩略 → s3 约 200px 详情）切换信息密度；每个域首条上方浮出可点击的域标签（点击平滑居中该域）；点击格子触发锚定悬浮详情窗（非整页跳转），展示类型、风险等级、适用版本与摘要。该视图面向「全量同屏、可放大缩小、可观性强」的评审演示场景，首屏即满屏知识密度，且因纯 DOM 渲染而极低开销。</p>
+  <div class="shot-row" style="display:flex; gap:12px; align-items:flex-start; margin:10px 0 4px;">
+    <figure style="flex:1; margin:0;">
+      <img src="assets/mosaic/01-mosaic-dark-s0.png" alt="照片墙总览：737 格正交密铺" style="width:100%; border:1px solid rgba(128,128,128,.35);">
+      <figcaption style="font-size:10px; opacity:.75; margin-top:4px;">照片墙总览：约 737 格全量同屏密铺，顶栏统计「737 格 · 10 个域」</figcaption>
+    </figure>
+    <figure style="flex:1; margin:0;">
+      <img src="assets/mosaic/04-mosaic-popover.png" alt="点击格子弹出锚定悬浮详情窗" style="width:100%; border:1px solid rgba(128,128,128,.35);">
+      <figcaption style="font-size:10px; opacity:.75; margin-top:4px;">点击格子触发锚定悬浮详情窗：目录、来源、摘要、风险等级与核验状态</figcaption>
+    </figure>
+  </div>
 
   <h3>5.2 管理员层功能</h3>
   <table>
