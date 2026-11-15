@@ -1,10 +1,10 @@
 <template>
   <section class="side-card">
     <div class="side-head">
-      <h3>在另外两个视图里</h3>
-      <span class="muted" v-if="selected">{{ currentIndex }} / 3</span>
+      <h3>在其它投影里</h3>
+      <span class="muted" v-if="selected">{{ currentIndex }} / {{ totalViews }}</span>
     </div>
-    <p class="muted" v-if="!selected">选中对象后，这里显示它在另外两个视图里落在哪，以及「有没有对应物」。</p>
+    <p class="muted" v-if="!selected">选中对象后，这里显示它在其它投影里落在哪，以及「有没有对应物」。</p>
     <div v-else class="proj-list">
       <div
         v-for="proj in projections"
@@ -21,6 +21,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { severityMeta } from './deskModel'
 
 const props = defineProps({
   selected: { type: Object, default: null },
@@ -32,10 +33,12 @@ const props = defineProps({
 const VIEWS = [
   { key: 'events', label: '纠察' },
   { key: 'stats', label: '统计' },
-  { key: 'runs', label: '运行' }
+  { key: 'runs', label: '运行' },
+  { key: 'nebula', label: '星云' }
 ]
 
 const currentIndex = computed(() => VIEWS.findIndex(v => v.key === props.view) + 1)
+const totalViews = VIEWS.length
 
 const projections = computed(() => {
   if (!props.selected) return []
@@ -60,6 +63,10 @@ const projections = computed(() => {
       if (!isEvent) { text = `${props.selected.id} · ${props.selected.tool}`; hasMatch = true }
       else if (props.link?.kind === 'linked') { text = `${props.link.run.id} · ${props.link.run.tool}`; hasMatch = true }
       else { text = '没有对应命令（未关联 traceId）' }
+    } else if (v.key === 'nebula') {
+      if (isEvent) { text = `${severityMeta(props.selected.severity).cn}环带上的粒子`; hasMatch = true }
+      else if (props.link?.kind === 'linked') { text = `已关联事件 ${props.link.event.id} 的粒子`; hasMatch = true }
+      else { text = '没有对应粒子（星云只收纠察事件）' }
     }
     return { view: v.key, label: v.label, isCurrent, text, hasMatch }
   })
