@@ -9,6 +9,10 @@
     <div v-if="!isMobile" class="login-cover-mask" aria-hidden="true"></div>
     <!-- 极光光带：中景层大尺度缓慢漂移（零 KB，CSS 渐变 + transform） -->
     <div v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-aurora" aria-hidden="true"></div>
+    <!-- 上浮气泡层：零 KB 纯 CSS（radial-gradient 泡壁 + translate3d 上浮），lightweight 档减量、reduced-motion 不挂载 -->
+    <div v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-bubbles" aria-hidden="true">
+      <span v-for="b in bubbles" :key="b.id" :style="b.style"></span>
+    </div>
     <MeteorShower v-if="!isMobile && visualMode === 'balanced'" class="login-meteors" />
     <header class="login-topbar">
       <div class="login-brand"><span class="login-brand__mark login-brand__mark--star" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none"><circle cx="16" cy="16" r="3" fill="currentColor"/><circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.2" opacity=".5"/><circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width=".6" opacity=".28"/><g stroke="currentColor" stroke-width="1" opacity=".65"><path d="M16 2 L16 7"/><path d="M16 25 L16 30"/><path d="M2 16 L7 16"/><path d="M25 16 L30 16"/></g></svg></span><div><strong>智维 Agent</strong><span>SMARTOPS · SPARKING OPERATIONS</span></div></div>
@@ -138,6 +142,21 @@ const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
 
 // §8 Gate-4: poster 占位图复用 starfield-placeholder.svg
 const loginCoverPoster = '/assets/starfield-placeholder.svg'
+
+/* 上浮气泡：确定性布局（不用 Math.random，保证每次渲染与截图/回归一致）。
+   10 颗；lightweight 档由 CSS 只保留前 4 颗并放慢周期。 */
+const bubbles = [
+  { id: 1, style: { left: '6%', width: '18px', height: '18px', '--dur': '17s', '--delay': '0s', '--sway': '26px', '--op': '.50', '--sc': '.9' } },
+  { id: 2, style: { left: '16%', width: '34px', height: '34px', '--dur': '24s', '--delay': '-9s', '--sway': '-34px', '--op': '.40', '--sc': '1' } },
+  { id: 3, style: { left: '27%', width: '12px', height: '12px', '--dur': '14s', '--delay': '-4s', '--sway': '18px', '--op': '.56', '--sc': '.8' } },
+  { id: 4, style: { left: '38%', width: '44px', height: '44px', '--dur': '30s', '--delay': '-16s', '--sway': '-28px', '--op': '.34', '--sc': '1' } },
+  { id: 5, style: { left: '49%', width: '22px', height: '22px', '--dur': '19s', '--delay': '-7s', '--sway': '30px', '--op': '.46', '--sc': '.95' } },
+  { id: 6, style: { left: '60%', width: '14px', height: '14px', '--dur': '15s', '--delay': '-11s', '--sway': '-20px', '--op': '.54', '--sc': '.85' } },
+  { id: 7, style: { left: '70%', width: '30px', height: '30px', '--dur': '26s', '--delay': '-3s', '--sway': '24px', '--op': '.38', '--sc': '1' } },
+  { id: 8, style: { left: '80%', width: '16px', height: '16px', '--dur': '16s', '--delay': '-13s', '--sway': '-26px', '--op': '.52', '--sc': '.9' } },
+  { id: 9, style: { left: '89%', width: '26px', height: '26px', '--dur': '22s', '--delay': '-6s', '--sway': '20px', '--op': '.42', '--sc': '1' } },
+  { id: 10, style: { left: '95%', width: '10px', height: '10px', '--dur': '13s', '--delay': '-10s', '--sway': '-14px', '--op': '.58', '--sc': '.8' } }
+]
 
 const router = useRouter()
 const route = useRoute()
@@ -375,6 +394,10 @@ async function finishLogin(user) {
     inset 0 -1px 0 rgba(122, 215, 245, .10);
   --login-glass-blur: 14px;
   --login-glyph-edge: rgba(122, 215, 245, .22);
+  /* 气泡令牌：泡壁描边 + 左上高光（浅色主题在下方覆盖） */
+  --bubble-wall: rgba(122, 215, 245, .38);
+  --bubble-wall-faint: rgba(122, 215, 245, .08);
+  --bubble-glint: rgba(184, 238, 255, .46);
   position: relative; isolation: isolate;
   /* 启佑极光层 .login-aurora 以 inset:-10% 外扩做漂移，若不裁剪会把
      documentElement.scrollWidth 撑大 20%（login-layout 契约实测 1440→1584）。
@@ -411,6 +434,9 @@ async function finishLogin(user) {
     inset 1px 0 0 rgba(255, 255, 255, .70),
     inset 0 -1px 0 rgba(14, 79, 122, .10);
   --login-glyph-edge: rgba(14, 79, 122, .18);
+  --bubble-wall: rgba(14, 79, 122, .26);
+  --bubble-wall-faint: rgba(14, 79, 122, .05);
+  --bubble-glint: rgba(255, 255, 255, .85);
 }
 /* §8 Gate-2: 封面视频槽（封面动态壁纸，balanced 档 + 桌面端才挂载） */
 .login-cover-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
@@ -462,6 +488,32 @@ async function finishLogin(user) {
 .login-shell[data-visual-mode='lightweight'] .login-aurora::after { animation-duration: 32s; }
 .login-shell:not([data-visual-mode='balanced']) .login-aurora::after { animation: none; opacity: .4; }
 @media (prefers-reduced-motion: reduce) { .login-aurora, .login-aurora::after { animation: none; } }
+/* 上浮气泡层：零 KB 纯 CSS（radial-gradient 泡壁 + translate3d 上浮），与极光同层纪律 */
+.login-bubbles { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.login-bubbles span {
+  position: absolute; bottom: -12%;
+  border-radius: 50%;
+  /* 泡体 = 左上高光 + 泡壁描边（中心透明，只有边缘一圈），不叠 filter */
+  background:
+    radial-gradient(circle at 30% 28%, var(--bubble-glint), transparent 42%),
+    radial-gradient(circle at 50% 50%, transparent 56%, var(--bubble-wall) 80%, var(--bubble-wall-faint) 100%);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: login-bubble-rise var(--dur) linear infinite;
+  animation-delay: var(--delay);
+}
+@keyframes login-bubble-rise {
+  0%   { transform: translate3d(0, 0, 0) scale(var(--sc)); opacity: 0; }
+  8%   { opacity: var(--op); }
+  50%  { transform: translate3d(var(--sway), -55vh, 0) scale(calc(var(--sc) * 1.06)); }
+  90%  { opacity: var(--op); }
+  100% { transform: translate3d(calc(-1 * var(--sway)), -112vh, 0) scale(var(--sc)); opacity: 0; }
+}
+/* lightweight：只留前 4 颗 + 周期放慢；reduced-motion / 系统 reduce：气泡静止隐藏 */
+.login-shell[data-visual-mode='lightweight'] .login-bubbles span:nth-child(n+5) { display: none; }
+.login-shell[data-visual-mode='lightweight'] .login-bubbles span { animation-duration: calc(var(--dur) * 1.4); }
+.login-shell[data-visual-mode='reduced-motion'] .login-bubbles { display: none; }
+@media (prefers-reduced-motion: reduce) { .login-bubbles span { animation: none; opacity: 0; } }
 .login-topbar, .login-layout, .login-page-footer { position: relative; z-index: 1; width: min(100%, 1240px); margin-inline: auto; }
 .login-topbar { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .login-brand { display: flex; align-items: center; gap: 12px; }
