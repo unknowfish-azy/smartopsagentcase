@@ -98,13 +98,24 @@
             <span class="sentinel-muted">{{ draftRiskReasons }}</span>
           </div>
         </div>
-        <label class="sentinel-field sentinel-field--wide">
+        <div class="sentinel-field sentinel-field--wide">
           <span>脚本内容</span>
-          <textarea v-model="draft.body" rows="9" spellcheck="false" placeholder="不知道写什么？从上面的「常用模板」一键开始"></textarea>
-        </label>
+          <div class="sentinel-code">
+            <pre ref="hlEl" class="sentinel-code__hl" aria-hidden="true"><code v-html="highlightedBody"></code></pre>
+            <textarea
+              ref="editorEl"
+              v-model="draft.body"
+              rows="12"
+              spellcheck="false"
+              wrap="off"
+              placeholder="不知道写什么？从上面的「常用模板」一键开始"
+              @scroll="syncScroll"
+            ></textarea>
+          </div>
+        </div>
       </div>
       <div class="sentinel-editor__actions">
-        <button type="button" @click="runLint">运行高危预检</button>
+        <span class="sentinel-muted">输入时自动做安全检查与风险判定，无需手动运行</span>
         <span v-if="requiresApproval(draftRisk.riskLevel)" class="sentinel-muted">
           该脚本被判为高风险，保存后需管理员审批才可用于告警联动（原因见上）
         </span>
@@ -126,13 +137,16 @@
       <summary>什么是平台变量？什么时候用得上</summary>
       <div class="sentinel-details__body">
         <p class="sentinel-hint">
+          <strong>点击变量即可插入到编辑器光标处。</strong>
           脚本里写 <code class="sentinel-mono">${'{'}主机IP{'}'}</code> 这样的占位符，
           告警联动执行时由平台自动替换成真实值；手动执行时也可以在下方「发起执行」表单里填。未提供的变量会保持原样并在界面上提示。
         </p>
         <ul class="sentinel-list">
           <li v-for="variable in PLATFORM_VARIABLES" :key="variable.key">
-            <code class="sentinel-mono">{{ variable.token }}</code>
-            <span class="sentinel-muted">{{ variable.description }}</span>
+            <button type="button" class="sentinel-var-insert" :title="`点击插入 ${variable.token}`" @click="insertVariable(variable.token)">
+              <code class="sentinel-mono">{{ variable.token }}</code>
+            </button>
+            <span class="sentinel-muted">{{ variable.description }}，如：{{ variable.example }}</span>
           </li>
         </ul>
       </div>
@@ -335,19 +349,21 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import SentinelNotice from './SentinelNotice.vue'
 import SentinelEmpty from './SentinelEmpty.vue'
 import { loadSentinel, prepareScriptRun, sentinelState as state } from './sentinelStore.js'
 import { addSchedule, deleteSchedule, loadRunDetail, uploadScript } from './sentinelStore.js'
 import {
   PLATFORM_VARIABLES, SCRIPT_LANGUAGES, SCRIPT_RISKS, SCRIPT_TEMPLATES, TRIGGER_MODES,
-  inferRiskLevel, lintScript, requiresApproval
+  inferRiskLevel, highlightScript, lintScript, requiresApproval
 } from './sentinelModel.js'
 import './sentinel.css'
 
 const draft = reactive({ language: 'shell', body: '' })
 const lint = ref(null)
+const editorEl = ref(null)
+const hlEl = ref(null)
 
 /** 模板卡片区：风险不做静态标注，按内容推断，避免模板改动后展示漂移。 */
 const templates = SCRIPT_TEMPLATES.map(tpl => ({ ...tpl, risk: inferRiskLevel(tpl.body).riskLevel }))
@@ -363,11 +379,10 @@ const uploadRiskReasons = computed(() => uploadRisk.value.reasons.length
   ? uploadRisk.value.reasons.join('；')
   : '读入文件后自动判定')
 
-/** 使用模板：填入编辑器、跑一次预检给出即时反馈，并滚动到编辑器。 */
+/** 使用模板：填入编辑器（安全检查由 watch 自动触发），并滚动到编辑器。 */
 function useTemplate(tpl) {
   draft.body = tpl.body
   draft.language = tpl.language
-  runLint()
   document.getElementById('scripts-editor-title')
     ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
@@ -379,8 +394,40 @@ const languageLabel = id => SCRIPT_LANGUAGES.find(item => item.id === id)?.label
 const riskLabel = id => SCRIPT_RISKS.find(item => item.id === id)?.label ?? id ?? '—'
 const riskClass = id => `sentinel-tag--${(id || 'low').toLowerCase()}`
 const lastResult = scriptId => state.runs.find(run => run.scriptId === scriptId)?.result ?? '—'
-const runLint = () => { lint.value = lintScript(draft.body, draft.language) }
 const reload = () => loadSentinel()
+
+/* ── 编辑器：实时高亮 + 实时安全检查 ────────────────────────────────── */
+
+const highlightedBody = computed(() => highlightScript(draft.body, draft.language))
+
+/** 高亮层与 textarea 同步滚动（textarea 在上、负责输入，高亮层只读）。 */
+function syncScroll() {
+  if (!editorEl.value || !hlEl.value) return
+  hlEl.value.scrollTop = editorEl.value.scrollTop
+  hlEl.value.scrollLeft = editorEl.value.scrollLeft
+}
+
+/** 输入即检（250ms 防抖）：不用单独点按钮，内容为空时收起提示。 */
+let lintTimer = null
+watch(() => draft.body, body => {
+  clearTimeout(lintTimer)
+  lintTimer = setTimeout(() => {
+    lint.value = body.trim() ? lintScript(body, draft.language) : null
+  }, 250)
+})
+
+/** 把平台变量插入到编辑器光标处；编辑器未聚焦时追加到末尾。 */
+async function insertVariable(token) {
+  const el = editorEl.value
+  if (!el) { draft.body += token; return }
+  const start = el.selectionStart ?? draft.body.length
+  const end = el.selectionEnd ?? start
+  draft.body = draft.body.slice(0, start) + token + draft.body.slice(end)
+  await nextTick()
+  el.focus()
+  const caret = start + token.length
+  el.setSelectionRange(caret, caret)
+}
 
 /* ── 发起执行（只生成预览） ─────────────────────────────────────────── */
 

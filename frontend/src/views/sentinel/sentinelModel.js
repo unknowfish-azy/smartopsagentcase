@@ -283,6 +283,78 @@ export function inferRiskLevel(body) {
   return { riskLevel: 'LOW', reasons: ['未命中删除、重启、装包等写入类规则，按只读查询处理'] }
 }
 
+/**
+ * 轻量语法高亮：不引第三方依赖，按行做"字符串 → 注释 → 平台变量 → 关键字"四类着色。
+ *
+ * 安全约定：所有文本先做 HTML 转义再包 span，脚本内容永远不能变成可执行的标记——
+ * 因此有专门的 XSS 测试钉死这一点。高亮只是阅读辅助，识别不出就原样展示，不影响编辑。
+ */
+
+const HIGHLIGHT_KEYWORDS = Object.freeze({
+  shell: ['if', 'then', 'else', 'elif', 'fi', 'for', 'while', 'do', 'done', 'case', 'esac', 'function', 'in', 'exit', 'return', 'local', 'export', 'sudo', 'grep', 'awk', 'sed', 'find', 'xargs', 'curl', 'wget', 'systemctl', 'journalctl', 'df', 'du', 'ps', 'ss', 'top', 'free', 'chmod', 'chown', 'tar', 'head', 'tail', 'cat', 'echo'],
+  python: ['import', 'from', 'as', 'def', 'return', 'if', 'elif', 'else', 'for', 'while', 'try', 'except', 'finally', 'with', 'class', 'pass', 'break', 'continue', 'raise', 'print', 'True', 'False', 'None', 'and', 'or', 'not', 'in', 'is', 'lambda', 'yield'],
+  bat: ['echo', 'set', 'if', 'else', 'for', 'goto', 'call', 'rem', 'pause', 'exit', 'del', 'copy', 'move', 'dir', 'cd', 'mkdir', 'rmdir'],
+  powershell: ['function', 'if', 'else', 'elseif', 'foreach', 'for', 'while', 'switch', 'try', 'catch', 'finally', 'return', 'param', 'Write-Host', 'Write-Output', 'Get-Content', 'Set-Content', 'Remove-Item', 'Stop-Service', 'Restart-Service', 'Get-Service', 'Get-Process', 'Stop-Process', 'Get-ChildItem']
+})
+
+function escapeHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** 找到行内注释起点；引号里的注释符不算注释（shell 的 echo '#' 不能整行变灰）。 */
+function commentIndex(line, language) {
+  if (language === 'bat') {
+    const match = /^\s*(rem\b|::)/i.exec(line)
+    return match ? match.index : -1
+  }
+  let inDouble = false
+  let inSingle = false
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i]
+    if (ch === '\\' && inDouble) { i += 1; continue }
+    if (ch === '"' && !inSingle) inDouble = !inDouble
+    else if (ch === "'" && !inDouble) inSingle = !inSingle
+    else if (ch === '#' && !inDouble && !inSingle) return i
+  }
+  return -1
+}
+
+function highlightLine(line, language, keywordPattern) {
+  const marker = commentIndex(line, language)
+  const code = marker > -1 ? line.slice(0, marker) : line
+  const comment = marker > -1 ? line.slice(marker) : ''
+  // 用占位符摘出字符串，避免字符串内容被关键字/变量规则二次命中
+  const parts = code.split(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g)
+  const html = parts.map((part, index) => {
+    if (index % 2 === 1) return `\u0000S${index}\u0000`
+    let seg = escapeHtml(part)
+    if (keywordPattern) {
+      seg = seg.replace(keywordPattern, '<span class="tok-kw">$1</span>')
+    }
+    seg = seg.replace(/\$\{[^}]+\}/g, m => `<span class="tok-var">${m}</span>`)
+    return seg
+  }).join('')
+  const restored = html.replace(/\u0000S(\d+)\u0000/g, (_, index) => `<span class="tok-str">${escapeHtml(parts[Number(index)])}</span>`)
+  return restored + (comment ? `<span class="tok-cmt">${escapeHtml(comment)}</span>` : '')
+}
+
+/**
+ * 高亮脚本正文，返回安全的 HTML 字符串（配合 v-html 与 .tok-* 样式使用）。
+ * @returns {string}
+ */
+export function highlightScript(body, language = 'shell') {
+  if (typeof body !== 'string' || body === '') return ''
+  const keywords = HIGHLIGHT_KEYWORDS[language] ?? []
+  const pattern = keywords.length
+    ? new RegExp(`(?<![\\w-])(${keywords.map(escapeRegExp).join('|')})(?![\\w-])`, 'gi')
+    : null
+  return body.split('\n').map(line => highlightLine(line, language, pattern)).join('\n')
+}
+
 /** 用平台变量替换脚本中的占位符；未提供的变量保持原样以便界面提示未替换项。 */
 export function applyVariables(body, variables = {}) {
   if (typeof body !== 'string') return ''

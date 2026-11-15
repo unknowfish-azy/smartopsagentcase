@@ -13,6 +13,7 @@ import {
   describeRules,
   inferRiskLevel,
   lintScript,
+  highlightScript,
   SCRIPT_TEMPLATES,
   requiresApproval,
   requiresHumanBeforeRemediation,
@@ -172,6 +173,42 @@ test('built-in templates pass lint and infer to LOW or MEDIUM, never HIGH', () =
   // 日志清理模板含注释中的 -delete，应被判为中危（教学示例的预期行为）
   const cleanup = SCRIPT_TEMPLATES.find(tpl => tpl.id === 'log-cleanup')
   assert.equal(inferRiskLevel(cleanup.body).riskLevel, 'MEDIUM')
+})
+
+test('highlightScript escapes HTML so script content can never inject markup', () => {
+  const hostile = 'echo "<img src=x onerror=alert(1)>"\ncat /etc/passwd && echo <script>alert(2)</script>\n'
+  const output = highlightScript(hostile, 'shell')
+  assert.ok(!output.includes('<img'), 'raw <img> must not survive')
+  assert.ok(!output.includes('<script>'), 'raw <script> must not survive')
+  assert.ok(output.includes('&lt;img'), 'hostile tags must be escaped')
+  assert.ok(output.includes('&lt;script&gt;'))
+})
+
+test('highlightScript marks comments, strings, variables and keywords', () => {
+  const body = [
+    '# 这是一行注释',
+    'df -h | grep \'/dev/sd\'',
+    'curl ${主机IP}:8080',
+    'if [ -f /tmp/x ]; then echo done; fi'
+  ].join('\n')
+  const output = highlightScript(body, 'shell')
+  assert.ok(output.includes('tok-cmt'), 'comment should be marked')
+  assert.ok(output.includes('tok-str'), 'string should be marked')
+  assert.ok(output.includes('tok-var'), 'platform variable should be marked')
+  assert.ok(output.includes('tok-kw'), 'keywords should be marked')
+  // 引号里的 # 不是注释：echo '#' 的 # 仍在字符串 span 内
+  const quotedHash = highlightScript("echo '#'", 'shell')
+  assert.ok(quotedHash.includes('tok-str'))
+  assert.ok(!quotedHash.includes('tok-cmt'))
+})
+
+test('highlightScript handles empty and unknown languages gracefully', () => {
+  assert.equal(highlightScript('', 'shell'), '')
+  assert.equal(highlightScript(null, 'shell'), '')
+  // 不支持的语言不高亮关键字，但仍要转义
+  const output = highlightScript('echo <b>', 'ruby')
+  assert.ok(!output.includes('<b>'))
+  assert.ok(output.includes('&lt;b&gt;'))
 })
 
 test('platform variables are substituted and unreplaced tokens are reported', () => {
