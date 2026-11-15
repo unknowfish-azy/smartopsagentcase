@@ -62,8 +62,13 @@ async function preparePage() {
     if (message.type() === 'error') noise.push(message.text())
   })
 
-  // 关键 fixture 先注册（Playwright 先注册先匹配）
+  // 关键 fixture 注册。注意：本机 Playwright 版本为「后注册优先」，
+  // 故兜底 501 必须先注册，具体 mock 后注册才能覆盖它；否则兜底会拦截 /api/auth/session 等，
+  // 导致 loadSession 抛错 → 路由守卫把 /chat 重定向到 /login → .chat-page 永不出现而超时。
   await page.routeWebSocket('**/*', socket => socket.close())
+  // 兜底（必须先于具体 mock 注册）：未单独 mock 的 /api/ 和 /ai/ 路径统一返回 501，避免真实后端请求挂起。
+  await page.route(url => url.pathname.startsWith('/api/') || url.pathname.startsWith('/ai/'),
+    route => route.fulfill({ status: 501, json: { code: 501, message: 'unknown fixture route' } }))
   await page.route('**/api/assistant/options', route => route.fulfill({
     json: { code: 200, data: { selectedKey: 'mini', options: [{ key: 'mini', name: '智维 Mini', kind: 'builtin', model: 'fixture', enabled: true, available: true, status: 'ready' }] } }
   }))
@@ -87,9 +92,6 @@ async function preparePage() {
     ].join('\n\n')
     return route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream; charset=utf-8' }, body: sse })
   })
-  // 兜底：未单独 mock 的 /api/ 和 /ai/ 路径统一返回 501
-  await page.route(url => url.pathname.startsWith('/api/') || url.pathname.startsWith('/ai/'),
-    route => route.fulfill({ status: 501, json: { code: 501, message: 'unknown fixture route' } }))
   await page.addInitScript(() => {
     localStorage.setItem('smartops_preview_auth', JSON.stringify({ id: 77, username: 'perf-user', role: 'operator' }))
     localStorage.setItem('smartops_theme', 'light')

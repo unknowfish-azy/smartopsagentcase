@@ -1,7 +1,6 @@
 // 照片墙性能烟雾（T27 §6.5 补充）：真实 Edge 上测 /knowledge/space（mosaic，737 DOM 格）的
 // FCP/LCP、首屏可见耗时、掉帧与堆内存。复用已验证的登录墙绕过手法（单函数 route mock /api/*，
 // auth 特判返回 operator）。本环境浏览器需 --no-proxy-server，否则 127.0.0.1 被代理拦截成 JSON。
-import assert from 'node:assert/strict'
 import { chromium } from 'playwright'
 import { spawn } from 'node:child_process'
 

@@ -36,6 +36,13 @@ export function devProxy(target) {
 // zrender 是 echarts 的渲染底座，单独拆出可让两包并行加载、独立缓存，
 // 避免单个 vendor 包过大。
 export function manualChunks(id) {
+    // commonjsHelpers 是被多个 CommonJS 包（@xterm、dayjs 等）共享的辅助模块。
+    // 必须固定到独立的公共小 chunk：否则 Rollup 会把它绑进 vendor-terminal，
+    // 导致 base（element-plus/dayjs，被登录等所有视图共享）静态依赖 71KB 的 @xterm，
+    // 登录首屏被迫下载整个终端包（Lighthouse unused-javascript 约 300ms）。
+    if (id.includes('commonjsHelpers')) {
+        return 'vendor-helpers'
+    }
     if (!id.includes('node_modules')) {
         return undefined
     }
