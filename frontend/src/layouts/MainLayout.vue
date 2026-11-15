@@ -16,7 +16,7 @@
         <button class="sidebar-toggle" type="button" :aria-label="appStore.sidebarCollapsed ? '展开主菜单' : '收起主菜单'" :title="appStore.sidebarCollapsed ? '展开主菜单' : '收起主菜单'" :aria-expanded="!appStore.sidebarCollapsed" @click="appStore.toggleSidebar()">
           <svg class="sidebar-toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" /></svg>
         </button>
-        <RouterLink class="wordmark" :to="isTeamSpace ? '/teams' : '/'"><span>SMARTOPS AGENT</span><small>{{ isTeamSpace ? '团队空间 · 成员与协作' : '个人空间 · 我的工作台' }}</small></RouterLink>
+        <RouterLink class="wordmark" :to="isTeamSpace ? '/teams' : '/'"><span class="wordmark__logo"><BrandMark :size="26" /></span><span class="wordmark__copy"><span class="wordmark__name">智维 Agent</span><small>{{ isTeamSpace ? '团队空间 · 成员与协作' : '个人空间 · 我的工作台' }}</small></span></RouterLink>
         <CommandPalette :entries="discoveryEntries" />
         <PersonalSystemNavigation
           v-if="!isTeamSpace"
@@ -102,6 +102,7 @@ import PersonalSystemNavigation from '../components/navigation/PersonalSystemNav
 import SpaceSwitcher from '../components/navigation/SpaceSwitcher.vue'
 import PageStepper from '../components/navigation/PageStepper.vue'
 import MeteorShower from '../components/common/MeteorShower.vue'
+import BrandMark from '../components/common/BrandMark.vue'
 import { useCompanionStore } from '../stores/companion.js'
 import { useOpsSpiderStore } from '../stores/opsSpider.js'
 import { usePersonaPetStore } from '../stores/personaPet.js'
@@ -335,13 +336,11 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
     width: var(--ds-sidebar-width, 256px); transition-duration: var(--ds-duration-micro, 150ms);
   }
   .app-layout:not(.app-layout--tools) > .sidebar .wordmark {
-    position: relative; flex: 0 0 72px; height: 72px; padding: 0 0 24px;
-    align-content: start; white-space: nowrap;
+    position: relative; flex: 0 0 72px; height: 72px; padding: 0 0 20px;
+    white-space: nowrap;
   }
-  .app-layout:not(.app-layout--tools) > .sidebar .wordmark::before {
-    content: 'S'; position: absolute; top: 0; left: 13px; font-size: 16px; color: var(--smart-primary-strong);
-  }
-  .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded .wordmark::before { visibility: hidden; }
+  /* 收起态：只留徽标，水平居中（原字母 "S" 占位已由真实徽标取代） */
+  .app-layout:not(.app-layout--tools) > .sidebar:not(.sidebar--expanded) .wordmark { justify-content: center; padding: 0; }
   .app-layout:not(.app-layout--tools) > .sidebar :deep(.nav-icon) {
     width: 19px; height: 19px; justify-self: center;
   }
@@ -369,16 +368,14 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
   }
   .app-layout:not(.app-layout--tools) > .sidebar :deep(.nav-copy),
   .app-layout:not(.app-layout--tools) > .sidebar :deep(.nav-label),
-  .app-layout:not(.app-layout--tools) > .sidebar .wordmark span,
-  .app-layout:not(.app-layout--tools) > .sidebar .wordmark small {
-    display: grid; white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none;
+  .app-layout:not(.app-layout--tools) > .sidebar .wordmark__copy {
+    display: grid; gap: 4px; min-width: 0; grid-template-columns: 0; white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none;
     transition: opacity 180ms ease, visibility 0s linear 180ms;
   }
   .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded :deep(.nav-copy),
   .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded :deep(.nav-label),
-  .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded .wordmark span,
-  .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded .wordmark small {
-    opacity: 1; visibility: visible; pointer-events: auto;
+  .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded .wordmark__copy {
+    grid-template-columns: none; opacity: 1; visibility: visible; pointer-events: auto;
     transition: opacity 180ms ease, visibility 0s linear 0s;
   }
   .app-layout:not(.app-layout--tools) > .sidebar:not(.sidebar--expanded) :deep(.navigation-group__toggle) {
@@ -414,8 +411,14 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
 }
 /* Navigation shell: editorial coordinates and a quiet instrument edge. */
 .sidebar { border-top: 2px solid var(--smart-primary-strong); }
+/* 品牌行：方形图标块 + 产品名 + 小字副标题（参照工作台品牌区版式） */
+.sidebar .wordmark { display: flex; align-items: center; gap: 10px; }
+.wordmark__logo { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; border: 1px solid var(--smart-border-strong); border-radius: 9px; background: var(--smart-surface); }
+.wordmark__copy { display: grid; gap: 3px; min-width: 0; }
+.wordmark__name { color: var(--smart-text); font: 600 14px/1.2 var(--font-cn); letter-spacing: .02em; }
 .sidebar--expanded .wordmark { border-bottom: 1px solid var(--smart-border); margin-bottom: 20px; }
-.sidebar--expanded .wordmark small { margin-top: 8px; }
+/* 768–1023px 的窄侧栏（78px）只放图标块，文案隐藏 */
+@media (min-width: 768px) and (max-width: 1023px) { .sidebar .wordmark__copy { display: none; } }
 .topbar { gap: 14px; }
 @media(max-width:1023px) { .topbar { flex-wrap:wrap; } }
 /* 个人账户芯片：点击开关的小窗口用户中心（交互契约对齐管理台用户菜单）。 */

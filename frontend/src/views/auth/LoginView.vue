@@ -1,6 +1,8 @@
 <template>
   <StellarOceanProvider state="thinking">
   <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode" :data-theme="resolvedTheme" @pointermove="moveBubbleLight" @pointerleave="resetBubbleLight">
+    <!-- 静态背景图：深空星海（public/assets/login-cover.jpg，静态资源，各视觉档位通用；动效层叠加其上） -->
+    <div class="login-cover-image" aria-hidden="true"></div>
     <!-- §8 Gate-1 CanvasAmbientField: 桌面端才挂载 + 移动端轻量降级（70 颗 + 无连线） -->
     <CanvasAmbientField v-if="!isMobile" class="login-ambient" :palette-root="loginShellRef" :star-multiplier="visualMode === 'lightweight' ? 1 : 1.8" :connect-particles="visualMode !== 'lightweight'" :connect-max-dist="130" />
     <!-- §8 Gate-2 封面视频槽：balanced 档 + 桌面端 + 仅当 public/assets/login-cover.mp4 存在时才挂载 -->
@@ -14,8 +16,96 @@
       <span v-for="b in bubbles" :key="b.id" :style="b.style"></span>
     </div>
     <MeteorShower v-if="!isMobile && visualMode === 'balanced'" class="login-meteors" />
+    <!-- 边缘荧光链路：左右神经走线 + 底部服务拓扑。零依赖 SVG（CSS 流光 + SMIL 脉冲），
+         呼应"维系上下文"主题；桌面端挂载，reduced-motion 档不渲染，lightweight 档转静态。 -->
+    <!-- 渐变定义：走线两端淡出、光点径向柔光。颜色走令牌，明暗主题自动切换。 -->
+    <svg v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-traces-defs" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="login-trace-fade-cyan" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+          <stop offset=".3" style="stop-color: var(--smart-primary-strong)" stop-opacity=".7" />
+          <stop offset=".7" style="stop-color: var(--smart-primary-strong)" stop-opacity=".7" />
+          <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="login-trace-fade-green" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
+          <stop offset=".3" style="stop-color: var(--smart-effect-primary)" stop-opacity=".6" />
+          <stop offset=".7" style="stop-color: var(--smart-effect-primary)" stop-opacity=".6" />
+          <stop offset="1" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="login-trace-wire-fade" gradientUnits="userSpaceOnUse" x1="140" y1="46" x2="580" y2="46">
+          <stop offset="0" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+          <stop offset=".25" style="stop-color: var(--smart-primary-strong)" stop-opacity=".4" />
+          <stop offset=".75" style="stop-color: var(--smart-primary-strong)" stop-opacity=".4" />
+          <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+        </linearGradient>
+        <radialGradient id="login-trace-core-cyan">
+          <stop offset="0" style="stop-color: var(--smart-effect-star)" stop-opacity=".9" />
+          <stop offset=".3" style="stop-color: var(--smart-primary-strong)" stop-opacity=".7" />
+          <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id="login-trace-core-green">
+          <stop offset="0" style="stop-color: var(--smart-effect-star)" stop-opacity=".9" />
+          <stop offset=".3" style="stop-color: var(--smart-effect-primary)" stop-opacity=".65" />
+          <stop offset="1" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id="login-trace-pulse-cyan">
+          <stop offset="0" style="stop-color: var(--smart-effect-star)" stop-opacity=".9" />
+          <stop offset=".4" style="stop-color: var(--smart-primary-strong)" stop-opacity=".5" />
+          <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id="login-trace-pulse-green">
+          <stop offset="0" style="stop-color: var(--smart-effect-star)" stop-opacity=".9" />
+          <stop offset=".4" style="stop-color: var(--smart-effect-primary)" stop-opacity=".45" />
+          <stop offset="1" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+    </svg>
+    <svg v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-traces login-traces--left" viewBox="0 0 90 720" preserveAspectRatio="xMinYMin slice" aria-hidden="true">
+      <path class="login-traces__aura" d="M 24 40 V 150 L 44 170 V 330 L 24 350 V 600" />
+      <path class="login-traces__aura login-traces__aura--green" d="M 48 70 V 200 L 32 218 V 470 L 48 488 V 640" />
+      <path class="login-traces__base" d="M 24 40 V 150 L 44 170 V 330 L 24 350 V 600" />
+      <path class="login-traces__glow" style="--flow-dur: 5.2s" d="M 24 40 V 150 L 44 170 V 330 L 24 350 V 600" />
+      <path class="login-traces__base login-traces__base--green" d="M 48 70 V 200 L 32 218 V 470 L 48 488 V 640" />
+      <path class="login-traces__glow login-traces__glow--green" style="--flow-dur: 6.8s" d="M 48 70 V 200 L 32 218 V 470 L 48 488 V 640" />
+      <circle class="login-traces__node" cx="24" cy="150" r="4" />
+      <circle class="login-traces__node" cx="44" cy="330" r="4" />
+      <circle class="login-traces__node login-traces__node--green" cx="48" cy="200" r="3.4" />
+      <circle class="login-traces__node login-traces__node--green" cx="32" cy="470" r="3.4" />
+      <circle class="login-traces__ring" cx="24" cy="600" r="4" />
+      <circle class="login-traces__pulse" r="5.5"><animateMotion dur="5.2s" repeatCount="indefinite" path="M 24 40 V 150 L 44 170 V 330 L 24 350 V 600" /></circle>
+      <circle class="login-traces__pulse login-traces__pulse--green" r="4.8"><animateMotion dur="6.8s" begin="1.4s" repeatCount="indefinite" path="M 48 70 V 200 L 32 218 V 470 L 48 488 V 640" /></circle>
+    </svg>
+    <svg v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-traces login-traces--right" viewBox="0 0 90 720" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
+      <path class="login-traces__aura" d="M 66 40 V 150 L 46 170 V 330 L 66 350 V 600" />
+      <path class="login-traces__aura login-traces__aura--green" d="M 42 70 V 200 L 58 218 V 470 L 42 488 V 640" />
+      <path class="login-traces__base" d="M 66 40 V 150 L 46 170 V 330 L 66 350 V 600" />
+      <path class="login-traces__glow" style="--flow-dur: 5.6s" d="M 66 40 V 150 L 46 170 V 330 L 66 350 V 600" />
+      <path class="login-traces__base login-traces__base--green" d="M 42 70 V 200 L 58 218 V 470 L 42 488 V 640" />
+      <path class="login-traces__glow login-traces__glow--green" style="--flow-dur: 6.2s" d="M 42 70 V 200 L 58 218 V 470 L 42 488 V 640" />
+      <circle class="login-traces__node" cx="66" cy="150" r="4" />
+      <circle class="login-traces__node" cx="46" cy="330" r="4" />
+      <circle class="login-traces__node login-traces__node--green" cx="42" cy="200" r="3.4" />
+      <circle class="login-traces__node login-traces__node--green" cx="58" cy="470" r="3.4" />
+      <circle class="login-traces__ring" cx="66" cy="600" r="4" />
+      <circle class="login-traces__pulse" r="5.5"><animateMotion dur="5.6s" begin="2s" repeatCount="indefinite" path="M 66 40 V 150 L 46 170 V 330 L 66 350 V 600" /></circle>
+      <circle class="login-traces__pulse login-traces__pulse--green" r="4.8"><animateMotion dur="6.2s" begin=".6s" repeatCount="indefinite" path="M 42 70 V 200 L 58 218 V 470 L 42 488 V 640" /></circle>
+    </svg>
+    <svg v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-traces login-traces--bottom" viewBox="0 0 720 72" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <line class="login-traces__wire" x1="140" y1="46" x2="580" y2="46" />
+      <rect class="login-traces__chip" x="116" y="38" width="48" height="16" rx="8" />
+      <text class="login-traces__chip-label" x="140" y="49" text-anchor="middle">GATEWAY</text>
+      <rect class="login-traces__chip" x="228" y="38" width="44" height="16" rx="8" />
+      <text class="login-traces__chip-label" x="250" y="49" text-anchor="middle">AGENT</text>
+      <rect class="login-traces__chip" x="338" y="38" width="74" height="16" rx="8" />
+      <text class="login-traces__chip-label" x="375" y="49" text-anchor="middle">KNOWLEDGE</text>
+      <rect class="login-traces__chip" x="490" y="38" width="50" height="16" rx="8" />
+      <text class="login-traces__chip-label" x="515" y="49" text-anchor="middle">SESSION</text>
+      <circle class="login-traces__pulse" r="5"><animateMotion dur="6s" repeatCount="indefinite" path="M 162 46 H 515" /></circle>
+      <circle class="login-traces__pulse login-traces__pulse--green" r="4.4"><animateMotion dur="6s" begin="3s" repeatCount="indefinite" path="M 515 46 H 162" /></circle>
+    </svg>
     <header class="login-topbar">
-      <div class="login-brand"><span class="login-brand__mark login-brand__mark--star" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none"><circle cx="16" cy="16" r="3" fill="currentColor"/><circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.2" opacity=".5"/><circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width=".6" opacity=".28"/><g stroke="currentColor" stroke-width="1" opacity=".65"><path d="M16 2 L16 7"/><path d="M16 25 L16 30"/><path d="M2 16 L7 16"/><path d="M25 16 L30 16"/></g></svg></span><div><strong>智维 Agent</strong><span>SMARTOPS · SPARKING OPERATIONS</span></div></div>
+      <div class="login-brand"><span class="login-brand__mark login-brand__mark--star" aria-hidden="true"><BrandMark :size="26" /></span><div><strong>智维 Agent</strong><span>SMARTOPS · SPARKING OPERATIONS</span></div></div>
       <div class="login-appearance" aria-label="外观设置">
         <label><span>主题</span><select aria-label="选择主题模式" :value="themeMode" @change="setThemeMode($event.target.value)"><option value="light">浅色</option><option value="dark">深色</option><option value="system">跟随系统</option></select></label>
         <label><span>视觉</span><select aria-label="选择视觉模式" :value="visualMode" @change="setVisualMode($event.target.value)"><option value="balanced">平衡视觉</option><option value="lightweight">轻量视觉</option><option value="reduced-motion">减少动态</option></select></label>
@@ -24,6 +114,7 @@
     <div class="login-layout">
     <section class="login-showcase" aria-label="智维工作空间介绍">
       <div class="login-copy">
+      <div class="login-copy__emblem" aria-hidden="true"><BrandMark :size="64" /></div>
       <p class="editorial-label">个人运维知识空间</p>
       <h1>智驭系统<br><span>维系上下文</span></h1>
       <p class="login-copy__description">把知识、系统与运维记忆连接起来，<br class="desktop-break">让每一次操作都有清晰的上下文。</p>
@@ -126,6 +217,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, Hide, Lock, User, View } from '@element-plus/icons-vue'
 import HumanVerification from '../../components/auth/HumanVerification.vue'
 import MfaChallenge from '../../components/auth/MfaChallenge.vue'
+import BrandMark from '../../components/common/BrandMark.vue'
 import StellarOceanProvider from '../../components/common/StellarOceanProvider.vue'
 import MeteorShower from '../../components/common/MeteorShower.vue'
 import { loginSession, registrationPolicy, registerAccount } from '../../security/session.js'
@@ -473,6 +565,20 @@ async function finishLogin(user) {
 /* §8 Gate-2: 封面视频槽（封面动态壁纸，balanced 档 + 桌面端才挂载） */
 .login-cover-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
 .login-cover-video[src] { opacity: 1; }
+/* 静态背景图：深空星海。暗色主题显示（浅色主题保持简洁渐变），
+   横向渐变压暗左文案区与右表单区，中间保留最多画面细节。 */
+.login-cover-image {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: url('/assets/login-cover.jpg') center / cover no-repeat;
+  opacity: .46;
+}
+.login-cover-image::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(4, 11, 22, .66) 0%, rgba(4, 11, 22, .30) 46%, rgba(4, 11, 22, .52) 100%),
+    linear-gradient(180deg, rgba(4, 11, 22, .50) 0%, transparent 30%, transparent 68%, rgba(4, 11, 22, .55) 100%);
+}
+.login-shell[data-theme='light'] .login-cover-image { display: none; }
 /* §8 Gate-3: 暗遮罩（40% 深暗，视频层叠用；极光/粒子独立时也提供统一暗度基线） */
 .login-cover-mask { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 30%, rgba(4, 11, 22, .40) 100%); }
 :global([data-theme='light']) .login-cover-mask { background: radial-gradient(ellipse at center, transparent 30%, rgba(234, 243, 250, .40) 100%); }
@@ -549,6 +655,36 @@ async function finishLogin(user) {
 .login-shell[data-visual-mode='lightweight'] .login-bubbles span { animation-duration: calc(var(--dur) * 1.4); }
 .login-shell[data-visual-mode='reduced-motion'] .login-bubbles { display: none; }
 @media (prefers-reduced-motion: reduce) { .login-bubbles span { animation: none; opacity: 0; } }
+/* 边缘荧光链路：左右神经走线 + 底部服务拓扑（呼应"维系上下文"）。
+   柔和渐变风：走线两端淡出（linearGradient）+ 模糊光晕底层（aura）+ 径向渐变光点，
+   无 drop-shadow 硬光。颜色走令牌：明暗主题自动切换（青 = primary-strong，绿 = effect-primary）。 */
+.login-traces { position: absolute; z-index: 0; pointer-events: none; opacity: .5; }
+.login-traces-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+.login-traces--left { left: 0; top: 0; bottom: 72px; width: clamp(56px, 6vw, 104px); }
+.login-traces--right { right: 0; top: 0; bottom: 72px; width: clamp(56px, 6vw, 104px); }
+.login-traces--bottom { left: 0; right: 0; bottom: 26px; height: 72px; margin-inline: auto; }
+/* aura：宽笔触 + blur(6px) 的柔光晕，垫在走线下替代 drop-shadow */
+.login-traces__aura { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; filter: blur(6px); opacity: .22; }
+.login-traces__aura--green { stroke: url('#login-trace-fade-green'); opacity: .18; }
+.login-traces__base { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 1.2; stroke-linejoin: round; opacity: .38; }
+.login-traces__base--green { stroke: url('#login-trace-fade-green'); }
+.login-traces__glow { fill: none; stroke: url('#login-trace-fade-cyan'); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 12 150; filter: blur(1.2px); opacity: .7; animation: login-trace-flow var(--flow-dur, 5s) linear infinite; }
+.login-traces__glow--green { stroke: url('#login-trace-fade-green'); }
+.login-traces__node { fill: url('#login-trace-core-cyan'); animation: login-trace-breathe 3s ease-in-out infinite alternate; }
+.login-traces__node--green { fill: url('#login-trace-core-green'); animation-duration: 3.8s; }
+.login-traces__ring { fill: none; stroke: color-mix(in srgb, var(--smart-primary-strong) 32%, transparent); stroke-width: 1; }
+.login-traces__pulse { fill: url('#login-trace-pulse-cyan'); }
+.login-traces__pulse--green { fill: url('#login-trace-pulse-green'); }
+.login-traces__wire { stroke: url('#login-trace-wire-fade'); stroke-width: 1.1; }
+.login-traces__chip { fill: color-mix(in srgb, var(--smart-bg) 82%, transparent); stroke: color-mix(in srgb, var(--smart-primary-strong) 34%, transparent); stroke-width: 1; }
+.login-traces__chip-label { font: 9px var(--font-mono); letter-spacing: .08em; fill: var(--smart-muted); }
+@keyframes login-trace-flow { to { stroke-dashoffset: -162; } }
+@keyframes login-trace-breathe { from { opacity: .45; } to { opacity: 1; } }
+/* lightweight：脉冲隐藏、流光/呼吸放慢（走线保持静态可见）；
+   reduced-motion 档模板不挂载，系统级 reduce 再兜底关动画。 */
+.login-shell[data-visual-mode='lightweight'] .login-traces__pulse { display: none; }
+.login-shell[data-visual-mode='lightweight'] .login-traces__glow { animation-duration: calc(var(--flow-dur, 5s) * 1.4); }
+@media (prefers-reduced-motion: reduce) { .login-traces__glow, .login-traces__node { animation: none; } }
 .login-topbar, .login-layout, .login-page-footer { position: relative; z-index: 1; width: min(100%, 1240px); margin-inline: auto; }
 .login-topbar { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .login-brand { display: flex; align-items: center; gap: 12px; }
@@ -563,6 +699,9 @@ async function finishLogin(user) {
 .login-layout { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 440px); align-items: center; gap: clamp(40px, 5.5vw, 88px); }
 .login-showcase { min-width: 0; }
 .login-copy { position: relative; z-index: 1; }
+/* 品牌徽标：标题上方主视觉（红框位置），柔光投影呼应星空氛围 */
+.login-copy__emblem { margin: 0 0 22px; width: 64px; height: 64px; line-height: 0; filter: drop-shadow(0 6px 22px rgba(43, 168, 200, .40)); }
+.login-copy__emblem :deep(svg) { width: 100%; height: 100%; }
 .editorial-label { margin: 0 0 16px; color: var(--smart-primary-strong); font: 11px var(--font-mono); letter-spacing: .12em; }
 .login-copy h1 { margin: 0; font: 500 clamp(36px, 3.7vw, 56px)/1.22 var(--font-cn); letter-spacing: -.025em; text-shadow: none; }
 .login-copy h1 span { color: var(--smart-primary-strong); }
@@ -652,9 +791,11 @@ async function finishLogin(user) {
 @keyframes login-spin { to { transform: rotate(360deg); } }
 @media (max-width: 1100px) {
   .login-shell { gap: 24px; }
+  .login-traces { display: none; }
   .login-layout { flex: none; grid-template-columns: minmax(0, 1fr); width: min(100%, 540px); gap: 24px; }
   .login-showcase { display: grid; grid-template-columns: minmax(0, 1fr) 170px; align-items: center; gap: 12px; }
   .login-copy .editorial-label { margin-bottom: 12px; font-size: 10px; }
+  .login-copy__emblem { width: 48px; height: 48px; margin-bottom: 14px; }
   .login-copy h1 { font-size: 30px; }
   .login-copy__description, .login-trust, .login-scene-label { display: none; }
   .login-organisms { width: 100%; height: 170px; margin: 0; }
@@ -669,6 +810,7 @@ async function finishLogin(user) {
   .login-appearance label { flex: 1; }
   .login-appearance select { flex: 1; max-width: none; min-width: 0; }
   .login-showcase { grid-template-columns: minmax(0, 1fr) 112px; gap: 8px; }
+  .login-copy__emblem { width: 40px; height: 40px; margin-bottom: 10px; }
   .login-copy h1 { font-size: clamp(21px, 6vw, 26px); }
   .login-copy .editorial-label { font-size: 9px; margin-bottom: 8px; }
   .login-organisms { height: 128px; }

@@ -1,25 +1,37 @@
-<svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 64 64"
->
-
-    <rect
-            width="64"
-            height="64"
-            rx="16"
-            fill="#1677ff"
-    />
-
-    <text
-            x="32"
-            y="43"
-            text-anchor="middle"
-            font-size="34"
-            font-family="Microsoft YaHei, Arial, sans-serif"
-            font-weight="700"
-            fill="#ffffff"
-    >
-        智
-    </text>
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+    <!-- 智维 Agent 品牌徽标：深蓝圆底 + 辐射网络 + 心电脉冲线 -->
+    <defs>
+        <radialGradient id="bm-bg" cx="50%" cy="38%" r="74%">
+            <stop offset="0%" stop-color="#1E4F94"/>
+            <stop offset="55%" stop-color="#123768"/>
+            <stop offset="100%" stop-color="#081C40"/>
+        </radialGradient>
+        <radialGradient id="bm-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#BFE9FF" stop-opacity=".95"/>
+            <stop offset="100%" stop-color="#7AD7F5" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="bm-blur" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="1.6"/>
+        </filter>
+    </defs>
+    <circle cx="32" cy="32" r="30" fill="url(#bm-bg)" stroke="#4C8FD6" stroke-opacity=".55" stroke-width="1.4"/>
+    <circle cx="32" cy="32" r="25.5" stroke="#7AD7F5" stroke-opacity=".28" stroke-width=".8"/>
+    <g stroke="#8FCDF2" stroke-opacity=".78" stroke-width="1.1">
+        <path d="M32 13v7M32 44v7M13 32h7M44 32h7"/>
+        <path d="M19.2 19.2l4.9 4.9M39.9 39.9l4.9 4.9M44.8 19.2l-4.9 4.9M24.1 39.9l-4.9 4.9"/>
+    </g>
+    <g>
+        <circle cx="32" cy="10" r="2.4" stroke="#9FDDFF" stroke-width="1.2"/>
+        <circle cx="43.3" cy="20.7" r="2.4" fill="#9FDDFF"/>
+        <circle cx="54" cy="32" r="2.4" stroke="#9FDDFF" stroke-width="1.2"/>
+        <circle cx="43.3" cy="43.3" r="2.4" fill="#9FDDFF"/>
+        <circle cx="32" cy="54" r="2.4" stroke="#9FDDFF" stroke-width="1.2"/>
+        <circle cx="20.7" cy="43.3" r="2.4" fill="#9FDDFF"/>
+        <circle cx="10" cy="32" r="2.4" stroke="#9FDDFF" stroke-width="1.2"/>
+        <circle cx="20.7" cy="20.7" r="2.4" fill="#9FDDFF"/>
+    </g>
+    <circle cx="32" cy="32" r="7" fill="url(#bm-glow)"/>
+    <circle cx="32" cy="32" r="3.2" fill="#DFF4FF"/>
+    <path d="M7 43h14l5-8.5 6 16 5-7.5h20" stroke="#2FD6E8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#bm-blur)" opacity=".55"/>
+    <path d="M7 43h14l5-8.5 6 16 5-7.5h20" stroke="#3FE3F5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
