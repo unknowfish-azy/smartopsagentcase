@@ -4,7 +4,7 @@ const OPS_SPIDER_ACTIONS = Object.freeze([
   { id: 'agent', label: '智能体', route: '/agent', direction: 'top' },
   { id: 'cluster', label: '集群', route: '/servers', direction: 'upper-right' },
   { id: 'terminal', label: '终端', route: '/connections', direction: 'right' },
-  { id: 'knowledge', label: '知识库', route: '/knowledge', direction: 'lower-right' },
+  { id: 'knowledge', label: '知识库', route: '/knowledge/space', direction: 'lower-right' },
   { id: 'alerts', label: '告警', action: 'investigation', direction: 'bottom' },
   { id: 'sleep', label: '休眠', action: 'sleep', direction: 'lower-left' },
   { id: 'hide', label: '隐藏', action: 'hide', direction: 'left' }

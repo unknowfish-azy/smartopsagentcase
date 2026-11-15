@@ -71,7 +71,7 @@
           <RouterLink to="/health" class="xiaoyu-chat-drawer__link">
             <span>一键体检</span><i>→</i>
           </RouterLink>
-          <RouterLink to="/knowledge" class="xiaoyu-chat-drawer__link">
+          <RouterLink to="/knowledge/space" class="xiaoyu-chat-drawer__link">
             <span>读取知识库</span><i>→</i>
           </RouterLink>
           <RouterLink to="/sentinel/alerts" class="xiaoyu-chat-drawer__link">

@@ -1,5 +1,5 @@
 export const pluginEntries = Object.freeze({
-  knowledge: { label: '运维知识库', path: '/knowledge' },
+  knowledge: { label: '运维知识库', path: '/knowledge/space' },
   connections: { label: '连接中心', path: '/connections' },
   inspector: { label: '纠察中心', path: '/inspector' },
   statistics: { label: '巡检统计', path: '/inspector/statistics' },

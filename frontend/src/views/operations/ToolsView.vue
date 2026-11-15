@@ -26,7 +26,7 @@
           <p class="tool-note"><strong>{{ area.status }}</strong></p>
           <p class="tool-note">{{ area.next }}</p>
           <RouterLink v-if="area.toolId" :to="`/tools/${area.toolId}`">打开对应工具</RouterLink>
-          <RouterLink v-else :to="{ path: '/knowledge', query: { query: area.domain } }">检索现有知识</RouterLink>
+          <RouterLink v-else :to="{ path: '/knowledge/space', query: { query: area.domain } }">检索现有知识</RouterLink>
         </section>
       </div>
     </details>
@@ -38,7 +38,7 @@
       <ObservabilityQuery v-if="observabilitySource" :source="observabilitySource" />
       <HarborBrowser v-else-if="isHarborBrowser" />
       <div v-else-if="isProcessTool" class="process-workspace">
-        <div class="process-context"><strong>READ-ONLY PROCESS DIAGNOSTICS</strong><span v-if="knowledgeContext">KNOWLEDGE: {{ knowledgeContext }}</span><RouterLink v-if="knowledgeContext" :to="{ path: '/knowledge', query: { entry: knowledgeContext } }">返回知识详情</RouterLink><small>不读取本机或 SSH 数据，不执行命令。</small></div>
+        <div class="process-context"><strong>READ-ONLY PROCESS DIAGNOSTICS</strong><span v-if="knowledgeContext">KNOWLEDGE: {{ knowledgeContext }}</span><RouterLink v-if="knowledgeContext" :to="{ path: '/knowledge/space', query: { entry: knowledgeContext } }">返回知识详情</RouterLink><small>不读取本机或 SSH 数据，不执行命令。</small></div>
         <div class="process-scenarios" role="list" aria-label="进程诊断场景">
           <button v-for="scenario in processDiagnosticScenarios" :key="scenario.id" type="button" :class="['process-scenario', { active: scenario.id === selectedScenarioId }]" @click="selectedScenarioId = scenario.id">{{ scenario.label }}</button>
         </div>

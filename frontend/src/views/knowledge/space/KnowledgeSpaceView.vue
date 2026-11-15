@@ -1,6 +1,7 @@
 <script setup>
 /* ===== 五视图：mosaic（照片墙，默认）/ space（3D 地图）/ field（场域）/ grid（域内行）/ list（全量平铺） ===== */
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { knowledgeDomains, knowledgeEntries } from '../knowledgeCatalog.js'
 import { knowledgeReadApi } from '../knowledgeLibrary.js'
 import { computeLayout, WORLD_DEFAULT, screenTier } from './useSpaceLayout.js'
@@ -244,6 +245,28 @@ function applySearch (term) {
 function onQueryInput (e) {
   queryText.value = e.target.value
   applySearch(e.target.value)
+}
+
+/* ===== 深链兼容：旧版 /knowledge?query=…&entry=…&domain=… 落到空间场 ===== */
+const route = useRoute()
+function applyDeepLinkIntent () {
+  const q = route.query
+  const term = typeof q.query === 'string' ? q.query.replace(/\+/g, ' ') : ''
+  if (term) { queryText.value = term; applySearch(term) }
+  const entryId = typeof q.entry === 'string' ? q.entry : ''
+  if (entryId) {
+    const lower = entryId.toLowerCase()
+    const card = cards.find(c => String(c.entry.id) === entryId) ||
+                 cards.find(c => String(c.entry.id).toLowerCase() === lower)
+    if (card) openCard(card.id)
+    return
+  }
+  const domainId = typeof q.domain === 'string' ? q.domain : ''
+  const z = domainId ? domainById.get(domainId) : null
+  if (z && stageRef.value && worldRef.value) {
+    cam.flyTo(z, worldRef.value, stageRef.value)
+    renderHUD(); renderMinimapViewport()
+  }
 }
 
 function lineWidthFactor () { return (1 / Math.max(0.1, cam.k.value)).toFixed(2) }
@@ -572,7 +595,13 @@ function init () {
 }
 
 let ro = null
-onMounted(() => {
+onMounted(async () => {
+  // 深链意图（query/entry/domain）：切到 space 视图（mosaic 无检索框/侧栏，意图不可见）
+  const hasDeepLink = ['query', 'entry', 'domain'].some(k => route.query[k] !== undefined)
+  if (hasDeepLink && viewMode.value === 'mosaic') {
+    viewMode.value = 'space'
+    await nextTick()
+  }
   // init() 仅用于 space（3D 地图）模式；field 模式下跳过，避免空引用错误
   if (viewMode.value === 'space') {
     init()
@@ -585,6 +614,7 @@ onMounted(() => {
       await nextTick()
       flushMountedVisibleNow()
     }, { immediate: false })
+    if (hasDeepLink) applyDeepLinkIntent()
   }
   window.addEventListener('keydown', onKeyDown)
 })
@@ -734,6 +764,7 @@ onBeforeUnmount(() => {
           <pre class="ks-side-content">{{ selectedContent || '…' }}</pre>
           <h3>来源</h3>
           <p>{{ selectedCard.entry.source || '未注明' }} · {{ selectedCard.entry.version || '未标注' }}</p>
+          <RouterLink v-if="selectedCard.entry.relatedTool" class="ks-side-tool" :to="{ path: `/tools/${selectedCard.entry.relatedTool}`, query: { knowledge: selectedCard.entry.id } }">打开进程诊断工具</RouterLink>
           <h3>推断关系 · {{ relatedToSelected.length }}</h3>
           <div class="ks-side-rel">
             <a v-for="r in relatedToSelected" :key="r.id" href="#"
@@ -804,6 +835,7 @@ onBeforeUnmount(() => {
         <h3>摘要</h3><p>{{ selectedCard.entry.summary || '当前资料暂未记录摘要。' }}</p>
         <h3>完整正文</h3><pre class="ks-side-content">{{ selectedContent || '…' }}</pre>
         <h3>来源</h3><p>{{ selectedCard.entry.source || '未注明' }} · {{ selectedCard.entry.version || '未标注' }}</p>
+        <RouterLink v-if="selectedCard.entry.relatedTool" class="ks-side-tool" :to="{ path: `/tools/${selectedCard.entry.relatedTool}`, query: { knowledge: selectedCard.entry.id } }">打开进程诊断工具</RouterLink>
         <h3>推断关系 · {{ relatedToSelected.length }}</h3>
         <div class="ks-side-rel">
           <a v-for="r in relatedToSelected" :key="r.id" href="#" @click.prevent="openCard(r.id)">{{ r.entry.title }}</a>
@@ -887,6 +919,8 @@ onBeforeUnmount(() => {
 .ks-side-body{flex:1;overflow:auto;padding:14px 20px 28px;font-size:13px;color:var(--ds-color-muted);line-height:1.7}
 .ks-side-body h3{margin:14px 0 6px;font:11px/1 var(--ds-font-mono);letter-spacing:.12em;color:var(--ds-semantic-neutral);text-transform:uppercase}
 .ks-side-body p{margin:4px 0}
+.ks-side-tool{display:inline-block;margin-top:10px;padding:7px 14px;border:1px solid var(--ds-border, color-mix(in srgb,currentColor 18%,transparent));border-radius:8px;font-size:12px;color:var(--ds-color-text,inherit);text-decoration:none}
+.ks-side-tool:hover{border-color:var(--ds-color-accent,currentColor)}
 .ks-side-content{margin:4px 0 0;padding:12px 14px;border:1px solid var(--ds-hairline);border-radius:var(--ds-radius-md);background:rgba(0,0,0,.25);font-size:12.5px;white-space:pre-wrap;font-family:var(--ds-font-cn);color:var(--ds-color-text);line-height:1.6;max-height:360px;overflow:auto}
 .ks-side-rel{display:flex;flex-direction:column;gap:6px}
 .ks-side-rel a{color:var(--ds-color-muted);text-decoration:none;border-left:2px solid var(--ds-color-border);padding-left:8px;font-size:12px}

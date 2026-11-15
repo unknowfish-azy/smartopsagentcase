@@ -120,7 +120,7 @@ test('ECharts and the knowledge catalog stay behind lazy route boundaries', asyn
 
   assert.match(router, /component: \(\) => import\('\.\.\/views\/dashboard\/DashboardView\.vue'\)/)
   assert.match(router, /component: \(\) => import\('\.\.\/views\/model\/ModelAnalyticsView\.vue'\)/)
-  assert.match(router, /component: \(\) => import\('\.\.\/views\/knowledge\/KnowledgeView\.vue'\)/)
+  assert.match(router, /component: \(\) => import\('\.\.\/views\/knowledge\/space\/KnowledgeSpaceView\.vue'\)/)
   assert.match(router, /component: \(\) => import\('\.\.\/views\/knowledge\/QuizView\.vue'\)/)
   for (const content of [main, mainLayout]) {
     assert.equal(content.includes('echarts'), false)

@@ -40,13 +40,13 @@
         <!-- 3 个快捷按钮 -->
         <div class="xiaoyu-quicks">
           <button type="button" class="xiaoyu-quick" @click="$router.push('/health')">一键体检</button>
-          <button type="button" class="xiaoyu-quick" @click="$router.push('/knowledge')">读取知识库</button>
+          <button type="button" class="xiaoyu-quick" @click="$router.push('/knowledge/space')">读取知识库</button>
           <button type="button" class="xiaoyu-quick" @click="goExplainAlerts">解释告警</button>
         </div>
 
         <!-- RAG + Agent 训练 双行指标：可点击跳转对应详情 -->
         <div class="xiaoyu-metrics">
-          <button type="button" class="xiaoyu-metric" @click="router.push('/knowledge?highlight=rag')">
+          <button type="button" class="xiaoyu-metric" @click="router.push('/knowledge/space')">
             <span class="xiaoyu-metric-label">RAG</span>
             <strong>{{ ragTotal }}</strong>
             <span class="xiaoyu-metric-hint">知识条目 · 点击查看</span>

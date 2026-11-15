@@ -60,7 +60,7 @@ test('exposes existing routes plus explicit local pet controls', () => {
     ['agent', '/agent'],
     ['cluster', '/servers'],
     ['terminal', '/connections'],
-    ['knowledge', '/knowledge']
+    ['knowledge', '/knowledge/space']
   ])
   assert.deepEqual(getOpsSpiderActions().filter(({ action }) => action).map(({ id, action }) => [id, action]), [
     ['alerts', 'investigation'],

@@ -13,7 +13,7 @@
     </header>
 
     <nav class="zone-tabs" aria-label="Knowledge zones">
-      <RouterLink class="zone-tab" to="/knowledge">系统知识库</RouterLink>
+      <RouterLink class="zone-tab" to="/knowledge/space">系统知识库</RouterLink>
       <RouterLink class="zone-tab" to="/knowledge/personal">我的知识库</RouterLink>
       <RouterLink class="zone-tab active" to="/knowledge/quiz">题库</RouterLink>
     </nav>
