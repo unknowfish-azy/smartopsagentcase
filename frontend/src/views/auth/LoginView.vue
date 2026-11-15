@@ -1,6 +1,6 @@
 <template>
   <StellarOceanProvider state="thinking">
-  <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode" :data-theme="resolvedTheme">
+  <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode" :data-theme="resolvedTheme" @pointermove="moveBubbleLight" @pointerleave="resetBubbleLight">
     <!-- §8 Gate-1 CanvasAmbientField: 桌面端才挂载 + 移动端轻量降级（70 颗 + 无连线） -->
     <CanvasAmbientField v-if="!isMobile" class="login-ambient" :palette-root="loginShellRef" :star-multiplier="visualMode === 'lightweight' ? 1 : 1.8" :connect-particles="visualMode !== 'lightweight'" :connect-max-dist="130" />
     <!-- §8 Gate-2 封面视频槽：balanced 档 + 桌面端 + 仅当 public/assets/login-cover.mp4 存在时才挂载 -->
@@ -144,18 +144,23 @@ const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
 const loginCoverPoster = '/assets/starfield-placeholder.svg'
 
 /* 上浮气泡：确定性布局（不用 Math.random，保证每次渲染与截图/回归一致）。
-   10 颗；lightweight 档由 CSS 只保留前 4 颗并放慢周期。 */
+   14 颗；lightweight 档由 CSS 只保留前 4 颗并放慢周期。
+   --depth 为鼠标视差深度：大泡近（系数大），小泡远；--bubble-px/py 由 moveBubbleLight 写入。 */
 const bubbles = [
-  { id: 1, style: { left: '6%', width: '18px', height: '18px', '--dur': '17s', '--delay': '0s', '--sway': '26px', '--op': '.50', '--sc': '.9' } },
-  { id: 2, style: { left: '16%', width: '34px', height: '34px', '--dur': '24s', '--delay': '-9s', '--sway': '-34px', '--op': '.40', '--sc': '1' } },
-  { id: 3, style: { left: '27%', width: '12px', height: '12px', '--dur': '14s', '--delay': '-4s', '--sway': '18px', '--op': '.56', '--sc': '.8' } },
-  { id: 4, style: { left: '38%', width: '44px', height: '44px', '--dur': '30s', '--delay': '-16s', '--sway': '-28px', '--op': '.34', '--sc': '1' } },
-  { id: 5, style: { left: '49%', width: '22px', height: '22px', '--dur': '19s', '--delay': '-7s', '--sway': '30px', '--op': '.46', '--sc': '.95' } },
-  { id: 6, style: { left: '60%', width: '14px', height: '14px', '--dur': '15s', '--delay': '-11s', '--sway': '-20px', '--op': '.54', '--sc': '.85' } },
-  { id: 7, style: { left: '70%', width: '30px', height: '30px', '--dur': '26s', '--delay': '-3s', '--sway': '24px', '--op': '.38', '--sc': '1' } },
-  { id: 8, style: { left: '80%', width: '16px', height: '16px', '--dur': '16s', '--delay': '-13s', '--sway': '-26px', '--op': '.52', '--sc': '.9' } },
-  { id: 9, style: { left: '89%', width: '26px', height: '26px', '--dur': '22s', '--delay': '-6s', '--sway': '20px', '--op': '.42', '--sc': '1' } },
-  { id: 10, style: { left: '95%', width: '10px', height: '10px', '--dur': '13s', '--delay': '-10s', '--sway': '-14px', '--op': '.58', '--sc': '.8' } }
+  { id: 1, style: { left: '4%', width: '18px', height: '18px', '--dur': '14s', '--delay': '0s', '--sway': '26px', '--op': '.50', '--sc': '.9', '--depth': '.7' } },
+  { id: 2, style: { left: '13%', width: '34px', height: '34px', '--dur': '20s', '--delay': '-9s', '--sway': '-34px', '--op': '.40', '--sc': '1', '--depth': '1.1' } },
+  { id: 3, style: { left: '23%', width: '12px', height: '12px', '--dur': '12s', '--delay': '-4s', '--sway': '18px', '--op': '.56', '--sc': '.8', '--depth': '.5' } },
+  { id: 4, style: { left: '32%', width: '44px', height: '44px', '--dur': '25s', '--delay': '-16s', '--sway': '-28px', '--op': '.34', '--sc': '1', '--depth': '1.3' } },
+  { id: 5, style: { left: '42%', width: '22px', height: '22px', '--dur': '16s', '--delay': '-7s', '--sway': '30px', '--op': '.46', '--sc': '.95', '--depth': '.8' } },
+  { id: 6, style: { left: '51%', width: '14px', height: '14px', '--dur': '13s', '--delay': '-11s', '--sway': '-20px', '--op': '.54', '--sc': '.85', '--depth': '.5' } },
+  { id: 7, style: { left: '60%', width: '30px', height: '30px', '--dur': '22s', '--delay': '-3s', '--sway': '24px', '--op': '.38', '--sc': '1', '--depth': '1' } },
+  { id: 8, style: { left: '69%', width: '16px', height: '16px', '--dur': '14s', '--delay': '-13s', '--sway': '-26px', '--op': '.52', '--sc': '.9', '--depth': '.6' } },
+  { id: 9, style: { left: '78%', width: '26px', height: '26px', '--dur': '18s', '--delay': '-6s', '--sway': '20px', '--op': '.42', '--sc': '1', '--depth': '.9' } },
+  { id: 10, style: { left: '86%', width: '10px', height: '10px', '--dur': '11s', '--delay': '-10s', '--sway': '-14px', '--op': '.58', '--sc': '.8', '--depth': '.4' } },
+  { id: 11, style: { left: '9%', width: '24px', height: '24px', '--dur': '17s', '--delay': '-14s', '--sway': '-22px', '--op': '.44', '--sc': '.95', '--depth': '.75' } },
+  { id: 12, style: { left: '37%', width: '13px', height: '13px', '--dur': '12s', '--delay': '-2s', '--sway': '16px', '--op': '.55', '--sc': '.85', '--depth': '.55' } },
+  { id: 13, style: { left: '56%', width: '36px', height: '36px', '--dur': '24s', '--delay': '-19s', '--sway': '-30px', '--op': '.36', '--sc': '1', '--depth': '1.2' } },
+  { id: 14, style: { left: '93%', width: '20px', height: '20px', '--dur': '15s', '--delay': '-8s', '--sway': '22px', '--op': '.48', '--sc': '.9', '--depth': '.95' } }
 ]
 
 const router = useRouter()
@@ -250,6 +255,32 @@ function moveGlassLight(event) {
 
 watch(visualMode, resetGlassLight)
 
+/* 气泡鼠标视差：仅 balanced 档；rAF 节流写 --bubble-px/py（±18/±14px），
+   各气泡按自身 --depth 缩放位移（大泡近动得多，小泡远动得少）。 */
+let bubbleFrame = 0
+let bubblePointerX = 0
+let bubblePointerY = 0
+function moveBubbleLight(event) {
+  if (event.pointerType === 'touch' || isMobile.value || visualMode.value !== 'balanced' || glassMotionQuery?.matches) return
+  // currentTarget 只在派发期间有效：同步读 bounds，rAF 里写 loginShellRef
+  const bounds = event.currentTarget.getBoundingClientRect()
+  bubblePointerX = Math.max(-1, Math.min(1, (event.clientX - bounds.left) / bounds.width - .5))
+  bubblePointerY = Math.max(-1, Math.min(1, (event.clientY - bounds.top) / bounds.height - .5))
+  if (bubbleFrame) return
+  bubbleFrame = requestAnimationFrame(() => {
+    bubbleFrame = 0
+    loginShellRef.value?.style.setProperty('--bubble-px', `${(bubblePointerX * 36).toFixed(1)}px`)
+    loginShellRef.value?.style.setProperty('--bubble-py', `${(bubblePointerY * 28).toFixed(1)}px`)
+  })
+}
+function resetBubbleLight() {
+  cancelAnimationFrame(bubbleFrame)
+  bubbleFrame = 0
+  loginShellRef.value?.style.setProperty('--bubble-px', '0px')
+  loginShellRef.value?.style.setProperty('--bubble-py', '0px')
+}
+watch(visualMode, resetBubbleLight)
+
 function selectPortal(event) {
   const next = form.portal === 'user' ? 'admin' : 'user'
   switchPortal(next)
@@ -283,6 +314,7 @@ function updateMobile() { isMobile.value = window.innerWidth < 1024 }
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(glassFrame)
+  cancelAnimationFrame(bubbleFrame)
   glassMotionQuery?.removeEventListener('change', resetGlassLight)
   window.removeEventListener('resize', updateMobile)
 })
@@ -493,6 +525,9 @@ async function finishLogin(user) {
 .login-bubbles span {
   position: absolute; bottom: -12%;
   border-radius: 50%;
+  /* 鼠标视差：--bubble-px/py 由壳层写入，各泡按 --depth 缩放（大泡近、小泡远） */
+  --bx: calc(var(--bubble-px, 0px) * var(--depth, .6));
+  --by: calc(var(--bubble-py, 0px) * var(--depth, .6));
   /* 泡体 = 左上高光 + 泡壁描边（中心透明，只有边缘一圈），不叠 filter */
   background:
     radial-gradient(circle at 30% 28%, var(--bubble-glint), transparent 42%),
@@ -503,11 +538,11 @@ async function finishLogin(user) {
   animation-delay: var(--delay);
 }
 @keyframes login-bubble-rise {
-  0%   { transform: translate3d(0, 0, 0) scale(var(--sc)); opacity: 0; }
+  0%   { transform: translate3d(var(--bx), 0, 0) scale(var(--sc)); opacity: 0; }
   8%   { opacity: var(--op); }
-  50%  { transform: translate3d(var(--sway), -55vh, 0) scale(calc(var(--sc) * 1.06)); }
+  50%  { transform: translate3d(calc(var(--sway) + var(--bx)), calc(-55vh + var(--by)), 0) scale(calc(var(--sc) * 1.06)); }
   90%  { opacity: var(--op); }
-  100% { transform: translate3d(calc(-1 * var(--sway)), -112vh, 0) scale(var(--sc)); opacity: 0; }
+  100% { transform: translate3d(calc(-1 * var(--sway) + var(--bx)), calc(-112vh + var(--by)), 0) scale(var(--sc)); opacity: 0; }
 }
 /* lightweight：只留前 4 颗 + 周期放慢；reduced-motion / 系统 reduce：气泡静止隐藏 */
 .login-shell[data-visual-mode='lightweight'] .login-bubbles span:nth-child(n+5) { display: none; }

@@ -20,7 +20,7 @@ async function setup(page, visual) {
 const p1 = await browser.newPage({ viewport: { width: 1440, height: 900 } })
 await setup(p1, 'balanced')
 await p1.locator('.login-bubbles').waitFor()
-check('balanced: 10 颗气泡挂载', await p1.locator('.login-bubbles span').count() === 10)
+check('balanced: 14 颗气泡挂载', await p1.locator('.login-bubbles span').count() === 14)
 const moved = await p1.evaluate(async () => {
   const s = document.querySelector('.login-bubbles span')
   const a = getComputedStyle(s).transform
@@ -28,6 +28,18 @@ const moved = await p1.evaluate(async () => {
   return a !== getComputedStyle(s).transform
 })
 check('balanced: 气泡动画帧推进', moved)
+// 鼠标视差：pointermove 后壳层写入 --bubble-px，且不同深度泡位移不同
+await p1.mouse.move(200, 200)
+await p1.waitForFunction(() => getComputedStyle(document.querySelector('.login-shell')).getPropertyValue('--bubble-px').trim() !== '0px', null, { timeout: 3000 }).catch(() => {})
+const px = await p1.evaluate(() => getComputedStyle(document.querySelector('.login-shell')).getPropertyValue('--bubble-px').trim())
+check('balanced: 鼠标视差写入 --bubble-px', px !== '0px' && px !== '', px)
+const depthDiff = await p1.evaluate(() => {
+  const spans = document.querySelectorAll('.login-bubbles span')
+  const t1 = getComputedStyle(spans[3]).getPropertyValue('--bx')
+  const t2 = getComputedStyle(spans[9]).getPropertyValue('--bx')
+  return t1 !== t2
+})
+check('balanced: 不同深度泡视差位移不同', depthDiff)
 await p1.screenshot({ path: 'test-artifacts/login-bubbles/dark-balanced.png' })
 
 // 2. 浅色主题气泡令牌
