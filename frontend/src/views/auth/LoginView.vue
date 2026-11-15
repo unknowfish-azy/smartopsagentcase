@@ -717,21 +717,21 @@ async function finishLogin(user) {
 .login-shell[data-visual-mode='lightweight'] .login-traces__pulse { display: none; }
 .login-shell[data-visual-mode='lightweight'] .login-traces__glow { animation-duration: calc(var(--flow-dur, 5s) * 1.4); }
 @media (prefers-reduced-motion: reduce) { .login-traces__glow, .login-traces__node { animation: none; } }
-/* 角落缀饰：与走线同语言——令牌描边 + 既有径向渐变 id，透明度压低不抢主体 */
-.login-corner-deco { position: absolute; z-index: 0; pointer-events: none; opacity: .55; }
+/* 角落缀饰：与走线同语言——令牌描边 + 既有径向渐变 id，配色加重但不抢主体 */
+.login-corner-deco { position: absolute; z-index: 0; pointer-events: none; opacity: .78; }
 .login-corner-deco--bl { left: 0; bottom: 0; width: clamp(220px, 21vw, 380px); height: auto; }
 .login-corner-deco--br { right: 0; bottom: 0; width: clamp(200px, 19vw, 340px); height: auto; }
-.login-corner-deco__arc { fill: none; stroke: color-mix(in srgb, var(--smart-primary-strong) 30%, transparent); stroke-width: 1; }
-.login-corner-deco__arc--dashed { stroke-dasharray: 3 7; stroke: color-mix(in srgb, var(--smart-primary-strong) 20%, transparent); }
-.login-corner-deco__spoke { stroke: color-mix(in srgb, var(--smart-primary-strong) 16%, transparent); stroke-width: 1; }
-.login-corner-deco__constellation { fill: none; stroke: color-mix(in srgb, var(--smart-primary-strong) 34%, transparent); stroke-width: 1; stroke-dasharray: 4 5; }
+.login-corner-deco__arc { fill: none; stroke: color-mix(in srgb, var(--smart-primary-strong) 52%, transparent); stroke-width: 1.1; }
+.login-corner-deco__arc--dashed { stroke-dasharray: 3 7; stroke: color-mix(in srgb, var(--smart-primary-strong) 38%, transparent); }
+.login-corner-deco__spoke { stroke: color-mix(in srgb, var(--smart-primary-strong) 32%, transparent); stroke-width: 1; }
+.login-corner-deco__constellation { fill: none; stroke: color-mix(in srgb, var(--smart-primary-strong) 58%, transparent); stroke-width: 1.1; stroke-dasharray: 4 5; }
 .login-corner-deco__star { fill: url('#login-trace-core-cyan'); animation: login-trace-breathe 3.4s ease-in-out infinite alternate; }
 .login-corner-deco__star--green { fill: url('#login-trace-core-green'); animation-duration: 4.2s; }
-.login-corner-deco__tick { stroke: color-mix(in srgb, var(--smart-primary-strong) 26%, transparent); stroke-width: 1; }
+.login-corner-deco__tick { stroke: color-mix(in srgb, var(--smart-primary-strong) 45%, transparent); stroke-width: 1; }
 .login-corner-deco__orbit { fill: url('#login-trace-pulse-cyan'); }
 .login-corner-deco__orbit--green { fill: url('#login-trace-pulse-green'); }
-.login-corner-deco__sweep { fill: color-mix(in srgb, var(--smart-primary-strong) 7%, transparent); transform-origin: 100% 100%; animation: login-corner-sweep 22s linear infinite; }
-.login-corner-deco__label { font: 9px var(--font-mono); letter-spacing: .1em; fill: color-mix(in srgb, var(--smart-muted) 72%, transparent); }
+.login-corner-deco__sweep { fill: color-mix(in srgb, var(--smart-primary-strong) 11%, transparent); transform-origin: 100% 100%; animation: login-corner-sweep 22s linear infinite; }
+.login-corner-deco__label { font: 9px var(--font-mono); letter-spacing: .1em; fill: color-mix(in srgb, var(--smart-muted) 88%, transparent); }
 @keyframes login-corner-sweep { to { transform: rotate(360deg); } }
 .login-shell[data-visual-mode='lightweight'] .login-corner-deco__orbit,
 .login-shell[data-visual-mode='lightweight'] .login-corner-deco__sweep { display: none; }
