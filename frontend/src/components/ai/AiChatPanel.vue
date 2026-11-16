@@ -32,13 +32,11 @@
         </details>
         <p v-if="message.pending && !message.streaming && !message.content" class="ai-chat-pending"><span></span><span></span><span></span></p>
         <template v-else-if="message.content">
-          <!-- 流式中：保持原文逐字输出 + 光标；完成后：按行拆分逐行揭示（S-AI） -->
+          <!-- 流式中：保持原文逐字输出 + 光标；完成后：助手消息按 Markdown 渲染（无依赖、先转义再转换） -->
           <p v-if="message.streaming" :class="{ 'ai-chat-message__error': message.error }">{{ message.content }}<span class="ai-cursor" aria-hidden="true"></span></p>
-          <p v-else :class="{ 'ai-chat-message__error': message.error, 'ml-stream-lines': message.role === 'assistant' }">
-            <template v-for="(line, idx) in splitLines(message.content)" :key="idx">
-              <span class="ai-chat-message__line">{{ line }}</span>
-            </template>
-          </p>
+          <!-- 安全说明：renderMarkdown 对全部输入先做 HTML 转义，链接仅放行 http/https，v-html 无注入面 -->
+          <div v-else-if="message.role === 'assistant' && !message.error" class="ai-chat-markdown ml-stream-lines" v-html="renderMarkdown(message.content)"></div>
+          <p v-else :class="{ 'ai-chat-message__error': message.error }">{{ message.content }}</p>
         </template>
         <div v-if="message.error && !message.pending" class="ai-chat-retry-row">
           <span class="ai-chat-retry-hint">回答生成失败，可直接重试；不会重复发送你的问题。</span>
@@ -84,6 +82,13 @@
           <p class="ai-run-diagnostics__hint">关联 ID 仅用于定位本次请求，不代表审批或身份；运行记录页暂不支持按 run_id 精确检索，打开后可按时间范围与状态对照。</p>
         </details>
         <AssistantEvidence v-if="!message.pending && !message.error" :message="message" />
+        <ChatMessageActions
+          v-if="!message.pending && !message.error && message.role === 'assistant'"
+          :key="`actions:${message.id}`"
+          :message="message"
+          :conversation-id="activeId"
+          @followup="useFollowup"
+        />
         <ChatMessageAttachments :key="`${activeId}:${message.id}`" :conversation-id="activeId" :attachments="message.attachments" :vision-events="message.visionEvents" />
       </article>
     </div>
@@ -154,8 +159,11 @@ import { useAiChatStore } from '../../stores/aiChat.js'
 import { createSpeechInput } from '../../domain/chat/speechInput.ts'
 import AssistantSelector from './AssistantSelector.vue'
 import AssistantEvidence from './AssistantEvidence.vue'
+import ChatMessageActions from './ChatMessageActions.vue'
 import ChatAttachmentComposer from './ChatAttachmentComposer.vue'
 import ChatMessageAttachments from './ChatMessageAttachments.vue'
+import { renderMarkdown } from './markdown.js'
+import './markdown.css'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -217,11 +225,6 @@ const STEP_KINDS = [
 ]
 function stepKind(label = '') {
   return STEP_KINDS.find(kind => kind.test.test(label)) || { tag: '步骤', tone: 'neutral' }
-}
-
-/* 把回答按换行拆成独立行，供 ml-stream-lines 逐行揭示；单行内容保持不拆分。 */
-function splitLines(content = '') {
-  return String(content).split('\n')
 }
 
 // 运行诊断只展示本链路真实上报的字段；缺失就明确写“未记录”，不猜测 provider 或耗时。
@@ -346,6 +349,12 @@ function useQuickAction(prompt) {
   attachmentNotice.value = ''
   nextTick(() => { adjustHeight(); textareaRef.value?.focus() })
 }
+/* 追问：把该回答对应的原问题回填输入框，用户可修改后再发送。 */
+function useFollowup(prompt) {
+  draft.value = prompt ? `${prompt}\n\n（追问：请基于上面的回答进一步说明）` : '（请继续详细说明上面的回答）'
+  attachmentNotice.value = ''
+  nextTick(() => { adjustHeight(); textareaRef.value?.focus() })
+}
 
 async function sendMessage() {
   const prompt = draft.value.trim()
@@ -428,8 +437,8 @@ onBeforeUnmount(() => {
 .ai-chat-message--user { justify-self: end; border-color: color-mix(in srgb, var(--smart-primary) 50%, var(--smart-border)); background: color-mix(in srgb, var(--smart-primary-soft, rgba(122,215,245,.12)) 72%, var(--smart-surface)); }
 .ai-chat-message__meta { margin-bottom: 7px; color: var(--smart-primary-strong); font: 9px var(--font-mono); letter-spacing: .12em; }
 .ai-chat-message p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--smart-text); font-size: 13px; line-height: 1.65; }
-/* 逐行揭示：每行作为块级堆叠，继承 ml-stream-lines 的错峰淡入。 */
-.ai-chat-message__line { display: block; min-height: 1.65em; }
+/* Markdown 样式已抽到 ./markdown.css（全局），否则 v-html 后代元素在 scoped 下匹配不到。
+ * 覆盖基础 `.ai-chat-message p` 的 pre-wrap 由全局规则中 `.ai-chat-markdown p` 完成。 */
 .ai-chat-message__error, .ai-chat-error { color: var(--ds-semantic-danger) !important; }
 .ai-chat-retry-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .ai-chat-retry-hint { font-size: 11px; color: var(--smart-muted); }

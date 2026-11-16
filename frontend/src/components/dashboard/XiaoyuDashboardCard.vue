@@ -32,6 +32,8 @@
                 <img v-for="(src, idx) in msg.images" :key="idx" :src="src" :alt="`附图 ${idx + 1}`" />
               </div>
               <span v-if="msg.error" class="xiaoyu-msg-error">{{ msg.content }}</span>
+              <!-- 助手回复统一按 Markdown 渲染（先转义再转换，v-html 无注入面）；流式进行中保留逐字纯文本 -->
+              <div v-else-if="msg.role === 'assistant' && !msg.pending && !msg.streaming" class="xiaoyu-msg-text ai-chat-markdown" v-html="renderMarkdown(msg.content)"></div>
               <span v-else class="xiaoyu-msg-text">{{ msg.content || (msg.pending ? '思考中…' : '') }}</span>
             </div>
           </div>
@@ -96,6 +98,8 @@ import { useRouter } from 'vue-router'
 import AgentPersona from '../persona/AgentPersona.vue'
 import { useCompanionStore } from '../../stores/companion.js'
 import { useAiChatStore } from '../../stores/aiChat.js'
+import { renderMarkdown } from '../ai/markdown.js'
+import '../ai/markdown.css'
 
 const router = useRouter()
 const companion = useCompanionStore()

@@ -55,7 +55,9 @@
       <AssistantSelector />
       <div ref="petMessages" class="pet-chat__messages" aria-live="polite">
         <article v-for="message in chatMessages.slice(-6)" :key="message.id" :class="`pet-chat__message--${message.role}`">
-          <span v-if="message.pending" class="pet-chat__pending">正在思考…</span><span v-else :class="{ 'pet-chat__error': message.error }">{{ message.content }}</span>
+          <span v-if="message.pending" class="pet-chat__pending">正在思考…</span>
+          <div v-else-if="message.role === 'assistant' && !message.error" class="ai-chat-markdown" v-html="renderMarkdown(message.content)"></div>
+          <span v-else :class="{ 'pet-chat__error': message.error }">{{ message.content }}</span>
           <AssistantEvidence v-if="!message.pending && !message.error" :message="message" />
         </article>
         <p v-if="!chatMessages.length" class="pet-chat__empty">说说你遇到的运维问题</p>
@@ -87,6 +89,8 @@ import { useCompanionStore } from '../../stores/companion.js'
 import { useAiChatStore } from '../../stores/aiChat.js'
 import AssistantSelector from '../ai/AssistantSelector.vue'
 import AssistantEvidence from '../ai/AssistantEvidence.vue'
+import { renderMarkdown } from '../ai/markdown.js'
+import '../ai/markdown.css'
 
 const props = defineProps({ state: { type: String, default: 'idle' }, agentState: { type: String, default: 'idle' }, compact: { type: Boolean, default: false } })
 const emit = defineEmits(['navigate'])
@@ -398,6 +402,8 @@ onBeforeUnmount(() => {
 .pet-chat__messages article { padding: 8px 10px; border: 1px solid var(--pet-panel-border); border-radius: 8px; font: 12px/1.6 var(--font-cn); white-space: pre-wrap; overflow-wrap: anywhere; }
 .pet-chat__message--user { justify-self: end; max-width: 88%; background: color-mix(in srgb, var(--smart-primary) 10%, var(--pet-action-bg)); color: var(--smart-text); }
 .pet-chat__message--assistant { max-width: 92%; background: var(--smart-card); color: var(--smart-text); }
+/* Markdown 块级排版：v-html 元素不带 data-v，须用 :deep 覆盖容器的 pre-wrap */
+.pet-chat__message--assistant :deep(.ai-chat-markdown) { white-space: normal; }
 .pet-chat__empty { margin: 0; padding: 20px 4px; color: var(--smart-muted); font-size: 12px; text-align: center; }
 .pet-chat__error { color: var(--smart-danger); }
 .pet-chat > :deep(.assistant-selector) { margin: 8px 8px 0; }

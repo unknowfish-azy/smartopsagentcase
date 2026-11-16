@@ -1,0 +1,42 @@
+/* AI 对话 Markdown 统一样式。
+ * 必须是全局样式（不由 SFC scoped 包裹）：v-html 生成的元素不带 data-v 属性，
+ * 写在 <style scoped> 里时后代选择器（如 `.ai-chat-markdown p`）永远匹配不到。
+ * 由 AiChatPanel / XiaoyuDashboardCard / OpsSpiderPet 共同引用，保证所有对话出口一致。
+ */
+.ai-chat-markdown {
+  color: var(--smart-text);
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.ai-chat-markdown > :first-child { margin-top: 0; }
+.ai-chat-markdown > :last-child { margin-bottom: 0; }
+.ai-chat-markdown p { margin: 6px 0; white-space: normal; }
+/* AiChatPanel 的 scoped `.ai-chat-message p[data-v]` 特异性更高，这里用重复类压过它的 pre-wrap */
+.ai-chat-message .ai-chat-markdown.ai-chat-markdown p { white-space: normal; }
+.ai-chat-markdown h1,
+.ai-chat-markdown h2,
+.ai-chat-markdown h3,
+.ai-chat-markdown h4 { margin: 12px 0 6px; font-weight: 600; line-height: 1.4; }
+.ai-chat-markdown h1 { font-size: 16px; }
+.ai-chat-markdown h2 { font-size: 15px; }
+.ai-chat-markdown h3 { font-size: 14px; }
+.ai-chat-markdown h4 { font-size: 13px; }
+.ai-chat-markdown ul,
+.ai-chat-markdown ol { display: grid; gap: 3px; margin: 6px 0; padding-left: 20px; }
+.ai-chat-markdown li { font-size: 13px; line-height: 1.6; }
+.ai-chat-markdown blockquote { margin: 6px 0; padding: 4px 10px; border-left: 3px solid var(--smart-border-strong); color: var(--smart-muted); }
+.ai-chat-markdown code { padding: 1px 5px; border-radius: 4px; background: color-mix(in srgb, var(--smart-primary-soft, rgba(122,215,245,.14)) 82%, transparent); font: 12px var(--font-mono); }
+.ai-chat-markdown pre { margin: 8px 0; padding: 10px 12px; overflow-x: auto; border: 1px solid var(--smart-border); border-radius: 8px; background: color-mix(in srgb, var(--smart-surface) 72%, rgba(0,0,0,.28)); }
+.ai-chat-markdown pre code { padding: 0; background: none; font-size: 12px; line-height: 1.6; }
+.ai-chat-markdown a { color: var(--smart-primary-strong); }
+.ai-chat-markdown strong { font-weight: 600; color: var(--smart-text); }
+
+/* 紧凑容器（首页小鱼卡 / 桌宠）沿用各自字号，避免 13px 撑破小面板 */
+.xiaoyu-msg-text.ai-chat-markdown,
+.pet-chat__message--assistant .ai-chat-markdown {
+  font-size: var(--ds-type-body-caption-size, 11.5px);
+  line-height: var(--ds-line-height-base, 1.6);
+}
+.xiaoyu-msg-text.ai-chat-markdown li,
+.pet-chat__message--assistant .ai-chat-markdown li { font-size: inherit; }
