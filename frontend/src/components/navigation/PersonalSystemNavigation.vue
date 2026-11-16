@@ -72,7 +72,7 @@
 
 <script setup>
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { ArrowDown, ArrowRight, ChatDotRound, CircleCheck, Collection, Cpu, DataAnalysis, Grid, HomeFilled, Link, Memo, Monitor, Setting, Trophy } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowRight, ChatDotRound, CircleCheck, Collection, Connection, Cpu, DataAnalysis, Grid, HomeFilled, Link, Memo, Monitor, Setting, Trophy } from '@element-plus/icons-vue'
 import NavHealthBadge from './NavHealthBadge.vue'
 import { navigationGroupView } from '../../navigation/personalSystemNavigation.js'
 
@@ -90,7 +90,7 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-group', 'navigate', 'close-mobile'])
 
-const icons = { ChatDotRound, CircleCheck, Collection, Cpu, DataAnalysis, Grid, HomeFilled, Link, Memo, Monitor, Setting, Trophy }
+const icons = { ChatDotRound, CircleCheck, Collection, Connection, Cpu, DataAnalysis, Grid, HomeFilled, Link, Memo, Monitor, Setting, Trophy }
 
 function iconFor(name) {
   return icons[name]

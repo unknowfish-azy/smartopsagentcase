@@ -126,7 +126,9 @@ const items = computed(() => {
       enabled: false,
       reason: candidate.value?.sourceRunId
         ? '同一来源运行只能有一个候选（UNIQUE(user_id, source_run_id)），覆盖需要后端支持'
-        : '来源运行不存在'
+        : candidate.value?.sourceType === 'WEB_RESEARCH'
+          ? '同一网页任务只能有一个候选；需要新证据时请重新读取网页生成新任务'
+          : '来源记录不存在'
     },
     {
       key: 'evidence',
@@ -137,7 +139,7 @@ const items = computed(() => {
     },
     {
       key: 'copy-trace',
-      label: '复制 Trace ID',
+      label: candidate.value?.sourceType === 'WEB_RESEARCH' ? '复制溯源标识' : '复制 Trace ID',
       enabled: Boolean(candidate.value?.traceId),
       request: `写入剪贴板：${candidate.value?.traceId || ''}（无 API 请求）`,
       reason: '该行没有 Trace ID'

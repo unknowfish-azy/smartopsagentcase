@@ -5,6 +5,7 @@ import com.smartops.operations.OperationRedactor;
 import com.smartops.security.OutboundUrlPolicy;
 import com.smartops.security.PinnedDns;
 import com.smartops.security.SessionUser;
+import com.smartops.service.KnowledgeCandidateService;
 import com.smartops.service.PersonalKnowledgeService;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -40,7 +41,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 知识库爬取：把一个同域静态站点抓成个人知识库条目。
+ * 知识库网页采集：把同域静态站点的新增/变更页面抓成待审知识候选。
+ * 正式知识条目只能由审核人员在候选中心采纳，采集与雷达不直接写入。
  *
  * <p>抓取过程是同步的，网络请求不包事务；每页独立落库，单页失败不影响整轮。</p>
  */
@@ -66,10 +68,11 @@ public class KnowledgeCrawlService {
     private static final Pattern BLOCK = Pattern.compile("</?(?:p|div|br|hr|li|ul|ol|tr|td|th|table|thead|tbody|section|article|header|footer|nav|aside|main|h[1-6]|blockquote|pre|form|figure|figcaption)\\b[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern TAG = Pattern.compile("<[^>]+>");
     private static final Pattern ASSET = Pattern.compile(".*\\.(?:css|js|mjs|png|jpe?g|gif|svg|ico|webp|pdf|zip|gz|tar|mp4|mp3|woff2?|ttf)(?:\\?.*)?$", Pattern.CASE_INSENSITIVE);
-    private static final String SOURCE_COLUMNS = "id,library_id,name,seed_url,max_pages,depth,last_run_at,last_status,last_error,created_at";
+    private static final String SOURCE_COLUMNS = "id,library_id,name,seed_url,max_pages,depth,last_run_at,last_status,last_error,monitor_enabled,monitor_interval_minutes,next_run_at,created_at";
 
     private final JdbcTemplate jdbc;
     private final PersonalKnowledgeService knowledge;
+    private final KnowledgeCandidateService candidates;
     // SEC-06 连接期 DNS pin：java.net.http 在 JDK 17 上没有解析钩子，改用
     // Apache HttpClient 5 + fail-closed 的 PinnedDns 解析器——建连只能拿到
     // OutboundUrlPolicy 校验过的地址，DNS rebinding 窗口关闭。
@@ -77,8 +80,14 @@ public class KnowledgeCrawlService {
     private final CloseableHttpClient client;
 
     public KnowledgeCrawlService(JdbcTemplate jdbc, PersonalKnowledgeService knowledge) {
+        this(jdbc, knowledge, new KnowledgeCandidateService(jdbc, null, knowledge));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public KnowledgeCrawlService(JdbcTemplate jdbc, PersonalKnowledgeService knowledge, KnowledgeCandidateService candidates) {
         this.jdbc = jdbc;
         this.knowledge = knowledge;
+        this.candidates = candidates;
         PoolingHttpClientConnectionManager connections = PoolingHttpClientConnectionManagerBuilder.create()
                 .setDnsResolver(new org.apache.hc.client5.http.DnsResolver() {
                     @Override
@@ -138,6 +147,17 @@ public class KnowledgeCrawlService {
     public List<CrawlSource> listSources(SessionUser actor) {
         requireActor(actor);
         return jdbc.query("SELECT " + SOURCE_COLUMNS + " FROM knowledge_crawl_source WHERE user_id=? ORDER BY id DESC", this::mapSource, actor.id());
+    }
+
+    /** 开启或暂停某个来源的自动时效检测。检测周期只影响该来源，不修改采集范围。 */
+    public CrawlSource updateMonitor(SessionUser actor, long sourceId, boolean enabled, Integer intervalMinutes) {
+        requireActor(actor);
+        detailSource(actor.id(), sourceId);
+        int interval = clamp(intervalMinutes, 15, 10_080, 60);
+        Timestamp nextRun = enabled ? Timestamp.from(Instant.now()) : null;
+        jdbc.update("UPDATE knowledge_crawl_source SET monitor_enabled=?,monitor_interval_minutes=?,next_run_at=? WHERE id=? AND user_id=?",
+                enabled, interval, nextRun, sourceId, actor.id());
+        return detailSource(actor.id(), sourceId);
     }
 
     public List<CrawlPage> listPages(SessionUser actor, long sourceId, int limit) {
@@ -226,39 +246,90 @@ public class KnowledgeCrawlService {
             }
         }
         String status = failed == 0 ? "SUCCESS" : "PARTIAL";
-        jdbc.update("UPDATE knowledge_crawl_source SET last_run_at=?,last_status=?,last_error=? WHERE id=? AND user_id=?",
-                Timestamp.from(Instant.now()), status, trimTo(String.join("；", errors), 500), sourceId, actor.id());
+        Instant checkedAt = Instant.now();
+        Timestamp nextRun = source.monitorEnabled()
+                ? Timestamp.from(checkedAt.plusSeconds(source.monitorIntervalMinutes() * 60L)) : null;
+        jdbc.update("UPDATE knowledge_crawl_source SET last_run_at=?,last_status=?,last_error=?,next_run_at=? WHERE id=? AND user_id=?",
+                Timestamp.from(checkedAt), status, trimTo(String.join("；", errors), 500), nextRun, sourceId, actor.id());
         return new CrawlResult(added, updated, unchanged, failed, pages);
     }
 
-    private String persist(SessionUser actor, CrawlSource source, String url, String title, String text, String hash) {
+    /**
+     * 每轮最多检测一个到期来源。来源内仍按既有串行预算执行，避免自动雷达挤占全部调度线程。
+     */
+    @org.springframework.scheduling.annotation.Scheduled(
+            fixedDelayString = "${smartops.knowledge.radar.sweep-ms:30000}",
+            initialDelayString = "${smartops.knowledge.radar.initial-delay-ms:60000}")
+    public void runDueMonitor() {
+        List<DueSource> due = jdbc.query("SELECT id,user_id FROM knowledge_crawl_source WHERE monitor_enabled=TRUE AND (next_run_at IS NULL OR next_run_at<=?) ORDER BY next_run_at ASC LIMIT 1",
+                (rs, row) -> new DueSource(rs.getLong("id"), rs.getLong("user_id")), Timestamp.from(Instant.now()));
+        if (due.isEmpty()) return;
+        DueSource source = due.get(0);
+        SessionUser actor = new SessionUser(source.userId(), "scheduled-radar", "user");
+        try {
+            run(actor, source.id());
+        } catch (Exception failure) {
+            CrawlSource current = detailSource(actor.id(), source.id());
+            Instant checkedAt = Instant.now();
+            Timestamp nextRun = Timestamp.from(checkedAt.plusSeconds(current.monitorIntervalMinutes() * 60L));
+            jdbc.update("UPDATE knowledge_crawl_source SET last_run_at=?,last_status='FAILED',last_error=?,next_run_at=? WHERE id=? AND user_id=?",
+                    Timestamp.from(checkedAt), trimTo(errorCode(failure), 500), nextRun, source.id(), actor.id());
+        }
+    }
+
+    private record DueSource(long id, long userId) {}
+
+    String persist(SessionUser actor, CrawlSource source, String url, String title, String text, String hash) {
         // SEC-11：URL 的 query 可能携带 token，只存去 query 的地址用于稳定比对。
         String storedUrl = stripQuery(url);
+        Instant fetchedAt = Instant.now();
+        String lastHash = jdbc.query("SELECT content_hash FROM knowledge_crawl_page WHERE source_id=? AND url=? ORDER BY id DESC LIMIT 1",
+                (rs, row) -> rs.getString(1), source.id(), storedUrl).stream().findFirst().orElse(null);
         List<Long> existing = jdbc.query("SELECT id FROM personal_knowledge_entry WHERE user_id=? AND library_id=? AND source_ref=? LIMIT 1",
                 (rs, row) -> rs.getLong(1), actor.id(), source.libraryId(), storedUrl);
-        String summary = trimTo(text, 160);
-        long entryId;
+        Long entryId = existing.isEmpty() ? null : existing.get(0);
         String change;
-        if (existing.isEmpty()) {
-            entryId = knowledge.createEntry(actor.id(), source.libraryId(), title, summary, text, "web_crawl", storedUrl).id();
-            change = "ADDED";
+        if (lastHash != null && lastHash.equals(hash)) {
+            change = "UNCHANGED";
         } else {
-            entryId = existing.get(0);
-            String lastHash = jdbc.query("SELECT content_hash FROM knowledge_crawl_page WHERE source_id=? AND url=? ORDER BY id DESC LIMIT 1",
-                    (rs, row) -> rs.getString(1), source.id(), storedUrl).stream().findFirst().orElse(null);
-            if (lastHash != null && lastHash.equals(hash)) {
-                change = "UNCHANGED";
-            } else {
-                knowledge.updateEntry(actor.id(), entryId, title, summary, text);
-                change = "UPDATED";
-            }
+            // 雷达只生成服务端快照与待审候选，不自动新建或覆盖正式知识条目。
+            long taskId = createRadarSnapshot(actor, source, storedUrl, title, text, hash, fetchedAt);
+            candidates.createFromWebResearch(actor.id(), taskId);
+            change = lastHash == null ? "ADDED" : "UPDATED";
         }
         jdbc.update("INSERT INTO knowledge_crawl_page(source_id,user_id,url,title,content_md,content_hash,entry_id,change_type,fetched_at) VALUES(?,?,?,?,?,?,?,?,?)",
-                source.id(), actor.id(), storedUrl, title, text, hash, entryId, change, Timestamp.from(Instant.now()));
+                source.id(), actor.id(), storedUrl, title, text, hash, entryId, change, Timestamp.from(fetchedAt));
         return change;
     }
 
-    private String fetch(String url) throws IOException, InterruptedException {
+    private long createRadarSnapshot(SessionUser actor, CrawlSource source, String url, String title,
+                                     String text, String hash, Instant fetchedAt) {
+        var keys = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement(
+                    "INSERT INTO web_research_task(user_id,task_type,query_text,status,result_count,created_at,finished_at) VALUES(?,?,?,?,?,?,?)",
+                    new String[]{"id"});
+            statement.setLong(1, actor.id());
+            statement.setString(2, "RADAR");
+            statement.setString(3, trimTo("雷达来源 #" + source.id() + " · " + url, 255));
+            statement.setString(4, "SUCCESS");
+            statement.setInt(5, 1);
+            statement.setTimestamp(6, Timestamp.from(fetchedAt));
+            statement.setTimestamp(7, Timestamp.from(fetchedAt));
+            return statement;
+        }, keys);
+        long taskId = keys.getKey().longValue();
+        jdbc.update("INSERT INTO web_research_page(task_id,user_id,url,title,excerpt,content,content_hash,fetched_at) VALUES(?,?,?,?,?,?,?,?)",
+                taskId, actor.id(), url, title, trimTo(text, 160), text, hash, Timestamp.from(fetchedAt));
+        return taskId;
+    }
+
+    String fetch(String url) throws IOException, InterruptedException {
+        return fetch(url, "text/html,application/xhtml+xml");
+    }
+
+    /** 同一安全出站链路供联网检索复用；每跳都执行公网校验与 DNS pin。 */
+    String fetch(String url, String accept) throws IOException, InterruptedException {
         String current = url;
         for (int hop = 0; hop < 4; hop++) {
             URI uri;
@@ -278,7 +349,7 @@ public class KnowledgeCrawlService {
             PinnedDns.pin(uri.getHost(), decision.addresses());
             HttpGet request = new HttpGet(uri);
             request.setHeader("User-Agent", USER_AGENT);
-            request.setHeader("Accept", "text/html,application/xhtml+xml");
+            request.setHeader("Accept", accept);
             try (CloseableHttpResponse response = client.execute(request)) {
                 int code = response.getCode();
                 String location = headerValue(response, "Location");
@@ -369,7 +440,7 @@ public class KnowledgeCrawlService {
         return links;
     }
 
-    private static String htmlToText(String html) {
+    static String htmlToText(String html) {
         String body = COMMENT.matcher(html).replaceAll(" ");
         body = SCRIPT.matcher(body).replaceAll(" ");
         body = STYLE.matcher(body).replaceAll(" ");
@@ -386,7 +457,7 @@ public class KnowledgeCrawlService {
         return text.toString().trim();
     }
 
-    private static String pageTitle(String html, String url) {
+    static String pageTitle(String html, String url) {
         Matcher matcher = TITLE.matcher(html);
         if (matcher.find()) {
             String title = decodeEntities(TAG.matcher(matcher.group(1)).replaceAll(" ")).replaceAll("\\s+", " ").trim();
@@ -408,7 +479,7 @@ public class KnowledgeCrawlService {
                 .replace("&amp;", "&");
     }
 
-    private static String sha256(String value) {
+    static String sha256(String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
@@ -417,7 +488,7 @@ public class KnowledgeCrawlService {
         }
     }
 
-    private static String normalizeUrl(String value) {
+    static String normalizeUrl(String value) {
         if (value == null || value.isBlank()) throw new BusinessException(400, "KNOWLEDGE_CRAWL_URL_REQUIRED");
         URI uri;
         try {
@@ -447,7 +518,8 @@ public class KnowledgeCrawlService {
     private CrawlSource mapSource(java.sql.ResultSet rs, int row) throws java.sql.SQLException {
         return new CrawlSource(rs.getLong("id"), rs.getLong("library_id"), rs.getString("name"), rs.getString("seed_url"),
                 rs.getInt("max_pages"), rs.getInt("depth"), instant(rs.getTimestamp("last_run_at")),
-                rs.getString("last_status"), rs.getString("last_error"), instant(rs.getTimestamp("created_at")));
+                rs.getString("last_status"), rs.getString("last_error"), rs.getBoolean("monitor_enabled"),
+                rs.getInt("monitor_interval_minutes"), instant(rs.getTimestamp("next_run_at")), instant(rs.getTimestamp("created_at")));
     }
 
     private static Instant instant(Timestamp value) {
@@ -492,7 +564,8 @@ public class KnowledgeCrawlService {
     private record Link(String url, int depth) {}
 
     public record CrawlSource(Long id, Long libraryId, String name, String seedUrl, int maxPages, int depth,
-                              Instant lastRunAt, String lastStatus, String lastError, Instant createdAt) {}
+                              Instant lastRunAt, String lastStatus, String lastError, boolean monitorEnabled,
+                              int monitorIntervalMinutes, Instant nextRunAt, Instant createdAt) {}
 
     public record CrawlPage(Long id, String url, String title, String contentHash, Long entryId, String changeType, Instant fetchedAt) {}
 

@@ -19,6 +19,7 @@ export function renderKnowledgeMarkdown(source) {
   const output = []
   let listType = null
   let inCode = false
+  let codeFence = ''
   let codeLanguage = 'text'
   let codeLines = []
 
@@ -31,16 +32,20 @@ export function renderKnowledgeMarkdown(source) {
   for (const line of String(source || '').replace(/\r\n?/g, '\n').split('\n')) {
     const trimmed = line.trim()
 
-    if (trimmed.startsWith('```')) {
-      if (inCode) {
-        output.push(`<pre><code class="language-${escapeHtml(codeLanguage)}">${escapeHtml(codeLines.join('\n'))}</code></pre>`)
-        inCode = false
-        codeLines = []
-      } else {
-        closeList()
-        inCode = true
-        codeLanguage = trimmed.slice(3).trim() || 'text'
-      }
+    const fence = trimmed.match(/^`+/)?.[0] || ''
+    if (inCode && codeFence && fence.startsWith(codeFence)) {
+      output.push(`<pre><code class="language-${escapeHtml(codeLanguage)}">${escapeHtml(codeLines.join('\n'))}</code></pre>`)
+      inCode = false
+      codeFence = ''
+      codeLines = []
+      continue
+    }
+
+    if (!inCode && fence.length >= 3) {
+      closeList()
+      inCode = true
+      codeFence = fence
+      codeLanguage = trimmed.slice(fence.length).trim() || 'text'
       continue
     }
 

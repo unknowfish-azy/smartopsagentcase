@@ -20,4 +20,6 @@ export const listKnowledgeCrawlSources = () => http.get('/api/knowledge/crawl/so
 export const createKnowledgeCrawlSource = payload => http.post('/api/knowledge/crawl/sources', payload)
 // 同步抓取可能超过默认 15 秒超时，单独放宽
 export const runKnowledgeCrawlSource = id => http.post(`/api/knowledge/crawl/sources/${id}/run`, {}, { timeout: 120000 })
+export const updateKnowledgeCrawlMonitor = (id, payload) => http.patch(`/api/knowledge/crawl/sources/${id}/monitor`, payload)
 export const getKnowledgeCrawlPages = (id, params = {}) => http.get(`/api/knowledge/crawl/sources/${id}/pages`, { params })
+export const getKnowledgeCrawlPageDiff = id => http.get(`/api/knowledge/crawl/pages/${id}/diff`)

@@ -26,6 +26,13 @@ export const personalSystemGroups = Object.freeze([
   directGroup({ id: 'insights', label: 'INSIGHTS', cn: '自然语言洞察', icon: 'DataAnalysis', routeName: 'Insights', to: '/insights' }),
   directGroup({ id: 'team-space', label: 'TEAM SPACE', cn: '团队协作', icon: 'Grid', routeName: 'TeamSpaces', to: '/teams' }),
   directGroup({ id: 'knowledge', label: '知识库', cn: '知识库', icon: 'Collection', routeName: 'KnowledgeSpace', to: '/knowledge/space' }),
+  expandableGroup({
+    id: 'research', label: 'NEURAL RESEARCH', cn: '联网研究', icon: 'Connection', routeName: 'WebResearch', to: '/web-research',
+    children: [
+      { label: 'WEB RESEARCH', cn: '联网检索', routeName: 'WebResearch', to: '/web-research' },
+      { label: 'FRESHNESS RADAR', cn: '时效雷达', routeName: 'Radar', to: '/radar' }
+    ]
+  }),
   directGroup({ id: 'cloud-native', label: 'CLOUD NATIVE', cn: '云原生工程', icon: 'Monitor', routeName: 'CloudNativeWorkbench', to: '/cloud-native' }),
   /* Cloud-native resources live in the workbench instead of expanding the sidebar. */
   /*

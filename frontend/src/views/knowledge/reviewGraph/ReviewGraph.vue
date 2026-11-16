@@ -131,7 +131,7 @@
 
       <footer class="rg-band__foot">
         <span v-if="entryNote" class="rg-note">{{ entryNote }}</span>
-        <span v-else class="rg-note">泳道按 entry.source_ref 与 candidate.trace_id 匹配；未匹配的候选固定落在最右「待归类」。</span>
+        <span v-else class="rg-note">泳道按 entry.source_ref 与候选 Trace（运维）或来源 URL（网页）匹配；未匹配的候选固定落在最右「待归类」。</span>
         <template v-if="truncated">
           <span class="rg-note rg-note--strong">已加载 {{ model.stats.total }} / {{ total }} 条候选</span>
           <button type="button" class="rg-link" @click="$emit('load-more')">加载更早</button>

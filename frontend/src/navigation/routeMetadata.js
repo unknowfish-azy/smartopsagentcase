@@ -2,6 +2,8 @@ const routeMetadata = Object.freeze({
   Dashboard: Object.freeze({ personalGroup: 'home', pageFlow: null }),
   Chat: Object.freeze({ personalGroup: 'ai-chat', pageFlow: null }),
   Knowledge: Object.freeze({ personalGroup: 'knowledge', pageFlow: null }),
+  WebResearch: Object.freeze({ personalGroup: 'research', pageFlow: null }),
+  Radar: Object.freeze({ personalGroup: 'research', pageFlow: null }),
   PluginCenter: Object.freeze({ personalGroup: 'plugins', pageFlow: null }),
   SkillCenter: Object.freeze({ personalGroup: 'skills', pageFlow: null }),
   Connections: Object.freeze({ personalGroup: 'connections', pageFlow: null }),

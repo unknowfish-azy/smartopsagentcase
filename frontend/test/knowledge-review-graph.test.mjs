@@ -7,6 +7,7 @@ import {
   LANE_WIDTH,
   ROW_HEIGHT,
   buildReviewGraph,
+  candidateEntryRef,
   laneCenter,
   laneSegments,
   rejectReasonOf,
@@ -73,6 +74,29 @@ test('promoted candidate is attached to its entry lane through source_ref', () =
   assert.equal(promoted.lane, 0)
   assert.equal(graph.lanes[0].kind, 'entry')
   assert.equal(graph.lanes[0].name, 'K8s Service 排障')
+})
+
+test('web research candidate is attached to its entry through the real source URL', () => {
+  const url = 'https://example.com/public-guide'
+  const candidate = {
+    id: 201,
+    sourceType: 'WEB_RESEARCH',
+    sourceTaskId: 71,
+    sourceUrl: url,
+    traceId: 'web-research-71',
+    toolId: 'WEB_RESEARCH',
+    title: '公开网页候选',
+    status: 'PROMOTED',
+    createdAt: '2026-03-05T09:00:00Z'
+  }
+  const entry = { id: 21, title: '已审核网页知识', sourceRef: url, version: 1, verificationStatus: 'UNVERIFIED' }
+
+  const graph = buildReviewGraph({ candidates: [candidate], entries: [entry] })
+
+  assert.equal(candidateEntryRef(candidate), url)
+  assert.equal(graph.nowRows.find(row => row.id === 'candidate-201').entry.id, 21)
+  assert.equal(graph.stats.unassigned, 0)
+  assert.equal(graph.entryByCandidateRef.get(url).id, 21)
 })
 
 test('candidates without an entry fall back to the last unassigned lane', () => {

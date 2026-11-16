@@ -76,6 +76,8 @@ const routes = [
             { path: 'agent/module', name: 'AgentModule', component: () => import('../views/agent/AgentModuleView.vue'), meta: { ...routeMetaFor('AgentModule'), section: 'AGENT MODULE / 智能体模块' } },
             { path: 'agent/persona', name: 'AgentPersona', component: () => import('../views/agent/AgentPersonaView.vue'), meta: { ...routeMetaFor('AgentPersona'), section: 'AGENT PERSONA / 人格化身' } },
             { path: 'knowledge', redirect: '/knowledge/space' },
+            { path: 'web-research', name: 'WebResearch', component: () => import('../views/research/WebResearchView.vue'), meta: { ...routeMetaFor('WebResearch'), section: 'NEURAL RESEARCH / 联网检索' } },
+            { path: 'radar', name: 'Radar', component: () => import('../views/research/RadarView.vue'), meta: { ...routeMetaFor('Radar'), section: 'FRESHNESS RADAR / 时效雷达' } },
             { path: 'knowledge/personal', name: 'PersonalKnowledge', component: () => import('../views/knowledge/PersonalKnowledgeView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'PERSONAL KNOWLEDGE / 个人知识库' } },
             { path: 'knowledge/quiz', name: 'KnowledgeQuiz', component: () => import('../views/knowledge/QuizView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'QUIZ BANK / 运维题库' } },
             { path: 'knowledge/generation', name: 'KnowledgeGeneration', component: () => import('../views/knowledge/GenerationCenterView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'ARTIFACT GENERATION / 生成中心' } },

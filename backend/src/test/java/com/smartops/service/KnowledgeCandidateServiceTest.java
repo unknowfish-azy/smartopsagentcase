@@ -24,7 +24,8 @@ class KnowledgeCandidateServiceTest {
         jdbc.execute("CREATE TABLE operation_run_record (id BIGINT AUTO_INCREMENT PRIMARY KEY, trace_id VARCHAR(64) NOT NULL, user_id BIGINT NOT NULL, session_id BIGINT, runtime_id VARCHAR(128) NOT NULL, tool_id VARCHAR(128) NOT NULL, status VARCHAR(32) NOT NULL, started_at TIMESTAMP NOT NULL, ended_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
         jdbc.execute("CREATE TABLE operation_run_output (id BIGINT AUTO_INCREMENT PRIMARY KEY, run_id BIGINT NOT NULL, sequence_no INT NOT NULL, command_text CLOB NOT NULL, exit_code INT NOT NULL, stdout_text CLOB, stderr_text CLOB, truncated TINYINT(1) NOT NULL DEFAULT 0, output_bytes BIGINT NOT NULL DEFAULT 0, started_at TIMESTAMP NOT NULL, ended_at TIMESTAMP NOT NULL)");
         jdbc.execute("CREATE TABLE operation_run_evidence (id BIGINT AUTO_INCREMENT PRIMARY KEY, run_id BIGINT NOT NULL, evidence_type VARCHAR(64) NOT NULL, content CLOB NOT NULL, source_ref VARCHAR(255), created_at TIMESTAMP NOT NULL)");
-        jdbc.execute("CREATE TABLE knowledge_candidate (id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL, source_type VARCHAR(32) NOT NULL, source_run_id BIGINT NOT NULL, trace_id VARCHAR(64) NOT NULL, tool_id VARCHAR(128) NOT NULL, title VARCHAR(255) NOT NULL, summary CLOB NOT NULL, content_markdown CLOB NOT NULL, status VARCHAR(32) NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, source_run_id))");
+        jdbc.execute("CREATE TABLE knowledge_candidate (id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL, source_type VARCHAR(32) NOT NULL, source_run_id BIGINT NULL, source_task_id BIGINT NULL, source_url VARCHAR(255), source_content_hash VARCHAR(64), source_fetched_at TIMESTAMP NULL, trace_id VARCHAR(64) NOT NULL, tool_id VARCHAR(128) NOT NULL, title VARCHAR(255) NOT NULL, summary CLOB NOT NULL, content_markdown CLOB NOT NULL, status VARCHAR(32) NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, source_run_id), UNIQUE(user_id, source_task_id))");
+        jdbc.execute("CREATE TABLE web_research_page (task_id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL, url VARCHAR(255) NOT NULL, title VARCHAR(255) NOT NULL, excerpt CLOB NOT NULL, content CLOB NOT NULL, content_hash VARCHAR(64) NOT NULL, fetched_at TIMESTAMP NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
         service = new KnowledgeCandidateService(jdbc, new OperationRunQueryService(jdbc));
     }
 
@@ -97,6 +98,61 @@ class KnowledgeCandidateServiceTest {
         assertThatThrownBy(() -> service.detail(1L, hidden.id()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("KNOWLEDGE_CANDIDATE_NOT_FOUND");
+    }
+
+    @Test
+    void createsIdempotentWebCandidateWithServerSideProvenanceAndSafeFence() {
+        String body = "Before\n```html\n<script>alert(1)</script>\n```\nAfter";
+        insertWebPage(41L, 1L, "https://example.com/guide", "Public guide", "A public excerpt", body, "a".repeat(64));
+
+        var candidate = service.createFromWebResearch(1L, 41L);
+        var repeated = service.createFromWebResearch(1L, 41L);
+
+        assertThat(repeated.id()).isEqualTo(candidate.id());
+        assertThat(candidate.sourceRunId()).isNull();
+        assertThat(candidate.sourceTaskId()).isEqualTo(41L);
+        assertThat(candidate.sourceType()).isEqualTo("WEB_RESEARCH");
+        assertThat(candidate.sourceUrl()).isEqualTo("https://example.com/guide");
+        assertThat(candidate.sourceContentHash()).isEqualTo("a".repeat(64));
+        assertThat(candidate.contentMarkdown())
+                .contains("未核验资料")
+                .contains("````text\n" + body + "\n````")
+                .contains("人工审核清单");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM knowledge_candidate", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void hidesAnotherUsersWebSnapshot() {
+        insertWebPage(42L, 2L, "https://example.com/private", "Private", "Private", "Private", "b".repeat(64));
+
+        assertThatThrownBy(() -> service.createFromWebResearch(1L, 42L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("WEB_RESEARCH_PAGE_NOT_FOUND");
+    }
+
+    @Test
+    void promotesWebCandidateWithRealUrlInsteadOfOperationTrace() {
+        insertWebPage(43L, 1L, "https://example.com/source", "Web source", "Excerpt", "Evidence", "c".repeat(64));
+        var candidate = service.createFromWebResearch(1L, 43L);
+        var personalKnowledge = org.mockito.Mockito.mock(PersonalKnowledgeService.class);
+        var reviewService = new KnowledgeCandidateService(jdbc, new OperationRunQueryService(jdbc), personalKnowledge);
+        var entry = new PersonalKnowledgeService.Entry(31L, 9L, 1L, candidate.title(), candidate.summary(),
+                candidate.contentMarkdown(), "WEB_RESEARCH", candidate.sourceUrl(), "UNVERIFIED", 1, Instant.EPOCH, Instant.EPOCH);
+        org.mockito.Mockito.when(personalKnowledge.createEntry(1L, 9L, candidate.title(), candidate.summary(),
+                candidate.contentMarkdown(), "WEB_RESEARCH", candidate.sourceUrl())).thenReturn(entry);
+
+        var promoted = reviewService.promote(1L, candidate.id(), 9L, null, null);
+
+        assertThat(promoted.sourceType()).isEqualTo("WEB_RESEARCH");
+        assertThat(promoted.sourceRef()).isEqualTo("https://example.com/source");
+        assertThat(reviewService.detail(1L, candidate.id()).status()).isEqualTo("PROMOTED");
+        org.mockito.Mockito.verify(personalKnowledge).createEntry(1L, 9L, candidate.title(), candidate.summary(),
+                candidate.contentMarkdown(), "WEB_RESEARCH", candidate.sourceUrl());
+    }
+
+    private void insertWebPage(long taskId, long userId, String url, String title, String excerpt, String content, String hash) {
+        jdbc.update("INSERT INTO web_research_page(task_id,user_id,url,title,excerpt,content,content_hash,fetched_at) VALUES(?,?,?,?,?,?,?,?)",
+                taskId, userId, url, title, excerpt, content, hash, Timestamp.from(Instant.parse("2026-11-15T10:00:00Z")));
     }
 
     private long insertRun(long userId, String traceId, String toolId, String status) {

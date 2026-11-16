@@ -93,6 +93,24 @@ test('real candidates replace virtual guidance as soon as data exists', () => {
   assert.equal(guided.total, 1)
 })
 
+test('dynamic web evidence fence keeps embedded backticks and html inside one escaped code block', () => {
+  const html = renderKnowledgeMarkdown('````text\nBefore\n```html\n<script>alert(1)</script>\n```\nAfter\n````')
+
+  assert.equal((html.match(/<pre>/g) || []).length, 1)
+  assert.match(html, /Before\n```html\n&lt;script&gt;alert\(1\)&lt;\/script&gt;\n```\nAfter/)
+  assert.doesNotMatch(html, /<script>/)
+})
+
+test('web candidate review exposes task url fetch time and content hash fields', async () => {
+  const view = await readFile(new URL('../src/views/knowledge/KnowledgeCandidateReviewView.vue', import.meta.url), 'utf8')
+
+  assert.match(view, /detail\.sourceTaskId/)
+  assert.match(view, /detail\.sourceUrl/)
+  assert.match(view, /detail\.sourceFetchedAt/)
+  assert.match(view, /detail\.sourceContentHash/)
+  assert.match(view, /entryByCandidateRef/)
+})
+
 test('knowledge markdown renders readable structure and escapes embedded html', () => {
   const html = renderKnowledgeMarkdown(`# 排障笔记
 

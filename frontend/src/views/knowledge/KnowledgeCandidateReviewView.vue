@@ -45,9 +45,13 @@
 
       <template v-if="detail">
         <dl class="kr-side__facts">
-          <div><dt>来源工具</dt><dd>{{ detail.toolId }}</dd></div>
-          <div><dt>来源 Trace</dt><dd><DecodeText :value="detail.traceId" tag="code" /></dd></div>
-          <div><dt>运行记录</dt><dd>#{{ detail.sourceRunId }}</dd></div>
+          <div><dt>来源工具</dt><dd>{{ detail.sourceType === 'WEB_RESEARCH' ? '公开网页' : detail.toolId }}</dd></div>
+          <div><dt>{{ detail.sourceType === 'WEB_RESEARCH' ? '溯源标识' : '来源 Trace' }}</dt><dd><DecodeText :value="detail.traceId" tag="code" /></dd></div>
+          <div v-if="detail.sourceType === 'WEB_RESEARCH'"><dt>网页任务</dt><dd>#{{ detail.sourceTaskId }}</dd></div>
+          <div v-else><dt>运行记录</dt><dd>#{{ detail.sourceRunId }}</dd></div>
+          <div v-if="detail.sourceUrl"><dt>原始 URL</dt><dd><a :href="detail.sourceUrl" target="_blank" rel="noopener noreferrer">{{ detail.sourceUrl }}</a></dd></div>
+          <div v-if="detail.sourceFetchedAt"><dt>抓取时间</dt><dd>{{ formatTime(detail.sourceFetchedAt) }}</dd></div>
+          <div v-if="detail.sourceContentHash"><dt>正文 SHA-256</dt><dd><DecodeText :value="detail.sourceContentHash" tag="code" /></dd></div>
           <div><dt>生成时间</dt><dd>{{ formatTime(detail.createdAt) }}</dd></div>
           <div>
             <dt>目标条目</dt>
@@ -166,7 +170,7 @@ import DecodeText from '../../components/common/DecodeText.vue'
 import KnowledgeReviewGraph from '../../components/knowledge/KnowledgeReviewGraph.vue'
 import ReviewGraph from './reviewGraph/ReviewGraph.vue'
 import ReviewActionMenu from './reviewGraph/ReviewActionMenu.vue'
-import { buildReviewGraph } from './reviewGraph/useReviewGraph.js'
+import { buildReviewGraph, candidateEntryRef } from './reviewGraph/useReviewGraph.js'
 
 /* 后端把 pageSize 上限钳到 100（KnowledgeCandidateService#list），这里就用满上限。 */
 const PAGE_SIZE = 100
@@ -220,9 +224,9 @@ const libraryLabel = computed(() => {
 })
 
 const detailEntry = computed(() => {
-  const candidate = detail.value
-  if (!candidate?.traceId) return null
-  return graph.value.entryByTrace.get(String(candidate.traceId)) || null
+  const sourceRef = candidateEntryRef(detail.value)
+  if (!sourceRef) return null
+  return graph.value.entryByCandidateRef.get(String(sourceRef)) || null
 })
 
 const adoptLibraryId = computed(() => libraries.value[0]?.id ?? null)
@@ -503,7 +507,7 @@ async function copyTrace(candidate) {
   if (!candidate?.traceId) return
   try {
     await navigator.clipboard.writeText(candidate.traceId)
-    showToast('已复制 Trace ID', candidate.traceId)
+    showToast(candidate.sourceType === 'WEB_RESEARCH' ? '已复制溯源标识' : '已复制 Trace ID', candidate.traceId)
   } catch {
     showToast('复制失败', '浏览器拒绝了剪贴板写入')
   }

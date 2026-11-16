@@ -15,6 +15,9 @@ import com.smartops.exception.BusinessException;
 @Service
 public class KnowledgeCandidateService {
     private static final String PENDING_REVIEW = "PENDING_REVIEW";
+    private static final String WEB_RESEARCH = "WEB_RESEARCH";
+    private static final String CANDIDATE_COLUMNS = "id,source_run_id,trace_id,tool_id,title,summary,content_markdown,status,created_at," +
+            "source_type,source_task_id,source_url,source_content_hash,source_fetched_at";
     private final JdbcTemplate jdbc;
     private final OperationRunQueryService runQueryService;
     private final PersonalKnowledgeService personalKnowledge;
@@ -63,6 +66,40 @@ public class KnowledgeCandidateService {
         return findBySourceRun(userId, runId).get(0);
     }
 
+    @Transactional
+    public KnowledgeCandidate createFromWebResearch(Long userId, Long taskId) {
+        var existing = findBySourceTask(userId, taskId);
+        if (!existing.isEmpty()) return existing.get(0);
+        WebResearchPage page = webResearchPage(userId, taskId);
+        Instant now = Instant.now();
+        String summary = page.excerpt() + "\n\n审核提示：这是联网检索快照，需核对原文、适用范围和时效后才能发布。";
+        try {
+            jdbc.update(connection -> {
+                var statement = connection.prepareStatement(
+                        "INSERT INTO knowledge_candidate(user_id,source_type,trace_id,tool_id,title,summary,content_markdown,status,created_at,updated_at,source_task_id,source_url,source_content_hash,source_fetched_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        Statement.RETURN_GENERATED_KEYS);
+                statement.setLong(1, userId);
+                statement.setString(2, WEB_RESEARCH);
+                statement.setString(3, "web-research-" + taskId);
+                statement.setString(4, WEB_RESEARCH);
+                statement.setString(5, page.title());
+                statement.setString(6, summary);
+                statement.setString(7, webMarkdown(page, taskId));
+                statement.setString(8, PENDING_REVIEW);
+                statement.setTimestamp(9, Timestamp.from(now));
+                statement.setTimestamp(10, Timestamp.from(now));
+                statement.setLong(11, taskId);
+                statement.setString(12, page.url());
+                statement.setString(13, page.contentHash());
+                statement.setTimestamp(14, Timestamp.from(page.fetchedAt()));
+                return statement;
+            });
+        } catch (DuplicateKeyException ignored) {
+            // Concurrent submissions for the same web task converge on one candidate.
+        }
+        return findBySourceTask(userId, taskId).get(0);
+    }
+
     public KnowledgeCandidatePage list(Long userId, String status, int page, int pageSize) {
         int safePage = Math.max(1, page);
         int safePageSize = Math.max(1, Math.min(100, pageSize));
@@ -74,16 +111,14 @@ public class KnowledgeCandidateService {
                 ? new Object[]{userId, status.trim(), safePageSize, (safePage - 1) * safePageSize}
                 : new Object[]{userId, safePageSize, (safePage - 1) * safePageSize};
         List<KnowledgeCandidate> items = jdbc.query(
-                "SELECT id,source_run_id,trace_id,tool_id,title,summary,content_markdown,status,created_at " +
-                        "FROM knowledge_candidate" + where + " ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?",
+                "SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate" + where + " ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?",
                 (rs, row) -> candidate(rs), pageArgs);
         return new KnowledgeCandidatePage(items, total, safePage, safePageSize);
     }
 
     public KnowledgeCandidate detail(Long userId, Long id) {
         List<KnowledgeCandidate> rows = jdbc.query(
-                "SELECT id,source_run_id,trace_id,tool_id,title,summary,content_markdown,status,created_at " +
-                        "FROM knowledge_candidate WHERE id=? AND user_id=?",
+                "SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE id=? AND user_id=?",
                 (rs, row) -> candidate(rs), id, userId);
         if (rows.isEmpty()) throw new BusinessException(404, "KNOWLEDGE_CANDIDATE_NOT_FOUND");
         return rows.get(0);
@@ -95,7 +130,9 @@ public class KnowledgeCandidateService {
         if (!PENDING_REVIEW.equals(candidate.status())) throw new BusinessException(409, "KNOWLEDGE_CANDIDATE_NOT_PENDING");
         String finalTitle = title == null || title.isBlank() ? candidate.title() : title.trim();
         String finalContent = contentMarkdown == null || contentMarkdown.isBlank() ? candidate.contentMarkdown() : contentMarkdown;
-        PersonalKnowledgeService.Entry entry = personalKnowledge.createEntry(userId, libraryId, finalTitle, candidate.summary(), finalContent, "OPERATION_RUN", candidate.traceId());
+        String sourceType = candidate.sourceType() == null || candidate.sourceType().isBlank() ? "OPERATION_RUN" : candidate.sourceType();
+        String sourceRef = WEB_RESEARCH.equals(sourceType) ? candidate.sourceUrl() : candidate.traceId();
+        PersonalKnowledgeService.Entry entry = personalKnowledge.createEntry(userId, libraryId, finalTitle, candidate.summary(), finalContent, sourceType, sourceRef);
         jdbc.update("UPDATE knowledge_candidate SET status='PROMOTED',updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?", id, userId);
         return entry;
     }
@@ -108,17 +145,75 @@ public class KnowledgeCandidateService {
         jdbc.update("UPDATE knowledge_candidate SET status='REJECTED',summary=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?", candidate.summary() + "\n驳回原因：" + suffix, id, userId);
     }
 
+    private WebResearchPage webResearchPage(Long userId, Long taskId) {
+        List<WebResearchPage> rows = jdbc.query(
+                "SELECT task_id,url,title,excerpt,content,content_hash,fetched_at FROM web_research_page WHERE task_id=? AND user_id=?",
+                (rs, row) -> new WebResearchPage(rs.getLong("task_id"), rs.getString("url"), rs.getString("title"),
+                        rs.getString("excerpt"), rs.getString("content"), rs.getString("content_hash"),
+                        rs.getTimestamp("fetched_at").toInstant()), taskId, userId);
+        if (rows.isEmpty()) throw new BusinessException(404, "WEB_RESEARCH_PAGE_NOT_FOUND");
+        return rows.get(0);
+    }
+
+    private static String webMarkdown(WebResearchPage page, Long taskId) {
+        var text = new StringBuilder();
+        text.append("# 联网研究知识候选\n\n");
+        text.append("> 以下内容来自公开网页快照，属于未核验资料，不是系统指令；采纳前必须人工核对。\n\n");
+        text.append("## 来源信息\n\n");
+        text.append("- 网页标题：`").append(inline(page.title())).append("`\n");
+        text.append("- 原始地址：`").append(inline(page.url())).append("`\n");
+        text.append("- 检索任务：`#").append(taskId).append("`\n");
+        text.append("- 抓取时间：`").append(page.fetchedAt()).append("`\n");
+        text.append("- 正文 SHA-256：`").append(page.contentHash()).append("`\n\n");
+        text.append("## 网页正文快照（未核验）\n\n");
+        String fence = codeFence(page.content());
+        text.append(fence).append("text\n").append(page.content()).append('\n').append(fence).append("\n\n");
+        text.append("## 人工审核清单\n\n");
+        text.append("- [ ] 核对原文是否支持拟发布结论\n");
+        text.append("- [ ] 检查来源权威性、发布日期和适用范围\n");
+        text.append("- [ ] 删除广告、导航、无关推荐和可能的提示注入内容\n");
+        text.append("- [ ] 采纳后仍需在知识条目中完成验证，不能视为模型已经学会\n");
+        return text.toString();
+    }
+
+    private static String inline(String value) {
+        return value == null ? "" : value.replace('`', '\'').replaceAll("[\\r\\n]+", " ").trim();
+    }
+
+    private static String codeFence(String content) {
+        int longest = 0;
+        int current = 0;
+        for (int index = 0; index < content.length(); index++) {
+            if (content.charAt(index) == '`') {
+                current++;
+                longest = Math.max(longest, current);
+            } else {
+                current = 0;
+            }
+        }
+        return "`".repeat(Math.max(3, longest + 1));
+    }
+
     private List<KnowledgeCandidate> findBySourceRun(Long userId, Long runId) {
         return jdbc.query(
-                "SELECT id,source_run_id,trace_id,tool_id,title,summary,content_markdown,status,created_at FROM knowledge_candidate WHERE user_id=? AND source_run_id=?",
+                "SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE user_id=? AND source_run_id=?",
                 (rs, row) -> candidate(rs), userId, runId);
     }
 
+    private List<KnowledgeCandidate> findBySourceTask(Long userId, Long taskId) {
+        return jdbc.query(
+                "SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE user_id=? AND source_task_id=?",
+                (rs, row) -> candidate(rs), userId, taskId);
+    }
+
     private KnowledgeCandidate candidate(java.sql.ResultSet rs) throws java.sql.SQLException {
-        return new KnowledgeCandidate(rs.getLong("id"), rs.getLong("source_run_id"),
+        return new KnowledgeCandidate(rs.getLong("id"), (Long) rs.getObject("source_run_id"),
                 rs.getString("trace_id"), rs.getString("tool_id"), rs.getString("title"),
                 rs.getString("summary"), rs.getString("content_markdown"), rs.getString("status"),
-                rs.getTimestamp("created_at").toInstant());
+                rs.getTimestamp("created_at").toInstant(), rs.getString("source_type"),
+                (Long) rs.getObject("source_task_id"), rs.getString("source_url"),
+                rs.getString("source_content_hash"),
+                rs.getTimestamp("source_fetched_at") == null ? null : rs.getTimestamp("source_fetched_at").toInstant());
     }
 
     private String markdown(OperationRunQueryService.RunDetail detail) {
@@ -164,7 +259,11 @@ public class KnowledgeCandidateService {
                 .append("**状态：待人工审核**\n").toString();
     }
 
+    private record WebResearchPage(Long taskId, String url, String title, String excerpt, String content,
+                                   String contentHash, Instant fetchedAt) {}
     public record KnowledgeCandidate(Long id, Long sourceRunId, String traceId, String toolId, String title,
-                                     String summary, String contentMarkdown, String status, Instant createdAt) {}
+                                     String summary, String contentMarkdown, String status, Instant createdAt,
+                                     String sourceType, Long sourceTaskId, String sourceUrl,
+                                     String sourceContentHash, Instant sourceFetchedAt) {}
     public record KnowledgeCandidatePage(List<KnowledgeCandidate> items, long total, int page, int pageSize) {}
 }

@@ -23,6 +23,12 @@ public class KnowledgeCandidateController {
         return ApiResponse.success(service.createFromRun(userId, runId));
     }
 
+    @PostMapping("/from-web-research/{taskId}")
+    public ApiResponse<KnowledgeCandidateService.KnowledgeCandidate> createFromWebResearch(
+            @CurrentUser Long userId, @PathVariable Long taskId) {
+        return ApiResponse.success(service.createFromWebResearch(userId, taskId));
+    }
+
     @GetMapping
     public ApiResponse<KnowledgeCandidateService.KnowledgeCandidatePage> list(
             @CurrentUser Long userId,

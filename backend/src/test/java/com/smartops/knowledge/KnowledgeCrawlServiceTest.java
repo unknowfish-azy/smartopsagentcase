@@ -2,18 +2,24 @@ package com.smartops.knowledge;
 
 import com.smartops.exception.BusinessException;
 import com.smartops.security.SessionUser;
+import com.smartops.service.KnowledgeCandidateService;
 import com.smartops.service.PersonalKnowledgeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.KeyHolder;
 
 import java.net.ConnectException;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class KnowledgeCrawlServiceTest {
 
@@ -62,23 +68,55 @@ class KnowledgeCrawlServiceTest {
     }
 
     @Test
-    void runRejectsAStoredSeedThatIsNoLongerPublicBeforeAnyRequest() {
-        KnowledgeCrawlService.CrawlSource stored = new KnowledgeCrawlService.CrawlSource(
-                9L, 1L, "legacy", "http://169.254.169.254/latest/meta-data/", 10, 1,
-                null, null, null, null);
-        JdbcTemplate jdbc = new JdbcTemplate() {
+    void radarNewPageCreatesCandidateWithoutWritingFormalKnowledge() {
+        KnowledgeCandidateService candidates = mock(KnowledgeCandidateService.class);
+        KnowledgeCrawlService service = new KnowledgeCrawlService(crawlJdbc(null), knowledge, candidates);
+
+        String change = service.persist(actor, source(), "https://docs.example.com/guide?token=secret#install",
+                "Install", "Public page body", "hash-a");
+
+        assertEquals("ADDED", change);
+        verify(candidates).createFromWebResearch(actor.id(), 77L);
+        verifyNoInteractions(knowledge);
+    }
+
+    @Test
+    void radarUnchangedHashDoesNotDuplicateCandidate() {
+        KnowledgeCandidateService candidates = mock(KnowledgeCandidateService.class);
+        KnowledgeCrawlService service = new KnowledgeCrawlService(crawlJdbc("hash-a"), knowledge, candidates);
+
+        String change = service.persist(actor, source(), "https://docs.example.com/guide",
+                "Install", "Public page body", "hash-a");
+
+        assertEquals("UNCHANGED", change);
+        verifyNoInteractions(candidates, knowledge);
+    }
+
+    private KnowledgeCrawlService.CrawlSource source() {
+        return new KnowledgeCrawlService.CrawlSource(
+                9L, 1L, "docs", "https://docs.example.com/guide", 10, 0,
+                null, null, null, true, 60, null, null);
+    }
+
+    private JdbcTemplate crawlJdbc(String lastHash) {
+        return new JdbcTemplate() {
             @Override
             @SuppressWarnings("unchecked")
             public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-                return (List<T>) List.of(stored);
+                if (sql.contains("content_hash") && lastHash != null) return (List<T>) List.of(lastHash);
+                return List.of();
+            }
+
+            @Override
+            public int update(String sql, Object... args) {
+                return 1;
+            }
+
+            @Override
+            public int update(PreparedStatementCreator creator, KeyHolder keyHolder) {
+                keyHolder.getKeyList().add(Map.of("id", 77L));
+                return 1;
             }
         };
-        KnowledgeCrawlService service = new KnowledgeCrawlService(jdbc, knowledge);
-
-        BusinessException failure = assertThrows(BusinessException.class,
-                () -> service.run(actor, 9L));
-
-        assertEquals(400, failure.getCode());
-        assertEquals("KNOWLEDGE_CRAWL_URL_BLOCKED", failure.getMessage());
     }
 }

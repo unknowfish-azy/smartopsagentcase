@@ -5,7 +5,8 @@
  * 所以滚动、字体加载、密度切换都不会让泳道和行错位——不用 getBoundingClientRect 反推。
  *
  * 泳道归属采用 A1 + source_ref 回挂：
- *   - 已采纳候选按 entry.source_ref === candidate.trace_id 挂到条目泳道（零后端改动）；
+ *   - 运维候选按 entry.source_ref === candidate.trace_id 挂到条目泳道；
+ *   - 网页候选按 entry.source_ref === candidate.source_url 挂到条目泳道；
  *   - 尚未关联条目的候选固定在最后一条「待归类」泳道。
  * 后端没有把条目置为 VERIFIED 的接口，因此本版不画「已入库」主干泳道，不呈现该假状态。
  */
@@ -123,6 +124,11 @@ export function rejectReasonOf(summary) {
   return matched ? matched[1].trim() : ''
 }
 
+export function candidateEntryRef(candidate) {
+  if (candidate?.sourceType === 'WEB_RESEARCH') return candidate.sourceUrl || ''
+  return candidate?.traceId || ''
+}
+
 /**
  * @param {object} input
  * @param {Array} input.candidates 候选（含 id/traceId/toolId/status/createdAt/summary）
@@ -135,9 +141,9 @@ export function buildReviewGraph({ candidates = [], entries = [], colorMode = 't
   const candidateList = (candidates || []).filter(Boolean)
   const entryList = (entries || []).filter(Boolean)
 
-  const entryByTrace = new Map()
+  const entryByCandidateRef = new Map()
   for (const entry of entryList) {
-    if (entry.sourceRef) entryByTrace.set(String(entry.sourceRef), entry)
+    if (entry.sourceRef) entryByCandidateRef.set(String(entry.sourceRef), entry)
   }
 
   const groups = []
@@ -145,7 +151,8 @@ export function buildReviewGraph({ candidates = [], entries = [], colorMode = 't
   const unassigned = { key: UNASSIGNED_KEY, kind: 'unassigned', entry: null, candidates: [] }
 
   for (const candidate of candidateList) {
-    const entry = candidate.traceId ? entryByTrace.get(String(candidate.traceId)) : null
+    const sourceRef = candidateEntryRef(candidate)
+    const entry = sourceRef ? entryByCandidateRef.get(String(sourceRef)) : null
     if (!entry) {
       unassigned.candidates.push(candidate)
       continue
@@ -208,7 +215,8 @@ export function buildReviewGraph({ candidates = [], entries = [], colorMode = 't
   const events = []
   for (const candidate of candidateList) {
     if (candidate.status !== 'PROMOTED' && candidate.status !== 'REJECTED') continue
-    const entry = candidate.traceId ? entryByTrace.get(String(candidate.traceId)) : null
+    const sourceRef = candidateEntryRef(candidate)
+    const entry = sourceRef ? entryByCandidateRef.get(String(sourceRef)) : null
     const lane = entry && groupByEntryId.has(`entry-${entry.id}`)
       ? laneIndexByGroupKey.get(`entry-${entry.id}`)
       : unassignedLane
@@ -245,7 +253,7 @@ export function buildReviewGraph({ candidates = [], entries = [], colorMode = 't
     metrics,
     avatarSize: metrics.avatar,
     toolColors,
-    entryByTrace,
+    entryByCandidateRef,
     stats: {
       pending: candidateList.filter(candidate => candidate.status === 'PENDING_REVIEW').length,
       promoted: candidateList.filter(candidate => candidate.status === 'PROMOTED').length,

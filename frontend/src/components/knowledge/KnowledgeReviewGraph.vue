@@ -55,14 +55,14 @@ function extractEvidence(candidate) {
   // 工具节点
   if (candidate?.toolId) {
     const toolId = `tool:${candidate.toolId}`
-    nodes.push({ id: toolId, name: candidate.toolId, category: 1, symbolSize: 46, value: '诊断工具' })
+    nodes.push({ id: toolId, name: candidate.toolId, category: 1, symbolSize: 46, value: candidate.sourceType === 'WEB_RESEARCH' ? '公开网页检索' : '诊断工具' })
     edges.push({ source: rootId, target: toolId })
   }
 
   // Trace 节点
   if (candidate?.traceId) {
     const traceNodeId = `trace:${candidate.traceId}`
-    nodes.push({ id: traceNodeId, name: candidate.traceId, category: 2, symbolSize: 38, value: '来源 Trace' })
+    nodes.push({ id: traceNodeId, name: candidate.traceId, category: 2, symbolSize: 38, value: candidate.sourceType === 'WEB_RESEARCH' ? '网页任务溯源' : '来源 Trace' })
     edges.push({ source: rootId, target: traceNodeId })
   }
 
