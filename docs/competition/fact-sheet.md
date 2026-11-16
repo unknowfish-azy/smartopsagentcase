@@ -21,6 +21,7 @@
 | F11（新增） | 前端整改入库状态 | 已提交并推送：`864683c`（P0–P3）→ `d8f5148`（执行记录）→ `4046f53`（交付件）→ `fb17361`（口令轮换）；origin/main 一致、工作区干净 | `git log --oneline`、`git status -sb`，2026-11-13 | 总方案 §3.1/§9 的"未 commit"表述 **作废** |
 | F12（新增） | 演示账号口令 | `demo_ops` 已轮换，明文不入库，由本机 `.env` 的 `SMARTOPS_DEMO_PASSWORD` 提供；旧口令 401 失效 | `scripts/e2e/ui_pages_snapshot.py:30-46`；2026-11-13 实测新口令登录 200、旧口令 401 | 讲解稿中旧明文已清除 |
 | F13（新增） | Java 后端规模与接口数 | main **331 文件 / 36,863 行**；接口 **477 个**（`@*Mapping` 注解）；迁移表 **119 张**（不变） | `backend/src/main` rglob("*.java") 统计；`grep -rE "@(Get|Post|Put|Delete|Patch|Request)Mapping" backend/src/main --include="*.java" | wc -l`；迁移 SQL `CREATE TABLE` 去重计数，2026-11-15 | 旧 321 文件/3.4 万行/422 接口（FCT 快照）**已过期**；119 表与旧值一致 |
+| F14（新增） | 语音识别（ASR）能力 | **工具已补齐**：`agent/tools/speech.py`（`speech.to_text`，可插拔栈 vosk→faster-whisper→whisper→内置 DTW 命令词基线→确定性降级，不伪造转写）；**训练/评测管线就绪**：`scripts/build_asr_dataset.py`（SAPI TTS 真实语音 / `--synthetic` 自检）→ `train_asr_baseline.py`（DTW 中位模板）→ `eval_asr.py`（**dev+holdout 双集合强制**） | 合成自检实测（2026-11-16）：dev 60 条 100% / holdout 30 条 100%（**管线自检指标，不代表真实语音**，模板 dataset_mode=synthetic 被工具强制拒用）；真实语音评测 **NOT_RUN**——待本机执行 `build_asr_dataset.py`（真实 TTS）→ `train_asr_baseline.py` → `eval_asr.py` 后回填 | **禁引用合成 100% 作为语音准确率**；真实指标必须双集合同报 |
 
 ## 2. 评测结果摘要（明细见 `docs/competition/eval_results.csv`）
 

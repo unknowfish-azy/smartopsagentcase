@@ -10,6 +10,7 @@ from .models import ToolMetadata
 from .shell import ShellTool
 from .server import ServerStatusTool
 from .knowledge import KnowledgeSearchTool
+from .speech import SpeechToTextTool
 
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "ShellTool",
     "ServerStatusTool",
     "KnowledgeSearchTool",
+    "SpeechToTextTool",
 ]

@@ -1,0 +1,109 @@
+{
+  "date": "2026-11-16",
+  "model": "dtw-cmd-v1",
+  "templates_path": "D:\\SmartOpsAgent\\agent\\asr\\templates.json",
+  "dataset_mode": "synthetic",
+  "note": "dev 参与训练（中位模板），holdout 独立。若数据集为 --synthetic 自检模式，指标仅代表管线正确性，不代表真实语音。",
+  "results": [
+    {
+      "split": "dev",
+      "n": 60,
+      "correct": 60,
+      "accuracy": 1.0,
+      "avg_distance": 6.6506,
+      "eval_seconds": 2.5,
+      "per_label": {
+        "打开知识库": {
+          "n": 6,
+          "correct": 6
+        },
+        "查询告警": {
+          "n": 6,
+          "correct": 6
+        },
+        "重启服务": {
+          "n": 6,
+          "correct": 6
+        },
+        "查看日志": {
+          "n": 6,
+          "correct": 6
+        },
+        "执行巡检": {
+          "n": 6,
+          "correct": 6
+        },
+        "备份数据库": {
+          "n": 6,
+          "correct": 6
+        },
+        "查看仪表盘": {
+          "n": 6,
+          "correct": 6
+        },
+        "停止任务": {
+          "n": 6,
+          "correct": 6
+        },
+        "生成报告": {
+          "n": 6,
+          "correct": 6
+        },
+        "回滚变更": {
+          "n": 6,
+          "correct": 6
+        }
+      }
+    },
+    {
+      "split": "holdout",
+      "n": 30,
+      "correct": 30,
+      "accuracy": 1.0,
+      "avg_distance": 7.194,
+      "eval_seconds": 2.1,
+      "per_label": {
+        "打开知识库": {
+          "n": 3,
+          "correct": 3
+        },
+        "查询告警": {
+          "n": 3,
+          "correct": 3
+        },
+        "重启服务": {
+          "n": 3,
+          "correct": 3
+        },
+        "查看日志": {
+          "n": 3,
+          "correct": 3
+        },
+        "执行巡检": {
+          "n": 3,
+          "correct": 3
+        },
+        "备份数据库": {
+          "n": 3,
+          "correct": 3
+        },
+        "查看仪表盘": {
+          "n": 3,
+          "correct": 3
+        },
+        "停止任务": {
+          "n": 3,
+          "correct": 3
+        },
+        "生成报告": {
+          "n": 3,
+          "correct": 3
+        },
+        "回滚变更": {
+          "n": 3,
+          "correct": 3
+        }
+      }
+    }
+  ]
+}
