@@ -28,6 +28,7 @@ const routeMetadata = Object.freeze({
   KnowledgeCandidateReview: Object.freeze({ personalGroup: 'memory', pageFlow: null }),
   InspectorDetail: Object.freeze({ personalGroup: 'memory', pageFlow: null }),
   ForecastPlane: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
+  EngineObservability: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
   AdminControlCenter: Object.freeze({ personalGroup: 'admin', pageFlow: null, roles: ['admin'] }),
   ArchitectureMap: Object.freeze({ personalGroup: 'architecture', pageFlow: null, roles: ['admin'] })
 })

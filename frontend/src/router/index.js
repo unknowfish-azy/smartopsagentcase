@@ -90,6 +90,7 @@ const routes = [
             { path: 'sentinel/alerts', name: 'AlertCenter', component: () => import('../views/sentinel/AlertCenterView.vue'), meta: { section: 'ALERT CENTER / 告警中心' } },
             { path: 'sentinel/guardian', name: 'SentinelGuardian', component: () => import('../views/sentinel/SentinelGuardianView.vue'), meta: { section: 'SENTINEL / 守护 Agent' } },
             { path: 'sentinel/forecast', name: 'ForecastPlane', component: () => import('../views/sentinel/ForecastPlaneView.vue'), meta: { ...routeMetaFor('ForecastPlane'), section: 'FORECAST / 预测面' } },
+            { path: 'sentinel/observability', name: 'EngineObservability', component: () => import('../views/sentinel/EngineObservabilityView.vue'), meta: { ...routeMetaFor('EngineObservability'), section: 'ENGINE OBSERVABILITY / 引擎可观测' } },
             { path: 'incidents', name: 'IncidentCenter', component: () => import('../views/incident/IncidentCenterView.vue'), meta: { section: 'INCIDENT CENTER / 工单中心' } },
             { path: 'incidents/:id', name: 'IncidentDetail', component: () => import('../views/incident/IncidentDetailView.vue'), meta: { section: 'INCIDENT CENTER / 工单详情' } },
             { path: 'connections', name: 'Connections', component: () => import('../views/operations/ConnectionsView.vue'), meta: { ...routeMetaFor('Connections'), section: '连接中心 / 远程运维' } },
