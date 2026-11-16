@@ -302,6 +302,8 @@ async def test_chat_routes_to_complex_model_when_configured(monkeypatch):
         degraded = False
         effective_provider = "mock"
         degradation_reason = ""
+        # KV-CACHE：chat 会把 last_llm_perf 并入响应 metadata
+        last_llm_perf = {"provider": "fake"}
 
         async def generate(self, prompt, *, system_prompt=None, model=None, **kwargs):
             captured["model"] = model

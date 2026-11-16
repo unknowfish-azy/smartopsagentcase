@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import time
 from typing import Any
 
 from ..core.config import settings
@@ -19,6 +20,9 @@ class LLMService:
         self.degraded = False
         self.degradation_reason = ""
         self.effective_provider = settings.llm_provider.lower()
+        # KV-CACHE：最近一次真实调用的推理指标（Ollama 返回的预填充/解码计数），
+        # 由 chat 层并入响应 metadata.llm_perf，用于验证 prompt 前缀复用效果。
+        self.last_llm_perf: dict[str, Any] = {"provider": settings.llm_provider.lower()}
 
     async def generate(
         self,
@@ -123,6 +127,24 @@ class LLMService:
             await asyncio.sleep(0.015)
             yield piece
 
+    @staticmethod
+    def _perf_from_ollama(data: dict[str, Any], ttft_ms: int | None, total_ms: int) -> dict[str, Any]:
+        """从 Ollama 响应/完成帧提取推理指标（时长单位 ns → ms，如实缺省 None）。"""
+
+        def _ms(key: str) -> int | None:
+            value = data.get(key)
+            return round(value / 1e6) if isinstance(value, (int, float)) else None
+
+        return {
+            "provider": "ollama",
+            "ttft_ms": ttft_ms,
+            "total_ms": total_ms,
+            "prompt_eval_count": data.get("prompt_eval_count"),
+            "prompt_eval_duration_ms": _ms("prompt_eval_duration"),
+            "eval_count": data.get("eval_count"),
+            "eval_duration_ms": _ms("eval_duration"),
+        }
+
     async def _ollama_stream(
         self,
         prompt: str,
@@ -132,6 +154,9 @@ class LLMService:
 
         payload = self._payload(prompt, system_prompt, stream=True, model=model)
 
+        started = time.perf_counter()
+        ttft_ms: int | None = None
+        done_data: dict[str, Any] = {}
         async with http_pool.acquire() as client:
             async with client.stream(
                 "POST",
@@ -156,13 +181,23 @@ class LLMService:
                     if not isinstance(chunk, str):
                         raise LLMException("Ollama 流格式错误")
                     if chunk:
+                        if ttft_ms is None:
+                            ttft_ms = round((time.perf_counter() - started) * 1000)
                         has_text = has_text or bool(chunk.strip())
                         yield chunk
                     if data.get("done"):
                         completed = True
+                        if isinstance(data, dict):
+                            done_data = data
                         break
                 if not completed or not has_text:
                     raise LLMException("Ollama 流未完整结束或返回为空")
+        # KV-CACHE：完成帧带最终计数，如实记录本次预填充/解码指标。
+        self.last_llm_perf = self._perf_from_ollama(
+            done_data,
+            ttft_ms=ttft_ms,
+            total_ms=round((time.perf_counter() - started) * 1000),
+        )
 
     @staticmethod
     def _mock_generate(
@@ -186,6 +221,7 @@ class LLMService:
     ) -> str:
 
         payload = self._payload(prompt, system_prompt, stream=False, model=model)
+        started = time.perf_counter()
         async with http_pool.acquire() as client:
             response = await client.post(
                 f"{settings.llm_base_url.rstrip('/')}/api/generate",
@@ -197,6 +233,12 @@ class LLMService:
         answer = data.get("response")
         if not isinstance(answer, str) or not answer.strip():
             raise LLMException("Ollama 返回为空")
+        # KV-CACHE：非流式响应体自带最终计数，如实记录本次预填充/解码指标。
+        self.last_llm_perf = self._perf_from_ollama(
+            data if isinstance(data, dict) else {},
+            ttft_ms=None,
+            total_ms=round((time.perf_counter() - started) * 1000),
+        )
         return answer
 
     @staticmethod
@@ -210,6 +252,8 @@ class LLMService:
         }
         if system_prompt:
             payload["system"] = system_prompt
+        # KV-CACHE：保模型与 KV 缓存驻留，前缀复用生效的前提（时长串，Ollama 接受 Go duration）。
+        payload["keep_alive"] = f"{max(0, settings.llm_keep_alive_sec)}s"
         return payload
 
     def _reset_call_state(self) -> str:
@@ -217,6 +261,8 @@ class LLMService:
         self.degraded = False
         self.degradation_reason = ""
         self.effective_provider = provider
+        # KV-CACHE：每次调用先重置，chat 层读到的一定是本次请求的指标。
+        self.last_llm_perf = {"provider": provider}
         return provider
 
     def _mark_degraded(self, exc: Exception, *, provider: str = "mock") -> None:

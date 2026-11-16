@@ -274,6 +274,7 @@ class ChatService:
                 **({"inspection": inspection} if inspection else {}),
                 "model_routing": self._router.decision_dict(routing),
                 "context_budget": self._budget.stats_dict(budget_stats),
+                "llm_perf": dict(self.llm.last_llm_perf),
                 **cache_metadata,
             },
         )
@@ -451,6 +452,7 @@ class ChatService:
                     **({"inspection": inspection} if inspection else {}),
                     "model_routing": self._router.decision_dict(routing),
                     "context_budget": self._budget.stats_dict(budget_stats),
+                    "llm_perf": dict(self.llm.last_llm_perf),
                     **cache_metadata,
                 },
             },
@@ -537,20 +539,23 @@ class ChatService:
 {lines}
 """
 
+        # KV-CACHE：稳定前缀在前、易变内容在后。开头+要求对所有请求逐字节
+        # 一致；RAG 缓存命中时知识库证据段也一致——Ollama 复用已算 KV 前缀，
+        # 只有末尾「用户问题」需要重新预填充（原理见 bench_kv_prefix.py）。
         return f"""
 请回答下面的用户问题。
-
-用户问题：
-{message}
-{image_section}
-知识库证据：
-{context}
 
 要求：
 - 优先使用知识库证据。
 - 不要把没有证据支持的内容说成确定事实。
 - 如果知识库没有足够证据，请明确说明。
 - 如果涉及执行操作，只给出建议，不声称已经执行。
+
+知识库证据：
+{context}
+{image_section}
+用户问题：
+{message}
 """
 
     @staticmethod

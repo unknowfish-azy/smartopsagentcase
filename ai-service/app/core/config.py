@@ -47,6 +47,11 @@ class Settings(BaseSettings):
 
     rag_cache_max_entries: int = 128
 
+    # KV-CACHE：Ollama 调用的 keep_alive（秒，payload 传 "Ns" 时长串）。
+    # 保模型与已算 KV 缓存驻留——Ollama 只对「最近一次评估」的 prompt 前缀
+    # 复用 KV，模型被卸载缓存即丢；这是 prompt 前缀复用生效的前提。
+    llm_keep_alive_sec: int = 1800
+
     knowledge_service_url: str = (
         "http://localhost:8002"
     )
