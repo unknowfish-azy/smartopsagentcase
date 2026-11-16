@@ -45,7 +45,7 @@
 
       <template v-if="detail">
         <dl class="kr-side__facts">
-          <div><dt>来源工具</dt><dd>{{ detail.sourceType === 'WEB_RESEARCH' ? '公开网页' : detail.toolId }}</dd></div>
+          <div><dt>来源工具</dt><dd>{{ detail.sourceType === 'WEB_RESEARCH' ? '公开网页' : detail.sourceType === 'CHAT_FEEDBACK' ? '聊天反馈复核' : detail.toolId }}</dd></div>
           <div><dt>{{ detail.sourceType === 'WEB_RESEARCH' ? '溯源标识' : '来源 Trace' }}</dt><dd><DecodeText :value="detail.traceId" tag="code" /></dd></div>
           <div v-if="detail.sourceType === 'WEB_RESEARCH'"><dt>网页任务</dt><dd>#{{ detail.sourceTaskId }}</dd></div>
           <div v-else><dt>运行记录</dt><dd>#{{ detail.sourceRunId }}</dd></div>

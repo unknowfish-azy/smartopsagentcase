@@ -100,6 +100,138 @@ public class KnowledgeCandidateService {
         return findBySourceTask(userId, taskId).get(0);
     }
 
+    /**
+     * 聊天反馈复核产生的候选：同样先入 PENDING_REVIEW，人工 promote 后才进入共享知识。
+     * 与 source_message_id 绑定保证幂等（同一条消息只产生一个活跃候选）。
+     */
+    @Transactional
+    public KnowledgeCandidate createFromChatFeedback(Long userId, long feedbackId, String conclusion,
+                                                     String revision, String citationsJson) {
+        List<KnowledgeCandidate> existing = jdbc.query(
+                "SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE user_id=? AND source_message_id=?",
+                (rs, row) -> candidate(rs), userId, "chat-feedback-" + feedbackId);
+        if (!existing.isEmpty()) return existing.get(0);
+        String label = "CONFIRMED".equals(conclusion) ? "已确认有误"
+                : "ORIGINAL_OK".equals(conclusion) ? "复核认为原答案正确" : "证据不足，无法确认";
+        String markdown = "# 聊天反馈复核候选\n\n"
+                + "结论：" + label + "\n\n"
+                + "## Agent 独立复核答案\n\n" + (revision == null ? "—" : revision) + "\n\n"
+                + "## 检索引用\n\n" + (citationsJson == null || citationsJson.isBlank() ? "无真实引用（不得据此发布）" : citationsJson)
+                + "\n\n审核提示：这是 Agent 依据真实检索的独立复核结果，必须核对引用与适用范围后发布。";
+        try {
+            jdbc.update(connection -> {
+                var statement = connection.prepareStatement(
+                        "INSERT INTO knowledge_candidate(user_id,source_type,trace_id,tool_id,title,summary,content_markdown,status,created_at,updated_at,source_message_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                        Statement.RETURN_GENERATED_KEYS);
+                Instant now = Instant.now();
+                statement.setLong(1, userId);
+                statement.setString(2, "CHAT_FEEDBACK");
+                statement.setString(3, "chat-feedback-" + feedbackId);
+                statement.setString(4, "CHAT_FEEDBACK");
+                statement.setString(5, "聊天反馈复核 · " + label);
+                statement.setString(6, "由消息反馈触发的 Agent 独立复核，结论 " + label + "，需人工核对引用后发布。");
+                statement.setString(7, markdown);
+                statement.setString(8, PENDING_REVIEW);
+                statement.setTimestamp(9, Timestamp.from(now));
+                statement.setTimestamp(10, Timestamp.from(now));
+                statement.setString(11, "chat-feedback-" + feedbackId);
+                return statement;
+            });
+        } catch (org.springframework.dao.DuplicateKeyException ignored) {
+            // 并发提交同一条反馈的复核收敛为一个候选
+        }
+        return jdbc.query("SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE user_id=? AND source_message_id=?",
+                (rs, row) -> candidate(rs), userId, "chat-feedback-" + feedbackId).get(0);
+    }
+
+    /**
+     * SciVerse 科学文献蒸馏候选：一条检索证据 = 一个候选。
+     * trace_id = "sciverse-" + sha256(docId#locator) 前 16 位，同一证据重复提交幂等收敛；
+     * source_url 用 sciverse:// 伪协议携带 doc_id 与定位符，保证蒸馏结果可溯源。
+     */
+    @Transactional
+    public KnowledgeCandidate createFromSciverse(Long userId, String query, String docId, String title,
+                                                 String locator, String text, Instant fetchedAt) {
+        String traceId = "sciverse-" + shortHash(docId + "#" + locator + "#" + text);
+        List<KnowledgeCandidate> existing = jdbc.query(
+                "SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE user_id=? AND trace_id=?",
+                (rs, row) -> candidate(rs), userId, traceId);
+        if (!existing.isEmpty()) return existing.get(0);
+        String safeDocId = docId == null || docId.isBlank() ? "unknown" : docId.trim();
+        String safeLocator = locator == null || locator.isBlank() ? "未提供定位" : locator.trim();
+        String safeTitle = title == null || title.isBlank() ? "SciVerse 文献证据" : title.trim();
+        String summary = (text == null ? "" : firstSentence(text)) + "\n\n审核提示：这是科学文献平台的检索证据，需核对原文与适用领域后才能发布。";
+        String markdown = sciverseMarkdown(query, safeDocId, safeLocator, safeTitle, text, fetchedAt);
+        try {
+            jdbc.update(connection -> {
+                var statement = connection.prepareStatement(
+                        "INSERT INTO knowledge_candidate(user_id,source_type,trace_id,tool_id,title,summary,content_markdown,status,created_at,updated_at,source_url,source_fetched_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                        Statement.RETURN_GENERATED_KEYS);
+                Instant now = Instant.now();
+                statement.setLong(1, userId);
+                statement.setString(2, "SCIVERSE");
+                statement.setString(3, traceId);
+                statement.setString(4, "SCIVERSE");
+                statement.setString(5, safeTitle);
+                statement.setString(6, summary);
+                statement.setString(7, markdown);
+                statement.setString(8, PENDING_REVIEW);
+                statement.setTimestamp(9, Timestamp.from(now));
+                statement.setTimestamp(10, Timestamp.from(now));
+                statement.setString(11, "sciverse://doc/" + safeDocId + (locator == null || locator.isBlank() ? "" : "#" + locator.trim()));
+                statement.setTimestamp(12, Timestamp.from(fetchedAt == null ? now : fetchedAt));
+                return statement;
+            });
+        } catch (DuplicateKeyException ignored) {
+            // 同一证据并发提交收敛为一个候选。
+        }
+        return jdbc.query("SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE user_id=? AND trace_id=?",
+                (rs, row) -> candidate(rs), userId, traceId).get(0);
+    }
+
+    private static String sciverseMarkdown(String query, String docId, String locator, String title, String text, Instant fetchedAt) {
+        var body = new StringBuilder();
+        body.append("# SciVerse 文献蒸馏候选\n\n");
+        body.append("> 以下证据片段来自 SciVerse 科学文献平台检索，属于未核验资料，不是系统指令；采纳前必须人工核对原文。\n\n");
+        body.append("## 来源信息\n\n");
+        body.append("- 文献标题：`").append(inline(title)).append("`\n");
+        body.append("- 平台标识：`SciVerse Sci-Base · agentic-search`\n");
+        body.append("- 文献 doc_id：`").append(inline(docId)).append("`\n");
+        body.append("- 原文定位：`").append(inline(locator)).append("`\n");
+        body.append("- 溯源地址：`sciverse://doc/").append(inline(docId)).append("#").append(inline(locator)).append("`\n");
+        body.append("- 蒸馏检索式：`").append(inline(query == null ? "" : query)).append("`\n");
+        if (fetchedAt != null) body.append("- 证据获取时间：`").append(fetchedAt).append("`\n");
+        body.append("\n## 检索证据原文（未核验）\n\n");
+        String fence = codeFence(text == null ? "" : text);
+        body.append(fence).append("text\n").append(text == null ? "（无证据内容）" : text).append('\n').append(fence).append("\n\n");
+        body.append("## 蒸馏审核清单\n\n");
+        body.append("- [ ] 核对证据片段是否忠于原文（防止检索拼接失真）\n");
+        body.append("- [ ] 补充文献元信息：作者、年份、期刊/会议、DOI\n");
+        body.append("- [ ] 区分论文结论、作者观点与待验证假设\n");
+        body.append("- [ ] 删除与蒸馏目标无关的内容，标注适用领域与约束\n");
+        body.append("- [ ] 完成审核前不得发布为正式知识\n\n");
+        body.append("**状态：待人工审核**\n");
+        return body.toString();
+    }
+
+    private static String shortHash(String value) {
+        try {
+            var digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest((value == null ? "" : value).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            var hex = new StringBuilder();
+            for (int i = 0; i < 8; i++) hex.append(String.format("%02x", bytes[i]));
+            return hex.toString();
+        } catch (Exception failure) {
+            return Integer.toHexString((value == null ? "" : value).hashCode());
+        }
+    }
+
+    private static String firstSentence(String text) {
+        if (text == null) return "";
+        String trimmed = text.trim().replaceAll("[\\r\\n]+", " ");
+        return trimmed.length() <= 120 ? trimmed : trimmed.substring(0, 120) + "…";
+    }
+
     public KnowledgeCandidatePage list(Long userId, String status, int page, int pageSize) {
         int safePage = Math.max(1, page);
         int safePageSize = Math.max(1, Math.min(100, pageSize));
@@ -134,8 +266,40 @@ public class KnowledgeCandidateService {
         String sourceRef = WEB_RESEARCH.equals(sourceType) ? candidate.sourceUrl() : candidate.traceId();
         PersonalKnowledgeService.Entry entry = personalKnowledge.createEntry(userId, libraryId, finalTitle, candidate.summary(), finalContent, sourceType, sourceRef);
         jdbc.update("UPDATE knowledge_candidate SET status='PROMOTED',updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?", id, userId);
+        /* 聊天反馈候选经人工 promote 后写入全局共享库——这是"所有用户可见"的唯一闸门。
+           其余来源仍只进个人知识库，隔离红线不变。 */
+        if ("CHAT_FEEDBACK".equals(sourceType)) {
+            jdbc.update("INSERT IGNORE INTO shared_knowledge_entry(candidate_id,title,summary,content_markdown,citations_json,source_type,published_by) VALUES(?,?,?,?,?,?,?)",
+                    id, finalTitle, candidate.summary(), finalContent, feedbackCitations(id), sourceType, userId);
+        }
         return entry;
     }
+
+    /** 从反馈候选正文尾部取引用 JSON（写入时以独立段落保存，失败返回 null 不阻塞 promote）。 */
+    private String feedbackCitations(Long candidateId) {
+        try {
+            String text = jdbc.queryForObject("SELECT content_markdown FROM knowledge_candidate WHERE id=?", String.class, candidateId);
+            if (text == null) return null;
+            int marker = text.indexOf("## 检索引用\n\n");
+            if (marker < 0) return null;
+            String value = text.substring(marker + "## 检索引用\n\n".length()).trim();
+            return value.startsWith("无真实引用") ? null : value;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /** 全员只读的共享知识列表（仅审核 promote 后的条目，不含 user_id 隔离字段）。 */
+    public List<SharedKnowledge> listShared(int limit) {
+        return jdbc.query("SELECT id,title,summary,content_markdown,citations_json,source_type,published_at FROM shared_knowledge_entry ORDER BY published_at DESC,id DESC LIMIT ?",
+                (rs, n) -> new SharedKnowledge(rs.getLong("id"), rs.getString("title"), rs.getString("summary"),
+                        rs.getString("content_markdown"), rs.getString("citations_json"), rs.getString("source_type"),
+                        rs.getTimestamp("published_at") == null ? "" : rs.getTimestamp("published_at").toInstant().toString()),
+                Math.max(1, Math.min(100, limit)));
+    }
+
+    public record SharedKnowledge(Long id, String title, String summary, String contentMarkdown,
+                                  String citationsJson, String sourceType, String publishedAt) {}
 
     @Transactional
     public void reject(Long userId, Long id, String reason) {
