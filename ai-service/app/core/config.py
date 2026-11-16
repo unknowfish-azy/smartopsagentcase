@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     # 复用 KV，模型被卸载缓存即丢；这是 prompt 前缀复用生效的前提。
     llm_keep_alive_sec: int = 1800
 
+    # KV-CACHE：Ollama 上下文窗口（payload options.num_ctx）。
+    # 0 = 不传、沿用 Ollama 默认（qwen3 默认 4096）。实测（bench_kv_prefix.py）
+    # 默认窗口下大 prompt + 生成会把 KV 缓存挤掉，前缀复用失效；
+    # 大上下文 RAG 场景建议 8192+（qwen3:1.7b 在 8GB 显存下实测稳定）。
+    llm_num_ctx: int = 0
+
     knowledge_service_url: str = (
         "http://localhost:8002"
     )

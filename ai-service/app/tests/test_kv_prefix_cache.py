@@ -57,6 +57,21 @@ def test_payload_includes_keep_alive():
     assert payload["stream"] is True
 
 
+def test_payload_num_ctx_only_when_configured(monkeypatch):
+    from app.services.llm import LLMService
+    from app.core.config import settings
+
+    # 0 = 不传 options，沿用 Ollama 服务端默认
+    monkeypatch.setattr(settings, "llm_num_ctx", 0)
+    payload = LLMService._payload("问题", None, stream=False, model=None)
+    assert "options" not in payload
+
+    # 配置后显式传入 options.num_ctx
+    monkeypatch.setattr(settings, "llm_num_ctx", 8192)
+    payload = LLMService._payload("问题", None, stream=False, model=None)
+    assert payload["options"] == {"num_ctx": 8192}
+
+
 @pytest.mark.asyncio
 async def test_chat_metadata_exposes_llm_perf(monkeypatch):
     from app.core.config import settings

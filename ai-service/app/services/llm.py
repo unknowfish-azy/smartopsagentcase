@@ -254,6 +254,10 @@ class LLMService:
             payload["system"] = system_prompt
         # KV-CACHE：保模型与 KV 缓存驻留，前缀复用生效的前提（时长串，Ollama 接受 Go duration）。
         payload["keep_alive"] = f"{max(0, settings.llm_keep_alive_sec)}s"
+        # KV-CACHE：显式上下文窗口——默认窗口下大 prompt 会挤掉 KV 缓存，
+        # 前缀复用失效（实测见 scripts/bench_kv_prefix.py）。0 = 不传沿用默认。
+        if settings.llm_num_ctx > 0:
+            payload["options"] = {"num_ctx": settings.llm_num_ctx}
         return payload
 
     def _reset_call_state(self) -> str:
