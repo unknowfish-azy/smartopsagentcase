@@ -29,9 +29,15 @@ class ChatRequest(BaseModel):
     vector_weight: float | None = Field(default=None, ge=0.0, le=1.0)
     bm25_weight: float | None = Field(default=None, ge=0.0, le=1.0)
 
-    # 图像证据（文件名列表，最多 5 张）。
-    # 当前阶段仅传递文件名用于模拟解析，图像内容不上传。
+    # 图像证据文件名（最多 5 张），用于展示/审计/路由信号，不含像素内容。
     images: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+    )
+
+    # 真实图像内容：data URL（data:image/...;base64,...）或裸 base64，最多 5 张。
+    # 仅当该项非空时才走视觉模型真实识别；images 只有文件名时仍为旧的文本链路。
+    image_data: list[str] = Field(
         default_factory=list,
         max_length=5,
     )

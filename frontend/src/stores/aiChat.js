@@ -11,6 +11,10 @@ function unwrap(value) {
   return value?.data ?? value
 }
 
+// 多模态原图仅驻内存：base64 不写 localStorage（体积/隐私）。
+// key = 用户消息 id；刷新 Memory 清空后重试会如实提示重新上传，不伪造"仍持有图片"。
+const visionImageCache = new Map()
+
 export const useAiChatStore = defineStore('ai-chat', () => {
   const conversations = ref([])
   const activeId = ref(null)
@@ -302,13 +306,14 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     }
   }
 
-  async function sendMessageStreaming(prompt, { images, rag } = {}) {
+  async function sendMessageStreaming(prompt, { images, imageData, rag } = {}) {
     syncAccount()
     if (activeConversation.value?.remote) return false
     const normalized = String(prompt || '').trim()
     const imageEvidence = Array.isArray(images) ? images.map(name => String(name || '').trim()).filter(Boolean).slice(0, 5) : []
+    const imageBytes = Array.isArray(imageData) ? imageData.map(value => String(value || '').trim()).filter(Boolean).slice(0, 5) : []
     validationError.value = ''
-    if (!normalized || sending.value) return false
+    if ((!normalized && !imageBytes.length) || sending.value) return false
     if (normalized.length > 2000) {
       validationError.value = '消息不能超过 2000 字符。'
       return false
@@ -320,12 +325,15 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     const conversation = activeConversation.value
     const providerKey = selectedKey.value
     if (!conversation.messages.length && conversation.title === '新对话') conversation.title = normalized.replace(/\s+/g, ' ').slice(0, 32)
-    conversation.messages.push({ id: crypto.randomUUID(), role: 'user', content: normalized, ...(imageEvidence.length ? { images: imageEvidence } : {}) })
+    const userId = crypto.randomUUID()
+    const userMessage = { id: userId, role: 'user', content: normalized, ...(imageEvidence.length ? { images: imageEvidence } : {}) }
+    conversation.messages.push(userMessage)
+    if (imageBytes.length) visionImageCache.set(userId, imageBytes)
     conversation.messages.push({ id: crypto.randomUUID(), role: 'assistant', content: '', pending: true, streaming: true, thinking: [], providerKey, prompt: normalized, attempt: 1, rag })
     const pending = conversation.messages.at(-1)
     conversation.updatedAt = Date.now()
     persist()
-    return streamInto({ conversation, pending, prompt: normalized, imageEvidence, rag, generation, attempt: 1 })
+    return streamInto({ conversation, pending, prompt: normalized || '请分析这张图片', imageEvidence, imageBytes, rag, generation, attempt: 1 })
   }
 
   // 在失败的回答上原地重试：不追加用户消息、不追加回答，保证重试前后消息条数不变；
@@ -344,14 +352,20 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     if (!prompt) return false
     const generation = accountEpoch.value
     const imageEvidence = Array.isArray(previousUser?.images) ? previousUser.images.slice(0, 5) : []
+    // 原图只在内存缓存里；刷新后缓存清空则 imageBytes 为空，重试退化为纯文本，
+    // 且下面提示用户重新上传——绝不把文件名当图片内容送去"假装识别"。
+    const imageBytes = previousUser ? (visionImageCache.get(previousUser.id) || []) : []
     const attempt = (target.attempt || 1) + 1
     Object.assign(target, { content: '', pending: true, streaming: true, error: false, recovered: false, thinking: [], metadata: {}, firstTokenMs: null, totalMs: null, attempt })
     conversation.updatedAt = Date.now()
     persist()
-    return streamInto({ conversation, pending: target, prompt, imageEvidence, rag: target.rag, generation, attempt })
+    if (imageEvidence.length && !imageBytes.length) {
+      validationError.value = '原图已随页面刷新清除，本次重试仅按文字重新提问；如需看图请重新上传。'
+    }
+    return streamInto({ conversation, pending: target, prompt, imageEvidence, imageBytes, rag: target.rag, generation, attempt })
   }
 
-  async function streamInto({ conversation, pending, prompt, imageEvidence, rag, generation, attempt }) {
+  async function streamInto({ conversation, pending, prompt, imageEvidence, imageBytes, rag, generation, attempt }) {
     // 首 token / 总耗时只统计本次流；重试时从新的开始点重新计时（字段在 retryMessageStreaming 中已清空）。
     const startedAt = performance.now()
     let firstTokenAt = null
@@ -407,7 +421,7 @@ export const useAiChatStore = defineStore('ai-chat', () => {
           pending.streaming = false
           pending.error = true
         },
-      }, { images: imageEvidence, rag, runToken: issued.runToken, correlation: { request_id: crypto.randomUUID(), task_id: conversation.id } })
+      }, { images: imageEvidence, imageData: imageBytes, rag, runToken: issued.runToken, correlation: { request_id: crypto.randomUUID(), task_id: conversation.id } })
       return true
     } catch (error) {
       if (!sameAccount(generation) || !conversations.value.includes(conversation)) return false

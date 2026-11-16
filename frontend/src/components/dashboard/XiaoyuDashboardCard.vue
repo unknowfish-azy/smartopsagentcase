@@ -23,25 +23,48 @@
         <!-- 当前状态 + 情境一句话 -->
         <p class="xiaoyu-bubble">{{ bubbleText }}</p>
 
-        <!-- 快捷对话输入 -->
+        <!-- 就地对话流：不跳转 /chat，回答直接显示在这里 -->
+        <div v-if="visibleMessages.length" ref="threadRef" class="xiaoyu-thread" aria-label="小鱼对话记录" role="log">
+          <div v-for="msg in visibleMessages" :key="msg.id" class="xiaoyu-msg" :class="`xiaoyu-msg--${msg.role}`">
+            <span class="xiaoyu-msg-role">{{ msg.role === 'user' ? '我' : '小鱼' }}</span>
+            <div class="xiaoyu-msg-body">
+              <div v-if="msg.images?.length" class="xiaoyu-msg-images">
+                <img v-for="(src, idx) in msg.images" :key="idx" :src="src" :alt="`附图 ${idx + 1}`" />
+              </div>
+              <span v-if="msg.error" class="xiaoyu-msg-error">{{ msg.content }}</span>
+              <span v-else class="xiaoyu-msg-text">{{ msg.content || (msg.pending ? '思考中…' : '') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 待发送图片 tray -->
+        <div v-if="staged.length" class="xiaoyu-tray" aria-label="待发送图片">
+          <div v-for="item in staged" :key="item.id" class="xiaoyu-tray-item">
+            <img :src="item.preview" :alt="item.name" />
+            <button type="button" :aria-label="`移除 ${item.name}`" @click="removeImage(item.id)">×</button>
+          </div>
+        </div>
+
+        <!-- 快捷对话输入（支持文字 + 图片多模态） -->
         <form class="xiaoyu-input" @submit.prevent="onSend">
+          <input ref="fileInput" class="xiaoyu-file" type="file" accept="image/png,image/jpeg" multiple @change="onPick" />
+          <button type="button" class="xiaoyu-attach" title="添加图片（多模态）" aria-label="添加图片" :disabled="sending" @click="fileInput?.click()">＋图</button>
           <textarea
             v-model="input"
             rows="2"
-            maxlength="200"
-            placeholder="跟小鱼说点什么…（回车发送）"
+            maxlength="2000"
+            placeholder="跟小鱼说点什么…（可粘贴图片，回车发送）"
             @keydown.enter.exact.prevent="onSend"
+            @paste="onPaste"
           ></textarea>
-          <button type="submit" class="xiaoyu-send" :disabled="!input.trim() || sending">
+          <button type="submit" class="xiaoyu-send" :disabled="(!input.trim() && !staged.length) || sending">
             {{ sending ? '思考中…' : '发送 →' }}
           </button>
         </form>
 
-        <!-- 3 个快捷按钮 -->
+        <!-- 3 个快捷按钮：就地填充问题，不再跳转 -->
         <div class="xiaoyu-quicks">
-          <button type="button" class="xiaoyu-quick" @click="$router.push('/health')">一键体检</button>
-          <button type="button" class="xiaoyu-quick" @click="$router.push('/knowledge/space')">读取知识库</button>
-          <button type="button" class="xiaoyu-quick" @click="goExplainAlerts">解释告警</button>
+          <button v-for="q in QUICK_PROMPTS" :key="q.label" type="button" class="xiaoyu-quick" @click="fillQuick(q)">{{ q.label }}</button>
         </div>
 
         <!-- RAG + Agent 训练 双行指标：可点击跳转对应详情 -->
@@ -68,7 +91,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AgentPersona from '../persona/AgentPersona.vue'
 import { useCompanionStore } from '../../stores/companion.js'
@@ -79,8 +102,22 @@ const companion = useCompanionStore()
 const aiChat = useAiChatStore()
 
 const personaRef = ref(null)
+const fileInput = ref(null)
+const threadRef = ref(null)
 const input = ref('')
-const sending = ref(false)
+const sending = computed(() => aiChat.sending)
+const staged = ref([]) // [{ id, name, preview, dataUrl }]
+
+// 最多 5 张、单张 10MB、合计 20MB，与 ai-service schema max_length=5 对齐。
+const MAX_IMAGES = 5
+const MAX_BYTES = 10 * 1024 * 1024
+const TOTAL_BYTES = 20 * 1024 * 1024
+
+const QUICK_PROMPTS = [
+  { label: '一键体检', text: '帮我做一次系统健康体检，指出当前最需要关注的风险。' },
+  { label: '读取知识库', text: '从知识库里总结与我当前问题最相关的三条运维经验。' },
+  { label: '解释告警', text: '解释一下当前活跃告警的可能原因和处置建议。' }
+]
 
 /** 七状态映射：whale 状态 → personaStates profile key */
 const personaState = computed(() => {
@@ -111,6 +148,9 @@ const bubbleText = computed(() => {
   }
 })
 
+// 就地展示当前会话最近 12 条消息（含进行中的流式回答），不跳转。
+const visibleMessages = computed(() => aiChat.messages.slice(-12))
+
 /** RAG 知识条目数 — 读 localStorage 缓存 + mock 兜底（真实接入后替换） */
 const ragTotal = ref(0)
 
@@ -120,9 +160,7 @@ const agentStats = ref({ conversations: 156, skills: 8, lastFineTune: '3 天前'
 /** 演示模式：手动 cycle 状态（点击状态 pill 触发） */
 const DEMO_STATE_ORDER = ['idle', 'thinking', 'observing', 'executing', 'warning', 'error', 'recovering']
 const demoIdx = ref(0)
-const demoMode = ref(false)
 function cycleDemoState() {
-  demoMode.value = true
   demoIdx.value = (demoIdx.value + 1) % DEMO_STATE_ORDER.length
   const next = DEMO_STATE_ORDER[demoIdx.value]
   personaRef.value?.setState?.(next, { fade: 350 })
@@ -157,21 +195,73 @@ async function loadRag() {
   ragTotal.value = 284 // mock fallback
 }
 
-async function onSend() {
-  const text = input.value.trim()
-  if (!text || sending.value) return
-  sending.value = true
-  try {
-    await aiChat.sendMessage(text)
-    input.value = ''
-    router.push('/chat')
-  } finally {
-    sending.value = false
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('图片读取失败'))
+    reader.readAsDataURL(file)
+  })
+}
+
+async function addFiles(files) {
+  const list = Array.from(files || [])
+  for (const file of list) {
+    if (staged.value.length >= MAX_IMAGES) { aiChat.validationError = '一次最多附加 5 张图片。'; break }
+    if (!/^image\/(png|jpe?g)$/i.test(file.type)) { aiChat.validationError = '仅支持 PNG / JPEG 图片。'; continue }
+    if (!file.size || file.size > MAX_BYTES) { aiChat.validationError = '单张图片不能超过 10 MB。'; continue }
+    if (staged.value.reduce((sum, item) => sum + item.size, file.size) > TOTAL_BYTES) { aiChat.validationError = '图片合计不能超过 20 MB。'; break }
+    try {
+      const dataUrl = await readAsDataUrl(file)
+      staged.value.push({ id: crypto.randomUUID(), name: file.name, preview: URL.createObjectURL(file), dataUrl, size: file.size })
+    } catch (error) {
+      aiChat.validationError = error.message || '图片读取失败'
+    }
   }
 }
 
-function goExplainAlerts() {
-  router.push({ path: '/sentinel/alerts', query: { focus: 'active' } })
+function onPick(event) {
+  addFiles(event.target.files)
+  event.target.value = ''
+}
+function onPaste(event) {
+  const files = Array.from(event.clipboardData?.files || [])
+  const images = files.filter(file => /^image\//i.test(file.type))
+  if (images.length) { event.preventDefault(); addFiles(images) }
+}
+function removeImage(id) {
+  const item = staged.value.find(value => value.id === id)
+  if (item?.preview) URL.revokeObjectURL(item.preview)
+  staged.value = staged.value.filter(value => value.id !== id)
+}
+function fillQuick(prompt) {
+  input.value = prompt.text
+  input.value && nextTick(() => threadRef.value?.scrollTo?.(0, threadRef.value.scrollHeight))
+}
+function clearStaged() {
+  for (const item of staged.value) if (item.preview) URL.revokeObjectURL(item.preview)
+  staged.value = []
+}
+
+// 发送后对话就地显示，不再 router.push('/chat')。
+async function onSend() {
+  const text = input.value.trim()
+  const images = [...staged.value]
+  if ((!text && !images.length) || sending.value) return
+  input.value = ''
+  clearStaged()
+  try {
+    // 带图走流式多模态链路（ai-service → 视觉模型）；纯文本也走同一链路便于就地流式显示。
+    await aiChat.sendMessageStreaming(text, {
+      images: images.map(item => item.name),
+      imageData: images.map(item => item.dataUrl)
+    })
+    personaRef.value?.speakText?.('已收到，我来分析一下。')
+    await nextTick()
+    threadRef.value?.scrollTo?.(0, threadRef.value.scrollHeight)
+  } catch {
+    // store 内部已把错误写入消息，这里不重复提示。
+  }
 }
 
 /** 让小鱼随状态切换姿态 */
@@ -183,6 +273,7 @@ onMounted(() => {
   loadRag()
 })
 onBeforeUnmount(() => {
+  clearStaged()
   personaRef.value?.dispose?.()
 })
 </script>
@@ -200,7 +291,7 @@ onBeforeUnmount(() => {
   align-items: start;
 }
 
-/* 3D 半身舞台：竖版裁剪，只露上半身 — button 加可点击态 */
+/* 3D 半身舞台 */
 .xiaoyu-stage {
   display: block;
   cursor: pointer;
@@ -224,7 +315,6 @@ onBeforeUnmount(() => {
   padding: 0;
   border: none;
   background: none;
-  /* 舞台居中裁剪，让 sendagaya-shino 上半身正好露在竖框里 */
   transform: translateY(-6%);
 }
 .xiaoyu-stage :deep(.webgl-host) { max-width: none; }
@@ -241,13 +331,72 @@ onBeforeUnmount(() => {
   border-left: 2px solid var(--ds-color-primary);
 }
 
+/* 就地对话流 */
+.xiaoyu-thread {
+  max-height: 240px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid var(--ds-hairline);
+  border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-text) 2%, transparent);
+  scrollbar-width: thin;
+}
+.xiaoyu-msg { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 8px; align-items: start; }
+.xiaoyu-msg-role {
+  font: 9.5px/1.6 var(--ds-font-mono);
+  letter-spacing: .06em;
+  color: var(--ds-color-muted);
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+.xiaoyu-msg--assistant .xiaoyu-msg-role { color: var(--ds-color-primary); }
+.xiaoyu-msg-body { min-width: 0; }
+.xiaoyu-msg-text {
+  display: block;
+  font-size: var(--ds-type-body-caption-size);
+  line-height: var(--ds-line-height-base);
+  color: var(--ds-color-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.xiaoyu-msg-error { display: block; font-size: 11px; color: var(--smart-danger); overflow-wrap: anywhere; }
+.xiaoyu-msg-images { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.xiaoyu-msg-images img {
+  width: 52px; height: 52px; object-fit: cover;
+  border: 1px solid var(--ds-hairline); border-radius: var(--ds-radius-sm);
+}
+
+/* 待发送图片 tray */
+.xiaoyu-tray { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.xiaoyu-tray-item { position: relative; width: 46px; height: 46px; }
+.xiaoyu-tray-item img { width: 46px; height: 46px; object-fit: cover; border-radius: var(--ds-radius-sm); border: 1px solid var(--ds-color-primary); }
+.xiaoyu-tray-item button {
+  position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; line-height: 16px;
+  border-radius: 50%; border: 1px solid var(--ds-hairline); background: var(--ds-color-surface-raised);
+  color: var(--ds-color-text); font-size: 12px; cursor: pointer; padding: 0;
+}
+
 /* 快捷对话 */
 .xiaoyu-input {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 6px;
   margin-bottom: 10px;
 }
+.xiaoyu-file { display: none; }
+.xiaoyu-attach {
+  padding: 0 8px;
+  border: 1px solid var(--ds-hairline);
+  border-radius: var(--ds-radius-md);
+  background: transparent;
+  color: var(--ds-color-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.xiaoyu-attach:hover { border-color: var(--ds-color-primary); color: var(--ds-color-primary); }
 .xiaoyu-input textarea {
   resize: none;
   padding: 8px 10px;

@@ -127,6 +127,107 @@ class LLMService:
             await asyncio.sleep(0.015)
             yield piece
 
+    async def generate_vision_stream(
+        self,
+        prompt: str,
+        *,
+        images: list[str],
+        system_prompt: str | None = None,
+        model: str | None = None,
+    ):
+        """多模态流式生成：把图片 base64 随提示交给 Ollama 视觉模型。
+
+        诚实性铁律：带图请求**绝不降级到 mock**。mock 无法看图，若静默降级
+        会产出「假装识别了图片」的假答案。因此：provider 非 ollama、无视觉模型
+        配置、Ollama 返回不支持多模态 —— 一律抛 LLMException，由上层如实展示。
+        """
+        provider = self._reset_call_state()
+        if provider != "ollama":
+            raise LLMException(
+                "当前 LLM Provider 不支持图像理解（仅 mock 文本模型），请先切换并配置视觉模型。"
+            )
+        vision_model = (model or "").strip() or settings.llm_vision_model.strip()
+        if not vision_model:
+            raise LLMException("未配置视觉模型（LLM_VISION_MODEL），无法分析图片。")
+
+        normalized = self._normalize_images(images)
+        if not normalized:
+            raise LLMException("图片数据为空或格式无效，无法分析。")
+
+        payload = self._payload(
+            prompt, system_prompt, stream=True, model=vision_model
+        )
+        payload["images"] = normalized
+
+        started = time.perf_counter()
+        ttft_ms: int | None = None
+        done_data: dict[str, Any] = {}
+        emitted = False
+        try:
+            async with http_pool.acquire() as client:
+                async with client.stream(
+                    "POST",
+                    f"{settings.llm_base_url.rstrip('/')}/api/generate",
+                    json=payload,
+                ) as response:
+                    if response.status_code != 200:
+                        body = (await response.aread()).decode("utf-8", "replace")[:500]
+                        raise LLMException(
+                            f"视觉模型调用失败：{response.status_code} {body}"
+                        )
+                    async for line in response.aiter_lines():
+                        if not line:
+                            continue
+                        data = json.loads(line)
+                        if not isinstance(data, dict) or data.get("error"):
+                            raise LLMException(
+                                f"视觉模型返回错误：{data.get('error', '未知错误') if isinstance(data, dict) else '格式错误'}"
+                            )
+                        chunk = data.get("response", "")
+                        if not isinstance(chunk, str):
+                            raise LLMException("视觉模型流格式错误")
+                        if chunk:
+                            if ttft_ms is None:
+                                ttft_ms = round((time.perf_counter() - started) * 1000)
+                            emitted = True
+                            yield chunk
+                        if data.get("done"):
+                            done_data = data
+                            break
+                    if not emitted:
+                        raise LLMException("视觉模型未返回任何内容")
+        except (LLMException, UpstreamSaturated):
+            raise
+        except Exception as exc:
+            raise LLMException(f"视觉模型调用异常：{type(exc).__name__}: {exc}") from exc
+
+        self.effective_provider = "ollama"
+        self.last_llm_perf = {
+            **self._perf_from_ollama(
+                done_data, ttft_ms=ttft_ms,
+                total_ms=round((time.perf_counter() - started) * 1000),
+            ),
+            "model": vision_model,
+            "multimodal": True,
+            "image_count": len(normalized),
+        }
+
+    @staticmethod
+    def _normalize_images(images: list[str]) -> list[str]:
+        """兼容 data URL 与裸 base64，剥掉前缀；拒绝空值与非图片 data URL。"""
+        out: list[str] = []
+        for raw in images[:5]:
+            value = str(raw or "").strip()
+            if not value:
+                continue
+            if value.startswith("data:"):
+                if not value.startswith("data:image/"):
+                    continue
+                value = value.split(",", 1)[-1]
+            if value:
+                out.append(value)
+        return out
+
     @staticmethod
     def _perf_from_ollama(data: dict[str, Any], ttft_ms: int | None, total_ms: int) -> dict[str, Any]:
         """从 Ollama 响应/完成帧提取推理指标（时长单位 ns → ms，如实缺省 None）。"""

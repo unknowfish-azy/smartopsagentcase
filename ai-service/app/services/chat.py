@@ -189,11 +189,19 @@ class ChatService:
             verification_required=(request.metadata or {}).get("verification_required") is True,
         )
 
-        answer = await self.llm.generate(
-            prompt,
-            system_prompt=SYSTEM_PROMPT,
-            model=routing.model,
-        )
+        if request.image_data:
+            # 非流式带图同样走视觉模型，失败如实抛错、不降级 mock。
+            from ..core.config import settings
+            answer = await self.llm.generate_vision_stream(
+                prompt, images=list(request.image_data), system_prompt=SYSTEM_PROMPT,
+            )
+            answer = "".join([chunk async for chunk in answer])
+        else:
+            answer = await self.llm.generate(
+                prompt,
+                system_prompt=SYSTEM_PROMPT,
+                model=routing.model,
+            )
 
         inspection = self._inspect_request(request, rag_data)
 
@@ -372,11 +380,19 @@ class ChatService:
             verification_required=(request.metadata or {}).get("verification_required") is True,
         )
 
+        # 真实多模态：带 image_data 才走视觉模型识别；仅有文件名仍是文本链路。
+        # 诚实性：不把"收到文件名"冒充"已识别图片"。
+        has_vision = bool(request.image_data)
+        from ..core.config import settings
+        vision_model = settings.llm_vision_model.strip() if has_vision else ""
+
         # Report only stages actually performed by this chat path.
         thinking_steps = []
         if request.images:
             thinking_steps.append(
-                {"stage": "attachments", "label": "附件已接收", "detail": f"收到 {len(request.images)} 个图像文件名，尚未执行图像识别"}
+                {"stage": "attachments", "label": "附件已接收",
+                 "detail": f"收到 {len(request.images)} 张图像"
+                           + (f"，交由视觉模型 {vision_model or '（未配置）'} 识别" if has_vision else "（仅文件名，未上传内容）")}
             )
         if request.use_rag:
             rag_metadata = self._rag_metadata(request, rag_data)
@@ -384,30 +400,48 @@ class ChatService:
                 "stage": "retrieve", "label": "知识检索结果",
                 "detail": f"状态：{rag_metadata['rag_status']}；返回 {len(results)} 条知识片段",
             })
-        thinking_steps.append({"stage": "answer", "label": "生成回答", "detail": "根据当前可用信息生成回答"})
+        thinking_steps.append({
+            "stage": "answer", "label": "生成回答",
+            "detail": f"由 {'视觉模型 ' + vision_model if has_vision else '文本模型'} 生成回答",
+        })
         for step in thinking_steps:
             yield {"event": "thinking", "data": step}
 
         # 2) 流式 token
         try:
-            async for delta in self.llm.generate_stream(
-                prompt,
-                system_prompt=SYSTEM_PROMPT,
-                model=routing.model,
-            ):
-                yield {"event": "token", "data": {"delta": delta}}
+            if has_vision:
+                async for delta in self.llm.generate_vision_stream(
+                    prompt,
+                    images=list(request.image_data),
+                    system_prompt=SYSTEM_PROMPT,
+                ):
+                    yield {"event": "token", "data": {"delta": delta}}
+            else:
+                async for delta in self.llm.generate_stream(
+                    prompt,
+                    system_prompt=SYSTEM_PROMPT,
+                    model=routing.model,
+                ):
+                    yield {"event": "token", "data": {"delta": delta}}
         except UpstreamSaturated:
-            # 容量不足是明确的过载状态：终止本次流式，不混入 mock 输出。
             yield {"event": "error", "data": {
                 "code": "UPSTREAM_SATURATED",
                 "message": "上游容量已饱和，请稍后重试",
             }}
             return
-        except LLMException:
-            yield {"event": "error", "data": {
-                "code": "LLM_STREAM_INTERRUPTED",
-                "message": "模型输出中断，已保留部分回答，请重试",
-            }}
+        except LLMException as exc:
+            # 视觉链路失败如实透传原因（如"视觉模型未安装/不支持多模态"），
+            # 绝不静默降级成文本 mock，避免伪造"已看图"。
+            if has_vision:
+                yield {"event": "error", "data": {
+                    "code": "VISION_UNAVAILABLE",
+                    "message": str(exc),
+                }}
+            else:
+                yield {"event": "error", "data": {
+                    "code": "LLM_STREAM_INTERRUPTED",
+                    "message": "模型输出中断，已保留部分回答，请重试",
+                }}
             return
 
         inspection = self._inspect_request(request, rag_data)

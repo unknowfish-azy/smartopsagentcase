@@ -40,7 +40,8 @@ function parseSse(raw: string): { event: string; data: any } | null {
  * @param {(payload: object) => void} [callbacks.onDone]
  * @param {(error: Error) => void} [callbacks.onError]
  * @param {object} [options]
- * @param {string[]} [options.images] 图像证据文件名（当前阶段仅传文件名参与模拟解析）
+ * @param {string[]} [options.images] 图像证据文件名（用于展示/审计）
+ * @param {string[]} [options.imageData] 图像内容 data URL（base64），非空时触发视觉模型真实识别
  * @param {object} [options.rag] 检索调试参数，全部可选；undefined 字段不会进请求体，
  *   ai-service 侧按 "None = 用默认值" 的约定处理。
  */
@@ -63,6 +64,7 @@ export async function streamChat(message: string, {
   /** Java 边缘签发的短时 run 令牌；缺失时请求会 ai-service 拒绝（401）。 */
   runToken?: string
   images?: string[]
+  imageData?: string[]
   rag?: {
     top_k?: number
     version?: string | null
@@ -90,6 +92,7 @@ export async function streamChat(message: string, {
   if (rag.vector_weight != null) body.vector_weight = rag.vector_weight
   if (rag.bm25_weight != null) body.bm25_weight = rag.bm25_weight
   if (options.images?.length) body.images = options.images
+  if (options.imageData?.length) body.image_data = options.imageData
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
   try {
     const response = await fetch(`${AI_SERVICE_BASE}/api/chat/stream`, {

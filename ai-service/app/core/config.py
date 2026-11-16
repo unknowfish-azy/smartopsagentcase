@@ -38,6 +38,11 @@ class Settings(BaseSettings):
 
     llm_model_complex: str = ""
 
+    # 多模态视觉模型：带真实图片的请求专用，Ollama 需已 pull 该模型。
+    # 留空表示未配置视觉能力——此时带图请求会明确报错，不降级、不伪造识别结果。
+    # 默认 qwen2.5vl:3b（与 qwen3 同系列、支持 vision、3B 低显存）。
+    llm_vision_model: str = "qwen2.5vl:3b"
+
     # PERF-07：RAG 证据上下文的字符预算（按分数优先装填）。
     context_budget_chars: int = 12000
 

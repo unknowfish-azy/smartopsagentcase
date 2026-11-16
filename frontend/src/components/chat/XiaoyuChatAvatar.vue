@@ -91,13 +91,11 @@
 
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElDrawer } from 'element-plus'
 import { useCompanionStore } from '../../stores/companion.js'
 import { useAiChatStore } from '../../stores/aiChat.js'
 import AgentPersona from '../persona/AgentPersona.vue'
 
-const router = useRouter()
 const companion = useCompanionStore()
 const aiChat = useAiChatStore()
 
@@ -158,7 +156,7 @@ function speakGreeting() {
   personaRef.value?.speakText?.(text)
 }
 
-/** Drawer 里发完快捷对话 → 跳到 Chat 主区 */
+/** Drawer 里发完快捷对话 → 直接留在当前页就地显示，不再跳 /chat */
 async function onSend() {
   const text = input.value.trim()
   if (!text || sending.value) return
@@ -166,8 +164,7 @@ async function onSend() {
   try {
     await aiChat.sendMessage(text)
     input.value = ''
-    drawerOpen.value = false
-    router.push('/chat')
+    // 不关闭抽屉、不跳转：Chat 主区的消息流会就地更新，用户可继续对话。
   } finally {
     sending.value = false
   }
