@@ -18,6 +18,55 @@
         <div><dt>桥接</dt><dd>{{ bridgeStatus }}</dd></div>
       </dl>
 
+      <section class="monitor-panel" aria-label="实时监控">
+        <div class="subsection-heading">
+          <h3>实时监控</h3>
+          <span v-if="monitorActive" class="monitor-intervals">
+            <button v-for="option in [3000, 5000, 10000]" :key="option" type="button" :class="{ active: monitor.intervalMs.value === option }" @click="monitor.setIntervalValue(option)">{{ option / 1000 }}s</button>
+          </span>
+        </div>
+        <p v-if="!runtimeId">连接后每 {{ monitor.intervalMs.value / 1000 }} 秒对目标做一次真实采样（/proc + df），不会自动执行其他命令。</p>
+        <p v-else-if="!runtimeOnline">会话在线后开始采样。</p>
+        <template v-else>
+          <p v-if="monitor.error.value" class="monitor-error" role="status">{{ monitor.error.value }}</p>
+          <p v-else-if="monitor.sampling.value && !monitor.latest.value" class="monitor-hint">正在采样…</p>
+          <template v-if="monitor.latest.value">
+            <template v-if="monitor.latest.value.supported">
+              <div class="monitor-grid">
+                <div class="monitor-row">
+                  <span class="monitor-label">CPU</span>
+                  <span class="monitor-bar"><i :style="{ width: cpuWidth }" /></span>
+                  <span class="monitor-value">{{ cpuText }}</span>
+                </div>
+                <div class="monitor-row">
+                  <span class="monitor-label">内存</span>
+                  <span class="monitor-bar"><i :style="{ width: memWidth }" /></span>
+                  <span class="monitor-value">{{ memText }}</span>
+                </div>
+                <div class="monitor-row">
+                  <span class="monitor-label">负载</span>
+                  <span class="monitor-bar"><i :style="{ width: loadWidth }" /></span>
+                  <span class="monitor-value">{{ loadText }}</span>
+                </div>
+                <div class="monitor-row">
+                  <span class="monitor-label">网络</span>
+                  <span class="monitor-bar dim"><i :style="{ width: '100%' }" /></span>
+                  <span class="monitor-value">↓{{ rateText.rx }} ↑{{ rateText.tx }}</span>
+                </div>
+                <div class="monitor-row">
+                  <span class="monitor-label">磁盘 /</span>
+                  <span class="monitor-bar"><i :style="{ width: diskWidth }" /></span>
+                  <span class="monitor-value">{{ diskText }}</span>
+                </div>
+              </div>
+              <canvas ref="spark" class="monitor-spark" width="216" height="54" aria-hidden="true"></canvas>
+              <p class="monitor-hint">趋势线：青=CPU 绿=内存（最近 {{ monitor.history.value.length }} 次采样）</p>
+            </template>
+            <p v-else class="monitor-error">该目标不支持采样：{{ monitor.latest.value.reason }}（Windows/受限 shell 无 /proc）</p>
+          </template>
+        </template>
+      </section>
+
       <section class="agent-context" aria-label="Agent 只读上下文">
         <div class="subsection-heading">
           <h3>Agent 上下文</h3>
@@ -47,8 +96,10 @@
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import { CONNECTIONS_WORKSPACE_KEY } from '../../composables/useConnectionsWorkspace.js'
+import { useServerMonitor } from '../../composables/useServerMonitor.js'
+import { drawSparkline, formatKb, formatRate, readSparklinePalette } from './serverMonitor.js'
 
 const {
   activeTab,
@@ -65,6 +116,56 @@ const {
   executionBoundaryLabel,
   formatLastConnected
 } = inject(CONNECTIONS_WORKSPACE_KEY)
+
+const monitor = useServerMonitor(runtimeId, runtimeOnline)
+const monitorActive = computed(() => Boolean(runtimeId.value && runtimeOnline.value))
+const spark = ref(null)
+
+watch(() => monitor.history.value.length, () => {
+  drawSparkline(spark.value, monitor.history.value, readSparklinePalette())
+})
+
+const cpuWidth = computed(() => pctWidth(monitor.latest.value?.cpuPercent))
+const cpuText = computed(() => {
+  const value = monitor.latest.value?.cpuPercent
+  return Number.isFinite(value) ? `${value.toFixed(0)}%` : '采样不足'
+})
+const memWidth = computed(() => pctWidth(memPercent(monitor.latest.value)))
+const memText = computed(() => {
+  const sample = monitor.latest.value
+  if (!Number.isFinite(sample?.memTotalKb) || !Number.isFinite(sample?.memAvailableKb)) return '—'
+  const used = sample.memTotalKb - sample.memAvailableKb
+  return `${pctText(memPercent(sample))} · ${formatKb(used)}/${formatKb(sample.memTotalKb)}`
+})
+const loadWidth = computed(() => {
+  const load = monitor.latest.value?.load1
+  return Number.isFinite(load) ? `${Math.min(100, load * 25)}%` : '0%'
+})
+const loadText = computed(() => {
+  const sample = monitor.latest.value
+  return Number.isFinite(sample?.load1) ? `${sample.load1.toFixed(2)} / ${Number.isFinite(sample?.load5) ? sample.load5.toFixed(2) : '—'} / ${Number.isFinite(sample?.load15) ? sample.load15.toFixed(2) : '—'}` : '—'
+})
+const rateText = computed(() => ({
+  rx: formatRate(monitor.rate.value?.rxPerSec),
+  tx: formatRate(monitor.rate.value?.txPerSec)
+}))
+const diskWidth = computed(() => pctWidth(monitor.latest.value?.diskUsagePercent))
+const diskText = computed(() => {
+  const sample = monitor.latest.value
+  if (!Number.isFinite(sample?.diskUsagePercent)) return '—'
+  return `${sample.diskUsagePercent}% · 余 ${formatKb(sample.diskAvailKb)}`
+})
+
+function memPercent(sample) {
+  if (!Number.isFinite(sample?.memTotalKb) || !Number.isFinite(sample?.memAvailableKb) || sample.memTotalKb <= 0) return null
+  return Math.max(0, Math.min(100, ((sample.memTotalKb - sample.memAvailableKb) * 100) / sample.memTotalKb))
+}
+function pctWidth(value) {
+  return Number.isFinite(value) ? `${Math.max(2, Math.min(100, value))}%` : '0%'
+}
+function pctText(value) {
+  return Number.isFinite(value) ? `${value.toFixed(0)}%` : '—'
+}
 </script>
 
 <style scoped>
@@ -105,6 +206,22 @@ const {
   color: var(--smart-muted);
   font-size: 12px;
 }
+
+.monitor-panel { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--smart-border); }
+.monitor-panel > p { margin: 8px 0; color: var(--smart-muted); font-size: 11px; line-height: 1.6; }
+.monitor-intervals { display: flex; gap: 4px; }
+.monitor-intervals button { min-width: 30px; padding: 2px 6px; border: 1px solid var(--smart-border-strong); background: transparent; color: var(--smart-muted); font: 10px var(--font-mono); cursor: pointer; }
+.monitor-intervals button.active { border-color: var(--smart-primary-strong); color: var(--smart-primary-strong); }
+.monitor-error { color: var(--smart-warning); font-size: 11px; }
+.monitor-hint { color: var(--smart-muted); font-size: 10px; }
+.monitor-grid { display: grid; gap: 7px; margin-top: 10px; }
+.monitor-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.monitor-label { color: var(--smart-muted); font-size: 10px; }
+.monitor-bar { position: relative; height: 8px; overflow: hidden; border-radius: 4px; background: color-mix(in srgb, var(--smart-text) 8%, var(--smart-surface)); }
+.monitor-bar i { position: absolute; inset: 0 auto 0 0; display: block; border-radius: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--smart-primary) 70%, transparent), var(--smart-primary-strong)); transition: width .25s ease; }
+.monitor-bar.dim i { background: color-mix(in srgb, var(--smart-muted) 35%, transparent); }
+.monitor-value { color: var(--smart-text); font: 10px var(--font-mono); white-space: nowrap; }
+.monitor-spark { display: block; width: 100%; height: 54px; margin-top: 10px; border: 1px solid var(--smart-border); background: color-mix(in srgb, var(--smart-text) 3%, var(--smart-surface)); }
 
 .context-error {
   color: var(--smart-danger);

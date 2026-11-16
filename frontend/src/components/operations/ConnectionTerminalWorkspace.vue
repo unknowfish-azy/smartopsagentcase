@@ -12,6 +12,7 @@
         <button type="button" :disabled="openTabs.length < 2" @click="layout = layout === 'SINGLE' ? 'SPLIT_VERTICAL' : layout === 'SPLIT_VERTICAL' ? 'SPLIT_HORIZONTAL' : 'SINGLE'">{{ layout === 'SINGLE' ? '左右分屏' : layout === 'SPLIT_VERTICAL' ? '上下分屏' : '单屏' }}</button>
         <button type="button" :disabled="!runtimeId" @click="activeWorkspace = activeWorkspace === 'FILES' ? 'TERMINAL' : 'FILES'">远程文件</button>
         <button type="button" :disabled="!runtimeId" @click="openMultiExec">批量命令</button>
+        <button type="button" :disabled="!runtimeId" @click="showSnippets = true">命令片段</button>
         <button type="button" :class="{ active: activeWorkspace === 'TUNNELS' }" @click="activeWorkspace = activeWorkspace === 'TUNNELS' ? 'TERMINAL' : 'TUNNELS'">隧道</button>
       </div>
     </div>
@@ -31,12 +32,17 @@
       :tunnels="tunnels.filter(tunnel => tunnel.runtimeId === runtimeId)"
       :runtime-online="runtimeOnline"
       :selected-tunnel="selectedTunnel"
+      :tunnel-form="tunnelForm"
+      :logs-for="logsFor"
       @create="createTunnel"
       @start="startTunnel"
       @stop="stopTunnel"
       @edit="editTunnel"
       @remove="removeTunnel"
       @logs="showTunnelLogs"
+      @submit-tunnel="submitTunnelForm"
+      @cancel-tunnel="cancelTunnelForm"
+      @close-logs="closeTunnelLogs"
     />
     <div v-if="!runtimeId && activeWorkspace === 'TERMINAL'" class="workspace-idle">
       <div class="remote-welcome">
@@ -70,15 +76,19 @@
       </div>
     </div>
     <p v-if="connectionError" class="connection-error" role="alert">{{ connectionError }}</p>
+    <SnippetsDialog :open="showSnippets" :runtime-id="runtimeId" @close="showSnippets = false" />
   </section>
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { inject, ref } from 'vue'
 import { CONNECTIONS_WORKSPACE_KEY } from '../../composables/useConnectionsWorkspace.js'
 import OperationsTerminal from './OperationsTerminal.vue'
 import RemoteFiles from './RemoteFiles.vue'
 import TunnelWorkspace from './TunnelWorkspace.vue'
+import SnippetsDialog from './SnippetsDialog.vue'
+
+const showSnippets = ref(false)
 
 const {
   query,
@@ -95,17 +105,22 @@ const {
   activeWorkspace,
   tunnels,
   selectedTunnel,
+  tunnelForm,
+  logsFor,
   runtimeOnline,
   recentSessions,
   formatLastConnected,
   selectSession,
   closeRuntimeTab,
   createTunnel,
+  editTunnel,
+  cancelTunnelForm,
+  submitTunnelForm,
   startTunnel,
   stopTunnel,
-  editTunnel,
   removeTunnel,
   showTunnelLogs,
+  closeTunnelLogs,
   connectSelected,
   openMultiExec
 } = inject(CONNECTIONS_WORKSPACE_KEY)

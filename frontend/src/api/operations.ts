@@ -26,6 +26,10 @@ export function getOperationAgentContext(runtimeId) {
   return http.get(`/api/operations/runtimes/${runtimeId}/agent-context`)
 }
 
+export function getRuntimeMonitor(runtimeId) {
+  return http.get(`/api/operations/runtimes/${runtimeId}/monitor`)
+}
+
 export function createOperationSession(payload) {
   return http.post('/api/operations/sessions', payload)
 }
@@ -88,6 +92,19 @@ export function promoteKnowledgeCandidate(id, payload) {
 
 export function rejectKnowledgeCandidate(id, reason) {
   return http.post(`/api/knowledge/candidates/${id}/reject`, { reason })
+}
+
+/* SciVerse 科学文献蒸馏：status 探测 / search 语义检索 / ingest 证据入库 */
+export function getSciverseStatus() {
+  return http.get('/api/knowledge/sciverse/status')
+}
+
+export function searchSciverse(q, limit = 8) {
+  return http.get('/api/knowledge/sciverse/search', { params: { q, limit } })
+}
+
+export function ingestSciverse(payload) {
+  return http.post('/api/knowledge/sciverse/ingest', payload)
 }
 
 export function startOperationTunnel(runtimeId, payload) {

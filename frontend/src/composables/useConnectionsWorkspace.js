@@ -40,6 +40,8 @@ export function useConnectionsWorkspace() {
   const showServerInspector = ref(true)
   const tunnels = ref([])
   const selectedTunnel = ref(null)
+  const tunnelForm = ref(null)
+  const logsFor = ref(null)
   const activeTab = computed(() => openTabs.value.find(tab => tab.runtimeId === runtimeId.value))
   const runtimeOnline = computed(() => activeTab.value?.status === '在线')
   const showMultiExec = ref(false)
@@ -139,9 +141,34 @@ export function useConnectionsWorkspace() {
 
   function createTunnel() {
     if (!runtimeId.value) return
-    const tunnel = { id: `draft-${Date.now()}`, runtimeId: runtimeId.value, name: `${selectedSession.value?.name || 'ssh'}-local`, type: 'LOCAL', listenAddress: '127.0.0.1', listenPort: 15432, targetHost: '', targetPort: 5432, sessionName: selectedSession.value?.name || 'SSH', status: 'STOPPED', autoReconnect: false, logs: [] }
-    tunnels.value = [...tunnels.value, tunnel]
-    selectedTunnel.value = tunnel
+    tunnelForm.value = { mode: 'create', target: null, draft: { name: `${selectedSession.value?.name || 'ssh'}-local`, targetHost: '', targetPort: 5432, listenPort: 15432 } }
+    selectedTunnel.value = null
+  }
+
+  function editTunnel(tunnel) {
+    if (!tunnel || tunnel.status === 'RUNNING' || tunnel.status === 'STARTING') return
+    tunnelForm.value = { mode: 'edit', target: tunnel, draft: { name: tunnel.name, targetHost: tunnel.targetHost, targetPort: tunnel.targetPort, listenPort: tunnel.listenPort } }
+  }
+
+  function cancelTunnelForm() {
+    tunnelForm.value = null
+  }
+
+  function submitTunnelForm(fields) {
+    const form = tunnelForm.value
+    if (!form) return
+    const listenPort = Number(fields.listenPort)
+    const targetPort = Number(fields.targetPort)
+    if (!fields.name?.trim() || !fields.targetHost?.trim()) return
+    if (![listenPort, targetPort].every(value => Number.isInteger(value) && value > 0 && value <= 65535)) return
+    if (form.mode === 'edit' && form.target) {
+      Object.assign(form.target, { name: fields.name.trim(), targetHost: fields.targetHost.trim(), targetPort, listenPort })
+    } else {
+      const tunnel = { id: `draft-${Date.now()}`, runtimeId: runtimeId.value, name: fields.name.trim(), type: 'LOCAL', listenAddress: '127.0.0.1', listenPort, targetHost: fields.targetHost.trim(), targetPort, sessionName: selectedSession.value?.name || 'SSH', status: 'STOPPED', autoReconnect: false, logs: [] }
+      tunnels.value = [...tunnels.value, tunnel]
+      selectedTunnel.value = tunnel
+    }
+    tunnelForm.value = null
   }
 
   async function startTunnel(tunnel) {
@@ -173,18 +200,6 @@ export function useConnectionsWorkspace() {
     selectedTunnel.value = tunnel
   }
 
-  function editTunnel(tunnel) {
-    if (tunnel.status === 'RUNNING' || tunnel.status === 'STARTING') return
-    const name = window.prompt('Tunnel name', tunnel.name)
-    if (!name?.trim()) return
-    const host = window.prompt('目标主机（从 SSH 服务器访问）', tunnel.targetHost)
-    if (!host?.trim()) return
-    const port = Number(window.prompt('目标端口', String(tunnel.targetPort)))
-    const listenPort = Number(window.prompt('桥接服务器监听端口', String(tunnel.listenPort)))
-    if (![port, listenPort].every(value => Number.isInteger(value) && value > 0 && value <= 65535)) return
-    Object.assign(tunnel, { name: name.trim(), targetHost: host.trim(), targetPort: port, listenPort })
-  }
-
   async function removeTunnel(tunnel) {
     if (!window.confirm(`Delete tunnel ${tunnel.name}?`)) return
     if (tunnel.status === 'STARTING') return
@@ -194,7 +209,11 @@ export function useConnectionsWorkspace() {
   }
 
   function showTunnelLogs(tunnel) {
-    window.alert((tunnel.logs || []).join('\n') || 'No tunnel logs')
+    logsFor.value = tunnel
+  }
+
+  function closeTunnelLogs() {
+    logsFor.value = null
   }
 
   async function connectSelected(decision = 'NONE') {
@@ -323,6 +342,8 @@ export function useConnectionsWorkspace() {
     showServerInspector,
     tunnels,
     selectedTunnel,
+    tunnelForm,
+    logsFor,
     activeTab,
     runtimeOnline,
     showMultiExec,
@@ -353,11 +374,14 @@ export function useConnectionsWorkspace() {
     closeRuntimeTab,
     loadAgentContext,
     createTunnel,
+    editTunnel,
+    cancelTunnelForm,
+    submitTunnelForm,
     startTunnel,
     stopTunnel,
-    editTunnel,
     removeTunnel,
     showTunnelLogs,
+    closeTunnelLogs,
     connectSelected,
     previewCommand,
     approveCommand,
