@@ -2,423 +2,785 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>智维Agent（SmartOpsAgent）技术文档</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="智维Agent（SmartOpsAgent）传智杯 AI Web 网页设计大赛 A 组国赛版作品介绍与技术文档">
+<title>智维Agent｜作品介绍与技术文档（国赛版）</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b1118'/%3E%3Cpath d='M14 38L26 18l10 16 14-20M14 48h36' fill='none' stroke='%2338bdf8' stroke-width='5'/%3E%3C/svg%3E">
 <style>
-  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
-    font-size: 10.5pt;
-    line-height: 1.65;
-    color: #1f2329;
+  @page { size: A4; margin: 0; }
+  :root {
+    --navy: #0b1118;
+    --navy-2: #102535;
+    --ink: #173042;
+    --blue: #0b3d63;
+    --cyan: #38bdf8;
+    --cyan-dark: #087ea4;
+    --paper: #f5f8fb;
+    --white: #ffffff;
+    --muted: #607284;
+    --line: #c9d7e2;
+    --soft: #e9f1f6;
+    --amber: #a16207;
+    --amber-bg: #fff8e7;
+    --green: #047857;
   }
-  h1, h2, h3, h4 { color: #0b3d63; line-height: 1.35; }
-  h1 { font-size: 20pt; margin: 0 0 8px; }
-  h2 { font-size: 15pt; margin: 22px 0 8px; padding-bottom: 5px; border-bottom: 2px solid #0b3d63; }
-  h3 { font-size: 12.5pt; margin: 16px 0 6px; color: #11567f; }
-  h4 { font-size: 11pt; margin: 12px 0 4px; color: #1d6fa5; }
-  p { margin: 6px 0; text-align: justify; }
-  ul, ol { margin: 6px 0 6px 0; padding-left: 22px; }
-  li { margin: 3px 0; }
-  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 9.6pt; }
-  th, td { border: 1px solid #b8c4cf; padding: 5px 7px; vertical-align: top; text-align: left; }
-  th { background: #0b3d63; color: #fff; font-weight: 600; }
-  tr:nth-child(even) td { background: #f2f6fa; }
-  code { font-family: "Consolas", "Courier New", monospace; background: #eef2f6; padding: 1px 4px; border-radius: 3px; font-size: 9pt; color: #0a2f4d; }
-  pre { background: #0f2740; color: #e8f0f7; padding: 10px 12px; border-radius: 6px; font-family: "Consolas", monospace; font-size: 8.6pt; line-height: 1.45; overflow: hidden; white-space: pre; margin: 10px 0; }
-  .cover { text-align: center; padding-top: 60mm; }
-  .cover .title { font-size: 30pt; font-weight: 700; color: #0b3d63; letter-spacing: 2px; }
-  .cover .sub { font-size: 14pt; color: #11567f; margin-top: 14px; }
-  .cover .meta { margin-top: 40px; font-size: 11pt; color: #44505c; line-height: 2; }
-  .cover .badge { display:inline-block; border:1px solid #0b3d63; color:#0b3d63; border-radius: 20px; padding: 4px 16px; margin-top: 26px; font-size: 10pt; }
-  .toc { font-size: 10.5pt; }
-  .toc a { color: #0b3d63; text-decoration: none; }
-  .toc li { margin: 5px 0; }
-  .page-break { page-break-before: always; }
-  .note { background: #fff7e6; border-left: 4px solid #d48806; padding: 8px 12px; margin: 10px 0; font-size: 9.6pt; }
-  .tag { display:inline-block; background:#e6f0f7; color:#0b3d63; border-radius:4px; padding:1px 8px; font-size:8.8pt; margin-right:6px; }
-  .avoid-break { page-break-inside: avoid; }
-  .footer-note { color:#8895a0; font-size:8.5pt; margin-top:30px; border-top:1px solid #d6dee6; padding-top:8px; }
+  * { box-sizing: border-box; }
+  html { background: #dce4eb; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    font-size: 9.8pt;
+    line-height: 1.55;
+  }
+  .page {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    margin: 10mm auto;
+    padding: 13mm 14mm 18mm;
+    background: var(--paper);
+    box-shadow: 0 4mm 12mm rgba(11, 17, 24, .14);
+    page-break-after: always;
+  }
+  .page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(11, 61, 99, .035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(11, 61, 99, .035) 1px, transparent 1px),
+      radial-gradient(circle at 95% 0%, rgba(56, 189, 248, .14), transparent 32%);
+    background-size: 12mm 12mm, 12mm 12mm, 100% 100%;
+    background-position: right top;
+    mask-image: linear-gradient(to bottom left, #000, transparent 58%);
+  }
+  .page > * { position: relative; }
+  .page:last-child { page-break-after: auto; }
+  .dark {
+    color: #e7f0f6;
+    background:
+      radial-gradient(circle at 82% 14%, rgba(56, 189, 248, .14), transparent 34%),
+      linear-gradient(145deg, #0b1118 0%, #0d1b27 58%, #0a151e 100%);
+  }
+  .dark::before {
+    background-image:
+      linear-gradient(rgba(56, 189, 248, .075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56, 189, 248, .075) 1px, transparent 1px),
+      radial-gradient(circle at 12% 85%, rgba(34, 211, 238, .09), transparent 32%);
+    background-size: 12mm 12mm, 12mm 12mm, 100% 100%;
+    mask-image: none;
+  }
+  h1, h2, h3, h4, p { margin-top: 0; }
+  h1, h2, h3, h4 { color: var(--blue); line-height: 1.25; }
+  h1 { margin-bottom: 3mm; font-size: 31pt; letter-spacing: 1px; }
+  h2 { margin-bottom: 2.5mm; font-size: 20pt; letter-spacing: .2px; }
+  h3 { margin: 5mm 0 2.3mm; font-size: 12pt; }
+  h4 { margin: 3.5mm 0 1.8mm; font-size: 10.2pt; color: var(--cyan-dark); }
+  p { margin-bottom: 2.4mm; }
+  ul, ol { margin: 1.8mm 0 2.4mm; padding-left: 5.5mm; }
+  li { margin: 1.2mm 0; }
+  b { color: #0b3d63; }
+  .dark b { color: #f1f5f9; }
+  code, .mono {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: .9em;
+  }
+  code { padding: .2mm 1mm; color: #084c6d; background: #e2edf3; border-radius: 1mm; }
+  .dark code { color: #a5e5ff; background: rgba(56, 189, 248, .1); }
+  .kicker {
+    margin-bottom: 2mm;
+    color: var(--cyan-dark);
+    font-family: "Consolas", monospace;
+    font-size: 7.8pt;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+  }
+  .dark .kicker { color: var(--cyan); }
+  .lead { max-width: 166mm; margin-bottom: 3.5mm; color: var(--muted); font-size: 10.3pt; }
+  .dark .lead { color: #afc1cf; }
+  .head-rule { width: 24mm; height: 1.2mm; margin: 3mm 0 4mm; background: var(--cyan); }
+  .section-title { margin-bottom: 1mm; }
+  .muted { color: var(--muted); }
+  .small { font-size: 8pt; }
+  .tiny { font-size: 7.2pt; }
+  .cyan { color: var(--cyan-dark); }
+  .dark .cyan { color: var(--cyan); }
+  .right { text-align: right; }
+  .grid-2, .grid-3, .grid-4 { display: grid; gap: 3mm; }
+  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .card {
+    min-width: 0;
+    padding: 3.4mm;
+    background: rgba(255, 255, 255, .88);
+    border: 1px solid var(--line);
+    border-top: 1.2mm solid var(--cyan-dark);
+    border-radius: 1.2mm;
+  }
+  .card h3, .card h4 { margin-top: 0; }
+  .card p:last-child { margin-bottom: 0; }
+  .dark .card { background: rgba(17, 35, 48, .84); border-color: #284556; }
+  .stat { padding: 3mm; background: #fff; border-top: 1.2mm solid var(--cyan); }
+  .stat .num { color: var(--blue); font-family: "Consolas", monospace; font-size: 20pt; font-weight: 700; line-height: 1; }
+  .stat .label { margin-top: 1.5mm; color: var(--muted); font-size: 7.8pt; }
+  .tag {
+    display: inline-block;
+    margin: 0 1mm 1mm 0;
+    padding: .6mm 1.8mm;
+    color: #075d7c;
+    background: #e1f3fb;
+    border: 1px solid #b7dfef;
+    border-radius: 5mm;
+    font-size: 7.3pt;
+    font-weight: 700;
+  }
+  .tag.measured { color: #065f46; background: #e5f7ef; border-color: #b7e4d1; }
+  .tag.draft { color: #92400e; background: #fff4d9; border-color: #ecd28f; }
+  .tag.notrun { color: #6b7280; background: #eef1f4; border-color: #cfd6dc; }
+  .note, .info, .warning {
+    margin: 3.5mm 0;
+    padding: 3mm 3.2mm;
+    font-size: 8.7pt;
+  }
+  .note { color: #754c05; background: var(--amber-bg); border-left: 1.2mm solid #d69e2e; }
+  .info { color: #0b4d6c; background: #e8f5fb; border-left: 1.2mm solid var(--cyan-dark); }
+  .warning { color: #753b12; background: #fff1e8; border-left: 1.2mm solid #d97706; }
+  .dark .info { color: #c4edff; background: rgba(56, 189, 248, .09); }
+  table {
+    width: 100%;
+    margin: 3mm 0;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 8.4pt;
+    line-height: 1.46;
+  }
+  th, td { padding: 2mm; vertical-align: top; text-align: left; border-bottom: 1px solid var(--line); }
+  th { color: #fff; background: var(--blue); font-weight: 700; }
+  tr:nth-child(even) td { background: rgba(228, 237, 243, .55); }
+  .compact-table { font-size: 7.9pt; }
+  .compact-table th, .compact-table td { padding: 1.65mm 1.8mm; }
+  .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2mm; margin: 4mm 0; }
+  .flow .step { min-width: 0; padding: 3mm 2mm; color: #dcebf4; background: var(--navy-2); border-top: 1mm solid var(--cyan); }
+  .flow .step .n { color: var(--cyan); font-family: "Consolas", monospace; font-size: 8pt; }
+  .flow .step b { display: block; margin: 1mm 0; color: #fff; font-size: 8.6pt; }
+  .flow .step span { color: #a9bfce; font-size: 7.2pt; }
+  .arch-front { padding: 3mm 4mm; color: #e9f4fa; background: var(--navy-2); border-left: 1.5mm solid var(--cyan); }
+  .arch-front b { color: #fff; }
+  .arch-links { margin: 1.5mm 0; color: var(--cyan-dark); text-align: center; font-family: "Consolas", monospace; font-size: 7.5pt; }
+  .service { min-height: 35mm; }
+  .service h3 { margin-top: 0; }
+  .shot { width: 176mm; margin: 2.5mm auto 0; }
+  .shot.wide { width: 182mm; }
+  .shot img { display: block; width: 100%; height: auto; background: var(--navy); border: 1px solid #284556; }
+  .caption { display: grid; grid-template-columns: 31mm minmax(0, 1fr); gap: 2mm; margin-top: 1.5mm; font-size: 7.5pt; line-height: 1.4; }
+  .caption b { color: var(--blue); }
+  .caption span { color: var(--muted); }
+  .effects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5mm; margin-top: 1.5mm; }
+  .effect { min-width: 0; padding: 1.5mm 2mm; color: #24485f; background: #e7f0f5; font-size: 7.2pt; line-height: 1.35; }
+  .effect b { display: block; color: #0b587a; }
+  .page-footer {
+    position: absolute;
+    right: 14mm;
+    bottom: 6mm;
+    left: 14mm;
+    display: flex;
+    justify-content: space-between;
+    padding-top: 2mm;
+    color: #728496;
+    border-top: 1px solid #cbd7e0;
+    font-family: "Consolas", "Microsoft YaHei", monospace;
+    font-size: 7pt;
+  }
+  .dark .page-footer { color: #7895a8; border-color: #28404f; }
+  .cover-brand { display: flex; justify-content: space-between; align-items: center; }
+  .cover-badge { padding: 1.2mm 2.5mm; color: var(--cyan); border: 1px solid #315165; font-size: 7.5pt; }
+  .cover-title { margin-top: 12mm; }
+  .cover-en { color: #9fb3c1; font-family: "Consolas", monospace; font-size: 13pt; letter-spacing: 1.2px; }
+  .cover-value { max-width: 158mm; margin: 5mm 0 3mm; color: #f1f5f9; font-size: 16pt; line-height: 1.45; }
+  .cover-shot { margin-top: 6mm; }
+  .cover-shot img { border-color: #3a5d70; }
+  .cover-meta { display: flex; justify-content: space-between; margin-top: 5mm; color: #a4b8c5; font-size: 8pt; }
+  .cover-proof { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3mm; margin-top: 5mm; padding-top: 4mm; border-top: 1px solid #28404f; }
+  .cover-proof b { display: block; margin-bottom: 1mm; color: var(--cyan); font-family: "Consolas", monospace; font-size: 8pt; }
+  .cover-proof span { color: #a4b8c5; font-size: 7.5pt; }
+  .map-row { display: grid; grid-template-columns: 11mm 36mm minmax(0, 1fr) 20mm; gap: 2mm; padding: 2.5mm 2mm; border-bottom: 1px solid var(--line); }
+  .map-row .n { color: var(--cyan-dark); font-family: "Consolas", monospace; font-weight: 700; }
+  .map-row .pages { color: var(--muted); font-family: "Consolas", monospace; text-align: right; }
+  .toc-band { display: grid; grid-template-columns: 26mm minmax(0, 1fr); gap: 3mm; padding: 2mm 0; border-bottom: 1px solid var(--line); }
+  .toc-band b { color: var(--cyan-dark); }
+  .closing-band { margin-top: 4mm; padding: 5mm; color: #eaf5fb; background: var(--navy-2); border-left: 1.5mm solid var(--cyan); }
+  .closing-band h3 { margin-top: 0; color: #fff; }
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { position: relative; padding-left: 4mm; }
+  .checklist li::before { content: ""; position: absolute; top: 2.1mm; left: 0; width: 1.7mm; height: 1.7mm; background: var(--cyan-dark); }
+  @media print {
+    html, body { background: #fff; }
+    .page { margin: 0; box-shadow: none; }
+  }
+  @media screen and (max-width: 800px) {
+    .page { margin: 0 auto 8mm; transform-origin: top left; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ===== 封面 ===== -->
-<section class="cover">
-  <div class="title">智维Agent</div>
-  <div class="sub">SmartOpsAgent 技术文档</div>
-  <div class="sub" style="font-size:11pt;color:#44505c;">面向中小企业的可信 AI 智能运维与知识协同平台</div>
-  <div class="badge">AI Agent · RAG · MCP · 可信安全闭环</div>
-  <div class="meta">
-    文档版本：v1.0（2026-10-25）<br>
-    项目类型：AI Native Web 应用（前端 + AI 服务 + 知识服务 + Agent 框架 + 后端）<br>
-    技术栈：Vue 3 · Vite · FastAPI · Spring Boot · Python Agent · 混合检索
+<!-- 01 封面 -->
+<section class="page dark">
+  <div class="cover-brand">
+    <div class="kicker">CHUANZHI CUP · AI WEB DESIGN · GROUP A</div>
+    <div class="cover-badge">作品介绍与技术文档 · 国赛版</div>
   </div>
+  <div class="cover-title">
+    <h1>智维 Agent</h1>
+    <div class="cover-en">SMARTOPSAGENT</div>
+    <div class="head-rule"></div>
+    <p class="cover-value">让 AI 参与运维的每一步，<br>都有证据、有边界、可回溯。</p>
+    <span class="tag">AI Agent</span><span class="tag">RAG</span><span class="tag">MCP</span><span class="tag">Web 可视化</span>
+  </div>
+  <figure class="shot wide cover-shot">
+    <img src="assets/ui/cover-insights.png" alt="智维Agent自然语言洞察真实产品界面">
+    <figcaption class="caption"><b>真实产品界面</b><span>自然语言洞察 · Vue 3 + TypeScript + Three.js + Canvas 2D；完整运行截图，未用概念图替代。</span></figcaption>
+  </figure>
+  <div class="cover-meta">
+    <div>团队：早点睡觉　｜　汇报人：黄亮<br>南阳师范学院 · 软件工程</div>
+    <div class="right">文档版本：v2.0（2026-11-15）<br>面向中小企业的可信智能运维与知识协同平台</div>
+  </div>
+  <div class="cover-proof">
+    <div><b>EVIDENCE / 证据</b><span>12 张真实界面，混合检索、版本过滤与来源引用可复核</span></div>
+    <div><b>CONTROL / 边界</b><span>工具级风险声明、风险取高、人工审批与一次性执行授权</span></div>
+    <div><b>TRACE / 留痕</b><span>SSE 思考事件、链式执行轨迹、三层测试与公开评测边界</span></div>
+  </div>
+  <footer class="page-footer"><span>SMARTOPSAGENT · NATIONAL COMPETITION EDITION</span><span>01 / 18</span></footer>
 </section>
 
-<!-- ===== 目录 ===== -->
-<section class="page-break">
-  <h2>目录</h2>
-  <ol class="toc">
-    <li><a href="#s1">项目概述</a></li>
-    <li><a href="#s2">需求分析</a></li>
-    <li><a href="#s3">系统架构设计</a></li>
-    <li><a href="#s4">AI 技术方案（选型理由 · 集成方式 · 优化策略）</a></li>
-    <li><a href="#s5">核心功能实现</a></li>
-    <li><a href="#s6">测试与部署</a></li>
-    <li><a href="#s7">总结与展望</a></li>
-    <li><a href="#s8">创新点说明（技术创新点 · 应用创新点）</a></li>
-  </ol>
-</section>
+<!-- 02 评审导航 -->
+<section class="page">
+  <div class="kicker">00 / REVIEW MAP</div>
+  <h2>评审导航｜四个问题，十八页证据</h2>
+  <p class="lead">产品体验与技术论证并行：先看真实界面，再核对实现路径、测试数据与未完成的边界。</p>
+  <div class="map-row"><span class="n">01</span><b>为什么值得做</b><span>中小企业运维痛点、目标用户、可信任务闭环与系统架构</span><span class="pages">P03–04</span></div>
+  <div class="map-row"><span class="n">02</span><b>产品是否好用</b><span>登录、首页、AI 对话、执行轨迹、Agent、知识墙、预测与哨兵</span><span class="pages">P05–10</span></div>
+  <div class="map-row"><span class="n">03</span><b>技术是否扎实</b><span>AI 集成、安全隐私、前端工程、三层测试与可复现部署</span><span class="pages">P11–15</span></div>
+  <div class="map-row"><span class="n">04</span><b>结论是否可信</b><span>创新映射、DRAFT / NOT_RUN、局限、演进路线与复核入口</span><span class="pages">P16–18</span></div>
 
-<!-- ===== 1 项目概述 ===== -->
-<section id="s1" class="page-break">
-  <h2>1. 项目概述</h2>
-
-  <h3>1.1 项目定位</h3>
-  <p><b>智维Agent（SmartOpsAgent）</b>是一个面向中小企业的<b>可信 AI 智能运维与知识协同平台</b>，基于 AI Agent + RAG + MCP + 可信安全闭环构建，是一套 AI Native Web 应用。它把"监测 → 分析 → 知识检索 → 证据验证 → 决策规划 → 风险判断 → 人工审批 → 安全执行 → 结果验证 → 审计留痕 → 经验沉淀"连成端到端可信闭环，让 AI 从"会回答运维问题"走向"可信地完成运维任务"。</p>
-
-  <h3>1.2 要解决的核心问题</h3>
-  <p>中小企业在日常运维中普遍面临：运维知识分散、故障定位依赖个人经验、传统检索返回错误版本知识、大模型结论不可验证、AI 能分析却无法安全执行、操作缺乏验证与审计。智维Agent 将上述环节在统一架构内贯通，使输出可解释、动作可控制、过程可追溯。</p>
-
-  <h3>1.3 一句话价值定位</h3>
-  <div class="note">把大模型能力约束在"证据驱动、风险可控、全程留痕"的闭环里，让企业敢把生产环境交给一位"AI 运维同事"——结论有证据、动作有边界、过程有留痕。</div>
-
-  <h3>1.4 技术栈概览</h3>
-  <table>
-    <tr><th>分层</th><th>技术选型</th></tr>
-    <tr><td>前端</td><td>Vue 3 + Vite 7 + TypeScript，共享逻辑层 TS（48 个模块）；Element Plus + Pinia + Vue Router + ECharts + Three.js</td></tr>
-    <tr><td>后端</td><td>Spring Boot 3.3.5 / Java 17，MyBatis，MySQL 8（119 张表），Redis 7；账户/权限/审计</td></tr>
-    <tr><td>AI 服务</td><td>FastAPI（:8001）：LLM 网关、对话编排、SSE 流式、RAG 检索与提示词组装</td></tr>
-    <tr><td>知识服务</td><td>FastAPI（:8002）：文档解析 → 分块 → 嵌入 → 混合检索 → 重排 → 证据与可信度评分 → 评测</td></tr>
-    <tr><td>Agent 框架</td><td>Python：planner / executor / inspector / memory / policies + kernel + 插件与工具生态</td></tr>
-    <tr><td>检索</td><td>混合检索（BM25 关键词 + 向量）+ 词法重排 + 版本感知过滤</td></tr>
-    <tr><td>工具集成</td><td>MCP 适配器、Function Calling、Docker/Kubernetes/MySQL/Nginx/Redis 插件</td></tr>
-    <tr><td>多模态</td><td>Three.js 3D + ECharts 图表 + 语音输入（Web Speech API）+ 截屏/拍照证据附件</td></tr>
-    <tr><td>模型接入</td><td>OpenAI 兼容网关（mock / Ollama / OpenAI 兼容，默认 mock 零密钥跑通）</td></tr>
-  </table>
-</section>
-
-<!-- ===== 2 需求分析 ===== -->
-<section id="s2" class="page-break">
-  <h2>2. 需求分析</h2>
-
-  <h3>2.1 背景与痛点</h3>
-  <p>中小企业的 IT 运维普遍具备"人手少、系统杂、知识散"三个特征。具体痛点与现有方案不足如下：</p>
-  <table>
-    <tr><th>现实痛点</th><th>现有方案的不足</th></tr>
-    <tr><td>运维知识散落在聊天记录、老员工经验、历史工单中</td><td>传统搜索引擎按关键词命中，返回的常是过期版本</td></tr>
-    <tr><td>故障定位依赖个人经验，新人上手周期长</td><td>通用问答机器人给不出可核对的证据链</td></tr>
-    <tr><td>大模型能"说"但不能"做"，或做了没人敢用</td><td>缺少风险分级、人工审批与审计留痕</td></tr>
-    <tr><td>一次误操作可能造成生产事故</td><td>通用 Agent 工具默认拥有过大的执行权限</td></tr>
-    <tr><td>故障处理过程无法复盘</td><td>操作缺少结构化记录，经验无法沉淀</td></tr>
-  </table>
-
-  <h3>2.2 目标用户与核心场景</h3>
-  <p><b>目标用户</b>：10–200 人规模企业的运维负责人、驻场运维工程师、技术负责人；以及高校实验室、实训机房等具备同类运维诉求的场景。</p>
-  <p><b>核心场景</b>：</p>
-  <ol>
-    <li><b>故障问答与定位</b>：工程师用自然语言（可附截屏/拍照）描述故障，系统检索版本正确的知识并给出带证据的处置建议。</li>
-    <li><b>证据驱动的知识检索</b>：同一主题存在多个版本时，按目标环境版本过滤，回答附来源与可信度评分。</li>
-    <li><b>受控执行</b>：Agent 生成处置计划，策略引擎判定风险等级，高风险动作转人工审批后才执行。</li>
-    <li><b>结果核查与经验沉淀</b>：执行后由 inspector 核查结果并写入审计，处置经验回流知识库。</li>
-    <li><b>团队协同</b>：共享会话、团队工作区、资源授权与通知，支撑多人协作。</li>
-  </ol>
-
-  <h3>2.3 项目目标</h3>
-  <h4>功能目标</h4>
-  <ul>
-    <li>完成"监测→分析→检索→验证→规划→风险→审批→执行→核查→审计→沉淀"的可信闭环。</li>
-    <li>提供对话式统一入口，支持流式输出与 AI 思考过程可视化。</li>
-    <li>支持多模态输入：语音描述、截屏/拍照/图片证据。</li>
-    <li>提供用户层与管理层双入口，覆盖账户、权限、审计、系统治理。</li>
-  </ul>
-  <h4>技术目标</h4>
-  <table>
-    <tr><th>目标</th><th>落地方式</th></tr>
-    <tr><td>AI 技术深度</td><td>Agent 五模块；混合检索 + 证据验证 + 可信度评分；SSE 流式与思考阶段事件</td></tr>
-    <tr><td>前端工程质量</td><td>Vue 3 + Vite 7；共享逻辑层 TS；构建分包；733 项前端测试 + 类型检查 + 双入口构建门禁（2026-11-15 实测）</td></tr>
-    <tr><td>可运行性</td><td>默认 mock 模型零密钥跑通；一键切换 Ollama / OpenAI 兼容模型</td></tr>
-    <tr><td>安全可信</td><td>BCrypt(12)、人机校验、CSRF、MFA、风险策略引擎、人工审批、审计留痕</td></tr>
-    <tr><td>可扩展性</td><td>插件化工具（Docker/Kubernetes/MySQL/Nginx/Redis）、MCP 适配器、多会话存储后端</td></tr>
-  </table>
-</section>
-
-<!-- ===== 3 系统架构设计 ===== -->
-<section id="s3" class="page-break">
-  <h2>3. 系统架构设计</h2>
-
-  <h3>3.1 总体架构</h3>
-  <pre>┌──────────────── 前端（Vue 3 + Vite 7，用户层 :5173 / 管理员层 :5174）────────────────┐
-│ 对话面板（流式+思考可视化+语音+图像证据）│工作台│知识空间│团队协作│管理后台     │
-│ 共享逻辑层 TS：api / domain / utils / types（48 个模块）                              │
-└───────┬───────────────────────────────────────┬──────────────────────────────────┘
-        │ /api（REST + CSRF）                    │ /ai（SSE，Vite 代理去前缀）
-        ▼                                        ▼
-┌─────────────────────┐              ┌──────────────────────────────────┐
-│ Spring Boot 后端:8080│              │ FastAPI ai-service :8001          │
-│ 账户/权限/审计/附件    │              │ LLM 网关 + 对话编排 + SSE + RAG     │
-└──────────┬──────────┘              └──────────────┬───────────────────┘
-           │                                        │ HTTP
-           │                          ┌─────────────▼──────────────┐
-           │                          │ knowledge :8002            │
-           │                          │ 解析→分块→嵌入→混合检索→重排 │
-           │                          │ 证据引用 + 可信度 + 评测      │
-           └────────────────────────►└─────────────────────────────┘
-           ▼
-   MySQL 8（119 张表） + Redis（会话/限流）</pre>
-
-  <h3>3.2 分层设计</h3>
-  <table>
-    <tr><th>分层</th><th>职责与关键模块</th></tr>
-    <tr><td>前端（Vue 3）</td><td>对话/工作台/知识空间/团队协作/管理后台；共享逻辑层承载 api / domain / utils / types；ECharts 与 Three.js 负责可视化</td></tr>
-    <tr><td>后端（Spring Boot :8080）</td><td>业务数据、账户权限（RBAC）、附件会话、团队、审计；Spring Security + CSRF + 频率限制</td></tr>
-    <tr><td>AI 服务（FastAPI :8001）</td><td>LLM 网关、对话编排、SSE 流式、RAG 检索与提示词组装</td></tr>
-    <tr><td>知识服务（FastAPI :8002）</td><td>文档解析、分块、嵌入、混合检索、词法重排、证据与可信度评分、回归评测</td></tr>
-    <tr><td>Agent 框架（Python）</td><td>planner / executor / inspector / memory / policies + kernel + 插件与工具（MCP）</td></tr>
-    <tr><td>存储</td><td>MySQL 8（119 表）持久化业务与审计；Redis 承载会话与限流</td></tr>
-  </table>
-
-  <h3>3.3 可信闭环数据流</h3>
-  <pre>用户提问（文本 / 语音 / 图像文件名）
-  → 前端 SSE 客户端（解析 thinking / token / done）
-  → ai-service：RAG 检索 → 证据验证 → Prompt 组装（系统提示 + 知识证据 + 图像证据段）
-  → LLM 网关（mock / Ollama / OpenAI 兼容）
-  → SSE 回流：thinking（vision→retrieve→evidence→plan→risk→answer）→ token → done（引用 + trust_score）
-  → 高风险动作：策略引擎 → 人工审批 → 受控执行 → 结果核查 → 审计留痕</pre>
-
-  <h3>3.4 安全与权限设计</h3>
-  <ul>
-    <li><b>认证与防护</b>：BCrypt(12) 密码哈希、会话/CSRF/频率限制、管理员 MFA、人机校验策略。</li>
-    <li><b>风险策略引擎</b>：<code>agent/policies/policy_engine.py</code> 依据权限与风险注册表给每个动作打风险等级。</li>
-    <li><b>人工审批</b>：高风险动作进入 <code>agent/safety/approval.py</code> 审批队列，未获批不执行。</li>
-    <li><b>受控执行与审计</b>：<code>agent/executor/audit.py</code> 在沙箱与权限约束下执行，产出结构化结果与审计记录。</li>
-    <li><b>密钥治理</b>：模型密钥 AES-GCM 加密存储；所有密钥经环境变量注入，绝不入库。</li>
-  </ul>
-</section>
-
-<!-- ===== 4 AI技术方案 ===== -->
-<section id="s4" class="page-break">
-  <h2>4. AI 技术方案</h2>
-  <p class="avoid-break">本节重点阐述 AI 技术的<b>选型理由</b>、<b>集成方式</b>与<b>优化策略</b>。核心设计原则贯穿全链路：<span class="tag">证据先行</span><span class="tag">风险分级</span><span class="tag">全程留痕</span>。
-
-  <h3>4.1 AI 技术选型与理由</h3>
-  <table>
-    <tr><th>能力</th><th>选型</th><th>选型理由</th></tr>
-    <tr><td>大语言模型接入</td><td>OpenAI 兼容网关（mock / Ollama / OpenAI 兼容）</td><td>解耦模型厂商，运行期可切换；默认 mock 零密钥即可完整演示，企业落地可无缝切到自有模型</td></tr>
-    <tr><td>知识检索（RAG）</td><td>混合检索：BM25 关键词 + 向量召回</td><td>单一路径易漏召回——关键词保高召回率与版本可解释，向量补语义相似，二者并行更稳</td></tr>
-    <tr><td>版本治理</td><td><code>version_filter</code> 版本感知过滤</td><td>中小企业最常见故障是"查到旧版本"，把版本作为检索一等公民是区别于通用 RAG 的实质差异</td></tr>
-    <tr><td>可信表达</td><td>Citation + <code>trust_score</code> 可信度评分</td><td>让结论可验证、可解释，引用带来源/分块/版本/分数，避免"黑盒断言"</td></tr>
-    <tr><td>Agent 框架</td><td>planner/executor/inspector/memory/policies</td><td>把"权限、风险、审批、核查、审计"做成可运行代码路径，而非单点 AI 调用</td></tr>
-    <tr><td>推理透明化</td><td>SSE 六步思考事件</td><td>用户能"看见"AI 在哪一步检索了什么、命中多少证据，提升对 AI 的信任</td></tr>
-    <tr><td>工具集成</td><td>MCP 适配器 + Function Calling + 插件契约</td><td>把运维能力从硬编码变为可插拔资产，新环境只需增加插件</td></tr>
-    <tr><td>多模态</td><td>隐私边界分层（语音/图像/附件）</td><td>在演示多模态的同时划清隐私红线，符合合规要求</td></tr>
-  </table>
-
-  <h3>4.2 Agent 框架（五模块）</h3>
-  <ul>
-    <li><b>planner</b>：把故障描述拆解成有依赖关系的步骤计划（<code>agent/planner/steps.py</code>）。</li>
-    <li><b>executor</b>：按步骤调用工具，产出结构化结果与审计记录。</li>
-    <li><b>inspector</b>：规则判定 + 证据判定 + AI 判定四级证据核查（规则→证据→AI→状态核验），输出验证结论（<code>agent/inspector/judges/</code>）。</li>
-    <li><b>memory</b>：短期上下文与长期经验（<code>operator_memory</code>）双层记忆，越用越懂你。</li>
-    <li><b>policies</b>：风险等级与权限策略，高危动作默认拒绝或转审批。</li>
-    <li><b>kernel</b>：插件注册、依赖解析、事件总线、生命周期与运行时加载。</li>
-  </ul>
-
-  <h3>4.3 混合检索与证据可信度（RAG）</h3>
-  <ol>
-    <li><b>召回层</b>：BM25 关键词召回与向量召回并行（<code>knowledge/retrieval/hybrid.py</code>），避免单一路径漏召回。</li>
-    <li><b>过滤层</b>：<code>version_filter</code> 按目标环境版本过滤候选，解决"知识正确但版本不对"的行业通病。</li>
-    <li><b>收敛层</b>：词法重排器对候选重新排序（<code>knowledge/reranker/lexical_reranker.py</code>）。</li>
-    <li><b>表达层</b>：检索结果转为 Citation（来源 / chunk / 版本 / 分数），聚合为 <code>trust_score</code>（<code>knowledge/evidence/</code>）。</li>
-    <li><b>评测层</b>：<code>knowledge/evaluation</code> 内置指标与样例数据集，支持回归评估。</li>
-  </ol>
-
-  <h3>4.4 可切换模型网关</h3>
-  <ul>
-    <li>默认 <code>mock</code> 提供方，无需任何密钥即可完整演示全链路。</li>
-    <li>支持 Ollama 本地模型与 OpenAI 兼容接口，运行期切换（<code>ai-service/app/services/model_gateway.py</code>）。</li>
-    <li>后端维护模型连接、路由、密钥（AES-GCM 加密存储）、Token 预算与用量统计。</li>
-  </ul>
-
-  <h3>4.5 集成方式</h3>
-  <table>
-    <tr><th>集成点</th><th>方式</th></tr>
-    <tr><td>前后端</td><td>REST（<code>/api</code>，CSRF）+ SSE（<code>/ai</code>，Vite 代理去前缀）；前端 <code>src/api/stream.ts</code> 逐事件渲染</td></tr>
-    <tr><td>AI 与知识</td><td>ai-service 通过 HTTP 调用 knowledge 的检索/证据/可信度接口，组装进 Prompt</td></tr>
-    <tr><td>工具生态</td><td>Function Calling + MCP 适配器（<code>agent/tools/adapters/mcp.py</code>）+ <code>AgentPlugin</code> 契约（<code>agent/sdk/plugin.py</code>）</td></tr>
-    <tr><td>会话存储</td><td>Redis / MySQL / PostgreSQL / SQLite / 文件五种后端（<code>agent/plugins/session/</code>）</td></tr>
-    <tr><td>多模态</td><td>语音（Web Speech API 浏览器内识别）、图像（仅文件名参与链路）、附件（私有会话隔离）</td></tr>
-  </table>
-
-  <h3>4.6 优化策略</h3>
-  <ul>
-    <li><b>检索优化</b>：词法重排收敛候选、版本过滤去噪；向量嵌入默认用轻量 <code>hash_embedding.py</code>，可切 Sentence Transformers（<code>sentence_transformer.py</code>）提升语义质量。</li>
-    <li><b>提示词优化</b>：Prompt 模板集中于 <code>agent/prompts/</code>，按"系统提示 + 知识证据 + 图像证据段"组装，输出稳定可控；结合 few-shot 提升一致性。</li>
-    <li><b>性能与分包</b>：统一分包策略，<code>vendor-echarts</code> 由 510 kB 降至 346 kB（zrender 独立拆分），Three.js 保持懒加载；共享 TS 逻辑层减少重复构建。</li>
-    <li><b>分流与降级</b>：默认 mock 提供方保证零密钥可演示；模型路由 + Token 预算做成本与限流控制。</li>
-    <li><b>隐私优化</b>：音频不出端、图片内容不出浏览器、附件与模型分析隔离，从源头降低合规风险。</li>
-    <li><b>风险优化</b>：策略引擎风险分级、高危转人工审批、沙箱执行，把"可信"落到代码路径而非文档。</li>
-  </ul>
-</section>
-
-<!-- ===== 5 核心功能实现 ===== -->
-<section id="s5" class="page-break">
-  <h2>5. 核心功能实现</h2>
-
-  <h3>5.1 用户层功能</h3>
-  <table>
-    <tr><th>模块</th><th>主要能力</th></tr>
-    <tr><td>AI 对话</td><td>流式问答、思考阶段可视化、引用证据与可信度评分、语音输入、图像证据、附件会话</td></tr>
-    <tr><td>运维工作台</td><td>服务器与指标监测、会话与命令记录、运行证据与输出留存</td></tr>
-    <tr><td>知识空间</td><td>个人知识库、候选知识审阅、版本感知检索；默认「照片墙」视图（约 737 条正交密铺、四档缩放、域浮标签、悬浮详情窗）</td></tr>
-    <tr><td>团队协作</td><td>团队工作区、成员与能力、Agent 运行与审批、草稿版本、通知</td></tr>
-    <tr><td>系统可视化</td><td>ECharts 图表、Three.js 3D 拓扑</td></tr>
-  </table>
-
-  <p><b>知识空间 · 照片墙视图</b>：将全部个人知识（运行时约 737 条、覆盖 10 个域）以「手机相册式」正交密铺呈现——零 3D / 零 WebGL / 零位图，全部为 DOM 网格，单屏即可缩放浏览全量。四档缩放（s0 约 28px 缩略 → s3 约 200px 详情）切换信息密度；每个域首条上方浮出可点击的域标签（点击平滑居中该域）；点击格子触发锚定悬浮详情窗（非整页跳转），展示类型、风险等级、适用版本与摘要。该视图面向「全量同屏、可放大缩小、可观性强」的评审演示场景，首屏即满屏知识密度，且因纯 DOM 渲染而极低开销。</p>
-  <div class="shot-row" style="display:flex; gap:12px; align-items:flex-start; margin:10px 0 4px;">
-    <figure style="flex:1; margin:0;">
-      <img src="assets/mosaic/01-mosaic-dark-s0.png" alt="照片墙总览：737 格正交密铺" style="width:100%; border:1px solid rgba(128,128,128,.35);">
-      <figcaption style="font-size:10px; opacity:.75; margin-top:4px;">照片墙总览：约 737 格全量同屏密铺，顶栏统计「737 格 · 10 个域」</figcaption>
-    </figure>
-    <figure style="flex:1; margin:0;">
-      <img src="assets/mosaic/04-mosaic-popover.png" alt="点击格子弹出锚定悬浮详情窗" style="width:100%; border:1px solid rgba(128,128,128,.35);">
-      <figcaption style="font-size:10px; opacity:.75; margin-top:4px;">点击格子触发锚定悬浮详情窗：目录、来源、摘要、风险等级与核验状态</figcaption>
-    </figure>
+  <h3>工程质量速览</h3>
+  <div class="grid-4">
+    <div class="stat"><div class="num">733</div><div class="label">前端用例通过<br>116 个 .test.mjs · 0 failed</div></div>
+    <div class="stat"><div class="num">774</div><div class="label">Java 项执行<br>0 失败 · 0 错误 · 1 跳过</div></div>
+    <div class="stat"><div class="num">622</div><div class="label">Python pytest 收集<br>收集数，不冒充通过数</div></div>
+    <div class="stat"><div class="num">12</div><div class="label">真实产品截图<br>覆盖主要前端体验与特效</div></div>
   </div>
 
-  <h3>5.2 管理员层功能</h3>
+  <h3>文档结构</h3>
+  <div class="toc-band"><b>01 项目与架构</b><span>项目定位、需求分析、可信闭环、服务架构与数据流（P03–04）</span></div>
+  <div class="toc-band"><b>02 前端证据</b><span>6 页真实界面与特效说明；保留 DEMO、空态和合成数据标记（P05–10）</span></div>
+  <div class="toc-band"><b>03 技术与质量</b><span>AI 技术方案、安全与隐私、代码规模、测试与 AI 评测（P11–14）</span></div>
+  <div class="toc-band"><b>04 交付与边界</b><span>部署复现、创新与评分映射、局限演进、证据索引（P15–18）</span></div>
+  <div class="info"><b>证据标签统一：</b><span class="tag measured">MEASURED 实跑</span><span class="tag draft">DRAFT 数据未复核</span><span class="tag notrun">NOT_RUN 未执行</span><span class="tag">DEMO 演示数据</span>。界面截图用于证明交互与视觉实现，不单独替代算法精度、生产性能或安全执行评测。</div>
+  <h3>三种阅读路径</h3>
+  <div class="grid-3">
+    <div class="card"><h4>产品体验评审</h4><p class="small">按 P05–P10 顺序查看真实界面；重点操作缩放、详情、状态切换与 DEMO 标记。</p></div>
+    <div class="card"><h4>技术方案评审</h4><p class="small">从 P04 架构进入 P11–P13，核对服务边界、AI 集成、安全代码与工程门禁。</p></div>
+    <div class="card"><h4>证据复核评审</h4><p class="small">直接查看 P14、P17、P18，复跑脚本并核对 DRAFT、NOT_RUN 和已知局限。</p></div>
+  </div>
+  <footer class="page-footer"><span>数据来源：fact-sheet F01–F13 / M01–M05</span><span>02 / 18</span></footer>
+</section>
+
+<!-- 03 项目定位与闭环 -->
+<section class="page">
+  <div class="kicker">01 / PROBLEM TO CLOSED LOOP</div>
+  <h2>不是再做一个聊天框，<br>而是把运维任务连成可信闭环</h2>
+  <p class="lead">智维Agent 面向“人手少、系统杂、知识散”的运维场景，把检索、决策、授权、执行与复盘放在同一套可审计流程中。</p>
+  <div class="grid-3">
+    <div class="card"><h3>工具与知识分散</h3><p>监控、日志、工单和文档分散在不同平台，排查依赖个人经验，传统关键词检索还可能返回过期版本。</p></div>
+    <div class="card"><h3>回答缺少证据</h3><p>通用问答给出结论，却难以说明来源、版本和检索过程，工程师难以核对，也不敢直接采用。</p></div>
+    <div class="card"><h3>执行缺少约束</h3><p>能“说”不等于能安全地“做”。高风险操作需要工具级风险声明、人工审批、结果核查与审计。</p></div>
+  </div>
+
+  <h3>目标用户与任务范围</h3>
+  <p><b>目标用户：</b>10–200 人规模企业的运维负责人、驻场工程师与技术负责人；同样适用于高校实验室、实训机房等相似场景。核心任务包括故障问答与定位、版本感知知识检索、受控执行、结果核查、经验沉淀与团队协同。</p>
+
+  <h3>五环可信任务闭环</h3>
+  <div class="flow">
+    <div class="step"><span class="n">01</span><b>监测与提问</b><span>文本 / 语音转写<br>图像文件名</span></div>
+    <div class="step"><span class="n">02</span><b>检索与证据</b><span>BM25＋向量<br>版本过滤 / Citation</span></div>
+    <div class="step"><span class="n">03</span><b>规划与风险</b><span>Planner 基线<br>工具级声明</span></div>
+    <div class="step"><span class="n">04</span><b>审批与执行</b><span>人工审批<br>受控工具调用</span></div>
+    <div class="step"><span class="n">05</span><b>核查与沉淀</b><span>四级 Inspector<br>审计与记忆</span></div>
+  </div>
+
+  <h3>需求到功能的对应关系</h3>
   <table>
-    <tr><th>模块</th><th>主要能力</th></tr>
-    <tr><td>账户与权限</td><td>用户/角色/部门/岗位、RBAC、会话管理、密码策略</td></tr>
-    <tr><td>安全治理</td><td>管理员 MFA、人机校验策略、登录日志、审计查询</td></tr>
-    <tr><td>模型网关</td><td>模型连接、路由、密钥托管（AES-GCM）、Token 预算与用量</td></tr>
-    <tr><td>平台治理</td><td>字典、菜单、公告、系统监控</td></tr>
+    <colgroup><col style="width:24%"><col style="width:42%"><col style="width:34%"></colgroup>
+    <tr><th>现实需求</th><th>产品响应</th><th>可复核证据</th></tr>
+    <tr><td>答案必须能核对</td><td>混合检索、版本过滤、来源引用与 trust_score</td><td>AI 对话截图；knowledge/retrieval 与 evidence</td></tr>
+    <tr><td>过程必须看得见</td><td>SSE 六步思考事件、执行轨迹链式节点</td><td>P06 两页真实界面；chat_stream</td></tr>
+    <tr><td>动作必须有边界</td><td>风险取高、CRITICAL 禁止自动执行、审批一次性消费</td><td>policy_engine.py；审批与审计模块</td></tr>
+    <tr><td>结果必须能复盘</td><td>Rule → Evidence → AI → StateVerifier 四级核查</td><td>inspector/pipeline.py 与 judges</td></tr>
+    <tr><td>经验必须能沉淀</td><td>个人/团队知识空间、审计记录与长期经验</td><td>P08 知识照片墙；operator_memory</td></tr>
+  </table>
+  <div class="info"><b>核心价值：</b>结论有证据，动作有边界，过程有留痕。项目定位是可信运维的工程化验证与演示，不把当前小样本结果包装成生产环境普遍适用结论。</div>
+  <h3>不同角色获得什么</h3>
+  <div class="grid-3">
+    <div class="card"><h4>运维工程师</h4><p class="small">从自然语言问题进入检索与建议，展开来源核对版本，再沿执行轨迹复盘每个节点。</p></div>
+    <div class="card"><h4>运维负责人</h4><p class="small">通过风险声明、审批与审计掌握动作边界，避免把模型回答直接等同于可执行命令。</p></div>
+    <div class="card"><h4>团队与管理员</h4><p class="small">用团队空间、知识沉淀、RBAC、MFA 和模型治理维持长期协作与平台秩序。</p></div>
+  </div>
+  <footer class="page-footer"><span>项目定位与需求分析</span><span>03 / 18</span></footer>
+</section>
+
+<!-- 04 系统架构 -->
+<section class="page">
+  <div class="kicker">01 / SYSTEM ARCHITECTURE</div>
+  <h2>Vue 3 双入口负责呈现，<br>三条服务链协同完成检索、决策与审计</h2>
+  <p class="lead">账户与治理、AI 对话编排、知识检索解耦；前端通过 REST 与 SSE 接入，Agent 通过插件契约扩展工具。</p>
+  <div class="arch-front"><b>Web 前端｜用户层 :5173 / 管理员层 :5174</b><br>Vue 3 + Vite 7 + TypeScript｜共享逻辑层 TS 52 文件｜Three.js · Canvas 2D · ECharts · VRM</div>
+  <div class="arch-links">/api · REST + CSRF　　　　　　　　　　/ai · SSE + OpenAI 兼容　　　　　　　　　　HTTP · RAG</div>
+  <div class="grid-3">
+    <div class="card service"><h3>Java 后端 :8080</h3><p>Spring Boot 3.3.5 / Java 17</p><p>账户、RBAC、附件、团队、模型治理与审计；477 个 <code>@*Mapping</code> 接口。</p><p class="small muted">业务数据与可信治理边界</p></div>
+    <div class="card service"><h3>AI 服务 :8001 ＋ Agent</h3><p>LLM 网关、对话编排、SSE 与 Prompt 组装。</p><p>planner / executor / inspector / memory / policies / kernel。</p><p class="small muted">确定性基线＋可插拔接口</p></div>
+    <div class="card service"><h3>知识服务 :8002</h3><p>解析 → 分块 → 嵌入 → BM25＋向量召回 → 版本过滤 → 重排。</p><p>Citation＋trust_score＋检索评测。</p><p class="small muted">证据生产与回归验证</p></div>
+  </div>
+  <div class="arch-links">MySQL 8 · 119 张迁移定义表　　　　Redis 7 · 会话与限流　　　　Ollama · qwen3:1.7b 本地推理</div>
+
+  <h3>一次对话与受控任务的数据流</h3>
+  <ol>
+    <li><b>输入：</b>用户提交文本、浏览器语音转写结果或图像文件名；前端 SSE 客户端准备接收 thinking / token / done。</li>
+    <li><b>检索：</b>ai-service 调用 knowledge，完成候选召回、版本过滤、重排与证据聚合，再组装系统提示和知识证据。</li>
+    <li><b>生成：</b>模型网关选择 mock / Ollama / OpenAI 兼容提供方；token 事件回流，done 事件携带引用与 trust_score。</li>
+    <li><b>执行：</b>涉及工具动作时，策略引擎计算风险并检查审批；CRITICAL 禁止自动执行，需审批动作在执行前消费一次性批准。</li>
+    <li><b>核查：</b>Inspector 按规则、证据、可选 AI 与状态核验顺序检查，执行结果进入审计与经验沉淀。</li>
+  </ol>
+  <div class="note"><b>统计口径：</b>119 张表为迁移脚本离线定义去重数，不宣称运行库实测；477 个接口按 Java main 中 <code>@*Mapping</code> 统计。模型密钥、内部令牌与演示口令均不在本文展示。</div>
+  <h3>三个架构取舍</h3>
+  <div class="grid-3">
+    <div class="card"><h4>共享，而不是复制</h4><p class="small">双入口共享 api / domain / utils / types 与代理配置，降低会话和请求契约分裂的概率。</p></div>
+    <div class="card"><h4>解耦，而不是割裂</h4><p class="small">Java 管业务治理，FastAPI 管 AI 与知识，REST / SSE / HTTP 明确跨服务数据边界。</p></div>
+    <div class="card"><h4>插件，而不是硬编码</h4><p class="small">工具通过 AgentPlugin 与 MCP 适配器接入，基线可复现，模型和执行能力可替换。</p></div>
+  </div>
+  <footer class="page-footer"><span>架构来源：README / overall architecture / fact-sheet F07–F10、F13</span><span>04 / 18</span></footer>
+</section>
+
+<!-- 05 登录与首页 -->
+<section class="page">
+  <div class="kicker">02 / LOGIN &amp; BENTO DASHBOARD</div>
+  <h2>第一眼是视觉体验，背后是完整的工作入口</h2>
+  <p class="lead">登录页建立产品识别，Bento 首页承接运维优先级；两组画面均来自真实运行页面。</p>
+  <figure class="shot">
+    <img src="assets/ui/login.png" alt="登录页星网粒子、玻璃拟态登录卡与悬浮助手真实截图">
+    <figcaption class="caption"><b>01 登录与安全入口</b><span>星网粒子、鼠标视差、玻璃拟态登录卡与智维 Mini 悬浮助手同屏；登录前即可获得操作引导。</span></figcaption>
+    <div class="effects"><div class="effect"><b>Three.js 星网</b>节点与连线实时渲染</div><div class="effect"><b>分层视差</b>位移克制，建立空间深度</div><div class="effect"><b>入口即引导</b>助手在登录前也可唤起</div></div>
+  </figure>
+  <figure class="shot">
+    <img src="assets/ui/dashboard.png" alt="Bento首页健康度、告警、快捷入口与Agent状态真实截图">
+    <figcaption class="caption"><b>02 Bento 运维首页</b><span>健康度、告警、快捷入口与 Agent 状态按任务主次组织；首页同时承担总览和任务导航，而非信息堆叠。</span></figcaption>
+    <div class="effects"><div class="effect"><b>不等宽网格</b>按信息权重分配面积</div><div class="effect"><b>状态优先</b>健康与告警先进入视野</div><div class="effect"><b>减少跳转</b>常用功能和运行状态直达</div></div>
+  </figure>
+  <footer class="page-footer"><span>真实截图：:5173 登录页与登录后首页 · 画面未裁剪</span><span>05 / 18</span></footer>
+</section>
+
+<!-- 06 AI 对话与执行轨迹 -->
+<section class="page">
+  <div class="kicker">02 / AI CHAT &amp; EXECUTION TRACE</div>
+  <h2>答案、来源、思考过程与执行轨迹，<br>都能在同一产品链路中核验</h2>
+  <p class="lead">对话页呈现本地模型真实回答与引用；轨迹页把任务拆成可回放、可核验的链式节点。</p>
+  <figure class="shot">
+    <img src="assets/ui/chat.png" alt="AI对话页本地qwen3模型回答与参考来源真实截图">
+    <figcaption class="caption"><b>01 AI 对话完成态</b><span>画面可见 qwen3:1.7b 本地回答、运行诊断完成状态与“参考来源（5 段 / 3 篇）”；SSE 驱动六步思考事件与流式输出。</span></figcaption>
+    <div class="effects"><div class="effect"><b>真实生成</b>本地模型回答，非预写文案</div><div class="effect"><b>过程可见</b>阶段事件逐步点亮</div><div class="effect"><b>证据可展开</b>来源、分块与版本可核对</div></div>
+  </figure>
+  <figure class="shot">
+    <img src="assets/ui/agent-trace.png" alt="Agent执行轨迹链式节点与状态真实截图">
+    <figcaption class="caption"><b>02 Agent 执行轨迹</b><span>任务被拆成有顺序的节点，状态随进度变化，输入、输出与结果用于复盘；前端轨迹展示不单独证明高危执行已完成审批。</span></figcaption>
+    <div class="effects"><div class="effect"><b>任务拆步</b>依赖关系转成链式结构</div><div class="effect"><b>状态点亮</b>当前执行位置直接可见</div><div class="effect"><b>过程回溯</b>保留节点输入输出证据</div></div>
+  </figure>
+  <footer class="page-footer"><span>对话时延口径见 P14：首 token，而非首个 SSE 框架事件</span><span>06 / 18</span></footer>
+</section>
+
+<!-- 07 Agent 工坊与 VRM -->
+<section class="page">
+  <div class="kicker">02 / AGENT STUDIO &amp; VRM PERSONA</div>
+  <h2>把抽象 Agent 变成可理解的模块系统，<br>把运行状态转成可感知的角色反馈</h2>
+  <p class="lead">视觉化服务于理解：构成图形解释模块关系，VRM 化身反馈状态，但不参与运维决策。</p>
+  <figure class="shot">
+    <img src="assets/ui/agent-studio.png" alt="Agent工坊构成变换与五种状态真实截图">
+    <figcaption class="caption"><b>01 Agent 构成图形</b><span>中央蓝色眼球形成观察与感知的视觉锚点，模块组成与五种状态预览同屏，帮助用户理解 Agent 的结构和当前反馈。</span></figcaption>
+    <div class="effects"><div class="effect"><b>模块可读</b>抽象关系转为构成图形</div><div class="effect"><b>视觉聚焦</b>感知意象而非无关装饰</div><div class="effect"><b>状态联动</b>五种状态在页面上反馈</div></div>
+  </figure>
+  <figure class="shot">
+    <img src="assets/ui/vrm-persona.png" alt="VRM人格化身与状态预览真实截图">
+    <figcaption class="caption"><b>02 VRM 人格化身</b><span>基于 @pixiv/three-vrm 加载可驱动角色，动作与状态预览用于具身交互；角色不承担风险判断、工具审批或运维决策。</span></figcaption>
+    <div class="effects"><div class="effect"><b>实时 3D</b>角色不是预渲染视频</div><div class="effect"><b>动作反馈</b>思考、说话等状态可感知</div><div class="effect"><b>职责清晰</b>只服务理解与交互</div></div>
+  </figure>
+  <footer class="page-footer"><span>真实截图：Agent 工坊与 VRM 人格化身 · 画面未裁剪</span><span>07 / 18</span></footer>
+</section>
+
+<!-- 08 知识照片墙 -->
+<section class="page">
+  <div class="kicker">02 / KNOWLEDGE WALL &amp; EVIDENCE DETAIL</div>
+  <h2>约 737 格、10 个域：从全量地图，<br>一路下钻到单条证据</h2>
+  <p class="lead">纯 DOM 正交密铺承担全量浏览，锚定详情窗承担单条核验；缩放不丢失上下文，点击不打断浏览路径。</p>
+  <figure class="shot">
+    <img src="assets/ui/knowledge-wall.png" alt="知识照片墙约737格与10个域真实截图">
+    <figcaption class="caption"><b>01 全量知识照片墙</b><span>演示运行约 737 格、10 个域；四档缩放、色域分区与域标签快速定位，让知识分布、密度和主题关系一屏可见。</span></figcaption>
+    <div class="effects"><div class="effect"><b>纯 DOM 密铺</b>零 WebGL，低开销渲染</div><div class="effect"><b>四档缩放</b>从分布总览到条目细节</div><div class="effect"><b>域标签定位</b>点击平滑居中目标域</div></div>
+  </figure>
+  <figure class="shot">
+    <img src="assets/ui/knowledge-detail.png" alt="知识照片墙锚定悬浮详情窗真实截图">
+    <figcaption class="caption"><b>02 锚定悬浮详情</b><span>点击格子即可查看目录、来源、摘要、风险等级、适用版本与核验状态；真实文本可选中复制，原始 DEMO 标记保留。</span></figcaption>
+    <div class="effects"><div class="effect"><b>不跳页核验</b>保留全量浏览上下文</div><div class="effect"><b>字段完整</b>来源、版本、风险同屏</div><div class="effect"><b>文本可复制</b>便于引用与人工复核</div></div>
+  </figure>
+  <footer class="page-footer"><span>约 737 格 / 10 域为演示运行口径，不作为生产知识规模承诺</span><span>08 / 18</span></footer>
+</section>
+
+<!-- 09 洞察星云与时序预测 -->
+<section class="page">
+  <div class="kicker">02 / INSIGHT NEBULA &amp; TIME SERIES</div>
+  <h2>视觉效果展示关系与不确定性，<br>同时把 DEMO 边界留在画面里</h2>
+  <p class="lead">星云视图用于观察事件关联，预测面用于表达区间与越界；两者都不把演示数据包装成真实生产结论。</p>
+  <figure class="shot">
+    <img src="assets/ui/insight-nebula.png" alt="洞察台星云粒子与DEMO标记真实截图">
+    <figcaption class="caption"><b>01 洞察星云</b><span>12 事件、38 运行、2 关联均为 DEMO；粒子聚合、旋转聚焦与四种投影用于呈现关系，不用视觉效果掩盖数据来源。</span></figcaption>
+    <div class="effects"><div class="effect"><b>关系可感知</b>事件与运行实例聚合</div><div class="effect"><b>多视角切换</b>纠察、统计、运行、星云</div><div class="effect"><b>边界不隐藏</b>DEMO 标识完整保留</div></div>
+  </figure>
+  <figure class="shot">
+    <img src="assets/ui/forecast.png" alt="时序预测中位数、置信带与越界红线真实截图">
+    <figcaption class="caption"><b>02 时序预测面</b><span>中位数、P10–P90 置信带、越界红线与门控权重同屏；MLP / GRU 为可插拔实现，当前画面为合成演示数据，不宣称预测精度。</span></figcaption>
+    <div class="effects"><div class="effect"><b>表达不确定性</b>区间而非单一确定值</div><div class="effect"><b>异常可定位</b>越界点与权重辅助理解</div><div class="effect"><b>模型可插拔</b>可视化与算法实现解耦</div></div>
+  </figure>
+  <footer class="page-footer"><span>真实截图保留 DEMO / 合成数据状态 · 未做专家复核</span><span>09 / 18</span></footer>
+</section>
+
+<!-- 10 哨兵拓扑与前端特效工程 -->
+<section class="page">
+  <div class="kicker">02 / SENTINEL TOPOLOGY &amp; MOTION SYSTEM</div>
+  <h2>哨兵拓扑把节点、链路与巡网过程，<br>放进同一张可观察画布</h2>
+  <p class="lead">动态路径用于解释巡检过程，空态用于说明尚未接入任务；视觉表现与真实采集状态明确分开。</p>
+  <figure class="shot wide">
+    <img src="assets/ui/sentinel.png" alt="哨兵监控拓扑巡网与任务空态真实截图">
+    <figcaption class="caption"><b>哨兵监控台</b><span>节点与连线构成拓扑，巡检单元沿路径移动；截图同时保留“还没有哨兵任务”等真实空态，不把拓扑动效写成已接入生产资产。</span></figcaption>
+    <div class="effects"><div class="effect"><b>关系一屏呈现</b>节点与链路替代纯列表</div><div class="effect"><b>巡检过程可见</b>动态路径解释后台过程</div><div class="effect"><b>空态不掩饰</b>任务指标以实际接入为准</div></div>
+  </figure>
+
+  <h3>前端特效不是贴图：实现方式与证据边界</h3>
+  <table class="compact-table">
+    <colgroup><col style="width:18%"><col style="width:29%"><col style="width:29%"><col style="width:24%"></colgroup>
+    <tr><th>体验</th><th>实现方式</th><th>用户价值</th><th>证据边界</th></tr>
+    <tr><td>登录星网</td><td>Three.js 节点连线＋分层视差</td><td>建立品牌识别与操作反馈</td><td>证明视觉交互，不代替登录安全测试</td></tr>
+    <tr><td>AI 对话</td><td>SSE 事件流＋阶段时间线＋来源展开</td><td>答案与过程同屏核验</td><td>引用数量不等于回答正确率</td></tr>
+    <tr><td>Agent / VRM</td><td>构成图形＋状态样式＋实时 3D 角色</td><td>降低模块与状态理解成本</td><td>角色不参与决策和审批</td></tr>
+    <tr><td>知识照片墙</td><td>纯 DOM 正交密铺＋四档缩放＋锚定窗</td><td>全量分布与单条证据连续浏览</td><td>约 737 格为演示运行口径</td></tr>
+    <tr><td>星云 / 预测</td><td>粒子投影＋置信带＋越界标记</td><td>呈现关联和不确定性</td><td>DEMO / 合成数据，不宣称精度</td></tr>
+    <tr><td>哨兵拓扑</td><td>节点链路＋动态巡网路径</td><td>观察结构与巡检路径</td><td>空态保留，采集结果需真实任务验证</td></tr>
+  </table>
+  <div class="info"><b>工程原则：</b>Three.js 按需加载，知识墙优先使用 DOM；动效解释状态与关系，reduced-motion 场景提供降级。所有关键文本仍为可选择文字，不将证据封死在图片中。</div>
+  <div class="note"><b>现场验收：</b>移动鼠标与切换状态，确认星网、Agent 和 VRM 响应真实操作；缩放并点击知识墙，核对来源与可复制文本；检查 reduced-motion、语音不支持与无哨兵任务等降级 / 空态。</div>
+  <footer class="page-footer"><span>真实截图：哨兵监控页 · 拓扑、空态与模板区域完整保留</span><span>10 / 18</span></footer>
+</section>
+
+<!-- 11 AI 技术方案 -->
+<section class="page">
+  <div class="kicker">03 / AI TECHNOLOGY</div>
+  <h2>模型可切换，检索可解释，Agent 可插拔</h2>
+  <p class="lead">AI 能力不以单一模型为中心，而以“证据生产—任务规划—风险控制—结果核查”的可运行链路为中心。</p>
+  <div class="grid-3">
+    <div class="card"><h3>可切换模型网关</h3><p><b>mock</b> 支持零密钥演示；<b>Ollama</b> 接入本地 qwen3:1.7b；OpenAI 兼容接口用于扩展。</p><p class="small">后端维护模型连接、路由、Token 预算与用量，密钥处理见 P12。</p></div>
+    <div class="card"><h3>版本感知 RAG</h3><p>BM25 关键词与向量双路召回，结合版本过滤、词法重排、Citation 与 trust_score。</p><p class="small">解决“知识正确但版本不适用”，而非只追求召回数量。</p></div>
+    <div class="card"><h3>Agent 五模块＋kernel</h3><p>planner / executor / inspector / memory / policies 配合插件注册、事件与生命周期管理。</p><p class="small">MCP 适配器与 Function Calling 扩展工具生态。</p></div>
+  </div>
+
+  <h3>检索与证据的五级流水线</h3>
+  <div class="flow">
+    <div class="step"><span class="n">01</span><b>双路召回</b><span>BM25＋向量<br>避免单一路径漏召回</span></div>
+    <div class="step"><span class="n">02</span><b>版本过滤</b><span>version_filter<br>按目标环境收敛</span></div>
+    <div class="step"><span class="n">03</span><b>候选重排</b><span>lexical_reranker<br>重排候选证据</span></div>
+    <div class="step"><span class="n">04</span><b>证据表达</b><span>来源 / chunk / 版本<br>Citation＋trust_score</span></div>
+    <div class="step"><span class="n">05</span><b>回归评测</b><span>Recall@3 / MRR<br>小样本口径公开</span></div>
+  </div>
+
+  <h3>核心实现与选型理由</h3>
+  <table class="compact-table">
+    <colgroup><col style="width:19%"><col style="width:37%"><col style="width:44%"></colgroup>
+    <tr><th>能力</th><th>实现入口</th><th>选型理由与降级边界</th></tr>
+    <tr><td>对话编排</td><td><code>ai-service/app/services/model_gateway.py</code><br><code>chat_stream</code></td><td>模型厂商解耦；thinking / token / done 真事件驱动前端，而非定时器模拟。</td></tr>
+    <tr><td>混合检索</td><td><code>knowledge/retrieval/hybrid.py</code><br><code>knowledge/reranker/</code></td><td>BM25 保留关键词可解释性，向量补语义；默认哈希嵌入可切 Sentence Transformers。</td></tr>
+    <tr><td>任务规划</td><td><code>agent/planner/steps.py</code></td><td>确定性拆解基线＋可插拔接口，便于复现，不宣称所有规划均由大模型自主完成。</td></tr>
+    <tr><td>四级核查</td><td><code>agent/inspector/pipeline.py</code><br><code>agent/inspector/judges/</code></td><td>Rule → Evidence → AI → StateVerifier；AI 级无 LLM 时降级为空发现，不伪装已评审。</td></tr>
+    <tr><td>工具生态</td><td><code>agent/sdk/plugin.py</code><br><code>agent/tools/adapters/mcp.py</code></td><td>AgentPlugin 契约统一注册；Docker / Kubernetes / MySQL / Nginx / Redis 能力可插拔。</td></tr>
+    <tr><td>多模态输入</td><td><code>domain/chat/speechInput.ts</code><br>图像文件名与私有附件会话</td><td>语音只转为输入框文本；当前不做图像内容理解，附件与模型分析隔离。</td></tr>
+  </table>
+  <h3>SSE 事件契约：前端展示什么，后端就发送什么</h3>
+  <div class="grid-3">
+    <div class="card"><h4 class="mono">thinking</h4><p class="small">发送检索、证据、规划、风险等阶段状态，驱动时间线逐步点亮；不是前端定时器伪造进度。</p></div>
+    <div class="card"><h4 class="mono">token</h4><p class="small">携带真实模型增量文本，首 token 时延以首个 token 事件计，而非更早的 run 事件。</p></div>
+    <div class="card"><h4 class="mono">done</h4><p class="small">汇总回答完成状态、引用与 trust_score；引用用于核验，不自动等价于答案正确。</p></div>
+  </div>
+  <div class="note"><b>统一口径：</b>Planner、BM25、向量与 AI Judge 均按“确定性基线＋可插拔接口”描述。检索主结果仅使用 14 条 DRAFT 数据；AI 改写变体不作为 70 个独立样本来宣称统计显著性。</div>
+  <footer class="page-footer"><span>AI 技术：选型理由 · 集成方式 · 降级边界</span><span>11 / 18</span></footer>
+</section>
+
+<!-- 12 安全与隐私 -->
+<section class="page">
+  <div class="kicker">03 / SECURITY, CONTROL &amp; PRIVACY</div>
+  <h2>可信不是一句口号：每一层都有代码边界</h2>
+  <p class="lead">账户、会话、请求、密钥、工具与数据处理分别治理；对已经发现的分类器与声明不一致，也如实保留。</p>
+  <h3>安全与受控执行</h3>
+  <table class="compact-table">
+    <colgroup><col style="width:18%"><col style="width:48%"><col style="width:34%"></colgroup>
+    <tr><th>层级</th><th>已实现措施</th><th>复核入口 / 边界</th></tr>
+    <tr><td>账户与密码</td><td>BCrypt(12)、密码强度策略、登录失败窗口限流</td><td>Spring Security 与账户模块</td></tr>
+    <tr><td>会话与请求</td><td>登录后 changeSessionId、CSRF、会话超时与吊销、写操作校验</td><td>双入口共享会话与代理配置</td></tr>
+    <tr><td>管理端</td><td>管理员 MFA＋恢复码、敏感操作二次确认、人机校验策略</td><td>AdminMfaService 与安全治理页面</td></tr>
+    <tr><td>附件</td><td>私有附件会话；下载 nosniff＋CSP sandbox；与模型分析隔离</td><td>chat_conversation / chat_attachment</td></tr>
+    <tr><td>模型密钥</td><td>API Key 以 AES-256-GCM 密文保存，仅返回脱敏末四位；主密钥由环境变量注入</td><td>AesGcmCryptoService / ModelConnection；未接 KMS / HSM</td></tr>
+    <tr><td>执行授权</td><td>分类风险与工具声明取高；HIGH 或显式 requires_approval 转审批；CRITICAL 禁止自动执行</td><td>policy_engine.py；批准在执行前一次性消费</td></tr>
+  </table>
+  <div class="warning"><b>已知风险不回避：</b>M04 中 3 个 <code>approval_required=true</code> 操作被名称分类器判为 LOW，暴露“双轨不一致”。实际策略还会读取工具声明与审批标记，因此该结果不等于已发生越权；但它证明不能只看分类器标签，也不能写成“AI 自动识别自然语言指令风险”。</div>
+
+  <h3>多模态与数据边界</h3>
+  <table class="compact-table">
+    <colgroup><col style="width:18%"><col style="width:45%"><col style="width:37%"></colgroup>
+    <tr><th>输入</th><th>当前实现</th><th>严谨表述</th></tr>
+    <tr><td>语音</td><td>Web Speech API 将识别文本填入输入框；应用代码不主动上传或保存音频，不自动发送。</td><td>识别位置取决于浏览器实现，且可能出现 network 错误；不承诺所有浏览器均离线识别。</td></tr>
+    <tr><td>图像证据</td><td>本地暂存，随消息仅向 ai-service 传文件名列表。</td><td>图片内容不进入当前模型链路；这是文件名级演示，不是图像理解。</td></tr>
+    <tr><td>文本 / 日志附件</td><td>用户显式上传到私有附件会话，用于证据保存。</td><td>附件与模型分析隔离；用户仍需遮盖密码、密钥与个人敏感信息。</td></tr>
+  </table>
+  <div class="info"><b>密钥口径修正：</b>“密文存数据库”与“.env 不进版本库”是两件不同的事。模型连接 API Key 的密文字段保存在后端数据库；AES 主密钥、演示口令等由本地环境变量提供，仓库不保存明文，也不把内部令牌放进前端。</div>
+  <h3>一次工具授权的三个检查点</h3>
+  <div class="grid-3">
+    <div class="card"><h4>01 风险计算</h4><p class="small">名称分类结果与工具声明取较高等级；未知声明按 CRITICAL 处理，不能用未知降低风险。</p></div>
+    <div class="card"><h4>02 事前检查</h4><p class="small">核对工具与计划一致、CRITICAL 拒绝、审批 ID 有效；check 本身不消耗批准。</p></div>
+    <div class="card"><h4>03 执行授权</h4><p class="small">authorize_execution 在真正执行前再次验证并消费批准，防止重复使用或参数不匹配。</p></div>
+  </div>
+  <footer class="page-footer"><span>安全代码复核：AesGcmCryptoService.java · policy_engine.py · speechInput.ts</span><span>12 / 18</span></footer>
+</section>
+
+<!-- 13 前端与代码工程 -->
+<section class="page">
+  <div class="kicker">03 / FRONTEND &amp; CODE QUALITY</div>
+  <h2>双入口同源，类型门禁与构建策略共同守住质量</h2>
+  <p class="lead">用户层与管理层共享逻辑和代理配置；组件层保持 Vue / JavaScript，共享领域逻辑使用 TypeScript，控制改造成本。</p>
+  <div class="grid-3">
+    <div class="card"><h3>双入口同源</h3><p>用户层 :5173 与管理员层 :5174 共用 <code>vite.shared.mjs</code>，统一代理与构建配置，避免会话、CSRF 和分包策略分裂。</p></div>
+    <div class="card"><h3>共享逻辑层</h3><p><code>api / domain / utils / types</code> 使用 TypeScript；<code>tsc --noEmit</code> 纳入质量门禁，优先守住契约与安全不变量。</p></div>
+    <div class="card"><h3>构建与按需加载</h3><p>ECharts 与 zrender 独立分包，Three.js 保持懒加载；双入口构建分别验证，避免重型可视化拖慢登录首屏。</p></div>
+  </div>
+
+  <h3>代码规模（按语种与目录统计，不混为“模块数”）</h3>
+  <table>
+    <colgroup><col style="width:38%"><col style="width:20%"><col style="width:22%"><col style="width:20%"></colgroup>
+    <tr><th>代码层</th><th>文件数</th><th>代码行数</th><th>统计口径</th></tr>
+    <tr><td>前端 Vue</td><td class="mono">234</td><td class="mono">38,998</td><td>frontend/src</td></tr>
+    <tr><td>前端 TypeScript（共享逻辑层）</td><td class="mono">52</td><td class="mono">2,643</td><td>无 .tsx</td></tr>
+    <tr><td>前端 JavaScript</td><td class="mono">109</td><td class="mono">13,696</td><td>frontend/src</td></tr>
+    <tr><td>Java 后端 main</td><td class="mono">331</td><td class="mono">36,863</td><td>backend/src/main</td></tr>
+    <tr><td>Python</td><td class="mono">278</td><td class="mono">22,048</td><td>非空行</td></tr>
+  </table>
+  <div class="grid-2">
+    <div class="card"><h3>业务与数据规模</h3><p><b>477</b> 个 Java <code>@*Mapping</code> 接口；<b>119</b> 张迁移定义表。Python 覆盖 Agent、knowledge 与 ai-service，后端主体为 Java。</p></div>
+    <div class="card"><h3>质量门禁</h3><p><code>npm test</code> 前端用例、<code>tsc --noEmit</code> 类型检查、用户层与管理层构建共同验收；Java 与 Python 测试口径见下一页。</p></div>
+  </div>
+  <h3>功能覆盖：用户层与管理层各自承担什么</h3>
+  <table class="compact-table">
+    <colgroup><col style="width:20%"><col style="width:80%"></colgroup>
+    <tr><th>入口</th><th>主要模块</th></tr>
+    <tr><td>用户层 :5173</td><td>AI 对话、自然语言洞察、Bento 工作台、Agent 工坊与轨迹、知识空间、团队协作、哨兵与预测、模型中心</td></tr>
+    <tr><td>管理员层 :5174</td><td>用户 / 角色 / 部门 / 岗位、RBAC、会话与密码策略、MFA、人机校验、登录日志、审计、模型连接与 Token 治理</td></tr>
+    <tr><td>共享能力</td><td>统一 API 与类型契约、主题与状态反馈、权限守卫、错误处理、构建代理、可视化按需加载与测试门禁</td></tr>
+  </table>
+  <div class="note"><b>统计日期：</b>前端与 Java 统计、前端和 Java 测试为 2026-11-15；Python 规模及 pytest 收集沿用 2026-11-13 实测，fact-sheet 已记录其后相关测试文件零改动。119 表为迁移脚本口径。</div>
+  <footer class="page-footer"><span>来源：fact-sheet F01 / F02 / F03 / F13</span><span>13 / 18</span></footer>
+</section>
+
+<!-- 14 测试与 AI 评测 -->
+<section class="page">
+  <div class="kicker">03 / TEST &amp; EVALUATION EVIDENCE</div>
+  <h2>通过数、执行数、收集数分开报告；<br>有利与不利结果同时呈现</h2>
+  <div class="grid-3">
+    <div class="stat"><div class="num">733</div><div class="label"><b>前端通过</b><br>116 个 .test.mjs · 0 failed</div></div>
+    <div class="stat"><div class="num">774</div><div class="label"><b>Java 执行</b><br>0 失败 · 0 错误 · 1 跳过</div></div>
+    <div class="stat"><div class="num">622</div><div class="label"><b>Python 收集</b><br>不是通过数，不混算总通过率</div></div>
+  </div>
+  <h3>AI 评测结果与限制</h3>
+  <table class="compact-table">
+    <colgroup><col style="width:20%"><col style="width:20%"><col style="width:9%"><col style="width:14%"><col style="width:37%"></colgroup>
+    <tr><th>指标</th><th>结果</th><th>n</th><th>状态</th><th>口径与限制</th></tr>
+    <tr><td>假成功检测 F1</td><td><b>开发集 1.0<br>留出集 0.4762</b></td><td>47<br>20</td><td><span class="tag measured">MEASURED</span></td><td>必须同时报告；留出集 R=0.3333，10 条漏检进入 uncertain，暴露泛化短板，不能只报开发集。</td></tr>
+    <tr><td>工具级风险声明一致性</td><td><b>0.7619<br>（16/21）</b></td><td>21</td><td><span class="tag measured">MEASURED</span></td><td>全量可枚举操作；不是自然语言指令风险识别。3 个需审批操作被名称分类器低估，支持保留双闸。</td></tr>
+    <tr><td>首 token 时延 P50 / P95</td><td><b>3589.6 ms<br>4522.5 ms</b></td><td>20</td><td><span class="tag measured">MEASURED</span></td><td>Ollama qwen3:1.7b，本机 CPU，20/20 成功；不是生产 GPU，也不能用首个 SSE run 事件替代。</td></tr>
+    <tr><td>检索 Recall@3 / MRR</td><td><b>0.5000<br>0.4286</b></td><td>14</td><td><span class="tag draft">DRAFT</span></td><td>7 类 14 条原始问法，数据全部 DRAFT；用于验证链路与暴露问题，不作为专家复核后的精度结论。</td></tr>
+    <tr><td>M05 真人盲评</td><td><b>—</b></td><td>0</td><td><span class="tag notrun">NOT_RUN</span></td><td>需 3 名真人评者；脚本与空白评分表已备，未执行就不给均分或一致性结论。</td></tr>
+  </table>
+  <div class="warning"><b>执行证据边界：</b>M02 的执行闸 / 人工队列量化项为 NOT_RUN。默认 mock 的链路演示不能替代该项独立测评；文档不会把界面存在直接写成“执行安全已被充分验证”。</div>
+  <h3>复核文件</h3>
+  <p class="small"><code>reports/t1-20261113/m01_retrieval.csv</code> · <code>m02_metrics.json</code> · <code>m02_holdout_metrics.json</code> · <code>m03_metrics.json</code> · <code>m04_metrics.json</code>；复跑脚本位于 <code>scripts/eval_*.py</code>，冻结用例位于 <code>tests/fixtures/defense/</code>。</p>
+  <h3>自动化测试与 AI 评测回答的问题不同</h3>
+  <div class="grid-3">
+    <div class="card"><h4>前端 733 通过</h4><p class="small">验证领域逻辑、请求契约与安全不变量，回答“前端行为是否符合预期”。</p></div>
+    <div class="card"><h4>Java 774 执行</h4><p class="small">覆盖后端业务与集成行为，回答“本次测试执行是否出现失败或错误”。</p></div>
+    <div class="card"><h4>AI M01–M05</h4><p class="small">衡量检索、假成功、时延与风险口径，回答“算法证据到哪里、边界在哪里”。</p></div>
+  </div>
+  <div class="info"><b>结论：</b>当前证据足以证明系统具有可运行、可测试、可复核的工程基础；尚不足以证明小样本算法指标已泛化，或已达到生产环境的性能与安全要求。</div>
+  <footer class="page-footer"><span>来源：fact-sheet M01–M05 · 测量日期 2026-11-13 / 2026-11-15</span><span>14 / 18</span></footer>
+</section>
+
+<!-- 15 部署与复现 -->
+<section class="page">
+  <div class="kicker">04 / DEPLOYMENT &amp; REPRODUCIBILITY</div>
+  <h2>评委看到的不只是截图，<br>还有一条可复现的运行路径</h2>
+  <p class="lead">默认 mock 降低演示门槛，本地 Ollama 用于真实生成；密钥通过环境变量配置，不在文档或公开仓库中提供。</p>
+  <h3>服务组成与启动顺序</h3>
+  <div class="flow">
+    <div class="step"><span class="n">01</span><b>知识服务</b><span>FastAPI :8002<br>检索与证据</span></div>
+    <div class="step"><span class="n">02</span><b>AI 服务</b><span>FastAPI :8001<br>模型与 SSE</span></div>
+    <div class="step"><span class="n">03</span><b>Java 后端</b><span>Spring Boot :8080<br>账户与审计</span></div>
+    <div class="step"><span class="n">04</span><b>用户层</b><span>Vite :5173<br>运维工作入口</span></div>
+    <div class="step"><span class="n">05</span><b>管理员层</b><span>Vite :5174<br>平台治理入口</span></div>
+  </div>
+  <table class="compact-table">
+    <colgroup><col style="width:22%"><col style="width:44%"><col style="width:34%"></colgroup>
+    <tr><th>项目</th><th>配置 / 命令</th><th>复核说明</th></tr>
+    <tr><td>模型提供方</td><td><code>LLM_PROVIDER=mock</code>；可切 Ollama / OpenAI 兼容</td><td>mock 零密钥演示；真实生成使用本地 qwen3:1.7b</td></tr>
+    <tr><td>前端测试</td><td><code>cd frontend</code> 后执行 <code>npm test</code></td><td>733 项通过；另跑类型检查与双入口构建</td></tr>
+    <tr><td>Java 测试</td><td><code>cd backend</code> 后执行 <code>mvn test</code></td><td>774 项执行，0 失败、0 错误、1 跳过</td></tr>
+    <tr><td>Python 收集</td><td>项目根目录执行 <code>python -m pytest --collect-only</code></td><td>收集 622；该命令不等于全部执行通过</td></tr>
+    <tr><td>环境配置</td><td>复制 <code>.env.example</code> 为本地 <code>.env</code> 并自行填写</td><td>关键密钥缺失时 fail-closed；文档不附带秘密</td></tr>
+  </table>
+  <div class="grid-2">
+    <div class="card"><h3>部署与可观测</h3><p><code>deploy/</code> 提供容器编排与 MySQL 初始化；MySQL 8 承担业务与审计，Redis 7 承担会话与限流。</p><p><code>infrastructure/</code> 集成 Prometheus、Grafana、Loki 与 Promtail，覆盖指标、日志和告警。</p></div>
+    <div class="card"><h3>跨平台与首次启动</h3><p>Windows 使用 <code>scripts/windows/*.ps1</code>，Linux / macOS 使用对应脚本。首次管理员由环境变量引导创建，仅在账户表为空时生效。</p><p>knowledge 的关键 API Key 需显式进入进程环境，不能假设它自动读取根目录 .env。</p></div>
+  </div>
+  <h3>建议的评审复核顺序</h3>
+  <ol class="small">
+    <li>登录页观察星网与视差，进入 Bento 首页核对健康度、告警与任务入口。</li>
+    <li>在 AI 对话发起运维问题，观察思考事件、流式回答与来源展开；再查看 Agent 执行轨迹。</li>
+    <li>操作 Agent 构成图形、VRM 状态预览与知识照片墙缩放 / 悬浮详情。</li>
+    <li>查看星云 DEMO、预测合成数据与哨兵空态，确认演示边界没有被隐藏。</li>
+    <li>最后核对管理端、测试报告、评测 JSON 与代码路径，形成“界面—实现—数据”三点闭环。</li>
+  </ol>
+  <div class="info"><b>演示前最后检查：</b>确认 :8001 / :8002 / :8080 与双前端可用，真实生成前检查 Ollama；演示口令只从本机环境读取；保留 DEMO、空态和合成标记，并准备 mock 降级路径。</div>
+  <div class="note"><b>复现边界：</b>生产构建与本地演示可复现，不代表已经完成面向公网的部署验收。真实上线仍需补充威胁建模、密钥托管、数据治理、压力测试与生产 GPU 性能评估。</div>
+  <footer class="page-footer"><span>运行原则：零秘密交付 · 可复现演示 · 真实边界公开</span><span>15 / 18</span></footer>
+</section>
+
+<!-- 16 创新与评审映射 -->
+<section class="page">
+  <div class="kicker">04 / INNOVATION &amp; REVIEW ALIGNMENT</div>
+  <h2>创新不在“更会聊天”，<br>而在证据、边界与可追溯的工程组合</h2>
+  <p class="lead">每项创新都对应真实页面、代码路径或评测文件；不使用“行业首创”“全面领先”等无法核验的表述。</p>
+  <table class="compact-table">
+    <colgroup><col style="width:24%"><col style="width:43%"><col style="width:33%"></colgroup>
+    <tr><th>创新点</th><th>具体实现</th><th>证据位置</th></tr>
+    <tr><td>版本感知的混合检索</td><td>BM25＋向量＋版本过滤＋重排，Citation 与 trust_score 支撑证据核验。</td><td>P04、P11；knowledge/retrieval 与 evidence</td></tr>
+    <tr><td>思考与执行双轨迹</td><td>SSE 六步思考事件叠加链式执行轨迹，让回答过程和任务过程分别可见。</td><td>P06；chat_stream 与 Agent Trace</td></tr>
+    <tr><td>风险取高与一次性审批</td><td>分类结果和工具声明取高，CRITICAL 拒绝自动执行，批准在执行前消费。</td><td>P12；policy_engine.py</td></tr>
+    <tr><td>四级结果核查</td><td>Rule → Evidence → AI → StateVerifier，区分“声称成功”与“状态恢复”。</td><td>P03、P11；inspector/pipeline.py</td></tr>
+    <tr><td>双入口同源与工程门禁</td><td>用户层 / 管理层共享逻辑与代理；类型检查、测试和双端构建共同验收。</td><td>P13；vite.shared.mjs 与 frontend/src</td></tr>
+    <tr><td>知识全图与单条证据连续浏览</td><td>纯 DOM 正交密铺、四档缩放与锚定详情，将全量分布和文本核验连成一体。</td><td>P08；知识照片墙真实截图</td></tr>
+    <tr><td>不确定性可视化</td><td>星云保留 DEMO，预测同时展示中位数、置信带、越界和门控权重。</td><td>P09；洞察台与时序预测面</td></tr>
+    <tr><td>隐私与渐进增强</td><td>语音能力按浏览器支持情况降级；图像仅传文件名；附件与模型分析隔离。</td><td>P12；speechInput.ts 与附件会话</td></tr>
   </table>
 
-  <h3>5.3 服务与框架实现</h3>
-  <ul>
-    <li><b>ai-service（:8001）</b>：LLM 网关、对话编排、SSE 流式、RAG 检索与提示词组装；<code>chat_stream</code> 输出 thinking / token / done 三类事件。</li>
-    <li><b>knowledge（:8002）</b>：文档解析、分块、嵌入、混合检索、重排、证据与可信度评分、评测一体化。</li>
-    <li><b>agent（Python）</b>：五模块闭环 + 插件与工具生态，覆盖规划到审计全链路。</li>
-    <li><b>backend（:8080）</b>：业务数据、账户权限、附件会话、团队与审计，MySQL 8 + Redis 存储。</li>
-  </ul>
-
-  <h3>5.4 多模态与隐私边界实现</h3>
-  <table>
-    <tr><th>输入类型</th><th>处理方式</th><th>数据是否出端</th></tr>
-    <tr><td>语音</td><td>Web Speech API 在浏览器内识别为文本，仅填入输入框（<code>domain/chat/speechInput.ts</code>）；不支持时入口自动隐藏</td><td>音频不出端</td></tr>
-    <tr><td>图像证据</td><td>本地暂存，随消息仅传<b>文件名列表</b>给 ai-service，触发"图像证据解析"阶段</td><td>图片内容不出端</td></tr>
-    <tr><td>文本/日志附件</td><td>走私有附件会话（<code>chat_conversation</code> / <code>chat_attachment</code>），仅保存证据，不参与模型分析</td><td>由用户显式上传，与模型分析隔离</td></tr>
+  <h3>竞赛 AI 技术分项映射</h3>
+  <p class="small">项目 README 所列 AI 技术分项权重为 <b>35%</b>，下文仅做证据导航，不预设评审得分。</p>
+  <table class="compact-table">
+    <colgroup><col style="width:16%"><col style="width:12%"><col style="width:42%"><col style="width:30%"></colgroup>
+    <tr><th>分项</th><th>权重</th><th>本项目对应能力</th><th>主要证据</th></tr>
+    <tr><td>LLM</td><td class="mono">8</td><td>模型网关、本地真实生成、流式回答</td><td>P06、P11、P14</td></tr>
+    <tr><td>Agent</td><td class="mono">8</td><td>五模块、执行轨迹、插件与核查</td><td>P06–07、P11</td></tr>
+    <tr><td>RAG</td><td class="mono">6</td><td>混合检索、版本过滤、引用与评测</td><td>P08、P11、P14</td></tr>
+    <tr><td>多模态</td><td class="mono">5</td><td>语音转写、图像文件名、3D / 图表表达</td><td>P05–10、P12</td></tr>
+    <tr><td>安全</td><td class="mono">4</td><td>账户防护、工具级风险、审批与隐私边界</td><td>P12、P14</td></tr>
+    <tr><td>MCP</td><td class="mono">4</td><td>MCP 适配器与 AgentPlugin 契约</td><td>P04、P11</td></tr>
   </table>
+  <div class="info"><b>应用价值：</b>面向资源有限的运维团队，把“能回答”升级为“能核验、能授权、能复盘”。可插拔基线降低复现门槛，真实边界降低误用风险。</div>
+  <div class="note"><b>创新点核验：</b>看界面，确认功能可操作且 DEMO / 空态未裁剪；读代码，沿 P18 路径区分已运行与规划能力；跑评测，复跑 M01 / M03 / M04，NOT_RUN 项先补实验再更新结论。</div>
+  <footer class="page-footer"><span>权重来源：fact-sheet F09 · 不代表实际评审得分</span><span>16 / 18</span></footer>
 </section>
 
-<!-- ===== 6 测试与部署 ===== -->
-<section id="s6" class="page-break">
-  <h2>6. 测试与部署</h2>
-
-  <h3>6.1 测试策略</h3>
-  <ul>
-    <li><b>前端质量门禁</b>：733 项前端测试覆盖契约、安全不变量与领域逻辑（2026-11-15 实测）；<code>tsc --noEmit</code> 类型检查纳入门禁；双入口（用户层/管理层）构建门禁保证同源。</li>
-    <li><b>分层测试</b>：单元测试、集成测试、E2E 测试覆盖 Agent 与 API；<code>pytest.ini</code> 统一编排。</li>
-    <li><b>算法评测</b>：<code>docs/experiments/</code> 提供评测计划、消融实验、检索评测、可信度评测，配合 OpsBench 样例数据集进行回归。</li>
-    <li><b>可信度验证</b>：对检索召回、证据命中、<code>trust_score</code> 分布做量化评估，确保"可解释"可被度量。</li>
-  </ul>
-
-  <h3>6.2 AI 评测数据现状（诚实声明）</h3>
-  <p>以下数据全部来自 <code>docs/competition/fact-sheet.md</code>，标注 <b>MEASURED</b>（实测）、<b>DRAFT</b>（小样本/仅验证链路）、<b>NOT_RUN</b>（未执行）。所有评测脚本 fixture 冻结、SHA256 绑定、不可篡改。</p>
-  <table>
-    <tr><th>指标</th><th>值</th><th>n</th><th>状态</th><th>口径说明</th></tr>
-    <tr><td>假成功检测 F1</td><td><b>开发集 1.0 / 留出集 0.48</b></td><td>47 / 20</td><td>MEASURED</td><td><b>必须同时报</b>，仅报开发集属于选择性呈现。开发集词表过拟合，留出集 F1=0.48 为真实泛化；留出集 10 条漏检全部落在"无法判定"（检测器老实承认看不懂），静默放过 0</td></tr>
-    <tr><td>风险分级准确率</td><td><b>0.76</b></td><td>21</td><td>MEASURED</td><td>工具级风险声明一致性；3 个 approval_required 被低估，论证保留人工审批闸的必要性</td></tr>
-    <tr><td>首 token 时延 P50 / P95</td><td><b>3590ms / 4523ms</b></td><td>20</td><td>MEASURED</td><td>Ollama qwen3:1.7b，本机 CPU；不是云端实测，环境声明</td></tr>
-    <tr><td>检索 Recall@3 / MRR</td><td><b>0.50 / 0.43</b></td><td>14</td><td><b>DRAFT</b></td><td>14 条原始问法，仅验证链路；真实留出集 Recall@3=0.57（C-R8）</td></tr>
-    <tr><td>M05 真人盲评</td><td>—</td><td>—</td><td><b>NOT_RUN</b></td><td>3 名真人评者未到位，作为国赛补充证据</td></tr>
+<!-- 17 局限与演进 -->
+<section class="page">
+  <div class="kicker">04 / LIMITATIONS &amp; ROADMAP</div>
+  <h2>把未完成项写出来，<br>比把演示结果说满更接近可信</h2>
+  <p class="lead">当前版本已经具备完整产品体验与工程验证基础，但算法泛化、真人评价、生产性能和部分数据能力仍需补证。</p>
+  <table class="compact-table">
+    <colgroup><col style="width:24%"><col style="width:38%"><col style="width:38%"></colgroup>
+    <tr><th>当前边界</th><th>为什么重要</th><th>下一步可执行动作</th></tr>
+    <tr><td>7 类 14 条数据全部 DRAFT</td><td>检索真值未经专家复核，Recall@3 / MRR 不能外推。</td><td>双人复核知识真值与版本，扩充真实故障样本并冻结新基线。</td></tr>
+    <tr><td>留出集假成功 F1=0.4762</td><td>开发集 1.0 存在样本内过拟合，泛化短板明确。</td><td>分析 uncertain 与漏检类型，引入状态证据后再做独立留出回归。</td></tr>
+    <tr><td>风险分类与工具声明双轨</td><td>名称分类器可能低估插件风险，单看标签会误导。</td><td>统一风险声明源，补充策略取高与审批一次性消费集成测试。</td></tr>
+    <tr><td>M02 执行闸量化 / M05 盲评 NOT_RUN</td><td>界面存在不等于执行安全和真人效果已被独立验证。</td><td>注入平台执行证据；邀请 3 名评者按既有模板完成盲评与 κ 计算。</td></tr>
+    <tr><td>图像仅文件名级参与</td><td>当前不具备图像内容理解，不能宣称多模态识图诊断。</td><td>在用户授权下接入 OCR / 多模态模型，并新增内容上传开关与审计。</td></tr>
+    <tr><td>语音依赖浏览器实现</td><td>Web Speech API 可能联网，不能承诺所有浏览器音频不出端。</td><td>明确浏览器支持矩阵；需要严格离线时接入端侧语音识别。</td></tr>
+    <tr><td>星云 / 预测 / 哨兵含演示或空态</td><td>视觉完成度不等于真实数据规模和算法精度。</td><td>接入真实事件、指标与任务，分别建立关联、预测和采集验收协议。</td></tr>
+    <tr><td>本机 CPU 时延；未接 KMS / HSM</td><td>当前性能与密钥治理不能直接代表生产环境。</td><td>在生产目标硬件压测；按部署等级接入 KMS / HSM 与密钥轮换。</td></tr>
   </table>
-  <div class="note">红线：禁止只报开发集 F1=1.0（选择性呈现）；禁止报"AI 识别指令风险"（按 F10 工具级声明口径）。评测脚本与 fixture 见 <code>scripts/eval_*.py</code>，冻结评测用例见 <code>tests/fixtures/defense/</code>。</div>
-
-  <h3>6.3 部署架构</h3>
-  <ul>
-    <li><b>容器化</b>：<code>deploy/</code> 提供 docker-compose、MySQL 初始化 SQL，一键拉起多服务。</li>
-    <li><b>存储</b>：MySQL 8（业务与审计，119 张表）+ Redis 7（会话/限流）。</li>
-    <li><b>可观测性</b>：<code>infrastructure/</code> 集成 Prometheus / Grafana / Loki / Promtail，覆盖指标、日志与告警。</li>
-    <li><b>跨平台</b>：Windows 提供 <code>scripts/windows/*.ps1</code>，Linux/macOS 提供等效 shell 脚本；<code>.env.example</code> 模板化所有密钥，密钥一律留空不入库。</li>
-  </ul>
-
-  <h3>6.4 运行与可复现</h3>
-  <div class="note">默认 <code>LLM_PROVIDER=mock</code>，无需任何模型密钥即可完整跑通"提问 → 检索 → 规划 → 审批 → 执行 → 核查 → 审计"全链路；评委与用户可零配置复现，企业落地时再切到 Ollama / OpenAI 兼容模型。</div>
-  <p>启动顺序：AI 服务（:8001）→ 知识服务（:8002）→ 后端（:8080，Spring Boot）→ 前端（:5173 用户层 / :5174 管理员层）。首次管理员由 <code>SMARTOPS_BOOTSTRAP_USERNAME/PASSWORD</code> 引导创建（仅账户表为空时生效）。</p>
+  <h3>演进路线</h3>
+  <div class="grid-3">
+    <div class="card"><h3>P0｜证据补全</h3><p>完成数据专家复核、M02 执行证据、M05 真人盲评；保持 DRAFT / NOT_RUN 状态同步更新。</p></div>
+    <div class="card"><h3>P1｜算法与治理</h3><p>治理假成功漏检与风险双轨，扩充检索样本，统一风险声明并强化回归门禁。</p></div>
+    <div class="card"><h3>P2｜生产适配</h3><p>授权多模态、端侧语音、生产硬件压测、KMS / HSM、威胁建模与上线验收。</p></div>
+  </div>
+  <div class="closing-band"><h3>现阶段的准确结论</h3><p>智维Agent 已完成“真实界面＋多服务架构＋可信任务链路＋自动化测试＋公开评测边界”的工程闭环。它是一套可运行、可演示、可复核的竞赛作品与私有化演进基础，而不是已经完成生产验收的通用运维平台。</p></div>
+  <footer class="page-footer"><span>诚实声明：所有未完成项均保留 NOT_RUN / DRAFT / DEMO 边界</span><span>17 / 18</span></footer>
 </section>
 
-<!-- ===== 7 总结与展望 ===== -->
-<section id="s7" class="page-break">
-  <h2>7. 总结与展望</h2>
+<!-- 18 总结与证据索引 -->
+<section class="page">
+  <div class="kicker">04 / CONCLUSION &amp; EVIDENCE INDEX</div>
+  <h2>从界面到代码，从数字到复核入口</h2>
+  <p class="lead">本版将 PPT 的“真实界面证据链”扩展为可通读、可打印、可复查的 A4 技术文档。</p>
+  <div class="grid-2">
+    <div>
+      <h3>核心事实源与代码</h3>
+      <ul class="checklist small">
+        <li><code>docs/competition/fact-sheet.md</code><br>F01–F13、M01–M05 的数字与状态主口径。</li>
+        <li><code>README.md</code>、<code>docs/SMARTOPS_ARCHITECTURE.md</code><br>项目结构、服务角色与运行说明。</li>
+        <li><code>docs/architecture/current-state.md</code><br>数据存储与模型连接密文字段。</li>
+        <li><code>backend/.../AesGcmCryptoService.java</code><br>AES-256-GCM、32 字节主密钥与密文处理。</li>
+        <li><code>agent/policies/policy_engine.py</code><br>风险取高、CRITICAL 拒绝与一次性审批。</li>
+        <li><code>agent/inspector/pipeline.py</code><br>Rule → Evidence → AI → StateVerifier 顺序。</li>
+        <li><code>frontend/src/domain/chat/speechInput.ts</code><br>语音渐进增强、错误状态与不自动发送。</li>
+        <li><code>docs/model-integrations.md</code><br>模型连接、脱敏、调用限制与浏览器边界。</li>
+      </ul>
+    </div>
+    <div>
+      <h3>真实截图索引</h3>
+      <table class="compact-table">
+        <colgroup><col style="width:24%"><col style="width:76%"></colgroup>
+        <tr><th>页码</th><th>assets/ui/ 文件</th></tr>
+        <tr><td>P01</td><td><code>cover-insights.png</code></td></tr>
+        <tr><td>P05</td><td><code>login.png</code> · <code>dashboard.png</code></td></tr>
+        <tr><td>P06</td><td><code>chat.png</code> · <code>agent-trace.png</code></td></tr>
+        <tr><td>P07</td><td><code>agent-studio.png</code> · <code>vrm-persona.png</code></td></tr>
+        <tr><td>P08</td><td><code>knowledge-wall.png</code> · <code>knowledge-detail.png</code></td></tr>
+        <tr><td>P09</td><td><code>insight-nebula.png</code> · <code>forecast.png</code></td></tr>
+        <tr><td>P10</td><td><code>sentinel.png</code></td></tr>
+      </table>
+      <p class="tiny muted">HTML 使用相对图片路径。转移 HTML 时需同时保留同级 <code>assets/</code> 目录；PDF 已内嵌图像，可独立阅读。</p>
+    </div>
+  </div>
 
-  <h3>7.1 成果总结</h3>
-  <p>智维Agent 把"规划—风险—执行—验证—审计"做成端到端可信闭环，而非单点 AI 调用；以版本感知的混合检索 + 证据可信度评分解决中小企业"查到旧版本"的普遍痛点；以 SSE 六步思考事件把"黑盒回答"变成"透明推理"。系统在默认 mock 零密钥下即可完整演示，并支持切换自有模型，兼顾可演示与可生产。</p>
-
-  <h3>7.2 局限与诚实声明</h3>
-  <ul>
-    <li>图像当前为<b>文件名级</b>参与演示链路，尚未做图像内容级理解；路线图为接入 OCR（<code>knowledge/ocr/</code>）与多模态大模型，并在用户授权后上传。</li>
-    <li>语音仅做浏览器内识别，不涉及声纹与音频留存。</li>
-    <li>混合检索的向量嵌入默认使用轻量哈希嵌入，可切换 Sentence Transformers 提升语义质量。</li>
-  </ul>
-
-  <h3>7.3 后续演进</h3>
-  <ul>
-    <li>端侧推理（Transformers.js / WebGPU），降低推理成本与延迟。</li>
-    <li>多节点会话与 MFA 强化、团队协同深化。</li>
-    <li>图像内容级理解与多模态大模型接入（授权后上传）。</li>
-    <li>SaaS / 私有化双形态交付，扩大中小企业覆盖。</li>
-  </ul>
+  <h3>评测复跑入口</h3>
+  <table class="compact-table">
+    <colgroup><col style="width:20%"><col style="width:50%"><col style="width:30%"></colgroup>
+    <tr><th>项目</th><th>命令 / 文件</th><th>注意事项</th></tr>
+    <tr><td>检索 M01</td><td><code>python scripts/eval_retrieval.py --output &lt;csv&gt;</code></td><td>14 条 DRAFT 主口径</td></tr>
+    <tr><td>时延 M03</td><td><code>python scripts/eval_chat_latency.py --requests 20 --output &lt;csv&gt; --metrics-json &lt;json&gt;</code></td><td>首 token，不是首个 SSE 事件</td></tr>
+    <tr><td>风险 M04</td><td><code>python scripts/eval_risk_classification.py --output &lt;csv&gt; --metrics-json &lt;json&gt;</code></td><td>工具级声明一致性</td></tr>
+    <tr><td>盲评 M05</td><td><code>python scripts/eval_blind_review.py --ratings &lt;csv&gt;</code></td><td>当前 NOT_RUN，先收齐 3 人评分</td></tr>
+  </table>
+  <div class="closing-band">
+    <h3>智维Agent｜让可信成为产品能力，而不是宣传词</h3>
+    <p>证据驱动检索，工具级风险与人工审批约束动作，SSE 与执行轨迹呈现过程，自动化测试和公开局限支撑复核。</p>
+    <p class="small">团队：早点睡觉　｜　黄亮　｜　南阳师范学院 · 软件工程<br>文档版本：v2.0（2026-11-15）　｜　HTML / PDF 双格式　｜　许可证：MIT</p>
+  </div>
+  <footer class="page-footer"><span>END OF DOCUMENT · SMARTOPSAGENT</span><span>18 / 18</span></footer>
 </section>
 
-<!-- ===== 8 创新点说明 ===== -->
-<section id="s8" class="page-break">
-  <h2>8. 创新点说明</h2>
-  <p>本节明确区分<b>技术创新点</b>与<b>应用创新点</b>，每个创新点均对应可运行代码与可演示路径，非概念包装。</p>
-
-  <h3>8.1 技术创新点</h3>
-  <h4>① 可解释的"可信 AI 闭环"</h4>
-  <p>把运维任务拆成"规划—审批—执行—核查—沉淀"五个可审计阶段，由 Agent 五模块分别承担（<code>planner/steps.py</code>、<code>policies/policy_engine.py</code>、<code>safety/approval.py</code>、<code>executor/audit.py</code>、<code>inspector/judges/</code>）。多数作品停留在对话层，本项目把权限、风险、审批、核查、审计做成可运行代码路径。</p>
-
-  <h4>② 版本感知的混合检索 + 证据可信度评分</h4>
-  <p>BM25 + 向量并行召回（<code>hybrid.py</code>），<code>version_filter</code> 按环境版本过滤，词法重排收敛，结果转为 Citation 并聚合 <code>trust_score</code>。把"版本"作为检索一等公民，是与通用 RAG 的实质差异。</p>
-
-  <h4>③ 把"黑盒回答"变成"透明推理"</h4>
-  <p><code>chat_stream</code> 以 SSE 输出 thinking / token / done 三类事件；思考阶段固定六步：vision→retrieve→evidence→plan→risk→answer。前端逐事件点亮，用户可见 AI 在每一步检索了什么、命中多少证据、判定何种风险。</p>
-
-  <h4>④ 插件化 Agent 工具生态</h4>
-  <p>工具通过 <code>AgentPlugin</code> 契约（<code>agent/sdk/plugin.py</code>）注册，kernel 完成注册/依赖解析/生命周期/事件分发；内置 Docker/Kubernetes/MySQL/Nginx/Redis 五类插件；MCP 适配器可接入外部工具生态。运维能力从硬编码变为可插拔资产。</p>
-
-  <h4>⑤ 可切换模型网关 + 零密钥可演示</h4>
-  <p>默认 mock 提供方零密钥演示全链路；支持 Ollama 与 OpenAI 兼容接口运行期切换；后端 AES-GCM 加密托管密钥并做 Token 预算。兼顾"可演示"与"可生产"。</p>
-
-  <h4>⑥ 前端工程化创新（双入口同源架构）</h4>
-  <p>用户层/管理层共用代理工厂 <code>vite.shared.mjs</code>，避免两端口各写代理导致会话与 CSRF 分裂；共享逻辑层 TS（48 模块）承载 api/domain/utils/types，<code>tsc --noEmit</code> 纳入门禁；733 项前端测试守护契约与安全不变量。</p>
-
-  <h3>8.2 应用创新点</h3>
-  <h4>① 选题创新：聚焦中小企业"可信运维"</h4>
-  <p>不追"更大的模型"，而切入"人手少、系统杂、知识散"的中小企业真实且未被充分满足的运维可信需求，把 AI 定位为"可托付的运维同事"。</p>
-
-  <h4>② 多模态输入的隐私边界分层</h4>
-  <p>行业常见"多模态 = 全部上传"，本项目把"能用"和"该传"分开：语音仅浏览器内识别（音频不出端）、图像仅传文件名（内容不出端）、附件与模型分析隔离，并用 UI 文案提示用户遮盖密码与密钥。</p>
-
-  <h4>③ 交互创新：降低运维 AI 使用门槛</h4>
-  <p>AI 思考过程可视化 + 流式输出 + 语音输入，让非专家也能看懂 AI 的推理与证据，直接提升对 AI 的信任与采用率；不支持语音时入口自动隐藏（渐进增强）。</p>
-
-  <h4>④ 可落地创新：演示即生产路径</h4>
-  <p>默认 mock 零密钥可复现、模型可一键切换，使同一套代码既可用于竞赛演示，也可平滑转入企业私有化/自有模型生产环境，缩短从原型到落地的距离。</p>
-
-  <h4>⑤ 治理创新：运维治理闭环</h4>
-  <p>用户层与管理层双入口覆盖账户、权限、审计、系统治理，配合团队工作区与审批流，形成"人 + AI + 流程"协同的运维治理体系，支撑 SaaS / 私有化双形态。</p>
-
-  <div class="note avoid-break"><b>可验证证据对照</b>：可信闭环 → 管理端审批与审计页面；版本感知检索 → 同一主题多版本检索对比；透明推理 → 对话面板思考阶段逐条点亮；多模态边界 → 语音输入 + 图像证据 + 附件隔离；插件生态 → 插件列表与工具调用；模型网关 → mock/Ollama 切换；前端工程化 → <code>npm test</code> 733 项通过。</div>
-
-  <div class="footer-note">文档基于 SmartOpsAgent 仓库（README.md、docs/SMARTOPS_ARCHITECTURE.md、docs/architecture/overall.md、docs/competition/innovation.md、docs/competition/project-plan.md）整理生成，内容均对应仓库内真实模块与路径。许可证：MIT。</div>
-</section>
 
 </body>
 </html>
