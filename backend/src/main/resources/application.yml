@@ -73,6 +73,18 @@ mybatis:
 smartops:
   knowledge:
     storage-root: ${SMARTOPS_KNOWLEDGE_STORAGE_ROOT:data/knowledge}
+    radar:
+      # 时效雷达调度键（与 KnowledgeCrawlService 内联默认一致，显式声明便于运维调参）
+      sweep-ms: ${SMARTOPS_RADAR_SWEEP_MS:30000}
+      initial-delay-ms: ${SMARTOPS_RADAR_INITIAL_DELAY_MS:60000}
+  web-research:
+    render:
+      node-command: ${SMARTOPS_WR_RENDER_NODE:node}
+      script: ${SMARTOPS_WR_RENDER_SCRIPT:tools/web-render.mjs}
+      profile-root: ${SMARTOPS_WR_RENDER_PROFILE_ROOT:data/web-render-profiles}
+      timeout-ms: ${SMARTOPS_WR_RENDER_TIMEOUT_MS:15000}
+      max-content: ${SMARTOPS_WR_RENDER_MAX_CONTENT:20000}
+      session-ttl-hours: ${SMARTOPS_WR_SESSION_TTL_HOURS:168}
   mini:
     base-url: ${SMARTOPS_MINI_BASE_URL:http://127.0.0.1:11434}
     model: ${SMARTOPS_MINI_MODEL:qwen3:1.7b}

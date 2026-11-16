@@ -118,7 +118,7 @@ public class WebResearchService {
             savePageSnapshot(taskId, actor.id(), displayUrl, title, excerpt, text, hash, fetchedAt);
             finishTask(taskId, "SUCCESS", 1, null);
             return new WebPage(taskId, url, displayUrl, host(url), title,
-                    excerpt, text, hash, fetchedAt);
+                    excerpt, text, hash, fetchedAt, "STATIC", null);
         } catch (InterruptedException failure) {
             Thread.currentThread().interrupt();
             finishTask(taskId, "FAILED", 0, "INTERRUPTED");
@@ -144,7 +144,7 @@ public class WebResearchService {
         }
     }
 
-    private void savePageSnapshot(long taskId, long userId, String url, String title, String excerpt,
+    void savePageSnapshot(long taskId, long userId, String url, String title, String excerpt,
                                   String content, String hash, Instant fetchedAt) {
         jdbc.update("INSERT INTO web_research_page(task_id,user_id,url,title,excerpt,content,content_hash,fetched_at) VALUES(?,?,?,?,?,?,?,?)",
                 taskId, userId, url, title, excerpt, content, hash, Timestamp.from(fetchedAt));
@@ -242,7 +242,7 @@ public class WebResearchService {
         return null;
     }
 
-    private long createTask(long userId, String type, String query) {
+    long createTask(long userId, String type, String query) {
         GeneratedKeyHolder keys = new GeneratedKeyHolder();
         Instant now = Instant.now();
         jdbc.update(connection -> {
@@ -257,7 +257,7 @@ public class WebResearchService {
         return keys.getKey().longValue();
     }
 
-    private void finishTask(long taskId, String status, int count, String error) {
+    void finishTask(long taskId, String status, int count, String error) {
         jdbc.update("UPDATE web_research_task SET status=?,result_count=?,error_code=?,finished_at=? WHERE id=?",
                 status, count, error, Timestamp.from(Instant.now()), taskId);
     }
@@ -290,7 +290,7 @@ public class WebResearchService {
     public record SearchResponse(Long taskId, String status, String query, String scope, List<SearchResult> results,
                                  List<String> errors, Instant searchedAt) {}
     public record WebPage(Long taskId, String url, String displayUrl, String site, String title, String excerpt, String content,
-                          String contentHash, Instant fetchedAt) {}
+                          String contentHash, Instant fetchedAt, String renderMode, String renderNote) {}
     public record ResearchTask(Long id, String taskType, String queryText, String status, int resultCount,
                                String errorCode, Instant createdAt, Instant finishedAt) {}
 }

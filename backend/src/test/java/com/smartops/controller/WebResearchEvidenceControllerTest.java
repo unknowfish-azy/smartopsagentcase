@@ -22,7 +22,7 @@ class WebResearchEvidenceControllerTest {
                 List.of(), List.of(), "仅作人工核验", Instant.EPOCH);
         when(evidence.compare(actor, List.of(11L, 12L))).thenReturn(comparison);
 
-        var response = new WebResearchController(null, evidence, null)
+        var response = new WebResearchController(null, null, null, evidence, null)
                 .compare(actor, new WebResearchController.CompareRequest(List.of(11L, 12L)));
 
         assertThat(response.getData()).isSameAs(comparison);
