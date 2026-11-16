@@ -21,7 +21,7 @@ class KnowledgeCrawlClaimTest {
     private KnowledgeCrawlService service(JdbcTemplate jdbc, WebResearchMetrics metrics) {
         return new KnowledgeCrawlService(jdbc, mock(com.smartops.service.PersonalKnowledgeService.class),
                 new com.smartops.service.KnowledgeCandidateService(jdbc, null,
-                        mock(com.smartops.service.PersonalKnowledgeService.class)), metrics);
+                        mock(com.smartops.service.PersonalKnowledgeService.class)), metrics, null);
     }
 
     private JdbcTemplate sourceJdbc() {

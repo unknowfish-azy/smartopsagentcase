@@ -74,6 +74,9 @@ public class KnowledgeCrawlService {
     private final PersonalKnowledgeService knowledge;
     private final KnowledgeCandidateService candidates;
     private final WebResearchMetrics metrics;
+    // T41：JS 渲染降级。SPA 页面静态抓取只有骨架（正文为空），走受控无头渲染补齐；
+    // 渲染不可用/失败时如实回退静态结果，绝不伪造正文。
+    private final HeadlessRenderer renderer;
 
     @org.springframework.beans.factory.annotation.Value("${smartops.knowledge.radar.claim-lease-ms:120000}")
     private long claimLeaseMs = 120_000;
@@ -88,16 +91,17 @@ public class KnowledgeCrawlService {
     }
 
     public KnowledgeCrawlService(JdbcTemplate jdbc, PersonalKnowledgeService knowledge, KnowledgeCandidateService candidates) {
-        this(jdbc, knowledge, candidates, null);
+        this(jdbc, knowledge, candidates, null, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
     public KnowledgeCrawlService(JdbcTemplate jdbc, PersonalKnowledgeService knowledge, KnowledgeCandidateService candidates,
-                                 WebResearchMetrics metrics) {
+                                 WebResearchMetrics metrics, HeadlessRenderer renderer) {
         this.jdbc = jdbc;
         this.knowledge = knowledge;
         this.candidates = candidates;
         this.metrics = metrics;
+        this.renderer = renderer;
         PoolingHttpClientConnectionManager connections = PoolingHttpClientConnectionManagerBuilder.create()
                 .setDnsResolver(new org.apache.hc.client5.http.DnsResolver() {
                     @Override
@@ -222,11 +226,15 @@ public class KnowledgeCrawlService {
             try {
                 String html = fetch(link.url());
                 String text = trimTo(htmlToText(html), MAX_CONTENT);
+                String title = pageTitle(html, link.url());
+                FallbackPage fallback = tryJsRenderFallback(link.url(), text, title);
+                text = fallback.text();
+                title = fallback.title();
                 if (text.isBlank()) throw new IOException("页面没有可提取的正文");
                 // SEC-11：正文与标题入库前脱敏，避免把页面里的凭据写成知识库内容。
                 text = OperationRedactor.redact(text);
                 String hash = sha256(text);
-                String title = OperationRedactor.redact(trimTo(pageTitle(html, link.url()), 200));
+                title = OperationRedactor.redact(trimTo(title, 200));
                 switch (persist(actor, source, link.url(), title, text, hash)) {
                     case "ADDED" -> added++;
                     case "UPDATED" -> updated++;
@@ -326,6 +334,37 @@ public class KnowledgeCrawlService {
 
     record DueSource(long id, long userId) {}
     record ClaimedSource(DueSource source, String token) {}
+
+    /**
+     * T41：JS 渲染降级。SPA 页面静态抓取只能拿到骨架（正文极短甚至为空），
+     * 此时若受控无头渲染器可用，则匿名渲染同一 URL 补齐正文与标题。
+     *
+     * <p>诚实性约束：只采用「渲染结果比静态结果更长」的正文（防止把弹窗/骨架
+     * 文本覆盖掉有效的静态正文）；渲染不可用或失败时原样返回静态结果，
+     * 由上层如实按空正文/失败处理，绝不伪造。渲染 URL 与静态抓取同一来源，
+     * 已经过 OutboundUrlPolicy 校验，renderer 内部不再重复放行校验。</p>
+     */
+    FallbackPage tryJsRenderFallback(String url, String staticText, String staticTitle) {
+        final int minUsefulText = 200;
+        if (staticText != null && staticText.length() >= minUsefulText) return new FallbackPage(staticText, staticTitle);
+        if (renderer == null || !renderer.isAvailable()) return new FallbackPage(staticText, staticTitle);
+        try {
+            HeadlessRenderer.RenderedPage rendered = renderer.render(url, null);
+            String renderedText = rendered == null ? "" : trimTo(OperationRedactor.redact(rendered.text() == null ? "" : rendered.text()), MAX_CONTENT);
+            if (metrics != null) metrics.radarJsFallback();
+            if (renderedText.length() > (staticText == null ? 0 : staticText.length())) {
+                String renderedTitle = rendered.title() == null || rendered.title().isBlank() ? staticTitle : rendered.title();
+                return new FallbackPage(renderedText, renderedTitle);
+            }
+            return new FallbackPage(staticText, staticTitle);
+        } catch (Exception renderFailure) {
+            // 渲染失败如实回退静态结果：上层按空正文抛"页面没有可提取的正文"，不伪造。
+            return new FallbackPage(staticText, staticTitle);
+        }
+    }
+
+    /** 降级后的页面字段（title/text），供入库统一脱敏与截断。 */
+    record FallbackPage(String text, String title) {}
 
     String persist(SessionUser actor, CrawlSource source, String url, String title, String text, String hash) {
         // SEC-11：URL 的 query 可能携带 token，只存去 query 的地址用于稳定比对。

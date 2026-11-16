@@ -32,6 +32,11 @@ public class WebResearchMetrics {
         registry.counter("smartops.webresearch.radar.skipped").increment();
     }
 
+    /** T41：雷达抓取触发 JS 渲染降级的次数（真实计数，无事件即零）。 */
+    public void radarJsFallback() {
+        registry.counter("smartops.webresearch.radar.js_fallback").increment();
+    }
+
     public void snapshotWritten() {
         registry.counter("smartops.webresearch.snapshot.written").increment();
     }
