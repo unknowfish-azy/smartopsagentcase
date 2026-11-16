@@ -513,7 +513,7 @@ trust_score：0.5×证据均分 + 0.3×是否被支持 + 0.2×min(证据数/3,1)
 <p><strong>F8 ⚠️ 你的算法"可证伪"吗？</strong><br/>答：可——融合/可信度是公式，纠察是状态机，消融可跑；<strong>设计上允许被数据推翻</strong>，这是科学态度。</p>
 <h3>G. 多模态（4 题）</h3>
 <p><strong>G1 图像为什么只传文件名？</strong><br/>答：刻意隐私取舍（内容不出端）；OCR 模块已在，授权后接内容级+多模态大模型。</p>
-<p><strong>G2 语音识别准吗？方言？</strong><br/>答：Web Speech API 浏览器内置识别，<strong>准确率/方言依赖浏览器</strong>；不支持时入口自动隐藏（渐进增强）。</p>
+<p><strong>G2 语音识别准吗？方言？</strong><br/>答：聊天入口是 Web Speech API 浏览器内置识别，<strong>准确率/方言依赖浏览器</strong>；不支持时入口自动隐藏。另补齐 Agent 侧 <code>speech.to_text</code> 工具：可插拔栈（vosk→whisper→内置 DTW 基线→确定性降级）+ 冻结集（ZipVoice 合成 10 命令 × 9 变体）+ dev/holdout 双集合评测。诚实交底：<strong>轻量 DTW 基线真实 holdout 仅 26.67%</strong>（随机基线 10%，不实用），仅受限命令词、不支持方言；自由听写需装 vosk/whisper。合成自检 100% 仅管线验证、不作准确率引用，工具对 synthetic 模板强制拒用。</p>
 <p><strong>G3 多模态算不算"假多模态"？</strong><br/>答：文件名级参与是<strong>如实边界</strong>，不包装成"看懂图片"；这是可信的一部分。</p>
 <p><strong>G4 接视觉模型要改架构吗？</strong><br/>答：不用大改，<code>ChatRequest.images</code> 已是扩展点，换内容级解析即可。</p>
 <h3>H. 架构与选型（6 题）</h3>

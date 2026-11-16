@@ -89,7 +89,7 @@ def test_load_wav_and_features_shape(tmp_path):
     assert len(samples) > 1000
     assert max(abs(s) for s in samples) <= 1.0
     features = extract_features(samples)
-    assert features and all(len(row) == 10 for row in features)
+    assert features and all(len(row) == 20 for row in features)
 
 
 def test_dtw_train_recognize_roundtrip(tmp_path):

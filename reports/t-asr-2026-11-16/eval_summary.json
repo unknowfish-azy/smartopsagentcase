@@ -2,106 +2,106 @@
   "date": "2026-11-16",
   "model": "dtw-cmd-v1",
   "templates_path": "D:\\SmartOpsAgent\\agent\\asr\\templates.json",
-  "dataset_mode": "synthetic",
+  "dataset_mode": "zipvoice",
   "note": "dev 参与训练（中位模板），holdout 独立。若数据集为 --synthetic 自检模式，指标仅代表管线正确性，不代表真实语音。",
   "results": [
     {
       "split": "dev",
       "n": 60,
-      "correct": 60,
-      "accuracy": 1.0,
-      "avg_distance": 6.6506,
-      "eval_seconds": 2.5,
+      "correct": 23,
+      "accuracy": 0.3833,
+      "avg_distance": 32.5805,
+      "eval_seconds": 20.5,
       "per_label": {
         "打开知识库": {
           "n": 6,
-          "correct": 6
+          "correct": 1
         },
         "查询告警": {
           "n": 6,
-          "correct": 6
+          "correct": 4
         },
         "重启服务": {
           "n": 6,
-          "correct": 6
+          "correct": 1
         },
         "查看日志": {
           "n": 6,
-          "correct": 6
+          "correct": 2
         },
         "执行巡检": {
           "n": 6,
-          "correct": 6
+          "correct": 2
         },
         "备份数据库": {
           "n": 6,
-          "correct": 6
+          "correct": 5
         },
         "查看仪表盘": {
           "n": 6,
-          "correct": 6
+          "correct": 3
         },
         "停止任务": {
           "n": 6,
-          "correct": 6
+          "correct": 2
         },
         "生成报告": {
           "n": 6,
-          "correct": 6
+          "correct": 1
         },
         "回滚变更": {
           "n": 6,
-          "correct": 6
+          "correct": 2
         }
       }
     },
     {
       "split": "holdout",
       "n": 30,
-      "correct": 30,
-      "accuracy": 1.0,
-      "avg_distance": 7.194,
-      "eval_seconds": 2.1,
+      "correct": 8,
+      "accuracy": 0.2667,
+      "avg_distance": 38.4207,
+      "eval_seconds": 10.3,
       "per_label": {
         "打开知识库": {
           "n": 3,
-          "correct": 3
+          "correct": 1
         },
         "查询告警": {
           "n": 3,
-          "correct": 3
+          "correct": 2
         },
         "重启服务": {
           "n": 3,
-          "correct": 3
+          "correct": 1
         },
         "查看日志": {
           "n": 3,
-          "correct": 3
+          "correct": 0
         },
         "执行巡检": {
           "n": 3,
-          "correct": 3
+          "correct": 0
         },
         "备份数据库": {
           "n": 3,
-          "correct": 3
+          "correct": 1
         },
         "查看仪表盘": {
           "n": 3,
-          "correct": 3
+          "correct": 0
         },
         "停止任务": {
           "n": 3,
-          "correct": 3
+          "correct": 1
         },
         "生成报告": {
           "n": 3,
-          "correct": 3
+          "correct": 0
         },
         "回滚变更": {
           "n": 3,
-          "correct": 3
+          "correct": 2
         }
       }
     }
