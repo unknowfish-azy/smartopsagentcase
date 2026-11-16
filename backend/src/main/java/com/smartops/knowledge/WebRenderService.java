@@ -4,36 +4,40 @@ import com.smartops.exception.BusinessException;
 import com.smartops.operations.OperationRedactor;
 import com.smartops.security.OutboundUrlPolicy;
 import com.smartops.security.SessionUser;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Locale;
 
 /**
  * JS 渲染只读工具（T33）：静态抓取之外的按页显式渲染通道。
  *
- * <p>静态分支直接复用 {@link WebResearchService#fetch}（等价既有链路）；JS 分支走受控渲染器，
- * 出站前统一 {@link OutboundUrlPolicy} 校验（不新造白名单），提取文本一律脱敏，
- * 任务/快照复用 web_research_task / web_research_page 既有表。渲染不可用或失败时落明确错误码，
- * 绝不回退伪造静态正文。</p>
+ * <p>只负责 JS 渲染路径（静态链路由 {@code /api/web-research/fetch} 承担）；出站前统一
+ * {@link OutboundUrlPolicy} 校验（不新造白名单），提取文本一律脱敏，任务/快照写入
+ * web_research_task / web_research_page 既有表（与静态链路共用数据语义）。
+ * 渲染不可用或失败时落明确错误码，绝不回退伪造静态正文。
+ * 注意：本服务不依赖 WebResearchService（避免 connectors→URL 连接器→本服务→检索服务 的循环）。</p>
  */
 @Service
 public class WebRenderService {
 
-    private final WebResearchService research;
+    private static final int MAX_PAGE_TEXT = 16_000;
+
+    private final JdbcTemplate jdbc;
     private final HeadlessRenderer renderer;
     private final WebRenderSessionService sessions;
 
-    public WebRenderService(WebResearchService research, HeadlessRenderer renderer, WebRenderSessionService sessions) {
-        this.research = research;
+    public WebRenderService(JdbcTemplate jdbc, HeadlessRenderer renderer, WebRenderSessionService sessions) {
+        this.jdbc = jdbc;
         this.renderer = renderer;
         this.sessions = sessions;
     }
 
-    /**
-     * @param useJs false = 静态链路（等价 fetch）；true = 受控 JS 渲染（按页显式选择）
-     */
-    public WebResearchService.WebPage fetchRendered(SessionUser actor, String value, boolean useJs) {
+    public WebResearchService.WebPage fetchRendered(SessionUser actor, String value) {
         if (actor == null) throw new BusinessException(401, "登录状态已失效");
         if (value == null || value.isBlank()) throw new BusinessException(400, "WEB_RENDER_URL_REQUIRED");
         String url;
@@ -49,42 +53,62 @@ public class WebRenderService {
             throw "KNOWLEDGE_CRAWL_URL_BLOCKED".equals(blocked.getMessage())
                     ? new BusinessException(400, "WEB_RENDER_URL_BLOCKED") : blocked;
         }
-        if (!useJs) return research.fetch(actor, url);
-        return fetchWithJs(actor, url);
-    }
-
-    private WebResearchService.WebPage fetchWithJs(SessionUser actor, String url) {
         if (!renderer.isAvailable()) throw new BusinessException(503, "RENDERER_UNAVAILABLE");
-        long taskId = research.createTask(actor.id(), "FETCH_JS", KnowledgeCrawlService.stripQuery(url));
+        long taskId = createTask(actor.id(), KnowledgeCrawlService.stripQuery(url));
         try {
             String storageState = sessions.storageStateForRender(actor);
             HeadlessRenderer.RenderedPage rendered = renderer.render(url, storageState);
-            String text = OperationRedactor.redact(trim(rendered.text(), 16_000));
+            String text = OperationRedactor.redact(trim(rendered.text(), MAX_PAGE_TEXT));
             if (text.isBlank()) throw new BusinessException(422, "WEB_RESEARCH_EMPTY_CONTENT");
             String title = OperationRedactor.redact(trim(rendered.title(), 200));
             String hash = KnowledgeCrawlService.sha256(text);
             Instant fetchedAt = Instant.now();
             String displayUrl = KnowledgeCrawlService.stripQuery(url);
-            research.savePageSnapshot(taskId, actor.id(), displayUrl, title, trim(text, 600), text, hash, fetchedAt);
-            String note = storageState == null
-                    ? "JS 渲染 · 匿名会话"
-                    : "JS 渲染 · 使用本人登录接续";
-            research.finishTask(taskId, "SUCCESS", 1, null);
+            savePageSnapshot(taskId, actor.id(), displayUrl, title, trim(text, 600), text, hash, fetchedAt);
+            String note = storageState == null ? "JS 渲染 · 匿名会话" : "JS 渲染 · 使用本人登录接续";
+            finishTask(taskId, "SUCCESS", 1, null);
             return new WebResearchService.WebPage(taskId, url, displayUrl, host(url), title,
                     trim(text, 600), text, hash, fetchedAt, "JS", note);
         } catch (BusinessException failure) {
-            research.finishTask(taskId, "FAILED", 0, failure.getMessage());
+            finishTask(taskId, "FAILED", 0, failure.getMessage());
             throw failure;
         } catch (Exception failure) {
-            research.finishTask(taskId, "FAILED", 0, "RENDER_FAILED");
+            finishTask(taskId, "FAILED", 0, "RENDER_FAILED");
             throw new BusinessException(502, "WEB_RESEARCH_RENDER_FAILED");
         }
+    }
+
+    // 与 WebResearchService 同表同语义的任务/快照写入（独立实现以斩断 bean 循环依赖）
+    private long createTask(long userId, String query) {
+        GeneratedKeyHolder keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement(
+                    "INSERT INTO web_research_task(user_id,task_type,query_text,status,result_count,created_at) VALUES(?,?,'',?,0,?)",
+                    new String[]{"id"});
+            statement.setLong(1, userId);
+            statement.setString(2, "FETCH_JS");
+            statement.setString(3, "RUNNING");
+            statement.setTimestamp(4, Timestamp.from(Instant.now()));
+            return statement;
+        }, keys);
+        return keys.getKey().longValue();
+    }
+
+    private void finishTask(long taskId, String status, int count, String error) {
+        jdbc.update("UPDATE web_research_task SET status=?,result_count=?,error_code=?,finished_at=? WHERE id=?",
+                status, count, error, Timestamp.from(Instant.now()), taskId);
+    }
+
+    private void savePageSnapshot(long taskId, long userId, String url, String title, String excerpt,
+                                  String content, String hash, Instant fetchedAt) {
+        jdbc.update("INSERT INTO web_research_page(task_id,user_id,url,title,excerpt,content,content_hash,fetched_at) VALUES(?,?,?,?,?,?,?,?)",
+                taskId, userId, url, title, excerpt, content, hash, Timestamp.from(fetchedAt));
     }
 
     private static String host(String url) {
         try {
             String host = URI.create(url).getHost();
-            return host == null ? "unknown" : host.toLowerCase(java.util.Locale.ROOT);
+            return host == null ? "unknown" : host.toLowerCase(Locale.ROOT);
         } catch (Exception invalid) {
             return "unknown";
         }

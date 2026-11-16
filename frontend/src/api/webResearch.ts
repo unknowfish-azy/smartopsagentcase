@@ -12,3 +12,5 @@ export const getWebRenderSession = () => http.get('/api/web-research/render-sess
 export const startWebRenderSession = () => http.post('/api/web-research/render-session/start', {}, { timeout: 30000 })
 export const finishWebRenderSession = () => http.post('/api/web-research/render-session/finish', {}, { timeout: 30000 })
 export const deleteWebRenderSession = () => http.delete('/api/web-research/render-session')
+// T34：已启用的连接器形态清单（来源范围下拉动态生成）
+export const listWebResearchConnectors = () => http.get('/api/web-research/connectors')

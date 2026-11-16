@@ -52,7 +52,7 @@ class WebResearchServiceTest {
         var jdbc = researchJdbc();
         KnowledgeCrawlService crawler = new KnowledgeCrawlService(new JdbcTemplate(), mock(PersonalKnowledgeService.class)) {
             @Override
-            String fetch(String url) {
+            public String fetch(String url) {
                 return "<html><head><title>Safe guide</title></head><body><script>ignore()</script><main>Verified evidence</main></body></html>";
             }
         };
@@ -76,7 +76,7 @@ class WebResearchServiceTest {
         List<String> requests = new java.util.ArrayList<>();
         KnowledgeCrawlService crawler = new KnowledgeCrawlService(new JdbcTemplate(), mock(PersonalKnowledgeService.class)) {
             @Override
-            String fetch(String url, String accept) {
+            public String fetch(String url, String accept) {
                 requests.add(url + " | " + accept);
                 if (url.endsWith("/readme")) {
                     assertEquals("application/vnd.github.raw+json", accept);
@@ -87,7 +87,7 @@ class WebResearchServiceTest {
             }
 
             @Override
-            String fetch(String url) {
+            public String fetch(String url) {
                 throw new AssertionError("Repository root must not use generic HTML fetch");
             }
         };
@@ -111,13 +111,13 @@ class WebResearchServiceTest {
         List<String> requests = new java.util.ArrayList<>();
         KnowledgeCrawlService crawler = new KnowledgeCrawlService(new JdbcTemplate(), mock(PersonalKnowledgeService.class)) {
             @Override
-            String fetch(String url) {
+            public String fetch(String url) {
                 requests.add(url);
                 return "<html><head><title>Organization repositories</title></head><body>Public list</body></html>";
             }
 
             @Override
-            String fetch(String url, String accept) {
+            public String fetch(String url, String accept) {
                 throw new AssertionError("Non-repository path must not use repository API");
             }
         };

@@ -10,11 +10,17 @@
     <section class="research-console" aria-label="联网检索工作台">
       <form class="search-form" @submit.prevent="runSearch">
         <label class="search-input"><span>检索问题</span><input v-model="query" type="search" maxlength="200" placeholder="例如：Kubernetes 1.31 网络策略排查" required /></label>
-        <label class="scope-input"><span>来源范围</span><select v-model="scope"><option value="ALL">网页 + GitHub</option><option value="WEB">公开网页</option><option value="GITHUB">GitHub</option></select></label>
+        <label class="scope-input"><span>来源范围</span><select v-model="scope">
+          <option v-for="item in scopeOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
+        </select></label>
         <button class="primary-action" type="submit" :disabled="searching">{{ searching ? '检索中…' : '开始检索' }}</button>
       </form>
       <form class="fetch-form" @submit.prevent="readUrl(directUrl)">
         <label><span>指定网址读取</span><input v-model="directUrl" type="url" placeholder="https://docs.example.com/public-guide" required /></label>
+        <select v-if="urlScopeOptions.length" v-model="urlScope" aria-label="网址读取形态">
+          <option value="">静态读取</option>
+          <option v-for="item in urlScopeOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
+        </select>
         <button type="submit" :disabled="fetching">{{ fetching ? '读取中…' : '读取正文' }}</button>
         <button type="button" :disabled="jsFetching || !directUrl" @click="readUrlJs(directUrl)">{{ jsFetching ? '渲染中…' : 'JS 渲染重试' }}</button>
         <p>仅访问公开或已授权页面；不绕过登录、验证码、付费墙和访问控制。JS 渲染为按页显式选择，默认不渲染。</p>
@@ -75,13 +81,24 @@ import RelationGraph from '../../components/research/RelationGraph.vue'
 import EvidenceCompare from '../../components/research/EvidenceCompare.vue'
 import { addEvidencePage, toggleEvidenceTask } from '../../components/research/evidenceSelection.js'
 import { researchGraph } from '../../components/research/relationGraph.js'
-import { compareWebResearchEvidence, deleteWebRenderSession, fetchWebResearchPage, fetchWebResearchPageJs, finishWebRenderSession, getWebRenderSession, getWebResearchRuntime, listWebResearchTasks, searchWebResearch, startWebRenderSession, submitWebResearchCandidate } from '../../api/webResearch.ts'
+import { compareWebResearchEvidence, deleteWebRenderSession, fetchWebResearchPage, fetchWebResearchPageJs, finishWebRenderSession, getWebRenderSession, getWebResearchRuntime, listWebResearchConnectors, listWebResearchTasks, searchWebResearch, startWebRenderSession, submitWebResearchCandidate } from '../../api/webResearch.ts'
 
 const unwrap = value => value?.data ?? value
 const query = ref(''), scope = ref('ALL'), directUrl = ref('')
 const results = ref([]), tasks = ref([]), runtime = ref(null), selectedResult = ref(null), page = ref(null)
 const searching = ref(false), fetching = ref(false), submittingCandidate = ref(false), error = ref(''), searchErrors = ref([]), searchStatus = ref(''), activeId = ref('query')
 const jsFetching = ref(false), sessionBusy = ref(false), renderSession = ref(null)
+const connectors = ref([])
+const SCOPE_LABELS = { DDG: '公开网页', GITHUB: 'GitHub', BAIDU_PUBLIC: '百度 · 公开页', ZHIHU_PUBLIC: '知乎 · 公开页', BAIDU_OFFICIAL: '百度 · 官方API（需凭证）', ZHIHU_OFFICIAL: '知乎 · 官方API（需凭证）', BAIDU_URL: '百度链接 · 受控读取', ZHIHU_URL: '知乎链接 · 受控读取' }
+const scopeOptions = computed(() => [
+  { value: 'ALL', label: '全部已启用来源' },
+  ...connectors.value.filter(item => item.enabled && item.supportsSearch)
+    .map(item => ({ value: item.id, label: SCOPE_LABELS[item.id] || item.id }))
+])
+const urlScopeOptions = computed(() =>
+  connectors.value.filter(item => item.enabled && !item.supportsSearch)
+    .map(item => ({ value: item.id, label: SCOPE_LABELS[item.id] || item.id })))
+const urlScope = ref('')
 const candidate = ref(null)
 const evidencePages = ref([]), selectedEvidenceIds = ref([]), comparison = ref(null), comparing = ref(false)
 const graph = computed(() => researchGraph(query.value, results.value, runtime.value))
@@ -107,7 +124,7 @@ async function readUrl(url) {
   if (!url || fetching.value) return
   directUrl.value = url; fetching.value = true; error.value = ''; candidate.value = null
   try {
-    const fetched = unwrap(await fetchWebResearchPage({ url }))
+    const fetched = unwrap(await fetchWebResearchPage({ url, scope: urlScope.value || null }))
     page.value = fetched
     const basket = addEvidencePage(evidencePages.value, selectedEvidenceIds.value, fetched)
     evidencePages.value = basket.pages; selectedEvidenceIds.value = basket.selectedTaskIds; comparison.value = null
@@ -116,6 +133,7 @@ async function readUrl(url) {
   catch (cause) { page.value = null; error.value = cause.message || '网页读取失败' }
   finally { fetching.value = false }
 }
+async function refreshConnectors() { try { connectors.value = unwrap(await listWebResearchConnectors()) || [] } catch { connectors.value = [] } }
 async function readUrlJs(url) {
   if (!url || jsFetching.value) return
   directUrl.value = url; jsFetching.value = true; error.value = ''; candidate.value = null
@@ -187,7 +205,7 @@ async function submitCandidate() {
 }
 async function refreshRuntime() { try { runtime.value = unwrap(await getWebResearchRuntime()) } catch (cause) { runtime.value = { available: false, model: 'Ollama', detail: cause.message || '运行时状态读取失败' } } }
 async function refreshTasks() { try { tasks.value = unwrap(await listWebResearchTasks(12)) || [] } catch { /* 主任务结果优先，任务账本失败不覆盖检索结果 */ } }
-onMounted(() => { refreshRuntime(); refreshTasks(); refreshRenderSession() })
+onMounted(() => { refreshRuntime(); refreshTasks(); refreshRenderSession(); refreshConnectors() })
 </script>
 
 <style scoped>

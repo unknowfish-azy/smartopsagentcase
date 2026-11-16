@@ -85,6 +85,28 @@ smartops:
       timeout-ms: ${SMARTOPS_WR_RENDER_TIMEOUT_MS:15000}
       max-content: ${SMARTOPS_WR_RENDER_MAX_CONTENT:20000}
       session-ttl-hours: ${SMARTOPS_WR_SESSION_TTL_HOURS:168}
+    connectors:
+      # T34：八形态全部默认关闭，显式开启才生效；互不为默认值、互不 fallback。
+      github:
+        enabled: ${SMARTOPS_WR_GITHUB_ENABLED:false}
+      ddg:
+        enabled: ${SMARTOPS_WR_DDG_ENABLED:false}
+      baidu-public:
+        enabled: ${SMARTOPS_WR_BAIDU_PUBLIC_ENABLED:false}
+      zhihu-public:
+        enabled: ${SMARTOPS_WR_ZHIHU_PUBLIC_ENABLED:false}
+      baidu-official:
+        enabled: ${SMARTOPS_WR_BAIDU_OFFICIAL_ENABLED:false}
+        api-key: ${SMARTOPS_WR_BAIDU_API_KEY:}
+        endpoint: ${SMARTOPS_WR_BAIDU_OFFICIAL_ENDPOINT:}
+      zhihu-official:
+        enabled: ${SMARTOPS_WR_ZHIHU_OFFICIAL_ENABLED:false}
+        api-key: ${SMARTOPS_WR_ZHIHU_API_KEY:}
+        endpoint: ${SMARTOPS_WR_ZHIHU_OFFICIAL_ENDPOINT:}
+      baidu-url:
+        enabled: ${SMARTOPS_WR_BAIDU_URL_ENABLED:false}
+      zhihu-url:
+        enabled: ${SMARTOPS_WR_ZHIHU_URL_ENABLED:false}
   mini:
     base-url: ${SMARTOPS_MINI_BASE_URL:http://127.0.0.1:11434}
     model: ${SMARTOPS_MINI_MODEL:qwen3:1.7b}

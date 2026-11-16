@@ -32,13 +32,23 @@ public class WebResearchController {
     @PostMapping("/fetch")
     public ApiResponse<WebResearchService.WebPage> fetch(@AuthenticationPrincipal SessionUser user,
             @RequestBody FetchRequest request) {
-        return ApiResponse.success(service.fetch(user, request.url()));
+        return ApiResponse.success(service.fetch(user, request.url(), request.scope()));
+    }
+
+    /** 已启用的连接器形态清单（T34）：前端来源范围下拉据此动态生成；只回 id 与启用态，无任何凭证信息。 */
+    @GetMapping("/connectors")
+    public ApiResponse<List<ConnectorView>> connectors(@AuthenticationPrincipal SessionUser user) {
+        if (user == null) throw new com.smartops.exception.BusinessException(401, "登录状态已失效");
+        List<ConnectorView> views = service.connectors().stream()
+                .map(connector -> new ConnectorView(connector.id(), connector.isEnabled(), connector.supportsSearch()))
+                .toList();
+        return ApiResponse.success(views);
     }
 
     @PostMapping("/fetch-js")
     public ApiResponse<WebResearchService.WebPage> fetchJs(@AuthenticationPrincipal SessionUser user,
             @RequestBody FetchRequest request) {
-        return ApiResponse.success(renderService.fetchRendered(user, request.url(), true));
+        return ApiResponse.success(renderService.fetchRendered(user, request.url()));
     }
 
     @PostMapping("/render-session/start")
@@ -80,6 +90,7 @@ public class WebResearchController {
     }
 
     public record SearchRequest(String query, String scope, Integer limit) {}
-    public record FetchRequest(String url) {}
+    public record FetchRequest(String url, String scope) {}
     public record CompareRequest(List<Long> taskIds) {}
+    public record ConnectorView(String id, boolean enabled, boolean supportsSearch) {}
 }

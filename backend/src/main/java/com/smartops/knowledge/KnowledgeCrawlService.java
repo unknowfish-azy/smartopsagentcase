@@ -324,12 +324,17 @@ public class KnowledgeCrawlService {
         return taskId;
     }
 
-    String fetch(String url) throws IOException, InterruptedException {
+    public String fetch(String url) throws IOException, InterruptedException {
         return fetch(url, "text/html,application/xhtml+xml");
     }
 
     /** 同一安全出站链路供联网检索复用；每跳都执行公网校验与 DNS pin。 */
-    String fetch(String url, String accept) throws IOException, InterruptedException {
+    public String fetch(String url, String accept) throws IOException, InterruptedException {
+        return fetch(url, accept, java.util.Map.of());
+    }
+
+    /** 带自定义头的同链变体（官方 API 适配用，如 Authorization）；仍然逐跳校验 + DNS pin + 限额，不得绕过。 */
+    public String fetch(String url, String accept, java.util.Map<String, String> extraHeaders) throws IOException, InterruptedException {
         String current = url;
         for (int hop = 0; hop < 4; hop++) {
             URI uri;
@@ -350,6 +355,9 @@ public class KnowledgeCrawlService {
             HttpGet request = new HttpGet(uri);
             request.setHeader("User-Agent", USER_AGENT);
             request.setHeader("Accept", accept);
+            if (extraHeaders != null) {
+                extraHeaders.forEach(request::setHeader);
+            }
             try (CloseableHttpResponse response = client.execute(request)) {
                 int code = response.getCode();
                 String location = headerValue(response, "Location");
@@ -440,7 +448,7 @@ public class KnowledgeCrawlService {
         return links;
     }
 
-    static String htmlToText(String html) {
+    public static String htmlToText(String html) {
         String body = COMMENT.matcher(html).replaceAll(" ");
         body = SCRIPT.matcher(body).replaceAll(" ");
         body = STYLE.matcher(body).replaceAll(" ");
@@ -457,7 +465,7 @@ public class KnowledgeCrawlService {
         return text.toString().trim();
     }
 
-    static String pageTitle(String html, String url) {
+    public static String pageTitle(String html, String url) {
         Matcher matcher = TITLE.matcher(html);
         if (matcher.find()) {
             String title = decodeEntities(TAG.matcher(matcher.group(1)).replaceAll(" ")).replaceAll("\\s+", " ").trim();
@@ -479,7 +487,7 @@ public class KnowledgeCrawlService {
                 .replace("&amp;", "&");
     }
 
-    static String sha256(String value) {
+    public static String sha256(String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
@@ -488,7 +496,7 @@ public class KnowledgeCrawlService {
         }
     }
 
-    static String normalizeUrl(String value) {
+    public static String normalizeUrl(String value) {
         if (value == null || value.isBlank()) throw new BusinessException(400, "KNOWLEDGE_CRAWL_URL_REQUIRED");
         URI uri;
         try {
@@ -540,7 +548,7 @@ public class KnowledgeCrawlService {
     }
 
     /** 去掉 query/fragment：query 里常带 token，且同一页不同 query 不应产生多条知识条目。 */
-    static String stripQuery(String url) {
+    public static String stripQuery(String url) {
         try {
             URI uri = URI.create(url);
             return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null).toString();
@@ -550,7 +558,7 @@ public class KnowledgeCrawlService {
     }
 
     /** 只返回我们自己的错误码；原始异常消息可能包含内部主机/端口/IP，不落库。 */
-    static String errorCode(Exception failure) {
+    public static String errorCode(Exception failure) {
         String message = failure.getMessage() == null ? "" : failure.getMessage();
         if (message.startsWith("HTTP ")) return message;
         if (message.contains("下载上限")) return "DOWNLOAD_LIMIT_EXCEEDED";

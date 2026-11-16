@@ -40,11 +40,23 @@ public class WebResearchService {
     private final KnowledgeCrawlService crawler;
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
+    private final List<com.smartops.knowledge.connector.ResearchConnector> connectors;
 
     public WebResearchService(KnowledgeCrawlService crawler, JdbcTemplate jdbc, ObjectMapper mapper) {
+        this(crawler, jdbc, mapper, List.of());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public WebResearchService(KnowledgeCrawlService crawler, JdbcTemplate jdbc, ObjectMapper mapper,
+                              List<com.smartops.knowledge.connector.ResearchConnector> connectors) {
         this.crawler = crawler;
         this.jdbc = jdbc;
         this.mapper = mapper;
+        this.connectors = connectors == null ? List.of() : connectors;
+    }
+
+    public List<com.smartops.knowledge.connector.ResearchConnector> connectors() {
+        return connectors;
     }
 
     public SearchResponse search(SessionUser actor, String query, String requestedScope, Integer requestedLimit) {
@@ -52,42 +64,58 @@ public class WebResearchService {
         String cleaned = cleanQuery(query);
         String scope = requestedScope == null || requestedScope.isBlank()
                 ? "ALL" : requestedScope.trim().toUpperCase(Locale.ROOT);
-        if (!List.of("ALL", "WEB", "GITHUB").contains(scope)) {
+        List<String> allowedScopes = new ArrayList<>(List.of("ALL", "WEB", "GITHUB"));
+        for (com.smartops.knowledge.connector.ResearchConnector connector : connectors) {
+            if (!allowedScopes.contains(connector.id())) allowedScopes.add(connector.id());
+        }
+        if (!allowedScopes.contains(scope)) {
             throw new BusinessException(400, "WEB_RESEARCH_SCOPE_INVALID");
         }
         int limit = clamp(requestedLimit, 1, MAX_RESULTS, 8);
         long taskId = createTask(actor.id(), "SEARCH", cleaned);
         Map<String, SearchResult> results = new LinkedHashMap<>();
         List<String> errors = new ArrayList<>();
-        if (scope.equals("ALL") || scope.equals("WEB")) {
-            try {
-                String endpoint = "https://html.duckduckgo.com/html/?q=" + URLEncoder.encode(cleaned, StandardCharsets.UTF_8);
-                String html = crawler.fetch(endpoint, "text/html,application/xhtml+xml");
-                for (SearchResult result : parseWebResults(html, limit)) results.putIfAbsent(result.url(), result);
-            } catch (InterruptedException failure) {
-                Thread.currentThread().interrupt();
-                errors.add("WEB:INTERRUPTED");
-            } catch (Exception failure) {
-                errors.add("WEB:" + KnowledgeCrawlService.errorCode(failure));
+        // 连接器聚合（T34）：每个形态独立，互不为默认值、互不 fallback——
+        // A 失败不会偷偷切 B，B 无凭证不会偷偷用 A；单形态失败只记入 errors，不中断其他形态。
+        for (com.smartops.knowledge.connector.ResearchConnector connector : connectors) {
+            if (!connector.isEnabled()) continue;
+            if (!connector.supportsSearch()) continue;
+            if (!scope.equals("ALL") && !scope.equals(connector.id())
+                    && !(scope.equals("WEB") && connector.id().equals("DDG"))
+                    && !(scope.equals("GITHUB") && connector.id().equals("GITHUB"))) {
+                continue;
             }
-        }
-        if (!Thread.currentThread().isInterrupted() && (scope.equals("ALL") || scope.equals("GITHUB"))) {
             try {
-                String endpoint = "https://api.github.com/search/repositories?q="
-                        + URLEncoder.encode(cleaned, StandardCharsets.UTF_8) + "&per_page=" + limit;
-                String json = crawler.fetch(endpoint, "application/vnd.github+json,application/json");
-                for (SearchResult result : parseGithubResults(json, limit)) results.putIfAbsent(result.url(), result);
+                for (SearchResult result : connector.search(actor, cleaned, limit)) {
+                    results.putIfAbsent(result.url(), result);
+                }
             } catch (InterruptedException failure) {
                 Thread.currentThread().interrupt();
-                errors.add("GITHUB:INTERRUPTED");
+                errors.add(connector.id() + ":INTERRUPTED");
+            } catch (BusinessException failure) {
+                errors.add(connector.id() + ":" + failure.getMessage());
             } catch (Exception failure) {
-                errors.add("GITHUB:" + KnowledgeCrawlService.errorCode(failure));
+                errors.add(connector.id() + ":" + KnowledgeCrawlService.errorCode(failure));
             }
         }
         List<SearchResult> items = List.copyOf(results.values());
         String status = items.isEmpty() && !errors.isEmpty() ? "FAILED" : errors.isEmpty() ? "SUCCESS" : "PARTIAL";
         finishTask(taskId, status, items.size(), errors.isEmpty() ? null : trimTo(String.join(";", errors), 500));
         return new SearchResponse(taskId, status, cleaned, scope, items, List.copyOf(errors), Instant.now());
+    }
+
+    /** 指定 URL 读取（T34 形态 C）：scope 指向 C 形态时按其域校验并走受控渲染，其余回落静态链路。 */
+    public WebPage fetch(SessionUser actor, String value, String requestedScope) {
+        String scope = requestedScope == null || requestedScope.isBlank()
+                ? "ALL" : requestedScope.trim().toUpperCase(Locale.ROOT);
+        if (scope.equals("ALL")) return fetch(actor, value);
+        requireActor(actor);
+        com.smartops.knowledge.connector.ResearchConnector connector = connectors.stream()
+                .filter(item -> item.id().equals(scope)).findFirst()
+                .orElseThrow(() -> new BusinessException(400, "WEB_RESEARCH_SCOPE_INVALID"));
+        if (!connector.isEnabled()) throw new BusinessException(409, scope + "_DISABLED");
+        String url = KnowledgeCrawlService.normalizeUrl(value);
+        return connector.fetch(actor, url);
     }
 
     public WebPage fetch(SessionUser actor, String value) {
@@ -159,7 +187,7 @@ public class WebResearchService {
                         instant(rs.getTimestamp("created_at")), instant(rs.getTimestamp("finished_at"))), actor.id(), limit);
     }
 
-    static List<SearchResult> parseWebResults(String html, int requestedLimit) {
+    public static List<SearchResult> parseWebResults(String html, int requestedLimit) {
         int limit = Math.max(1, Math.min(MAX_RESULTS, requestedLimit));
         Matcher matcher = ANCHOR.matcher(html == null ? "" : html);
         List<AnchorMatch> matches = new ArrayList<>();
@@ -187,7 +215,7 @@ public class WebResearchService {
         return results;
     }
 
-    static List<SearchResult> parseGithubResults(String json, int requestedLimit) throws IOException {
+    public static List<SearchResult> parseGithubResults(String json, int requestedLimit) throws IOException {
         int limit = Math.max(1, Math.min(MAX_RESULTS, requestedLimit));
         JsonNode root = new ObjectMapper().readTree(json);
         List<SearchResult> results = new ArrayList<>();
@@ -209,6 +237,11 @@ public class WebResearchService {
         String id = kind.toLowerCase(Locale.ROOT) + "-" + KnowledgeCrawlService.sha256(url).substring(0, 12);
         return new SearchResult(id, safeTitle, url, KnowledgeCrawlService.stripQuery(url), site,
                 OperationRedactor.redact(snippet == null ? "" : snippet), kind, publishedAt, Instant.now());
+    }
+
+    /** 连接器构建结果条目的统一入口：kind 必须填形态标识，脱敏与截断在此统一处理。 */
+    public static SearchResult buildResult(String url, String title, String kind, String snippet, String publishedAt) {
+        return result(url, title, kind, snippet, publishedAt);
     }
 
     private static String safeResultUrl(String raw) {

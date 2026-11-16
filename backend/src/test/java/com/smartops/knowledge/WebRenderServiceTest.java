@@ -20,10 +20,10 @@ class WebRenderServiceTest {
     @Test
     void blockedUrlIsRejectedBeforeAnyNetworkOrTask() {
         var deps = deps();
-        var service = new WebRenderService(deps.research, deps.renderer, deps.sessions);
+        var service = new WebRenderService(deps.jdbc, deps.renderer, deps.sessions);
 
         BusinessException failure = assertThrows(BusinessException.class,
-                () -> service.fetchRendered(actor, "http://127.0.0.1:8080/internal", true));
+                () -> service.fetchRendered(actor, "http://127.0.0.1:8080/internal"));
 
         assertEquals(400, failure.getCode());
         assertEquals("WEB_RENDER_URL_BLOCKED", failure.getMessage());
@@ -32,15 +32,16 @@ class WebRenderServiceTest {
     }
 
     @Test
-    void staticBranchDelegatesToResearchFetch() {
+    void blankUrlIsRejectedWithoutTask() {
         var deps = deps();
-        var service = new WebRenderService(deps.research, deps.renderer, deps.sessions);
+        var service = new WebRenderService(deps.jdbc, deps.renderer, deps.sessions);
 
-        var page = service.fetchRendered(actor, "https://93.184.216.34/guide?token=secret", false);
+        BusinessException failure = assertThrows(BusinessException.class,
+                () -> service.fetchRendered(actor, "  "));
 
-        assertEquals("STATIC", page.renderMode());
-        assertNull(page.renderNote());
+        assertEquals(400, failure.getCode());
         assertTrue(deps.renderer.renderCalls.isEmpty());
+        assertEquals(0, deps.jdbc.queryForObject("SELECT COUNT(*) FROM web_research_task", Integer.class));
     }
 
     @Test
@@ -50,8 +51,8 @@ class WebRenderServiceTest {
         deps.renderer.confirmedState = "[{\"name\":\"sid\",\"value\":\"s3cret\"}]";
         deps.sessions.finish(actor);
 
-        var page = new WebRenderService(deps.research, deps.renderer, deps.sessions)
-                .fetchRendered(actor, "https://93.184.216.34/spa?token=secret", true);
+        var page = new WebRenderService(deps.jdbc, deps.renderer, deps.sessions)
+                .fetchRendered(actor, "https://93.184.216.34/spa?token=secret");
 
         assertEquals("JS", page.renderMode());
         assertTrue(page.renderNote().contains("本人登录接续"));
@@ -71,9 +72,9 @@ class WebRenderServiceTest {
     @Test
     void jsRenderWithoutSessionStaysAnonymous() {
         var deps = deps();
-        var service = new WebRenderService(deps.research, deps.renderer, deps.sessions);
+        var service = new WebRenderService(deps.jdbc, deps.renderer, deps.sessions);
 
-        var page = service.fetchRendered(actor, "https://93.184.216.34/spa", true);
+        var page = service.fetchRendered(actor, "https://93.184.216.34/spa");
 
         assertEquals("JS", page.renderMode());
         assertTrue(page.renderNote().contains("匿名"));
@@ -90,8 +91,8 @@ class WebRenderServiceTest {
                 java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(60)), actor.id());
 
         BusinessException failure = assertThrows(BusinessException.class,
-                () -> new WebRenderService(deps.research, deps.renderer, deps.sessions)
-                        .fetchRendered(actor, "https://93.184.216.34/spa", true));
+                () -> new WebRenderService(deps.jdbc, deps.renderer, deps.sessions)
+                        .fetchRendered(actor, "https://93.184.216.34/spa"));
 
         assertEquals(409, failure.getCode());
         assertEquals("WEB_RENDER_SESSION_EXPIRED", failure.getMessage());
@@ -102,10 +103,10 @@ class WebRenderServiceTest {
     void unavailableRendererReportsInsteadOfFakingStaticContent() {
         var deps = deps();
         deps.renderer.available = false;
-        var service = new WebRenderService(deps.research, deps.renderer, deps.sessions);
+        var service = new WebRenderService(deps.jdbc, deps.renderer, deps.sessions);
 
         BusinessException failure = assertThrows(BusinessException.class,
-                () -> service.fetchRendered(actor, "https://93.184.216.34/spa", true));
+                () -> service.fetchRendered(actor, "https://93.184.216.34/spa"));
 
         assertEquals(503, failure.getCode());
         assertEquals("RENDERER_UNAVAILABLE", failure.getMessage());
@@ -115,10 +116,10 @@ class WebRenderServiceTest {
     void failedRenderLandsExplicitErrorCodeAndFailedTask() {
         var deps = deps();
         deps.renderer.failWith = new BusinessException(504, "RENDER_TIMEOUT");
-        var service = new WebRenderService(deps.research, deps.renderer, deps.sessions);
+        var service = new WebRenderService(deps.jdbc, deps.renderer, deps.sessions);
 
         BusinessException failure = assertThrows(BusinessException.class,
-                () -> service.fetchRendered(actor, "https://93.184.216.34/spa", true));
+                () -> service.fetchRendered(actor, "https://93.184.216.34/spa"));
 
         assertEquals(504, failure.getCode());
         assertEquals("FAILED", deps.jdbc.queryForObject(
@@ -131,10 +132,10 @@ class WebRenderServiceTest {
     void emptyRenderedBodyIsRejected() {
         var deps = deps();
         deps.renderer.nextPage = new HeadlessRenderer.RenderedPage("Empty shell", "  ");
-        var service = new WebRenderService(deps.research, deps.renderer, deps.sessions);
+        var service = new WebRenderService(deps.jdbc, deps.renderer, deps.sessions);
 
         BusinessException failure = assertThrows(BusinessException.class,
-                () -> service.fetchRendered(actor, "https://93.184.216.34/spa", true));
+                () -> service.fetchRendered(actor, "https://93.184.216.34/spa"));
 
         assertEquals(422, failure.getCode());
         assertEquals("WEB_RESEARCH_EMPTY_CONTENT", failure.getMessage());
@@ -144,7 +145,7 @@ class WebRenderServiceTest {
         var jdbc = researchJdbc();
         KnowledgeCrawlService crawler = new KnowledgeCrawlService(new JdbcTemplate(), mock(com.smartops.service.PersonalKnowledgeService.class)) {
             @Override
-            String fetch(String url) {
+            public String fetch(String url) {
                 return "<html><head><title>Static</title></head><body>static body</body></html>";
             }
         };
