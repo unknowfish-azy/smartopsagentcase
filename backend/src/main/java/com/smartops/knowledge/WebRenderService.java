@@ -30,11 +30,19 @@ public class WebRenderService {
     private final JdbcTemplate jdbc;
     private final HeadlessRenderer renderer;
     private final WebRenderSessionService sessions;
+    private final WebResearchMetrics metrics;
 
     public WebRenderService(JdbcTemplate jdbc, HeadlessRenderer renderer, WebRenderSessionService sessions) {
+        this(jdbc, renderer, sessions, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public WebRenderService(JdbcTemplate jdbc, HeadlessRenderer renderer, WebRenderSessionService sessions,
+                            WebResearchMetrics metrics) {
         this.jdbc = jdbc;
         this.renderer = renderer;
         this.sessions = sessions;
+        this.metrics = metrics;
     }
 
     public WebResearchService.WebPage fetchRendered(SessionUser actor, String value) {
@@ -57,7 +65,9 @@ public class WebRenderService {
         long taskId = createTask(actor.id(), KnowledgeCrawlService.stripQuery(url));
         try {
             String storageState = sessions.storageStateForRender(actor);
+            long renderStart = System.nanoTime();
             HeadlessRenderer.RenderedPage rendered = renderer.render(url, storageState);
+            if (metrics != null) metrics.renderDuration(java.time.Duration.ofNanos(System.nanoTime() - renderStart));
             String text = OperationRedactor.redact(trim(rendered.text(), MAX_PAGE_TEXT));
             if (text.isBlank()) throw new BusinessException(422, "WEB_RESEARCH_EMPTY_CONTENT");
             String title = OperationRedactor.redact(trim(rendered.title(), 200));
@@ -65,6 +75,7 @@ public class WebRenderService {
             Instant fetchedAt = Instant.now();
             String displayUrl = KnowledgeCrawlService.stripQuery(url);
             savePageSnapshot(taskId, actor.id(), displayUrl, title, trim(text, 600), text, hash, fetchedAt);
+            if (metrics != null) metrics.snapshotWritten();
             String note = storageState == null ? "JS 渲染 · 匿名会话" : "JS 渲染 · 使用本人登录接续";
             finishTask(taskId, "SUCCESS", 1, null);
             return new WebResearchService.WebPage(taskId, url, displayUrl, host(url), title,

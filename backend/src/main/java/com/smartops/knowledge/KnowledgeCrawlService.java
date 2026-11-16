@@ -73,6 +73,10 @@ public class KnowledgeCrawlService {
     private final JdbcTemplate jdbc;
     private final PersonalKnowledgeService knowledge;
     private final KnowledgeCandidateService candidates;
+    private final WebResearchMetrics metrics;
+
+    @org.springframework.beans.factory.annotation.Value("${smartops.knowledge.radar.claim-lease-ms:120000}")
+    private long claimLeaseMs = 120_000;
     // SEC-06 连接期 DNS pin：java.net.http 在 JDK 17 上没有解析钩子，改用
     // Apache HttpClient 5 + fail-closed 的 PinnedDns 解析器——建连只能拿到
     // OutboundUrlPolicy 校验过的地址，DNS rebinding 窗口关闭。
@@ -83,11 +87,17 @@ public class KnowledgeCrawlService {
         this(jdbc, knowledge, new KnowledgeCandidateService(jdbc, null, knowledge));
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
     public KnowledgeCrawlService(JdbcTemplate jdbc, PersonalKnowledgeService knowledge, KnowledgeCandidateService candidates) {
+        this(jdbc, knowledge, candidates, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public KnowledgeCrawlService(JdbcTemplate jdbc, PersonalKnowledgeService knowledge, KnowledgeCandidateService candidates,
+                                 WebResearchMetrics metrics) {
         this.jdbc = jdbc;
         this.knowledge = knowledge;
         this.candidates = candidates;
+        this.metrics = metrics;
         PoolingHttpClientConnectionManager connections = PoolingHttpClientConnectionManagerBuilder.create()
                 .setDnsResolver(new org.apache.hc.client5.http.DnsResolver() {
                     @Override
@@ -261,23 +271,61 @@ public class KnowledgeCrawlService {
             fixedDelayString = "${smartops.knowledge.radar.sweep-ms:30000}",
             initialDelayString = "${smartops.knowledge.radar.initial-delay-ms:60000}")
     public void runDueMonitor() {
-        List<DueSource> due = jdbc.query("SELECT id,user_id FROM knowledge_crawl_source WHERE monitor_enabled=TRUE AND (next_run_at IS NULL OR next_run_at<=?) ORDER BY next_run_at ASC LIMIT 1",
-                (rs, row) -> new DueSource(rs.getLong("id"), rs.getLong("user_id")), Timestamp.from(Instant.now()));
-        if (due.isEmpty()) return;
-        DueSource source = due.get(0);
+        DueSource candidate = findDueSource();
+        if (candidate == null) return;
+        if (metrics != null) metrics.radarDue();
+        ClaimedSource claimed = tryClaim(candidate);
+        if (claimed == null) {
+            // 已被其他副本领取且租约未过期：本轮跳过，如实计数，不伪造成功
+            if (metrics != null) metrics.radarSkipped();
+            return;
+        }
+        DueSource source = claimed.source();
         SessionUser actor = new SessionUser(source.userId(), "scheduled-radar", "user");
         try {
             run(actor, source.id());
+            if (metrics != null) metrics.radarProcessed();
         } catch (Exception failure) {
+            if (metrics != null) metrics.radarProcessed();
             CrawlSource current = detailSource(actor.id(), source.id());
             Instant checkedAt = Instant.now();
             Timestamp nextRun = Timestamp.from(checkedAt.plusSeconds(current.monitorIntervalMinutes() * 60L));
             jdbc.update("UPDATE knowledge_crawl_source SET last_run_at=?,last_status='FAILED',last_error=?,next_run_at=? WHERE id=? AND user_id=?",
                     Timestamp.from(checkedAt), trimTo(errorCode(failure), 500), nextRun, source.id(), actor.id());
+        } finally {
+            // 释放 claim（无论成败）；next_run_at 已由 run()/失败分支推进
+            jdbc.update("UPDATE knowledge_crawl_source SET claim_token=NULL, claim_expiry=NULL WHERE id=? AND claim_token=?",
+                    source.id(), claimed.token());
         }
     }
 
-    private record DueSource(long id, long userId) {}
+    private DueSource findDueSource() {
+        Instant now = Instant.now();
+        List<DueSource> due = jdbc.query("SELECT id,user_id FROM knowledge_crawl_source WHERE monitor_enabled=TRUE AND (next_run_at IS NULL OR next_run_at<=?) ORDER BY next_run_at ASC LIMIT 1",
+                (rs, row) -> new DueSource(rs.getLong("id"), rs.getLong("user_id")), Timestamp.from(now));
+        return due.isEmpty() ? null : due.get(0);
+    }
+
+    /** 条件更新领取；已被其他副本持有且租约未过期时返回 null。 */
+    private ClaimedSource tryClaim(DueSource candidate) {
+        Instant now = Instant.now();
+        String token = java.util.UUID.randomUUID().toString();
+        Timestamp lease = Timestamp.from(now.plusMillis(claimLeaseMs));
+        int claimed = jdbc.update("UPDATE knowledge_crawl_source SET claim_token=?, claim_expiry=? WHERE id=? "
+                        + "AND monitor_enabled=TRUE AND (next_run_at IS NULL OR next_run_at<=?) "
+                        + "AND (claim_token IS NULL OR claim_expiry IS NULL OR claim_expiry<=?)",
+                token, lease, candidate.id(), Timestamp.from(now), Timestamp.from(now));
+        return claimed == 1 ? new ClaimedSource(candidate, token) : null;
+    }
+
+    /** 测试与运维入口：找到即领取；无到期或竞争失败返回 null。 */
+    ClaimedSource claimNextSource() {
+        DueSource candidate = findDueSource();
+        return candidate == null ? null : tryClaim(candidate);
+    }
+
+    record DueSource(long id, long userId) {}
+    record ClaimedSource(DueSource source, String token) {}
 
     String persist(SessionUser actor, CrawlSource source, String url, String title, String text, String hash) {
         // SEC-11：URL 的 query 可能携带 token，只存去 query 的地址用于稳定比对。

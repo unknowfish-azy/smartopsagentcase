@@ -77,6 +77,8 @@ smartops:
       # 时效雷达调度键（与 KnowledgeCrawlService 内联默认一致，显式声明便于运维调参）
       sweep-ms: ${SMARTOPS_RADAR_SWEEP_MS:30000}
       initial-delay-ms: ${SMARTOPS_RADAR_INITIAL_DELAY_MS:60000}
+      # 调度 claim 租约：略大于单轮 60s 预算；租约超时按 UNCERTAIN 语义，不自动重试
+      claim-lease-ms: ${SMARTOPS_RADAR_CLAIM_LEASE_MS:120000}
   web-research:
     render:
       node-command: ${SMARTOPS_WR_RENDER_NODE:node}
