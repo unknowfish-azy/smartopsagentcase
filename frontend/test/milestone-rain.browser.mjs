@@ -62,7 +62,8 @@ async function newHallPage({ reducedMotion = false, width = 1440, query = '' } =
     if (path.startsWith('/api/model-analytics')) return route.fulfill({ json: report })
     return route.fulfill({ json: { code: 200, data: [] } })
   })
-  await page.goto(`${base}/milestones${query}`, { waitUntil: 'networkidle' })
+  /* 战报已并入用量页子视图；旧 /milestones 由 router redirect 承接，这里直接走新 URL。 */
+  await page.goto(`${base}/token-usage?view=milestones${query ? `&${query.replace(/^\?/, '')}` : ''}`, { waitUntil: 'networkidle' })
   await page.locator('.vessel-stage canvas').waitFor()
   return { page, errors, vueWarnings }
 }
@@ -158,15 +159,14 @@ try {
     await waitForStatus(page, '播放完毕')
     await assertCanvasRests(page)
 
-    // 双栏独立滚动：滚右栏 → 右栏动、页面与左栏不动；滚左栏 → 左栏动、右栏不动
+    // 双栏独立滚动：滚右栏 → 右栏动、左栏不动；滚左栏 → 左栏动、右栏不动。
+    // 战报已并入用量页：页面本身可滚动（不再视口锁定），只要求两栏互不干扰。
     const panes = await page.evaluate(() => ({
       listOverflow: getComputedStyle(document.querySelector('.achievement-list')).overflowY,
-      vesselOverflow: getComputedStyle(document.querySelector('.vessel-panel')).overflowY,
-      pageLocked: document.body.scrollHeight <= window.innerHeight + 1
+      vesselOverflow: getComputedStyle(document.querySelector('.vessel-panel')).overflowY
     }))
     assert.equal(panes.listOverflow, 'auto', 'right pane is its own scroll container')
     assert.equal(panes.vesselOverflow, 'auto', 'left pane is its own scroll container')
-    assert.equal(panes.pageLocked, true, 'page itself is viewport-locked, not scrolling')
 
     const listBox = await page.locator('.achievement-list').boundingBox()
     await page.mouse.move(listBox.x + listBox.width / 2, listBox.y + 40)
@@ -179,7 +179,6 @@ try {
     }))
     assert.ok(afterRight.list > 0, 'right pane scrolls independently')
     assert.equal(afterRight.vessel, 0, 'left pane unaffected by right-pane scroll')
-    assert.equal(afterRight.page, 0, 'page itself does not scroll')
 
     const listBefore = afterRight.list
     const vesselBox = await page.locator('.vessel-panel').boundingBox()
@@ -193,7 +192,6 @@ try {
     }))
     assert.ok(afterLeft.vessel > 0, 'left pane scrolls independently')
     assert.equal(afterLeft.list, listBefore, 'right pane unaffected by left-pane scroll')
-    assert.equal(afterLeft.page, 0, 'page itself does not scroll')
     await page.screenshot({ path: 'test-artifacts/milestone-rain/hall-1440-ladder.png' })
 
     // 右栏滚到底：演示实例卡完整可见
@@ -306,10 +304,40 @@ try {
     await chip.waitFor()
     assert.match(await chip.innerText(), /本月调用已达成 1,000 次里程碑/)
     await chip.click()
-    await page.getByRole('heading', { name: '里程碑战报', exact: true }).waitFor()
-    assert.equal(page.url(), `${base}/milestones`)
+    await page.locator('.vessel-stage canvas').waitFor()
+    assert.equal(page.url(), `${base}/token-usage?view=milestones`)
+    assert.equal(await page.getByRole('link', { name: '里程碑战报' }).getAttribute('aria-current'), 'page')
     assert.deepEqual(errors, [])
-    console.log('PASS token-usage milestone chip: shown at 1,000 calls and links to the hall')
+    console.log('PASS token-usage milestone chip: shown at 1,000 calls and switches to milestone view')
+    await page.close()
+  }
+  // ── 旧链接兼容：/milestones 重定向到子视图并透传 query ──
+  {
+    const { page, errors } = await newHallPage()
+    await page.goto(`${base}/milestones?preview=1&ambient=0`, { waitUntil: 'networkidle' })
+    await page.locator('.vessel-stage canvas').waitFor()
+    const redirected = new URL(page.url())
+    assert.equal(redirected.pathname, '/token-usage')
+    assert.equal(redirected.searchParams.get('view'), 'milestones')
+    assert.equal(redirected.searchParams.get('preview'), '1')
+    assert.equal(redirected.searchParams.get('ambient'), '0')
+    assert.equal(await page.locator('.ambient-toggle').getAttribute('aria-pressed'), 'false', 'ambient=0 survives redirect')
+    assert.deepEqual(errors, [])
+    console.log('PASS legacy /milestones redirect preserves query')
+    await page.close()
+  }
+  // ── tab 往返：画布卸载重建不累积、无 pageerror ──
+  {
+    const { page, errors } = await newHallPage()
+    for (let round = 0; round < 3; round += 1) {
+      await page.getByRole('link', { name: 'Token 用量与额度' }).click()
+      await page.getByRole('heading', { name: 'Token 用量与额度' }).waitFor()
+      await page.getByRole('link', { name: '里程碑战报' }).click()
+      await page.locator('.vessel-stage canvas').waitFor()
+    }
+    assert.equal(await page.locator('.vessel-stage canvas').count(), 1, 'exactly one canvas after tab round trips')
+    assert.deepEqual(errors, [], 'no pageerror while switching tabs')
+    console.log('PASS tab round trips: one live canvas, no page errors')
     await page.close()
   }
 } finally {

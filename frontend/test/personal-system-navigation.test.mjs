@@ -46,19 +46,8 @@ test('keeps cloud-native resources inside its workbench route', () => {
 
 test('contains only groups with existing direct routes', () => {
   assert.deepEqual(visiblePersonalSystemGroups(personalSystemGroups).map(group => group.id), [
-    'home', 'ai-chat', 'insights', 'team-space', 'knowledge', 'research', 'cloud-native', 'plugins', 'skills', 'connections', 'harbor', 'operations', 'health', 'milestones', 'models', 'agent', 'memory', 'sentinel'
+    'home', 'ai-chat', 'insights', 'team-space', 'knowledge', 'research', 'cloud-native', 'plugins', 'skills', 'connections', 'harbor', 'operations', 'health', 'models', 'agent', 'memory', 'sentinel'
   ])
-})
-
-test('milestone hall is a first-class destination beside health center', () => {
-  const group = findPersonalSystemGroup('MilestoneHall')
-
-  assert.equal(group.id, 'milestones')
-  assert.equal(group.to, '/milestones')
-  assert.equal(group.label, 'MILESTONES')
-  assert.equal(group.cn, '里程碑战报')
-  // 所有角色可见（庆祝动效不设权限门槛，数据仍按本人账本）
-  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
 })
 
 test('sentinel groups dashboard, scripts, alerts and Guardian under one menu', () => {
@@ -88,6 +77,15 @@ test('model menu keeps the Astra6 group and exposes the gateway inside it', () =
   assert.deepEqual(findPersonalSystemGroup('TokenUsage').children.map(item => item.routeName), ['ModelSettings', 'ModelGateway', 'ModelStrength', 'TokenUsage'])
   assert.equal(findPersonalSystemGroup('ModelGateway').id, 'models')
   assert.equal(findPersonalSystemGroup('ModelStrength').id, 'models')
+})
+
+test('milestone hall is folded into token usage, no longer a sidebar item', () => {
+  /* 战报已并入 /token-usage?view=milestones：侧栏不留独立项，避免一级菜单冗余。 */
+  assert.equal(findPersonalSystemGroup('MilestoneHall'), null)
+  const insights = findPersonalSystemGroup('Insights')
+  assert.equal(insights.id, 'insights')
+  assert.deepEqual(insights.children.map(item => item.routeName), [])
+  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(insights))
 })
 
 test('uses concise Chinese for the Knowledge navigation label', () => {

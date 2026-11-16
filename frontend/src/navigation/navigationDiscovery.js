@@ -1,8 +1,13 @@
+/* 侧栏已移除「里程碑战报」独立项，但保留命令面板可发现性（指向用量页子视图）。 */
+const DISCOVERY_ALIASES = Object.freeze([
+  { to: '/token-usage?view=milestones', title: '里程碑战报', label: 'MILESTONES', group: '模型中心' }
+])
+
 export function navigationEntries(groups) {
   const seen = new Set()
-  return groups.flatMap(group => [group, ...(group.children || [])].map(item => ({
+  return [...DISCOVERY_ALIASES, ...groups.flatMap(group => [group, ...(group.children || [])].map(item => ({
     to: item.to, title: item.cn || item.label, label: item.label || '', group: group.cn || group.label
-  }))).filter(item => {
+  })))].filter(item => {
     if (!item.to || seen.has(item.to)) return false
     seen.add(item.to)
     return true

@@ -57,6 +57,15 @@
           <span class="eo-summary-note">心跳阈值由后端引擎目录下发，前端不硬编码</span>
         </div>
 
+        <!-- 3D 引擎场：六节点绑真实心跳，无事件静默（详见 engine-observability-3d-v1/DESIGN.md） -->
+        <EngineField3D
+          :engines="obs.engines.value"
+          :selected-id="obs.selectedEngine.value"
+          :generated-at-text="obs.generatedAtText.value"
+          :narrow="isNarrow"
+          @select="obs.selectEngine"
+        />
+
         <!-- 引擎卡片网格（Bento） -->
         <section class="eo-grid" aria-label="引擎状态卡">
           <article
@@ -171,6 +180,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CanvasAmbientField from '../../components/common/CanvasAmbientField.vue'
+import EngineField3D from '../../components/sentinel/EngineField3D.vue'
 import { useEngineObservability } from '../../composables/useEngineObservability.js'
 import { resolvedTheme } from '../../theme.js'
 import { isLightweightVisualMode, isReducedMotionMode } from '../../visual/visualMode.js'
@@ -180,6 +190,7 @@ const shellRef = ref(null)
 const timelineCanvas = ref(null)
 const obs = useEngineObservability()
 const reducedMotion = ref(false)
+const isNarrow = ref(false)
 let resizeObserver = null
 
 const isLightweight = computed(() =>
@@ -306,8 +317,14 @@ function reload() {
   obs.fetchSnapshot().then(drawTimeline)
 }
 
+function updateNarrow() {
+  isNarrow.value = window.innerWidth <= 760
+}
+
 onMounted(() => {
   try { reducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { /* SSR */ }
+  updateNarrow()
+  window.addEventListener('resize', updateNarrow)
   obs.fetchSnapshot().then(drawTimeline)
   obs.startPolling()
   if (typeof ResizeObserver !== 'undefined' && timelineCanvas.value) {
@@ -321,6 +338,7 @@ watch(() => [obs.events.value.length, obs.selectedEngine.value], () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateNarrow)
   obs.dispose()
   resizeObserver?.disconnect()
 })

@@ -66,7 +66,8 @@ const routes = [
                 meta: routeMetaFor('ServerDetail')
             },
             { path: 'health', name: 'HealthCenter', component: () => import('../views/diagnostics/HealthCenterView.vue'), meta: { ...routeMetaFor('HealthCenter'), section: 'SERVICE DIAGNOSTICS / 健康诊断' } },
-            { path: 'milestones', name: 'MilestoneHall', component: () => import('../views/celebrate/AchievementsView.vue'), meta: { ...routeMetaFor('MilestoneHall'), section: 'MILESTONE HALL / 里程碑战报' } },
+            /* 里程碑战报已并入「用量与额度」子视图；旧链接保留可访问，透传 query（视频/外链/书签不失效） */
+            { path: 'milestones', redirect: to => ({ path: '/token-usage', query: { ...to.query, view: 'milestones' } }) },
             { path: 'inspector/desk', name: 'InspectorDesk', component: () => import('../views/inspector/InspectorDeskView.vue'), meta: { ...routeMetaFor('InspectorDesk'), section: 'INSPECTOR DESK / 洞察台' } },
             { path: 'inspector', name: 'InspectorCenter', component: () => import('../views/inspector/InspectorCenterView.vue'), meta: routeMetaFor('InspectorCenter') },
             { path: 'inspector/events/:id', name: 'InspectorDetail', component: () => import('../views/inspector/InspectorDetailView.vue'), meta: routeMetaFor('InspectorDetail') },

@@ -1,36 +1,39 @@
 <template>
   <section class="model-analytics" :aria-busy="loading && !isDemo">
     <header class="analytics-heading">
-      <div><p class="eyebrow">MODEL OBSERVATORY / 模型观测</p><h1>{{ isTokens ? 'Token 用量与额度' : '模型强度' }}</h1>
-        <p class="intro">{{ isTokens ? '看清每一次调用的消耗，让月度用量保持可控。' : '从实际调用中观察可用性与响应表现。' }}</p>
+      <div><p class="eyebrow">MODEL OBSERVATORY / 模型观测</p><h1>{{ isMilestoneView ? 'Token 用量与额度 · 里程碑战报' : isTokens ? 'Token 用量与额度' : '模型强度' }}</h1>
+        <p class="intro">{{ isMilestoneView ? '每一项里程碑都来自同一份真实调用账本；庆祝动效不关联任何虚构收益。' : isTokens ? '看清每一次调用的消耗，让月度用量保持可控。' : '从实际调用中观察可用性与响应表现。' }}</p>
       </div>
       <RouterLink class="outline-button" to="/model-settings">管理模型连接 <span aria-hidden="true">↗</span></RouterLink>
     </header>
 
     <nav class="analytics-tabs" aria-label="模型页面">
       <RouterLink to="/model-strength" :aria-current="!isTokens ? 'page' : undefined">模型强度</RouterLink>
-      <RouterLink to="/token-usage" :aria-current="isTokens ? 'page' : undefined">Token 用量与额度</RouterLink>
+      <RouterLink to="/token-usage" :aria-current="isTokens && !isMilestoneView ? 'page' : undefined">Token 用量与额度</RouterLink>
+      <!-- 战报并入后的第三档：同一行，可分享深链（?view=milestones） -->
+      <RouterLink v-if="isTokens" :to="{ path: '/token-usage', query: { view: 'milestones' } }" :aria-current="isMilestoneView ? 'page' : undefined">里程碑战报</RouterLink>
     </nav>
 
-    <!-- 真实里程碑入口：本月调用达到档位才出现（演示模式不显示，不拿虚构数据炫耀） -->
-    <RouterLink v-if="isTokens && !isDemo && callsMilestone" class="milestone-link" to="/milestones">
+    <!-- 真实里程碑入口：本月调用达到档位才出现；已在战报视图则隐藏，避免自指。
+         种子集阶段也只认真实账本档位，不拿演示数据炫耀。 -->
+    <RouterLink v-if="isTokens && !isDemo && !isMilestoneView && callsMilestone" class="milestone-link" :to="{ path: '/token-usage', query: { view: 'milestones' } }">
       <i class="milestone-dot" aria-hidden="true" />
       本月调用已达成 {{ callsMilestone.toLocaleString('zh-CN') }} 次里程碑 · 查看里程碑战报
       <span aria-hidden="true">↗</span>
     </RouterLink>
 
-    <div class="demo-controls">
+    <div v-if="!isMilestoneView" class="demo-controls">
       <span>{{ isDemo ? '当前查看：虚构案例' : '想先了解图表？可以查看虚构案例。' }}</span>
       <button type="button" class="outline-button" :disabled="saving" :aria-pressed="isDemo" @click="demoEnabled = !demoEnabled">{{ isDemo ? '返回真实数据' : '查看虚构案例' }}</button>
     </div>
-    <aside v-if="isDemo" class="demo-banner" role="status">
+    <aside v-if="isDemo && !isMilestoneView" class="demo-banner" role="status">
       <strong>演示模式 · 虚构数据</strong>
       <h2>Nginx 502 故障排查</h2>
       <p>2026 年 9 月 19–25 日，模拟使用排障助手分析错误日志、检查上游服务并生成排查步骤。共 250 次调用，242 次成功；5 次超时、3 次空回复。</p>
       <p>以下图表、模型和额度均为虚构案例，仅用于展示界面，不计入真实账本，也不会修改已保存额度。</p>
     </aside>
 
-    <div v-if="!isDemo" class="analytics-filters">
+    <div v-if="!isDemo && !isMilestoneView" class="analytics-filters">
       <div class="filter-fields">
         <label>统计月份 <input v-model="month" aria-label="统计月份" type="month" min="2000-01" max="2100-12" :disabled="saving" /></label>
         <label>模型连接 <select v-model="connectionId" aria-label="模型连接" :disabled="saving"><option value="">全部模型</option><option v-for="item in connectionOptions" :key="item.id" :value="String(item.id)">{{ item.name }}</option></select></label>
@@ -45,9 +48,24 @@
         <button class="outline-button" type="button" :disabled="loading || saving" @click="loadReport()">{{ loading ? '读取中…' : '刷新统计' }}</button>
       </div>
     </div>
-    <p v-if="connectionWarning && !isDemo" class="source-note">{{ connectionWarning }}</p>
+    <p v-if="connectionWarning && !isDemo && !isMilestoneView" class="source-note">{{ connectionWarning }}</p>
     <div v-if="error && !isDemo" class="state-panel error-panel" role="alert"><h2>暂时无法读取统计</h2><p>{{ error }}</p><button type="button" class="outline-button" :disabled="loading" @click="loadReport()">重新加载</button></div>
     <div v-else-if="loading && !isDemo" class="state-panel" role="status">正在读取 {{ month }} 的调用记录…</div>
+
+    <!-- 里程碑战报：与用量总览共用同一份 report 与 month，不二次请求，不写死数字。
+         demo 模式下 report 是虚构案例，不能冒充真实账本档位 → 只显示说明卡（D2）。 -->
+    <aside v-else-if="isMilestoneView && isDemo" class="demo-banner milestone-demo-note" role="status">
+      <strong>演示模式 · 虚构数据不生成里程碑</strong>
+      <p>里程碑只从真实调用账本推导。当前虚构案例的 250 次调用不会计入任何档位；请返回真实数据后查看战报。</p>
+      <button type="button" class="outline-button" @click="demoEnabled = false">返回真实数据</button>
+    </aside>
+    <MilestoneReportPanel
+      v-else-if="isMilestoneView && report"
+      :report="report"
+      :month="month"
+      :ambient="route.query.ambient !== '0'"
+      :preview="route.query.preview === '1'"
+    />
 
     <template v-else-if="report">
       <div class="metric-grid">
@@ -130,12 +148,14 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import ChartBarStack from '../../components/ui/v-chart-bar.vue'
 import ChartLineDefault from '../../components/ui/v-chart-4.vue'
 import QuotaRing from '../../components/model/QuotaRing.vue'
 import MetricSparkline from '../../components/model/MetricSparkline.vue'
 import ModelLeaderboard from '../../components/model/ModelLeaderboard.vue'
 import UsageQualityPanel from '../../components/model/UsageQualityPanel.vue'
+import MilestoneReportPanel from '../../components/model/MilestoneReportPanel.vue'
 import { getModelAnalytics, saveModelTokenBudget } from '../../api/modelAnalytics.ts'
 import { getModelConnections } from '../../api/model.ts'
 import { budgetState, daysInMonth, formatMetric, modelLeaderboard, parseTokenBudget, periodAggregate, periodDelta, priorPeriodAggregate, usagePace, validMonth } from '../../components/model/modelAnalytics.js'
@@ -144,7 +164,10 @@ import { callMilestoneReached } from '../../components/celebrate/achievements.js
 import ModelShareDonut from '../../components/model/ModelShareDonut.vue'
 
 const props = defineProps({ mode: { type: String, default: 'strength' } })
+const route = useRoute()
 const isTokens = computed(() => props.mode === 'tokens')
+/* 战报子视图：只在 tokens 模式生效，?view=milestones 深链；默认用量总览。 */
+const isMilestoneView = computed(() => isTokens.value && route.query.view === 'milestones')
 // 周期三档（claude-usage 的今日/本周/本月）：今日与近 7 天按 UTC 从 daily 切片，本月用 summary 权威口径
 const DEMO_TODAY = '2026-09-25' // 虚构案例的"今天"，与 demo 七天样本最后一天对齐
 const periodOptions = [{ value: 'month', label: '本月' }, { value: 'week', label: '近 7 天' }, { value: 'today', label: '今日' }]
@@ -289,7 +312,8 @@ onBeforeUnmount(() => { disposed = true; requestVersion++; stopAutoRefresh(); do
 .model-analytics { max-width: 1280px; margin: 0 auto; padding: 12px 0 36px; color: var(--smart-text); font-family: var(--font-cn); }
 .analytics-heading { display: flex; justify-content: space-between; gap: 24px; align-items: center; }.eyebrow { margin: 0 0 10px; color: var(--smart-primary-strong); font: 10px var(--font-mono); letter-spacing: .13em; }h1 { margin: 0; font-size: clamp(26px, 3vw, 36px); font-weight: 550; letter-spacing: -.03em; }.intro { color: var(--smart-muted); font-size: 13px; line-height: 1.8; margin: 12px 0 0; }h2 { margin: 0; font-size: 17px; font-weight: 550; }
 .outline-button, .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 14px; min-height: 40px; padding: 9px 16px; border: 1px solid var(--smart-border); border-radius: 8px; font: inherit; font-size: 12px; color: var(--smart-text); background: var(--smart-surface); text-decoration: none; cursor: pointer; transition: border-color 140ms, background 140ms; white-space: nowrap; }.outline-button:hover { border-color: var(--smart-primary-strong); }.primary-button { background: var(--smart-primary-strong); color: var(--smart-bg); border-color: transparent; font-weight: 600; }button:disabled { opacity: .5; cursor: wait; }button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 3px; }
-.analytics-tabs { display: flex; gap: 28px; margin-top: 30px; border-bottom: 1px solid var(--smart-border); }.analytics-tabs a { padding: 14px 0; text-decoration: none; color: var(--smart-muted); font-size: 13px; border-bottom: 2px solid transparent; }.analytics-tabs a[aria-current=page] { color: var(--smart-primary-strong); border-color: currentColor; }
+.analytics-tabs { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 30px; border-bottom: 1px solid var(--smart-border); }
+.milestone-demo-note { display: grid; gap: 10px; justify-items: start; }.analytics-tabs a { padding: 14px 0; text-decoration: none; color: var(--smart-muted); font-size: 13px; border-bottom: 2px solid transparent; }.analytics-tabs a[aria-current=page] { color: var(--smart-primary-strong); border-color: currentColor; }
 .milestone-link { display: inline-flex; align-items: center; gap: 10px; margin-top: 16px; padding: 8px 15px; border: 1px solid var(--smart-border); border-radius: 999px; font-size: 12px; color: var(--smart-muted); text-decoration: none; transition: border-color 140ms, color 140ms; }.milestone-link:hover { border-color: var(--smart-primary-strong); color: var(--smart-primary-strong); }.milestone-dot { width: 7px; height: 7px; background: var(--smart-primary-strong); transform: rotate(45deg); }
 .analytics-filters { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin: 24px 0; }.filter-fields { display: flex; gap: 16px; min-width: 0; }.filter-fields label { display: grid; gap: 8px; font-size: 11px; color: var(--smart-muted); min-width: 0; }input, select { min-height: 40px; min-width: 0; max-width: 100%; border: 1px solid var(--smart-border); border-radius: 7px; padding: 8px 12px; color: var(--smart-text); background: var(--smart-surface); font: inherit; font-size: 13px; }.filter-fields select { width: 240px; text-overflow: ellipsis; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }

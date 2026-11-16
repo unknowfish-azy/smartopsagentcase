@@ -69,7 +69,6 @@ export const personalSystemGroups = Object.freeze([
   directGroup({ id: 'harbor', label: 'HARBOR WORKBENCH', cn: 'Harbor 工作台', icon: 'Monitor', routeName: 'HarborWorkbench', to: '/harbor' }),
   directGroup({ id: 'operations', label: 'OPERATIONS', cn: '运维系统', icon: 'Monitor', routeName: 'ServerList', to: '/servers' }),
   directGroup({ id: 'health', label: 'HEALTH CENTER', cn: '健康诊断', icon: 'CircleCheck', routeName: 'HealthCenter', to: '/health' }),
-  directGroup({ id: 'milestones', label: 'MILESTONES', cn: '里程碑战报', icon: 'Trophy', routeName: 'MilestoneHall', to: '/milestones' }),
   expandableGroup({
     id: 'models', label: 'MODELS', cn: '模型中心', icon: 'Cpu', routeName: 'ModelSettings', to: '/model-settings',
     children: [

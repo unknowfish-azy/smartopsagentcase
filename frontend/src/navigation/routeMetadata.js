@@ -15,7 +15,6 @@ const routeMetadata = Object.freeze({
   ServerList: Object.freeze({ personalGroup: 'operations', pageFlow: null }),
   ServerDetail: Object.freeze({ personalGroup: 'operations', pageFlow: null }),
   HealthCenter: Object.freeze({ personalGroup: 'operations', pageFlow: null }),
-  MilestoneHall: Object.freeze({ personalGroup: 'milestones', pageFlow: null }),
   AgentCommandCenter: Object.freeze({ personalGroup: 'agent', pageFlow: 'agent' }),
   ExecutionTrace: Object.freeze({ personalGroup: 'agent', pageFlow: 'agent' }),
   AgentPersona: Object.freeze({ personalGroup: 'agent', pageFlow: null }),
