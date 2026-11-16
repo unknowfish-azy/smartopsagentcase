@@ -159,6 +159,72 @@
       <div class="login-organisms login-organisms--spark" aria-hidden="true">
         <div class="login-stars-bg"></div>
         <div class="login-stars-front"></div>
+        <svg v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-globe" viewBox="0 0 260 260" aria-hidden="true" focusable="false">
+          <defs>
+            <radialGradient id="login-globe-core">
+              <stop offset="0" style="stop-color: var(--smart-effect-star)" stop-opacity=".55" />
+              <stop offset=".45" style="stop-color: var(--smart-primary-strong)" stop-opacity=".16" />
+              <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+            </radialGradient>
+            <radialGradient id="login-globe-aura">
+              <stop offset="0" style="stop-color: var(--smart-primary-strong)" stop-opacity=".2" />
+              <stop offset=".6" style="stop-color: var(--smart-primary-strong)" stop-opacity=".08" />
+              <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="login-globe-line" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+              <stop offset=".5" style="stop-color: var(--smart-primary-strong)" stop-opacity=".5" />
+              <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="login-globe-line-green" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
+              <stop offset=".5" style="stop-color: var(--smart-effect-primary)" stop-opacity=".42" />
+              <stop offset="1" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
+            </linearGradient>
+            <radialGradient id="login-globe-sat">
+              <stop offset="0" style="stop-color: var(--smart-effect-star)" stop-opacity=".9" />
+              <stop offset=".4" style="stop-color: var(--smart-primary-strong)" stop-opacity=".5" />
+              <stop offset="1" style="stop-color: var(--smart-primary-strong)" stop-opacity="0" />
+            </radialGradient>
+            <radialGradient id="login-globe-sat-green">
+              <stop offset="0" style="stop-color: var(--smart-effect-star)" stop-opacity=".9" />
+              <stop offset=".4" style="stop-color: var(--smart-effect-primary)" stop-opacity=".5" />
+              <stop offset="1" style="stop-color: var(--smart-effect-primary)" stop-opacity="0" />
+            </radialGradient>
+            <clipPath id="login-globe-clip"><circle cx="130" cy="130" r="88" /></clipPath>
+          </defs>
+          <circle class="login-globe__aura" cx="130" cy="130" r="126" fill="url(#login-globe-aura)" />
+          <g class="login-globe__breathe">
+            <circle cx="130" cy="130" r="88" fill="url(#login-globe-core)" />
+            <circle cx="130" cy="130" r="88" fill="none" stroke="url(#login-globe-line)" stroke-width="1" />
+            <g clip-path="url(#login-globe-clip)" stroke-width="1" fill="none">
+              <ellipse cx="130" cy="97" rx="79" ry="13" stroke="url(#login-globe-line)" opacity=".34" />
+              <ellipse cx="130" cy="163" rx="76" ry="13" stroke="url(#login-globe-line)" opacity=".3" />
+              <ellipse cx="130" cy="130" rx="87" ry="15" stroke="url(#login-globe-line)" opacity=".44" />
+              <ellipse cx="130" cy="130" ry="88" rx="86" stroke="url(#login-globe-line)" opacity=".3">
+                <animate attributeName="rx" values="86;8;86" keyTimes="0;.5;1" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1" dur="11s" repeatCount="indefinite" />
+              </ellipse>
+              <ellipse cx="130" cy="130" ry="88" rx="61" stroke="url(#login-globe-line)" opacity=".26">
+                <animate attributeName="rx" values="61;5;61" keyTimes="0;.5;1" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1" dur="11s" begin="-2.75s" repeatCount="indefinite" />
+              </ellipse>
+              <ellipse cx="130" cy="130" ry="88" rx="61" stroke="url(#login-globe-line-green)" opacity=".24">
+                <animate attributeName="rx" values="61;5;61" keyTimes="0;.5;1" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1" dur="11s" begin="-8.25s" repeatCount="indefinite" />
+              </ellipse>
+              <circle class="login-globe__land" cx="102" cy="112" r="7" fill="url(#login-globe-sat)" stroke="none" />
+              <circle class="login-globe__land login-globe__land--green" cx="158" cy="148" r="5.4" fill="url(#login-globe-sat-green)" stroke="none" />
+              <circle class="login-globe__land" cx="140" cy="96" r="4.2" fill="url(#login-globe-sat)" stroke="none" />
+            </g>
+            <g transform="rotate(-16 130 130)" fill="none">
+              <ellipse cx="130" cy="130" rx="118" ry="34" stroke="url(#login-globe-line)" opacity=".28" stroke-dasharray="3 7" />
+              <circle r="4.6" fill="url(#login-globe-sat)">
+                <animateMotion dur="13s" repeatCount="indefinite" path="M 12 130 a 118 34 0 1 0 236 0 a 118 34 0 1 0 -236 0" />
+              </circle>
+              <circle r="3.6" fill="url(#login-globe-sat-green)">
+                <animateMotion dur="13s" begin="-6.5s" repeatCount="indefinite" path="M 12 130 a 118 34 0 1 0 236 0 a 118 34 0 1 0 -236 0" />
+              </circle>
+            </g>
+          </g>
+        </svg>
         <span class="login-scene-label">KNOWLEDGE · MEMORY · AGENT</span>
       </div>
     </section>
@@ -788,6 +854,15 @@ async function finishLogin(user) {
   to { opacity: 1; }
 }
 .login-scene-label { position: absolute; bottom: 0; left: 0; font: 10px var(--font-mono); color: var(--smart-muted); letter-spacing: .12em; }
+/* 全息知识球：经线 rx 循环收张模拟自转，整体一吸一呼呼吸缩放 */
+.login-globe { position: absolute; inset: 0; z-index: 1; margin: auto; width: min(72%, 300px); height: auto; aspect-ratio: 1; opacity: .8; pointer-events: none; }
+.login-globe__breathe { transform-box: fill-box; transform-origin: center; animation: login-globe-breathe 5.6s ease-in-out infinite; }
+.login-globe__aura { transform-box: fill-box; transform-origin: center; animation: login-globe-aura 5.6s ease-in-out infinite; }
+.login-globe__land { animation: login-globe-land 4.2s ease-in-out infinite; }
+.login-globe__land--green { animation-delay: -2.1s; }
+@keyframes login-globe-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes login-globe-aura { 0%, 100% { transform: scale(1); opacity: .75; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes login-globe-land { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 .login-trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0 0; padding-top: 18px; border-top: 1px solid var(--smart-border); }
 .login-trust > div { display: grid; gap: 6px; }
 .login-trust dt { color: var(--smart-muted); font-size: 12px; }
