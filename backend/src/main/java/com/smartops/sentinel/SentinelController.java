@@ -2,6 +2,10 @@ package com.smartops.sentinel;
 
 import com.smartops.common.ApiResponse;
 import com.smartops.security.SessionUser;
+import com.smartops.service.OperatorMemoryService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,12 +29,14 @@ public class SentinelController {
     private final SentinelService sentinel;
     private final SentinelScriptRunner runner;
     private final AlertLifecycleService lifecycle;
+    private final JdbcTemplate jdbc;
 
     public SentinelController(SentinelService sentinel, SentinelScriptRunner runner,
-                              AlertLifecycleService lifecycle) {
+                              AlertLifecycleService lifecycle, JdbcTemplate jdbc) {
         this.sentinel = sentinel;
         this.runner = runner;
         this.lifecycle = lifecycle;
+        this.jdbc = jdbc;
     }
 
     /* ── 哨兵任务 ─────────────────────────────────────────────────────── */
@@ -441,6 +447,76 @@ public class SentinelController {
         return ApiResponse.success();
     }
 
+    /* ── PID 闭环状态 ──────────────────────────────────────────────── */
+
+    /** 查 PID 闭环状态；可按 taskId（查该任务所有指标）或 taskId+metric（精确）过滤。 */
+    @GetMapping("/pid-states")
+    public ApiResponse<List<PidStateView>> pidStates(@AuthenticationPrincipal SessionUser actor,
+                                                     @RequestParam(required = false) Long taskId,
+                                                     @RequestParam(required = false) String metric) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT p.id, p.task_id, p.metric, p.kp, p.ki, p.kd, p.integral,
+                       p.last_error, p.last_intensity,
+                       p.last_executed_at, p.execution_count, p.enabled,
+                       p.created_at, p.updated_at
+                  FROM sentinel_pid_state p
+                """);
+        java.util.List<Object> args = new java.util.ArrayList<>();
+        if (taskId != null) {
+            sql.append(" WHERE p.task_id = ?");
+            args.add(taskId);
+        }
+        if (metric != null && !metric.isBlank()) {
+            sql.append(args.isEmpty() ? " WHERE " : " AND ");
+            sql.append("p.metric = ?");
+            args.add(metric);
+        }
+        sql.append(" ORDER BY p.updated_at DESC LIMIT 100");
+        List<PidStateView> rows = jdbc.query(sql.toString(), (rs, row) -> new PidStateView(
+                rs.getLong("id"), rs.getLong("task_id"), rs.getString("metric"),
+                rs.getDouble("kp"), rs.getDouble("ki"), rs.getDouble("kd"),
+                rs.getDouble("integral"), rs.getDouble("last_error"),
+                rs.getDouble("last_intensity"),
+                rs.getTimestamp("last_executed_at") != null
+                        ? rs.getTimestamp("last_executed_at").toInstant().toString() : null,
+                rs.getInt("execution_count"), rs.getBoolean("enabled"),
+                rs.getTimestamp("created_at").toInstant().toString(),
+                rs.getTimestamp("updated_at").toInstant().toString()),
+                args.toArray());
+        return ApiResponse.success(rows);
+    }
+
+    /** 查已蒸馏的哨兵经验记忆（DECISION_LOOP 类型 + incident_key 以 "sentinel:" 开头）。 */
+    @GetMapping("/distill-memories")
+    public ApiResponse<List<DistillMemoryView>> distillMemories(@AuthenticationPrincipal SessionUser actor,
+                                                                  @RequestParam(required = false) String metric,
+                                                                  @RequestParam(defaultValue = "20") int limit) {
+        long userId = actor.id();
+        StringBuilder sql = new StringBuilder("""
+                SELECT id, incident_key, memory_type, preferred_action, source_refs,
+                       evidence_count, confidence, status, created_at, updated_at
+                  FROM operator_memory
+                 WHERE user_id = ? AND memory_type = 'DECISION_LOOP'
+                   AND incident_key LIKE 'sentinel:%'
+                """);
+        java.util.List<Object> args = new java.util.ArrayList<>();
+        args.add(userId);
+        if (metric != null && !metric.isBlank()) {
+            sql.append(" AND incident_key LIKE ?");
+            args.add("%:" + metric.toLowerCase() + "%");
+        }
+        sql.append(" ORDER BY confidence DESC, updated_at DESC LIMIT ?");
+        args.add(Math.max(1, Math.min(50, limit)));
+        List<DistillMemoryView> rows = jdbc.query(sql.toString(), (rs, row) -> new DistillMemoryView(
+                rs.getLong("id"), rs.getString("incident_key"), rs.getString("memory_type"),
+                rs.getString("preferred_action"), rs.getString("source_refs"),
+                rs.getInt("evidence_count"), rs.getDouble("confidence"), rs.getString("status"),
+                rs.getTimestamp("created_at").toInstant().toString(),
+                rs.getTimestamp("updated_at").toInstant().toString()),
+                args.toArray());
+        return ApiResponse.success(rows);
+    }
+
     /* ── 请求体 ───────────────────────────────────────────────────────── */
 
     public record ScheduleRequest(long scriptId, String cronExpr, String runtimeId, String nextFireAt) {}
@@ -457,6 +533,19 @@ public class SentinelController {
                               Long templateId, String runtimeId, String groupLabel) {}
 
     public record EnabledRequest(boolean enabled) {}
+
+    /** PID 闭环状态（前端展示用）。 */
+    public record PidStateView(long id, long taskId, String metric,
+                               double kp, double ki, double kd,
+                               double integral, double lastError, double lastIntensity,
+                               String lastExecutedAt, int executionCount, boolean enabled,
+                               String createdAt, String updatedAt) {}
+
+    /** 蒸馏经验记忆（前端展示用）。 */
+    public record DistillMemoryView(long id, String incidentKey, String memoryType,
+                                     String preferredAction, String sourceRefs,
+                                     int evidenceCount, double confidence, String status,
+                                     String createdAt, String updatedAt) {}
 
     public record RebindRequest(Long sessionId) {}
 

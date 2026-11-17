@@ -2,6 +2,7 @@ package com.smartops.sentinel;
 
 import com.smartops.operations.OperationRuntime;
 import com.smartops.operations.OperationRuntimeRegistry;
+import com.smartops.sentinel.AlertCorrelationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * PERF-01 的集成验证：有界并发、背压、慢车道、队列年龄/到期延迟、失败下次时间、双副本互斥。
@@ -207,7 +209,9 @@ class SentinelSchedulerIntegrationTest {
     }
 
     private SentinelService scheduler(String instanceId) {
-        SentinelService service = new SentinelService(jdbc, runtimes, connections, clock, advisor, notifications,
+        SentinelService service = new SentinelService(jdbc, runtimes, connections,
+                mock(AlertCorrelationService.class),  // 集成测试不关心关联，Mock 一个
+                clock, advisor, notifications,
                 notifier, MAX_CONCURRENCY, BATCH, 20_000L, 3_600L, 2_000L, SLOW_LANE, 20_000L, instanceId);
         extraSchedulers.add(service);
         return service;

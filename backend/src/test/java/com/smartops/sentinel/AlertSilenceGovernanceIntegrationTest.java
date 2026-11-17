@@ -163,7 +163,7 @@ class AlertSilenceGovernanceIntegrationTest {
                                                    Instant endsAt, String reason, String createdBy) {
                         throw new IllegalStateException("connection refused");
                     }
-                });
+                }, new SelfHealingPidService(jdbc));
 
         AlertLifecycleService.SilenceView view = external.createSilence(OWNER,
                 new AlertLifecycleService.SilenceRequest("TASK", TASK_ID, "外部同步演练",
@@ -188,7 +188,7 @@ class AlertSilenceGovernanceIntegrationTest {
                     @Override public void expire(String externalId) {
                         throw new IllegalStateException("external 502");
                     }
-                });
+                }, new SelfHealingPidService(jdbc));
 
         AlertLifecycleService.SilenceView view = external.createSilence(OWNER,
                 new AlertLifecycleService.SilenceRequest("TASK", TASK_ID, "外部撤销演练",
@@ -218,7 +218,7 @@ class AlertSilenceGovernanceIntegrationTest {
                     @Override public void expire(String externalId) {
                         revoked.add(externalId);
                     }
-                });
+                }, new SelfHealingPidService(jdbc));
 
         long silenceId = external.createSilence(OWNER,
                 new AlertLifecycleService.SilenceRequest("GLOBAL", null, "外部撤销成功演练",

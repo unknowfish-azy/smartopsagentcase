@@ -113,6 +113,13 @@
         <footer class="alert-card__actions">
           <button type="button" :disabled="busyId === alert.id" @click="analyze(alert)">研判</button>
           <button type="button" :disabled="busyId === alert.id" @click="notify(alert)">通知</button>
+          <!-- 已关闭的告警已处理完，再转工单没有意义，提前禁用并说明。 -->
+          <button
+            type="button"
+            :disabled="busyId === alert.id || alert.status === 'CLOSED'"
+            :title="alert.status === 'CLOSED' ? '已关闭的告警无需转工单' : '创建工单并带上下文，跳转工单详情'"
+            @click="toIncident(alert)"
+          >转工单</button>
           <!-- 只有已关闭的告警才能沉淀为经验；未关闭时后端会拒绝，这里提前禁用并说明原因。 -->
           <button type="button" :disabled="busyId === alert.id || alert.status !== 'CLOSED'" :title="alert.status === 'CLOSED' ? '沉淀为知识候选，等待团队复核' : '需先人工确认关闭后才能沉淀为知识'" @click="sediment(alert)">沉淀</button>
           <button type="button" :disabled="busyId === alert.id" title="交给团队 Agent 提出处置：生成预览并在团队侧创建待审批运行，不执行命令" @click="openProposal(alert)">走团队审批</button>
@@ -299,6 +306,8 @@ import {
 import { ALERT_SEVERITIES, ALERT_STATUSES, NOTIFY_CHANNELS, requiresHumanBeforeRemediation } from './sentinelModel.js'
 import AlertEventTimeline from '../../components/sentinel/AlertEventTimeline.vue'
 import { useVoiceActionBus } from '../../components/persona/voiceActionRegistry.js'
+import { useRouter } from 'vue-router'
+import { createIncidentFromAlert } from '../../api/incident'
 import './sentinel.css'
 
 const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
@@ -312,6 +321,7 @@ function updateMobile() { isMobile.value = window.innerWidth < 1024 }
 const busyId = ref(null)
 const actionMessage = ref('')
 const advice = ref(null)
+const router = useRouter()
 
 const countBy = status => state.alerts.filter(alert => alert.status === status).length
 const latestAlert = computed(() => state.alerts[0] || null)
@@ -411,6 +421,27 @@ async function sediment(alert) {
     actionMessage.value = result.ok
       ? `已沉淀为知识候选 #${result.candidateId}，等待团队复核后采纳。`
       : result.message
+  } finally { busyId.value = null }
+}
+
+/**
+ * 告警转工单：复用后端 from-alert 编排（自动带上下文），成功后跳转工单详情。
+ * 失败信息如实展示，不静默。
+ */
+async function toIncident(alert) {
+  busyId.value = alert.id
+  actionMessage.value = ''
+  try {
+    const response = await createIncidentFromAlert(alert.id)
+    const incident = response?.data?.data
+    if (!incident?.id) {
+      actionMessage.value = '工单已创建，但未返回工单号，请到工单中心查看。'
+      return
+    }
+    actionMessage.value = `已创建工单 #${incident.id}，正在跳转…`
+    router.push(`/incidents/${incident.id}`)
+  } catch (error) {
+    actionMessage.value = error?.response?.data?.message || error?.message || '转工单失败，请重试。'
   } finally { busyId.value = null }
 }
 

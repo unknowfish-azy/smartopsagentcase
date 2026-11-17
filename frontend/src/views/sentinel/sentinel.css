@@ -614,6 +614,68 @@ fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); fo
   color: color-mix(in srgb, var(--smart-text) 62%, transparent);
 }
 
+/* 工单详情：恢复契约草案（未签发） */
+.incident-contract {
+  display: grid;
+  gap: 10px;
+}
+
+.incident-contract__summary {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.incident-contract__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--smart-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.incident-contract__id {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--smart-primary-soft);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.incident-contract__notes {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--smart-muted);
+}
+
+.incident-contract__json pre {
+  max-height: 320px;
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--smart-border);
+  border-radius: 6px;
+  background: var(--smart-surface);
+  overflow: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.incident-contract__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
 /* 右侧画布容器：蛛网动画的领地，文字不进入 */
 .sentinel-crawler-canvas {
   position: relative;

@@ -72,6 +72,7 @@ public class SentinelService {
     private final JdbcTemplate jdbc;
     private final OperationRuntimeRegistry runtimes;
     private final com.smartops.service.OperationConnectionService connections;
+    private final AlertCorrelationService correlation;
     private final ObjectMapper json = new ObjectMapper();
     private final Clock clock;
 
@@ -99,6 +100,7 @@ public class SentinelService {
 
     public SentinelService(JdbcTemplate jdbc, OperationRuntimeRegistry runtimes,
                            com.smartops.service.OperationConnectionService connections,
+                           AlertCorrelationService correlation,
                            @org.springframework.beans.factory.annotation.Qualifier("mfaClock") Clock clock,
                            SentinelAdvisor advisor,
                            com.smartops.service.TeamNotificationService notifications,
@@ -114,6 +116,7 @@ public class SentinelService {
         this.jdbc = jdbc;
         this.runtimes = runtimes;
         this.connections = connections;
+        this.correlation = correlation;
         this.clock = clock;
         this.advisor = advisor;
         this.notifications = notifications;
@@ -1227,7 +1230,16 @@ public class SentinelService {
         String severity = meta.severity() == null ? "P2" : meta.severity();
         int debounceSec = meta.debounceSec();
 
-        if (!SentinelThreshold.breached(rules, snapshot)) {
+        // ── 路径 A：硬编码阈值越界（原有逻辑） ──
+        boolean hardBreached = SentinelThreshold.breached(rules, snapshot);
+
+        // ── 路径 B：Python 建模脚本离线标记的统计异常 ──
+        //    脚本 sentinel_modeling_plan1.py 会把 STL + 孤立森林检出的异常样本
+        //    写回 sentinel_metric_sample.abnormal=1；Java 端每轮评估时顺手查一下
+        //    过去 60 秒内有没有同 task 的 abnormal 标记——有就跳过硬编码阈值门槛。
+        boolean modelBreached = hasModelAnomaly(task.id(), now);
+
+        if (!hardBreached && !modelBreached) {
             jdbc.update("UPDATE sentinel_task SET breached_since=NULL WHERE id=? AND breached_since IS NOT NULL", task.id());
             return;
         }
@@ -1291,6 +1303,13 @@ public class SentinelService {
         }, keys);
         long alertId = generatedId(keys);
         recordEvent(alertId, taskUserId(task.id()), "FIRED", "哨兵 " + task.name() + " 命中阈值：" + observed);
+
+        // 告警关联折叠：同资源 5 分钟窗口内的告警合并成一个 correlation event
+        try {
+            correlation.foldAlert(alertId, task.id(), metric, severity, observed, now);
+        } catch (RuntimeException ce) {
+            log.debug("alert correlation skipped for alert {}: {}", alertId, ce.getMessage());
+        }
     }
 
     private static String describeObserved(List<SentinelThreshold.Rule> rules, Map<String, Double> snapshot) {
@@ -1304,6 +1323,25 @@ public class SentinelService {
 
     /** 阈值模板的判定上下文：一次查询取回规则、级别与防抖时长。 */
     private record Template(List<SentinelThreshold.Rule> rules, String severity, int debounceSec) {}
+
+    /**
+     * 检查过去 60 秒内 sentinel_metric_sample 有没有被 Python 建模脚本标记为 abnormal=1。
+     *
+     * <p>Python 脚本 sentinel_modeling_plan1.py 每轮运行都会把 STL + 孤立森林检出的异常样本
+     * 批量写回 sentinel_metric_sample.abnormal。这里只查"最近 60 秒内有没有同 task 的标记"——
+     * 有就等于建模脚本说"这个任务最近在异常态"，Java 端跳过硬编码阈值门槛，直接进入防抖判定。</p>
+     *
+     * <p>窗口固定 60 秒的原因：哨兵最短轮询周期是 10 秒、默认 30 秒，60 秒刚好能覆盖 1~2 轮
+     * 完整采集。超过 60 秒没新标记说明异常已消，硬编码阈值会接管判定。</p>
+     */
+    private boolean hasModelAnomaly(long taskId, Instant now) {
+        long windowStartSec = now.getEpochSecond() - 60L;
+        java.sql.Timestamp windowStart = java.sql.Timestamp.from(Instant.ofEpochSecond(windowStartSec));
+        Long count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM sentinel_metric_sample WHERE task_id=? AND abnormal=1 AND sampled_at >= ?",
+                Long.class, taskId, windowStart);
+        return count != null && count > 0;
+    }
 
     /* ── 轮询入口 ─────────────────────────────────────────────────────── */
 

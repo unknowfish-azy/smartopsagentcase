@@ -43,12 +43,15 @@ public class AlertLifecycleService {
     private final JdbcTemplate jdbc;
     private final SentinelNotifier notifier;
     private final AlertmanagerSilenceClient silenceClient;
+    private final SelfHealingPidService pidService;
 
     public AlertLifecycleService(JdbcTemplate jdbc, SentinelNotifier notifier,
-                                 AlertmanagerSilenceClient silenceClient) {
+                                 AlertmanagerSilenceClient silenceClient,
+                                 SelfHealingPidService pidService) {
         this.jdbc = jdbc;
         this.notifier = notifier;
         this.silenceClient = silenceClient;
+        this.pidService = pidService;
     }
 
     /* ── 自动恢复：故障消失后进入待关闭 ───────────────────────────────── */
@@ -64,7 +67,8 @@ public class AlertLifecycleService {
     @Transactional
     public int resolveRecoveredAlerts(int limit) {
         List<Map<String, Object>> rows = jdbc.queryForList("""
-                SELECT a.id, a.task_id, a.metric FROM sentinel_alert a
+                SELECT a.id, a.task_id, a.metric
+                  FROM sentinel_alert a
                  WHERE a.status IN ('OPEN','NOTIFIED')
                    AND EXISTS (SELECT 1 FROM sentinel_metric_sample s
                                 WHERE s.task_id=a.task_id AND s.sampled_at >= a.fired_at AND s.abnormal=FALSE
@@ -75,14 +79,22 @@ public class AlertLifecycleService {
                 """, Math.max(1, Math.min(200, limit)));
 
         int resolved = 0;
+        Instant resolvedNow = Instant.now();
         for (Map<String, Object> row : rows) {
             long alertId = ((Number) row.get("id")).longValue();
+            long taskId = ((Number) row.get("task_id")).longValue();
             String metric = (String) row.get("metric");
             jdbc.update("""
                     UPDATE sentinel_alert
                        SET status='RESOLVED', resolved_at=CURRENT_TIMESTAMP, recovered_at=CURRENT_TIMESTAMP
                      WHERE id=? AND status IN ('OPEN','NOTIFIED')
                     """, alertId);
+            // PID 闭环反馈：告警 resolved 后读指标回差，更新积分项
+            try {
+                pidService.onAlertResolved(taskId, metric, resolvedNow);
+            } catch (RuntimeException pe) {
+                log.debug("PID feedback skipped for alert {}: {}", alertId, pe.getMessage());
+            }
             recordEvent(alertId, null, "RECOVERED",
                     "指标已恢复正常，自动进入待关闭" + (metric == null ? "" : "（" + metric + "）"));
             resolved++;

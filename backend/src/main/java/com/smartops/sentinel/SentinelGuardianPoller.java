@@ -16,9 +16,11 @@ public class SentinelGuardianPoller {
     private static final Logger log = LoggerFactory.getLogger(SentinelGuardianPoller.class);
 
     private final SentinelGuardianService guardian;
+    private final Plan1ModelingRunner plan1Runner;
 
-    public SentinelGuardianPoller(SentinelGuardianService guardian) {
+    public SentinelGuardianPoller(SentinelGuardianService guardian, Plan1ModelingRunner plan1Runner) {
         this.guardian = guardian;
+        this.plan1Runner = plan1Runner;
     }
 
     @Scheduled(
@@ -42,6 +44,16 @@ public class SentinelGuardianPoller {
             if (learned > 0) log.info("sentinel guardian refreshed {} baseline profile(s)", learned);
         } catch (Exception failure) {
             log.warn("sentinel guardian learning failed: {}", failure.getMessage());
+        }
+
+        // ── Java 基线学习完成后，跑 Python 建模脚本 ──
+        // 注意顺序：Java learnAll 有 @Transactional，必须等它提交完 Python 再启动
+        // （Python 用独立 JDBC 连接写 DB，和 Java 事务边界无关）。
+        try {
+            int scanned = plan1Runner.run();
+            if (scanned > 0) log.info("sentinel plan1 modeling scanned {} samples", scanned);
+        } catch (Exception failure) {
+            log.warn("sentinel plan1 modeling runner failed: {}", failure.getMessage());
         }
     }
 }

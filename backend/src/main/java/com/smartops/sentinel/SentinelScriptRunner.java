@@ -3,6 +3,7 @@ package com.smartops.sentinel;
 import com.smartops.exception.BusinessException;
 import com.smartops.security.SessionUser;
 import com.smartops.service.MultiExecService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -27,6 +28,7 @@ import java.util.Map;
  * 而目标主机的运行连接是用户会话内的资源。没有连接就无法生成预览 ——
  * 这不是限制，而是既有安全模型的正常要求。</p>
  */
+@Slf4j
 @Service
 public class SentinelScriptRunner {
 
@@ -39,13 +41,19 @@ public class SentinelScriptRunner {
     private final MultiExecService multiExec;
     private final com.smartops.service.TeamAgentRunService teamRuns;
     private final Clock clock;
+    private final SelfHealingPidService pidService;
+    private final DistillExperienceService distillService;
 
     public SentinelScriptRunner(JdbcTemplate jdbc, MultiExecService multiExec,
                                 com.smartops.service.TeamAgentRunService teamRuns,
+                                SelfHealingPidService pidService,
+                                DistillExperienceService distillService,
                                 @org.springframework.beans.factory.annotation.Qualifier("mfaClock") Clock clock) {
         this.jdbc = jdbc;
         this.multiExec = multiExec;
         this.teamRuns = teamRuns;
+        this.pidService = pidService;
+        this.distillService = distillService;
         this.clock = clock;
     }
 
@@ -213,6 +221,8 @@ public class SentinelScriptRunner {
                 UPDATE sentinel_script_run SET result=?, exit_code=?, duration_ms=?, output_excerpt=?, finished_at=NOW()
                  WHERE id=? AND actor_id=?
                 """, result, exitCode, durationMs, SentinelAlertLimits.truncate(outputExcerpt, 20000), runId, userId);
+        // 处置闭环：结果落库后自动尝试蒸馏经验（仅 SUCCESS/FAILED + ALERT 触发）
+        distillService.distillAfterRun(runId);
     }
 
     /**
@@ -315,14 +325,20 @@ public class SentinelScriptRunner {
                 "severity", severity);
         var run = teamRuns.create(actor, teamId, agentId, versionId, runtimeId, TOOL_ID, parameters);
 
+        // 4.5) PID 闭环调参：只需要 task_id + metric，数值由 PID 服务自己从 DB 查
+        PidTaskMetric pidSnap = loadPidTaskMetric(alertId);
+        double pidIntensity = pidSnap != null
+                ? pidService.calculateIntensity(pidSnap.taskId, pidSnap.metric)
+                : 0.5;
+
         // 5) 登记执行记录并推进告警状态（仍等待审批）
         Instant now = clock.instant();
         jdbc.update("""
                 INSERT INTO sentinel_script_run(script_id,version,trigger_kind,alert_id,run_id,actor_id,
-                    target_runtime,variables_json,started_at,result)
-                VALUES(?,?,?,?,?,?,?,?,?,?)
+                    target_runtime,variables_json,pid_intensity,started_at,result)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?)
                 """, script.id(), script.currentVersion(), TRIGGER_ALERT, alertId, preview.id(), userId,
-                runtimeId, toJson(variables), java.sql.Timestamp.from(now), "PENDING_APPROVAL");
+                runtimeId, toJson(variables), pidIntensity, java.sql.Timestamp.from(now), "PENDING_APPROVAL");
         jdbc.update("UPDATE sentinel_alert SET status='PENDING_APPROVAL', recommended_script_id=? WHERE id=?",
                 script.id(), alertId);
 
@@ -336,6 +352,11 @@ public class SentinelScriptRunner {
         result.put("humanApprovalRequired", true);
         result.put("alertId", alertId);
         result.put("severity", severity);
+        result.put("pidIntensity", SelfHealingPidService.round2(pidIntensity));
+        result.put("pidNote", pidSnap != null
+                ? String.format("PID 闭环调节：task=%d metric=%s → 强度=%s（首次或无历史阈值时默认 0.5）",
+                        pidSnap.taskId, pidSnap.metric, SelfHealingPidService.round2(pidIntensity))
+                : "PID 快照不可用，走默认强度");
         result.put("nextStep", "团队运行已创建为待审批。请由有审批权的成员 preview 后 approve，"
                 + "再由申请人 consumeGrant 执行；哨兵不直接执行命令。");
         return result;
@@ -439,6 +460,21 @@ public class SentinelScriptRunner {
                 """, (row, ignored) -> row.getString("metric"), alertId, userId, userId);
         return rows.isEmpty() || rows.get(0) == null ? "unknown" : rows.get(0);
     }
+
+    /** PID 计算所需的 task_id + metric（数值由 PID 服务自己从 DB 查）。 */
+    private PidTaskMetric loadPidTaskMetric(long alertId) {
+        try {
+            return jdbc.queryForObject("""
+                    SELECT task_id, metric FROM sentinel_alert WHERE id=?
+                    """, (rs, ignored) -> new PidTaskMetric(rs.getLong("task_id"), rs.getString("metric")),
+                    alertId);
+        } catch (Exception e) {
+            log.debug("PID snapshot unavailable for alert {}: {}", alertId, e.getMessage());
+            return null;
+        }
+    }
+
+    private record PidTaskMetric(long taskId, String metric) {}
 
     private int currentVersion(long scriptId) {
         Integer version = jdbc.queryForObject("SELECT current_version FROM sentinel_script WHERE id=?", Integer.class, scriptId);
