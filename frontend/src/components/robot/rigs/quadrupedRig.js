@@ -289,7 +289,7 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
     const glowState = beaconGlow(pulse)
     glowMat.opacity = glowState.opacity
     glow.scale.setScalar(glowState.scale)
-    beaconLight.intensity = pulse.intensity * 0.55
+    beaconLight.intensity = pulse.intensity * 0.38
     /* 扫描扇面亮度随旋转轻微呼吸，拖尾保持更暗 */
     const sweepWave = 0.5 + 0.5 * Math.sin(elapsed * 4)
     sweepMat.opacity = 0.24 + 0.16 * sweepWave

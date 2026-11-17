@@ -109,6 +109,10 @@ import {
   MeshBasicMaterial, PerspectiveCamera, PMREMGenerator, Raycaster, Scene, Vector2, Vector3, WebGLRenderer
 } from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { buildQuadrupedRig } from './rigs/quadrupedRig'
 import { buildHumanoidRig } from './rigs/humanoidRig'
@@ -242,6 +246,20 @@ function resolveColor(cssVar, fallback) {
   try { return new Color(raw).getHex() } catch { return fallback }
 }
 
+/**
+ * 取 3D 面板所在卡片的实际背景色：Bloom 会在透明画布上叠加半透明雾状 alpha，
+ * 若继续保持透明，CSS 背景会透出成色块接缝，因此给场景一个与卡片一致的纯色背景。
+ */
+function surfaceColor(element) {
+  let node = element
+  while (node && node !== document.body) {
+    const color = getComputedStyle(node).backgroundColor
+    if (color && color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)') return color
+    node = node.parentElement
+  }
+  return getComputedStyle(document.body).backgroundColor || '#0d1117'
+}
+
 /** 占位机器人本体（M8b 时在此替换为 GLTFLoader 加载真实 GLB）。 */
 function buildPlaceholder(formFactor, accent) {
   const group = new Group()
@@ -307,6 +325,14 @@ onMounted(() => {
   webglReady.value = true
 
   const scene = new Scene()
+  /* 纯色背景（与所在卡片一致）+ 主题切换时同步，避免 Bloom 的半透明辉光与 CSS 背景形成色块接缝 */
+  const bgColor = new Color(surfaceColor(element))
+  scene.background = bgColor
+  let themeObserver = null
+  if (typeof MutationObserver !== 'undefined') {
+    themeObserver = new MutationObserver(() => bgColor.set(surfaceColor(element)))
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+  }
   const accent = resolveColor('--ds-color-primary', ROUTE_COLOR)
   const camera = new PerspectiveCamera(42, 1, 0.1, 100)
   /* 环视：目标点固定在地图中部，拖拽只改球坐标角度，构图基准不漂移 */
@@ -330,6 +356,15 @@ onMounted(() => {
   scene.environment = envRT.texture
   scene.environmentIntensity = 0.65
   pmrem.dispose()
+
+  /* 后处理 Bloom：把状态灯光晕、LiDAR 激光线等自发光溢出成真实辉光。
+     strength 0.98 / radius 0.38 / threshold 0.7：辉光明显但不糊掉本体与网格；
+     isDegraded()（降级/低性能）时跳过 Bloom，直接走原始渲染。 */
+  const composer = new EffectComposer(renderer)
+  composer.addPass(new RenderPass(scene, camera))
+  const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.98, 0.38, 0.7)
+  composer.addPass(bloomPass)
+  composer.addPass(new OutputPass())
 
   /* 地面网格：覆盖地图 x∈[-5,10]，中心放 (2.5, 0) */
   const grid = new GridHelper(16, 16, 0x3a3f4a, 0x24272e)
@@ -511,6 +546,7 @@ onMounted(() => {
     const w = Math.max(1, element.clientWidth)
     const h = Math.max(1, element.clientHeight)
     renderer.setSize(w, h, false)
+    composer.setSize(w, h)
     camera.aspect = w / h
     camera.updateProjectionMatrix()
   }
@@ -691,7 +727,8 @@ onMounted(() => {
       shadowMat.opacity = wantStale ? 0.07 : 0.2
     }
 
-    renderer.render(scene, camera)
+    if (isDegraded()) renderer.render(scene, camera)
+    else composer.render()
   })
 
   disposeScene = () => {
@@ -699,6 +736,9 @@ onMounted(() => {
     mixer?.stopAllAction()
     mixer = null
     ro?.disconnect()
+    bloomPass.dispose()
+    composer.dispose()
+    themeObserver?.disconnect()
     element.removeEventListener('click', onStageClick)
     element.removeEventListener('pointerdown', onStagePointerDown)
     element.removeEventListener('pointerup', onStagePointerUp)

@@ -323,7 +323,7 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
     const glowState = beaconGlow(pulse)
     glowMat.opacity = glowState.opacity
     glow.scale.setScalar(glowState.scale)
-    beaconLight.intensity = pulse.intensity * 0.55
+    beaconLight.intensity = pulse.intensity * 0.38
     /* 扇面 / 拖尾 / 光束亮度随扫描轻微呼吸 */
     const sweepWave = 0.5 + 0.5 * Math.sin(elapsed * 4)
     sweepMat.opacity = 0.24 + 0.16 * sweepWave
