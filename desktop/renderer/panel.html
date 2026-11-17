@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:" />
+  <link rel="stylesheet" href="panel.css" />
+  <title>智维伴侣</title>
+</head>
+<body>
+  <div class="panel" id="panel">
+    <header class="panel__header" id="dragBar">
+      <div class="panel__title">
+        <span class="panel__dot" id="statusDot"></span>
+        智维伴侣
+        <small id="statusText">空闲</small>
+      </div>
+      <div class="panel__actions">
+        <button id="btnSettings" class="icon-btn" title="设置" aria-label="设置">⚙</button>
+        <button id="btnClose" class="icon-btn" title="收起" aria-label="收起">×</button>
+      </div>
+    </header>
+
+    <main class="panel__messages" id="messages" aria-live="polite"></main>
+
+    <div class="panel__attach" id="attachBar" hidden>
+      <img id="attachThumb" alt="待发送截屏" />
+      <span class="panel__attach-name">截屏 1 张</span>
+      <button id="btnAttachRemove" class="icon-btn" title="移除截屏">×</button>
+    </div>
+
+    <footer class="panel__input">
+      <button id="btnCapture" class="icon-btn" title="截屏提问（圈选）" aria-label="截屏提问">✂</button>
+      <textarea id="input" rows="1" placeholder="输入问题，或点 ✂ 截屏提问"></textarea>
+      <button id="btnStop" class="stop-btn" title="停止生成" hidden>■</button>
+      <button id="btnSend" class="send-btn" title="发送">↑</button>
+    </footer>
+
+    <div class="settings" id="settingsPop" hidden>
+      <h3>设置</h3>
+      <label>AI 服务地址
+        <input id="setUrl" type="text" spellcheck="false" placeholder="http://localhost:8001" />
+      </label>
+      <label>截屏默认提问语
+        <input id="setPrompt" type="text" spellcheck="false" />
+      </label>
+      <p class="settings__hint">
+        桌面壳暂不签发运行令牌：请在本机 ai-service 环境中设置
+        <code>CHAT_ALLOW_ANONYMOUS=true</code>（仅限本地/内网联调）。
+      </p>
+      <div class="settings__row">
+        <button id="btnSettingsSave" class="save-btn">保存</button>
+        <span id="settingsMsg" class="settings__msg"></span>
+      </div>
+    </div>
+
+    <div class="lightbox" id="lightbox" hidden>
+      <img id="lightboxImg" alt="截屏放大" />
+    </div>
+  </div>
+  <script src="panel.js"></script>
+</body>
+</html>

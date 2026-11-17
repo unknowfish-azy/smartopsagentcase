@@ -76,7 +76,18 @@
       >
         <AgentPersona ref="personaRef" mode="vrm" :state="agentState" @ready="onReady" />
         <transition name="pet-bubble">
-          <span v-if="reaction" class="persona-pet__bubble" :key="reactionKey">{{ reaction }}</span>
+          <span v-if="reaction && !faultAlert" class="persona-pet__bubble" :key="reactionKey">{{ reaction }}</span>
+        </transition>
+        <transition name="pet-bubble">
+          <button
+            v-if="faultAlert"
+            :key="faultAlert.id"
+            type="button"
+            class="persona-pet__bubble"
+            :class="{ 'persona-pet__bubble--alert': faultAlert.critical }"
+            :title="faultAlert.critical ? '高危异常，点击打开处置面板' : '点击打开处置面板'"
+            @click.stop="openFaultAlert"
+          >{{ faultAlert.text }} · 点我查看</button>
         </transition>
       </div>
       <p class="persona-pet__note" aria-live="polite">
@@ -104,8 +115,9 @@
       v-else
       type="button"
       class="persona-pet__orb"
-      :aria-label="`展开小鱼，当前状态：${agentStateLabel}`"
-      :title="`小鱼（${agentStateLabel}）· 点击展开`"
+      :class="{ 'persona-pet__orb--fault': faultAlert }"
+      :aria-label="`展开小鱼，当前状态：${agentStateLabel}${faultAlert ? '，有待查看的异常' : ''}`"
+      :title="`小鱼（${agentStateLabel}${faultAlert ? ' · 有待查看的异常' : ''}）· 点击展开`"
       @click.stop="store.setCollapsed(false, currentViewport)"
     />
   </aside>
@@ -226,6 +238,61 @@ function showReaction(text, holdMs = 2200) {
   reactionKey.value++
   if (reactionTimer) clearTimeout(reactionTimer)
   if (holdMs > 0) reactionTimer = setTimeout(() => { reaction.value = '' }, holdMs)
+}
+
+/* ------------------------------------------------------------
+   告警主动通知（P1-3）：订阅 companion 的 FAULT_DETECTED 事件——
+   视觉回传 / 哨兵 / 任意页面 ingestFault 都会走到这里。
+   小鱼举手示警 + 气泡提示，点击气泡打开处置面板；收起时小球亮红点。
+   克制原则：同一事件只报一次、5 分钟节流、高危才出声（甜妹音），
+   正在播报时不出声，避免打断用户正在进行的事。
+   ------------------------------------------------------------ */
+const faultAlert = ref(null)
+let faultUnsubscribe = null
+let faultClearTimer = null
+let lastFaultNotifyAt = 0
+const seenFaultIds = new Set()
+const FAULT_NOTIFY_GAP_MS = 5 * 60 * 1000
+
+function onFaultDetected(event) {
+  const faultEvent = event?.payload?.faultEvent
+  if (!faultEvent?.id) return
+  if (seenFaultIds.has(faultEvent.id)) return
+  seenFaultIds.add(faultEvent.id)
+  if (seenFaultIds.size > 50) {
+    seenFaultIds.delete(seenFaultIds.values().next().value)
+  }
+  const now = Date.now()
+  if (now - lastFaultNotifyAt < FAULT_NOTIFY_GAP_MS) return
+  lastFaultNotifyAt = now
+
+  const critical = faultEvent.severity === 'CRITICAL' || faultEvent.severity === 'HIGH'
+  faultAlert.value = {
+    id: faultEvent.id,
+    critical,
+    text: `发现异常「${faultEvent.title}」（${faultEvent.severity}）`
+  }
+  if (faultClearTimer) clearTimeout(faultClearTimer)
+  faultClearTimer = setTimeout(() => { faultAlert.value = null }, critical ? 12000 : 8000)
+
+  personaRef.value?.playGesture?.('pointUp')
+  if (critical && !speaking.value && voiceMode.value !== 'speaking') {
+    speakNeuralOnly(`发现${faultEvent.severity === 'CRITICAL' ? '高危' : '较高级'}异常：${faultEvent.title}，请查看处置面板。`)
+  }
+}
+
+function dismissFaultAlert() {
+  faultAlert.value = null
+  if (faultClearTimer) {
+    clearTimeout(faultClearTimer)
+    faultClearTimer = null
+  }
+}
+
+/** 点气泡 → 打开处置抽屉（companion.openInvestigation 的正式入口） */
+function openFaultAlert() {
+  dismissFaultAlert()
+  companion.openInvestigation()
 }
 
 /* 声音开关（听筒图标）：关闭后神经语音与浏览器语音都不出声，
@@ -461,6 +528,8 @@ onMounted(() => {
   window.addEventListener('resize', updateViewport)
   document.addEventListener('visibilitychange', onVisibilityChange)
   idleScheduler.reset()
+  // 订阅异常事件流：视觉回传/哨兵 ingestFault → FAULT_DETECTED → 小鱼示警
+  faultUnsubscribe = companion.subscribe('FAULT_DETECTED', onFaultDetected)
   // 探测后端神经语音：可用则记录引擎名（UI 如实展示），不可用则静默走浏览器语音
   neuralTts.probe().then((status) => {
     if (!status?.available || !status.provider) return
@@ -916,6 +985,8 @@ onBeforeUnmount(() => {
   personaRef.value?.stopSpeaking?.()
   personaRef.value?.stopGesture?.()
   if (reactionTimer) clearTimeout(reactionTimer)
+  faultUnsubscribe?.()
+  if (faultClearTimer) clearTimeout(faultClearTimer)
 })
 </script>
 

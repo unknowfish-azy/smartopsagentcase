@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+  <link rel="stylesheet" href="overlay.css" />
+  <title>圈选截屏</title>
+</head>
+<body>
+  <canvas id="mask"></canvas>
+  <div id="hint" class="hint">拖动鼠标圈选屏幕区域，松开即提问 · ESC 取消</div>
+  <div id="size" class="size" hidden>0 × 0</div>
+  <script src="overlay.js"></script>
+</body>
+</html>

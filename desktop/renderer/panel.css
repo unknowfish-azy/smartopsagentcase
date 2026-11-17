@@ -1,0 +1,176 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* hidden 属性必须胜过下方的 display 声明（.panel__attach / .lightbox 用了 flex） */
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+.panel {
+  height: calc(100% - 12px);
+  margin: 6px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(248, 250, 255, .97);
+  border: 1px solid rgba(90, 120, 200, .35);
+  box-shadow: 0 10px 32px rgba(20, 35, 80, .28);
+}
+
+/* —— 头部（拖拽区） —— */
+.panel__header {
+  -webkit-app-region: drag;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #2f5bdd, #1e3aa8);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.panel__title { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; }
+.panel__title small { font-weight: 400; opacity: .75; font-size: 11px; }
+.panel__dot { width: 7px; height: 7px; border-radius: 50%; background: #6fdc9c; box-shadow: 0 0 6px currentColor; }
+.panel__dot--thinking { background: #ffb74d; }
+.panel__dot--error { background: #ef5350; }
+
+.panel__actions { -webkit-app-region: no-drag; display: flex; gap: 2px; }
+.icon-btn {
+  -webkit-app-region: no-drag;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.icon-btn:hover { background: rgba(127, 160, 255, .25); }
+
+/* —— 消息区 —— */
+.panel__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.msg { max-width: 88%; border-radius: 12px; padding: 8px 11px; font-size: 13px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
+.msg--user { align-self: flex-end; background: #2f5bdd; color: #fff; border-bottom-right-radius: 4px; }
+.msg--assistant { align-self: flex-start; background: #eef2ff; color: #1c2440; border-bottom-left-radius: 4px; }
+.msg--error { align-self: stretch; background: #fdecea; color: #b3261e; border: 1px solid #f2b8b5; font-size: 12px; }
+.msg--meta { align-self: center; font-size: 10px; color: #8a93ad; background: transparent; padding: 0; }
+
+.msg__thumb { display: block; max-width: 100%; max-height: 110px; border-radius: 8px; margin-bottom: 6px; cursor: zoom-in; border: 1px solid rgba(255,255,255,.4); }
+.msg__stream-caret::after { content: "▍"; color: #5b8cff; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.msg__thinking { display: flex; align-items: center; gap: 6px; color: #7a86ad; font-size: 12px; }
+.msg__thinking .dot-pulse { width: 6px; height: 6px; border-radius: 50%; background: #7a9bff; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+
+/* —— 附件条 —— */
+.panel__attach {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #eef2ff;
+  border-top: 1px solid #dbe4ff;
+  flex-shrink: 0;
+}
+.panel__attach img { width: 46px; height: 34px; object-fit: cover; border-radius: 6px; border: 1px solid #c3d0ff; }
+.panel__attach-name { font-size: 12px; color: #3d4a75; flex: 1; }
+
+/* —— 输入区 —— */
+.panel__input {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  border-top: 1px solid #e3e9fb;
+  flex-shrink: 0;
+}
+
+#input {
+  flex: 1;
+  resize: none;
+  border: none;
+  outline: none;
+  background: #f2f5ff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 96px;
+  font-family: inherit;
+}
+
+.send-btn, .stop-btn {
+  border: none;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  font-size: 15px;
+  color: #fff;
+  background: #2f5bdd;
+  flex-shrink: 0;
+}
+.send-btn:disabled { background: #b9c4e8; cursor: default; }
+.stop-btn { background: #ef5350; }
+
+#btnCapture { color: #2f5bdd; font-size: 16px; }
+
+/* —— 设置弹层 —— */
+.settings {
+  position: absolute;
+  right: 10px;
+  top: 44px;
+  width: 88%;
+  background: #fff;
+  border: 1px solid #dbe4ff;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 8px 24px rgba(20, 35, 80, .2);
+  z-index: 50;
+}
+.settings h3 { font-size: 13px; margin-bottom: 10px; color: #1c2440; }
+.settings label { display: block; font-size: 12px; color: #3d4a75; margin-bottom: 8px; }
+.settings input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  border: 1px solid #c9d4f5;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  outline: none;
+}
+.settings__hint { font-size: 11px; color: #8a93ad; line-height: 1.6; margin: 8px 0; }
+.settings__hint code { background: #eef2ff; padding: 1px 4px; border-radius: 4px; font-size: 10px; }
+.settings__row { display: flex; align-items: center; gap: 10px; }
+.save-btn { border: none; background: #2f5bdd; color: #fff; border-radius: 8px; padding: 6px 16px; font-size: 12px; cursor: pointer; }
+.settings__msg { font-size: 11px; color: #2e7d32; }
+
+/* —— 截屏灯箱 —— */
+.lightbox {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 14, 26, .78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  cursor: zoom-out;
+}
+.lightbox img { max-width: 94%; max-height: 94%; border-radius: 8px; }

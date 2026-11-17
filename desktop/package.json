@@ -1,0 +1,16 @@
+{
+  "name": "smartops-desktop",
+  "productName": "SmartOps 智维伴侣",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SmartOpsAgent 桌面悬浮伴侣（悬浮球 + 截屏提问 + 桌宠对话）",
+  "main": "main.js",
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "gen:icon": "node scripts/gen-icon.js"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0"
+  }
+}

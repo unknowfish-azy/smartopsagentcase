@@ -1,0 +1,89 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
+}
+
+body:active { cursor: grabbing; }
+
+/* 悬浮球本体：圆形渐变，半透明态，对标搜题酱悬浮球 */
+.ball {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+
+.ball__core {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #5b8cff 0%, #2f5bdd 52%, #1e3aa8 100%);
+  box-shadow: 0 4px 14px rgba(30, 58, 168, .45), inset 0 1px 3px rgba(255, 255, 255, .35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .15s ease;
+}
+
+.ball:hover .ball__core { transform: scale(1.06); }
+.ball:active .ball__core { transform: scale(.94); }
+
+.ball__core svg {
+  width: 34px;
+  height: 34px;
+  fill: rgba(255, 255, 255, .95);
+}
+
+.ball__eye { fill: #1e3aa8; }
+
+/* 状态环：thinking 时呼吸旋转 */
+.ball__ring {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 2px solid rgba(120, 160, 255, .55);
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.ball__halo {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(80, 120, 255, .5);
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+/* —— 状态态（承接 Companion SEE/THINK/KNOW 语义）—— */
+.ball--idle .ball__ring,
+.ball--idle .ball__halo { opacity: 0; }
+
+.ball--thinking .ball__ring {
+  opacity: 1;
+  border-color: #ffb74d;
+  animation: spin 1.6s linear infinite;
+}
+
+.ball--thinking .ball__halo {
+  opacity: 1;
+  box-shadow: 0 0 18px rgba(255, 183, 77, .55);
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+.ball--listening .ball__halo {
+  opacity: 1;
+  box-shadow: 0 0 18px rgba(102, 220, 160, .55);
+}
+
+.ball--error .ball__halo {
+  opacity: 1;
+  box-shadow: 0 0 18px rgba(239, 83, 80, .6);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes breathe { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
