@@ -179,6 +179,66 @@ export function buildDependencyMap(snapshot) {
 }
 
 /**
+ * 弱关联边：两篇文档共用「稀有专业命令行工具」即视为弱关联（不是先修关系）。
+ * 只用快照里的 doc.commands 真实数据：通用 shell 工具（ls/cat/git…）不参与，
+ * 只在 2 ~ 18% 篇文档出现的工具才算区分度足够。每篇最多连 maxPerDoc 条，按共用工具数量排序。
+ * 返回 [{ a: docId, b: docId, shared: string[] }]，无向去重。
+ */
+const GENERIC_COMMANDS = new Set([
+  'ls', 'cat', 'cp', 'mv', 'rm', 'mkdir', 'touch', 'echo', 'grep', 'awk', 'sed', 'tail', 'head',
+  'ps', 'df', 'du', 'free', 'top', 'chown', 'chmod', 'ln', 'ip', 'ss', 'ping', 'curl', 'wget',
+  'vim', 'nano', 'yum', 'dnf', 'apt', 'tar', 'unzip', 'ssh', 'scp', 'kill', 'source', 'cd',
+  'bash', 'sh', 'python', 'python3', 'git', 'docker', 'find', 'wc', 'sort', 'uniq', 'xargs',
+  'tee', 'export', 'env', 'which', 'sudo', 'nvidia-smi', 'make', 'cmake', 'gcc', 'g++'
+])
+
+function docTools(doc) {
+  const tools = new Set()
+  for (const item of doc.commands || []) {
+    const tool = String(item.cmd || '').trim().split(/\s+/)[0].toLowerCase()
+    if (tool && !GENERIC_COMMANDS.has(tool)) tools.add(tool)
+  }
+  return tools
+}
+
+export function buildWeakLinkMap(snapshot, { maxPerDoc = 2 } = {}) {
+  const docs = snapshot.documents
+  const tools = docs.map(docTools)
+  const df = new Map()
+  tools.forEach(set => set.forEach(tool => df.set(tool, (df.get(tool) || 0) + 1)))
+  const cap = Math.max(3, Math.ceil(docs.length * 0.18))
+  const isRare = tool => {
+    const count = df.get(tool) || 0
+    return count >= 2 && count <= cap
+  }
+
+  const candidates = docs.map(() => [])
+  for (let i = 0; i < docs.length; i += 1) {
+    for (let j = i + 1; j < docs.length; j += 1) {
+      const shared = [...tools[i]].filter(tool => tools[j].has(tool) && isRare(tool))
+      if (!shared.length) continue
+      candidates[i].push({ other: j, shared })
+      candidates[j].push({ other: i, shared })
+    }
+  }
+
+  const edges = []
+  const seen = new Set()
+  candidates.forEach((list, i) => {
+    const ranked = [...list].sort((left, right) =>
+      right.shared.length - left.shared.length ||
+      docs[left.other].title.localeCompare(docs[right.other].title))
+    for (const link of ranked.slice(0, maxPerDoc)) {
+      const key = i < link.other ? `${i}-${link.other}` : `${link.other}-${i}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      edges.push({ a: docs[i].id, b: docs[link.other].id, shared: link.shared })
+    }
+  })
+  return edges
+}
+
+/**
  * 综述组装：按选中文档集合产出结构化综述（概览 → 主题脉络 → 命令面板 → 引用）。
  * 每条引用都是快照里的真实节选，编号可在正文里回查。
  */

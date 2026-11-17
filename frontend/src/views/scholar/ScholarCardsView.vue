@@ -52,6 +52,10 @@
               <button type="button" class="scholar-tree__view" :class="{ 'is-active': treeView === 'list' }" :aria-pressed="treeView === 'list'" @click="treeView = 'list'">列表</button>
               <button type="button" class="scholar-tree__view" :class="{ 'is-active': treeView === 'graph' }" :aria-pressed="treeView === 'graph'" @click="treeView = 'graph'">依赖图</button>
             </div>
+            <label v-if="treeView === 'graph'" class="scholar-tree__weak-toggle">
+              <input v-model="showWeak" type="checkbox">
+              弱关联
+            </label>
           </div>
 
           <!-- 依赖图：节点＝当前课程文档；纵向主干为顺序，右侧弧线为原文声明的先修课次 -->
@@ -63,7 +67,7 @@
               :viewBox="`0 0 ${graph.width} ${graph.height}`"
               preserveAspectRatio="xMinYMin meet"
               role="img"
-              :aria-label="`依赖图：${graph.nodes.length} 个文档节点，${graph.edgeCount} 条先修连线`"
+              :aria-label="`依赖图：${graph.nodes.length} 个文档节点，${graph.edgeCount} 条先修连线，${graph.weakEdges.length} 条弱关联`"
             >
               <line
                 v-for="rail in graph.rails"
@@ -78,6 +82,15 @@
                 :class="`is-${edge.kind}`"
                 :d="edge.d"
               />
+              <path
+                v-for="edge in graph.weakEdges"
+                :key="edge.id"
+                class="scholar-tree__edge is-weak"
+                :class="{ 'is-focus': edge.focus }"
+                :d="edge.d"
+              >
+                <title>弱关联：共用 {{ edge.tools }}</title>
+              </path>
               <g
                 v-for="node in graph.nodes"
                 :key="node.docId"
@@ -99,7 +112,7 @@
               </g>
             </svg>
             <p class="scholar-tree__legend">
-              实线＝原文“已完成第 N 课”；虚线＝原文“建议先完成”；竖线主干＝快照文档顺序；灰字＝原文提到但快照未收录。
+              实线＝原文“已完成第 N 课”；虚线＝原文“建议先完成”；点线＝共用专业工具推得的弱关联（非先修）；竖线主干＝快照文档顺序；灰字＝原文提到但快照未收录。
             </p>
           </div>
 
@@ -194,7 +207,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import snapshot from '../atlas/atlasDistilled.json'
-import { buildDeck, buildDependencyMap, buildDocCards } from '../../domain/scholar/scholarEngine.js'
+import { buildDeck, buildDependencyMap, buildDocCards, buildWeakLinkMap } from '../../domain/scholar/scholarEngine.js'
 
 const courseId = ref('')
 const index = ref(0)
@@ -279,6 +292,9 @@ const treeCourses = computed(() => {
 
 /* 依赖表由原文抽取，快照静态故只构建一次 */
 const dependencyMap = buildDependencyMap(snapshot)
+/* 弱关联：共用稀有专业工具（nsys/ncu 等）推得，属于关联而非先修 */
+const weakLinks = buildWeakLinkMap(snapshot)
+const showWeak = ref(true)
 
 const viewedInRange = computed(() => deck.value.filter(card => viewedCards.value.has(card.id)).length)
 
@@ -359,14 +375,37 @@ const graph = computed(() => {
     }
   }
 
+  /* 弱关联走更外侧的弧线，避免与先修弧线重叠；仅当前卡所在文档的关联高亮 */
+  const weakEdges = []
+  if (showWeak.value) {
+    const byDocId = new Map(nodes.map(node => [node.docId, node]))
+    const activeSource = current.value?.source || ''
+    for (const link of weakLinks) {
+      const from = byDocId.get(link.a)
+      const to = byDocId.get(link.b)
+      if (!from || !to) continue
+      const y1 = from.y + nodeH / 2
+      const y2 = to.y + nodeH / 2
+      const x1 = baseX + nodeW
+      const bulge = x1 + 120 + Math.min(Math.abs(y2 - y1) * 0.05, 60)
+      weakEdges.push({
+        id: `weak-${link.a}-${link.b}`,
+        focus: from.title === activeSource || to.title === activeSource,
+        tools: link.shared.join('/'),
+        d: `M${x1},${y1} C${bulge},${y1} ${bulge},${y2} ${x1},${y2}`
+      })
+    }
+  }
+
   return {
     nodes,
     rails,
     edges,
     ghosts,
+    weakEdges,
     nodeW,
     nodeH,
-    width: baseX + nodeW + 130,
+    width: baseX + nodeW + 200,
     height: Math.max(nodes.length * rowH + 12, 40),
     edgeCount: edges.filter(edge => edge.kind !== 'missing').length
   }
@@ -584,6 +623,25 @@ function jumpToDoc(docTitle) {
 .scholar-tree__node.is-viewed rect { fill: rgba(37, 99, 235, .10); stroke: rgba(37, 99, 235, .5); }
 .scholar-tree__node.is-active rect { stroke-width: 2; stroke: var(--smart-primary-strong, #2563eb); }
 .scholar-tree__ghost text { font-size: 10.5px; fill: var(--smart-muted, #9ca3af); }
+/* 弱关联：点线、低对比，当前卡相关的高亮；与先修弧线区分 */
+.scholar-tree__edge.is-weak {
+  stroke: #0f9d8f;
+  stroke-width: 1.2;
+  stroke-dasharray: 1 5;
+  stroke-linecap: round;
+  opacity: .38;
+  transition: opacity .15s ease, stroke-width .15s ease;
+}
+.scholar-tree__edge.is-weak.is-focus { opacity: .95; stroke-width: 1.8; }
+.scholar-tree__weak-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  color: var(--smart-muted, #6b7280);
+  font-size: 11.5px;
+  cursor: pointer;
+}
 
 /* 翻转卡：3D 翻转；reduced-motion 下退化为直接切换（无 transition） */
 .scholar-card-zone { display: grid; place-items: center; min-height: 340px; }
