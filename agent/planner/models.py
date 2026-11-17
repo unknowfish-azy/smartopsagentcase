@@ -15,3 +15,10 @@ class AgentPlan:
     )
 
     requires_human_approval: bool = False
+
+    # 计划来源标注：rule / llm / rule-fallback
+    planner: str = "rule"
+
+    metadata: dict = field(
+        default_factory=dict
+    )

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -9,6 +9,8 @@ class ModelResponse:
     model: str
     provider: str
     metadata: dict[str, Any]
+    usage: dict[str, Any] = field(default_factory=dict)
+    raw: Any = None
 
 
 class ModelProvider(ABC):

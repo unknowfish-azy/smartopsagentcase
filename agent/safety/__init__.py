@@ -5,6 +5,8 @@ from .approval import (
 )
 from .decision import SafetyDecision
 from .guard import SafetyGuard
+from .injection import InjectionDetector, InjectionScanResult
+from .moderation import ModerationResult, OutputModerator
 from .safe_agent import SafeAgent
 
 __all__ = [
@@ -14,4 +16,8 @@ __all__ = [
     "ApprovalManager",
     "ApprovalRequest",
     "ApprovalResult",
+    "InjectionDetector",
+    "InjectionScanResult",
+    "OutputModerator",
+    "ModerationResult",
 ]

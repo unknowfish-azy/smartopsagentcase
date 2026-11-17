@@ -18,6 +18,9 @@ class ExecutionResult:
 
     error: str | None = None
 
+    # 错误分类（ToolErrorCategory 值），失败时由 Executor 标注
+    error_category: str | None = None
+
     duration_ms: int = 0
 
     metadata: dict[str, Any] = field(

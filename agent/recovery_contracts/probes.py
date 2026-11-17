@@ -16,12 +16,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Callable, Mapping
 from urllib.parse import urlsplit
 
 from .models import (
-    ContractError,
     EvidenceObservation,
     Target,
     _ID_RE,
