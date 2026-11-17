@@ -1,0 +1,712 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-17T12:48:20.956Z",
+  "sourceRoot": "knowledge/reference/ops-knowledge-rag",
+  "docs": [
+    {
+      "path": "AI-Infra/04-K8s-AI编排与综合项目.md",
+      "sections": [
+        {
+          "text": "避坑经验（Day23 原文）",
+          "kinds": [
+            "next"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "AI-Infra/12-前沿技术与实战项目.md",
+      "sections": [
+        {
+          "text": "3.3 分析工具与瓶颈识别",
+          "kinds": [
+            "next"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/02.数据模型.md",
+      "sections": [
+        {
+          "text": "数据模型",
+          "kinds": [
+            "prev"
+          ]
+        },
+        {
+          "text": "三、数据样本",
+          "kinds": [
+            "next"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/03.指标类型.md",
+      "sections": [
+        {
+          "text": "指标类型",
+          "kinds": [
+            "prev"
+          ]
+        },
+        {
+          "text": "四、summary",
+          "kinds": [
+            "next"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/04.Jobs和Instances.md",
+      "sections": [
+        {
+          "text": "Jobs和Instances",
+          "kinds": [
+            "prev",
+            "next"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/05.源码包部署监控组件.md",
+      "sections": [
+        {
+          "text": "grafana导入自定义的dashboard",
+          "kinds": [
+            "next"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/06.docker部署监控组件.md",
+      "sections": [
+        {
+          "text": "docker部署监控组件",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/07.PromQL基本使用.md",
+      "sections": [
+        {
+          "text": "PromQL基本使用",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/08.Prometheus基础查询.md",
+      "sections": [
+        {
+          "text": "Prometheus基础查询",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/09.查询操作符.md",
+      "sections": [
+        {
+          "text": "查询操作符",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/10.内置函数.md",
+      "sections": [
+        {
+          "text": "内置函数",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/11.在HTTP API中使用PromQL.md",
+      "sections": [
+        {
+          "text": "在HTTP API中使用PromQL",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/12.最佳实践.md",
+      "sections": [
+        {
+          "text": "最佳实践",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/13.告警简介.md",
+      "sections": [
+        {
+          "text": "告警简介",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/14.自定义Prometheus告警规则.md",
+      "sections": [
+        {
+          "text": "自定义Prometheus告警规则",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/15.常见告警规则.md",
+      "sections": [
+        {
+          "text": "常见告警规则",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/16.部署Alertmanager.md",
+      "sections": [
+        {
+          "text": "部署Alertmanager",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/17.Alertmanager配置概述.md",
+      "sections": [
+        {
+          "text": "Alertmanager配置概述",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/18.基于标签的告警处理路由.md",
+      "sections": [
+        {
+          "text": "基于标签的告警处理路由",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/19.使用Receiver接收告警信息.md",
+      "sections": [
+        {
+          "text": "使用Receiver接收告警信息",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/21.屏蔽告警通知.md",
+      "sections": [
+        {
+          "text": "屏蔽告警通知",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/22.使用Recoding Rules优化性能.md",
+      "sections": [
+        {
+          "text": "使用Recoding Rules优化性能",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/23.exporter.md",
+      "sections": [
+        {
+          "text": "exporter",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/24.Node Exporter.md",
+      "sections": [
+        {
+          "text": "Node Exporter",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/25.Process Exporter.md",
+      "sections": [
+        {
+          "text": "Process Exporter",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/26.cAdvisor.md",
+      "sections": [
+        {
+          "text": "cAdvisor",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/27.Mysql Exporter.md",
+      "sections": [
+        {
+          "text": "Mysql Exporter",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/28.Blackbox Exporter.md",
+      "sections": [
+        {
+          "text": "Blackbox Exporter",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/29.Process Exporter.md",
+      "sections": [
+        {
+          "text": "Process Exporter",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/30.Ipmi export.md",
+      "sections": [
+        {
+          "text": "Ipmi export",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/31.Pushgateway.md",
+      "sections": [
+        {
+          "text": "Pushgateway",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/32.grafana基本概念.md",
+      "sections": [
+        {
+          "text": "grafana基本概念",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/33.创建dashboard与Panel.md",
+      "sections": [
+        {
+          "text": "创建dashboard与Panel",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/34.变化趋势：Graph面板.md",
+      "sections": [
+        {
+          "text": "变化趋势：Graph面板",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/35.graph面板常用操作.md",
+      "sections": [
+        {
+          "text": "graph面板常用操作",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/37.当前状态：SingleStat面板.md",
+      "sections": [
+        {
+          "text": "当前状态：SingleStat面板",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/39.grafana报警.md",
+      "sections": [
+        {
+          "text": "grafana报警",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/40.本地存储.md",
+      "sections": [
+        {
+          "text": "本地存储",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/41.远程存储.md",
+      "sections": [
+        {
+          "text": "远程存储",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/42.联邦集群.md",
+      "sections": [
+        {
+          "text": "联邦集群",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/43.prometheus高可用.md",
+      "sections": [
+        {
+          "text": "prometheus高可用",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/44.Alertmanager高可用.md",
+      "sections": [
+        {
+          "text": "Alertmanager高可用",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/45.Prometheus与服务发现.md",
+      "sections": [
+        {
+          "text": "Prometheus与服务发现",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/47.标签管理.md",
+      "sections": [
+        {
+          "text": "标签管理",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/48.什么是Prometheus Operator.md",
+      "sections": [
+        {
+          "text": "什么是Prometheus Operator",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/49.Prometheus Operator自定义监控项.md",
+      "sections": [
+        {
+          "text": "Prometheus Operator自定义监控项",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/50.配置blackbox-exporter.md",
+      "sections": [
+        {
+          "text": "配置blackbox-exporter",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/51.添加prometheus自定义配置.md",
+      "sections": [
+        {
+          "text": "添加prometheus自定义配置",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/52.配置PrometheusRule.md",
+      "sections": [
+        {
+          "text": "配置PrometheusRule",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/53.配置blackbox-exporter监控项.md",
+      "sections": [
+        {
+          "text": "配置blackbox-exporter监控项",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/54.基础入门.md",
+      "sections": [
+        {
+          "text": "基础入门",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Prometheus监控课_分节md/55.配置详解.md",
+      "sections": [
+        {
+          "text": "配置详解",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "RH教材/RH124_p1-200.md",
+      "sections": [
+        {
+          "text": "注意",
+          "kinds": [
+            "next"
+          ]
+        },
+        {
+          "text": "pinfo 和 man，键绑定比较",
+          "kinds": [
+            "prev",
+            "next"
+          ]
+        },
+        {
+          "text": "注意",
+          "kinds": [
+            "prev"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "RH教材/RH124_p401-600.md",
+      "sections": [
+        {
+          "text": "安装 RPM 软件包",
+          "kinds": [
+            "next"
+          ]
+        },
+        {
+          "text": "使用红帽支持工具搜索知识库",
+          "kinds": [
+            "back"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "RH教材/RH124_p601-634.md",
+      "sections": [
+        {
+          "text": "章17 | 总复习",
+          "kinds": [
+            "back"
+          ]
+        },
+        {
+          "text": "说明",
+          "kinds": [
+            "back"
+          ]
+        },
+        {
+          "text": "章17 | 总复习",
+          "kinds": [
+            "back"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "RH教材/RH134_p1-200.md",
+      "sections": [
+        {
+          "text": "注意",
+          "kinds": [
+            "next"
+          ]
+        },
+        {
+          "text": "查看目录 ACL",
+          "kinds": [
+            "back"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "RH教材/RH294_p1-200.md",
+      "sections": [
+        {
+          "text": "覆盖清单的位置",
+          "kinds": [
+            "next"
+          ]
+        },
+        {
+          "text": "模块文档",
+          "kinds": [
+            "back"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "RH教材/RH294_p401-494.md",
+      "sections": [
+        {
+          "text": "确定修改的配置选项",
+          "kinds": [
+            "back"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "了解Shell三剑客.md",
+      "sections": [
+        {
+          "text": "sed指令说明",
+          "kinds": [
+            "next"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -51,6 +51,7 @@
             <div class="scholar-tree__views" role="group" aria-label="知识树视图切换">
               <button type="button" class="scholar-tree__view" :class="{ 'is-active': treeView === 'list' }" :aria-pressed="treeView === 'list'" @click="treeView = 'list'">列表</button>
               <button type="button" class="scholar-tree__view" :class="{ 'is-active': treeView === 'graph' }" :aria-pressed="treeView === 'graph'" @click="treeView = 'graph'">依赖图</button>
+              <button type="button" class="scholar-tree__view" :class="{ 'is-active': treeView === 'sections' }" :aria-pressed="treeView === 'sections'" @click="treeView = 'sections'">小节图谱</button>
             </div>
             <label v-if="treeView === 'graph'" class="scholar-tree__weak-toggle">
               <input v-model="showWeak" type="checkbox">
@@ -118,6 +119,52 @@
             <p class="scholar-tree__legend">
               实线＝原文“已完成第 N 课”；短虚线＝原文“建议先完成”；长虚线＝共用专业工具推得的弱关联（非先修）；竖线主干＝快照文档顺序；灰字＝原文提到但快照未收录；悬停节点高亮其全部关联边。
             </p>
+          </div>
+
+          <!-- 小节图谱：只看当前卡所在文档，节点＝该文档成卡小节，边＝小节顺序 + 原文显式互引 -->
+          <div v-show="treeView === 'sections'" class="scholar-tree__graph">
+            <p v-if="!sectionGraph.nodes.length" class="scholar-tree__deps-empty">当前卡片没有所属文档，暂无可绘制的小节。</p>
+            <template v-else>
+              <svg
+                class="scholar-tree__svg"
+                :viewBox="`0 0 ${sectionGraph.width} ${sectionGraph.height}`"
+                preserveAspectRatio="xMinYMin meet"
+                role="img"
+                :aria-label="`小节图谱：${sectionGraph.docTitle} 共 ${sectionGraph.nodes.length} 个小节，${sectionGraph.refCount} 处原文互引`"
+              >
+                <path
+                  v-for="edge in sectionGraph.edges"
+                  :key="edge.id"
+                  class="scholar-tree__sedge"
+                  :class="{ 'is-ref': edge.ref }"
+                  :d="edge.d"
+                />
+                <g
+                  v-for="node in sectionGraph.nodes"
+                  :key="node.id"
+                  class="scholar-tree__snode"
+                  :class="{ 'is-active': node.active }"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="`第 ${node.index + 1} 小节 ${node.label}${node.kinds.length ? '，原文含小节互引' : ''}，点击跳到该小节卡片`"
+                  @click="jumpToDoc(sectionGraph.docTitle, { cardIndex: node.index })"
+                  @keydown.enter.prevent="jumpToDoc(sectionGraph.docTitle, { cardIndex: node.index })"
+                  @keydown.space.prevent="jumpToDoc(sectionGraph.docTitle, { cardIndex: node.index })"
+                >
+                  <title>{{ node.label }}{{ node.kinds.length ? `（原文写：${node.kinds.map(k => SECTION_REF_LABELS[k]).join('、')}）` : '' }}</title>
+                  <rect :x="node.x" :y="node.y" :width="sectionGraph.nodeW" :height="sectionGraph.nodeH" rx="6" />
+                  <text :x="node.x + 8" :y="node.y + 16">{{ node.label }}</text>
+                  <text v-if="node.kinds.length" :x="node.x + 8" :y="node.y + 28" class="scholar-tree__snode-ref">
+                    原文互引：{{ node.kinds.map(k => SECTION_REF_LABELS[k]).join('、') }}
+                  </text>
+                </g>
+              </svg>
+              <p class="scholar-tree__legend">
+                实线＝小节在原文中的先后顺序；虚线＝该小节原文写了「上一节/下一节」，属原文显式互引。
+                {{ sectionGraph.refCount ? `本文档共 ${sectionGraph.refCount} 处互引。` : '本文档原文没有显式小节互引，故只有顺序线。' }}
+                点击小节可跳到对应卡片。
+              </p>
+            </template>
           </div>
 
           <div v-show="treeView === 'list'">
@@ -212,6 +259,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import snapshot from '../atlas/atlasDistilled.json'
+import sectionRefsSnapshot from '../atlas/atlasSectionRefs.json'
 import { buildDeck, buildDependencyMap, buildDocCards, buildWeakLinkMap } from '../../domain/scholar/scholarEngine.js'
 
 const route = useRoute()
@@ -227,6 +275,58 @@ const deckLimit = ref(60)
 
 const deck = computed(() => buildDeck(snapshot, { courseId: courseId.value || null, limit: deckLimit.value }))
 const current = computed(() => deck.value[index.value] ?? deck.value[0])
+
+/* 小节图谱数据源：原文互引按语料相对路径关联，未收录的文档自然没有互引 */
+const SECTION_REF_LABELS = { prev: '上一节', next: '下一节', back: '前述' }
+const sectionRefsByPath = new Map((sectionRefsSnapshot.docs || []).map(doc => [doc.path, doc.sections]))
+
+const currentDoc = computed(() =>
+  snapshot.documents.find(doc => doc.title === current.value?.source) || null
+)
+
+/**
+ * 小节图谱：节点＝当前文档里成卡的小节（与卡片一一对应），
+ * 实线＝原文小节顺序，虚线＝该小节原文写了「上一节/下一节」。
+ * 不推断跨小节语义依赖，避免把顺序当依赖。
+ */
+const sectionGraph = computed(() => {
+  const doc = currentDoc.value
+  const cards = doc ? buildDocCards(doc) : []
+  const refKinds = new Map((doc ? sectionRefsByPath.get(doc.path) || [] : []).map(item => [item.text, item.kinds]))
+  const nodeW = 360
+  const nodeH = 38
+  const gap = 22
+  const baseX = 16
+  const nodes = cards.map((card, cardIndex) => ({
+    id: card.id,
+    label: card.front.length > 26 ? `${card.front.slice(0, 26)}…` : card.front,
+    index: cardIndex,
+    kinds: refKinds.get(card.front) || [],
+    active: card.id === current.value?.id,
+    x: baseX,
+    y: cardIndex * (nodeH + gap)
+  }))
+  const edges = []
+  for (let i = 1; i < nodes.length; i += 1) {
+    const from = nodes[i - 1]
+    const to = nodes[i]
+    edges.push({
+      id: `${from.id}->${to.id}`,
+      ref: to.kinds.includes('prev') || from.kinds.includes('next'),
+      d: `M${baseX + 12},${from.y + nodeH} L${baseX + 12},${to.y}`
+    })
+  }
+  return {
+    docTitle: doc?.title || '',
+    nodes,
+    edges,
+    nodeW,
+    nodeH,
+    width: baseX + nodeW + 16,
+    height: Math.max(nodes.length * (nodeH + gap) - gap, 40),
+    refCount: nodes.reduce((sum, node) => sum + node.kinds.length, 0)
+  }
+})
 
 const deckCourses = computed(() => snapshot.courses
   .map(course => ({ id: course.id, label: course.label, count: buildDeck(snapshot, { courseId: course.id, limit: 60 }).length }))
@@ -683,6 +783,17 @@ watch(() => current.value?.id, (cardId) => {
 .scholar-tree__node:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 1px; }
 .scholar-tree__node.is-viewed rect { fill: rgba(37, 99, 235, .10); stroke: rgba(37, 99, 235, .5); }
 .scholar-tree__node.is-active rect { stroke-width: 2; stroke: var(--smart-primary-strong, #2563eb); }
+/* 小节图谱：节点＝当前文档成卡小节，实线顺序 / 虚线原文互引 */
+.scholar-tree__snode { cursor: pointer; }
+.scholar-tree__snode rect { fill: var(--smart-surface, #fff); stroke: var(--smart-border, #d1d5db); stroke-width: 1; }
+.scholar-tree__snode text { font-size: 11px; fill: var(--smart-text, #1f2937); pointer-events: none; }
+.scholar-tree__snode .scholar-tree__snode-ref { font-size: 9px; fill: #0f9d8f; }
+.scholar-tree__snode:hover rect,
+.scholar-tree__snode:focus-visible rect { stroke: var(--smart-primary-strong, #2563eb); }
+.scholar-tree__snode:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 1px; }
+.scholar-tree__snode.is-active rect { stroke-width: 2; stroke: var(--smart-primary-strong, #2563eb); }
+.scholar-tree__sedge { fill: none; stroke: var(--smart-primary-strong, #2563eb); stroke-width: 1.4; }
+.scholar-tree__sedge.is-ref { stroke: #0f9d8f; stroke-width: 1.6; stroke-dasharray: 5 4; }
 .scholar-tree__ghost text { font-size: 10.5px; fill: var(--smart-muted, #9ca3af); }
 /* 弱关联：长虚线、低对比，当前卡相关的高亮；与先修弧线区分 */
 .scholar-tree__edge.is-weak {

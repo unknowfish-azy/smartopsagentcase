@@ -9,6 +9,7 @@
     "knowledge:export": "node ../scripts/knowledge/export-catalog.mjs",
     "knowledge:check": "node ../scripts/knowledge/export-catalog.mjs --check",
     "atlas:distill": "node ../scripts/atlas/distill-atlas.mjs",
+    "atlas:section-refs": "node ../scripts/atlas/section-refs.mjs",
     "prebuild": "npm run knowledge:check",
     "build": "vite build",
     "build:admin": "vite build --config vite.config.admin.mjs",
