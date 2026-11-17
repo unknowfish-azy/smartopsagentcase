@@ -112,7 +112,7 @@
               </g>
             </svg>
             <p class="scholar-tree__legend">
-              实线＝原文“已完成第 N 课”；虚线＝原文“建议先完成”；点线＝共用专业工具推得的弱关联（非先修）；竖线主干＝快照文档顺序；灰字＝原文提到但快照未收录。
+              实线＝原文“已完成第 N 课”；短虚线＝原文“建议先完成”；长虚线＝共用专业工具推得的弱关联（非先修）；竖线主干＝快照文档顺序；灰字＝原文提到但快照未收录。
             </p>
           </div>
 
@@ -623,12 +623,12 @@ function jumpToDoc(docTitle) {
 .scholar-tree__node.is-viewed rect { fill: rgba(37, 99, 235, .10); stroke: rgba(37, 99, 235, .5); }
 .scholar-tree__node.is-active rect { stroke-width: 2; stroke: var(--smart-primary-strong, #2563eb); }
 .scholar-tree__ghost text { font-size: 10.5px; fill: var(--smart-muted, #9ca3af); }
-/* 弱关联：点线、低对比，当前卡相关的高亮；与先修弧线区分 */
+/* 弱关联：长虚线、低对比，当前卡相关的高亮；与先修弧线区分 */
 .scholar-tree__edge.is-weak {
   stroke: #0f9d8f;
   stroke-width: 1.2;
-  stroke-dasharray: 1 5;
-  stroke-linecap: round;
+  stroke-dasharray: 8 4;
+  stroke-linecap: butt;
   opacity: .38;
   transition: opacity .15s ease, stroke-width .15s ease;
 }
