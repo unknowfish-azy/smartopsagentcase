@@ -617,6 +617,10 @@ backend/.env
 backend/.env.*
 !backend/.env.example
 
+# 本机 Spring 外部配置（backend/config/）可能含聊天 run-token 密钥，
+# 与根 .env 同级敏感，绝不进 git
+backend/config/
+
 # ============================================================
 # AI Service Local Environment
 # ============================================================
@@ -646,6 +650,7 @@ agent/.env.*
 # ============================================================
 
 data/local/
+data/lake/
 data/runtime/
 data/cache/
 data/tmp/
@@ -784,3 +789,13 @@ api/generated/
 # ASR 生成物（DTW 模板与数据集由脚本重建，真实语音数据集另行提交）
 agent/asr/templates.json
 SmartOps-Dataset/asr/
+
+# 运行时数据产物（建模导出/输出与 SFT 训练数据，体积超 1GB，可由脚本重建）
+/data/
+
+# 第三方教材语料（AI Infra 训练营/Docker 课/RH 教材，版权敏感不入公开仓库）
+/knowledge/reference/
+
+# Electron 依赖与构建产物（源码入库，依赖由 npm install 重建）
+/desktop/node_modules/
+/desktop/dist/
