@@ -92,16 +92,23 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
   visor.position.set(0.066, 0.006, 0)
   head.add(visor)
 
-  const beacon = new Mesh(new SphereGeometry(0.014, 12, 10), beaconMat)
-  beacon.position.set(0.045, 0.05, 0.045)
+  /* 头顶状态灯：立杆抬到头部轮廓之外，避免光晕被白色头壳「吃掉」 */
+  const beaconMast = new Mesh(new CylinderGeometry(0.006, 0.006, 0.05, 8), jointMat)
+  beaconMast.position.set(0, 0.085, 0)
+  head.add(beaconMast)
+
+  const beacon = new Mesh(new SphereGeometry(0.016, 12, 10), beaconMat)
+  beacon.position.set(0, 0.116, 0)
   head.add(beacon)
 
   /* 状态灯外发光光晕 + 局部点光，让呼吸/闪烁在缩略视角下也清晰 */
   const glowMat = new MeshBasicMaterial({
-    color: 0x5ad691, transparent: true, opacity: 0.16, depthWrite: false,
+    /* 光晕不做深度测试：被头部/机身挡住时也能透出，保证远景可见 */
+    color: 0x5ad691, transparent: true, opacity: 0.16, depthWrite: false, depthTest: false,
     side: DoubleSide, blending: AdditiveBlending
   })
-  const glow = new Mesh(new SphereGeometry(0.028, 16, 12), glowMat)
+  const glow = new Mesh(new SphereGeometry(0.038, 16, 12), glowMat)
+  glow.renderOrder = 3
   glow.position.copy(beacon.position)
   head.add(glow)
 

@@ -278,7 +278,7 @@ test('beaconGlow：亮度越高光晕越大越亮，并钳制上限', () => {
   const bright = beaconGlow({ intensity: 3, scale: 1.15 })
   assert.ok(bright.opacity > dim.opacity)
   assert.ok(bright.scale > dim.scale)
-  assert.ok(beaconGlow({ intensity: 10, scale: 2 }).opacity <= 0.46)
+  assert.ok(beaconGlow({ intensity: 10, scale: 2 }).opacity <= 0.7)
   assert.equal(beaconGlow().scale, 1, '缺省脉冲不放大光晕')
 })
 

@@ -157,10 +157,12 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
   head.add(beacon)
 
   const glowMat = new MeshBasicMaterial({
-    color: 0x5ad691, transparent: true, opacity: 0.16, depthWrite: false,
+    /* 光晕不做深度测试：被头部/机身挡住时也能透出，保证远景可见 */
+    color: 0x5ad691, transparent: true, opacity: 0.16, depthWrite: false, depthTest: false,
     side: DoubleSide, blending: AdditiveBlending
   })
-  const glow = new Mesh(new SphereGeometry(0.03, 16, 12), glowMat)
+  const glow = new Mesh(new SphereGeometry(0.042, 16, 12), glowMat)
+  glow.renderOrder = 3
   glow.position.copy(beacon.position)
   head.add(glow)
 

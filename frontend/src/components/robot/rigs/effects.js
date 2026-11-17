@@ -137,8 +137,8 @@ export function beaconGlow(pulse) {
   const intensity = Number(pulse?.intensity) || 0
   const scale = Number(pulse?.scale) || 1
   return {
-    opacity: Math.min(0.46, 0.1 + intensity * 0.13),
-    scale: 1 + (scale - 1) * 2.6
+    opacity: Math.min(0.7, intensity * 0.22),
+    scale: 1 + (scale - 1) * 3.4
   }
 }
 
