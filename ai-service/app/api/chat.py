@@ -97,7 +97,11 @@ async def chat(
     response.headers.update(
         correlation_headers(identity.request_id, identity.task_id, identity.run_id)
     )
-    return await service.chat(request, identity=identity)
+    # 记忆归属只认 Java 签发的 run 令牌 subject（数字型 userId）；
+    # 匿名模式（仅本地联调）没有可信用户，记忆链路自动降级为不读不写。
+    return await service.chat(
+        request, identity=identity, user_id=(identity_token or {}).get("subject")
+    )
 
 
 @router.post("/stream")
@@ -115,7 +119,9 @@ async def chat_stream(
     identity = _identity(request, x_request_id, x_task_id, identity_token)
 
     async def event_generator():
-        async for event in service.chat_stream(request, identity=identity):
+        async for event in service.chat_stream(
+            request, identity=identity, user_id=(identity_token or {}).get("subject")
+        ):
             yield (
                 f"event: {event['event']}\n"
                 f"data: {json.dumps(event['data'], ensure_ascii=False)}\n\n"

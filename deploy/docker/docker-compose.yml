@@ -289,6 +289,14 @@ services:
       LLM_API_KEY: "${LLM_API_KEY:-}"
       LLM_MODEL: "${LLM_MODEL:-mock-model}"
 
+      # 对话记忆闭环：读写 backend 的 operator_memory 内部接口。
+      # 容器内走 compose 服务名；token 必须与 backend 的 SMARTOPS_INTERNAL_TOKEN 一致。
+      MEMORY_ENABLED: "${MEMORY_ENABLED:-true}"
+      MEMORY_SERVICE_URL: "http://backend:8080"
+      MEMORY_INTERNAL_TOKEN: "${SMARTOPS_INTERNAL_TOKEN:-}"
+      MEMORY_RECALL_LIMIT: "${MEMORY_RECALL_LIMIT:-3}"
+      MEMORY_TIMEOUT_SEC: "${MEMORY_TIMEOUT_SEC:-2.0}"
+
     # SEC-01 网络层隔离：8001 不发布到宿主机，ai-service 只能经 nginx
     # （公网 /ai/、内网 /ai-api/）或同一 docker 网络内的服务访问。
     # 本机直连调试需要时再临时放开：

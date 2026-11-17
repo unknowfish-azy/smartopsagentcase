@@ -1,6 +1,38 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+import re
+
+from pydantic import BaseModel, Field, field_validator
+
+
+# 页面上下文字段只允许安全文本：去控制字符、trim、限长 200（与前端白名单规则对齐）。
+_PAGE_CONTEXT_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
+_PAGE_CONTEXT_MAX_LENGTH = 200
+
+
+class PageContext(BaseModel):
+
+    """页面上下文（只读参考信息，非指令）：前端上报的当前页面路径与栏目。
+
+    服务端仅按固定模板回填这两个字段进 system 提示，绝不拼接页面 DOM 内容，
+    也不把其中的文字当作指令执行。
+    """
+
+    path: str = ""
+
+    section: str = ""
+
+    @field_validator("path", "section", mode="before")
+    @classmethod
+    def _sanitize(cls, value):
+
+        if not isinstance(value, str):
+
+            raise ValueError("页面上下文字段必须是字符串")
+
+        cleaned = _PAGE_CONTEXT_CONTROL_CHARS.sub("", value.strip())
+
+        return cleaned[:_PAGE_CONTEXT_MAX_LENGTH]
 
 
 class ChatRequest(BaseModel):
@@ -42,6 +74,10 @@ class ChatRequest(BaseModel):
         max_length=5,
     )
 
+    # 页面上下文（可选）：前端上报的当前页面路径与栏目，仅作回答参考信息；
+    # 未传时（None）行为与旧版完全一致。
+    context: PageContext | None = None
+
     metadata: dict[str, Any] = Field(
         default_factory=dict
     )
@@ -75,6 +111,10 @@ class ChatResponse(BaseModel):
     provider: str
 
     trust_score: float = 0.0
+
+    # GUARDRAIL v1：本次对话的护栏处置结果（NONE/ALLOW/REDACT/BLOCK）。
+    # 默认 NONE 保持向后兼容；前端不展示（D2 裁决），仅入审计与元数据。
+    guard_action: str = "NONE"
 
     citations: list[Citation] = Field(
         default_factory=list
