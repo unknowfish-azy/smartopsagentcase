@@ -12,6 +12,9 @@ Thumbs.db:encryptable
 ehthumbs.db
 Desktop.ini
 
+# Office 文档锁文件
+~$*
+
 # macOS
 .DS_Store
 .AppleDouble
