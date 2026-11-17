@@ -44,57 +44,115 @@
           <div class="scholar-tree__bar" role="progressbar" :aria-valuenow="viewedInRange" :aria-valuemax="deck.length">
             <span class="scholar-tree__bar-fill" :style="{ width: `${deck.length ? (viewedInRange / deck.length) * 100 : 0}%` }"></span>
           </div>
-          <p class="scholar-tree__legend">
-            前置标注只来自各课「前置知识」原文的先修课次；「顺序·上一课」为快照文档顺序，非推断的硬依赖。
-          </p>
-          <div v-for="group in treeCourses" :key="group.label" class="scholar-tree__course">
-            <button type="button" class="scholar-tree__course-name" :title="`切换到课程：${group.label}`" @click="jumpToCourse(group)">
-              {{ group.label }}
-            </button>
-            <ul class="scholar-tree__docs">
-              <li v-for="doc in group.docs" :key="doc.docId">
-                <button type="button" class="scholar-tree__doc" :aria-expanded="expandedDocs.has(doc.title)" @click="toggleDoc(doc.title)">
-                  <span class="scholar-tree__doc-title">{{ doc.title }}</span>
-                  <span class="scholar-muted">
-                    <span v-if="depsOf(doc).length" class="scholar-tree__dep-count" :title="depSummary(doc)">前置 {{ depsOf(doc).length }}</span>
-                    {{ docViewedCount(doc) }}/{{ doc.cards.length }}
-                  </span>
-                </button>
-                <div v-show="expandedDocs.has(doc.title)" class="scholar-tree__branch">
-                  <div v-if="depsOf(doc).length" class="scholar-tree__deps">
-                    <span class="scholar-tree__deps-label">依赖</span>
-                    <button
-                      v-for="dep in depsOf(doc)"
-                      :key="`${dep.kind}-${dep.label}`"
-                      type="button"
-                      class="scholar-tree__dep"
-                      :class="[`is-${dep.kind}`, { 'is-missing': !dep.docTitle }]"
-                      :disabled="!dep.docTitle"
-                      :title="dep.docTitle ? `跳转到 ${dep.docTitle}` : '原文提到的课次不在当前快照中'"
-                      @click="jumpToDoc(dep.docTitle)"
-                    >
-                      {{ dep.label }}<span v-if="dep.kind === 'suggested'" class="scholar-tree__dep-note">·建议</span><span v-if="!dep.docTitle" class="scholar-tree__dep-note">·未收录</span>
-                    </button>
-                  </div>
-                  <p v-else-if="declaredNoteOf(doc)" class="scholar-tree__deps-empty">
-                    原文前置（未提课次）：{{ declaredNoteOf(doc) }}
-                  </p>
-                  <p v-else class="scholar-tree__deps-empty">原文未声明前置知识</p>
-                  <ul class="scholar-tree__sections">
-                    <li v-for="card in doc.cards" :key="card.id">
+          <div class="scholar-tree__legend-row">
+            <p class="scholar-tree__legend">
+              依赖来自各课「前置知识」原文的先修课次；主干为快照文档顺序，非推断的硬依赖。
+            </p>
+            <div class="scholar-tree__views" role="group" aria-label="知识树视图切换">
+              <button type="button" class="scholar-tree__view" :class="{ 'is-active': treeView === 'list' }" :aria-pressed="treeView === 'list'" @click="treeView = 'list'">列表</button>
+              <button type="button" class="scholar-tree__view" :class="{ 'is-active': treeView === 'graph' }" :aria-pressed="treeView === 'graph'" @click="treeView = 'graph'">依赖图</button>
+            </div>
+          </div>
+
+          <!-- 依赖图：节点＝当前课程文档；纵向主干为顺序，右侧弧线为原文声明的先修课次 -->
+          <div v-show="treeView === 'graph'" class="scholar-tree__graph">
+            <p v-if="!graph.nodes.length" class="scholar-tree__deps-empty">当前课程没有可绘制的文档节点。</p>
+            <svg
+              v-else
+              class="scholar-tree__svg"
+              :viewBox="`0 0 ${graph.width} ${graph.height}`"
+              preserveAspectRatio="xMinYMin meet"
+              role="img"
+              :aria-label="`依赖图：${graph.nodes.length} 个文档节点，${graph.edgeCount} 条先修连线`"
+            >
+              <line
+                v-for="rail in graph.rails"
+                :key="rail.id"
+                class="scholar-tree__rail"
+                :x1="rail.x1" :y1="rail.y1" :x2="rail.x2" :y2="rail.y2"
+              />
+              <path
+                v-for="edge in graph.edges"
+                :key="edge.id"
+                class="scholar-tree__edge"
+                :class="`is-${edge.kind}`"
+                :d="edge.d"
+              />
+              <g
+                v-for="node in graph.nodes"
+                :key="node.docId"
+                class="scholar-tree__node"
+                :class="{ 'is-viewed': node.viewed > 0, 'is-active': node.title === current?.source }"
+                role="button"
+                tabindex="0"
+                :aria-label="`${node.title}，已学 ${node.viewed}/${node.total}，点击查看`"
+                @click="jumpToDoc(node.title)"
+                @keydown.enter.prevent="jumpToDoc(node.title)"
+                @keydown.space.prevent="jumpToDoc(node.title)"
+              >
+                <title>{{ node.title }}（已学 {{ node.viewed }}/{{ node.total }}）</title>
+                <rect :x="node.x" :y="node.y" :width="graph.nodeW" :height="graph.nodeH" rx="6" />
+                <text :x="node.x + 8" :y="node.y + 15">{{ node.label }}</text>
+              </g>
+              <g v-for="ghost in graph.ghosts" :key="ghost.id" class="scholar-tree__ghost">
+                <text :x="ghost.x" :y="ghost.y + 4">{{ ghost.label }}</text>
+              </g>
+            </svg>
+            <p class="scholar-tree__legend">
+              实线＝原文“已完成第 N 课”；虚线＝原文“建议先完成”；竖线主干＝快照文档顺序；灰字＝原文提到但快照未收录。
+            </p>
+          </div>
+
+          <div v-show="treeView === 'list'">
+            <div v-for="group in treeCourses" :key="group.label" class="scholar-tree__course">
+              <button type="button" class="scholar-tree__course-name" :title="`切换到课程：${group.label}`" @click="jumpToCourse(group)">
+                {{ group.label }}
+              </button>
+              <ul class="scholar-tree__docs">
+                <li v-for="doc in group.docs" :key="doc.docId">
+                  <button type="button" class="scholar-tree__doc" :aria-expanded="expandedDocs.has(doc.title)" @click="toggleDoc(doc.title)">
+                    <span class="scholar-tree__doc-title">{{ doc.title }}</span>
+                    <span class="scholar-muted">
+                      <span v-if="depsOf(doc).length" class="scholar-tree__dep-count" :title="depSummary(doc)">前置 {{ depsOf(doc).length }}</span>
+                      {{ docViewedCount(doc) }}/{{ doc.cards.length }}
+                    </span>
+                  </button>
+                  <div v-show="expandedDocs.has(doc.title)" class="scholar-tree__branch">
+                    <div v-if="depsOf(doc).length" class="scholar-tree__deps">
+                      <span class="scholar-tree__deps-label">依赖</span>
                       <button
+                        v-for="dep in depsOf(doc)"
+                        :key="`${dep.kind}-${dep.label}`"
                         type="button"
-                        class="scholar-tree__section"
-                        :class="{ 'is-viewed': viewedCards.has(card.id) }"
-                        @click="jumpToCard(card.id, doc.title)"
+                        class="scholar-tree__dep"
+                        :class="[`is-${dep.kind}`, { 'is-missing': !dep.docTitle }]"
+                        :disabled="!dep.docTitle"
+                        :title="dep.docTitle ? `跳转到 ${dep.docTitle}` : '原文提到的课次不在当前快照中'"
+                        @click="jumpToDoc(dep.docTitle)"
                       >
-                        {{ card.front }}
+                        {{ dep.label }}<span v-if="dep.kind === 'suggested'" class="scholar-tree__dep-note">·建议</span><span v-if="!dep.docTitle" class="scholar-tree__dep-note">·未收录</span>
                       </button>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-            </ul>
+                    </div>
+                    <p v-else-if="declaredNoteOf(doc)" class="scholar-tree__deps-empty">
+                      原文前置（未提课次）：{{ declaredNoteOf(doc) }}
+                    </p>
+                    <p v-else class="scholar-tree__deps-empty">原文未声明前置知识</p>
+                    <ul class="scholar-tree__sections">
+                      <li v-for="card in doc.cards" :key="card.id">
+                        <button
+                          type="button"
+                          class="scholar-tree__section"
+                          :class="{ 'is-viewed': viewedCards.has(card.id) }"
+                          @click="jumpToCard(card.id, doc.title)"
+                        >
+                          {{ card.front }}
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -174,6 +232,7 @@ function flip() {
 
 const VIEWED_KEY = 'scholar-cards-viewed'
 const treeOpen = ref(false)
+const treeView = ref('list')
 const expandedDocs = ref(new Set())
 const viewedCards = ref(loadViewedCards())
 
@@ -240,6 +299,78 @@ function declaredNoteOf(doc) {
 function depSummary(doc) {
   return depsOf(doc).map(dep => `${dep.label}${dep.kind === 'suggested' ? '（建议）' : ''}`).join('、')
 }
+
+/**
+ * 依赖图布局：纵向主干按快照文档顺序排列，跨课先修画成右侧弧线。
+ * 纯前端 SVG 计算，无第三方图形库；未收录的课次画成灰字端点。
+ */
+const graph = computed(() => {
+  const nodeW = 200
+  const nodeH = 22
+  const rowH = 30
+  const baseX = 12
+  const railX = 4
+  const nodes = treeDocs.value.map((doc, order) => ({
+    docId: doc.docId,
+    title: doc.title,
+    label: doc.title.length > 18 ? `${doc.title.slice(0, 18)}…` : doc.title,
+    viewed: docViewedCount(doc),
+    total: doc.cards.length,
+    x: baseX,
+    y: order * rowH + 6
+  }))
+  const byTitle = new Map(nodes.map(node => [node.title, node]))
+
+  /* 主干：相邻节点竖线 + 每节点一段横向接入线 */
+  const rails = []
+  for (let i = 0; i < nodes.length - 1; i += 1) {
+    const from = nodes[i]
+    const to = nodes[i + 1]
+    rails.push({ id: `rail-${i}`, x1: railX, y1: from.y + nodeH / 2, x2: railX, y2: to.y + nodeH / 2 })
+    rails.push({ id: `tick-${i}`, x1: railX, y1: to.y + nodeH / 2, x2: baseX, y2: to.y + nodeH / 2 })
+  }
+
+  const edges = []
+  const ghosts = []
+  for (const doc of treeDocs.value) {
+    const source = byTitle.get(doc.title)
+    for (const dep of depsOf(doc)) {
+      if (dep.kind === 'order') continue /* 顺序关系已由主干表达，避免重复噪音 */
+      const sy = source.y + nodeH / 2
+      const target = dep.docTitle ? byTitle.get(dep.docTitle) : null
+      if (target) {
+        const ty = target.y + nodeH / 2
+        const x1 = baseX + nodeW
+        const bulge = x1 + 40 + Math.min(Math.abs(ty - sy) * 0.12, 56)
+        edges.push({
+          id: `${doc.docId}-${dep.kind}-${dep.label}`,
+          kind: dep.kind,
+          d: `M${x1},${sy} C${bulge},${sy} ${bulge},${ty} ${x1},${ty}`
+        })
+      } else {
+        const gx = baseX + nodeW + 22
+        ghosts.push({ id: `ghost-${doc.docId}-${dep.label}`, x: gx, y: sy, label: `${dep.label}·未收录` })
+        edges.push({
+          id: `missing-${doc.docId}-${dep.label}`,
+          kind: 'missing',
+          d: `M${baseX + nodeW},${sy} L${gx - 4},${sy}`
+        })
+      }
+    }
+  }
+
+  return {
+    nodes,
+    rails,
+    edges,
+    ghosts,
+    nodeW,
+    nodeH,
+    width: baseX + nodeW + 130,
+    height: Math.max(nodes.length * rowH + 12, 40),
+    edgeCount: edges.filter(edge => edge.kind !== 'missing').length
+  }
+})
 
 /* 当前卡所在文档自动展开（其余保持用户手动状态），对齐「默认折叠仅当前域展开」惯例 */
 watch(() => current.value?.source, (docTitle) => {
@@ -423,6 +554,36 @@ function jumpToDoc(docTitle) {
   font-size: 10.5px;
 }
 .scholar-tree__deps-empty { margin: 0 0 2px 4px; font-size: 11px; color: var(--smart-muted, #6b7280); }
+
+/* 依赖图：纯 SVG，主干竖线 + 右侧贝塞尔先修弧线 */
+.scholar-tree__legend-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 12px; }
+.scholar-tree__views { display: inline-flex; flex: none; border: 1px solid var(--smart-border, #e5e7eb); border-radius: 999px; overflow: hidden; }
+.scholar-tree__view {
+  padding: 2px 10px;
+  border: 0;
+  background: none;
+  color: var(--smart-muted, #6b7280);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.scholar-tree__view.is-active { background: var(--smart-primary-strong, #2563eb); color: #fff; }
+.scholar-tree__view:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 1px; }
+.scholar-tree__graph { display: grid; gap: 6px; }
+.scholar-tree__svg { display: block; width: 100%; max-width: 420px; height: auto; }
+.scholar-tree__rail { stroke: var(--smart-border, #d1d5db); stroke-width: 1.5; }
+.scholar-tree__edge { fill: none; stroke: var(--smart-primary-strong, #2563eb); stroke-width: 1.4; }
+.scholar-tree__edge.is-suggested { stroke-dasharray: 4 3; opacity: .85; }
+.scholar-tree__edge.is-missing { stroke: var(--smart-muted, #9ca3af); stroke-dasharray: 2 3; }
+.scholar-tree__node { cursor: pointer; }
+.scholar-tree__node rect { fill: var(--smart-surface, #fff); stroke: var(--smart-border, #d1d5db); stroke-width: 1; }
+.scholar-tree__node text { font-size: 11px; fill: var(--smart-text, #1f2937); pointer-events: none; }
+.scholar-tree__node:hover rect,
+.scholar-tree__node:focus-visible rect { stroke: var(--smart-primary-strong, #2563eb); }
+.scholar-tree__node:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 1px; }
+.scholar-tree__node.is-viewed rect { fill: rgba(37, 99, 235, .10); stroke: rgba(37, 99, 235, .5); }
+.scholar-tree__node.is-active rect { stroke-width: 2; stroke: var(--smart-primary-strong, #2563eb); }
+.scholar-tree__ghost text { font-size: 10.5px; fill: var(--smart-muted, #9ca3af); }
 
 /* 翻转卡：3D 翻转；reduced-motion 下退化为直接切换（无 transition） */
 .scholar-card-zone { display: grid; place-items: center; min-height: 340px; }
