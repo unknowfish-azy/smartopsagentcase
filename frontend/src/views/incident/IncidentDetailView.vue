@@ -10,6 +10,7 @@
       </div>
       <div class="sentinel-actions">
         <RouterLink to="/incidents">返回列表</RouterLink>
+        <button type="button" :disabled="loading || !incident" @click="exportReport">导出证据链报告</button>
         <button type="button" :disabled="loading || !incident" @click="reload">刷新</button>
       </div>
     </header>
@@ -237,6 +238,7 @@ import {
   sourceLabel,
   statusLabel
 } from './incidentModel'
+import { buildEvidenceReport, evidenceReportFileName } from './evidenceReport'
 import '../sentinel/sentinel.css'
 
 const route = useRoute()
@@ -367,6 +369,31 @@ async function recordExpAction(match) {
   } finally {
     expBusy.value = false
   }
+}
+
+/**
+ * 导出证据链报告（P2-5）：把当前工单上下文组装成 Markdown 快照并下载。
+ * 报告内容完全来自页面已加载的数据，不额外发请求、不编造任何结论。
+ */
+function exportReport() {
+  const item = incident.value
+  if (!item) return
+  const markdown = buildEvidenceReport({
+    incident: item,
+    events: events.value,
+    relations: relations.value,
+    experiences: expMatches.value,
+    contractDraft: contractDraft.value,
+    generatedAt: new Date().toLocaleString('zh-CN', { hour12: false })
+  })
+  const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = evidenceReportFileName(item)
+  anchor.click()
+  URL.revokeObjectURL(url)
+  actionMessage.value = '证据链报告已导出（Markdown 快照）。'
 }
 
 /** 生成恢复契约草案：平台只负责组装草案，签发（digest + 内部端点登记）留在 Agent 侧。 */

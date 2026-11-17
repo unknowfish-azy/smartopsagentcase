@@ -173,6 +173,24 @@
             @switch-sensor="primarySensor = $event"
           />
         </section>
+
+        <!-- 预防动作建议（P1-4）：置信度达阈值 → 建议提前准备的动作 + 一键契约草案 -->
+        <section class="forecast-card forecast-side-card" aria-labelledby="forecast-preventive-title">
+          <header class="forecast-card-head">
+            <div>
+              <h2 id="forecast-preventive-title">预防动作建议</h2>
+              <span class="forecast-card-en">PREVENTIVE ACTIONS</span>
+            </div>
+            <span class="forecast-card-aside">人在环上</span>
+          </header>
+          <ForecastPreventive
+            :primary-key="primarySensor"
+            :generated-at="generatedAt"
+            :now="playOffset"
+            :horizon="horizon"
+            :crossings="payload?.crossings"
+          />
+        </section>
       </div>
     </div>
 
@@ -228,6 +246,7 @@ import ForecastResidual from '../../components/forecast/ForecastResidual.vue'
 import ForecastModelCard from '../../components/forecast/ForecastModelCard.vue'
 import ForecastGates from '../../components/forecast/ForecastGates.vue'
 import ForecastCrossings from '../../components/forecast/ForecastCrossings.vue'
+import ForecastPreventive from '../../components/forecast/ForecastPreventive.vue'
 import ForecastTraining from '../../components/forecast/ForecastTraining.vue'
 import ForecastSources from '../../components/forecast/ForecastSources.vue'
 

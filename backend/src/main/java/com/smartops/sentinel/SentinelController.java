@@ -3,6 +3,8 @@ package com.smartops.sentinel;
 import com.smartops.common.ApiResponse;
 import com.smartops.security.SessionUser;
 import com.smartops.service.OperatorMemoryService;
+import com.smartops.support.RecoveryContractDrafts;
+import com.smartops.vo.ForecastContractDraftVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -517,6 +519,47 @@ public class SentinelController {
         return ApiResponse.success(rows);
     }
 
+    /* ── 预测面 · 预防性恢复契约草案 ──────────────────────────────── */
+
+    /**
+     * 按越界预测上下文组装预防性恢复契约草案（P1-4）。
+     *
+     * <p>草案 digest 为空串、不落库不留痕：预测面没有工单实体，
+     * 交付形态是即时 JSON，由用户复核后交给 Agent 运行手册签发。
+     * 组装走与工单侧同一套冻结常量（RecoveryContractDrafts），
+     * 模板 forecast-preventive、证据组 sentinel-metrics。</p>
+     */
+    @PostMapping("/forecast/contract-draft")
+    public ApiResponse<ForecastContractDraftVO> forecastContractDraft(@AuthenticationPrincipal SessionUser actor,
+                                                                      @RequestBody ForecastDraftRequest request) {
+        String sensor = (request.sensor() == null || request.sensor().isBlank())
+                ? "unknown-sensor" : request.sensor().trim();
+        String kind = "crit".equalsIgnoreCase(request.kind()) ? "crit" : "warn";
+        int horizonSec = request.horizonSec() == null ? 0 : Math.max(0, request.horizonSec());
+        double confidence = request.confidence() == null ? 0 : Math.max(0, Math.min(1, request.confidence()));
+
+        Map<String, Object> draft = RecoveryContractDrafts.forService(
+                sensor, "forecast-", "forecast-preventive", List.of("sentinel-metrics"));
+
+        String levelCn = "crit".equals(kind) ? "越界" : "预警";
+        return ApiResponse.success(ForecastContractDraftVO.builder()
+                .sensor(sensor)
+                .kind(kind)
+                .horizonSec(horizonSec)
+                .confidence(confidence)
+                .summary("预测 " + sensor + " 将在 +" + horizonSec + "s 出现" + levelCn
+                        + "（置信 " + String.format("%.2f", confidence) + "），"
+                        + "建议提前准备服务健康观察契约，模板 forecast-preventive/v1，有效期 1 小时。")
+                .draft(draft)
+                .notes(List.of(
+                        "草案 digest 为空串，不是可执行契约——签发必须由 Agent 侧完成"
+                                + "（核对谓词绑定、计算 canonical digest、经内部端点登记）。",
+                        "predicate_id=service-health-ok 为占位谓词，签发前需按团队谓词库核对替换；"
+                                + "目标服务当前以传感器标识占位，接入真实资产后替换。",
+                        "预测面草案不落库不留痕；window/budgets 为冻结常量，不可修改。"))
+                .build());
+    }
+
     /* ── 请求体 ───────────────────────────────────────────────────────── */
 
     public record ScheduleRequest(long scriptId, String cronExpr, String runtimeId, String nextFireAt) {}
@@ -570,4 +613,7 @@ public class SentinelController {
     public record ResultRequest(String result, Integer exitCode, String excerpt) {}
 
     public record CloseRequest(String note) {}
+
+    /** 预测面预防性契约草案请求：传感器标识 + 越界上下文。 */
+    public record ForecastDraftRequest(String sensor, String kind, Integer horizonSec, Double confidence) {}
 }

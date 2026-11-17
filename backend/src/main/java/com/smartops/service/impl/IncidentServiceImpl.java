@@ -11,6 +11,7 @@ import com.smartops.entity.IncidentEvent;
 import com.smartops.entity.IncidentRelation;
 import com.smartops.entity.SentinelAlertRef;
 import com.smartops.exception.BusinessException;
+import com.smartops.support.RecoveryContractDrafts;
 import com.smartops.mapper.IncidentEventMapper;
 import com.smartops.mapper.IncidentMapper;
 import com.smartops.mapper.IncidentRelationMapper;
@@ -327,59 +328,18 @@ public class IncidentServiceImpl implements IncidentService {
     /**
      * 从工单上下文生成恢复契约草案（阶段 C）。
      *
-     * <p>草案与 recovery-contract/v1 schema 同形，digest 恒为空串——平台不越权签发：
-     * 谓词核对、canonical digest 计算、内部端点登记全部留在 Agent 侧。</p>
+     * <p>草案组装抽到 {@link RecoveryContractDrafts}（P1-4 起预测面共用同一套
+     * 冻结常量），digest 恒为空串——平台不越权签发：谓词核对、canonical digest
+     * 计算、内部端点登记全部留在 Agent 侧。工单侧在时间线留痕。</p>
      */
     @Override
     public IncidentContractDraftVO buildContractDraft(Long id) {
         Incident incident = requireIncident(id);
         String service = firstNonBlank(incident.getRelatedService(), incident.getCategory(), "unknown-service");
-        String ident = toIdent(service);
 
-        Map<String, Object> target = new LinkedHashMap<>();
-        target.put("target_id", ident + "-primary");
-        target.put("target_kind", "SERVICE");
-
-        Map<String, Object> obligation = new LinkedHashMap<>();
-        obligation.put("obligation_id", "service-health-observed");
-        obligation.put("predicate_id", "service-health-ok");
-        obligation.put("predicate_version", "v1");
-        obligation.put("required", true);
-        obligation.put("weight", 1);
-        obligation.put("collector_ids", List.of("metric-collector"));
-        obligation.put("source_groups", List.of("incident-evidence"));
-        obligation.put("binding_revision", "unspecified");
-        obligation.put("scope", ident);
-        obligation.put("target", target);
-        obligation.put("predicate_params", Map.of("service", service));
-
-        Map<String, Object> draft = new LinkedHashMap<>();
-        draft.put("schema_version", "recovery-contract/v1");
-        draft.put("id", "incident-" + incident.getId() + "-"
-                + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
-        draft.put("version", "v1");
-        draft.put("scope", ident);
-        draft.put("target", target);
-        draft.put("expected_revision", "unspecified");
-        draft.put("template_id", "incident-reactive");
-        draft.put("template_version", "v1");
-        draft.put("obligations", List.of(obligation));
-        draft.put("source_groups", List.of("incident-evidence", "sentinel-metrics"));
-        // window/budgets 是 semantics.md 冻结常量，草案直接给出冻结值，签发前不得修改。
-        draft.put("window", Map.of(
-                "sample_groups", 3,
-                "min_first_last_gap_ms", 4000,
-                "max_adjacent_gap_ms", 4000,
-                "max_intra_group_skew_ms", 1250,
-                "min_next_group_gap_ms", 2000));
-        draft.put("budgets", Map.of(
-                "max_probe_calls", 12,
-                "per_probe_timeout_ms", 1000,
-                "run_deadline_ms", 30000,
-                "evidence_ttl_ms", 15000,
-                "receipt_ttl_ms", 8000));
-        draft.put("expires_after", 3600000);
-        draft.put("digest", "");
+        Map<String, Object> draft = RecoveryContractDrafts.forService(
+                service, "incident-", "incident-reactive",
+                List.of("incident-evidence", "sentinel-metrics"));
 
         // 草案生成是可追溯动作：写入时间线
         IncidentEvent event = new IncidentEvent();
