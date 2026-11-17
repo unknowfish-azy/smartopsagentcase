@@ -16,6 +16,7 @@ const routeMetadata = Object.freeze({
   ReWorkbench: Object.freeze({ personalGroup: 'research', pageFlow: null }),
   PluginCenter: Object.freeze({ personalGroup: 'extensions', pageFlow: null }),
   SkillCenter: Object.freeze({ personalGroup: 'extensions', pageFlow: null }),
+  SceneReconstruction: Object.freeze({ personalGroup: 'extensions', pageFlow: null }),
   Connections: Object.freeze({ personalGroup: 'operations', pageFlow: null }),
   HarborWorkbench: Object.freeze({ personalGroup: 'repository', pageFlow: null }),
   CloudNativeWorkbench: Object.freeze({ personalGroup: 'repository', pageFlow: null }),
@@ -43,6 +44,7 @@ const routeMetadata = Object.freeze({
   ForecastPlane: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
   SectionAnalysis: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
   EngineObservability: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
+  DataCenterTwin: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
   AdminControlCenter: Object.freeze({ personalGroup: 'admin', pageFlow: null, roles: ['admin'] }),
   ArchitectureMap: Object.freeze({ personalGroup: 'architecture', pageFlow: null, roles: ['admin'] })
 })

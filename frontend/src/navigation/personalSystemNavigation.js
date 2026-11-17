@@ -52,7 +52,8 @@ export const personalSystemGroups = Object.freeze([
     id: 'extensions', label: 'EXTENSIONS', cn: '扩展能力', icon: 'Grid', routeName: 'PluginCenter', to: '/plugins',
     children: [
       { label: 'PLUGINS', cn: '插件中心', routeName: 'PluginCenter', to: '/plugins' },
-      { label: 'SKILLS', cn: '技能中心', routeName: 'SkillCenter', to: '/skills' }
+      { label: 'SKILLS', cn: '技能中心', routeName: 'SkillCenter', to: '/skills' },
+      { label: 'SCENE RECONSTRUCTION', cn: '实景还原', routeName: 'SceneReconstruction', to: '/reconstruction' }
     ]
   }),
   expandableGroup({
@@ -121,7 +122,8 @@ export const personalSystemGroups = Object.freeze([
       { label: 'GUARDIAN', cn: '守护 Agent', routeName: 'SentinelGuardian', to: '/sentinel/guardian' },
       { label: 'FORECAST', cn: '预测面', routeName: 'ForecastPlane', to: '/sentinel/forecast' },
       { label: 'SECTION ANALYSIS', cn: '断面对比', routeName: 'SectionAnalysis', to: '/sentinel/sections' },
-      { label: 'OBSERVABILITY', cn: '引擎可观测', routeName: 'EngineObservability', to: '/sentinel/observability' }
+      { label: 'OBSERVABILITY', cn: '引擎可观测', routeName: 'EngineObservability', to: '/sentinel/observability' },
+      { label: 'DATACENTER TWIN', cn: '机房孪生', routeName: 'DataCenterTwin', to: '/sentinel/twin' }
     ]
   })
   ,directGroup({ id: 'admin', label: 'ADMIN', cn: '管理控制台', icon: 'Setting', routeName: 'AdminControlCenter', to: '/admin', roles: ['admin'] })

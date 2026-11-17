@@ -78,7 +78,10 @@
           :device-key="selectedKey"
           :form-factor="selectedDevice?.formFactor || 'CAR'"
           :mode="mode"
+          :effects="effectConfig"
         />
+
+        <RobotEffectTuner v-model="effectConfig" />
       </div>
 
       <!-- 右：双态 + 遥控 -->
@@ -186,11 +189,13 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import DeviceTeleopPanel from '../../components/robot/DeviceTeleopPanel.vue'
 import RobotVideoPanel from '../../components/robot/RobotVideoPanel.vue'
 import RobotScene3D from '../../components/robot/RobotScene3D.vue'
+import RobotEffectTuner from '../../components/robot/RobotEffectTuner.vue'
+import { DEFAULT_EFFECT_CONFIG, resolveEffectConfig } from '../../components/robot/rigs/effects.js'
 import RobotTaskPanel from '../../components/robot/RobotTaskPanel.vue'
 import RobotVoiceBar from '../../components/robot/RobotVoiceBar.vue'
 import RobotFleetPanel from '../../components/robot/RobotFleetPanel.vue'
@@ -245,6 +250,26 @@ const events = ref([])
 const errorMessage = ref('')
 const noticeMessage = ref('')
 const wsState = ref('closed')
+
+/** 3D 动效参数：本地持久化，刷新后保持上次调节结果。 */
+const EFFECT_STORAGE_KEY = 'smartops_robot_effect_config'
+function loadEffectConfig() {
+  try {
+    const raw = window.localStorage.getItem(EFFECT_STORAGE_KEY)
+    return raw ? resolveEffectConfig(JSON.parse(raw)) : { ...DEFAULT_EFFECT_CONFIG }
+  } catch {
+    /* 存储不可用或内容损坏 → 回落默认值 */
+    return { ...DEFAULT_EFFECT_CONFIG }
+  }
+}
+const effectConfig = ref(loadEffectConfig())
+watch(effectConfig, (value) => {
+  try {
+    window.localStorage.setItem(EFFECT_STORAGE_KEY, JSON.stringify(value))
+  } catch {
+    /* 隐私模式 / 配额不足：仅当次生效 */
+  }
+}, { deep: true })
 
 /** 续传节奏：面板内部按 80ms 节流发命令，这里只负责按住期间按 ttl 续传 */
 const RENEW_INTERVAL_MS = 150

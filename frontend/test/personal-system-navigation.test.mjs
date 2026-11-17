@@ -88,13 +88,26 @@ test('sentinel groups dashboard, scripts, alerts and Guardian under one menu', (
   assert.equal(group.id, 'sentinel')
   assert.equal(group.to, '/sentinel')
   assert.equal(group.cn, '哨兵与自动化')
-  assert.deepEqual(group.children.map(item => item.routeName), ['SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'IncidentCenter', 'SentinelGuardian', 'ForecastPlane', 'SectionAnalysis', 'EngineObservability'])
-  assert.deepEqual(group.children.map(item => item.to), ['/sentinel', '/sentinel/scripts', '/sentinel/alerts', '/incidents', '/sentinel/guardian', '/sentinel/forecast', '/sentinel/sections', '/sentinel/observability'])
+  assert.deepEqual(group.children.map(item => item.routeName), ['SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'IncidentCenter', 'SentinelGuardian', 'ForecastPlane', 'SectionAnalysis', 'EngineObservability', 'DataCenterTwin'])
+  assert.deepEqual(group.children.map(item => item.to), ['/sentinel', '/sentinel/scripts', '/sentinel/alerts', '/incidents', '/sentinel/guardian', '/sentinel/forecast', '/sentinel/sections', '/sentinel/observability', '/sentinel/twin'])
   assert.equal(findPersonalSystemGroup('SentinelGuardian'), group)
   assert.equal(findPersonalSystemGroup('ForecastPlane'), group)
   assert.equal(findPersonalSystemGroup('SectionAnalysis'), group)
   assert.equal(findPersonalSystemGroup('EngineObservability'), group)
+  assert.equal(findPersonalSystemGroup('DataCenterTwin'), group)
   // 普通运维用户也要能用（不是管理员专属）。
+  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
+})
+
+test('scene reconstruction tool lives inside the extensions group', () => {
+  const group = findPersonalSystemGroup('SceneReconstruction')
+
+  assert.equal(group.id, 'extensions')
+  assert.equal(group.cn, '扩展能力')
+  assert.deepEqual(group.children.map(item => item.routeName), ['PluginCenter', 'SkillCenter', 'SceneReconstruction'])
+  const item = group.children.find(child => child.routeName === 'SceneReconstruction')
+  assert.equal(item.to, '/reconstruction')
+  assert.equal(item.cn, '实景还原')
   assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
 })
 
