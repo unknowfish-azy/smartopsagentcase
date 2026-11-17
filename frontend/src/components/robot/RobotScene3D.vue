@@ -17,10 +17,10 @@
       </div>
     </header>
 
-    <!-- WebGL 3D 场：容器常驻用 v-show；WebGL 不可用 / 轻量模式 / 减少动态时降级静态 SVG -->
-    <div v-show="webglReady && !staticMode" ref="host" class="rs3-stage" role="img" :aria-label="ariaLabel"></div>
+    <!-- 3D 场：容器常驻用 v-show；WebGL 优先，缺失时用 SVGRenderer 软件渲染，两者皆不可用才降级静态 SVG -->
+    <div v-show="renderReady && !staticMode" ref="host" class="rs3-stage" role="img" :aria-label="ariaLabel"></div>
 
-    <div v-if="!webglReady || staticMode" class="rs3-stage rs3-stage--static" role="img" :aria-label="ariaLabel">
+    <div v-if="!renderReady || staticMode" class="rs3-stage rs3-stage--static" role="img" :aria-label="ariaLabel">
       <svg viewBox="0 0 560 200" class="rs3-static-svg" aria-hidden="true">
         <rect x="20" y="20" width="520" height="160" fill="none" stroke="var(--ds-hairline, #333)" stroke-width="1" />
         <polyline
@@ -68,6 +68,9 @@
     </div>
 
     <p class="rs3-caption">{{ caption }}</p>
+    <p v-if="renderBackend === 'svg'" class="rs3-caption rs3-caption--fallback">
+      当前环境不支持 WebGL，已切换到 SVG 软件渲染：场景、拾取与遥测驱动保持一致，动效帧率降低。
+    </p>
 
     <!-- 设备详情弹窗：台账信息自接口加载，遥测/路线直接复用本面板已持有的真实数据 -->
     <RobotDeviceDetails
@@ -100,7 +103,8 @@
  *
  * 交互：拖拽环视（>6px 位移）、滚轮缩放；位移 <6px 视为点击 → 射线拾取打开设备详情。
  *
- * 降级：WebGL 不可用 / 轻量视觉模式 / 减少动态模式 → 静态 SVG 俯视图（对齐 EngineField3D 惯例）。
+ * 降级：WebGL 不可用 → SVGRenderer 软件渲染（同一场景/相机/拾取）；轻量视觉模式 / 减少动态模式
+ *        → 静态 SVG 俯视图（对齐 EngineField3D 惯例）。
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
@@ -108,6 +112,7 @@ import {
   CylinderGeometry, DirectionalLight, GridHelper, Group, HemisphereLight, Line, LineBasicMaterial, Mesh,
   MeshBasicMaterial, PerspectiveCamera, PMREMGenerator, Raycaster, Scene, Vector2, Vector3, WebGLRenderer
 } from 'three'
+import { SVGRenderer } from 'three/addons/renderers/SVGRenderer.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
@@ -133,13 +138,16 @@ const props = defineProps({
 })
 
 const host = ref(null)
-const webglReady = ref(false)
+/* 渲染后端：webgl（GPU）→ svg（软件光栅）→ static（两种后端都不可用，走静态俯视图） */
+const renderBackend = ref('static')
+const renderReady = computed(() => renderBackend.value !== 'static')
 const reduced = ref(false)
 const detailsOpen = ref(false)
 const staticMode = computed(() => isLightweightVisualMode.value || isReducedMotionMode.value || isDegraded() || reduced.value)
 const staticReason = computed(() => {
-  if (reduced.value) return '减少动态'
+  if (reduced.value || isReducedMotionMode.value) return '减少动态'
   if (isLightweightVisualMode.value) return '轻量视觉模式'
+  if (isDegraded()) return '渲染负载过高'
   return 'WebGL 不可用'
 })
 
@@ -260,8 +268,9 @@ function surfaceColor(element) {
   return getComputedStyle(document.body).backgroundColor || '#0d1117'
 }
 
-/** 占位机器人本体（M8b 时在此替换为 GLTFLoader 加载真实 GLB）。 */
-function buildPlaceholder(formFactor, accent) {
+/** 占位机器人本体（M8b 时在此替换为 GLTFLoader 加载真实 GLB）。
+ *  lowDetail 供 SVGRenderer 软件渲染使用：减少分段数，控制每帧生成的 SVG 面片数量。 */
+function buildPlaceholder(formFactor, accent, lowDetail = false) {
   const group = new Group()
   const body = new MeshBasicMaterial({ color: accent, transparent: true, opacity: 0.92 })
   const dark = new MeshBasicMaterial({ color: 0x22262e, transparent: true, opacity: 0.95 })
@@ -272,16 +281,36 @@ function buildPlaceholder(formFactor, accent) {
     const roof = new Mesh(new BoxGeometry(0.2, 0.1, 0.2), dark)
     roof.position.set(-0.05, 0.26, 0)
     group.add(chassis, roof)
-    /* 4 轮：圆柱默认轴向是 Y，旋转到 Z 轴（横向） */
-    const wheelGeo = new CylinderGeometry(0.07, 0.07, 0.05, 12)
-    wheelGeo.rotateX(Math.PI / 2)
-    for (const [wx, wz] of [[0.16, 0.16], [0.16, -0.16], [-0.16, 0.16], [-0.16, -0.16]]) {
-      const wheel = new Mesh(wheelGeo, dark)
-      wheel.position.set(wx, 0.07, wz)
-      group.add(wheel)
+    if (lowDetail) {
+      /* 软件渲染下用方块代替圆柱车轮：外形从俯视机位几乎无差别，面片数从 48 降到 12 */
+      for (const [wx, wz] of [[0.16, 0.16], [0.16, -0.16], [-0.16, 0.16], [-0.16, -0.16]]) {
+        const wheel = new Mesh(new BoxGeometry(0.08, 0.06, 0.14), dark)
+        wheel.position.set(wx, 0.07, wz)
+        group.add(wheel)
+      }
+    } else {
+      /* 4 轮：圆柱默认轴向是 Y，旋转到 Z 轴（横向） */
+      const wheelGeo = new CylinderGeometry(0.07, 0.07, 0.05, 12)
+      wheelGeo.rotateX(Math.PI / 2)
+      for (const [wx, wz] of [[0.16, 0.16], [0.16, -0.16], [-0.16, 0.16], [-0.16, -0.16]]) {
+        const wheel = new Mesh(wheelGeo, dark)
+        wheel.position.set(wx, 0.07, wz)
+        group.add(wheel)
+      }
+    }
+  } else if (formFactor === 'DOG') {
+    const torso = new Mesh(new BoxGeometry(0.42, 0.14, 0.22), body)
+    torso.position.y = 0.2
+    const head = new Mesh(new BoxGeometry(0.14, 0.12, 0.14), dark)
+    head.position.set(0.24, 0.26, 0)
+    group.add(torso, head)
+    for (const [lx, lz] of [[0.14, 0.1], [0.14, -0.1], [-0.14, 0.1], [-0.14, -0.1]]) {
+      const leg = new Mesh(new BoxGeometry(0.05, 0.16, 0.05), dark)
+      leg.position.set(lx, 0.08, lz)
+      group.add(leg)
     }
   } else if (formFactor === 'SPIDER') {
-    const disc = new Mesh(new CylinderGeometry(0.22, 0.26, 0.12, 16), body)
+    const disc = new Mesh(new CylinderGeometry(0.22, 0.26, 0.12, lowDetail ? 8 : 16), body)
     disc.position.y = 0.22
     group.add(disc)
     const legGeo = new BoxGeometry(0.03, 0.03, 0.2)
@@ -294,7 +323,7 @@ function buildPlaceholder(formFactor, accent) {
       group.add(leg)
     }
   } else {
-    const torso = new Mesh(new CylinderGeometry(0.14, 0.18, 0.4, 12), body)
+    const torso = new Mesh(new CylinderGeometry(0.14, 0.18, 0.4, lowDetail ? 8 : 12), body)
     torso.position.y = 0.25
     const head = new Mesh(new BoxGeometry(0.16, 0.14, 0.16), dark)
     head.position.y = 0.52
@@ -303,7 +332,7 @@ function buildPlaceholder(formFactor, accent) {
 
   /* 朝向箭头：+X 为机头方向（theta=0 朝 +X），障碍过近时变红 */
   const noseMat = new MeshBasicMaterial({ color: 0x5ad691, transparent: true, opacity: 0.95 })
-  const nose = new Mesh(new ConeGeometry(0.07, 0.2, 10), noseMat)
+  const nose = new Mesh(new ConeGeometry(0.07, 0.2, lowDetail ? 6 : 10), noseMat)
   nose.rotation.z = -Math.PI / 2
   nose.position.set(0.34, 0.2, 0)
   group.add(nose)
@@ -315,22 +344,52 @@ onMounted(() => {
   try { reduced.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { /* SSR */ }
   if (staticMode.value || !host.value) return
 
-  let renderer
-  try {
-    renderer = new WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' })
-  } catch { return }
   const element = host.value
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
+
+  /* 后端选择：WebGL 优先；GPU 被禁用 / 无 GPU 环境时退到 three 的 SVGRenderer 软件渲染 ——
+     复用同一 Scene / Camera / Raycaster，交互与遥测驱动不变；两种后端都不可用才落到静态俯视图。
+     先用探测 canvas 判断 WebGL 可用性：直接 new WebGLRenderer 失败时 three 会打印 error 噪音。 */
+  const hasWebGL = (() => {
+    try {
+      const probe = document.createElement('canvas')
+      return Boolean(probe.getContext('webgl2') || probe.getContext('webgl'))
+    } catch { return false }
+  })()
+  let renderer = null
+  let backend = 'svg'
+  if (hasWebGL) {
+    try {
+      renderer = new WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' })
+      backend = 'webgl'
+    } catch { renderer = null }
+  }
+  if (!renderer) {
+    try {
+      renderer = new SVGRenderer()
+    } catch { return }
+  }
+  const isSvg = backend === 'svg'
+  if (isSvg) {
+    renderer.setQuality('low')
+    renderer.setPrecision(1)
+  } else {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
+  }
   element.appendChild(renderer.domElement)
-  webglReady.value = true
+  renderBackend.value = backend
 
   const scene = new Scene()
   /* 纯色背景（与所在卡片一致）+ 主题切换时同步，避免 Bloom 的半透明辉光与 CSS 背景形成色块接缝 */
   const bgColor = new Color(surfaceColor(element))
   scene.background = bgColor
+  /* SVG 后端按「本体位姿 + 材质状态」签名跳帧：静止时不做任何重绘 */
+  let lastSvgSignature = ''
   let themeObserver = null
   if (typeof MutationObserver !== 'undefined') {
-    themeObserver = new MutationObserver(() => bgColor.set(surfaceColor(element)))
+    themeObserver = new MutationObserver(() => {
+      bgColor.set(surfaceColor(element))
+      lastSvgSignature = ''
+    })
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
   }
   const accent = resolveColor('--ds-color-primary', ROUTE_COLOR)
@@ -346,29 +405,44 @@ onMounted(() => {
       camTarget.z + orbit.radius * sinPolar * Math.cos(orbit.azimuth)
     )
     camera.lookAt(camTarget)
+    lastSvgSignature = '' /* 机位变化必须重绘（SVG 后端） */
   }
   applyCamera()
 
   /* PBR 环境贴图：金属材质没有环境反射会发黑，用 RoomEnvironment 生成一次即可
-     （只影响 PBR 材质，占位几何用的 MeshBasicMaterial 不受影响） */
-  const pmrem = new PMREMGenerator(renderer)
-  const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04)
-  scene.environment = envRT.texture
-  scene.environmentIntensity = 0.65
-  pmrem.dispose()
+     （只影响 PBR 材质，占位几何用的 MeshBasicMaterial 不受影响；SVG 后端无 PBR 材质，跳过） */
+  let envRT = null
+  if (!isSvg) {
+    const pmrem = new PMREMGenerator(renderer)
+    envRT = pmrem.fromScene(new RoomEnvironment(), 0.04)
+    scene.environment = envRT.texture
+    scene.environmentIntensity = 0.65
+    pmrem.dispose()
+  }
 
   /* 后处理 Bloom：把状态灯光晕、LiDAR 激光线等自发光溢出成真实辉光。
-     strength 0.98 / radius 0.38 / threshold 0.7：辉光明显但不糊掉本体与网格；
-     isDegraded()（降级/低性能）时跳过 Bloom，直接走原始渲染。 */
-  const composer = new EffectComposer(renderer)
-  composer.addPass(new RenderPass(scene, camera))
-  const bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.98, 0.38, 0.7)
-  composer.addPass(bloomPass)
-  composer.addPass(new OutputPass())
+     strength 1.2 / radius 0.38 / threshold 0.7：辉光明显但不糊掉本体与网格；
+     isDegraded()（降级/低性能）时跳过 Bloom，直接走原始渲染。SVG 后端不支持后处理，跳过。 */
+  let composer = null
+  let bloomPass = null
+  if (!isSvg) {
+    composer = new EffectComposer(renderer)
+    composer.addPass(new RenderPass(scene, camera))
+    bloomPass = new UnrealBloomPass(new Vector2(1, 1), 1.2, 0.38, 0.7)
+    composer.addPass(bloomPass)
+    composer.addPass(new OutputPass())
+  }
 
-  /* 地面网格：覆盖地图 x∈[-5,10]，中心放 (2.5, 0) */
-  const grid = new GridHelper(16, 16, 0x3a3f4a, 0x24272e)
+  /* 地面网格：覆盖地图 x∈[-5,10]，中心放 (2.5, 0)；软件渲染减半格数并压低亮度，控制面片量 */
+  const grid = new GridHelper(16, isSvg ? 8 : 16, 0x3a3f4a, 0x24272e)
   grid.position.set(2.5, 0, 0)
+  if (isSvg) {
+    /* GridHelper 用顶点色区分主/次网格线，SVGRenderer 只取材质色，故统一乘透明度弱化 */
+    grid.material.vertexColors = false
+    grid.material.color.setHex(0x3a3f4a)
+    grid.material.transparent = true
+    grid.material.opacity = 0.55
+  }
   scene.add(grid)
 
   /* 路线折线 + 路点标记（route 变化时重建） */
@@ -376,8 +450,10 @@ onMounted(() => {
   scene.add(routeGroup)
 
   /* 机器人本体（formFactor 变化时替换）：DOG → 仿宇树四足 rig；ROBOT → 仿宇树人形 rig；
-     CAR / SPIDER 优先加载真实 GLB，失败回退占位几何 */
-  let robot = buildPlaceholder(props.formFactor, accent)
+     CAR / SPIDER 优先加载真实 GLB，失败回退占位几何；SVG 后端统一用低面数占位几何 */
+  let robot = buildPlaceholder(props.formFactor, accent, isSvg)
+  /* 软件渲染下放大本体：与 DOG / ROBOT rig 的图标比例一致，同时保证点击拾取面积 */
+  if (isSvg) robot.scale.setScalar(2)
   scene.add(robot)
 
   /* PBR 材质需要灯光：半球光铺天光/地面反射，主平行光造高光与体积感，补光压暗部
@@ -411,7 +487,7 @@ onMounted(() => {
 
   /* 接触阴影：一块跟随本体的半透明圆片，让立体件与地面有落地感 */
   const shadowMat = new MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2, depthWrite: false })
-  const shadowGeo = new CircleGeometry(0.34, 24)
+  const shadowGeo = new CircleGeometry(0.34, isSvg ? 12 : 24)
   shadowGeo.rotateX(-Math.PI / 2)
   const contactShadow = new Mesh(shadowGeo, shadowMat)
   contactShadow.position.y = 0.004
@@ -471,7 +547,9 @@ onMounted(() => {
 
   function usePlaceholder(formFactor) {
     teardownRobot()
-    robot = buildPlaceholder(formFactor, accent)
+    robot = buildPlaceholder(formFactor, accent, isSvg)
+    /* 软件渲染下放大本体：与 DOG / ROBOT rig 的图标比例一致，同时保证点击拾取面积 */
+    if (isSvg) robot.scale.setScalar(2)
     scene.add(robot)
   }
 
@@ -490,6 +568,8 @@ onMounted(() => {
   }
 
   function mountRobotFor(formFactor) {
+    /* SVG 软件渲染：rig 与 GLB 的面片量过大（每帧都会重建成 SVG path），统一走低面数占位几何 */
+    if (isSvg) { usePlaceholder(formFactor); return }
     if (formFactor === 'DOG' || formFactor === 'ROBOT') { useProceduralRig(formFactor); return }
     const url = MODEL_URLS[formFactor]
     if (!url) { usePlaceholder(formFactor); return }
@@ -520,6 +600,7 @@ onMounted(() => {
   }
 
   function syncRoute() {
+    lastSvgSignature = '' /* 路线变化必须重绘（SVG 后端） */
     disposeGroupChildren(routeGroup)
     const pts = waypoints.value
     if (!pts.length) return
@@ -528,7 +609,7 @@ onMounted(() => {
     const lineGeo = new BufferGeometry().setFromPoints(positions)
     routeGroup.add(new Line(lineGeo, new LineBasicMaterial({ color: accent, transparent: true, opacity: 0.45 })))
 
-    const markGeo = new CircleGeometry(0.09, 16)
+    const markGeo = new CircleGeometry(0.09, isSvg ? 8 : 16)
     markGeo.rotateX(-Math.PI / 2)
     for (const p of pts) {
       const mat = new MeshBasicMaterial({
@@ -546,9 +627,10 @@ onMounted(() => {
     const w = Math.max(1, element.clientWidth)
     const h = Math.max(1, element.clientHeight)
     renderer.setSize(w, h, false)
-    composer.setSize(w, h)
+    composer?.setSize(w, h)
     camera.aspect = w / h
     camera.updateProjectionMatrix()
+    lastSvgSignature = '' /* 视口尺寸变化后 SVG 视口需重绘 */
   }
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null
   ro?.observe(element)
@@ -727,17 +809,27 @@ onMounted(() => {
       shadowMat.opacity = wantStale ? 0.07 : 0.2
     }
 
+    /* SVG 后端：按「位姿 + 材质状态」签名跳帧，本体静止时不产生任何重绘开销 */
+    if (isSvg) {
+      const signature = robot
+        ? `${robot.position.x.toFixed(3)}|${robot.position.z.toFixed(3)}|${robot.rotation.y.toFixed(3)}|${staleApplied ? 1 : 0}|${alarmApplied ? 1 : 0}`
+        : 'empty'
+      if (signature === lastSvgSignature) return
+      lastSvgSignature = signature
+      renderer.render(scene, camera)
+      return
+    }
     if (isDegraded()) renderer.render(scene, camera)
     else composer.render()
-  })
+  }, { id: 'robot-scene-3d', fps: isSvg ? 24 : 30 })
 
   disposeScene = () => {
     unsubscribe()
     mixer?.stopAllAction()
     mixer = null
     ro?.disconnect()
-    bloomPass.dispose()
-    composer.dispose()
+    bloomPass?.dispose()
+    composer?.dispose()
     themeObserver?.disconnect()
     element.removeEventListener('click', onStageClick)
     element.removeEventListener('pointerdown', onStagePointerDown)
@@ -751,10 +843,10 @@ onMounted(() => {
     if (rig) { rig.dispose(); rig = null } else if (robot) { disposeRobotMesh(robot) }
     shadowGeo.dispose()
     shadowMat.dispose()
-    envRT.dispose()
+    envRT?.dispose()
     grid.geometry.dispose()
     grid.material.dispose()
-    renderer.dispose()
+    renderer.dispose?.() /* SVGRenderer 无 dispose，按可选调用处理 */
     if (renderer.domElement.parentNode === element) element.removeChild(renderer.domElement)
     delete window.__rs3d
   }
@@ -762,7 +854,7 @@ onMounted(() => {
   /* DEV 调试钩子：性能诊断用（生产构建为 undefined） */
   if (import.meta.env.DEV) {
     window.__rs3d = {
-      renderer, scene, camera, canvas: renderer.domElement,
+      renderer, scene, camera, backend, canvas: renderer.domElement,
       getStageVisible: () => stageVisible,
       getMixer: () => ({ present: !!mixer, time: mixer?.time ?? 0, clipCount: mixer?.clipActions?.length ?? 0 }),
     }
@@ -822,10 +914,12 @@ onBeforeUnmount(() => {
 .dot-robot { background: var(--ds-color-text, #e8eaed); }
 .rs3-stage { position: relative; height: 320px; margin-top: 12px; overflow: hidden; border-radius: 8px; cursor: grab; }
 .rs3-stage :deep(canvas) { display: block; width: 100%; height: 100%; }
+.rs3-stage :deep(svg) { display: block; width: 100%; height: 100%; }
 .rs3-stage--static { display: grid; place-items: center; cursor: default; }
 .rs3-static-svg { width: 100%; height: 100%; }
 .rs3-static-robot { cursor: pointer; }
 .rs3-static-note { position: absolute; bottom: 8px; left: 12px; margin: 0; color: var(--ds-color-muted, var(--smart-muted)); font-size: 10px; }
 .rs3-caption { margin: 8px 0 0; color: var(--ds-color-muted, var(--smart-muted)); font-size: 11px; line-height: 1.6; }
+.rs3-caption--fallback { margin-top: 2px; color: #e3a008; }
 @media (max-width: 760px) { .rs3-stage { height: 220px; } .rs3-legend { display: none; } }
 </style>
