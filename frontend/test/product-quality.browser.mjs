@@ -25,6 +25,8 @@ try {
   await page.routeWebSocket('**/*', socket => socket.close())
   await page.route('**/api/assistant/options', route => route.fulfill({ json: { code: 200, data: { selectedKey: 'mini', options: [{ key: 'mini', name: '智维 Mini', kind: 'builtin', model: 'fixture', enabled: true, available: true, status: 'ready' }] } } }))
   await page.route('**/api/conversations', route => route.fulfill({ json: { code: 200, data: [] } }))
+  // 流式对话前置：应用先取 Java 签发的短时 run 令牌（SEC-01/SEC-02），漏 mock 会直接失败在鉴权。
+  await page.route('**/api/chat/run-token', route => route.fulfill({ json: { code: 200, data: { runToken: 'fixture-run-token' } } }))
   let loggedIn = false
   await page.route('**/api/auth/session', route => route.fulfill({ json: { code: 200, data: { user: loggedIn ? { id: 77, username: 'fixture-user', role: 'operator' } : null, csrfToken: 'fixture-csrf' } } }))
   await page.route('**/api/auth/registration', route => route.fulfill({ json: { code: 200, data: { enabled: false } } }))

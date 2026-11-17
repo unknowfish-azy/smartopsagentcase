@@ -54,6 +54,7 @@ await page.route(url => url.pathname.startsWith('/api/') || url.pathname.startsW
     return route.fulfill(json({ selectedKey: 'mini', options: [{ key: 'mini', name: '智维 Mini', kind: 'builtin', model: 'fixture', enabled: true, available: true, status: 'ready' }] }))
   }
   if (path.endsWith('/conversations')) return route.fulfill(json([]))
+  if (path.endsWith('/chat/run-token')) return route.fulfill(json({ runToken: 'fixture-run-token' }))
   if (path.endsWith('/api/chat/stream')) {
     streamCalls += 1
     if (streamCalls === 1) {

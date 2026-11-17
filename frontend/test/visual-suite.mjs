@@ -14,6 +14,8 @@ const suite = [
   'test/chat-retry.browser.mjs',
   'test/chat-focus.browser.mjs',
   'test/chat-diagnostics.browser.mjs',
+  'test/data-center-twin.browser.mjs',
+  'test/scene-reconstruction.browser.mjs',
 ]
 
 const vite = spawn(

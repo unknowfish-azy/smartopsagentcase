@@ -31,6 +31,7 @@ await page.route(url => url.pathname.startsWith('/api/') || url.pathname.startsW
     return route.fulfill(json({ selectedKey: 'mini', options: [{ key: 'mini', name: '智维 Mini', kind: 'builtin', model: 'fixture', enabled: true, available: true, status: 'ready' }] }))
   }
   if (path.endsWith('/conversations')) return route.fulfill(json([]))
+  if (path.endsWith('/chat/run-token')) return route.fulfill(json({ runToken: 'fixture-run-token' }))
   if (path.endsWith('/api/chat/stream')) {
     const run = { request_id: 'req-focus', task_id: 'task-focus', run_id: 'run-focus', schema_version: '1.0.0', source: 'ai-service', status: 'succeeded', timestamp: new Date().toISOString() }
     return route.fulfill({
