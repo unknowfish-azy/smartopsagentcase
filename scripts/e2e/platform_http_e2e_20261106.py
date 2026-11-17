@@ -5,9 +5,9 @@
 前置条件：
   1. MySQL(smartops)/Redis 已启动，后端以 local profile 运行在 127.0.0.1:8080。
   2. 已通过 SQL 建好 E2E 账号：
-     - e2e_admin / ***REMOVED***（admin，platform_admin_profile level=root）
-     - e2e_op1  / ***REMOVED***（operator）
-     - e2e_op2  / ***REMOVED***（operator）
+     - e2e_admin / E2eAdmin#R2-7k2p!vN（admin，platform_admin_profile level=root）
+     - e2e_op1  / E2eOp#R2-4x9m!qW（operator）
+     - e2e_op2  / E2eOp#R2-4x9m!qW（operator）
   3. 已插入归属测试用的 inspector_event 数据（见 docs E2E 执行记录）。
 
 覆盖项（对应整改清单 next_batch「平台 E2E 8 项验收」）：
@@ -360,9 +360,9 @@ def e2e_07_knowledge_auth():
 
 
 def e2e_08_governance_minimal():
-    # 无档案管理员 = e2e_admin2（无 platform_admin_profile），SQL 预建，密码同 ***REMOVED***
+    # 无档案管理员 = e2e_admin2（无 platform_admin_profile），SQL 预建，密码同 E2eAdmin#R2-7k2p!vN
     try:
-        client = login("e2e_admin2", "***REMOVED***", "admin")
+        client = login("e2e_admin2", "E2eAdmin#R2-7k2p!vN", "admin")
     except AssertionError as err:
         check("E2E-08", "无档案管理员最小只读", False, f"登录失败: {err}")
         return
@@ -482,9 +482,9 @@ def main():
     op1 = admin = None
     if any(want(n) for n in ("e2e_02", "e2e_04", "e2e_05", "e2e_06", "e2e_09")):
         op1 = register_operator() if "--register" in sys.argv \
-            else login("e2e_op1", "***REMOVED***", "user")
+            else login("e2e_op1", "E2eOp#R2-4x9m!qW", "user")
     if want("e2e_03"):
-        admin = login("e2e_admin", "***REMOVED***", "admin")
+        admin = login("e2e_admin", "E2eAdmin#R2-7k2p!vN", "admin")
 
     if want("e2e_02"):
         e2e_02_scope_isolation(op1)

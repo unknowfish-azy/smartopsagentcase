@@ -4,7 +4,7 @@
 
 前置条件：
   1. MySQL(smartops)/Redis 已启动；后端（含 grantToken 下发修复）运行在 127.0.0.1:8080。
-  2. mock SSH 服务器已启动：scripts/e2e/mock_ssh_server.py（127.0.0.1:2222，e2eops/***REMOVED***）。
+  2. mock SSH 服务器已启动：scripts/e2e/mock_ssh_server.py（127.0.0.1:2222，e2eops/E2eSsh#R2-5t8w!xZ）。
   3. 账号 e2e_op1 / e2e_op2 由本脚本自动注册（上轮验收后已清理；若已存在会自动改用登录）。
 
 覆盖项（对应整改清单 next_batch「SEC-04/05 HTTP 级负例、Redis 启动后的健康检查」）：
@@ -50,11 +50,11 @@ import xml.etree.ElementTree as ET
 import pymysql
 
 BASE = "http://127.0.0.1:8080"
-SSH_USER, SSH_PASSWORD, SSH_PORT = "e2eops", "***REMOVED***", 2222
+SSH_USER, SSH_PASSWORD, SSH_PORT = "e2eops", "E2eSsh#R2-5t8w!xZ", 2222
 OP1, OP2 = "e2e_op1", "e2e_op2"
 # 必须与 seed_sec_fixtures.py / platform_http_e2e 保持一致：
 # 账号是跨套件共享的，口令不一致会让后跑的套件登录 401（曾发生）。
-PASSWORD = "***REMOVED***"
+PASSWORD = "E2eOp#R2-4x9m!qW"
 MYSQL = dict(host="127.0.0.1", port=3306, user="root", password="password",
              database="smartops", charset="utf8mb4", autocommit=True)
 

@@ -10,10 +10,10 @@
   python scripts/e2e/seed_sec_fixtures.py --cleanup  # 清理夹具（账号/事件/审计/闭环）
 
 夹具：
-  e2e_admin  / ***REMOVED***  role=admin   + platform_admin_profile(level=root)
-  e2e_admin2 / ***REMOVED***  role=admin   无治理档案（SEC-07 最小只读用例）
-  e2e_op1    / ***REMOVED***     role=operator
-  e2e_op2    / ***REMOVED***     role=operator
+  e2e_admin  / E2eAdmin#R2-7k2p!vN  role=admin   + platform_admin_profile(level=root)
+  e2e_admin2 / E2eAdmin#R2-7k2p!vN  role=admin   无治理档案（SEC-07 最小只读用例）
+  e2e_op1    / E2eOp#R2-4x9m!qW     role=operator
+  e2e_op2    / E2eOp#R2-4x9m!qW     role=operator
   inspector_event: e2e-op1-0001(op1) / e2e-op2-0001(op2) / e2e-internal-0001(NULL 归属)
 """
 
@@ -29,10 +29,10 @@ MYSQL = dict(host="127.0.0.1", user="root", password="password",
 
 ACCOUNTS = [
     # username, password, role, governance_level
-    ("e2e_admin", "***REMOVED***", "admin", "root"),
-    ("e2e_admin2", "***REMOVED***", "admin", None),
-    ("e2e_op1", "***REMOVED***", "operator", None),
-    ("e2e_op2", "***REMOVED***", "operator", None),
+    ("e2e_admin", "E2eAdmin#R2-7k2p!vN", "admin", "root"),
+    ("e2e_admin2", "E2eAdmin#R2-7k2p!vN", "admin", None),
+    ("e2e_op1", "E2eOp#R2-4x9m!qW", "operator", None),
+    ("e2e_op2", "E2eOp#R2-4x9m!qW", "operator", None),
 ]
 
 EVENTS = [
