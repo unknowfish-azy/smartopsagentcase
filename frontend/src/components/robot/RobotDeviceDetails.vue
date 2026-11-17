@@ -53,8 +53,20 @@
         共 {{ waypoints.length }} 个路点 · 已执行 {{ doneCount }} 个<template v-if="detourCount"> · {{ detourCount }} 个绕行点来自连续异常重规划</template>
       </p>
 
-      <!-- 实时画面：GET /api/robot/.../frame 最新关键帧；无帧/模拟画面均如实标注 -->
-      <h3>实时画面</h3>
+      <!-- 实时画面：GET /api/robot/.../frame 最新关键帧；弹窗打开期间轮询刷新，无帧/模拟画面均如实标注 -->
+      <div class="rdd-frame-head">
+        <h3>实时画面</h3>
+        <div class="rdd-frame-bar">
+          <label class="rdd-frame-toggle">
+            <input v-model="frameAutoRefresh" type="checkbox">
+            每 2s 自动刷新
+          </label>
+          <span v-if="frameAt" class="rdd-frame-time">刷新于 {{ frameAt }}</span>
+          <button type="button" class="rdd-frame-refresh" :disabled="frame.state === 'loading'" @click="loadFrame">
+            手动刷新
+          </button>
+        </div>
+      </div>
       <p v-if="frame.state === 'loading'" class="rdd-note">正在获取最新关键帧…</p>
       <div v-else-if="frame.data?.imageBase64" class="rdd-frame">
         <img :src="frameSrc" alt="机器人最新关键帧">
@@ -90,7 +102,7 @@
  * 数据全部来自真实链路：台账/关键帧/任务记录在打开时请求真实 REST 接口；
  * 遥测/路线由父级（RobotScene3D）传入，无数据即如实显示「—」，不伪造。
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { getRobotDevices, getRobotFrame, getRobotLive, getRobotTasks } from '../../api/robot'
 
 const props = defineProps({
@@ -148,14 +160,38 @@ async function loadLedger() {
 
 async function loadFrame() {
   if (!props.deviceKey) return
-  frame.value = { state: 'loading', data: null, error: '' }
+  frame.value = { state: 'loading', data: frame.value.data, error: '' } /* 轮询时保留旧帧，避免闪烁 */
   try {
     const response = await getRobotFrame(props.deviceKey)
     frame.value = { state: 'ok', data: response?.data || null, error: '' }
+    /* 只要查询成功就更新时间戳：无帧设备也能如实反映轮询活性 */
+    frameAt.value = new Date().toLocaleTimeString('zh-CN', { hour12: false })
   } catch (error) {
     frame.value = { state: 'error', data: null, error: error?.message || '接口请求失败' }
   }
 }
+
+/* ---- 画面轮询刷新：弹窗打开期间每 2s 拉一次关键帧，可暂停/手动 ---- */
+
+const FRAME_POLL_MS = 2000
+const frameAutoRefresh = ref(true)
+const frameAt = ref('')
+let framePollTimer = null
+
+function startFramePoll() {
+  stopFramePoll()
+  if (!frameAutoRefresh.value || !props.open) return
+  framePollTimer = window.setInterval(loadFrame, FRAME_POLL_MS)
+}
+
+function stopFramePoll() {
+  if (framePollTimer) {
+    window.clearInterval(framePollTimer)
+    framePollTimer = null
+  }
+}
+
+watch(frameAutoRefresh, () => startFramePoll())
 
 async function loadTasks() {
   if (!props.deviceKey) return
@@ -185,7 +221,14 @@ watch(() => props.open, (isOpen) => {
     loadFrame()
     loadTasks()
     loadLiveSnapshot()
+    startFramePoll()
+  } else {
+    stopFramePoll() /* 关闭即停轮询（destroy-on-close 下组件随关随毁，此处双保险） */
   }
+})
+
+onBeforeUnmount(() => {
+  stopFramePoll()
 })
 
 /* 遥测来源统一收敛：父级实时流优先，REST 快照兜底（快照的桥连接状态如实映射心跳） */
@@ -287,6 +330,32 @@ function routeCount(task) {
 .pill-danger { background: var(--ds-pill-danger-bg, rgba(229, 72, 77, .16)); color: var(--ds-pill-danger-fg, #e5484d); }
 
 /* 实时画面缩略图 */
+.rdd-frame-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.rdd-frame-head h3 { margin: 6px 0 0; }
+.rdd-frame-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.rdd-frame-toggle { display: inline-flex; align-items: center; gap: 5px; color: var(--smart-muted, var(--ds-color-muted)); font-size: 11px; cursor: pointer; }
+.rdd-frame-time { color: var(--smart-muted, var(--ds-color-muted)); font-size: 11px; font-variant-numeric: tabular-nums; }
+.rdd-frame-refresh {
+  padding: 1px 10px;
+  border: 1px solid var(--ds-color-border-strong, var(--smart-border-strong, #3a3f4a));
+  border-radius: var(--ds-radius-pill, 999px);
+  background: transparent;
+  color: var(--ds-color-muted, var(--smart-muted));
+  font-size: 11px;
+  cursor: pointer;
+  transition: color var(--ds-duration-fast, 150ms) var(--ds-ease-out, ease-out),
+              border-color var(--ds-duration-fast, 150ms) var(--ds-ease-out, ease-out);
+}
+.rdd-frame-refresh:hover:not(:disabled),
+.rdd-frame-refresh:focus-visible {
+  color: var(--ds-color-primary, var(--smart-primary));
+  border-color: var(--ds-color-primary, var(--smart-primary));
+}
+.rdd-frame-refresh:disabled { opacity: 0.55; cursor: not-allowed; }
+.rdd-frame-refresh:focus-visible {
+  outline: 2px solid var(--ds-focus-ring-color, var(--smart-primary));
+  outline-offset: 2px;
+}
 .rdd-frame { position: relative; display: inline-block; }
 .rdd-frame img {
   display: block;
