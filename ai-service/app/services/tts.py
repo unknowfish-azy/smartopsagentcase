@@ -1036,6 +1036,8 @@ _PIPER_CN_UNITS = ("", "十", "百", "千")
 _PIPER_CN_BIG_UNITS = ("", "万", "亿", "万亿")
 _PIPER_NUMBER_RE = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)*")
 _PIPER_DATE_RE = re.compile(r"(?<!\d)(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?!\d)")
+# 时刻：10:30 / 10:30:45。前后紧邻数字或冒号时不算（避免把端口 8080 或 1:100 当时间）
+_PIPER_TIME_RE = re.compile(r"(?<![\d:])(\d{1,2})[:：](\d{2})(?:[:：](\d{2}))?(?![\d:])")
 
 
 def _read_cn_group(group: int) -> str:
@@ -1105,8 +1107,116 @@ def _read_cn_date(match: re.Match[str]) -> str:
     )
 
 
+def _read_cn_min_sec(value: int) -> str:
+    """分钟/秒的读法：不足十位补「零」（5 → 零五），否则按数量读。"""
+    if value < 10:
+        return "零" + _PIPER_CN_DIGITS[value]
+    return _read_cn_int(value)
+
+
+def _read_cn_time(match: re.Match[str]) -> str:
+    """10:30 → 十点三十分；10:00 → 十点整；10:30:45 → 十点三十分四十五秒。
+
+    时分秒越界（``25:70``）时原样返回，交给后面的数字规则，不硬套时间读法。
+    """
+    hour = int(match.group(1))
+    minute = int(match.group(2))
+    second = int(match.group(3)) if match.group(3) else None
+    if hour > 23 or minute > 59 or (second is not None and second > 59):
+        return match.group(0)
+    if second is None:
+        if minute == 0:
+            return f"{_read_cn_int(hour)}点整"
+        return f"{_read_cn_int(hour)}点{_read_cn_min_sec(minute)}分"
+    return (
+        f"{_read_cn_int(hour)}点{_read_cn_min_sec(minute)}分"
+        f"{_read_cn_min_sec(second)}秒"
+    )
+
+
 def _is_piper_run_char(char: str) -> bool:
     return bool(char) and (char in _PIPER_RUN_CONNECTORS or (char.isascii() and char.isalnum()))
+
+
+# 货币符号 → 单位词（符号在数字前）。金额小数按点读，不做角/分拆分。
+_PIPER_CURRENCY = {
+    "¥": "元",
+    "￥": "元",
+    "$": "美元",
+    "€": "欧元",
+    "£": "英镑",
+    "₩": "韩元",
+}
+
+# 单位后缀 → 中文读法。只收运维话术里高频且不歧义的单位；
+# 单字母 V/W/s/m/h/t/g/L 也收，但要求右侧不再是字母数字（见 _piper_unit_at）。
+_PIPER_UNIT_SUFFIXES = {
+    "km/h": "公里每小时",
+    "m/s": "米每秒",
+    "Gbps": "吉比特每秒",
+    "Mbps": "兆比特每秒",
+    "kbps": "千比特每秒",
+    "kWh": "千瓦时",
+    "GHz": "吉赫兹",
+    "MHz": "兆赫兹",
+    "kHz": "千赫兹",
+    "MPa": "兆帕",
+    "kPa": "千帕",
+    "kg": "公斤",
+    "km": "千米",
+    "cm": "厘米",
+    "mm": "毫米",
+    "nm": "纳米",
+    "mg": "毫克",
+    "ms": "毫秒",
+    "min": "分钟",
+    "TB": "太字节",
+    "GB": "吉字节",
+    "MB": "兆字节",
+    "KB": "千字节",
+    "kW": "千瓦",
+    "kV": "千伏",
+    "mA": "毫安",
+    "mL": "毫升",
+    "Pa": "帕",
+    "Hz": "赫兹",
+    "rpm": "转每分钟",
+    "dB": "分贝",
+    "℃": "摄氏度",
+    "°C": "摄氏度",
+    "g": "克",
+    "t": "吨",
+    "m": "米",
+    "s": "秒",
+    "h": "小时",
+    "W": "瓦",
+    "V": "伏",
+    "L": "升",
+}
+
+# 长单位优先（min 先于 m、MHz 先于 Hz），否则短单位会抢走长单位的首字母
+_PIPER_UNIT_TABLE: tuple[tuple[str, str], ...] = tuple(
+    sorted(_PIPER_UNIT_SUFFIXES.items(), key=lambda item: len(item[0]), reverse=True)
+)
+
+
+def _piper_unit_at(source: str, index: int, prev: str) -> tuple[str, int] | None:
+    """数字右侧的单位：返回（中文读法, 原文字符数）；不是单位时返回 None。
+
+    两个边界条件，缺一就会误伤型号/版本号：
+    - 数字左侧必须不在字母数字串里（``A-07s`` 是型号，不是「零七秒」）；
+    - 单位右侧必须不再是字母数字（否则 ``5min`` 会被 ``m`` 抢成「五米in」）。
+    """
+    if _is_piper_run_char(prev):
+        return None
+    for suffix, spoken in _PIPER_UNIT_TABLE:
+        if not source.startswith(suffix, index):
+            continue
+        tail = index + len(suffix)
+        if tail < len(source) and source[tail].isascii() and source[tail].isalnum():
+            continue
+        return spoken, len(suffix)
+    return None
 
 
 def _normalize_piper_numbers(text: str) -> str:
@@ -1116,11 +1226,14 @@ def _normalize_piper_numbers(text: str) -> str:
     - 独立数字按数量读：``92`` → 九十二、``0.35`` → 零点三五、``1001`` → 一千零一；
     - 千分位按整段数量读：``1,024`` → 一千零二十四；
     - 日期按年月日读：``2026-11-17`` → 二零二六年十一月十七日；
+    - 时刻按时分读：``10:30`` → 十点三十分、``10:00`` → 十点整、``10:30:45`` → 十点三十分四十五秒；
+    - 货币按单位词读：``¥5`` → 五元、``$12.50`` → 十二点五美元（金额尾零去掉，不拆角分）；
+    - 单位按中文读：``5kg`` → 五公斤、``30ms`` → 三十毫秒、``3.5kW`` → 三点五千瓦；
     - 前导零按位读：``07`` → 零七；多段编号逐段读：``192.168.1.1`` → 一九二点一六八点一点一；
     - 字母数字串内逐位读：``A-07`` → A-零七；
     - 紧跟百分号加「百分之」，前导负号读「负」。
     """
-    source = _PIPER_DATE_RE.sub(_read_cn_date, str(text))
+    source = _PIPER_TIME_RE.sub(_read_cn_time, _PIPER_DATE_RE.sub(_read_cn_date, str(text)))
     result: list[str] = []
     cursor = 0
     for match in _PIPER_NUMBER_RE.finditer(source):
@@ -1133,17 +1246,34 @@ def _normalize_piper_numbers(text: str) -> str:
             if not _is_piper_run_char(before_sign):
                 sign = "负"
                 remove_from = start - 1
+        unit = _piper_unit_at(source, end, source[remove_from - 1] if remove_from else "")
+        currency = ""
+        if remove_from > 0 and source[remove_from - 1] in _PIPER_CURRENCY:
+            currency = _PIPER_CURRENCY[source[remove_from - 1]]
+            remove_from -= 1
+        if currency and "." in number:
+            # 12.50 元读「十二点五元」，不读「十二点五零元」
+            number = number.rstrip("0").rstrip(".")
         inside_run = _is_piper_run_char(source[start - 1] if start else "") or _is_piper_run_char(
             source[end] if end < len(source) else ""
         )
-        if inside_run and "." not in number:
+        if inside_run and "." not in number and unit is None:
+            # 带单位的数字必须按数量读（120MB → 一百二十兆字节），
+            # 逐位读法只留给型号/编号串（A-07 → A-零七）
             spoken = _read_cn_digits(number)
         else:
             spoken = _read_piper_number(number)
         percent = source[end : end + 1] in {"%", "％"}
         result.append(source[cursor:remove_from])
-        result.append(("百分之" if percent else "") + sign + spoken)
-        cursor = end + 1 if percent else end
+        result.append(
+            ("百分之" if percent else "") + sign + spoken + (currency or (unit[0] if unit else ""))
+        )
+        if percent:
+            cursor = end + 1
+        elif unit:
+            cursor = end + unit[1]
+        else:
+            cursor = end
     result.append(source[cursor:])
     return "".join(result)
 

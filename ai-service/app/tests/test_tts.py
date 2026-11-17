@@ -601,6 +601,60 @@ def test_normalize_piper_numbers_覆盖告警常见数字形态():
     assert normalize("温度九十二度") == "温度九十二度"
 
 
+def test_normalize_piper_numbers_时刻按时分读():
+    """10:30 不能逐位读成「一零:三零」：运维话术里时刻出现频率很高。"""
+    normalize = tts_module._normalize_piper_numbers
+
+    assert normalize("会议10:30开始") == "会议十点三十分开始"
+    assert normalize("巡检09:05出发") == "巡检九点零五分出发"
+    assert normalize("18:00 下班") == "十八点整 下班"
+    assert normalize("日志时间 10:30:45") == "日志时间 十点三十分四十五秒"
+    # 全角冒号同样识别
+    assert normalize("23：59 截止") == "二十三点五十九分 截止"
+    # 时分秒越界不算时刻：退回逐位读法，不静默丢数字
+    assert normalize("比例25:70") == "比例二五:七零"
+
+
+def test_normalize_piper_numbers_端口与比例不当时刻():
+    """URL 端口、1:100 这类不是时刻：冒号紧邻数字时不能按「点」读。"""
+    normalize = tts_module._normalize_piper_numbers
+
+    assert normalize("http://10.0.0.1:8080") == "http://一零点零点零点一:八零八零"
+    assert normalize("比例1:100") == "比例一:一零零"
+
+
+def test_normalize_piper_numbers_货币与单位换算():
+    """货币符号与单位后缀都要读成中文词，而不是让模型念字母。"""
+    normalize = tts_module._normalize_piper_numbers
+
+    assert normalize("金额¥5") == "金额五元"
+    assert normalize("报价￥1,024") == "报价一千零二十四元"
+    assert normalize("费用$12.50") == "费用十二点五美元"
+    assert normalize("运费€30") == "运费三十欧元"
+    assert normalize("重量5kg") == "重量五公斤"
+    assert normalize("包体积120MB") == "包体积一百二十兆字节"
+    assert normalize("带宽100Mbps") == "带宽一百兆比特每秒"
+    assert normalize("延迟30ms") == "延迟三十毫秒"
+    assert normalize("超时5min") == "超时五分钟"
+    assert normalize("电压220V") == "电压二百二十伏"
+    assert normalize("功耗3.5kW") == "功耗三点五千瓦"
+    assert normalize("温度-5℃") == "温度负五摄氏度"
+    assert normalize("转速3000rpm") == "转速三千转每分钟"
+    assert normalize("布线100m") == "布线一百米"
+
+
+def test_normalize_piper_numbers_单位不误伤型号与版本():
+    """单位识别必须带边界条件，否则型号、版本号会被读成时间/长度。"""
+    normalize = tts_module._normalize_piper_numbers
+
+    # 数字左侧在字母数字串里：A-07s 是型号，不是「零七秒」
+    assert normalize("服务器A-07s") == "服务器A-零七s"
+    # 单位右侧还接字母：5kgf 不整体换算，kg 后面不是边界
+    assert normalize("载荷5kgf") == "载荷五kgf"
+    # 版本号/多段编号不受影响
+    assert normalize("v1.2.3") == "v一点二点三"
+
+
 def test_piper_units_千分位与日期各算一个数字串():
     """对齐单元与数字规则保持一致：1,024 和日期都只占一个整串。"""
     assert tts_module._piper_units("共1,024台") == [
@@ -609,6 +663,13 @@ def test_piper_units_千分位与日期各算一个数字串():
         ("cjk", "台"),
     ]
     assert tts_module._piper_units("2026-11-17") == [("run", "2026-11-17")]
+    assert tts_module._piper_units("会议10:30开始") == [
+        ("cjk", "会"),
+        ("cjk", "议"),
+        ("run", "10:30"),
+        ("cjk", "开"),
+        ("cjk", "始"),
+    ]
 
 
 def test_piper_synthesize_合成前把数字改写成中文(monkeypatch):
