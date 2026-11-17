@@ -61,4 +61,29 @@ class OperatorMemoryServiceTest {
         service.disable(1L, memory.id());
         assertThat(service.match(1L, "502")).isEmpty();
     }
+
+    /** 会话召回方向与 match 相反：incident_key 出现在用户这句话里才算命中，且只看本人 ACTIVE。 */
+    @Test
+    void recallFindsMemoriesWhoseIncidentKeyAppearsInTheQuestion() {
+        var nginx = service.recordConfirmed(1L, "nginx:502", "TOOL", "先查 upstream 状态", "trace-1");
+        service.recordConfirmed(1L, "redis:oom", "TOOL", "扩容内存", "trace-2");
+        service.recordConfirmed(2L, "nginx:502", "TOOL", "别人的记忆", "trace-3");
+
+        assertThat(service.recall(1L, "线上 nginx:502 又报了，帮我看看", 5))
+                .extracting(OperatorMemoryService.Memory::id).containsExactly(nginx.id());
+        assertThat(service.recall(3L, "线上 nginx:502 又报了", 5)).isEmpty();
+
+        service.disable(1L, nginx.id());
+        assertThat(service.recall(1L, "线上 nginx:502 又报了", 5)).isEmpty();
+    }
+
+    /** 聊天教给的规则单独标 CHAT_PREFERENCE，同一句话重复回写走唯一键幂等。 */
+    @Test
+    void chatPreferenceIsIdempotentAndLabelled() {
+        var first = service.recordChatPreference(1L, "nginx:502", "先看网关日志", "chat-pref:abc");
+        var second = service.recordChatPreference(1L, "nginx:502", "先看网关日志", "chat-pref:abc");
+
+        assertThat(first.memoryType()).isEqualTo("CHAT_PREFERENCE");
+        assertThat(second.id()).isEqualTo(first.id());
+    }
 }

@@ -49,16 +49,35 @@ public class OperatorMemoryService {
     /** 复盘沉淀出的新记忆：首次经验，置信度略高于默认值。 */
     @Transactional
     public Memory recordLearned(Long userId, String incidentKey, String preferredAction, String sourceRefs) {
+        return recordExperience(userId, incidentKey, preferredAction, sourceRefs, "DECISION_LOOP", 0.55d);
+    }
+
+    /**
+     * 聊天中用户明确教给的规则（「以后遇到 X 先 Y」）写入记忆。
+     *
+     * <p>来源是对话而非运行记录，单独标 {@code CHAT_PREFERENCE}；同一句话重复说
+     * 走 (user_id, source_refs) 唯一键幂等返回已有行，不会堆积重复记忆。</p>
+     */
+    @Transactional
+    public Memory recordChatPreference(Long userId, String incidentKey, String preferredAction, String sourceRefs) {
+        return recordExperience(userId, incidentKey, preferredAction, sourceRefs, "CHAT_PREFERENCE", 0.6d);
+    }
+
+    private Memory recordExperience(Long userId, String incidentKey, String preferredAction, String sourceRefs,
+                                    String memoryType, double confidence) {
         if (incidentKey == null || incidentKey.isBlank() || preferredAction == null || preferredAction.isBlank()) return null;
+        // 幂等：本地库的 source_refs 是 TEXT，MySQL 无法直接建 (user_id, source_refs) 唯一键，
+        // 所以先查后插；有唯一键的部署仍由下面的 DuplicateKeyException 兜住并发。
+        Memory existing = findBySourceRefs(userId, sourceRefs);
+        if (existing != null) return existing;
         Instant now = Instant.now();
         try {
             long id = insertReturningId("INSERT INTO operator_memory(user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                    userId, incidentKey.trim(), "DECISION_LOOP", preferredAction.trim(), sourceRefs, 1, 0.55d, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
+                    userId, incidentKey.trim(), memoryType, preferredAction.trim(), sourceRefs, 1, confidence, "ACTIVE", Timestamp.from(now), Timestamp.from(now));
             return detail(userId, id);
         } catch (DuplicateKeyException e) {
-            // SEC-10：唯一键冲突说明该 loop 已沉淀过记忆（review 幂等兜底），返回已有行即可。
-            Memory existing = findBySourceRefs(userId, sourceRefs);
-            return existing != null ? existing : null;
+            // SEC-10：唯一键冲突说明该来源已沉淀过记忆（并发重复提交兜底），返回已有行即可。
+            return findBySourceRefs(userId, sourceRefs);
         }
     }
 
@@ -83,6 +102,24 @@ public class OperatorMemoryService {
     public List<Memory> match(Long userId, String incidentKey) {
         String query = incidentKey == null ? "" : incidentKey.trim().toLowerCase();
         return jdbc.query("SELECT id,user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at FROM operator_memory WHERE user_id=? AND status='ACTIVE' AND LOWER(incident_key) LIKE ? ORDER BY confidence DESC,updated_at DESC", this::map, userId, "%" + query + "%");
+    }
+
+    /**
+     * 会话前置召回：方向与 {@link #match} 相反——match 是「关键词 ⊂ incident_key」，
+     * recall 是「incident_key ⊂ 用户这句话」。用户说「nginx 502 又来了」时，只有
+     * 反向包含才能命中此前沉淀的「nginx:502」。
+     *
+     * <p>只按 user_id 隔离、只召回 ACTIVE；limit 上限 20，避免长句把整表带进 prompt。</p>
+     */
+    public List<Memory> recall(Long userId, String text, int limit) {
+        if (userId == null || text == null || text.isBlank()) return List.of();
+        int capped = Math.max(1, Math.min(limit, 20));
+        return jdbc.query(
+                "SELECT id,user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at "
+                        + "FROM operator_memory WHERE user_id=? AND status='ACTIVE' "
+                        + "AND LOWER(?) LIKE CONCAT('%', LOWER(incident_key), '%') "
+                        + "ORDER BY confidence DESC, evidence_count DESC, updated_at DESC LIMIT ?",
+                this::map, userId, text.trim(), capped);
     }
 
     public List<Memory> list(Long userId) { return jdbc.query("SELECT id,user_id,incident_key,memory_type,preferred_action,source_refs,evidence_count,confidence,status,created_at,updated_at FROM operator_memory WHERE user_id=? ORDER BY updated_at DESC,id DESC", this::map, userId); }

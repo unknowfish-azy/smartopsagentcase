@@ -28,7 +28,7 @@ import java.io.IOException;
 
 @Configuration
 public class SecurityConfig {
-    private static final String[] INTERNAL = { "/api/model-connections/*/runtime", "/api/model-connections/*/invoke", "/api/inspector/check", "/api/inspector/verify", "/api/inspector/replan", "/api/internal/recovery/**" };
+    private static final String[] INTERNAL = { "/api/model-connections/*/runtime", "/api/model-connections/*/invoke", "/api/inspector/check", "/api/inspector/verify", "/api/inspector/replan", "/api/internal/recovery/**", "/api/internal/memory/**" };
     private final InternalTokenAuthenticationFilter internal;
     public SecurityConfig(InternalTokenAuthenticationFilter internal) { this.internal = internal; }
 
@@ -56,6 +56,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/actuator/prometheus",
                                 "/actuator/health/liveness", "/actuator/health/readiness").permitAll()
                         .requestMatchers(INTERNAL).permitAll()
+                        // 巡检机器人蓝牙桥是无头进程，没有用户会话；鉴权由 handler 内的
+                        // X-Robot-Bridge-Token 常量时间比较完成（未配置 token 一律拒连，fail-closed）。
+                        .requestMatchers("/ws/robot/bridge").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/models").permitAll()
                         .requestMatchers(HttpMethod.POST, "/v1/chat/completions").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/mfa/complete", "/api/auth/mfa/cancel").permitAll()

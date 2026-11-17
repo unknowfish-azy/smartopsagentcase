@@ -40,6 +40,11 @@
             </span>
           </p>
           <p class="persona-view__message-body">{{ message.content || '…' }}</p>
+          <ChatMessageActions
+            v-if="message.role === 'assistant' && message.content && !message.error"
+            :message="message"
+            conversation-id="persona"
+          />
         </li>
       </ol>
       <p v-else class="persona-view__note">
@@ -133,6 +138,7 @@
 <script setup>
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import AgentPersona from '../../components/persona/AgentPersona.vue'
+import ChatMessageActions from '../../components/ai/ChatMessageActions.vue'
 import {
   CHAT_PHASE_LABELS,
   createSpeechPump,
@@ -228,7 +234,8 @@ async function sendMessage() {
 
   // 用 reactive 包住助手消息：流式增量要逐字触发更新，直接改 push 进去的
   // 原始对象不会让 Vue 的代理感知。
-  const reply = reactive({ id: crypto.randomUUID(), role: 'assistant', content: '' })
+  // prompt 记录本次提问：纠错反馈（ChatMessageActions）需要原问题做独立复核。
+  const reply = reactive({ id: crypto.randomUUID(), role: 'assistant', content: '', prompt: checked.text })
   messages.value.push(
     { id: crypto.randomUUID(), role: 'user', content: checked.text },
     reply
