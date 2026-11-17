@@ -2,6 +2,8 @@ package com.smartops.service;
 
 import com.smartops.dto.model.ModelInvocationRequest;
 import com.smartops.dto.model.ModelInvocationResponse;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +15,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 模型网关语义缓存（借鉴 LLM 推理加速中的 Prefix/Semantic Caching 思想）。
@@ -29,7 +32,9 @@ import java.util.Set;
  * <ul>
  *   <li>缓存写失败绝不影响主链路（全部内部消化）；</li>
  *   <li>TTL 由 created_at 过滤，写入时顺带清理该组过期条目；</li>
- *   <li>命中回填 hit_count / last_hit_at，供审计观测缓存效率。</li>
+ *   <li>命中回填 hit_count / last_hit_at，供审计观测缓存效率；</li>
+ *   <li>每次查询按 final 结果打点（exact / semantic / miss / error / skipped），
+ *       命中时额外累计省掉的 token，指标见 /actuator/prometheus。</li>
  * </ul>
  */
 @Slf4j
@@ -38,6 +43,12 @@ import java.util.Set;
 public class ModelSemanticCacheService {
 
     private final JdbcTemplate jdbc;
+
+    /** 指标注册表：命中率与省下的 token 数，随 /actuator/prometheus 暴露。 */
+    private final MeterRegistry meterRegistry;
+
+    /** 按 group+result 缓存 Counter，避免每次查询重复构建 meter。 */
+    private final Map<String, Counter> counters = new ConcurrentHashMap<>();
 
     @Value("${smartops.gateway.cache.enabled:true}")
     private boolean enabled = true;
@@ -55,10 +66,16 @@ public class ModelSemanticCacheService {
                     Integer inputTokens, Integer outputTokens, Integer totalTokens, String digest) {}
 
     public Optional<ModelInvocationResponse> lookup(Long keyId, String group, ModelInvocationRequest request) {
-        if (!enabled || group == null || request == null) return Optional.empty();
+        if (!enabled || group == null || request == null) {
+            recordLookup(group, "skipped", null);
+            return Optional.empty();
+        }
         try {
             String digest = normalize(request.getPrompt());
-            if (digest.isEmpty()) return Optional.empty();
+            if (digest.isEmpty()) {
+                recordLookup(group, "miss", null);
+                return Optional.empty();
+            }
 
             String exact = exactHash(group, request);
             String semantic = ModelGatewayService.hash(normalize(request.getSystemPrompt()) + "||" + digest);
@@ -75,6 +92,7 @@ public class ModelSemanticCacheService {
                     exact);
             if (!exactRows.isEmpty()) {
                 touch(exactRows.get(0).id());
+                recordLookup(group, "exact", exactRows.get(0).totalTokens());
                 return Optional.of(toResponse(exactRows.get(0)));
             }
 
@@ -99,11 +117,14 @@ public class ModelSemanticCacheService {
             }
             if (best != null && bestScore >= similarityThreshold) {
                 touch(best.id());
+                recordLookup(group, "semantic", best.totalTokens());
                 return Optional.of(toResponse(best));
             }
+            recordLookup(group, "miss", null);
             return Optional.empty();
         } catch (RuntimeException ex) {
             log.warn("semantic cache lookup failed for group {}: {}", group, ex.getMessage());
+            recordLookup(group, "error", null);
             return Optional.empty();
         }
     }
@@ -131,6 +152,30 @@ public class ModelSemanticCacheService {
     }
 
     /* ── 内部工具 ───────────────────────────────────────── */
+
+    /**
+     * 记录一次缓存查询结果，供 Prometheus 计算命中率。
+     *
+     * <p>group 基数等于网关组数量（自建场景下很小），可安全作为 tag。
+     * 命中时顺带累计被省掉的 token（按缓存条目的 total_tokens 估算），
+     * 用来量化"少发起一次模型调用"的实际收益。</p>
+     */
+    private void recordLookup(String group, String result, Integer savedTokens) {
+        String g = group == null ? "unknown" : group;
+        counters.computeIfAbsent("lookup|" + g + "|" + result, k ->
+                Counter.builder("smartops.gateway.cache.lookup")
+                        .description("模型网关语义缓存查询结果")
+                        .tag("group", g)
+                        .tag("result", result)
+                        .register(meterRegistry)).increment();
+        if (savedTokens != null && savedTokens > 0) {
+            counters.computeIfAbsent("saved|" + g, k ->
+                    Counter.builder("smartops.gateway.cache.saved.tokens")
+                            .description("语义缓存命中而省掉的模型 token 数（按条目 total_tokens 估算）")
+                            .tag("group", g)
+                            .register(meterRegistry)).increment(savedTokens);
+        }
+    }
 
     private void touch(Long id) {
         try {

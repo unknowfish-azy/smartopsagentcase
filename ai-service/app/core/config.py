@@ -59,7 +59,11 @@ class Settings(BaseSettings):
     # KV-CACHE：Ollama 调用的 keep_alive（秒，payload 传 "Ns" 时长串）。
     # 保模型与已算 KV 缓存驻留——Ollama 只对「最近一次评估」的 prompt 前缀
     # 复用 KV，模型被卸载缓存即丢；这是 prompt 前缀复用生效的前提。
-    llm_keep_alive_sec: int = 1800
+    # 显存预算优先：默认 300（空闲 5 分钟即卸载）。实测完整前缀复用只在请求
+    # 间隔 ≤5s 时可靠（见下方心跳结论），长 keep_alive 主要只省掉 250-500ms
+    # 冷启动，却让模型（qwen3:1.7b ≈1.5GB、qwen2.5vl:3b ≈3GB）长期驻留
+    # 8GB 显卡。显存充裕（≥16GB）可调回 1800。
+    llm_keep_alive_sec: int = 300
 
     # KV-CACHE：Ollama 上下文窗口（payload options.num_ctx）。
     # 0 = 不传、沿用 Ollama 默认（qwen3 默认 4096）。实测（bench_kv_prefix.py）
@@ -151,8 +155,9 @@ class Settings(BaseSettings):
     # 红线：依赖未安装 / 权重缺失 / 加载失败时，/api/tts/synthesize 返回 503
     # 并在 message 里写明原因；绝不返回占位音频，也不静默换成别的音色。
     # ============================================================
-    # auto = 按 voxcpm2 → f5tts → edge → baidu 顺序取第一个可用；
-    # 也可强制 voxcpm2 / f5tts / edge / baidu；none = 显式关闭（前端回落浏览器语音）。
+    # auto = 按 f5tts → edge → baidu → voxcpm2 → piperplus 顺序取第一个可用；
+    # 也可强制 voxcpm2 / f5tts / edge / baidu / piperplus；none = 显式关闭（前端回落浏览器语音）。
+    # piperplus 额外提供音素级时间戳（真口型），但音色固定，默认不抢占前排。
     # edge / baidu 是在线音源：无需本地权重，但需要联网；edge 在部分网络会被区域拦截。
     tts_provider: str = "auto"
     # auto / cuda / cpu。auto 在 torch 可用且 CUDA 可见时用 GPU，否则 CPU。
@@ -163,6 +168,13 @@ class Settings(BaseSettings):
     tts_timeout_sec: float = 120.0
     # VoxCPM2 权重目录：本地路径或 HuggingFace 仓库 id。留空 = 未配置（不可用）。
     tts_voxcpm_model_dir: str = ""
+    # Piper-Plus（Piper 的 MIT 分支）模型 .onnx 路径：必须来自 piper-plus 自家 release
+    # （上游 rhasspy/piper-voices 的中文模型是 espeak 音素类型，piper-plus 2.x 无法加载）。
+    # 留空 = 未配置（不可用）；配置后可用 TTS_PROVIDER=piperplus 强制启用。
+    tts_piper_model: str = ""
+    # Piper-Plus 模型配置 json（含 phoneme_type / sample_rate / hop_size）。
+    # 留空 = 自动找 <model>.json 或同目录 config.json。
+    tts_piper_config: str = ""
     # F5-TTS 权重目录：留空 = 用 f5-tts 包内置默认权重（首次运行会联网下载）。
     tts_f5_model_dir: str = ""
     # F5-TTS 的 vocos 声码器本地目录（需含 config.yaml 与 pytorch_model.bin）。

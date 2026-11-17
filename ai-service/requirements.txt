@@ -29,6 +29,8 @@ pytest-asyncio>=0.24,<2
 # 未安装时 /api/tts/status 返回 available=false 与具体原因，
 # /api/tts/synthesize 返回 503，前端回落浏览器 speechSynthesis。
 #
+# 显存预算（8GB 显卡，如 RTX 4060 Laptop）：只建议装 F5-TTS。VoxCPM2 峰值
+# 5.3GB 会与常驻的 Ollama 模型（qwen2.5vl:3b ≈3GB）争显存，极易 OOM。
 # VoxCPM2（4.4GB 权重，峰值显存约 5.3GB；本机 Python 3.14 上约半数加载会崩，慎用）：
 #   pip install voxcpm==2.0.3
 # F5-TTS（1.3GB 权重，峰值显存约 1.9GB，必须提供参考音频做声线克隆）：
@@ -36,4 +38,9 @@ pytest-asyncio>=0.24,<2
 #   F5 另需 share 版 FFmpeg（torchaudio 2.9+ 的 torchcodec 解码依赖其 avcodec DLL）
 # 两者都需要 torch；本机已有 torch+cu126 时只需安装其一。
 # 注意：voxcpm 会把 datasets 降到 3.6.x（f5-tts 只要求 >=2.19，装完一起实测可用）。
+# Piper-Plus（CPU 即可，约 40MB 模型；唯一能回传音素级时间戳的本地 Provider）：
+#   pip install "piper-plus[cpu]==2.0.2"
+#   模型必须来自 piper-plus 自家 release：上游 rhasspy/piper-voices 的中文模型是
+#   espeak 音素类型，piper-plus 2.x 不支持。配置 TTS_PIPER_MODEL 后可用
+#   TTS_PROVIDER=piperplus 启用；未配置时该 Provider 如实判定不可用。
 # ------------------------------------------------------------

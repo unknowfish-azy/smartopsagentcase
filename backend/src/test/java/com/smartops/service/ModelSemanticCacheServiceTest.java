@@ -2,6 +2,7 @@ package com.smartops.service;
 
 import com.smartops.dto.model.ModelInvocationRequest;
 import com.smartops.dto.model.ModelInvocationResponse;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -27,7 +28,8 @@ import static org.mockito.Mockito.when;
 class ModelSemanticCacheServiceTest {
 
     private final JdbcTemplate jdbc = mock(JdbcTemplate.class);
-    private final ModelSemanticCacheService cache = new ModelSemanticCacheService(jdbc);
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+    private final ModelSemanticCacheService cache = new ModelSemanticCacheService(jdbc, meterRegistry);
 
     private void enable() {
         ReflectionTestUtils.setField(cache, "enabled", true);

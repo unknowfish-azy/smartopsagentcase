@@ -37,9 +37,10 @@ class KnowledgeConfig:
     embedding_backend: str = "bge"
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
 
-    # 向量后端设备：None = 自动（有 GPU 就用 cuda，否则 cpu）；
-    # 显式传 "cuda" / "cuda:0" / "cpu" 可以覆盖自动判定。
-    embedding_device: str | None = None
+    # 向量后端设备：默认 cpu——bge-small 单条编码在 CPU 上仅几十毫秒，
+    # 8GB 显卡应把显存留给 Ollama 等大模型；设 "auto" 表示有 GPU 就用 cuda:0，
+    # 也可显式传 "cuda" / "cuda:0" / "cpu" 覆盖。
+    embedding_device: str | None = "cpu"
 
     # 非 hash 后端的向量缓存路径；设为 "off" 可关闭。
     vector_cache_path: str = str(
@@ -65,10 +66,8 @@ class KnowledgeConfig:
 
     @classmethod
     def from_env(cls) -> "KnowledgeConfig":
-        device = _env_str(
-            "KNOWLEDGE_EMBEDDING_DEVICE",
-            "",
-        ).strip() or cls._auto_device()
+        raw_device = _env_str("KNOWLEDGE_EMBEDDING_DEVICE", "").strip().lower()
+        device = cls._auto_device() if raw_device == "auto" else (raw_device or "cpu")
         return cls(
             embedding_backend=_env_str(
                 "KNOWLEDGE_EMBEDDING_BACKEND",

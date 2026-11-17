@@ -46,6 +46,12 @@ spring:
 # Actuator
 # ============================================
 management:
+  endpoints:
+    web:
+      exposure:
+        # 本地可观测：放行 Prometheus 指标，用于观察语义缓存收益
+        # smartops_gateway_cache_lookup_total{result} / smartops_gateway_cache_saved_tokens_total
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when-authorized
