@@ -209,9 +209,13 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import snapshot from '../atlas/atlasDistilled.json'
 import { buildDeck, buildDependencyMap, buildDocCards, buildWeakLinkMap } from '../../domain/scholar/scholarEngine.js'
+
+const route = useRoute()
+const router = useRouter()
 
 const courseId = ref('')
 const index = ref(0)
@@ -449,7 +453,7 @@ function jumpToCard(cardId, docTitle) {
 }
 
 /* 跳到依赖目标文档：必要时切课程并放大组卷上限，确保目标卡确实在组内 */
-function jumpToDoc(docTitle) {
+function jumpToDoc(docTitle, { scroll = true } = {}) {
   if (!docTitle) return
   const target = snapshot.documents.find(doc => doc.title === docTitle)
   if (!target) return
@@ -463,9 +467,32 @@ function jumpToDoc(docTitle) {
   nextTick(() => {
     index.value = targetIndex
     flipped.value = false
-    cardZone.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (scroll) cardZone.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
 }
+
+/* URL 回写：当前文档写入 ?doc=<id>，刷新或分享链接可直达同一文档 */
+const DOC_QUERY = 'doc'
+
+function docIdByTitle(docTitle) {
+  return snapshot.documents.find(doc => doc.title === docTitle)?.id || ''
+}
+
+onMounted(() => {
+  const docId = String(route.query[DOC_QUERY] || '')
+  if (!docId) return
+  const doc = snapshot.documents.find(item => item.id === docId)
+  if (doc) jumpToDoc(doc.title, { scroll: false })
+})
+
+watch(() => current.value?.source, (docTitle) => {
+  const docId = docTitle ? docIdByTitle(docTitle) : ''
+  if (docId === String(route.query[DOC_QUERY] || '')) return
+  const query = { ...route.query }
+  if (docId) query[DOC_QUERY] = docId
+  else delete query[DOC_QUERY]
+  router.replace({ query })
+})
 </script>
 
 <style scoped>
