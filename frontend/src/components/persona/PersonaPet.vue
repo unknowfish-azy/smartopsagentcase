@@ -1230,6 +1230,40 @@ onBeforeUnmount(() => {
   transform: translateX(-50%) translateY(4px);
 }
 
+/* 异常示警气泡：可点击打开处置面板；高危红描边 + 呼吸提醒 */
+.persona-pet__bubble--alert {
+  pointer-events: auto;
+  cursor: pointer;
+  border-color: #ef4444;
+  color: #b91c1c;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, .3);
+  animation: pet-alert-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pet-alert-pulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(220, 38, 38, .3); }
+  50% { box-shadow: 0 4px 18px rgba(220, 38, 38, .55); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .persona-pet__bubble--alert {
+    animation: none;
+  }
+}
+
+/* 收起态小球：有待查看异常时亮红点，展开即随气泡消失 */
+.persona-pet__orb--fault::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, .25);
+}
+
 .persona-pet--collapsed {
   width: 44px;
   height: 44px;

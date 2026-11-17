@@ -279,7 +279,10 @@ onMounted(() => {
   /* 材质状态机：只在切换帧写材质 */
   let staleApplied = false
   let alarmApplied = false
-  const MODEL_URLS = { CAR: '/models/robot/patrol-car.glb' }
+  const MODEL_URLS = {
+    CAR: '/models/robot/patrol-car.glb',
+    SPIDER: '/models/robot/spider-bot.glb',
+  }
   let glbCache = null
 
   function loadGltf(url) {
