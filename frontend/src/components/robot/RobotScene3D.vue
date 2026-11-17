@@ -5,10 +5,15 @@
         <p class="rs3-eyebrow">SCENE 3D · 真实遥测驱动</p>
         <h2 id="rs3-title">3D 态势</h2>
       </div>
-      <div class="rs3-legend" aria-hidden="true">
-        <span class="rs3-key"><i class="dot dot-route"></i>路点</span>
-        <span class="rs3-key"><i class="dot dot-detour"></i>绕行点</span>
-        <span class="rs3-key"><i class="dot dot-robot"></i>机器人</span>
+      <div class="rs3-head-right">
+        <div class="rs3-legend" aria-hidden="true">
+          <span class="rs3-key"><i class="dot dot-route"></i>路点</span>
+          <span class="rs3-key"><i class="dot dot-detour"></i>绕行点</span>
+          <span class="rs3-key"><i class="dot dot-robot"></i>机器人</span>
+        </div>
+        <button type="button" class="rs3-details-btn" :aria-label="`查看 ${deviceKey || '设备'} 详情`" @click="detailsOpen = true">
+          设备详情
+        </button>
       </div>
     </header>
 
@@ -35,6 +40,18 @@
     </div>
 
     <p class="rs3-caption">{{ caption }}</p>
+
+    <!-- 设备详情弹窗：台账信息自接口加载，遥测/路线直接复用本面板已持有的真实数据 -->
+    <RobotDeviceDetails
+      :open="detailsOpen"
+      :device-key="deviceKey"
+      :form-factor="formFactor"
+      :mode="mode"
+      :telemetry="telemetry"
+      :stale="stale"
+      :waypoints="waypoints"
+      @close="detailsOpen = false"
+    />
   </section>
 </template>
 
@@ -62,6 +79,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { isDegraded, subscribe } from '../../visual/motionScheduler.js'
 import { isLightweightVisualMode, isReducedMotionMode } from '../../visual/visualMode.js'
 import { getRobotTasks } from '../../api/robot'
+import RobotDeviceDetails from './RobotDeviceDetails.vue'
 
 const props = defineProps({
   telemetry: { type: Object, default: null },
@@ -74,6 +92,7 @@ const props = defineProps({
 const host = ref(null)
 const webglReady = ref(false)
 const reduced = ref(false)
+const detailsOpen = ref(false)
 const staticMode = computed(() => isLightweightVisualMode.value || isReducedMotionMode.value || isDegraded() || reduced.value)
 const staticReason = computed(() => {
   if (reduced.value) return '减少动态'
@@ -511,6 +530,26 @@ onBeforeUnmount(() => {
 .rs3-eyebrow { margin: 0 0 5px; color: var(--ds-color-primary, var(--smart-primary)); font: 10px Consolas, monospace; letter-spacing: .14em; }
 .rs3-head h2 { margin: 0; font-size: 15px; font-weight: 500; }
 .rs3-legend { display: flex; gap: 12px; }
+.rs3-head-right { display: flex; align-items: center; gap: 14px; }
+.rs3-details-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--ds-color-border, var(--smart-border-strong, #3a3f4a));
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ds-color-muted, var(--smart-muted));
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 150ms ease-out, border-color 150ms ease-out;
+}
+.rs3-details-btn:hover,
+.rs3-details-btn:focus-visible {
+  color: var(--ds-color-primary, var(--smart-primary));
+  border-color: var(--ds-color-primary, var(--smart-primary));
+}
+.rs3-details-btn:focus-visible {
+  outline: 2px solid var(--ds-focus-ring-color, var(--smart-primary));
+  outline-offset: 2px;
+}
 .rs3-key { display: inline-flex; align-items: center; gap: 5px; color: var(--ds-color-muted, var(--smart-muted)); font-size: 11px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .dot-route { border: 1.5px solid var(--ds-color-primary, #5b8cff); }
