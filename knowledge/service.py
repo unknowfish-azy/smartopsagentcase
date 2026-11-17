@@ -79,6 +79,7 @@ class KnowledgeService:
             self.config.embedding_backend,
             self.config.embedding_model,
             self.config.vector_cache_path,
+            getattr(self.config, "embedding_device", None),
         )
 
         self.chunker = TextChunker(

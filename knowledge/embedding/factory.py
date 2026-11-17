@@ -58,10 +58,12 @@ def create_embedding(
     backend: str = "hash",
     model_name: str = "BAAI/bge-small-zh-v1.5",
     cache_path: str | None = None,
+    device: str | None = None,
 ) -> EmbeddingModelWithStatus:
     """RAG-P1-01：返回带 status 的包装器。
 
     签名兼容旧调用方（仍返回 EmbeddingModel-like 对象），但现在多了 `.backend_status`。
+    新增 ``device``：``"cuda"`` / ``"cuda:0"`` 显式启用 GPU；``None`` 由后端决定。
     """
     backend = (backend or "hash").strip().lower()
     fallback_reason: str | None = None
@@ -69,23 +71,26 @@ def create_embedding(
     model_revision: str | None = None
     dimension: int | None = None
     cache_actual_path: str | None = None
+    actual_device: str | None = None
     inner: EmbeddingModel
 
     if backend == "hash":
         inner = HashEmbedding()
         dimension = inner.dimension()
+        actual_device = "cpu"
 
     elif backend == "bge":
         try:
             from .bge_embedding import BgeEmbedding
-            inner = BgeEmbedding(model_name=model_name)
+            inner = BgeEmbedding(model_name=model_name, device=device)
             dimension = inner.dimension()
+            actual_device = getattr(inner, "_device", device or "cpu")
             # HuggingFace HF_HUB_OFFLINE=1 环境变量下，本地模型没有 commit sha 可拿
             # model_revision 先用 model_name 占位（真实 commit sha 需联网）
             model_revision = model_name
             logger.info(
-                "已启用 BGE 向量后端：%s（%s 维）",
-                model_name, dimension,
+                "已启用 BGE 向量后端：%s（%s 维，device=%s）",
+                model_name, dimension, actual_device,
             )
         except EmbeddingUnavailable as exc:
             fallback_reason = str(exc)
@@ -139,6 +144,7 @@ def create_embedding(
         dimension=dimension,
         fallback_reason=fallback_reason,
         cache_path=cache_actual_path,
+        device=actual_device,
     )
 
     logger.info(

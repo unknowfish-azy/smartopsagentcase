@@ -37,6 +37,10 @@ class KnowledgeConfig:
     embedding_backend: str = "bge"
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
 
+    # 向量后端设备：None = 自动（有 GPU 就用 cuda，否则 cpu）；
+    # 显式传 "cuda" / "cuda:0" / "cpu" 可以覆盖自动判定。
+    embedding_device: str | None = None
+
     # 非 hash 后端的向量缓存路径；设为 "off" 可关闭。
     vector_cache_path: str = str(
         Path(__file__).resolve().parent / ".cache" / "vectors.sqlite3"
@@ -49,7 +53,22 @@ class KnowledgeConfig:
     l3_judge_min_confidence: float = 0.6
 
     @classmethod
+    def _auto_device(cls) -> str | None:
+        """有 CUDA 则默认 cuda:0，否则 None（让 backend 自己决定）。"""
+        try:
+            import torch  # noqa: F401
+            if torch.cuda.is_available():
+                return "cuda:0"
+        except Exception:  # noqa: BLE001 - 依赖缺失时跳过
+            pass
+        return None
+
+    @classmethod
     def from_env(cls) -> "KnowledgeConfig":
+        device = _env_str(
+            "KNOWLEDGE_EMBEDDING_DEVICE",
+            "",
+        ).strip() or cls._auto_device()
         return cls(
             embedding_backend=_env_str(
                 "KNOWLEDGE_EMBEDDING_BACKEND",
@@ -59,6 +78,7 @@ class KnowledgeConfig:
                 "KNOWLEDGE_EMBEDDING_MODEL",
                 "BAAI/bge-small-zh-v1.5",
             ),
+            embedding_device=device,
             vector_cache_path=_env_str(
                 "KNOWLEDGE_VECTOR_CACHE",
                 str(Path(__file__).resolve().parent / ".cache" / "vectors.sqlite3"),

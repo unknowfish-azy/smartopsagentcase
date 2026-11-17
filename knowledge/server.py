@@ -43,6 +43,7 @@ from pydantic import BaseModel, Field
 
 from knowledge.corpus_manifest import verify_snapshot
 from knowledge.config import KnowledgeConfig
+from knowledge.ingest_ids import reference_document_id
 from knowledge.service import KnowledgeService
 
 logger = logging.getLogger(__name__)
@@ -259,14 +260,17 @@ def _seed_reference_corpus() -> dict:
         if not content.strip():
             continue
 
+        relative = path.relative_to(root).as_posix()
+        source = f"reference/{relative}"
         documents.append(
             {
                 "content": content,
-                "source": f"reference/{path.relative_to(root)}",
+                "source": source,
                 "version": "reference",
+                # 与热摄入脚本共用确定性 ID，保证重启后幂等校验依然成立
+                "document_id": reference_document_id(source, content),
             }
         )
-        relative = path.relative_to(root).as_posix()
         digest.update(relative.encode("utf-8") + b"\0" + content.encode("utf-8") + b"\0")
         loaded += 1
 

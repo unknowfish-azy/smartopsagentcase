@@ -17,6 +17,9 @@
 .PARAMETER Reload
     开发态热重载：knowledge/ 下 .py 改动后自动换 worker。
     换版本或换配置时用默认（不带 reload）的稳定启动。
+.PARAMETER Python
+    启动用的 Python 解释器，默认取 PATH 中的 python。
+    机器上多版本共存时可传绝对路径，如 C:\Python311\python.exe。
 
 .EXAMPLE
     .\restart-knowledge.ps1
@@ -29,7 +32,8 @@ param(
     [string]$HostAddress = '127.0.0.1',
     [int]$Port = 8002,
     [int]$TimeoutSeconds = 40,
-    [switch]$Reload
+    [switch]$Reload,
+    [string]$Python = 'python'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -37,6 +41,61 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
 $logs = Join-Path $root '.runtime\logs'
 [System.IO.Directory]::CreateDirectory($logs) | Out-Null
+
+# 启动前置检查放在停服务之前：配置或解释器有问题时就地报错，
+# 不要先把正在健康运行的服务停掉再失败。
+#
+# 1) transformers 在 import 阶段就把 HF_HUB_OFFLINE 读成模块常量，
+#    之后再 setdefault 已无效；不设会在模型加载时连 HuggingFace，
+#    无网环境重试约 2 分钟后失败退出。
+if (!$env:HF_HUB_OFFLINE) { $env:HF_HUB_OFFLINE = '1' }
+if (!$env:TRANSFORMERS_OFFLINE) { $env:TRANSFORMERS_OFFLINE = '1' }
+
+# 2) 知识服务 fail-closed：没有 KNOWLEDGE_API_KEY 会在启动阶段直接抛错。
+#    优先使用当前进程环境，否则从仓库根 .env 读取（该文件不入库）。
+if (!$env:KNOWLEDGE_API_KEY) {
+    $envFile = Join-Path $root '.env'
+    if (Test-Path -LiteralPath $envFile) {
+        foreach ($line in Get-Content -LiteralPath $envFile) {
+            if ($line -match '^\s*KNOWLEDGE_API_KEY\s*=\s*(.+?)\s*$') {
+                $env:KNOWLEDGE_API_KEY = $Matches[1].Trim('"').Trim("'")
+                break
+            }
+        }
+    }
+}
+if (!$env:KNOWLEDGE_API_KEY) {
+    throw "KNOWLEDGE_API_KEY is not set and not found in $root\.env; knowledge service is fail-closed, refusing to start"
+}
+
+# 3) 解释器校验：PATH 里的 python 不一定是本项目要用的那个。
+#    多版本共存、Microsoft Store 别名、依赖没装，都会让服务在启动几秒后
+#    以 ImportError 或版本语法错误退出，报错点离根因很远。
+$pythonCommand = Get-Command $Python -ErrorAction SilentlyContinue
+if (!$pythonCommand) {
+    throw "Python interpreter '$Python' not found; install Python 3.10+ or pass -Python <path>"
+}
+$pythonExe = $pythonCommand.Source
+if (!$pythonExe) { $pythonExe = $pythonCommand.Path }
+
+$versionText = & $pythonExe -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>$null
+if ($LASTEXITCODE -ne 0 -or -not "$versionText".Trim()) {
+    throw "Cannot execute '$pythonExe' (broken install or Microsoft Store alias)"
+}
+$versionText = "$versionText".Trim()
+$minimumVersion = [version]'3.10'
+if ([version]$versionText -lt $minimumVersion) {
+    throw "Python $versionText is too old (need >= $minimumVersion): $pythonExe"
+}
+
+$missingModules = & $pythonExe -c "import importlib.util as u; print(','.join(m for m in ('uvicorn','fastapi') if u.find_spec(m) is None))" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    throw "Interpreter self-check failed: $pythonExe"
+}
+if ("$missingModules".Trim()) {
+    throw "Python $versionText at $pythonExe is missing: $("$missingModules".Trim()). Run: `"$pythonExe`" -m pip install -r knowledge\requirements.txt"
+}
+Write-Output "Python $versionText OK: $pythonExe"
 
 # 只结束"确实属于 knowledge.server"的进程，避免误杀占用 8002 的其它程序。
 # --reload 模式下真正监听端口的是 worker 子进程，命令行里可能没有模块名，
@@ -81,7 +140,7 @@ for ($i = 0; $i -lt 20; $i++) {
 
 $arguments = @('-m', 'uvicorn', 'knowledge.server:app', '--host', $HostAddress, '--port', $Port)
 if ($Reload) { $arguments += @('--reload', '--reload-dir', 'knowledge') }
-$process = Start-Process -FilePath 'python' -ArgumentList $arguments -WorkingDirectory $root -WindowStyle Hidden -PassThru `
+$process = Start-Process -FilePath $pythonExe -ArgumentList $arguments -WorkingDirectory $root -WindowStyle Hidden -PassThru `
     -RedirectStandardOutput (Join-Path $logs "knowledge-$stamp.out.log") `
     -RedirectStandardError (Join-Path $logs "knowledge-$stamp.err.log")
 Write-Output "Knowledge launched: PID $($process.Id), logs .runtime/logs/knowledge-$stamp.*.log"

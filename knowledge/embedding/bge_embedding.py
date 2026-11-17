@@ -79,10 +79,10 @@ class BgeEmbedding(EmbeddingModel):
                     model.to(device)
                 model.eval()
                 dimension = int(model.config.hidden_size)
-                cached = (tokenizer, model, dimension)
+                cached = (tokenizer, model, dimension, str(model.device) if hasattr(model, "device") else device or "cpu")
                 _MODEL_CACHE[cache_key] = cached
 
-        self._tokenizer, self._model, self._dimension = cached
+        self._tokenizer, self._model, self._dimension, self._device = cached
 
     def dimension(self) -> int:
         return self._dimension
@@ -115,6 +115,8 @@ class BgeEmbedding(EmbeddingModel):
                     max_length=self.max_length,
                     return_tensors="pt",
                 )
+                target = self._model.device if hasattr(self._model, "device") else torch.device("cpu")
+                inputs = {key: value.to(target) for key, value in inputs.items()}
                 outputs = self._model(**inputs)
                 # BGE 用首 token（CLS）作为句向量。
                 pooled = outputs.last_hidden_state[:, 0]

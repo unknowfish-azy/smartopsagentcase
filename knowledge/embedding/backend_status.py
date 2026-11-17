@@ -28,6 +28,7 @@ class EmbeddingBackendStatus:
     fallback_reason: str | None = None  # null 表示没回退；否则是 Exception 消息
     cache_path: str | None = None       # SQLite cache 路径
     cache_hit_count: int = 0            # 来自 CachedEmbedding
+    device: str | None = None           # "cpu" / "cuda" / "cuda:0"，GPU 启用时可观测
 
     @property
     def has_fallback(self) -> bool:

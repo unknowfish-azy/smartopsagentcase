@@ -1,0 +1,5397 @@
+[
+  {
+    "case_id": "case-ret-0001",
+    "question": "AI Systems Performance Eng是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\01 第1课 AI Systems Performance Engineering概述.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0002",
+    "question": "AI Systems Performance Eng 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\01 第1课 AI Systems Performance Engineering概述.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0003",
+    "question": "线上告警涉及AI Systems Performance Eng，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\01 第1课 AI Systems Performance Engineering概述.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0004",
+    "question": "AI系统性能指标体系怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\02 第2课 AI系统性能指标体系.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0005",
+    "question": "线上遇到 AI系统性能指标体系 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\02 第2课 AI系统性能指标体系.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0006",
+    "question": "交接班被问到AI系统性能指标体系，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\02 第2课 AI系统性能指标体系.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0007",
+    "question": "现代AI系统全栈架构有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\03 第3课 现代AI系统全栈架构.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0008",
+    "question": "同事问 现代AI系统全栈架构 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\03 第3课 现代AI系统全栈架构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0009",
+    "question": "现代AI系统全栈架构出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\03 第3课 现代AI系统全栈架构.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0010",
+    "question": "DeepSeek软件优化案例是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\04 第4课 DeepSeek软件优化案例.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0011",
+    "question": "DeepSeek软件优化案例 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\04 第4课 DeepSeek软件优化案例.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0012",
+    "question": "新人问DeepSeek软件优化案例具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\04 第4课 DeepSeek软件优化案例.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0013",
+    "question": "GPU架构深度解析怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\05 第5课 GPU架构深度解析.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0014",
+    "question": "GPU架构深度解析 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\05 第5课 GPU架构深度解析.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0015",
+    "question": "线上告警涉及GPU架构深度解析，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\05 第5课 GPU架构深度解析.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0016",
+    "question": "GPU Memory体系优化有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\06 第6课 GPU Memory体系优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0017",
+    "question": "线上遇到 GPU Memory体系优化 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\06 第6课 GPU Memory体系优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0018",
+    "question": "交接班被问到GPU Memory体系优化，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\06 第6课 GPU Memory体系优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0019",
+    "question": "Tensor Core与低精度计算优化是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\07 第7课 Tensor Core与低精度计算优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0020",
+    "question": "同事问 Tensor Core与低精度计算优化 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\07 第7课 Tensor Core与低精度计算优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0021",
+    "question": "Tensor Core与低精度计算优化出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\07 第7课 Tensor Core与低精度计算优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0022",
+    "question": "NVLink NVSwitch与AI集群互联怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\08 第8课 NVLink NVSwitch与AI集群互联.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0023",
+    "question": "NVLink NVSwitch与AI集群互联 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\08 第8课 NVLink NVSwitch与AI集群互联.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0024",
+    "question": "新人问NVLink NVSwitch与AI集群互联具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\08 第8课 NVLink NVSwitch与AI集群互联.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0025",
+    "question": "Linux Docker Kubernetes GP有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\09 第9课 Linux Docker Kubernetes GPU性能优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0026",
+    "question": "Linux Docker Kubernetes GP 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\09 第9课 Linux Docker Kubernetes GPU性能优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0027",
+    "question": "线上告警涉及Linux Docker Kubernetes GP，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\09 第9课 Linux Docker Kubernetes GPU性能优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0028",
+    "question": "CUDA编程模型是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\10 第10课 CUDA编程模型.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0029",
+    "question": "线上遇到 CUDA编程模型 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\10 第10课 CUDA编程模型.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0030",
+    "question": "交接班被问到CUDA编程模型，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\10 第10课 CUDA编程模型.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0031",
+    "question": "GPU Memory访问优化怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\11 第11课 GPU Memory访问优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0032",
+    "question": "同事问 GPU Memory访问优化 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\11 第11课 GPU Memory访问优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0033",
+    "question": "GPU Memory访问优化出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\11 第11课 GPU Memory访问优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0034",
+    "question": "GPU性能分析方法有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\12 第12课 GPU性能分析方法.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0035",
+    "question": "GPU性能分析方法 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\12 第12课 GPU性能分析方法.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0036",
+    "question": "新人问GPU性能分析方法具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\12 第12课 GPU性能分析方法.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0037",
+    "question": "Kernel Fusion与高性能算子开发是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\13 第13课 Kernel Fusion与高性能算子开发.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0038",
+    "question": "Kernel Fusion与高性能算子开发 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\13 第13课 Kernel Fusion与高性能算子开发.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0039",
+    "question": "线上告警涉及Kernel Fusion与高性能算子开发，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\13 第13课 Kernel Fusion与高性能算子开发.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0040",
+    "question": "Triton Kernel开发怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\14 第14课 Triton Kernel开发.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0041",
+    "question": "线上遇到 Triton Kernel开发 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\14 第14课 Triton Kernel开发.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0042",
+    "question": "交接班被问到Triton Kernel开发，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\14 第14课 Triton Kernel开发.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0043",
+    "question": "大模型分布式训练体系有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\15 第15课 大模型分布式训练体系.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0044",
+    "question": "同事问 大模型分布式训练体系 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\15 第15课 大模型分布式训练体系.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0045",
+    "question": "大模型分布式训练体系出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\15 第15课 大模型分布式训练体系.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0046",
+    "question": "NCCL深度优化是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\16 第16课 NCCL深度优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0047",
+    "question": "NCCL深度优化 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\16 第16课 NCCL深度优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0048",
+    "question": "新人问NCCL深度优化具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\16 第16课 NCCL深度优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0049",
+    "question": "GPU通信性能优化怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\17 第17课 GPU通信性能优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0050",
+    "question": "GPU通信性能优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\17 第17课 GPU通信性能优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0051",
+    "question": "线上告警涉及GPU通信性能优化，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\17 第17课 GPU通信性能优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0052",
+    "question": "FSDP与超大模型训练优化有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\18 第18课 FSDP与超大模型训练优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0053",
+    "question": "线上遇到 FSDP与超大模型训练优化 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\18 第18课 FSDP与超大模型训练优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0054",
+    "question": "交接班被问到FSDP与超大模型训练优化，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\18 第18课 FSDP与超大模型训练优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0055",
+    "question": "PyTorch性能分析体系是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\19 第19课 PyTorch性能分析体系.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0056",
+    "question": "同事问 PyTorch性能分析体系 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\19 第19课 PyTorch性能分析体系.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0057",
+    "question": "PyTorch性能分析体系出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\19 第19课 PyTorch性能分析体系.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0058",
+    "question": "torch compile深度解析怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\20 第20课 torch compile深度解析.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0059",
+    "question": "torch compile深度解析 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\20 第20课 torch compile深度解析.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0060",
+    "question": "新人问torch compile深度解析具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\20 第20课 torch compile深度解析.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0061",
+    "question": "CUDA Graph与Runtime优化有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\21 第21课 CUDA Graph与Runtime优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0062",
+    "question": "CUDA Graph与Runtime优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\21 第21课 CUDA Graph与Runtime优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0063",
+    "question": "线上告警涉及CUDA Graph与Runtime优化，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\21 第21课 CUDA Graph与Runtime优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0064",
+    "question": "AI Runtime优化思想是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\22 第22课 AI Runtime优化思想.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0065",
+    "question": "线上遇到 AI Runtime优化思想 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\22 第22课 AI Runtime优化思想.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0066",
+    "question": "交接班被问到AI Runtime优化思想，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\22 第22课 AI Runtime优化思想.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0067",
+    "question": "LLM推理系统架构怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\23 第23课 LLM推理系统架构.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0068",
+    "question": "同事问 LLM推理系统架构 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\23 第23课 LLM推理系统架构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0069",
+    "question": "LLM推理系统架构出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\23 第23课 LLM推理系统架构.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0070",
+    "question": "Continuous Batching与Schedu有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\24 第24课 Continuous Batching与Scheduler优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0071",
+    "question": "Continuous Batching与Schedu 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\24 第24课 Continuous Batching与Scheduler优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0072",
+    "question": "新人问Continuous Batching与Schedu具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\24 第24课 Continuous Batching与Scheduler优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0073",
+    "question": "KV Cache性能优化是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\25 第25课 KV Cache性能优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0074",
+    "question": "KV Cache性能优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\25 第25课 KV Cache性能优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0075",
+    "question": "线上告警涉及KV Cache性能优化，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\25 第25课 KV Cache性能优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0076",
+    "question": "Speculative Decoding与推理加速怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\26 第26课 Speculative Decoding与推理加速.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0077",
+    "question": "线上遇到 Speculative Decoding与推理加速 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\26 第26课 Speculative Decoding与推理加速.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0078",
+    "question": "交接班被问到Speculative Decoding与推理加速，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\26 第26课 Speculative Decoding与推理加速.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0079",
+    "question": "Disaggregated Inference架构有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\27 第27课 Disaggregated Inference架构.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0080",
+    "question": "同事问 Disaggregated Inference架构 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\27 第27课 Disaggregated Inference架构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0081",
+    "question": "Disaggregated Inference架构出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\27 第27课 Disaggregated Inference架构.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0082",
+    "question": "MoE推理与未来AI Runtime是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\28 第28课 MoE推理与未来AI Runtime.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0083",
+    "question": "MoE推理与未来AI Runtime 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\28 第28课 MoE推理与未来AI Runtime.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0084",
+    "question": "新人问MoE推理与未来AI Runtime具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\28 第28课 MoE推理与未来AI Runtime.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0085",
+    "question": "项目1 GPU性能分析实验怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\29 项目1 GPU性能分析实验.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0086",
+    "question": "项目1 GPU性能分析实验 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\29 项目1 GPU性能分析实验.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0087",
+    "question": "线上告警涉及项目1 GPU性能分析实验，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\29 项目1 GPU性能分析实验.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0088",
+    "question": "项目2 CUDA Kernel优化项目有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\30 项目2 CUDA Kernel优化项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0089",
+    "question": "线上遇到 项目2 CUDA Kernel优化项目 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\30 项目2 CUDA Kernel优化项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0090",
+    "question": "交接班被问到项目2 CUDA Kernel优化项目，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\30 项目2 CUDA Kernel优化项目.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0091",
+    "question": "项目3 PyTorch训练性能优化是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\31 项目3 PyTorch训练性能优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0092",
+    "question": "同事问 项目3 PyTorch训练性能优化 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\31 项目3 PyTorch训练性能优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0093",
+    "question": "项目3 PyTorch训练性能优化出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\31 项目3 PyTorch训练性能优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0094",
+    "question": "项目4 7B模型训练性能Benchmark怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\32 项目4 7B模型训练性能Benchmark.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0095",
+    "question": "项目4 7B模型训练性能Benchmark 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\32 项目4 7B模型训练性能Benchmark.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0096",
+    "question": "新人问项目4 7B模型训练性能Benchmark具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\32 项目4 7B模型训练性能Benchmark.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0097",
+    "question": "项目5 vLLM推理优化有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\33 项目5 vLLM推理优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0098",
+    "question": "项目5 vLLM推理优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\33 项目5 vLLM推理优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0099",
+    "question": "线上告警涉及项目5 vLLM推理优化，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\33 项目5 vLLM推理优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0100",
+    "question": "项目6 KV Cache优化实验是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\34 项目6 KV Cache优化实验.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0101",
+    "question": "线上遇到 项目6 KV Cache优化实验 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\34 项目6 KV Cache优化实验.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0102",
+    "question": "交接班被问到项目6 KV Cache优化实验，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\34 项目6 KV Cache优化实验.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0103",
+    "question": "项目7 Disaggregated Inferenc怎么操作？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\35 项目7 Disaggregated Inference系统设计.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0104",
+    "question": "同事问 项目7 Disaggregated Inferenc 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\35 项目7 Disaggregated Inference系统设计.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0105",
+    "question": "项目7 Disaggregated Inferenc出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\35 项目7 Disaggregated Inference系统设计.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0106",
+    "question": "项目8 AI Systems Performance有哪些关键点？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\36 项目8 AI Systems Performance Engineering综合项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0107",
+    "question": "项目8 AI Systems Performance 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\36 项目8 AI Systems Performance Engineering综合项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0108",
+    "question": "新人问项目8 AI Systems Performance具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\36 项目8 AI Systems Performance Engineering综合项目.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI Infra训练营二期_分课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0109",
+    "question": "AI Infra 概览与学习路线是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\00-概览与学习路线.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0110",
+    "question": "AI Infra 是什么：五层分层体系 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\00-概览与学习路线.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0111",
+    "question": "线上告警涉及AI Infra 是什么：五层分层体系，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI-Infra\\00-概览与学习路线.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0112",
+    "question": "Linux、Docker 与 GPU 环境基础怎么操作？",
+    "expected_sources": [
+      "reference/AI-Infra\\01-Linux-Docker-GPU环境.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0113",
+    "question": "线上遇到 Day1：Linux 系统夯实 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\01-Linux-Docker-GPU环境.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0114",
+    "question": "交接班被问到Day1：Linux 系统夯实，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI-Infra\\01-Linux-Docker-GPU环境.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0115",
+    "question": "本地推理与推理服务部署有哪些关键点？",
+    "expected_sources": [
+      "reference/AI-Infra\\02-本地推理部署.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0116",
+    "question": "同事问 Day8：Transformers 原生推理跑通大模 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\02-本地推理部署.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0117",
+    "question": "Day8：Transformers 原生推理跑通大模出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI-Infra\\02-本地推理部署.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0118",
+    "question": "LoRA/QLoRA 微调训练链路是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\03-LoRA微调训练.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0119",
+    "question": "全量微调 LoRA QLoRA 三者对比 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\03-LoRA微调训练.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0120",
+    "question": "新人问全量微调 / LoRA / QLoRA 三者对比具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI-Infra\\03-LoRA微调训练.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0121",
+    "question": "K8s AI 编排、监控与端到端项目怎么操作？",
+    "expected_sources": [
+      "reference/AI-Infra\\04-K8s-AI编排与综合项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0122",
+    "question": "K8s 核心概念与 GPU 调度机制 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\04-K8s-AI编排与综合项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0123",
+    "question": "线上告警涉及K8s 核心概念与 GPU 调度原理，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI-Infra\\04-K8s-AI编排与综合项目.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0124",
+    "question": "AI Infra 训练概览与硬件基础有哪些关键点？",
+    "expected_sources": [
+      "reference/AI-Infra\\05-训练概览与硬件基础.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0125",
+    "question": "线上遇到 大模型训练的核心矛盾与时代背景 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\05-训练概览与硬件基础.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0126",
+    "question": "交接班被问到大模型训练的核心矛盾与时代背景，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI-Infra\\05-训练概览与硬件基础.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0127",
+    "question": "AI Infra 分布式并行策略是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\06-分布式并行策略.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0128",
+    "question": "同事问 数据并行 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\06-分布式并行策略.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0129",
+    "question": "数据并行出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI-Infra\\06-分布式并行策略.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0130",
+    "question": "AI Infra 分布式通信与网络优化怎么操作？",
+    "expected_sources": [
+      "reference/AI-Infra\\07-分布式通信与网络优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0131",
+    "question": "四大集合通信原语 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\07-分布式通信与网络优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0132",
+    "question": "新人问四大集合通信原语具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI-Infra\\07-分布式通信与网络优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0133",
+    "question": "AI Infra 显存优化有哪些关键点？",
+    "expected_sources": [
+      "reference/AI-Infra\\08-显存优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0134",
+    "question": "显存都去哪了：四大消耗源 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\08-显存优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0135",
+    "question": "线上告警涉及显存都去哪了：四大消耗源，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI-Infra\\08-显存优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0136",
+    "question": "AI Infra 计算与精度优化是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\09-计算与精度优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0137",
+    "question": "线上遇到 浮点格式与混合精度训练 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\09-计算与精度优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0138",
+    "question": "交接班被问到浮点格式与混合精度训练，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI-Infra\\09-计算与精度优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0139",
+    "question": "AI Infra 数据与 IO 优化怎么操作？",
+    "expected_sources": [
+      "reference/AI-Infra\\10-数据与IO优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0140",
+    "question": "同事问 PyTorch DataLoader 深度优化 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\10-数据与IO优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0141",
+    "question": "PyTorch DataLoader 深度优化出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI-Infra\\10-数据与IO优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0142",
+    "question": "AI Infra 训练稳定性与可观测性有哪些关键点？",
+    "expected_sources": [
+      "reference/AI-Infra\\11-训练稳定性与可观测性.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0143",
+    "question": "Loss Spike 的检测与恢复 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\11-训练稳定性与可观测性.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0144",
+    "question": "新人问Loss Spike 的检测与恢复具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI-Infra\\11-训练稳定性与可观测性.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0145",
+    "question": "AI Infra 前沿技术与实战项目是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\12-前沿技术与实战项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0146",
+    "question": "实战项目一：7B 模型分布式训练 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\12-前沿技术与实战项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0147",
+    "question": "线上告警涉及实战项目一：7B 模型分布式训练，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI-Infra\\12-前沿技术与实战项目.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0148",
+    "question": "AI Infra 性能工程方法论怎么操作？",
+    "expected_sources": [
+      "reference/AI-Infra\\13-性能工程方法论.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0149",
+    "question": "线上遇到 体系 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\13-性能工程方法论.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0150",
+    "question": "交接班被问到体系，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI-Infra\\13-性能工程方法论.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0151",
+    "question": "GPU 硬件与系统优化有哪些关键点？",
+    "expected_sources": [
+      "reference/AI-Infra\\14-GPU硬件与系统优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0152",
+    "question": "同事问 模块二 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\14-GPU硬件与系统优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0153",
+    "question": "模块二出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI-Infra\\14-GPU硬件与系统优化.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0154",
+    "question": "CUDA 与高性能算子是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\15-CUDA与高性能算子.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0155",
+    "question": "模块三 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\15-CUDA与高性能算子.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0156",
+    "question": "新人问模块三具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI-Infra\\15-CUDA与高性能算子.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0157",
+    "question": "分布式训练与通信怎么操作？",
+    "expected_sources": [
+      "reference/AI-Infra\\16-分布式训练与通信-二期.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0158",
+    "question": "模块四 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\16-分布式训练与通信-二期.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0159",
+    "question": "线上告警涉及模块四，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI-Infra\\16-分布式训练与通信-二期.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0160",
+    "question": "PyTorch 编译与 Runtime有哪些关键点？",
+    "expected_sources": [
+      "reference/AI-Infra\\17-PyTorch编译与Runtime.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0161",
+    "question": "线上遇到 模块五 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\17-PyTorch编译与Runtime.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0162",
+    "question": "交接班被问到模块五，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI-Infra\\17-PyTorch编译与Runtime.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0163",
+    "question": "LLM 推理系统是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\18-LLM推理系统.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0164",
+    "question": "同事问 模块六 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\18-LLM推理系统.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0165",
+    "question": "模块六出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI-Infra\\18-LLM推理系统.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0166",
+    "question": "性能工程综合项目怎么操作？",
+    "expected_sources": [
+      "reference/AI-Infra\\19-性能工程综合项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0167",
+    "question": "项目体系 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\19-性能工程综合项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0168",
+    "question": "新人问项目体系具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI-Infra\\19-性能工程综合项目.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0169",
+    "question": "CUDA 编程与大模型核心算子有哪些关键点？",
+    "expected_sources": [
+      "reference/AI-Infra\\20-CUDA编程与核心算子.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0170",
+    "question": "三期 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\20-CUDA编程与核心算子.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0171",
+    "question": "线上告警涉及三期，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/AI-Infra\\20-CUDA编程与核心算子.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0172",
+    "question": "分布式训练优化是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\21-分布式训练优化三期.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0173",
+    "question": "线上遇到 NCCL 通信库机制 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\21-分布式训练优化三期.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0174",
+    "question": "交接班被问到NCCL 通信库原理，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/AI-Infra\\21-分布式训练优化三期.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0175",
+    "question": "AI Infra 面试指南与免费学习资源全集怎么操作？",
+    "expected_sources": [
+      "reference/AI-Infra\\22-面试指南与学习资源.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0176",
+    "question": "同事问 岗位全景：AI Infra 三大方向 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\22-面试指南与学习资源.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0177",
+    "question": "岗位全景：AI Infra 三大方向出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/AI-Infra\\22-面试指南与学习资源.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0178",
+    "question": "AI Infra 知识库索引有哪些关键点？",
+    "expected_sources": [
+      "reference/AI-Infra\\README.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0179",
+    "question": "系列一 · 30 天入门实操 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/AI-Infra\\README.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0180",
+    "question": "新人问系列一 · 30 天入门实操具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/AI-Infra\\README.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "AI-Infra",
+    "license_status": "pending: 未登记（语雀训练营蒸馏）",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0181",
+    "question": "daemon.json 配置示例是什么？",
+    "expected_sources": [
+      "reference/Docker运维课\\daemon配置示例.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0182",
+    "question": "课堂用的完整设置 一般怎么处理？",
+    "expected_sources": [
+      "reference/Docker运维课\\daemon配置示例.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0183",
+    "question": "线上告警涉及课堂用的完整配置，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Docker运维课\\daemon配置示例.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0184",
+    "question": "Docker 基础与镜像管理实操手册怎么操作？",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker基础与镜像管理实操手册.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0185",
+    "question": "线上遇到 学习目标 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker基础与镜像管理实操手册.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0186",
+    "question": "交接班被问到学习目标，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker基础与镜像管理实操手册.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0187",
+    "question": "docker容器命令有哪些关键点？",
+    "expected_sources": [
+      "reference/Docker运维课\\docker容器命令.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0188",
+    "question": "同事问 看一下构建历史 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Docker运维课\\docker容器命令.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0189",
+    "question": "查看构建历史出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Docker运维课\\docker容器命令.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0190",
+    "question": "Docker 重点背诵卡是什么？",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker重点背诵卡.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0191",
+    "question": "换源四步 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker重点背诵卡.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0192",
+    "question": "新人问换源四步具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker重点背诵卡.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0193",
+    "question": "Zabbix 容器化部署怎么操作？",
+    "expected_sources": [
+      "reference/Docker运维课\\Zabbix容器化部署五步.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0194",
+    "question": "新建专用上网 一般怎么处理？",
+    "expected_sources": [
+      "reference/Docker运维课\\Zabbix容器化部署五步.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0195",
+    "question": "线上告警涉及创建专用网络，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Docker运维课\\Zabbix容器化部署五步.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0196",
+    "question": "课堂记录 1112 —— Docker 理论与部署有哪些关键点？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1112-Docker理论与部署.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0197",
+    "question": "线上遇到 环境准备 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1112-Docker理论与部署.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0198",
+    "question": "交接班被问到环境准备，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1112-Docker理论与部署.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0199",
+    "question": "课堂记录 1113 —— 容器命令是什么？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1113-容器命令.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0200",
+    "question": "同事问 镜像删掉与构建历史 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1113-容器命令.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0201",
+    "question": "镜像删除与构建历史出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1113-容器命令.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0202",
+    "question": "课堂记录 1115 下午 —— 文件系统与 Dock怎么操作？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1115下午-Dockerfile分层实验.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0203",
+    "question": "理论要点 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1115下午-Dockerfile分层实验.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0204",
+    "question": "新人问理论要点具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1115下午-Dockerfile分层实验.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Docker运维课",
+    "license_status": "pending: 未登记",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0205",
+    "question": "MySQL 图形化开发工具 DataGrip有哪些关键点？",
+    "expected_sources": [
+      "reference/MySQL8 数据服务管理.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0206",
+    "question": "DataGrip 一般怎么处理？",
+    "expected_sources": [
+      "reference/MySQL8 数据服务管理.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0207",
+    "question": "线上告警涉及DataGrip，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/MySQL8 数据服务管理.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0208",
+    "question": "nginx 运维笔记是什么？",
+    "expected_sources": [
+      "reference/nginx.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0209",
+    "question": "线上遇到 1 装编译环境 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/nginx.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0210",
+    "question": "交接班被问到1 安装编译环境，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/nginx.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0211",
+    "question": "prometheus怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\01.prometheus简介.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0212",
+    "question": "同事问 prometheus优势 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\01.prometheus简介.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0213",
+    "question": "prometheus优势出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\01.prometheus简介.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0214",
+    "question": "数据模型有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\02.数据模型.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0215",
+    "question": "指标定义 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\02.数据模型.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0216",
+    "question": "新人问指标定义具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\02.数据模型.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0217",
+    "question": "指标类型是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\03.指标类型.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0218",
+    "question": "Counter 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\03.指标类型.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0219",
+    "question": "线上告警涉及Counter，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\03.指标类型.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0220",
+    "question": "Jobs和Instances怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\04.Jobs和Instances.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0221",
+    "question": "线上遇到 Jobs和Instances 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\04.Jobs和Instances.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0222",
+    "question": "交接班被问到Jobs和Instances，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\04.Jobs和Instances.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0223",
+    "question": "源码包部署监控组件有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\05.源码包部署监控组件.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0224",
+    "question": "同事问 装prometheus 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\05.源码包部署监控组件.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0225",
+    "question": "安装prometheus出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\05.源码包部署监控组件.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0226",
+    "question": "docker部署监控组件是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\06.docker部署监控组件.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0227",
+    "question": "node-export上线 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\06.docker部署监控组件.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0228",
+    "question": "新人问node-export部署具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\06.docker部署监控组件.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0229",
+    "question": "PromQL基本使用怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\07.PromQL基本使用.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0230",
+    "question": "正数 浮点数 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\07.PromQL基本使用.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0231",
+    "question": "线上告警涉及正数，浮点数，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\07.PromQL基本使用.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0232",
+    "question": "Prometheus基础查询有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\08.Prometheus基础查询.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0233",
+    "question": "线上遇到 查询 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\08.Prometheus基础查询.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0234",
+    "question": "交接班被问到查询，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\08.Prometheus基础查询.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0235",
+    "question": "查询操作符是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\09.查询操作符.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0236",
+    "question": "同事问 计算二元使用符 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\09.查询操作符.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0237",
+    "question": "计算二元操作符出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\09.查询操作符.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0238",
+    "question": "内置函数怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\10.内置函数.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0239",
+    "question": "vector 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\10.内置函数.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0240",
+    "question": "新人问vector具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\10.内置函数.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0241",
+    "question": "在HTTP API中使用PromQL有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\11.在HTTP API中使用PromQL.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0242",
+    "question": "获取targets数据 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\11.在HTTP API中使用PromQL.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0243",
+    "question": "线上告警涉及获取targets数据，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\11.在HTTP API中使用PromQL.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0244",
+    "question": "最佳实践是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\12.最佳实践.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0245",
+    "question": "线上遇到 最佳实践 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\12.最佳实践.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0246",
+    "question": "交接班被问到最佳实践，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\12.最佳实践.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0247",
+    "question": "自定义Prometheus告警规则怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\14.自定义Prometheus告警规则.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0248",
+    "question": "同事问 自定义Prometheus告警规则 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\14.自定义Prometheus告警规则.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0249",
+    "question": "自定义Prometheus告警规则出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\14.自定义Prometheus告警规则.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0250",
+    "question": "常见告警规则有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\15.常见告警规则.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0251",
+    "question": "Linux系统监控 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\15.常见告警规则.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0252",
+    "question": "新人问Linux系统监控具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\15.常见告警规则.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0253",
+    "question": "部署Alertmanager是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\16.部署Alertmanager.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0254",
+    "question": "上线Alertmanager 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\16.部署Alertmanager.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0255",
+    "question": "线上告警涉及部署Alertmanager，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\16.部署Alertmanager.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0256",
+    "question": "Alertmanager配置怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\17.Alertmanager配置概述.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0257",
+    "question": "线上遇到 Alertmanager设置 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\17.Alertmanager配置概述.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0258",
+    "question": "交接班被问到Alertmanager配置，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\17.Alertmanager配置概述.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0259",
+    "question": "基于标签的告警处理路由有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\18.基于标签的告警处理路由.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0260",
+    "question": "同事问 基于标签的告警处理路由 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\18.基于标签的告警处理路由.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0261",
+    "question": "基于标签的告警处理路由出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\18.基于标签的告警处理路由.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0262",
+    "question": "使用Receiver接收告警信息是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\19.使用Receiver接收告警信息.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0263",
+    "question": "使用Receiver接收告警信息 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\19.使用Receiver接收告警信息.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0264",
+    "question": "新人问使用Receiver接收告警信息具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\19.使用Receiver接收告警信息.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0265",
+    "question": "自定义告警模板怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\20.自定义告警模板.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0266",
+    "question": "自定义告警模板 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\20.自定义告警模板.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0267",
+    "question": "线上告警涉及自定义告警模板，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\20.自定义告警模板.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0268",
+    "question": "屏蔽告警通知有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\21.屏蔽告警通知.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0269",
+    "question": "线上遇到 屏蔽告警通知 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\21.屏蔽告警通知.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0270",
+    "question": "交接班被问到屏蔽告警通知，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\21.屏蔽告警通知.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0271",
+    "question": "使用Recoding Rules优化性能是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\22.使用Recoding Rules优化性能.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0272",
+    "question": "同事问 使用Recoding Rules优化性能 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\22.使用Recoding Rules优化性能.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0273",
+    "question": "使用Recoding Rules优化性能出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\22.使用Recoding Rules优化性能.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0274",
+    "question": "exporter怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\23.exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0275",
+    "question": "exporter 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\23.exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0276",
+    "question": "新人问exporter具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\23.exporter.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0277",
+    "question": "Node Exporter有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\24.Node Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0278",
+    "question": "参考文档 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\24.Node Exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0279",
+    "question": "线上告警涉及参考文档，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\24.Node Exporter.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0280",
+    "question": "Process Exporter是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\25.Process Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0281",
+    "question": "线上遇到 Process Exporter 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\25.Process Exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0282",
+    "question": "交接班被问到Process Exporter，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\25.Process Exporter.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0283",
+    "question": "cAdvisor怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\26.cAdvisor.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0284",
+    "question": "同事问 cAdvisor 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\26.cAdvisor.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0285",
+    "question": "cAdvisor出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\26.cAdvisor.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0286",
+    "question": "Mysql Exporter有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\27.Mysql Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0287",
+    "question": "Mysql Exporter 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\27.Mysql Exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0288",
+    "question": "新人问Mysql Exporter具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\27.Mysql Exporter.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0289",
+    "question": "Blackbox Exporter是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\28.Blackbox Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0290",
+    "question": "设置文件 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\28.Blackbox Exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0291",
+    "question": "线上告警涉及配置文件，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\28.Blackbox Exporter.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0292",
+    "question": "Process Exporter怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\29.Process Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0293",
+    "question": "Ipmi export有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\30.Ipmi export.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0294",
+    "question": "同事问 装ipmitool 并加载相应模块 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\30.Ipmi export.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0295",
+    "question": "安装ipmitool 并加载相应模块出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\30.Ipmi export.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0296",
+    "question": "Pushgateway是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\31.Pushgateway.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0297",
+    "question": "Pushgateway 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\31.Pushgateway.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0298",
+    "question": "新人问Pushgateway具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\31.Pushgateway.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0299",
+    "question": "grafana基本概念怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\32.grafana基本概念.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0300",
+    "question": "grafana基本概念 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\32.grafana基本概念.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0301",
+    "question": "线上告警涉及grafana基本概念，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\32.grafana基本概念.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0302",
+    "question": "创建dashboard与Panel有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\33.创建dashboard与Panel.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0303",
+    "question": "线上遇到 新建dashboard与Panel 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\33.创建dashboard与Panel.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0304",
+    "question": "交接班被问到创建dashboard与Panel，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\33.创建dashboard与Panel.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0305",
+    "question": "变化趋势：Graph面板是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\34.变化趋势：Graph面板.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0306",
+    "question": "同事问 变化趋势：Graph面板 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\34.变化趋势：Graph面板.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0307",
+    "question": "变化趋势：Graph面板出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\34.变化趋势：Graph面板.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0308",
+    "question": "graph面板常用操作怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\35.graph面板常用操作.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0309",
+    "question": "graph面板常用使用 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\35.graph面板常用操作.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0310",
+    "question": "新人问graph面板常用操作具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\35.graph面板常用操作.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0311",
+    "question": "分布统计：Heatmap面板有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\36.分布统计：Heatmap面板.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0312",
+    "question": "分布统计：Heatmap面板 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\36.分布统计：Heatmap面板.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0313",
+    "question": "线上告警涉及分布统计：Heatmap面板，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\36.分布统计：Heatmap面板.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0314",
+    "question": "当前状态：SingleStat面板是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\37.当前状态：SingleStat面板.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0315",
+    "question": "线上遇到 当前状态：SingleStat面板 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\37.当前状态：SingleStat面板.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0316",
+    "question": "交接班被问到当前状态：SingleStat面板，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\37.当前状态：SingleStat面板.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0317",
+    "question": "grafana报警怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\39.grafana报警.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0318",
+    "question": "同事问 grafana报警 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\39.grafana报警.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0319",
+    "question": "grafana报警出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\39.grafana报警.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0320",
+    "question": "本地存储有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\40.本地存储.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0321",
+    "question": "本地存储 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\40.本地存储.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0322",
+    "question": "新人问本地存储具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\40.本地存储.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0323",
+    "question": "远程存储是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\41.远程存储.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0324",
+    "question": "远程存储 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\41.远程存储.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0325",
+    "question": "线上告警涉及远程存储，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\41.远程存储.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0326",
+    "question": "联邦集群怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\42.联邦集群.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0327",
+    "question": "线上遇到 联邦集群 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\42.联邦集群.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0328",
+    "question": "交接班被问到联邦集群，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\42.联邦集群.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0329",
+    "question": "prometheus高可用有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\43.prometheus高可用.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0330",
+    "question": "同事问 prometheus高可用 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\43.prometheus高可用.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0331",
+    "question": "prometheus高可用出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\43.prometheus高可用.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0332",
+    "question": "Alertmanager高可用是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\44.Alertmanager高可用.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0333",
+    "question": "Alertmanager高可用 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\44.Alertmanager高可用.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0334",
+    "question": "新人问Alertmanager高可用具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\44.Alertmanager高可用.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0335",
+    "question": "Prometheus与服务发现怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\45.Prometheus与服务发现.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0336",
+    "question": "Prometheus与服务发现 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\45.Prometheus与服务发现.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0337",
+    "question": "线上告警涉及Prometheus与服务发现，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\45.Prometheus与服务发现.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0338",
+    "question": "基于文件的服务发现有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\46.基于文件的服务发现.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0339",
+    "question": "线上遇到 基于文件的服务发现 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\46.基于文件的服务发现.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0340",
+    "question": "交接班被问到基于文件的服务发现，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\46.基于文件的服务发现.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0341",
+    "question": "标签管理是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\47.标签管理.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0342",
+    "question": "同事问 标签维护 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\47.标签管理.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0343",
+    "question": "标签管理出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\47.标签管理.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0344",
+    "question": "什么是Prometheus Operator怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\48.什么是Prometheus Operator.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0345",
+    "question": "什么是Prometheus Operator 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\48.什么是Prometheus Operator.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0346",
+    "question": "新人问什么是Prometheus Operator具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\48.什么是Prometheus Operator.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0347",
+    "question": "Prometheus Operator自定义监控项有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\49.Prometheus Operator自定义监控项.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0348",
+    "question": "Prometheus Operator自定义监控项 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\49.Prometheus Operator自定义监控项.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0349",
+    "question": "线上告警涉及Prometheus Operator自定义监控项，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\49.Prometheus Operator自定义监控项.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0350",
+    "question": "配置blackbox-exporter是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\50.配置blackbox-exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0351",
+    "question": "线上遇到 改成blackbox设置文件 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\50.配置blackbox-exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0352",
+    "question": "交接班被问到修改blackbox配置文件，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\50.配置blackbox-exporter.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0353",
+    "question": "添加prometheus自定义配置怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\51.添加prometheus自定义配置.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0354",
+    "question": "同事问 添加prometheus自定义设置 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\51.添加prometheus自定义配置.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0355",
+    "question": "添加prometheus自定义配置出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\51.添加prometheus自定义配置.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0356",
+    "question": "配置PrometheusRule有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\52.配置PrometheusRule.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0357",
+    "question": "看一下prometheus web页面 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\52.配置PrometheusRule.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0358",
+    "question": "新人问查看prometheus web页面具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\52.配置PrometheusRule.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0359",
+    "question": "配置blackbox-exporter监控项是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\53.配置blackbox-exporter监控项.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0360",
+    "question": "ping 检测 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\53.配置blackbox-exporter监控项.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0361",
+    "question": "线上告警涉及ping 检测，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\53.配置blackbox-exporter监控项.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0362",
+    "question": "基础入门怎么操作？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\54.基础入门.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0363",
+    "question": "线上遇到 prometheus告警 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\54.基础入门.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0364",
+    "question": "交接班被问到prometheus告警，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\54.基础入门.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0365",
+    "question": "配置详解有哪些关键点？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\55.配置详解.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0366",
+    "question": "同事问 设置 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\55.配置详解.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0367",
+    "question": "配置出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\55.配置详解.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "Prometheus监控课_分节md",
+    "license_status": "pending: ART-021",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0368",
+    "question": "Shell函数是什么？",
+    "expected_sources": [
+      "reference/Shell函数.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0369",
+    "question": "什么是函数？ 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/Shell函数.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0370",
+    "question": "新人问什么是函数？具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/Shell函数.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0371",
+    "question": "Shell流程结构怎么操作？",
+    "expected_sources": [
+      "reference/Shell流程结构.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0372",
+    "question": "什么是流程结构？ 一般怎么处理？",
+    "expected_sources": [
+      "reference/Shell流程结构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0373",
+    "question": "线上告警涉及什么是流程结构？，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/Shell流程结构.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0374",
+    "question": "SciVerse 文献接入契约有哪些关键点？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\01-SciVerse文献接入契约.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0375",
+    "question": "线上遇到 平台定位 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\01-SciVerse文献接入契约.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0376",
+    "question": "交接班被问到平台定位，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\01-SciVerse文献接入契约.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0377",
+    "question": "后端配置优先级与启动链路是什么？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\02-后端配置优先级与启动链路.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0378",
+    "question": "同事问 核心结论 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\02-后端配置优先级与启动链路.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0379",
+    "question": "核心结论出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\02-后端配置优先级与启动链路.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0380",
+    "question": "SciVerse 联调排障手册怎么操作？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\03-SciVerse联调排障手册.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0381",
+    "question": "先记住三条反直觉事实 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\03-SciVerse联调排障手册.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0382",
+    "question": "新人问先记住三条反直觉事实具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\03-SciVerse联调排障手册.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0383",
+    "question": "SmartOpsAgent 项目知识索引有哪些关键点？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\README.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0384",
+    "question": "卡片清单 一般怎么处理？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\README.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0385",
+    "question": "线上告警涉及卡片清单，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\README.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "SmartOpsAgent-项目知识",
+    "license_status": "approved",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0386",
+    "question": "【了解】Shell三剑客是什么？",
+    "expected_sources": [
+      "reference/了解Shell三剑客.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0387",
+    "question": "线上遇到 Shell三剑客 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/了解Shell三剑客.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0388",
+    "question": "交接班被问到Shell三剑客，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/了解Shell三剑客.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0389",
+    "question": "云计算发展历程与云原生定义怎么操作？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\01.云计算发展历程与云原生定义.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0390",
+    "question": "同事问 P06 · 云计算的发展历程 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\01.云计算发展历程与云原生定义.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0391",
+    "question": "P06 · 云计算的发展历程出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\01.云计算发展历程与云原生定义.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0392",
+    "question": "Netflix云原生实践案例有哪些关键点？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\02.Netflix云原生实践案例.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0393",
+    "question": "P11 · 从云原生拓荒者Netflix 的故事说起 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\02.Netflix云原生实践案例.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0394",
+    "question": "新人问P11 · 从云原生拓荒者Netflix 的故事说起具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\02.Netflix云原生实践案例.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0395",
+    "question": "容器技术与Spring Cloud框架是什么？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\03.容器技术与Spring Cloud框架.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0396",
+    "question": "P25 · 容器技术和Spring Cloud框架的 一般怎么处理？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\03.容器技术与Spring Cloud框架.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0397",
+    "question": "线上告警涉及P25 · 容器技术和Spring Cloud框架的，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\03.容器技术与Spring Cloud框架.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0398",
+    "question": "Kubernetes编排标准怎么操作？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\04.Kubernetes编排标准.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0399",
+    "question": "线上遇到 P30 · Kubernetes横空出世 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\04.Kubernetes编排标准.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0400",
+    "question": "交接班被问到P30 · Kubernetes横空出世，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\04.Kubernetes编排标准.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0401",
+    "question": "ServiceMesh服务治理演进有哪些关键点？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\05.ServiceMesh服务治理演进.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0402",
+    "question": "同事问 P34 · 但是 等等…… 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\05.ServiceMesh服务治理演进.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0403",
+    "question": "P34 · 但是，等等……出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\05.ServiceMesh服务治理演进.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0404",
+    "question": "企业IT数字化转型与岗位影响是什么？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\06.企业IT数字化转型与岗位影响.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0405",
+    "question": "P43 · 企业IT数字化转型的“三阶段两转变” 出了问题，第一步先看什么？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\06.企业IT数字化转型与岗位影响.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0406",
+    "question": "新人问P43 · 企业IT数字化转型的“三阶段两转变”具体怎么做，按什么顺序讲？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\06.企业IT数字化转型与岗位影响.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0407",
+    "question": "云原生技术趋势-多运行时微服务怎么操作？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\07.云原生技术趋势-多运行时微服务.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0408",
+    "question": "P53 · 分布式应用程序的需求 一般怎么处理？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\07.云原生技术趋势-多运行时微服务.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0409",
+    "question": "线上告警涉及P53 · 分布式应用程序的需求，值班时先核对哪些证据再动手？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\07.云原生技术趋势-多运行时微服务.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0410",
+    "question": "参考资料与致谢有哪些关键点？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\08.参考资料与致谢.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0411",
+    "question": "线上遇到 P60 · 参考资料 相关问题时，排查顺序是什么？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\08.参考资料与致谢.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0412",
+    "question": "交接班被问到P60 · 参考资料，需要准备怎样的说明？",
+    "expected_sources": [
+      "reference/云原生公开课_分章md\\08.参考资料与致谢.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "云原生公开课_分章md",
+    "license_status": "pending: ART-004",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0413",
+    "question": "Nginx 服务部署与基础配置是什么？",
+    "expected_sources": [
+      "reference/安装Nginx.md"
+    ],
+    "style": "verbatim",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:title",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0414",
+    "question": "同事问 Nginx 服务上线与设置 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/安装Nginx.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:synonym",
+    "review_status": "unreviewed"
+  },
+  {
+    "case_id": "case-ret-0415",
+    "question": "Nginx 服务部署与基础配置出现异常，如何分步定位并验证恢复？",
+    "expected_sources": [
+      "reference/安装Nginx.md"
+    ],
+    "style": "scenario",
+    "version": "reference",
+    "corpus_dir": "(root)",
+    "license_status": "pending: ART-005",
+    "provenance": "rule:scenario",
+    "review_status": "unreviewed"
+  }
+]

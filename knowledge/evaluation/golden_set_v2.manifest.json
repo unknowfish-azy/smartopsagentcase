@@ -1,0 +1,46 @@
+{
+  "schema": "smartops.retrieval_eval.v2",
+  "generated_at": "2026-11-17T00:56:48+00:00",
+  "source_root": "knowledge/reference/ops-knowledge-rag",
+  "case_count": 415,
+  "effective_independent_units": 139,
+  "documents": 139,
+  "by_style": {
+    "paraphrase": 138,
+    "scenario": 138,
+    "verbatim": 139
+  },
+  "by_corpus_dir": {
+    "(root)": 18,
+    "AI Infra训练营二期_分课": 108,
+    "AI-Infra": 72,
+    "Docker运维课": 24,
+    "Prometheus监控课_分节md": 157,
+    "SmartOpsAgent-项目知识": 12,
+    "云原生公开课_分章md": 24
+  },
+  "license_distribution": {
+    "approved": 12,
+    "pending: ART-004": 24,
+    "pending: ART-005": 18,
+    "pending: ART-021": 157,
+    "pending: 未登记": 132,
+    "pending: 未登记（语雀训练营蒸馏）": 72
+  },
+  "approved_subset_cases": 12,
+  "excluded_dirs": {
+    "RH教材": "REJECTED: 红帽官方培训教材，禁止入库/入评测集（ART-001/002/003）"
+  },
+  "excluded_documents": 9,
+  "review": {
+    "ratio": 0.3,
+    "sample_size": 124,
+    "status": "pending_human"
+  },
+  "dataset_sha256": "a61d1a1d062e1a439878c650684d09296e0f99afc399cce737708b22275e34b5",
+  "notes": [
+    "自动生成仅衡量改写鲁棒性，不替代人工标注",
+    "正式对外指标只能基于 license_status=approved 子集 + 人工复核通过的 case",
+    "按文档数计有效独立样本，多问法之间存在相关性"
+  ]
+}
