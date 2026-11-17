@@ -1,14 +1,12 @@
 <template>
-  <el-dialog
-    :model-value="open"
-    title="设备详情"
-    width="min(560px, calc(100vw - 32px))"
-    class="rdd-dialog"
-    append-to-body
-    destroy-on-close
-    @update:model-value="!$event && emit('close')"
-  >
-    <section class="rdd-body">
+  <Teleport to="body">
+    <div v-if="open" class="rdd-mask" @click.self="emit('close')">
+      <section class="rdd-panel" role="dialog" aria-modal="true" aria-labelledby="rdd-title">
+        <header class="rdd-head">
+          <h2 id="rdd-title">设备详情</h2>
+          <button type="button" class="rdd-close" aria-label="关闭设备详情" @click="emit('close')">✕</button>
+        </header>
+        <div class="rdd-body">
       <!-- 台账信息：真实接口 GET /api/robot/devices，失败如实标注 -->
       <h3>台账信息</h3>
       <p v-if="ledger.state === 'loading'" class="rdd-note">正在加载设备台账…</p>
@@ -88,11 +86,13 @@
         </li>
       </ul>
       <p v-else class="rdd-note">暂无巡检任务记录。</p>
-    </section>
-    <template #footer>
-      <el-button @click="emit('close')">关闭</el-button>
-    </template>
-  </el-dialog>
+        </div>
+        <footer class="rdd-foot">
+          <button type="button" class="rdd-action" @click="emit('close')">关闭</button>
+        </footer>
+      </section>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -215,6 +215,11 @@ async function loadLiveSnapshot() {
   }
 }
 
+/* Esc 关闭：只在弹窗打开期间挂监听，避免常驻全局热键 */
+function onKeydown(event) {
+  if (event.key === 'Escape') emit('close')
+}
+
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
     loadLedger()
@@ -222,13 +227,16 @@ watch(() => props.open, (isOpen) => {
     loadTasks()
     loadLiveSnapshot()
     startFramePoll()
+    window.addEventListener('keydown', onKeydown)
   } else {
-    stopFramePoll() /* 关闭即停轮询（destroy-on-close 下组件随关随毁，此处双保险） */
+    stopFramePoll() /* 关闭即停轮询（组件随关随毁，此处双保险） */
+    window.removeEventListener('keydown', onKeydown)
   }
 })
 
 onBeforeUnmount(() => {
   stopFramePoll()
+  window.removeEventListener('keydown', onKeydown)
 })
 
 /* 遥测来源统一收敛：父级实时流优先，REST 快照兜底（快照的桥连接状态如实映射心跳） */
@@ -315,7 +323,44 @@ function routeCount(task) {
 </script>
 
 <style scoped>
-.rdd-body { display: grid; gap: 10px; color: var(--smart-text, var(--ds-color-text)); overflow-wrap: anywhere; }
+/* 自绘弹窗：不依赖 Element Plus 的样式装配，避免遮罩层盖住内容导致“点了没反应” */
+.rdd-mask {
+  position: fixed; inset: 0; z-index: 2400;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; overflow: auto;
+  background: rgba(8, 10, 14, .62); backdrop-filter: blur(2px);
+}
+.rdd-panel {
+  width: min(560px, 100%); max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column;
+  background: var(--smart-surface, var(--ds-color-surface, #15181d));
+  color: var(--smart-text, var(--ds-color-text, #e8eaed));
+  border: 1px solid var(--smart-border, var(--ds-color-border, #2a2f37));
+  border-radius: 12px; box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+  animation: rdd-in 160ms ease-out;
+}
+@keyframes rdd-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rdd-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--smart-border, var(--ds-color-border, #2a2f37));
+}
+.rdd-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.rdd-close {
+  border: none; background: none; cursor: pointer; padding: 2px 8px; border-radius: 6px;
+  color: var(--smart-muted, var(--ds-color-muted, #9aa0a6)); font-size: 13px; line-height: 1.4;
+}
+.rdd-close:hover, .rdd-close:focus-visible { color: var(--smart-text, #e8eaed); background: rgba(255, 255, 255, .08); }
+.rdd-foot {
+  display: flex; justify-content: flex-end; padding: 10px 16px;
+  border-top: 1px solid var(--smart-border, var(--ds-color-border, #2a2f37));
+}
+.rdd-action {
+  border: 1px solid var(--smart-border, var(--ds-color-border, #2a2f37));
+  background: rgba(255, 255, 255, .04); color: inherit;
+  padding: 6px 16px; border-radius: 8px; font-size: 13px; cursor: pointer;
+}
+.rdd-action:hover { border-color: var(--smart-primary-strong, var(--ds-color-primary, #2563eb)); }
+.rdd-body { padding: 14px 16px; overflow: auto; display: grid; gap: 10px; color: var(--smart-text, var(--ds-color-text)); overflow-wrap: anywhere; }
 .rdd-body h3 { margin: 6px 0 0; font-size: 14px; font-weight: 600; }
 .rdd-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; }
 .rdd-facts dt { color: var(--smart-muted, var(--ds-color-muted)); font-size: 12px; }
