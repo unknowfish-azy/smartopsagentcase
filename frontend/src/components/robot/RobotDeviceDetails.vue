@@ -30,16 +30,14 @@
         <div><dt>最近上报</dt><dd>{{ ledger.device.lastSeenAt || '—' }}</dd></div>
       </dl>
 
-      <!-- 实时遥测：父级传入的真实数据（控制台 WS / 台账 REST 轮询），无遥测即如实标注 -->
+      <!-- 实时遥测：父级实时流优先（控制台 WS / 台账轮询），无流时自拉 REST 快照兜底 -->
       <h3>实时遥测</h3>
       <dl class="rdd-facts">
         <div><dt>运行态</dt><dd>{{ modeLabel }}</dd></div>
         <div>
           <dt>心跳</dt>
           <dd>
-            <span class="pill" :class="heartbeatClass">
-              {{ telemetry ? (stale ? '心跳超时' : '心跳正常') : '无遥测' }}
-            </span>
+            <span class="pill" :class="heartbeatClass">{{ heartbeatLabel }}</span>
           </dd>
         </div>
         <div><dt>电量</dt><dd>{{ batteryText }}</dd></div>
@@ -93,7 +91,7 @@
  * 遥测/路线由父级（RobotScene3D）传入，无数据即如实显示「—」，不伪造。
  */
 import { computed, ref, watch } from 'vue'
-import { getRobotDevices, getRobotFrame, getRobotTasks } from '../../api/robot'
+import { getRobotDevices, getRobotFrame, getRobotLive, getRobotTasks } from '../../api/robot'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -126,6 +124,8 @@ const FORM_FACTOR_LABELS = {
 const ledger = ref({ state: 'loading', device: null, error: '' })
 const frame = ref({ state: 'idle', data: null, error: '' })
 const tasks = ref({ state: 'idle', list: [], error: '' })
+/* REST 快照兜底：父级未传实时遥测（如台账页直接点行内详情）时，打开弹窗自拉一次 live 快照 */
+const liveSnapshot = ref(null)
 
 async function loadLedger() {
   if (!props.deviceKey) {
@@ -169,27 +169,52 @@ async function loadTasks() {
   }
 }
 
+async function loadLiveSnapshot() {
+  if (props.telemetry || !props.deviceKey) return /* 父级已有实时流（WS/轮询），不重复拉取 */
+  try {
+    const response = await getRobotLive(props.deviceKey)
+    liveSnapshot.value = response?.data || null
+  } catch {
+    liveSnapshot.value = null /* 快照失败如实显示「无遥测」 */
+  }
+}
+
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
     loadLedger()
     loadFrame()
     loadTasks()
+    loadLiveSnapshot()
   }
+})
+
+/* 遥测来源统一收敛：父级实时流优先，REST 快照兜底（快照的桥连接状态如实映射心跳） */
+const effectiveTelemetry = computed(() => props.telemetry || liveSnapshot.value?.telemetry || null)
+const effectiveMode = computed(() =>
+  props.mode && props.mode !== 'OFFLINE' ? props.mode : (liveSnapshot.value?.mode || props.mode || 'OFFLINE')
+)
+const effectiveStale = computed(() =>
+  props.telemetry ? props.stale : !liveSnapshot.value?.bridgeConnected
+)
+const heartbeatLabel = computed(() => {
+  if (props.telemetry) return effectiveStale.value ? '心跳超时' : '心跳正常'
+  if (liveSnapshot.value) return effectiveStale.value ? '桥离线（快照）' : '桥在线（快照）'
+  return '无遥测'
 })
 
 const formFactorLabel = computed(() =>
   FORM_FACTOR_LABELS[props.formFactor] || (props.formFactor || '未知形态')
 )
 
-const modeLabel = computed(() => MODE_LABELS[props.mode] || props.mode)
+const modeLabel = computed(() => MODE_LABELS[effectiveMode.value] || effectiveMode.value)
 
 const heartbeatClass = computed(() => {
-  if (!props.telemetry) return 'pill-neutral'
-  return props.stale ? 'pill-warning' : 'pill-ok'
+  if (!effectiveTelemetry.value && !liveSnapshot.value) return 'pill-neutral'
+  return effectiveStale.value ? 'pill-warning' : 'pill-ok'
 })
 
 const batteryText = computed(() => {
-  const raw = props.telemetry?.battery
+  const raw = effectiveTelemetry.value?.battery
   if (raw === undefined || raw === null) return '—'
   const ratio = Number(raw)
   if (!Number.isFinite(ratio)) return '—'
@@ -198,7 +223,7 @@ const batteryText = computed(() => {
 })
 
 const poseText = computed(() => {
-  const pose = props.telemetry?.pose
+  const pose = effectiveTelemetry.value?.pose
   if (!pose) return '—'
   const x = Number(pose.x)
   const y = Number(pose.y)
@@ -207,13 +232,13 @@ const poseText = computed(() => {
 })
 
 const headingText = computed(() => {
-  const theta = Number(props.telemetry?.pose?.theta)
+  const theta = Number(effectiveTelemetry.value?.pose?.theta)
   if (!Number.isFinite(theta)) return '—'
   return `${theta.toFixed(0)}°`
 })
 
 const obstacleText = computed(() => {
-  const raw = props.telemetry?.obstacleDistance
+  const raw = effectiveTelemetry.value?.obstacleDistance
   if (raw === undefined || raw === null) return '—'
   const value = Number(raw)
   if (!Number.isFinite(value)) return '—'

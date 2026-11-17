@@ -128,6 +128,14 @@
                 <span class="pill" :class="robot.enabled ? 'pill-ok' : 'pill-neutral'">
                   {{ robot.enabled ? '已启用' : '未启用' }}
                 </span>
+                <button
+                  type="button"
+                  class="robot-detail-btn"
+                  :aria-label="`查看 ${robot.name || robot.deviceKey} 详情`"
+                  @click.stop="openDetails(robot)"
+                >
+                  详情
+                </button>
               </li>
             </ul>
             <p v-if="!robotsSource.data.length" class="source-note">暂无登记的巡检机器人（管理员可通过 POST /api/robot/devices 登记）</p>
@@ -160,6 +168,18 @@
         />
       </template>
     </section>
+
+    <!-- 行内详情弹窗：台账页任意机器人行可直接打开，遥测由弹窗自拉 REST 快照兜底 -->
+    <RobotDeviceDetails
+      :open="Boolean(detailsRobot)"
+      :device-key="detailsRobot?.deviceKey || ''"
+      :form-factor="detailsRobot?.formFactor || 'CAR'"
+      mode="OFFLINE"
+      :telemetry="null"
+      :stale="true"
+      :waypoints="[]"
+      @close="detailsRobot = null"
+    />
 
     <!-- B. 视觉巡检区：本地多模态模型识别 + 纠察事件落库 -->
     <section class="section" aria-labelledby="vision-heading">
@@ -303,6 +323,7 @@ import { getInspectorEvents } from '../../api/inspector'
 import { getRobotDevices, getRobotLive } from '../../api/robot'
 import { summarizeLedger } from '../../utils/deviceRegistry'
 import RobotScene3D from '../../components/robot/RobotScene3D.vue'
+import RobotDeviceDetails from '../../components/robot/RobotDeviceDetails.vue'
 
 /* ============ 常量 ============ */
 
@@ -442,6 +463,13 @@ function stopRobotPoll() {
     window.clearInterval(robotPollTimer)
     robotPollTimer = null
   }
+}
+
+/* 行内详情：不经 3D 面板选择，直接按行打开弹窗（弹窗自拉台账/快照/任务/画面） */
+const detailsRobot = ref(null)
+
+function openDetails(robot) {
+  detailsRobot.value = robot || null
 }
 
 /* ============ 视觉巡检 ============ */
@@ -743,6 +771,30 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
+}
+
+/* 行内详情按钮：与 pill 同风格的可点击小按钮 */
+.robot-detail-btn {
+  padding: 1px 10px;
+  border: 1px solid var(--ds-color-border-strong, var(--smart-border-strong, #3a3f4a));
+  border-radius: var(--ds-radius-pill, 999px);
+  background: transparent;
+  color: var(--ds-color-muted, var(--smart-muted));
+  font-size: var(--ds-font-xs, 11px);
+  cursor: pointer;
+  transition: color var(--ds-duration-fast, 150ms) var(--ds-ease-out, ease-out),
+              border-color var(--ds-duration-fast, 150ms) var(--ds-ease-out, ease-out);
+}
+
+.robot-detail-btn:hover,
+.robot-detail-btn:focus-visible {
+  color: var(--ds-color-primary, var(--smart-primary));
+  border-color: var(--ds-color-primary, var(--smart-primary));
+}
+
+.robot-detail-btn:focus-visible {
+  outline: var(--ds-focus-ring-width, 2px) solid var(--ds-focus-ring-color, var(--smart-primary));
+  outline-offset: 2px;
 }
 
 .item-name {
