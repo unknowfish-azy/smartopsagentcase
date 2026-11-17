@@ -54,10 +54,11 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
-  BufferGeometry, BoxGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry,
-  GridHelper, Group, Line, LineBasicMaterial, Mesh, MeshBasicMaterial,
-  PerspectiveCamera, Scene, Vector3, WebGLRenderer
+  AmbientLight, AnimationMixer, BufferGeometry, BoxGeometry, CircleGeometry, Color, ConeGeometry,
+  CylinderGeometry, DirectionalLight, GridHelper, Group, Line, LineBasicMaterial, Mesh,
+  MeshBasicMaterial, PerspectiveCamera, Scene, Vector3, WebGLRenderer
 } from 'three'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { isDegraded, subscribe } from '../../visual/motionScheduler.js'
 import { isLightweightVisualMode, isReducedMotionMode } from '../../visual/visualMode.js'
 import { getRobotTasks } from '../../api/robot'
@@ -261,19 +262,93 @@ onMounted(() => {
   const routeGroup = new Group()
   scene.add(routeGroup)
 
-  /* 机器人占位本体（formFactor 变化时替换） */
+  /* 机器人占位本体（formFactor 变化时替换）；CAR 优先加载真实 GLB，失败回退占位 */
   let robot = buildPlaceholder(props.formFactor, accent)
   scene.add(robot)
 
-  replaceRobotRef = (formFactor) => {
-    scene.remove(robot)
-    robot.traverse((node) => {
+  /* GLB PBR 材质需要灯光（占位模型是 MeshBasicMaterial，不受灯光影响） */
+  scene.add(new AmbientLight(0xffffff, 1.1))
+  const sun = new DirectionalLight(0xffffff, 1.6)
+  sun.position.set(5, 8, 4)
+  scene.add(sun)
+
+  /* 真模型状态：动画 mixer + 材质清单（stale 半透明 / 障碍红警用） */
+  let mixer = null
+  let glbMaterials = []
+  let lampMats = []
+  /* 材质状态机：只在切换帧写材质 */
+  let staleApplied = false
+  let alarmApplied = false
+  const MODEL_URLS = { CAR: '/models/robot/patrol-car.glb' }
+  let glbCache = null
+
+  function loadGltf(url) {
+    if (!glbCache) {
+      glbCache = new Promise((resolve, reject) => {
+        new GLTFLoader().load(url, resolve, undefined, reject)
+      })
+    }
+    return glbCache
+  }
+
+  function disposeRobotMesh(target) {
+    target.traverse((node) => {
       node.geometry?.dispose?.()
       node.material?.dispose?.()
     })
+  }
+
+  /** 挂载 GLB 场景并接管渲染状态（调用方保证先移除旧 robot）。 */
+  function applyGltf(gltf) {
+    scene.remove(robot)
+    disposeRobotMesh(robot)
+    robot = gltf.scene
+    glbMaterials = []
+    lampMats = []
+    staleApplied = false
+    alarmApplied = false
+    robot.traverse((node) => {
+      if (!node.material) return
+      if (!glbMaterials.includes(node.material)) glbMaterials.push(node.material)
+      if (/HeadLamp/.test(node.name || '') && !lampMats.includes(node.material)) lampMats.push(node.material)
+    })
+    if (gltf.animations?.length) {
+      mixer = new AnimationMixer(robot)
+      const clip = gltf.animations.find((c) => c.name === 'drive') || gltf.animations[0]
+      mixer.clipAction(clip).play()
+    }
+    scene.add(robot)
+  }
+
+  function usePlaceholder(formFactor) {
+    scene.remove(robot)
+    disposeRobotMesh(robot)
+    mixer?.stopAllAction()
+    mixer = null
+    glbMaterials = []
+    lampMats = []
+    staleApplied = false
+    alarmApplied = false
     robot = buildPlaceholder(formFactor, accent)
     scene.add(robot)
   }
+
+  function mountRobotFor(formFactor) {
+    const url = MODEL_URLS[formFactor]
+    if (!url) { usePlaceholder(formFactor); return }
+    loadGltf(url)
+      .then((gltf) => {
+        /* 异步加载期间的 formFactor 竞态守卫：只挂载当前形态对应的模型 */
+        if (MODEL_URLS[props.formFactor] === url) applyGltf(gltf)
+      })
+      .catch(() => {
+        if (MODEL_URLS[props.formFactor] === url) usePlaceholder(formFactor) /* 模型缺失/解析失败 → 占位兜底 */
+      })
+  }
+
+  mountRobotFor(props.formFactor)
+
+  replaceRobotRef = mountRobotFor
 
   function disposeGroupChildren(group) {
     for (const child of [...group.children]) {
@@ -347,23 +422,44 @@ onMounted(() => {
       while (delta < -Math.PI) delta += Math.PI * 2
       robot.rotation.y += delta * 0.12
     }
-    /* 心跳超时 → 本体半透明；障碍过近 → 机头箭头变红（真实 obstacleDistance 驱动） */
-    const bodyOpacity = props.stale ? 0.3 : 0.92
-    robot.children.forEach((child) => {
-      if (child.material && child.material !== robot.userData.noseMat) {
-        child.material.opacity = bodyOpacity
-      }
-    })
+    /* GLB 骨骼/关键帧动画驱动（motionScheduler 的 dt 是毫秒；钳制防 tab 切回后跳帧） */
+    if (mixer) mixer.update(Math.min(dt / 1000, 0.1))
+    /* 心跳超时 → 本体半透明；障碍过近 → 车灯/机头变红（真实 obstacleDistance 驱动）
+       只在状态切换时写材质：GLB PBR 材质 transparent 默认 false，避免每帧写与常驻透明排序开销 */
     const obstacle = Number(props.telemetry?.obstacleDistance)
-    robot.userData.noseMat.color.setHex(
-      Number.isFinite(obstacle) && obstacle < 0.5 && !props.stale ? 0xe5484d : 0x5ad691
-    )
-    robot.userData.noseMat.opacity = props.stale ? 0.35 : 0.95
+    const wantAlarm = Number.isFinite(obstacle) && obstacle < 0.5 && !props.stale
+    const wantStale = props.stale
+    if (glbMaterials.length) {
+      if (wantStale !== staleApplied) {
+        staleApplied = wantStale
+        glbMaterials.forEach((m) => {
+          m.transparent = wantStale
+          m.opacity = wantStale ? 0.3 : 1
+        })
+      }
+      if (wantAlarm !== alarmApplied && lampMats.length) {
+        alarmApplied = wantAlarm
+        lampMats.forEach((m) => m.emissive?.setHex(wantAlarm ? 0xe5484d : 0x1c5a37))
+      }
+    } else {
+      const bodyOpacity = props.stale ? 0.3 : 0.92
+      robot.children.forEach((child) => {
+        if (child.material && child.material !== robot.userData.noseMat) {
+          child.material.opacity = bodyOpacity
+        }
+      })
+      robot.userData.noseMat.color.setHex(wantAlarm ? 0xe5484d : 0x5ad691)
+      robot.userData.noseMat.opacity = props.stale ? 0.35 : 0.95
+      staleApplied = props.stale
+      alarmApplied = wantAlarm
+    }
     renderer.render(scene, camera)
   })
 
   disposeScene = () => {
     unsubscribe()
+    mixer?.stopAllAction()
+    mixer = null
     ro?.disconnect()
     disposeGroupChildren(routeGroup)
     robot.traverse((node) => {
@@ -379,7 +475,11 @@ onMounted(() => {
 
   /* DEV 调试钩子：性能诊断用（生产构建为 undefined） */
   if (import.meta.env.DEV) {
-    window.__rs3d = { renderer, scene, camera, canvas: renderer.domElement, getStageVisible: () => stageVisible }
+    window.__rs3d = {
+      renderer, scene, camera, canvas: renderer.domElement,
+      getStageVisible: () => stageVisible,
+      getMixer: () => ({ present: !!mixer, time: mixer?.time ?? 0, clipCount: mixer?.clipActions?.length ?? 0 }),
+    }
   }
 })
 

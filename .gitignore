@@ -285,6 +285,9 @@ models/
 model-cache/
 checkpoints/
 
+# 前端 3D 资产（机器人 GLB）不属于 ML 模型缓存，正常入库
+!frontend/public/models/
+
 # Large vector indexes
 *.faiss
 *.index

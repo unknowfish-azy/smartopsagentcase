@@ -52,9 +52,12 @@ function tick(now) {
   for (const entry of subscribers.values()) {
     /* 门控：距上次执行不足一个完整间隔则跳过（原公式 interval - fps*0.5 会让 30fps 目标实际跑到 ~54fps） */
     if (now - entry.last < interval) continue
+    /* dt 是该订阅者两次执行的真实间隔（门控跳帧时 dt 会累积），与全局 rAF 间隔无关；
+       否则高刷屏（rAF 120/196Hz）下 30fps 订阅者拿到的 dt 只有真实间隔的一小半 */
+    const subDt = entry.last ? Math.min(now - entry.last, 100) : 16
     entry.last = now
     try {
-      entry.fn(Math.min(elapsed, 100), now)
+      entry.fn(subDt, now)
     } catch (error) {
       // 单个订阅者异常不应拖垮整条调度链。
       console.warn('[motionScheduler] subscriber failed', entry.id, error)
