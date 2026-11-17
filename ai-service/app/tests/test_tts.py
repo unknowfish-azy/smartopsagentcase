@@ -448,6 +448,9 @@ def test_piper_viseme_按韵母最长匹配_音调令牌不参与():
     assert tts_module._piper_viseme("ueɪ") == "ee"
     assert tts_module._piper_viseme("uo") == "oh"
     assert tts_module._piper_viseme("ɻ̩") == "ih"
+    # 舌尖元音（次/十）与儿化元音（二）
+    assert tts_module._piper_viseme("ɨ") == "ih"
+    assert tts_module._piper_viseme("ɚ") == "aa"
     # 纯辅音与音调令牌都不产生口型
     assert tts_module._piper_viseme("tʂ") is None
     assert tts_module._piper_viseme("tone2") is None
@@ -472,15 +475,86 @@ def test_piper_timing_entries_按音节对齐并给出真实韵母():
     ]
 
 
-def test_piper_timing_entries_音节数与汉字数不一致时回空():
-    """中英混排/数字会改变音节数：宁可回空让前端降级，也不硬凑时间戳。"""
+def test_piper_timing_entries_字母数字未被发音时只出汉字条目():
+    """ASCII 数字会被 phonemizer 丢弃：宁可为无声字符跳过，也不编造时间。"""
     timing = _piper_timing(
         ("p", 0.0, 10.0),
         ("aŋ", 10.0, 40.0),
         ("tone4", 40.0, 50.0),
+        ("tʂ", 50.0, 60.0),
+        ("an", 60.0, 90.0),
+        ("tone4", 90.0, 100.0),
+        ("tɕʰ", 100.0, 110.0),
+        ("y_vowel", 110.0, 140.0),
+        ("tone1", 140.0, 150.0),
     )
 
-    assert tts_module.piper_timing_entries("泵站A区", timing) == []
+    entries = tts_module.piper_timing_entries("泵站A区", timing)
+
+    assert [entry["text"] for entry in entries] == ["泵", "站", "区"]
+    assert [entry["offset_ms"] for entry in entries] == [0, 50, 100]
+
+
+def test_piper_timing_entries_字母数字串整串对齐():
+    """A-07 这类串音节数不固定：整串共用一段时间，不冒充逐字。"""
+    timing = _piper_timing(
+        ("f", 0.0, 10.0),
+        ("u", 10.0, 60.0),
+        ("tone2", 60.0, 80.0),
+        ("u", 80.0, 90.0),
+        ("tone4", 90.0, 110.0),
+        ("tɕʰ", 110.0, 120.0),
+        ("i", 120.0, 170.0),
+        ("tone4", 170.0, 190.0),
+        ("eɪ", 190.0, 220.0),
+        ("tone1", 220.0, 240.0),
+        ("t", 240.0, 250.0),
+        ("ɤ", 250.0, 300.0),
+        ("tone5", 300.0, 320.0),
+    )
+
+    entries = tts_module.piper_timing_entries("服务器A-07的", timing)
+
+    assert [entry["text"] for entry in entries] == ["服", "务", "器", "A-07", "的"]
+    assert entries[3] == {"text": "A-07", "offset_ms": 190, "duration_ms": 50, "viseme": "ee"}
+
+
+def test_piper_timing_entries_字母数字串按字符数分配多音节():
+    """一串字母数字对应多个音节时，整串时间段覆盖这些音节。"""
+    timing = _piper_timing(
+        ("uən", 0.0, 60.0),
+        ("tone1", 60.0, 100.0),
+        ("t", 100.0, 110.0),
+        ("u", 110.0, 150.0),
+        ("tone4", 150.0, 200.0),
+        ("l", 200.0, 210.0),
+        ("iŋ", 210.0, 260.0),
+        ("tone2", 260.0, 300.0),
+        ("tɕʰ", 300.0, 310.0),
+        ("i", 310.0, 360.0),
+        ("tone1", 360.0, 400.0),
+        ("t", 400.0, 410.0),
+        ("u", 410.0, 450.0),
+        ("tone4", 450.0, 500.0),
+    )
+
+    entries = tts_module.piper_timing_entries("温度07度", timing)
+
+    assert [entry["text"] for entry in entries] == ["温", "度", "07", "度"]
+    assert entries[2] == {"text": "07", "offset_ms": 200, "duration_ms": 200, "viseme": "ih"}
+
+
+def test_piper_timing_entries_无法判定哪串被发音时回空():
+    """两个字母数字串只分到 1 个音节：无法判断归属，回空让前端降级。"""
+    timing = _piper_timing(
+        ("kʰ", 0.0, 10.0),
+        ("an", 10.0, 90.0),
+        ("tone4", 90.0, 100.0),
+        ("eɪ", 100.0, 140.0),
+        ("tone1", 140.0, 160.0),
+    )
+
+    assert tts_module.piper_timing_entries("A看B", timing) == []
 
 
 def test_piper_timing_entries_无音调令牌时不猜音节():
@@ -488,6 +562,60 @@ def test_piper_timing_entries_无音调令牌时不猜音节():
     timing = _piper_timing(("h", 0.0, 10.0), ("ə", 10.0, 30.0), ("l", 30.0, 40.0))
 
     assert tts_module.piper_timing_entries("hello", timing) == []
+
+
+def test_read_cn_int_按十百千万亿读():
+    cases = {
+        0: "零",
+        10: "十",
+        12: "十二",
+        92: "九十二",
+        105: "一百零五",
+        1001: "一千零一",
+        10000: "一万",
+        10010: "一万零一十",
+        100000001: "一亿零一",
+    }
+
+    for value, expected in cases.items():
+        assert tts_module._read_cn_int(value) == expected
+
+
+def test_normalize_piper_numbers_覆盖告警常见数字形态():
+    """模型会丢弃 ASCII 数字：合成前必须改写成中文读法，否则数值直接漏念。"""
+    normalize = tts_module._normalize_piper_numbers
+
+    assert normalize("温度92度") == "温度九十二度"
+    assert normalize("压力0.35兆帕") == "压力零点三五兆帕"
+    assert normalize("编号07") == "编号零七"
+    assert normalize("编号1001") == "编号一千零一"
+    assert normalize("增长98%") == "增长百分之九十八"
+    assert normalize("温度-5度") == "温度负五度"
+    assert normalize("服务器A-07") == "服务器A-零七"
+    assert normalize("地址192.168.1.1") == "地址一九二点一六八点一点一"
+    # 已含中文读法的文本保持原样（幂等）
+    assert normalize("温度九十二度") == "温度九十二度"
+
+
+def test_piper_synthesize_合成前把数字改写成中文(monkeypatch):
+    """Provider 必须把改写后的文本交给模型，同时仍按原文对齐时间戳。"""
+    class _FakePiperVoice:
+        def __init__(self) -> None:
+            self.seen: list[str] = []
+
+        def synthesize_with_timing(self, text, length_scale=1.0):
+            self.seen.append(text)
+            return encode_wav([0.0] * 160, 16000), None
+
+    voice = _FakePiperVoice()
+    provider = tts_module.PiperPlusProvider()
+    monkeypatch.setattr(provider, "_ensure_voice", lambda: voice)
+
+    audio, timing = provider.synthesize_with_timing("服务器A-07温度92度", None, 1.0)
+
+    assert voice.seen == ["服务器A-零七温度九十二度"]
+    assert timing == []
+    assert audio[:4] == b"RIFF"
 
 
 def test_piper_probe_未配置模型时如实报原因(monkeypatch):

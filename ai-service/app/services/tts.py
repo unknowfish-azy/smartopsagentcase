@@ -21,7 +21,6 @@ import re
 import sys
 import threading
 import time
-import unicodedata
 import urllib.parse
 import urllib.request
 import uuid
@@ -915,6 +914,8 @@ _PIPER_VISEME_PATTERNS: tuple[tuple[str, str], ...] = (
     ("ʐ̩", "ih"),
     ("ɿ", "ih"),
     ("ʅ", "ih"),
+    ("ɨ", "ih"),
+    ("ɚ", "aa"),
     ("a", "aa"),
     ("ɑ", "aa"),
     ("ʌ", "aa"),
@@ -975,40 +976,227 @@ def _piper_syllables(phonemes: list[Any]) -> list[dict[str, Any]]:
     return syllables
 
 
-def _spoken_chars(text: str) -> list[str]:
-    """只保留真正会被读出的字符：去掉空白、标点、符号与控制字符。"""
-    return [
-        char
-        for char in str(text)
-        if unicodedata.category(char)[0] not in {"P", "Z", "S", "C"}
-    ]
+# 字母数字串内部允许出现这些连接符（A-07 / v1.2 / 10:30），整体算一个对齐单元
+_PIPER_RUN_CONNECTORS = frozenset("-_.:/#")
+
+
+def _is_piper_cjk(char: str) -> bool:
+    """汉字与假名：在中文/多语种模型里稳定对应一个音节，可逐字对齐。"""
+    code = ord(char)
+    return (
+        0x3400 <= code <= 0x4DBF
+        or 0x4E00 <= code <= 0x9FFF
+        or 0xF900 <= code <= 0xFAFF
+        or 0x3040 <= code <= 0x30FF
+    )
+
+
+def _piper_units(text: str) -> list[tuple[str, str]]:
+    """把原文切成对齐单元：汉字逐字，字母数字串整体（保留 A-07 这类连接符）。"""
+    units: list[tuple[str, str]] = []
+    buffer: list[str] = []
+
+    def flush() -> None:
+        if buffer:
+            run = "".join(buffer).rstrip("-_./:#")
+            if run:
+                units.append(("run", run))
+            buffer.clear()
+
+    for char in str(text):
+        if _is_piper_cjk(char):
+            flush()
+            units.append(("cjk", char))
+        elif char.isalnum():
+            buffer.append(char)
+        elif char in _PIPER_RUN_CONNECTORS and buffer:
+            buffer.append(char)
+        else:
+            flush()
+    flush()
+    return units
+
+
+def _allocate_run_syllables(total: int, weights: list[int]) -> list[int]:
+    """把可用音节数按字符数比例分给各字母数字串：每串至少 1 个，最大余额法收尾。"""
+    count = len(weights)
+    spare = total - count
+    weight_sum = sum(weights) or count
+    quotas = [1 + spare * weight / weight_sum for weight in weights]
+    allocated = [int(quota) for quota in quotas]
+    missing = total - sum(allocated)
+    ranked = sorted(range(count), key=lambda index: quotas[index] - allocated[index], reverse=True)
+    for index in ranked[: max(0, missing)]:
+        allocated[index] += 1
+    return allocated
+
+
+_PIPER_CN_DIGITS = "零一二三四五六七八九"
+_PIPER_CN_UNITS = ("", "十", "百", "千")
+_PIPER_CN_BIG_UNITS = ("", "万", "亿", "万亿")
+_PIPER_NUMBER_RE = re.compile(r"\d+(?:\.\d+)*")
+
+
+def _read_cn_group(group: int) -> str:
+    """读四位以内的数字（0-9999），中间连续零只补一个「零」。"""
+    text = ""
+    pending_zero = False
+    for position in range(3, -1, -1):
+        digit = group // (10**position) % 10
+        if digit == 0:
+            pending_zero = bool(text)
+            continue
+        if pending_zero:
+            text += "零"
+            pending_zero = False
+        text += _PIPER_CN_DIGITS[digit] + _PIPER_CN_UNITS[position]
+    return text
+
+
+def _read_cn_int(value: int) -> str:
+    """整数 → 中文读法：92 → 九十二、1001 → 一千零一、10000 → 一万。"""
+    if value == 0:
+        return "零"
+    groups: list[int] = []
+    while value:
+        groups.append(value % 10000)
+        value //= 10000
+    parts: list[str] = []
+    for index in range(len(groups) - 1, -1, -1):
+        group = groups[index]
+        if group == 0:
+            # 整组为零：只有低位还有非零时才补一个「零」（一万零一，而不是一万零）
+            if parts and any(groups[lower] for lower in range(index)):
+                if not parts[-1].endswith("零"):
+                    parts.append("零")
+            continue
+        prefix = "零" if parts and group < 1000 and not parts[-1].endswith("零") else ""
+        parts.append(prefix + _read_cn_group(group) + _PIPER_CN_BIG_UNITS[index])
+    text = "".join(parts)
+    return text[1:] if text.startswith("一十") else text
+
+
+def _read_cn_digits(value: str) -> str:
+    return "".join(_PIPER_CN_DIGITS[int(char)] for char in value)
+
+
+def _read_piper_number(number: str) -> str:
+    """纯数字串 → 中文读法：小数逐位、多段编号逐段按位、前导零按位。"""
+    parts = number.split(".")
+    if len(parts) > 2:
+        return "点".join(_read_cn_digits(part) for part in parts)
+    if len(parts) == 2:
+        return _read_cn_int(int(parts[0])) + "点" + _read_cn_digits(parts[1])
+    if len(number) > 1 and number.startswith("0"):
+        return _read_cn_digits(number)
+    return _read_cn_int(int(number))
+
+
+def _is_piper_run_char(char: str) -> bool:
+    return bool(char) and (char in _PIPER_RUN_CONNECTORS or (char.isascii() and char.isalnum()))
+
+
+def _normalize_piper_numbers(text: str) -> str:
+    """把 ASCII 数字改写成中文读法：模型会直接丢弃数字，不改写等于漏念。
+
+    实测 ``温度07度`` 的音频只读「温度度」。改写规则：
+    - 独立数字按数量读：``92`` → 九十二、``0.35`` → 零点三五、``1001`` → 一千零一；
+    - 前导零按位读：``07`` → 零七；多段编号逐段读：``192.168.1.1`` → 一九二点一六八点一点一；
+    - 字母数字串内逐位读：``A-07`` → A-零七；
+    - 紧跟百分号加「百分之」，前导负号读「负」。
+    """
+    source = str(text)
+    result: list[str] = []
+    cursor = 0
+    for match in _PIPER_NUMBER_RE.finditer(source):
+        start, end = match.span()
+        number = match.group(0)
+        sign = ""
+        remove_from = start
+        if start > 0 and source[start - 1] == "-":
+            before_sign = source[start - 2] if start >= 2 else ""
+            if not _is_piper_run_char(before_sign):
+                sign = "负"
+                remove_from = start - 1
+        inside_run = _is_piper_run_char(source[start - 1] if start else "") or _is_piper_run_char(
+            source[end] if end < len(source) else ""
+        )
+        if inside_run and "." not in number:
+            spoken = _read_cn_digits(number)
+        else:
+            spoken = _read_piper_number(number)
+        percent = source[end : end + 1] in {"%", "％"}
+        result.append(source[cursor:remove_from])
+        result.append(("百分之" if percent else "") + sign + spoken)
+        cursor = end + 1 if percent else end
+    result.append(source[cursor:])
+    return "".join(result)
+
+
+def _piper_timing_entry(label: str, group: list[dict[str, Any]]) -> dict[str, Any]:
+    """一组音节 → 一条前端契约条目（毫秒，口型取组内第一个真实韵母）。"""
+    start_ms = max(0, int(round(group[0]["start_ms"])))
+    end_ms = max(start_ms + 1, int(round(group[-1]["end_ms"])))
+    entry: dict[str, Any] = {
+        "text": label,
+        "offset_ms": start_ms,
+        "duration_ms": end_ms - start_ms,
+    }
+    viseme = next((item["viseme"] for item in group if item["viseme"]), None)
+    if viseme:
+        entry["viseme"] = viseme
+    return entry
 
 
 def piper_timing_entries(text: str, timing: Any) -> list[dict[str, Any]]:
-    """把 piper-plus 的音素时间戳折算成前端契约：每个汉字一条时间线。
+    """把音素时间戳折算成前端契约：中文逐字、字母数字串整体。
 
-    输出 ``[{text, offset_ms, duration_ms, viseme}]``（毫秒）：
-    ``text`` 是原文中的一个字，``viseme`` 是该字真实韵母对应的五元音。
-    音节数必须与可发音字符数**完全一致**才输出：中英混排/数字时音节数会与
-    字符数不同，此时回空数组让前端如实降级，绝不硬凑时间戳。
+    输出 ``[{text, offset_ms, duration_ms, viseme}]``（毫秒）。规则：
+    - 汉字/假名各占一个音节，拿到**逐字精确**的起止与真实韵母；
+    - 字母数字串（``A-07`` / ``Kubernetes``）的音节数不固定，整串共用一个时间段，
+      串内由前端均分——这是「整串近似」，不冒充逐字；
+    - 这套模型的 phonemizer 会直接丢弃 ASCII 数字（实测 ``07`` 不发声），
+      此时不为无声字符编造时间，只输出汉字的条目；
+    - 没有汉字锚点、音节数少于汉字数、或字母数字串的发音归属无法判定时回空数组，
+      由前端如实降级，绝不硬凑时间戳。
     """
-    phonemes = getattr(timing, "phonemes", None) or []
-    syllables = _piper_syllables(phonemes)
-    chars = _spoken_chars(text)
-    if not syllables or len(syllables) != len(chars):
+    syllables = _piper_syllables(getattr(timing, "phonemes", None) or [])
+    units = _piper_units(text)
+    cjk_units = [unit for unit in units if unit[0] == "cjk"]
+    run_units = [unit for unit in units if unit[0] == "run"]
+    if not syllables or not cjk_units or len(syllables) < len(cjk_units):
         return []
+
+    spare = len(syllables) - len(cjk_units)
+    if run_units:
+        if spare and spare < len(run_units):
+            # 有字母数字串没发声，但无法确定是哪一串：不猜
+            return []
+        run_counts = (
+            _allocate_run_syllables(
+                spare,
+                [sum(1 for char in value if char.isalnum()) or 1 for _, value in run_units],
+            )
+            if spare
+            else [0] * len(run_units)
+        )
+    elif spare:
+        return []
+
     entries: list[dict[str, Any]] = []
-    for char, syllable in zip(chars, syllables):
-        start_ms = max(0, int(round(syllable["start_ms"])))
-        end_ms = max(start_ms + 1, int(round(syllable["end_ms"])))
-        entry: dict[str, Any] = {
-            "text": char,
-            "offset_ms": start_ms,
-            "duration_ms": end_ms - start_ms,
-        }
-        if syllable["viseme"]:
-            entry["viseme"] = syllable["viseme"]
-        entries.append(entry)
+    cursor = 0
+    run_index = 0
+    for kind, value in units:
+        if kind == "cjk":
+            entries.append(_piper_timing_entry(value, syllables[cursor : cursor + 1]))
+            cursor += 1
+        else:
+            count = run_counts[run_index]
+            run_index += 1
+            if count <= 0:
+                continue
+            entries.append(_piper_timing_entry(value, syllables[cursor : cursor + count]))
+            cursor += count
     return entries
 
 
@@ -1088,8 +1276,11 @@ class PiperPlusProvider(TtsProvider):
         voice = self._ensure_voice()
         # length_scale 与语速成反比：speed=1.2 → 0.833（每个音素占更少帧）
         length_scale = 1.0 / float(speed) if speed and speed > 0 else 1.0
+        # 模型 phonemizer 会丢弃 ASCII 数字：先改写成中文读法再合成。
+        # 时间戳仍按原文对齐——数字串本来就走「整串近似」，多出来的音节由它吸收。
+        spoken = _normalize_piper_numbers(text)
         try:
-            audio, timing = voice.synthesize_with_timing(text, length_scale=length_scale)
+            audio, timing = voice.synthesize_with_timing(spoken, length_scale=length_scale)
         except Exception as exc:  # noqa: BLE001
             raise TtsSynthesisFailed(f"Piper-Plus 合成失败：{exc}") from exc
         if not audio:
