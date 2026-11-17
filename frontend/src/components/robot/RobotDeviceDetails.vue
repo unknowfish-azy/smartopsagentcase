@@ -54,6 +54,30 @@
       <p v-else class="rdd-note">
         共 {{ waypoints.length }} 个路点 · 已执行 {{ doneCount }} 个<template v-if="detourCount"> · {{ detourCount }} 个绕行点来自连续异常重规划</template>
       </p>
+
+      <!-- 实时画面：GET /api/robot/.../frame 最新关键帧；无帧/模拟画面均如实标注 -->
+      <h3>实时画面</h3>
+      <p v-if="frame.state === 'loading'" class="rdd-note">正在获取最新关键帧…</p>
+      <div v-else-if="frame.data?.imageBase64" class="rdd-frame">
+        <img :src="frameSrc" alt="机器人最新关键帧">
+        <span v-if="frame.data.simulated" class="pill pill-warning rdd-frame-tag">模拟画面</span>
+      </div>
+      <p v-else-if="frame.state === 'error'" class="rdd-error" role="alert">画面不可用：{{ frame.error }}</p>
+      <p v-else class="rdd-note">暂无关键帧。设备回传画面后此处会显示最新一帧。</p>
+      <p v-if="frame.data?.lastAnalysis?.summary" class="rdd-note">最近视觉结论：{{ frame.data.lastAnalysis.summary }}</p>
+
+      <!-- 最近任务：GET /api/robot/.../tasks 真实任务记录（事件流仅存在于控制台 WS，弹窗不伪造） -->
+      <h3>最近任务</h3>
+      <p v-if="tasks.state === 'loading'" class="rdd-note">正在加载任务记录…</p>
+      <p v-else-if="tasks.state === 'error'" class="rdd-error" role="alert">任务记录不可用：{{ tasks.error }}</p>
+      <ul v-else-if="tasks.list.length" class="rdd-tasks">
+        <li v-for="(task, index) in tasks.list" :key="task.id ?? index">
+          <span class="pill" :class="taskPillClass(task.status)">{{ task.status || '未知' }}</span>
+          <span class="rdd-task-progress">进度 {{ task.progress || 0 }}/{{ routeCount(task) }}</span>
+          <span class="rdd-task-time">{{ task.updated_at || task.created_at || '—' }}</span>
+        </li>
+      </ul>
+      <p v-else class="rdd-note">暂无巡检任务记录。</p>
     </section>
     <template #footer>
       <el-button @click="emit('close')">关闭</el-button>
@@ -65,11 +89,11 @@
 /**
  * 机器人设备详情弹窗（3D 面板配套）。
  *
- * 数据全部来自真实链路：台账信息在打开时请求 GET /api/robot/devices 并按 deviceKey 匹配；
+ * 数据全部来自真实链路：台账/关键帧/任务记录在打开时请求真实 REST 接口；
  * 遥测/路线由父级（RobotScene3D）传入，无数据即如实显示「—」，不伪造。
  */
 import { computed, ref, watch } from 'vue'
-import { getRobotDevices } from '../../api/robot'
+import { getRobotDevices, getRobotFrame, getRobotTasks } from '../../api/robot'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -100,6 +124,8 @@ const FORM_FACTOR_LABELS = {
 }
 
 const ledger = ref({ state: 'loading', device: null, error: '' })
+const frame = ref({ state: 'idle', data: null, error: '' })
+const tasks = ref({ state: 'idle', list: [], error: '' })
 
 async function loadLedger() {
   if (!props.deviceKey) {
@@ -120,8 +146,35 @@ async function loadLedger() {
   }
 }
 
+async function loadFrame() {
+  if (!props.deviceKey) return
+  frame.value = { state: 'loading', data: null, error: '' }
+  try {
+    const response = await getRobotFrame(props.deviceKey)
+    frame.value = { state: 'ok', data: response?.data || null, error: '' }
+  } catch (error) {
+    frame.value = { state: 'error', data: null, error: error?.message || '接口请求失败' }
+  }
+}
+
+async function loadTasks() {
+  if (!props.deviceKey) return
+  tasks.value = { state: 'loading', list: [], error: '' }
+  try {
+    const response = await getRobotTasks(props.deviceKey)
+    const list = Array.isArray(response?.data) ? response.data : []
+    tasks.value = { state: 'ok', list: list.slice(0, 5), error: '' }
+  } catch (error) {
+    tasks.value = { state: 'error', list: [], error: error?.message || '接口请求失败' }
+  }
+}
+
 watch(() => props.open, (isOpen) => {
-  if (isOpen) loadLedger()
+  if (isOpen) {
+    loadLedger()
+    loadFrame()
+    loadTasks()
+  }
 })
 
 const formFactorLabel = computed(() =>
@@ -169,6 +222,28 @@ const obstacleText = computed(() => {
 
 const doneCount = computed(() => props.waypoints.filter((p) => p?.done).length)
 const detourCount = computed(() => props.waypoints.filter((p) => p?.detour).length)
+
+const frameSrc = computed(() => {
+  const data = frame.value.data
+  if (!data?.imageBase64) return ''
+  return `data:${data.mime || 'image/jpeg'};base64,${data.imageBase64}`
+})
+
+function taskPillClass(status) {
+  if (status === 'RUNNING') return 'pill-ok'
+  if (status === 'PAUSED') return 'pill-warning'
+  if (status === 'FAILED') return 'pill-danger'
+  return 'pill-neutral'
+}
+
+function routeCount(task) {
+  try {
+    const route = typeof task?.route === 'string' ? JSON.parse(task.route) : task?.route
+    return Array.isArray(route) ? route.length : 0
+  } catch {
+    return 0
+  }
+}
 </script>
 
 <style scoped>
@@ -184,5 +259,32 @@ const detourCount = computed(() => props.waypoints.filter((p) => p?.detour).leng
 .pill-ok { background: var(--ds-pill-success-bg, rgba(92, 200, 133, .16)); color: var(--ds-pill-success-fg, #5cc885); }
 .pill-warning { background: var(--ds-pill-warning-bg, rgba(227, 160, 8, .16)); color: var(--ds-pill-warning-fg, #e3a008); }
 .pill-neutral { background: var(--ds-pill-neutral-bg, rgba(128, 134, 146, .16)); color: var(--smart-muted, var(--ds-color-muted)); }
+.pill-danger { background: var(--ds-pill-danger-bg, rgba(229, 72, 77, .16)); color: var(--ds-pill-danger-fg, #e5484d); }
+
+/* 实时画面缩略图 */
+.rdd-frame { position: relative; display: inline-block; }
+.rdd-frame img {
+  display: block;
+  max-width: 100%;
+  max-height: 180px;
+  border: 1px solid var(--smart-border, var(--ds-color-border));
+  border-radius: 8px;
+}
+.rdd-frame-tag { position: absolute; top: 8px; right: 8px; }
+
+/* 最近任务列表 */
+.rdd-tasks { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rdd-tasks li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 6px 10px;
+  border: 1px solid var(--smart-border, var(--ds-color-border));
+  border-radius: 6px;
+  font-size: 12px;
+}
+.rdd-task-progress { color: var(--smart-text, var(--ds-color-text)); }
+.rdd-task-time { margin-left: auto; color: var(--smart-muted, var(--ds-color-muted)); font-size: 11px; }
 @media (max-width: 500px) { .rdd-facts { grid-template-columns: 1fr; } }
 </style>
