@@ -410,6 +410,16 @@ if (-not $useJar) {
 else {
     # 默认模式：源码有更新时先 mvn package，再用 java -jar 启动（省内存、启动快）
     if (Update-BackendJar -Dir $backendDir -Jar $backendJar) {
+        # 打包前必须先停掉旧后端：mvn package 是原地覆盖同一个 jar 文件，
+        # 而运行中的 JVM 还在按需从这个文件里懒加载类。像
+        # ch.qos.logback.classic.spi.ThrowableProxy 只有在格式化异常栈时才会加载，
+        # jar 被覆盖后就可能读到已不存在的条目，表现为打印日志时抛出
+        # ClassNotFoundException（日志系统自己坏掉，异常栈完全丢失）。
+        # 停掉后端口释放，下面的 Start-Service4 会正常重启而不会"已在运行（跳过）"。
+        if (Test-Port 8080) {
+            Stop-Service4 -Name 'backend' -Port 8080 -PidFile (Join-Path $PidDir 'backend.pid')
+            Start-Sleep -Seconds 2
+        }
         Write-Step '后端源码有更新，先打 jar（mvn -DskipTests package）'
         Push-Location $backendDir
         try {

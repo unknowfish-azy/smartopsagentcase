@@ -1,0 +1,55 @@
+plugin:
+  id: smartops.robot
+  name: SmartOps Robot Plugin
+  version: 1.0.0
+  description: 巡检机器人 route 生成与任务调度插件（M3 自主态大脑）
+  type: operations
+  enabled: true
+
+permissions:
+  - resource: robot
+    actions:
+      - route_generate
+      - task_submit
+      - task_status
+      - voice_command
+      - fleet_submit
+      - fleet_status
+      - replan_route
+
+risk:
+  default: HIGH
+  operations:
+    - operation: robot.route_generate
+      risk: MEDIUM
+      approval_required: false
+    - operation: robot.task_submit
+      risk: HIGH
+      approval_required: true
+    - operation: robot.task_status
+      risk: LOW
+      approval_required: false
+    - operation: robot.voice_command
+      risk: MEDIUM
+      approval_required: false
+    - operation: robot.fleet_submit
+      risk: HIGH
+      approval_required: true
+    - operation: robot.fleet_status
+      risk: LOW
+      approval_required: false
+    - operation: robot.replan_route
+      risk: MEDIUM
+      approval_required: false
+
+skills:
+  - robot-inspection
+
+tools:
+  - robot.route_generate
+  - robot.task_submit
+  - robot.task_status
+  - robot.voice_command
+  - robot.fleet_submit
+  - robot.fleet_status
+  - robot.replan_route
