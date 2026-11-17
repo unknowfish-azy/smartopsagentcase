@@ -221,12 +221,16 @@
 
 ### 9.8 接入结果（2026-11-17）
 
-已按路线 A 把 piper-plus 接成**可选** Provider，默认不抢占现有音色：
+已按路线 A 把 piper-plus 接成**可选** Provider（不抢占默认音色，`TTS_PROVIDER=piperplus` 显式启用）：
 
-- 后端 `PiperPlusProvider`（`name="piperplus"`）：探测 `piper_plus` 模块 + 模型/config 文件；`synthesize_with_timing` 把以 `toneN` 收尾的音素组切成音节，折算成前端契约 `{text, offset_ms, duration_ms, viseme}`。音节数与可发音字符数不一致（中英混排、数字）时回空数组，由前端如实降级。
-- 配置：`TTS_PIPER_MODEL` / `TTS_PIPER_CONFIG`（.env.example 已补），安装 `pip install "piper-plus[cpu]==2.0.2"`；`_AUTO_ORDER` 末尾追加，`TTS_PROVIDER=piperplus` 可显式启用。
-- 前端：`visemeTimeline` 优先采用条目里的 `viseme`；桌宠把口型来源分三档标注——`phoneme`（音素级）/ `timeline`（词级）/ `text`（近似）。
-- 实机抽测（本机 CPU，tsukuyomi-6lang）：`设备温度过高，请立即检查冷却系统。` 15 字 → 15 条音节时间戳，音频 2.26s；口型与韵母一致（设/备 ee、度 ou、高 aa、统 ou），首个音节从 35ms 起、末音节止于 2218ms。
+- 后端 `PiperPlusProvider`（`name="piperplus"`）：探测 `piper_plus` 模块 + 模型/config 文件；`synthesize_with_timing` 把以 `toneN` 收尾的音素组切成音节，折算成前端契约 `{text, offset_ms, duration_ms, viseme}`，`length_scale = 1/speed`。
+- 对齐策略（2026-11-17 补充）：**中文逐字 + 字母数字串整体**。汉字/假名各占一个音节，拿到逐字起止与真实韵母；`A-07` / `Kubernetes` 这类串音节数不固定，整串共用一个时间段、串内由前端均分，UI 额外注明「字母数字为整串近似」；没有汉字锚点、音节数少于汉字数、或无法判定哪串被发音时回空降级。
+- 实测混合文本：`服务器 A-07 的处理器温度…` → 27 条（含 `A-07` 360ms）；`请注意，Kubernetes 集群的 Pod 重启次数异常。` → 14 条（`Kubernetes` 801ms、`Pod` 255ms），此前这两种句子会整句降级。
+- **数字规范化（重要，已修）**：模型 phonemizer 会丢弃 ASCII 数字（日志 `Missing phoneme from id map: 0/7`），实测 `温度07度` 原本只读「温度度」。现在 Provider 在合成前改写：独立数字按数量读（`92`→九十二、`0.35`→零点三五、`1001`→一千零一），前导零与多段编号按位读（`07`→零七、`192.168.1.1`→一九二点一六八点一点一），字母数字串内逐位读（`A-07`→A-零七），`98%`→百分之九十八，前导负号读「负」。时间戳仍按原文对齐，多出的音节由数字串吸收。
+  仍未覆盖：千分位（`1,024`）、日期语义（`2026-11-17` 会读成「二零二六-一一-一七」，不是「年月日」）、货币与单位换算。
+- 配置：`TTS_PIPER_MODEL` / `TTS_PIPER_CONFIG`（.env.example 已补），安装 `pip install "piper-plus[cpu]==2.0.2"`；`_AUTO_ORDER` 末尾追加。
+- 前端：`visemeTimeline` 优先采用条目里的 `viseme`；桌宠把口型来源分三档标注——`phoneme`（音素级）/ `timeline`（词级）/ `text`（近似），含字母数字串时降档说明。
+- 实机抽测（本机 CPU，22050Hz，tsukuyomi-6lang）：热态 RTF 0.04–0.05（含 HTTP 往返）；`设备温度过高，请立即检查冷却系统。` 15 字 → 15 条音节时间戳。
 - 仍未验证：中文主观听感、长句稳定性、zero-shot 音色克隆。
 
 ---
