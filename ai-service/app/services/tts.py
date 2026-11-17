@@ -178,6 +178,9 @@ class TtsProvider:
     supports_speed = False
     # 合成结果的真实媒体类型：本地模型输出 WAV，在线音源直接回 MP3，不做转码
     media_type = "audio/wav"
+    # 是否吃 TTS_VOICE_PRESETS 里的参考音频；单说话人模型（piper-plus）为 False，
+    # 否则会把不属于它的预设名（如 xiaoyu）写进 meta，前端显示的"音色"就是假的
+    supports_presets = True
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -1023,6 +1026,8 @@ class PiperPlusProvider(TtsProvider):
     # piper 用 length_scale 控制快慢（越大越慢），可如实应用调用方语速
     supports_speed = True
     media_type = "audio/wav"
+    # 单说话人固定音色：没有参考音频/音色切换，不能套用 voice presets
+    supports_presets = False
     _MODULE = "piper_plus"
 
     def __init__(self) -> None:
@@ -1225,6 +1230,8 @@ class TtsService:
             preset = next(iter(presets.values()))
 
         provider = _provider_instance(provider_name)
+        if not provider.supports_presets:
+            preset = None
         total = settings.tts_timeout_sec
         async with self._semaphore:
             try:

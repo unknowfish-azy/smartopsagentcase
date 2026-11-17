@@ -202,6 +202,28 @@ def test_synthesize_uses_voice_preset(client, auth_headers, fake_provider, monke
     assert fake_provider.calls[0]["voice"] == "sweet_girl"
 
 
+def test_single_speaker_provider_不使用音色预设(client, auth_headers, fake_provider, monkeypatch):
+    """piper-plus 这类单说话人 Provider 不套预设，否则 meta 会报出不属于它的音色名。"""
+    from app.core.config import settings
+
+    monkeypatch.setattr(fake_provider, "supports_presets", False)
+    monkeypatch.setattr(
+        settings,
+        "tts_voice_presets",
+        json.dumps({"sweet_girl": {"audio": "assets/tts/sweet.wav", "text": "参考原文"}}),
+    )
+
+    response = client.post(
+        "/api/tts/synthesize",
+        json={"text": "你好"},
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200
+    assert response.headers["x-tts-voice"] == ""
+    assert fake_provider.calls[0]["voice"] is None
+
+
 def test_single_preset_used_when_voice_omitted(client, auth_headers, fake_provider, monkeypatch):
     """只配置一条音色时自动选用：前端不必硬编码音色名（F5-TTS 也必须有参考音频）。"""
     from app.core.config import settings
