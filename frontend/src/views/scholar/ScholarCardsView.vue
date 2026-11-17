@@ -44,28 +44,55 @@
           <div class="scholar-tree__bar" role="progressbar" :aria-valuenow="viewedInRange" :aria-valuemax="deck.length">
             <span class="scholar-tree__bar-fill" :style="{ width: `${deck.length ? (viewedInRange / deck.length) * 100 : 0}%` }"></span>
           </div>
+          <p class="scholar-tree__legend">
+            前置标注只来自各课「前置知识」原文的先修课次；「顺序·上一课」为快照文档顺序，非推断的硬依赖。
+          </p>
           <div v-for="group in treeCourses" :key="group.label" class="scholar-tree__course">
             <button type="button" class="scholar-tree__course-name" :title="`切换到课程：${group.label}`" @click="jumpToCourse(group)">
               {{ group.label }}
             </button>
             <ul class="scholar-tree__docs">
-              <li v-for="doc in group.docs" :key="doc.title">
+              <li v-for="doc in group.docs" :key="doc.docId">
                 <button type="button" class="scholar-tree__doc" :aria-expanded="expandedDocs.has(doc.title)" @click="toggleDoc(doc.title)">
                   <span class="scholar-tree__doc-title">{{ doc.title }}</span>
-                  <span class="scholar-muted">{{ docViewedCount(doc) }}/{{ doc.cards.length }}</span>
+                  <span class="scholar-muted">
+                    <span v-if="depsOf(doc).length" class="scholar-tree__dep-count" :title="depSummary(doc)">前置 {{ depsOf(doc).length }}</span>
+                    {{ docViewedCount(doc) }}/{{ doc.cards.length }}
+                  </span>
                 </button>
-                <ul v-show="expandedDocs.has(doc.title)" class="scholar-tree__sections">
-                  <li v-for="card in doc.cards" :key="card.id">
+                <div v-show="expandedDocs.has(doc.title)" class="scholar-tree__branch">
+                  <div v-if="depsOf(doc).length" class="scholar-tree__deps">
+                    <span class="scholar-tree__deps-label">依赖</span>
                     <button
+                      v-for="dep in depsOf(doc)"
+                      :key="`${dep.kind}-${dep.label}`"
                       type="button"
-                      class="scholar-tree__section"
-                      :class="{ 'is-viewed': viewedCards.has(card.id) }"
-                      @click="jumpToCard(card.id, doc.title)"
+                      class="scholar-tree__dep"
+                      :class="[`is-${dep.kind}`, { 'is-missing': !dep.docTitle }]"
+                      :disabled="!dep.docTitle"
+                      :title="dep.docTitle ? `跳转到 ${dep.docTitle}` : '原文提到的课次不在当前快照中'"
+                      @click="jumpToDoc(dep.docTitle)"
                     >
-                      {{ card.front }}
+                      {{ dep.label }}<span v-if="dep.kind === 'suggested'" class="scholar-tree__dep-note">·建议</span><span v-if="!dep.docTitle" class="scholar-tree__dep-note">·未收录</span>
                     </button>
-                  </li>
-                </ul>
+                  </div>
+                  <p v-else-if="declaredNoteOf(doc)" class="scholar-tree__deps-empty">
+                    原文前置（未提课次）：{{ declaredNoteOf(doc) }}
+                  </p>
+                  <p v-else class="scholar-tree__deps-empty">原文未声明前置知识</p>
+                  <ul class="scholar-tree__sections">
+                    <li v-for="card in doc.cards" :key="card.id">
+                      <button
+                        type="button"
+                        class="scholar-tree__section"
+                        :class="{ 'is-viewed': viewedCards.has(card.id) }"
+                        @click="jumpToCard(card.id, doc.title)"
+                      >
+                        {{ card.front }}
+                      </button>
+                    </li>
+                  </ul>
+                </div>
               </li>
             </ul>
           </div>
@@ -109,15 +136,17 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import snapshot from '../atlas/atlasDistilled.json'
-import { buildDeck } from '../../domain/scholar/scholarEngine.js'
+import { buildDeck, buildDependencyMap, buildDocCards } from '../../domain/scholar/scholarEngine.js'
 
 const courseId = ref('')
 const index = ref(0)
 const flipped = ref(false)
 const flippedCount = ref(0)
 const cardZone = ref(null)
+/* 组卷上限默认 60；仅在跳转到更靠后的依赖目标时按需放大，不改变默认观感 */
+const deckLimit = ref(60)
 
-const deck = computed(() => buildDeck(snapshot, { courseId: courseId.value || null, limit: 60 }))
+const deck = computed(() => buildDeck(snapshot, { courseId: courseId.value || null, limit: deckLimit.value }))
 const current = computed(() => deck.value[index.value] ?? deck.value[0])
 
 const deckCourses = computed(() => snapshot.courses
@@ -167,17 +196,16 @@ function markViewed(cardId) {
   } catch { /* 隐私模式等 localStorage 不可用时仅本次会话生效 */ }
 }
 
-/* 树仅渲染当前 deck 范围（与卡片组严格同步，定位永不落空） */
-const treeDocs = computed(() => {
-  const docs = new Map()
-  for (const card of deck.value) {
-    if (!docs.has(card.source)) {
-      docs.set(card.source, { title: card.source, courseId: card.courseId, cards: [] })
-    }
-    docs.get(card.source).cards.push({ id: card.id, front: card.front })
-  }
-  return [...docs.values()]
-})
+/* 树渲染当前课程的全量文档（不随 60 张组卷上限截断），过滤规则与组卷同源 */
+const treeDocs = computed(() => snapshot.documents
+  .filter(doc => !courseId.value || doc.courseId === courseId.value)
+  .map(doc => ({
+    docId: doc.id,
+    title: doc.title,
+    courseId: doc.courseId,
+    cards: buildDocCards(doc).map(card => ({ id: card.id, front: card.front }))
+  }))
+  .filter(doc => doc.cards.length > 0))
 
 const treeCourses = computed(() => {
   const groups = new Map()
@@ -190,10 +218,27 @@ const treeCourses = computed(() => {
   return [...groups.values()]
 })
 
+/* 依赖表由原文抽取，快照静态故只构建一次 */
+const dependencyMap = buildDependencyMap(snapshot)
+
 const viewedInRange = computed(() => deck.value.filter(card => viewedCards.value.has(card.id)).length)
 
 function docViewedCount(doc) {
   return doc.cards.filter(card => viewedCards.value.has(card.id)).length
+}
+
+function depsOf(doc) {
+  return dependencyMap.get(doc.docId)?.deps || []
+}
+
+/* 原文写了前置知识但没提课次时，展示原文首句，而不是断言「未声明」 */
+function declaredNoteOf(doc) {
+  const entry = dependencyMap.get(doc.docId)
+  return entry?.declared && !entry.deps.length ? entry.excerpt : ''
+}
+
+function depSummary(doc) {
+  return depsOf(doc).map(dep => `${dep.label}${dep.kind === 'suggested' ? '（建议）' : ''}`).join('、')
 }
 
 /* 当前卡所在文档自动展开（其余保持用户手动状态），对齐「默认折叠仅当前域展开」惯例 */
@@ -221,6 +266,25 @@ function jumpToCard(cardId, docTitle) {
   flipped.value = false
   expandedDocs.value = new Set([...expandedDocs.value, docTitle])
   nextTick(() => cardZone.value?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+}
+
+/* 跳到依赖目标文档：必要时切课程并放大组卷上限，确保目标卡确实在组内 */
+function jumpToDoc(docTitle) {
+  if (!docTitle) return
+  const target = snapshot.documents.find(doc => doc.title === docTitle)
+  if (!target) return
+  const targetIndex = buildDeck(snapshot, { courseId: target.courseId, limit: Number.MAX_SAFE_INTEGER })
+    .findIndex(card => card.source === target.title)
+  if (targetIndex < 0) return
+  if (deckLimit.value < targetIndex + 1) deckLimit.value = targetIndex + 1
+  expandedDocs.value = new Set([...expandedDocs.value, target.title])
+  /* 切课程会经 watch 归零索引，故在渲染更新后再定位 */
+  if (courseId.value !== target.courseId) courseId.value = target.courseId
+  nextTick(() => {
+    index.value = targetIndex
+    flipped.value = false
+    cardZone.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
 }
 </script>
 
@@ -319,6 +383,46 @@ function jumpToCard(cardId, docTitle) {
 .scholar-tree__section:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 1px; }
 .scholar-tree__section.is-viewed { color: var(--smart-primary-strong, #2563eb); }
 .scholar-tree__section.is-viewed::before { content: '● '; font-size: 9px; vertical-align: 1px; }
+
+/* 依赖标注：required 实线 / suggested 虚线 / order 灰底 / missing 斜体灰 */
+.scholar-tree__legend { margin: 0; font-size: 11.5px; line-height: 1.6; color: var(--smart-muted, #6b7280); }
+.scholar-tree__branch { display: grid; gap: 4px; }
+.scholar-tree__deps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 2px 0 4px 4px; }
+.scholar-tree__deps-label { font-size: 11px; color: var(--smart-muted, #6b7280); }
+.scholar-tree__dep {
+  padding: 1px 8px;
+  border: 1px solid var(--smart-primary-strong, #2563eb);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, .08);
+  color: var(--smart-primary-strong, #2563eb);
+  font-size: 11px;
+  cursor: pointer;
+}
+.scholar-tree__dep:hover:not(:disabled) { background: rgba(37, 99, 235, .16); }
+.scholar-tree__dep:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 2px; }
+.scholar-tree__dep.is-suggested { border-style: dashed; background: none; }
+.scholar-tree__dep.is-order {
+  border-color: var(--smart-border, #e5e7eb);
+  background: rgba(107, 114, 128, .08);
+  color: var(--smart-muted, #6b7280);
+}
+.scholar-tree__dep.is-missing {
+  border-style: dashed;
+  border-color: var(--smart-border, #e5e7eb);
+  background: none;
+  color: var(--smart-muted, #6b7280);
+  cursor: not-allowed;
+}
+.scholar-tree__dep-note { opacity: .8; }
+.scholar-tree__dep-count {
+  margin-right: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, .12);
+  color: var(--smart-primary-strong, #2563eb);
+  font-size: 10.5px;
+}
+.scholar-tree__deps-empty { margin: 0 0 2px 4px; font-size: 11px; color: var(--smart-muted, #6b7280); }
 
 /* 翻转卡：3D 翻转；reduced-motion 下退化为直接切换（无 transition） */
 .scholar-card-zone { display: grid; place-items: center; min-height: 340px; }

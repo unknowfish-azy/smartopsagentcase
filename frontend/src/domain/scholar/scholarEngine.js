@@ -94,30 +94,88 @@ export function searchDocuments(snapshot, query, { limit = 6, courseId = null } 
   return { tokens, results: results.slice(0, limit) }
 }
 
-/** 资料卡组卷：章节有正文的才成卡，正反两面都来自快照原文。 */
+/** 单篇文档成卡：章节有正文的才成卡，正反两面都来自快照原文。组卷与知识树共用。 */
+export function buildDocCards(doc) {
+  const cards = []
+  for (const section of doc.sections) {
+    if (!section.excerpt || section.excerpt.length < 12) continue
+    if (section.level === 1) continue
+    cards.push({
+      id: `${doc.id}:${section.text}`,
+      front: section.text,
+      source: doc.title,
+      courseId: doc.courseId,
+      back: {
+        excerpt: section.excerpt,
+        docTitle: doc.title,
+        path: doc.path,
+        commands: doc.commands.slice(0, 3).map(item => item.cmd)
+      }
+    })
+  }
+  return cards
+}
+
+/** 资料卡组卷：按快照文档顺序取前 limit 张卡。 */
 export function buildDeck(snapshot, { courseId = null, limit = 48 } = {}) {
   const cards = []
   for (const doc of snapshot.documents) {
     if (courseId && doc.courseId !== courseId) continue
-    for (const section of doc.sections) {
-      if (!section.excerpt || section.excerpt.length < 12) continue
-      if (section.level === 1) continue
-      cards.push({
-        id: `${doc.id}:${section.text}`,
-        front: section.text,
-        source: doc.title,
-        courseId: doc.courseId,
-        back: {
-          excerpt: section.excerpt,
-          docTitle: doc.title,
-          path: doc.path,
-          commands: doc.commands.slice(0, 3).map(item => item.cmd)
-        }
-      })
+    for (const card of buildDocCards(doc)) {
+      cards.push(card)
       if (cards.length >= limit) return cards
     }
   }
   return cards
+}
+
+/**
+ * 章节依赖：只从原文真实声明与快照顺序中抽取，不做语义推断。
+ * - 「已完成第 N 课」/「第 N 课」→ required（原文把它列为前置）
+ * - 「建议先完成第 N 课」→ suggested（原文措辞是建议）
+ * - 同课程上一篇 → order（快照文档顺序，结构性顺序而非硬依赖）
+ * 目标课次不在快照里时 docTitle 为 null，由界面如实标「未收录」。
+ * 返回 Map<docId, { deps, declared, excerpt }>：declared=true 表示原文写了「前置知识」节，
+ * excerpt 是该节原文首句（未提课次时界面展示原文，不擅自说「未声明」）。
+ */
+export function buildDependencyMap(snapshot) {
+  const lessonDocs = new Map()
+  for (const doc of snapshot.documents) {
+    const matched = /第\s*(\d+)\s*课/.exec(doc.title)
+    if (matched && !lessonDocs.has(Number(matched[1]))) lessonDocs.set(Number(matched[1]), doc)
+  }
+
+  const map = new Map()
+  const prevInCourse = new Map()
+  for (const doc of snapshot.documents) {
+    const deps = []
+    const prereq = doc.sections.find(section => section.text === '前置知识')
+    if (prereq?.excerpt) {
+      const seen = new Set()
+      const pattern = /建议先完成第\s*(\d+)\s*课|已完成第\s*(\d+)\s*课|第\s*(\d+)\s*课/g
+      for (const matched of prereq.excerpt.matchAll(pattern)) {
+        const lesson = Number(matched[1] || matched[2] || matched[3])
+        const kind = matched[1] ? 'suggested' : 'required'
+        const target = lessonDocs.get(lesson)
+        const key = `${kind}:${lesson}`
+        if (seen.has(key) || target?.id === doc.id) continue
+        seen.add(key)
+        deps.push({ kind, label: `第 ${lesson} 课`, docTitle: target?.title || null })
+      }
+    }
+    const prev = prevInCourse.get(doc.courseId)
+    if (prev) deps.push({ kind: 'order', label: '顺序·上一课', docTitle: prev.title })
+    prevInCourse.set(doc.courseId, doc)
+
+    if (deps.length || prereq?.excerpt) {
+      map.set(doc.id, {
+        deps,
+        declared: Boolean(prereq?.excerpt),
+        excerpt: prereq?.excerpt ? prereq.excerpt.split(/[。；]/)[0].trim() : ''
+      })
+    }
+  }
+  return map
 }
 
 /**
