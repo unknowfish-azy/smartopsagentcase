@@ -14,9 +14,9 @@
 
 import {
   AdditiveBlending, BoxGeometry, CircleGeometry, CylinderGeometry, DoubleSide, Group, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, RingGeometry, SphereGeometry, TorusGeometry
+  MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, RingGeometry, SphereGeometry, TorusGeometry
 } from 'three'
-import { beaconPulse, resolveEffectConfig, scanRing } from './effects.js'
+import { BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, scanRing } from './effects.js'
 
 const HIP_Y = 0.53
 const THIGH_LEN = 0.24
@@ -96,6 +96,19 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
   beacon.position.set(0.045, 0.05, 0.045)
   head.add(beacon)
 
+  /* 状态灯外发光光晕 + 局部点光，让呼吸/闪烁在缩略视角下也清晰 */
+  const glowMat = new MeshBasicMaterial({
+    color: 0x5ad691, transparent: true, opacity: 0.16, depthWrite: false,
+    side: DoubleSide, blending: AdditiveBlending
+  })
+  const glow = new Mesh(new SphereGeometry(0.028, 16, 12), glowMat)
+  glow.position.copy(beacon.position)
+  head.add(glow)
+
+  const beaconLight = new PointLight(0x5ad691, 0, 0.9, 2)
+  beaconLight.position.copy(beacon.position)
+  head.add(beaconLight)
+
   /* 头顶 LiDAR：半球罩 + 扫描环 + 旋转激光楔形（与四足同款扫描语言） */
   const lidar = new Group()
   lidar.position.set(-0.02, 0.072, 0)
@@ -110,13 +123,34 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
   lidar.add(lidarRing)
 
   const sweepMat = new MeshBasicMaterial({
-    color: accentHex, transparent: true, opacity: 0.24, depthWrite: false,
+    color: accentHex, transparent: true, opacity: 0.3, depthWrite: false,
     side: DoubleSide, blending: AdditiveBlending
   })
-  const sweep = new Mesh(new CircleGeometry(0.22, 20, -Math.PI / 8, Math.PI / 4), sweepMat)
+  const sweep = new Mesh(new CircleGeometry(0.26, 24, -Math.PI / 7, Math.PI * 2 / 7), sweepMat)
   sweep.rotation.x = -Math.PI / 2
   sweep.position.y = 0.005
   lidar.add(sweep)
+
+  /* 拖尾扇面：滞后于主扇面，形成「扫过」的残影 */
+  const trailMat = new MeshBasicMaterial({
+    color: accentHex, transparent: true, opacity: 0.12, depthWrite: false,
+    side: DoubleSide, blending: AdditiveBlending
+  })
+  const trail = new Mesh(new CircleGeometry(0.26, 24, -Math.PI / 7 - 0.62, Math.PI * 2 / 7), trailMat)
+  trail.rotation.x = -Math.PI / 2
+  trail.position.y = 0.004
+  lidar.add(trail)
+
+  /* 激光线：从 LiDAR 前端水平射出的细长光束，跟随扫描旋转 */
+  const beamGeo = new PlaneGeometry(0.5, 0.009)
+  beamGeo.rotateX(-Math.PI / 2)
+  beamGeo.translate(0.26, 0.007, 0)
+  const beamMat = new MeshBasicMaterial({
+    color: accentHex, transparent: true, opacity: 0.46, depthWrite: false,
+    side: DoubleSide, blending: AdditiveBlending
+  })
+  const beam = new Mesh(beamGeo, beamMat)
+  lidar.add(beam)
 
   /* ---------- 手臂 ---------- */
   const shoulderGeo = new SphereGeometry(0.042, 12, 10)
@@ -215,9 +249,18 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
   scanRingMesh.position.y = 0.006
   group.add(scanRingMesh)
 
+  /* 错峰副环：与主环相差半个周期，形成连续扩散的雷达波 */
+  const scanEchoMat = new MeshBasicMaterial({
+    color: accentHex, transparent: true, opacity: 0.18, depthWrite: false,
+    side: DoubleSide, blending: AdditiveBlending
+  })
+  const scanEchoMesh = new Mesh(scanRingGeo, scanEchoMat)
+  scanEchoMesh.position.y = 0.007
+  group.add(scanEchoMesh)
+
   /* ---------- 运行时 ---------- */
   let staleApplied = false
-  let alarmApplied = false
+  let beaconStatus = { key: 'idle', ...BEACON_STATUS.idle }
   let lidarSpin = 0
   let elapsed = 0
   const state = {
@@ -257,19 +300,29 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
     }
 
     elapsed += dt
-    /* LiDAR 扫描：常态匀速，告警加速 */
-    lidarSpin += dt * (alarmApplied ? fx.lidarAlarmSpeed : fx.lidarSpeed)
+    /* LiDAR 扫描：常态匀速，告警态加速 */
+    lidarSpin += dt * (beaconStatus.source === 'alarm' ? fx.lidarAlarmSpeed : fx.lidarSpeed)
     lidar.rotation.y = lidarSpin
-    /* 状态灯呼吸 / 告警闪烁；心跳超时压暗 */
+    /* 状态灯：颜色随业务状态，节奏 = 对应基准频率 × 状态倍率；心跳超时压暗 */
     const pulse = beaconPulse(elapsed, {
-      alarm: alarmApplied,
       stale: staleApplied,
-      idleHz: fx.beaconIdleHz,
-      alarmHz: fx.beaconAlarmHz
+      hz: (beaconStatus.source === 'alarm' ? fx.beaconAlarmHz : fx.beaconIdleHz) * beaconStatus.factor,
+      intensity: beaconStatus.intensity,
+      scaleAmp: beaconStatus.scaleAmp
     })
     beaconMat.emissiveIntensity = pulse.intensity
     beacon.scale.setScalar(pulse.scale)
-    /* 地面扫描环扩散淡出 */
+    /* 外发光光晕 + 局部点光：把呼吸亮度放大成可见光圈 */
+    const glowState = beaconGlow(pulse)
+    glowMat.opacity = glowState.opacity
+    glow.scale.setScalar(glowState.scale)
+    beaconLight.intensity = pulse.intensity * 0.55
+    /* 扇面 / 拖尾 / 光束亮度随扫描轻微呼吸 */
+    const sweepWave = 0.5 + 0.5 * Math.sin(elapsed * 4)
+    sweepMat.opacity = 0.24 + 0.16 * sweepWave
+    trailMat.opacity = 0.08 + 0.06 * sweepWave
+    beamMat.opacity = 0.36 + 0.24 * sweepWave
+    /* 地面扫描环：主环 + 错峰副环扩散淡出 */
     const wave = scanRing(elapsed, {
       stale: staleApplied,
       period: fx.scanPeriod,
@@ -278,6 +331,15 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
     })
     scanRingMesh.scale.setScalar(wave.scale)
     scanRingMat.opacity = wave.opacity
+    const echo = scanRing(elapsed, {
+      stale: staleApplied,
+      period: fx.scanPeriod,
+      maxOpacity: fx.ringMaxOpacity,
+      staleOpacity: fx.ringStaleOpacity,
+      phase: 0.5
+    })
+    scanEchoMesh.scale.setScalar(echo.scale)
+    scanEchoMat.opacity = echo.opacity * 0.6
   }
 
   function setStale(stale) {
@@ -286,11 +348,15 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
     materials.forEach((m) => { m.opacity = stale ? 0.3 : 1 })
   }
 
-  function setAlarm(alarm) {
-    if (alarm === alarmApplied) return
-    alarmApplied = alarm
-    beaconMat.color.setHex(alarm ? 0xe5484d : 0x5ad691)
-    beaconMat.emissive.setHex(alarm ? 0x7a1418 : 0x1c5a37)
+  /** 由真实遥测/模式更新状态灯颜色：离线灰、故障红、障碍/低电琥珀、自主蓝、人工青、常态绿。 */
+  function setBeaconStatus(input) {
+    const next = resolveBeaconStatus(input)
+    if (next.key === beaconStatus.key) return
+    beaconStatus = next
+    beaconMat.color.setHex(next.color)
+    beaconMat.emissive.setHex(next.emissive)
+    glowMat.color.setHex(next.color)
+    beaconLight.color.setHex(next.color)
   }
 
   /** 运行时热更新动效参数（调节面板拖动滑杆时无需重建 rig）。 */
@@ -305,5 +371,5 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
     })
   }
 
-  return { kind: 'humanoid', group, materials, beaconMat, update, setStale, setAlarm, setEffects, dispose }
+  return { kind: 'humanoid', group, materials, beaconMat, update, setStale, setBeaconStatus, setEffects, dispose }
 }

@@ -58,8 +58,8 @@ const open = ref(true)
 
 /** 滑杆元信息：范围与步长按「有效但不极端」的观感区间取；顺序决定双列排布的配对。 */
 const FIELDS = [
-  { key: 'beaconIdleHz', label: '状态灯呼吸', unit: 'Hz', min: 0, max: 3, step: 0.1, decimals: 1, hint: '常态下状态灯的呼吸频率' },
-  { key: 'beaconAlarmHz', label: '告警闪烁', unit: 'Hz', min: 0.5, max: 8, step: 0.5, decimals: 1, hint: '障碍过近时的闪烁频率' },
+  { key: 'beaconIdleHz', label: '状态灯呼吸', unit: 'Hz', min: 0, max: 3, step: 0.1, decimals: 1, hint: '常态 / 自主 / 人工态的呼吸基准频率，各状态按倍率派生' },
+  { key: 'beaconAlarmHz', label: '告警闪烁', unit: 'Hz', min: 0.5, max: 8, step: 0.5, decimals: 1, hint: '警示（琥珀）取 0.5×、急停/故障（红）取 1× 作为闪烁频率' },
   { key: 'lidarSpeed', label: 'LiDAR 转速', unit: 'rad/s', min: 0, max: 12, step: 0.5, decimals: 1, hint: '常态下 LiDAR 扫描扇面的旋转速度' },
   { key: 'lidarAlarmSpeed', label: '告警转速', unit: 'rad/s', min: 0, max: 20, step: 0.5, decimals: 1, hint: '告警态下 LiDAR 的旋转速度' },
   { key: 'ringMaxOpacity', label: '扫描环亮度', unit: '', min: 0, max: 1, step: 0.02, decimals: 2, hint: '扫描环刚出现时的不透明度' },

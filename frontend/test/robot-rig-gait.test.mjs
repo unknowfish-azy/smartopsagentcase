@@ -19,7 +19,7 @@ import {
 } from '../src/components/robot/rigs/gait.js'
 import { buildQuadrupedRig } from '../src/components/robot/rigs/quadrupedRig.js'
 import { buildHumanoidRig } from '../src/components/robot/rigs/humanoidRig.js'
-import { beaconPulse, resolveEffectConfig, scanRing, DEFAULT_EFFECT_CONFIG } from '../src/components/robot/rigs/effects.js'
+import { BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, scanRing, DEFAULT_EFFECT_CONFIG } from '../src/components/robot/rigs/effects.js'
 
 test('resolveGait：低速归为站立，显式 STAND 优先，其余落到 TROT/WALK', () => {
   assert.equal(resolveGait('TROT', 0), 'STAND')
@@ -118,7 +118,7 @@ test('quadrupedRig：构建出 4 条腿关节，update 可反复调用不抛错'
   assert.ok(Number.isFinite(rig.group.position.x))
   rig.setStale(true)
   rig.setStale(false)
-  rig.setAlarm(true)
+  rig.setBeaconStatus({ mode: 'AUTONOMOUS' })
   assert.equal(rig.materials[0].opacity, 1)
   rig.dispose()
 })
@@ -129,7 +129,8 @@ test('humanoidRig：构建与动画更新可用', () => {
   const pose = humanoidPose({ speed: 0.4, t: 0.2 })
   for (let i = 0; i < 6; i += 1) rig.update({ dt: 0.016, pose })
   assert.ok(rig.group.children.length > 0)
-  rig.setAlarm(true)
+  rig.setBeaconStatus({ mode: 'HUMAN_CONTROL' })
+  assert.equal(rig.beaconMat.color.getHex(), 0x57c8d8)
   rig.dispose()
 })
 
@@ -167,7 +168,7 @@ test('scanRing：半径单调外扩、透明度递减，超时更淡', () => {
   assert.ok(scanRing(-1).progress >= 0 && scanRing(-1).progress < 1, '负时间仍然落在 0→1 区间')
 })
 
-test('rig 驱动状态灯与扫描环：状态切换会改变亮度，扫描环存在于场景', () => {
+test('rig 状态灯接入业务状态：颜色与节奏随真实模式切换', () => {
   const rig = buildQuadrupedRig({ accentHex: 0x5b8cff })
   const pose = quadrupedPose({ speed: 0.25, t: 0.2 })
   rig.update({ dt: 0.1, pose })
@@ -177,17 +178,56 @@ test('rig 驱动状态灯与扫描环：状态切换会改变亮度，扫描环�
   assert.ok(Number.isFinite(first) && Number.isFinite(later))
   assert.ok(Math.abs(later - first) > 1e-6, '状态灯应随呼吸动画持续变化')
 
-  rig.setAlarm(true)
+  /* 自主巡检：蓝色呼吸，节奏 = 常态频率 × 1.6 */
+  rig.setBeaconStatus({ mode: 'AUTONOMOUS', battery: 0.8 })
+  assert.equal(rig.beaconMat.color.getHex(), 0x5b8cff)
   rig.update({ dt: 0.02, pose })
-  /* 累计 0.1 + 8×0.05 + 0.02 = 0.52s，亮度应等于告警曲线在该时刻的取值 */
-  assert.ok(Math.abs(rig.beaconMat.emissiveIntensity - beaconPulse(0.52, { alarm: true }).intensity) < 1e-9)
-  assert.ok(rig.beaconMat.emissiveIntensity >= 1.2, '告警态亮度下限高于常态')
+  const elapsed = 0.1 + 8 * 0.05 + 0.02
+  const expected = beaconPulse(elapsed, {
+    hz: DEFAULT_EFFECT_CONFIG.beaconIdleHz * BEACON_STATUS.running.factor,
+    intensity: BEACON_STATUS.running.intensity,
+    scaleAmp: BEACON_STATUS.running.scaleAmp
+  })
+  assert.ok(Math.abs(rig.beaconMat.emissiveIntensity - expected.intensity) < 1e-9)
+
+  /* 急停：红色快闪，且 LiDAR 切到告警转速 */
+  rig.setBeaconStatus({ mode: 'E_STOP' })
+  assert.equal(rig.beaconMat.color.getHex(), 0xe5484d)
+  let lidarGroup = null
+  rig.group.traverse((node) => { if (node.geometry?.type === 'TorusGeometry') lidarGroup = node.parent })
+  const spinBefore = lidarGroup.rotation.y
+  rig.update({ dt: 0.5, pose })
+  assert.ok(Math.abs(lidarGroup.rotation.y - spinBefore - 0.5 * DEFAULT_EFFECT_CONFIG.lidarAlarmSpeed) < 1e-9)
+
+  /* 心跳中断：灰色离线 */
+  rig.setBeaconStatus({ stale: true })
+  assert.equal(rig.beaconMat.color.getHex(), 0x8a8f98)
 
   let ringCount = 0
   rig.group.traverse((node) => { if (node.geometry?.type === 'RingGeometry') ringCount += 1 })
-  assert.equal(ringCount, 1)
-  assert.equal(rig.beaconMat.color.getHex(), 0xe5484d, '告警时状态灯转红')
+  assert.equal(ringCount, 2, '主环 + 错峰副环')
+
+  /* 状态灯还应驱动外发光与局部点光 */
+  let lightIntensity = 0
+  rig.group.traverse((node) => { if (node.type === 'PointLight') lightIntensity = node.intensity })
+  assert.ok(lightIntensity > 0, '状态灯应点亮局部点光')
   rig.dispose()
+})
+
+test('resolveBeaconStatus：离线 > 急停 > 障碍 > 低电 > 运行模式', () => {
+  assert.equal(resolveBeaconStatus({ stale: true, mode: 'E_STOP' }).key, 'offline')
+  assert.equal(resolveBeaconStatus({ mode: 'OFFLINE' }).key, 'offline')
+  assert.equal(resolveBeaconStatus({ mode: 'E_STOP', obstacleDistance: 0.1 }).key, 'fault')
+  assert.equal(resolveBeaconStatus({ mode: 'AUTONOMOUS', obstacleDistance: 0.3, battery: 0.05 }).key, 'warn')
+  assert.equal(resolveBeaconStatus({ mode: 'AUTONOMOUS', battery: 0.5 }).key, 'running')
+  assert.equal(resolveBeaconStatus({ mode: 'HUMAN_CONTROL' }).key, 'manual')
+  assert.equal(resolveBeaconStatus({ mode: 'IDLE' }).key, 'idle')
+  /* 电量兼容 0~1 比例与 0~100 百分数 */
+  assert.equal(resolveBeaconStatus({ battery: 15 }).key, 'warn')
+  assert.equal(resolveBeaconStatus({ battery: 60 }).key, 'idle')
+  /* 阈值边界：0.5m 不算过近，缺失/非法遥测不误报 */
+  assert.equal(resolveBeaconStatus({ obstacleDistance: 0.5 }).key, 'idle')
+  assert.equal(resolveBeaconStatus({ obstacleDistance: null, battery: null }).key, 'idle')
 })
 
 test('humanoidRig 同样带 LiDAR 扫描与状态灯', () => {
@@ -199,7 +239,7 @@ test('humanoidRig 同样带 LiDAR 扫描与状态灯', () => {
   rig.group.traverse((node) => {
     if (node.geometry?.type === 'RingGeometry') ringCount += 1
   })
-  assert.equal(ringCount, 1)
+  assert.equal(ringCount, 2, '主环 + 错峰副环')
   rig.dispose()
 })
 
@@ -228,6 +268,18 @@ test('可配置项生效：LiDAR 转速与扫描周期按覆盖值运行', () =>
 
   assert.ok(Math.abs(scanRing(0.6, { period: 1.2 }).progress - 0.5) < 1e-9)
   assert.ok(Math.abs(scanRing(0, { maxOpacity: 0.5 }).opacity - 0.5) < 1e-9)
+  /* 相位偏移：副环落后半个周期 */
+  assert.ok(Math.abs(scanRing(0, { phase: 0.5 }).progress - 0.5) < 1e-9)
+  assert.ok(scanRing(0.1, { phase: 0.5 }).scale > scanRing(0.1).scale)
+})
+
+test('beaconGlow：亮度越高光晕越大越亮，并钳制上限', () => {
+  const dim = beaconGlow({ intensity: 0.5, scale: 1.02 })
+  const bright = beaconGlow({ intensity: 3, scale: 1.15 })
+  assert.ok(bright.opacity > dim.opacity)
+  assert.ok(bright.scale > dim.scale)
+  assert.ok(beaconGlow({ intensity: 10, scale: 2 }).opacity <= 0.46)
+  assert.equal(beaconGlow().scale, 1, '缺省脉冲不放大光晕')
 })
 
 test('setEffects：运行中热更新参数，无需重建 rig', () => {

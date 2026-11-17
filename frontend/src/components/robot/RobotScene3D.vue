@@ -650,7 +650,13 @@ onMounted(() => {
         : humanoidPose({ speed: speedEma, t: gaitClock })
       rig.update({ dt: dtSec, pose })
       rig.setStale(wantStale)
-      rig.setAlarm(wantAlarm)
+      /* 状态灯由真实业务状态驱动：心跳、急停/故障、障碍距离、电量、运行模式 */
+      rig.setBeaconStatus({
+        mode: props.mode,
+        battery: props.telemetry?.battery,
+        obstacleDistance: props.telemetry?.obstacleDistance,
+        stale: wantStale
+      })
     } else if (glbMaterials.length) {
       if (wantStale !== staleApplied) {
         staleApplied = wantStale

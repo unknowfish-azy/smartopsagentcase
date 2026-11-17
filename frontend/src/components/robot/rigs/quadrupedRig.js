@@ -13,9 +13,9 @@
 
 import {
   AdditiveBlending, BoxGeometry, CircleGeometry, CylinderGeometry, DoubleSide, Group, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, RingGeometry, SphereGeometry, TorusGeometry
+  MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, RingGeometry, SphereGeometry, TorusGeometry
 } from 'three'
-import { beaconPulse, resolveEffectConfig, scanRing } from './effects.js'
+import { BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, scanRing } from './effects.js'
 
 /* 机身尺寸（米级，与真实 Go2 同一量级，方便和 1m 网格对照） */
 const BODY = Object.freeze({ length: 0.62, height: 0.115, width: 0.26 })
@@ -112,13 +112,34 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
 
   /* LiDAR 扫描扇面：与 LiDAR 同轴旋转的激光楔形，加色混合避免遮挡本体 */
   const sweepMat = new MeshBasicMaterial({
-    color: accentHex, transparent: true, opacity: 0.24, depthWrite: false,
+    color: accentHex, transparent: true, opacity: 0.3, depthWrite: false,
     side: DoubleSide, blending: AdditiveBlending
   })
-  const sweep = new Mesh(new CircleGeometry(0.26, 20, -Math.PI / 8, Math.PI / 4), sweepMat)
+  const sweep = new Mesh(new CircleGeometry(0.3, 24, -Math.PI / 7, Math.PI * 2 / 7), sweepMat)
   sweep.rotation.x = -Math.PI / 2
   sweep.position.y = 0.006
   lidar.add(sweep)
+
+  /* 拖尾扇面：滞后于主扇面，形成扫描「扫过」的残影 */
+  const trailMat = new MeshBasicMaterial({
+    color: accentHex, transparent: true, opacity: 0.12, depthWrite: false,
+    side: DoubleSide, blending: AdditiveBlending
+  })
+  const trail = new Mesh(new CircleGeometry(0.3, 24, -Math.PI / 7 - 0.62, Math.PI * 2 / 7), trailMat)
+  trail.rotation.x = -Math.PI / 2
+  trail.position.y = 0.005
+  lidar.add(trail)
+
+  /* 激光线：从 LiDAR 前端水平射出的细长光束，随扫描一起旋转 */
+  const beamGeo = new PlaneGeometry(0.62, 0.01)
+  beamGeo.rotateX(-Math.PI / 2)
+  beamGeo.translate(0.32, 0.009, 0)
+  const beamMat = new MeshBasicMaterial({
+    color: accentHex, transparent: true, opacity: 0.46, depthWrite: false,
+    side: DoubleSide, blending: AdditiveBlending
+  })
+  const beam = new Mesh(beamGeo, beamMat)
+  lidar.add(beam)
   head.add(lidar)
 
   /* 双目相机 */
@@ -130,10 +151,22 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
     head.add(lens)
   }
 
-  /* 状态灯（障碍报警 / 心跳异常时变色） */
+  /* 状态灯（业务状态驱动：颜色 + 呼吸/闪烁）＋ 外发光光晕 + 局部点光 */
   const beacon = new Mesh(new SphereGeometry(0.014, 12, 10), beaconMat)
   beacon.position.set(0.05, 0.108, 0)
   head.add(beacon)
+
+  const glowMat = new MeshBasicMaterial({
+    color: 0x5ad691, transparent: true, opacity: 0.16, depthWrite: false,
+    side: DoubleSide, blending: AdditiveBlending
+  })
+  const glow = new Mesh(new SphereGeometry(0.03, 16, 12), glowMat)
+  glow.position.copy(beacon.position)
+  head.add(glow)
+
+  const beaconLight = new PointLight(0x5ad691, 0, 0.9, 2)
+  beaconLight.position.copy(beacon.position)
+  head.add(beaconLight)
 
   /* ---------- 天线 ---------- */
   const antenna = new Mesh(new CylinderGeometry(0.004, 0.004, 0.16, 6), panelMat)
@@ -199,9 +232,18 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
   scanRingMesh.position.y = 0.008
   group.add(scanRingMesh)
 
+  /* 错峰副环：与主环相差半个周期，形成连续向外扩散的雷达波 */
+  const scanEchoMat = new MeshBasicMaterial({
+    color: accentHex, transparent: true, opacity: 0.18, depthWrite: false,
+    side: DoubleSide, blending: AdditiveBlending
+  })
+  const scanEchoMesh = new Mesh(scanRingGeo, scanEchoMat)
+  scanEchoMesh.position.y = 0.009
+  group.add(scanEchoMesh)
+
   /* ---------- 运行时状态 ---------- */
   let staleApplied = false
-  let alarmApplied = false
+  let beaconStatus = { key: 'idle', ...BEACON_STATUS.idle }
   let lidarSpin = 0
   let elapsed = 0
   const jointState = {}
@@ -229,19 +271,29 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
       torso.rotation.z = pose.body.pitch || 0
     }
     elapsed += dt
-    /* LiDAR：常态匀速扫描，告警时加速，强化「发现异常」的观感 */
-    lidarSpin += dt * (alarmApplied ? fx.lidarAlarmSpeed : fx.lidarSpeed)
+    /* LiDAR：常态匀速扫描，告警态加速，强化「发现异常」的观感 */
+    lidarSpin += dt * (beaconStatus.source === 'alarm' ? fx.lidarAlarmSpeed : fx.lidarSpeed)
     lidar.rotation.y = lidarSpin
-    /* 状态灯呼吸 / 告警闪烁；心跳超时压暗为常亮微光 */
+    /* 状态灯：颜色随业务状态，节奏 = 对应基准频率 × 状态倍率；心跳超时压暗为常亮微光 */
     const pulse = beaconPulse(elapsed, {
-      alarm: alarmApplied,
       stale: staleApplied,
-      idleHz: fx.beaconIdleHz,
-      alarmHz: fx.beaconAlarmHz
+      hz: (beaconStatus.source === 'alarm' ? fx.beaconAlarmHz : fx.beaconIdleHz) * beaconStatus.factor,
+      intensity: beaconStatus.intensity,
+      scaleAmp: beaconStatus.scaleAmp
     })
     beaconMat.emissiveIntensity = pulse.intensity
     beacon.scale.setScalar(pulse.scale)
-    /* 地面扫描环：向外扩散并淡出 */
+    /* 外发光光晕 + 局部点光：把呼吸亮度放大成肉眼可见的光圈，并照亮周围机壳 */
+    const glowState = beaconGlow(pulse)
+    glowMat.opacity = glowState.opacity
+    glow.scale.setScalar(glowState.scale)
+    beaconLight.intensity = pulse.intensity * 0.55
+    /* 扫描扇面亮度随旋转轻微呼吸，拖尾保持更暗 */
+    const sweepWave = 0.5 + 0.5 * Math.sin(elapsed * 4)
+    sweepMat.opacity = 0.24 + 0.16 * sweepWave
+    trailMat.opacity = 0.08 + 0.06 * sweepWave
+    beamMat.opacity = 0.36 + 0.24 * sweepWave
+    /* 地面扫描环：主环 + 错峰副环向外扩散并淡出 */
     const wave = scanRing(elapsed, {
       stale: staleApplied,
       period: fx.scanPeriod,
@@ -250,6 +302,15 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
     })
     scanRingMesh.scale.setScalar(wave.scale)
     scanRingMat.opacity = wave.opacity
+    const echo = scanRing(elapsed, {
+      stale: staleApplied,
+      period: fx.scanPeriod,
+      maxOpacity: fx.ringMaxOpacity,
+      staleOpacity: fx.ringStaleOpacity,
+      phase: 0.5
+    })
+    scanEchoMesh.scale.setScalar(echo.scale)
+    scanEchoMat.opacity = echo.opacity * 0.6
   }
 
   function setStale(stale) {
@@ -258,11 +319,15 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
     materials.forEach((m) => { m.opacity = stale ? 0.3 : 1 })
   }
 
-  function setAlarm(alarm) {
-    if (alarm === alarmApplied) return
-    alarmApplied = alarm
-    beaconMat.color.setHex(alarm ? 0xe5484d : 0x5ad691)
-    beaconMat.emissive.setHex(alarm ? 0x7a1418 : 0x1c5a37)
+  /** 由真实遥测/模式更新状态灯颜色：离线灰、故障红、障碍/低电琥珀、自主蓝、人工青、常态绿。 */
+  function setBeaconStatus(input) {
+    const next = resolveBeaconStatus(input)
+    if (next.key === beaconStatus.key) return
+    beaconStatus = next
+    beaconMat.color.setHex(next.color)
+    beaconMat.emissive.setHex(next.emissive)
+    glowMat.color.setHex(next.color)
+    beaconLight.color.setHex(next.color)
   }
 
   /** 运行时热更新动效参数（调节面板拖动滑杆时无需重建 rig）。 */
@@ -284,7 +349,7 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
     beaconMat,
     update,
     setStale,
-    setAlarm,
+    setBeaconStatus,
     setEffects,
     dispose
   }

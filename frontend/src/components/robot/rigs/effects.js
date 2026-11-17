@@ -35,11 +35,11 @@ export const NEAR_OBSTACLE_METERS = 0.5
  * source 指「用调节面板里的哪一档基准频率」，factor 是相对倍率，保证面板滑杆依然有效。
  */
 export const BEACON_STATUS = Object.freeze({
-  idle: { color: 0x5ad691, emissive: 0x1c5a37, source: 'idle', factor: 1, intensity: [0.9, 1.8], scaleAmp: 0.12 },
-  running: { color: 0x5b8cff, emissive: 0x14336b, source: 'idle', factor: 1.6, intensity: [1.1, 2.1], scaleAmp: 0.14 },
-  manual: { color: 0x57c8d8, emissive: 0x14505a, source: 'idle', factor: 1.2, intensity: [0.9, 1.7], scaleAmp: 0.1 },
-  warn: { color: 0xe3a008, emissive: 0x5a3d00, source: 'alarm', factor: 0.5, intensity: [1, 2], scaleAmp: 0.16 },
-  fault: { color: 0xe5484d, emissive: 0x7a1418, source: 'alarm', factor: 1, intensity: [1.2, 3.4], scaleAmp: 0.3 },
+  idle: { color: 0x5ad691, emissive: 0x1c5a37, source: 'idle', factor: 1, intensity: [0.9, 2.6], scaleAmp: 0.24 },
+  running: { color: 0x5b8cff, emissive: 0x14336b, source: 'idle', factor: 1.6, intensity: [1.1, 3], scaleAmp: 0.28 },
+  manual: { color: 0x57c8d8, emissive: 0x14505a, source: 'idle', factor: 1.2, intensity: [0.9, 2.4], scaleAmp: 0.22 },
+  warn: { color: 0xe3a008, emissive: 0x5a3d00, source: 'alarm', factor: 0.5, intensity: [1, 2.8], scaleAmp: 0.34 },
+  fault: { color: 0xe5484d, emissive: 0x7a1418, source: 'alarm', factor: 1, intensity: [1.2, 4.4], scaleAmp: 0.52 },
   offline: { color: 0x8a8f98, emissive: 0x2a2d33, source: 'idle', factor: 1, intensity: [0.35, 0.35], scaleAmp: 0 }
 })
 
@@ -129,21 +129,38 @@ export function beaconPulse(t, {
 }
 
 /**
+ * 状态灯外发光光晕参数：亮度越高光晕越亮、越大，让呼吸在缩略的 3D 视角里也清晰可见。
+ * @param {{intensity?: number, scale?: number}} pulse beaconPulse 的返回值
+ * @returns {{opacity: number, scale: number}}
+ */
+export function beaconGlow(pulse) {
+  const intensity = Number(pulse?.intensity) || 0
+  const scale = Number(pulse?.scale) || 1
+  return {
+    opacity: Math.min(0.46, 0.1 + intensity * 0.13),
+    scale: 1 + (scale - 1) * 2.6
+  }
+}
+
+/**
  * 地面扫描环参数：progress 0→1 线性推进，半径由内向外扩张、透明度递减。
  * @param {number} t 累计秒数
- * @param {{period?: number, stale?: boolean, maxOpacity?: number, staleOpacity?: number}} options
+ * @param {{period?: number, stale?: boolean, maxOpacity?: number, staleOpacity?: number, phase?: number}} options
+ *   phase：0→1 的相位偏移，用于多环错峰扩散
  * @returns {{progress: number, scale: number, opacity: number}}
  */
 export function scanRing(t, {
   period = DEFAULT_EFFECT_CONFIG.scanPeriod,
   stale = false,
   maxOpacity = DEFAULT_EFFECT_CONFIG.ringMaxOpacity,
-  staleOpacity = DEFAULT_EFFECT_CONFIG.ringStaleOpacity
+  staleOpacity = DEFAULT_EFFECT_CONFIG.ringStaleOpacity,
+  phase = 0
 } = {}) {
   const time = Number.isFinite(t) ? t : 0
   const cycle = Number.isFinite(period) && period > 0 ? period : DEFAULT_EFFECT_CONFIG.scanPeriod
-  const raw = (time % cycle) / cycle
-  const progress = raw < 0 ? raw + 1 : raw
+  const offset = Number.isFinite(phase) ? phase : 0
+  const raw = ((time / cycle + offset) % 1 + 1) % 1
+  const progress = raw
   return {
     progress,
     scale: 0.4 + progress * 0.9,
