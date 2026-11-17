@@ -149,6 +149,29 @@ def test_missing_explicit_path_raises():
         load_baseline("D:/nonexistent/baseline.yaml")
 
 
+def test_partial_config_inherits_missing_layers(tmp_path):
+    # 只覆盖配额的裁剪配置，不得让 L0/L2/L3 保护层静默失效
+    partial = tmp_path / "partial.yaml"
+    partial.write_text(
+        """
+L1_GENERIC_AI:
+  quotas:
+    tool_default:
+      capacity: 3
+      refill_per_second: 0
+""",
+        encoding="utf-8",
+    )
+    config = load_baseline(partial)
+    assert config.quota("tool_default") == (3, 0.0)
+    # 缺失分层全部继承内置默认值
+    assert len(config.rules(BaselineLayer.L0_COMPLIANCE)) >= 7
+    assert len(config.rules(BaselineLayer.L2_OPERATIONS)) >= 9
+    assert config.auto_suppression_limit == 3
+    assert "power.off" in config.destructive_actions
+    assert "baseline.redline_hit" in config.audit_required_events
+
+
 def test_duplicate_rule_id_rejected(tmp_path):
     bad = tmp_path / "bad-baseline.yaml"
     bad.write_text(

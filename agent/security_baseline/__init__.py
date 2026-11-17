@@ -11,6 +11,12 @@
 不修改任何既有模块的行为。
 """
 
+from .audit_sink import (
+    AuditSink,
+    BaselineEvent,
+    InMemoryAuditSink,
+    JsonlAuditSink,
+)
 from .compliance import ComplianceGuard
 from .engine import SecurityBaselineEngine
 from .loader import BaselineConfig, load_baseline
@@ -29,6 +35,7 @@ from .models import (
 from .multimodal import CrossSourceValidator
 from .ratelimit import RateLimitManager, TokenBucket
 from .redlines import RedlineChecker
+from .robot_guard import RobotActionGuard
 
 __all__ = [
     "SecurityBaselineEngine",
@@ -49,4 +56,9 @@ __all__ = [
     "CrossSourceValidator",
     "RateLimitManager",
     "TokenBucket",
+    "AuditSink",
+    "BaselineEvent",
+    "InMemoryAuditSink",
+    "JsonlAuditSink",
+    "RobotActionGuard",
 ]

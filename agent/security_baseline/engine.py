@@ -21,6 +21,7 @@ from agent.policies.risk import RiskLevel
 from agent.safety.injection import InjectionDetector
 from agent.safety.moderation import OutputModerator
 
+from .audit_sink import AuditSink, BaselineEvent, build_event
 from .compliance import ComplianceGuard
 from .loader import BaselineConfig, load_baseline
 from .models import (
@@ -46,6 +47,7 @@ class SecurityBaselineEngine:
         *,
         injection_detector: InjectionDetector | None = None,
         output_moderator: OutputModerator | None = None,
+        audit_sink: AuditSink | None = None,
         clock=None,
     ) -> None:
         self.config: BaselineConfig = load_baseline(config_path)
@@ -58,6 +60,44 @@ class SecurityBaselineEngine:
         self.limiter = RateLimitManager(self.config)
         self.injection = injection_detector or InjectionDetector()
         self.moderator = output_moderator or OutputModerator()
+        self.audit_sink = audit_sink
+
+    # ------------------------------------------------------------------
+    # 审计发射：只记录 baseline.yaml 白名单内的事件类型
+    # ------------------------------------------------------------------
+
+    def emit_event(
+        self,
+        event_type: str,
+        *,
+        layer: BaselineLayer | str = "",
+        decision: str = "",
+        reasons: tuple[str, ...] = (),
+        evidence: tuple[str, ...] = (),
+        request_id: str = "",
+        user_id: str = "",
+        tool_name: str = "",
+        action: str = "",
+        extra: dict | None = None,
+    ) -> BaselineEvent | None:
+        """向审计接收器追加一条白名单事件；未挂 sink 或非白名单时静默跳过。"""
+        if self.audit_sink is None or event_type not in self.config.audit_required_events:
+            return None
+        layer_value = layer.value if isinstance(layer, BaselineLayer) else str(layer)
+        event = build_event(
+            event_type,
+            layer=layer_value,
+            decision=decision,
+            reasons=reasons,
+            evidence=evidence,
+            request_id=request_id,
+            user_id=user_id,
+            tool_name=tool_name,
+            action=action,
+            extra=extra,
+        )
+        self.audit_sink.record(event)
+        return event
 
     # ------------------------------------------------------------------
     # L1 输入侧
@@ -142,11 +182,13 @@ class SecurityBaselineEngine:
         command: str = "",
         identity: str = "default",
         quota_scope: str = "tool_default",
+        consume_quota: bool = True,
     ) -> BaselineDecision:
         """工具执行前硬闸门。
 
         顺序固定：L0 合规（不可豁免）→ L2 运维红线 → L1 限流。
         通过后调用方继续走既有 PolicyEngine 的风险分级与人工审批。
+        dry-run 场景传 consume_quota=False：红线照常拦截，但不消耗真实配额。
         """
         operation = f"{tool_name}.{action}" if action else tool_name
 
@@ -159,7 +201,7 @@ class SecurityBaselineEngine:
             if decision is not None:
                 return decision
 
-            if not self.limiter.acquire(identity, quota_scope):
+            if consume_quota and not self.limiter.acquire(identity, quota_scope):
                 return BaselineDecision.block(
                     reason=f"QUOTA_EXHAUSTED:{identity}:{quota_scope}",
                     layer=BaselineLayer.L1_GENERIC_AI,

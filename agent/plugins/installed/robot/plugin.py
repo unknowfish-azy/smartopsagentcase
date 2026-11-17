@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from agent.sdk.manifest import PluginManifest
 from agent.sdk.plugin import Plugin
@@ -13,20 +14,24 @@ from .tools import (
     RobotVoiceCommandTool,
 )
 
+if TYPE_CHECKING:
+    from agent.security_baseline.robot_guard import RobotActionGuard
+
 
 class RobotPlugin(Plugin):
 
-    def __init__(self) -> None:
+    def __init__(self, guard: "RobotActionGuard | None" = None) -> None:
         manifest = PluginManifest.from_yaml(
             Path(__file__).parent / "manifest.yaml"
         )
         super().__init__(manifest)
+        self.guard = guard
 
         self.tools = [
             RobotRouteGenerateTool(),
             RobotTaskSubmitTool(),
             RobotTaskStatusTool(),
-            RobotVoiceCommandTool(),
+            RobotVoiceCommandTool(guard=guard),
             RobotFleetSubmitTool(),
             RobotFleetStatusTool(),
             RobotReplanRouteTool(),

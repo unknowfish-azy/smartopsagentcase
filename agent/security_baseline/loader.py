@@ -90,6 +90,14 @@ class BaselineConfig:
             )
         )
 
+    @property
+    def audit_required_events(self) -> set[str]:
+        return set(
+            self.layer_config(BaselineLayer.L2_OPERATIONS).get(
+                "audit_required_events", []
+            )
+        )
+
 
 # ---------------------------------------------------------------------------
 # 内置兜底基线（与 baseline.yaml 同构；YAML 不可用时的 fail-closed 最后防线）
@@ -124,7 +132,12 @@ DEFAULT_BASELINE: dict[str, Any] = {
             "baseline.blocked",
             "baseline.redline_hit",
             "baseline.compliance_hit",
+            "approval.requested",
+            "approval.granted",
+            "approval.rejected",
             "multimodal.escalation",
+            "multimodal.destructive_allowed",
+            "quota.exhausted",
         ],
     },
     "L0_COMPLIANCE": {
@@ -164,17 +177,41 @@ DEFAULT_BASELINE: dict[str, Any] = {
 }
 
 
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """字典递归合并；列表整体替换（规则清单以覆盖方为准）。
+
+    安全语义：用户配置只能覆盖/收窄内置基线，缺失的分层自动继承默认值，
+    防止一份裁剪过的配置把 L0/L2/L3 保护层静默卸掉。
+    """
+    from copy import deepcopy
+
+    result = deepcopy(base)
+    for key, value in override.items():
+        if (
+            key in result
+            and isinstance(result[key], dict)
+            and isinstance(value, dict)
+        ):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
 def load_baseline(path: str | Path | None = None) -> BaselineConfig:
     """加载基线配置。
 
+    任何外部 YAML 都先与内置默认基线深度合并（缺失分层自动继承默认保护）；
     显式路径损坏时抛异常交由调用方按 fail-closed 处理；
     包内 YAML 缺失/损坏时静默回退内置默认值并标注 source。
     """
     if path is not None:
-        return BaselineConfig(raw=_read_yaml(Path(path)), source=str(path))
+        raw = _deep_merge(DEFAULT_BASELINE, _read_yaml(Path(path)))
+        return BaselineConfig(raw=raw, source=str(path))
 
     try:
-        return BaselineConfig(raw=_read_yaml(_DEFAULT_PATH), source=str(_DEFAULT_PATH))
+        raw = _deep_merge(DEFAULT_BASELINE, _read_yaml(_DEFAULT_PATH))
+        return BaselineConfig(raw=raw, source=str(_DEFAULT_PATH))
     except Exception:
         return BaselineConfig(raw=DEFAULT_BASELINE, source="built-in-default")
 

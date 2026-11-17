@@ -100,10 +100,14 @@ class AgentExecutor:
         tool_registry,
         policy_engine,
         execution_policy: ExecutionPolicy | None = None,
+        security_engine=None,
     ):
         self.tool_registry = tool_registry
         self.policy_engine = policy_engine
         self.execution_policy = execution_policy or ExecutionPolicy()
+        # 安全基线引擎为可选依赖：未挂载时执行链行为与历史完全一致。
+        # 挂载后 L0 合规/L2 红线/L1 限流在 PolicyEngine 授权之前短路。
+        self.security_engine = security_engine
         self.audit_records: list[
             AuditRecord
         ] = []
@@ -123,7 +127,11 @@ class AgentExecutor:
         event = terminal_event(identity, "executor", "started", step_id=step.step_id)
         result = self._execute(step, context, event)
         status = "dry_run" if result.success and context.dry_run else "succeeded" if result.success else "failed"
-        if not result.success and result.message in {"操作被策略阻止", "工具不存在"}:
+        if not result.success and result.message in {
+            "操作被策略阻止",
+            "工具不存在",
+            "操作被安全基线拦截",
+        }:
             status = "denied"
         event.update(status=status)
         self._run_events.append(event)
@@ -267,6 +275,63 @@ class AgentExecutor:
         return f"{step.tool_name}::{arguments}"
 
     # ------------------------------------------------------------------
+    # 安全基线闸门辅助
+    # ------------------------------------------------------------------
+
+    # 只有承载可执行文本的参数键才送入命令红线匹配，
+    # 普通业务参数（deviceKey、route 等）不参与，避免误报。
+    _COMMAND_ARG_KEYS = ("command", "cmd", "script")
+
+    def _extract_command_text(self, step) -> str:
+        parts: list[str] = []
+        for key in self._COMMAND_ARG_KEYS:
+            value = (step.arguments or {}).get(key)
+            if isinstance(value, str) and value.strip():
+                parts.append(value.strip())
+        return "\n".join(parts)
+
+    def _quota_scope_for(self, tool) -> str:
+        risk = str(getattr(tool, "risk_level", "LOW")).upper()
+        return "tool_high_risk" if risk in {"HIGH", "CRITICAL"} else "tool_default"
+
+    def _run_baseline_gate(self, tool, step, context):
+        command = self._extract_command_text(step)
+        return self.security_engine.evaluate_operation(
+            tool_name=step.tool_name,
+            action=step.action,
+            command=command,
+            identity=context.user_id or "anonymous",
+            quota_scope=self._quota_scope_for(tool),
+            # dry-run 只做计划校验：红线照拦，但不消耗真实调用配额。
+            consume_quota=not context.dry_run,
+        )
+
+    def _emit_baseline_event(self, decision, tool, step, context) -> None:
+        engine = self.security_engine
+        if engine is None:
+            return
+        reason = decision.reasons[0] if decision.reasons else ""
+        if decision.layer is not None and decision.layer.value == "L0_COMPLIANCE":
+            event_type = "baseline.compliance_hit"
+        elif decision.layer is not None and decision.layer.value == "L2_OPERATIONS":
+            event_type = "baseline.redline_hit"
+        elif reason.startswith("QUOTA_EXHAUSTED"):
+            event_type = "quota.exhausted"
+        else:
+            event_type = "baseline.blocked"
+        engine.emit_event(
+            event_type,
+            layer=decision.layer or "",
+            decision=decision.action.value,
+            reasons=decision.reasons,
+            evidence=decision.evidence,
+            request_id=context.request_id,
+            user_id=context.user_id,
+            tool_name=step.tool_name,
+            action=step.action,
+        )
+
+    # ------------------------------------------------------------------
     # 单步内部实现：校验 → 授权 → 超时/重试执行 → 截断
     # ------------------------------------------------------------------
 
@@ -300,6 +365,41 @@ class AgentExecutor:
                 metadata={"failure_class": "recoverable"},
             )
 
+        # 安全基线硬闸门：L0 合规 → L2 红线 → L1 限流，先于人工审批链短路。
+        # 挂载引擎时任何 BLOCK 都按 fatal 处理，下游步骤在 DAG 中自动 skip。
+        if self.security_engine is not None:
+            baseline_decision = self._run_baseline_gate(tool, step, context)
+            if baseline_decision is not None and not baseline_decision.allowed:
+                self._emit_baseline_event(baseline_decision, tool, step, context)
+                result = ExecutionResult(
+                    success=False,
+                    tool_name=tool_name,
+                    message="操作被安全基线拦截",
+                    error="; ".join(baseline_decision.reasons) or "baseline blocked",
+                    error_category=ToolErrorCategory.PERMISSION.value,
+                    metadata={
+                        "failure_class": "fatal",
+                        "baseline_layer": (
+                            baseline_decision.layer.value
+                            if baseline_decision.layer else ""
+                        ),
+                        "baseline_reasons": list(baseline_decision.reasons),
+                    },
+                )
+                self.audit_records.append(
+                    AuditRecord.create(
+                        run_event=run_event,
+                        request_id=context.request_id,
+                        user_id=context.user_id,
+                        tool_name=tool_name,
+                        action=step.action,
+                        success=False,
+                        risk_level=str(baseline_decision.risk),
+                        error=result.error,
+                    )
+                )
+                return result
+
         decision = self.policy_engine.authorize_execution(
             tool,
             context,
@@ -307,6 +407,21 @@ class AgentExecutor:
         )
 
         if not decision.allowed:
+            if self.security_engine is not None and getattr(
+                decision, "requires_approval", False
+            ):
+                # 高风险操作进入人工审批等待态——审批结论本身在 ApprovalManager 留痕，
+                # 这里补一条基线审计事件，保证审批链路可从基线侧完整追溯。
+                self.security_engine.emit_event(
+                    "approval.requested",
+                    layer="L2_OPERATIONS",
+                    decision="APPROVAL_REQUIRED",
+                    reasons=(decision.reason,),
+                    request_id=context.request_id,
+                    user_id=context.user_id,
+                    tool_name=tool_name,
+                    action=step.action,
+                )
             result = ExecutionResult(
                 success=False,
                 tool_name=tool_name,
@@ -330,6 +445,19 @@ class AgentExecutor:
             )
 
             return result
+
+        if self.security_engine is not None and context.approval_id:
+            # 能走到这里说明审批指纹已校验并被 authorize_execution 消费。
+            self.security_engine.emit_event(
+                "approval.granted",
+                layer="L2_OPERATIONS",
+                decision="ALLOW",
+                reasons=("approval_consumed",),
+                request_id=context.request_id,
+                user_id=context.user_id,
+                tool_name=tool_name,
+                action=step.action,
+            )
 
         if context.dry_run:
             return ExecutionResult(
