@@ -7,3 +7,5 @@ export const getInspectorStatistics = () => request.get('/api/inspector/statisti
 export const recordInspection = data => request.post('/api/inspector/check', data)
 export const verifyInspection = data => request.post('/api/inspector/verify', data)
 export const replanInspection = data => request.post('/api/inspector/replan', data)
+/** 视觉巡检配置状态（本地多模态模型是否已配置，fail-closed 展示用） */
+export const getVisionStatus = () => request.get('/api/inspector/vision/status')
