@@ -13,4 +13,6 @@ public class ModelInvocationResponse {
     private String model;
     private String content;
     private Map<String, Object> usage;
+    /** 是否命中网关语义缓存（true=缓存返回，未经过真实模型调用）。 */
+    private Boolean cached;
 }

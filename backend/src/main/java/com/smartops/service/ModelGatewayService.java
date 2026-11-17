@@ -21,6 +21,8 @@ import java.util.Map;
 public class ModelGatewayService {
     private final JdbcTemplate jdbc;
     private final ModelConnectionService connections;
+    private final ModelSemanticCacheService semanticCache;
+    private final ModelRouterService router;
     private final SecureRandom random = new SecureRandom();
 
     public record IssuedKey(Long id, String name, String key, String prefix, String scope, Instant expiresAt) {}
@@ -55,19 +57,31 @@ public class ModelGatewayService {
         if (group == null || !group.matches("[a-zA-Z0-9._-]{1,120}")) throw new BusinessException(400, "Invalid model group");
         if (!"PERSONAL".equals(principal.scope())) throw new BusinessException(403, "Key scope not supported");
         enforceQuota(principal.id(), principal.ownerUserId(), group);
-        List<Map<String, Long>> routes = jdbc.query("SELECT r.id,r.connection_id FROM model_gateway_group g JOIN model_gateway_route r ON r.group_id=g.id WHERE g.slug=? AND g.scope='PERSONAL' AND g.owner_user_id=? AND g.enabled=TRUE AND r.enabled=TRUE AND (r.unhealthy_until IS NULL OR r.unhealthy_until <= CURRENT_TIMESTAMP) ORDER BY r.priority ASC, r.weight DESC", (rs, n) -> Map.of("routeId", rs.getLong("id"), "connectionId", rs.getLong("connection_id")), group, principal.ownerUserId());
-        if (routes.isEmpty()) throw new BusinessException(404, "Model group unavailable");
         long started = System.nanoTime();
+
+        // 语义缓存（LLM 推理加速）：精确/语义命中直接返回，省下一次完整的模型调用
+        ModelInvocationResponse cached = semanticCache.lookup(principal.id(), group, request).orElse(null);
+        if (cached != null) {
+            cached.setCached(Boolean.TRUE);
+            recordSafely(principal.id(), group, cached.getModel(), "CACHE_HIT", elapsed(started), cached.getUsage());
+            return cached;
+        }
+
+        // 路由：AUTO 模式由 ModelRouterService 按意图选，MANUAL 模式沿用 route 表
+        List<ModelRouterService.RoutedConnection> routes = router.selectConnections(group, principal.ownerUserId(), request);
+        if (routes.isEmpty()) throw new BusinessException(404, "Model group unavailable");
         RuntimeException lastFailure = null;
-        for (Map<String, Long> route : routes) {
-            Long connectionId = route.get("connectionId");
+        for (ModelRouterService.RoutedConnection route : routes) {
+            Long connectionId = route.connectionId();
             try {
                 var result = connections.invoke(principal.ownerUserId(), connectionId, request);
-                markRouteSuccess(route.get("routeId"));
+                if (route.routeId() != null) markRouteSuccess(route.routeId());
+                semanticCache.store(principal.id(), group, request, result);
+                result.setCached(Boolean.FALSE);
                 recordSafely(principal.id(), group, result.getModel(), "SUCCESS", elapsed(started), result.getUsage());
                 return result;
             } catch (RuntimeException ex) {
-                markRouteFailure(route.get("routeId"), ex);
+                if (route.routeId() != null) markRouteFailure(route.routeId(), ex);
                 lastFailure = ex;
             }
         }
@@ -94,7 +108,8 @@ public class ModelGatewayService {
         long requestLimit = limits.get(0).get("requests"), tokenLimit = limits.get(0).get("tokens");
         // key 两项额度都未配置时只是跳过 key 维度计量，仍必须继续校验模型组额度。
         if (requestLimit >= 0 || tokenLimit >= 0) {
-            Map<String, Long> usage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(total_tokens),0) tokens FROM model_gateway_invocation WHERE key_id=? AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), keyId).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
+            // CACHE_HIT 不占请求/token 配额：缓存命中没有真实消耗模型资源
+            Map<String, Long> usage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(total_tokens),0) tokens FROM model_gateway_invocation WHERE key_id=? AND status<>'CACHE_HIT' AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), keyId).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
             if (requestLimit >= 0 && usage.get("calls") >= requestLimit) throw new BusinessException(429, "Gateway request quota exceeded");
             if (tokenLimit >= 0 && usage.get("tokens") >= tokenLimit) throw new BusinessException(429, "Gateway token quota exceeded");
         }
@@ -102,7 +117,7 @@ public class ModelGatewayService {
         if (!groupLimits.isEmpty()) {
             long groupRequestLimit = groupLimits.get(0).get("requests"), groupTokenLimit = groupLimits.get(0).get("tokens");
             if (groupRequestLimit >= 0 || groupTokenLimit >= 0) {
-                Map<String, Long> groupUsage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(i.total_tokens),0) tokens FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? AND i.group_slug=? AND i.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), ownerUserId, group).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
+                Map<String, Long> groupUsage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(i.total_tokens),0) tokens FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? AND i.group_slug=? AND i.status<>'CACHE_HIT' AND i.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), ownerUserId, group).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
                 if (groupRequestLimit >= 0 && groupUsage.get("calls") >= groupRequestLimit) throw new BusinessException(429, "Model group request quota exceeded");
                 if (groupTokenLimit >= 0 && groupUsage.get("tokens") >= groupTokenLimit) throw new BusinessException(429, "Model group token quota exceeded");
             }

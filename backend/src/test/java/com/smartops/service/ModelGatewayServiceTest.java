@@ -22,7 +22,9 @@ import java.util.Map;
 class ModelGatewayServiceTest {
     private final JdbcTemplate jdbc = mock(JdbcTemplate.class);
     private final ModelConnectionService connections = mock(ModelConnectionService.class);
-    private final ModelGatewayService gateway = new ModelGatewayService(jdbc, connections);
+    private final ModelSemanticCacheService cache = mock(ModelSemanticCacheService.class);
+    private final ModelRouterService router = mock(ModelRouterService.class);
+    private final ModelGatewayService gateway = new ModelGatewayService(jdbc, connections, cache, router);
 
     @Test void unsupportedScopeCannotIssueKey() {
         assertEquals(400, assertThrows(BusinessException.class,
@@ -46,10 +48,11 @@ class ModelGatewayServiceTest {
         var principal = new ModelGatewayService.GatewayPrincipal(4L, 9L, "PERSONAL");
         when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq(4L)))
                 .thenReturn(List.of(Map.of("requests", -1L, "tokens", -1L)));
-        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq("ops"), eq(9L)))
-                .thenAnswer(call -> call.getArgument(0, String.class).contains("request_limit_24h")
-                        ? List.<Map<String, Long>>of()
-                        : List.of(Map.of("routeId", 101L, "connectionId", 11L), Map.of("routeId", 102L, "connectionId", 12L)));
+        // 路由已委托 ModelRouterService：主路由失败后回退到下一个候选连接
+        when(router.selectConnections(eq("ops"), eq(9L), any(ModelInvocationRequest.class)))
+                .thenReturn(List.of(
+                        new ModelRouterService.RoutedConnection(11L, 101L, "MANUAL route", 1.0),
+                        new ModelRouterService.RoutedConnection(12L, 102L, "MANUAL route", 1.0)));
         when(connections.invoke(eq(9L), eq(11L), any(ModelInvocationRequest.class)))
                 .thenThrow(new IllegalStateException("provider down"));
         when(connections.invoke(eq(9L), eq(12L), any(ModelInvocationRequest.class)))

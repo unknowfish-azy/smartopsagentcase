@@ -109,6 +109,12 @@ smartops:
         enabled: ${SMARTOPS_WR_BAIDU_URL_ENABLED:false}
       zhihu-url:
         enabled: ${SMARTOPS_WR_ZHIHU_URL_ENABLED:false}
+  # SciVerse 科学文献平台（官方 API 网关契约，llms.txt / docs.sciverse.space 2026-11 核对）
+  sciverse:
+    base-url: ${SMARTOPS_SCIVERSE_BASE_URL:https://api.sciverse.space}
+    api-key: ${SMARTOPS_SCIVERSE_API_KEY:}
+    search-path: ${SMARTOPS_SCIVERSE_SEARCH_PATH:/agentic-search}
+    content-path: ${SMARTOPS_SCIVERSE_CONTENT_PATH:/content}
   mini:
     base-url: ${SMARTOPS_MINI_BASE_URL:http://127.0.0.1:11434}
     model: ${SMARTOPS_MINI_MODEL:qwen3:1.7b}
