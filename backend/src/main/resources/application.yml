@@ -113,6 +113,37 @@ smartops:
     base-url: ${SMARTOPS_MINI_BASE_URL:http://127.0.0.1:11434}
     model: ${SMARTOPS_MINI_MODEL:qwen3:1.7b}
     knowledge-root: ${SMARTOPS_MINI_KNOWLEDGE_ROOT:../knowledge}
+  # 视觉巡检（本地多模态模型识别，如 llava / qwen2.5vl）。
+  # 2026-11-16 已启用：指向本地已装的 qwen2.5vl:3b（Ollama）。
+  # 未配置时 /api/inspector/vision fail-closed 返回 503。
+  vision:
+    base-url: ${SMARTOPS_VISION_BASE_URL:http://127.0.0.1:11434}
+    model: ${SMARTOPS_VISION_MODEL:qwen2.5vl:3b}
+  # 巡检机器人（M0 台账 + M1 双态控制；详见 docs/architecture/巡检机器人详细设计.md）。
+  # bridge-token 未配置时桥端点一律拒连（fail-closed，SMARTOPS_ROBOT_BRIDGE_TOKEN 注入）。
+  robot:
+    bridge-token: ${SMARTOPS_ROBOT_BRIDGE_TOKEN:}
+    # 心跳沉默阈值（毫秒）：超过即自动 FAULT + STOP，默认 3 个心跳周期
+    heartbeat-timeout-ms: ${SMARTOPS_ROBOT_HEARTBEAT_TIMEOUT_MS:600}
+    # 同一设备两次视觉巡检的最小间隔（毫秒）：防止连点拍照打爆本地多模态模型
+    frame-interval-ms: ${SMARTOPS_ROBOT_FRAME_INTERVAL_MS:2000}
+    # RobotBrainService 执行线程数（每设备一个执行器线程）
+    brain-parallelism: ${SMARTOPS_ROBOT_BRAIN_PARALLELISM:4}
+    # 机队并发上限（与 DAG 并发上限一致，默认 3 台同时启动）
+    fleet-concurrency: ${SMARTOPS_ROBOT_FLEET_CONCURRENCY:3}
+    # M6+M7 重规划配置
+    replan:
+      # 触发阈值：窗口内连续 WARN/CRITICAL 条数
+      threshold: ${SMARTOPS_ROBOT_REPLAN_THRESHOLD:2}
+      # 事件查询窗口（毫秒）
+      window-ms: ${SMARTOPS_ROBOT_REPLAN_WINDOW_MS:30000}
+      # 主策略：deterministic（默认，始终可靠）/ ollama（M7 真机接入增强）
+      strategy: ${SMARTOPS_ROBOT_REPLAN_STRATEGY:deterministic}
+      ollama:
+        base-url: ${SMARTOPS_ROBOT_REPLAN_OLLAMA_BASE_URL:http://127.0.0.1:11434}
+        # 空 = 未配置 ollama 策略，主策略自动 fallback 到 deterministic
+        model: ${SMARTOPS_ROBOT_REPLAN_OLLAMA_MODEL:}
+        timeout-ms: ${SMARTOPS_ROBOT_REPLAN_OLLAMA_TIMEOUT_MS:5000}
   bootstrap:
     username: ${SMARTOPS_BOOTSTRAP_USERNAME:admin}
     password: ${SMARTOPS_BOOTSTRAP_PASSWORD:}
