@@ -372,6 +372,7 @@ export function createProgrammaticAvatar({ canvas, container, id = 'agent-person
     attachAudio: (element) => lipSync.attachAudio(element),
     resumeAudio: () => lipSync.resume(),
     speakText: (text, options) => lipSync.speak(text, options),
+    speakTimeline: (text, timing) => lipSync.speakTimeline(text, timing),
     seekSpeech: (charIndex) => lipSync.seek(charIndex),
     stopSpeaking: () => lipSync.silence()
   }

@@ -129,7 +129,7 @@ import { useRouter } from 'vue-router'
 import AgentPersona from './AgentPersona.vue'
 import { createPetSpeech, isSpeechSynthesisAvailable } from './petSpeech.js'
 import { createPetNeuralTts } from './petNeuralTts.js'
-import { fetchTtsStatus, synthesizeSpeech } from '../../api/tts.ts'
+import { fetchTtsStatus, synthesizeSpeech, synthesizeSpeechWithTiming } from '../../api/tts.ts'
 import { askAssistant, createVoiceInput, isVoiceInputAvailable } from './personaVoice.js'
 import { resolveNavigationIntent, hazardBubble, isHazardRoute } from './voiceCommandRegistry.js'
 import {
@@ -141,6 +141,7 @@ import {
   useVoiceActionBus,
 } from './voiceActionRegistry.js'
 import { createClickClassifier, createIdleScheduler, LONG_PRESS_MS } from './personaInteractions.js'
+import { createFaultNotifier } from './personaFaultNotify.js'
 import { gestureVoice } from './personaGestures.js'
 import { PERSONA_PET_ASPECT, PERSONA_PET_INSET, resolvePetSize, usePersonaPetStore } from '../../stores/personaPet.js'
 import { useCompanionStore } from '../../stores/companion.js'
@@ -171,6 +172,10 @@ const ttsEngine = ref('')
 const voiceMode = ref('idle')
 const heard = ref('')
 const boundarySeen = ref(false)
+
+/* 当前口型驱动来源，如实标注三档：
+   phoneme=音素级（服务端给了真实韵母）/ timeline=词/字级时间戳 / text=按字数匀速近似 */
+const lipAlign = ref('text')
 
 const LISTEN_ERRORS = {
   unsupported: '当前浏览器不支持语音识别，请使用 Chrome 或 Edge',
@@ -217,7 +222,15 @@ const noteLabel = computed(() => {
 const noteHint = computed(() => {
   // 播报中给一句"可以打断"的提示：这是新交互的发现性入口
   if (speaking.value || voiceMode.value === 'speaking') {
-    if (ttsEngine.value) return '神经语音 · 按「听」或点我即可打断（口型近似同步）'
+    if (ttsEngine.value) {
+      if (lipAlign.value === 'phoneme') {
+        return '神经语音 · 按「听」或点我即可打断（口型按音素级时间戳对齐）'
+      }
+      if (lipAlign.value === 'timeline') {
+        return '神经语音 · 按「听」或点我即可打断（口型按词级时间戳对齐）'
+      }
+      return '神经语音 · 按「听」或点我即可打断（口型为近似同步）'
+    }
     if (boundarySeen.value) return '按「听」或点我即可打断 · 口型已按词边界校正'
     return '按「听」或点我即可打断（口型为近似同步）'
   }
@@ -243,55 +256,27 @@ function showReaction(text, holdMs = 2200) {
 /* ------------------------------------------------------------
    告警主动通知（P1-3）：订阅 companion 的 FAULT_DETECTED 事件——
    视觉回传 / 哨兵 / 任意页面 ingestFault 都会走到这里。
-   小鱼举手示警 + 气泡提示，点击气泡打开处置面板；收起时小球亮红点。
-   克制原则：同一事件只报一次、5 分钟节流、高危才出声（甜妹音），
-   正在播报时不出声，避免打断用户正在进行的事。
+   决策逻辑（去重/节流/分级/出声守卫）在 personaFaultNotify.js 纯逻辑层，
+   本组件只负责把展示与语音注入进去；决策依据在测试里锁定。
    ------------------------------------------------------------ */
 const faultAlert = ref(null)
 let faultUnsubscribe = null
-let faultClearTimer = null
-let lastFaultNotifyAt = 0
-const seenFaultIds = new Set()
-const FAULT_NOTIFY_GAP_MS = 5 * 60 * 1000
 
-function onFaultDetected(event) {
-  const faultEvent = event?.payload?.faultEvent
-  if (!faultEvent?.id) return
-  if (seenFaultIds.has(faultEvent.id)) return
-  seenFaultIds.add(faultEvent.id)
-  if (seenFaultIds.size > 50) {
-    seenFaultIds.delete(seenFaultIds.values().next().value)
-  }
-  const now = Date.now()
-  if (now - lastFaultNotifyAt < FAULT_NOTIFY_GAP_MS) return
-  lastFaultNotifyAt = now
-
-  const critical = faultEvent.severity === 'CRITICAL' || faultEvent.severity === 'HIGH'
-  faultAlert.value = {
-    id: faultEvent.id,
-    critical,
-    text: `发现异常「${faultEvent.title}」（${faultEvent.severity}）`
-  }
-  if (faultClearTimer) clearTimeout(faultClearTimer)
-  faultClearTimer = setTimeout(() => { faultAlert.value = null }, critical ? 12000 : 8000)
-
-  personaRef.value?.playGesture?.('pointUp')
-  if (critical && !speaking.value && voiceMode.value !== 'speaking') {
-    speakNeuralOnly(`发现${faultEvent.severity === 'CRITICAL' ? '高危' : '较高级'}异常：${faultEvent.title}，请查看处置面板。`)
-  }
-}
-
-function dismissFaultAlert() {
-  faultAlert.value = null
-  if (faultClearTimer) {
-    clearTimeout(faultClearTimer)
-    faultClearTimer = null
-  }
-}
+const faultNotifier = createFaultNotifier({
+  showAlert: (alert) => { faultAlert.value = alert },
+  clearAlert: () => { faultAlert.value = null },
+  playGesture: (name) => personaRef.value?.playGesture?.(name),
+  // 工厂已做"高危 + 空闲 + 非静音"守卫；speakNeuralOnly 的静音守卫是双保险
+  speak: (text) => { speakNeuralOnly(text) }
+}, {
+  isBusy: () => speaking.value || voiceMode.value === 'speaking',
+  isMuted: () => audioMuted.value
+})
 
 /** 点气泡 → 打开处置抽屉（companion.openInvestigation 的正式入口） */
 function openFaultAlert() {
-  dismissFaultAlert()
+  faultNotifier.dismiss()
+  faultAlert.value = null
   companion.openInvestigation()
 }
 
@@ -386,7 +371,7 @@ async function sayGestureLine(name, { allowFallback = true } = {}) {
   const started = allowFallback ? await speakLine(line, isCurrent) : await speakNeuralOnly(line, isCurrent)
   // 声音真正开始后才驱动口型，避免合成等待期间出现"无声动嘴"
   if (!started || !isCurrent()) return false
-  personaRef.value?.speakText(line, { cps: 5 })
+  driveLipSync(line)
   return true
 }
 
@@ -529,7 +514,9 @@ onMounted(() => {
   document.addEventListener('visibilitychange', onVisibilityChange)
   idleScheduler.reset()
   // 订阅异常事件流：视觉回传/哨兵 ingestFault → FAULT_DETECTED → 小鱼示警
-  faultUnsubscribe = companion.subscribe('FAULT_DETECTED', onFaultDetected)
+  faultUnsubscribe = companion.subscribe('FAULT_DETECTED', (event) => {
+    faultNotifier.handleFault(event?.payload?.faultEvent)
+  })
   // 探测后端神经语音：可用则记录引擎名（UI 如实展示），不可用则静默走浏览器语音
   neuralTts.probe().then((status) => {
     if (!status?.available || !status.provider) return
@@ -640,10 +627,31 @@ const petSpeech = createPetSpeech({
 const neuralTts = createPetNeuralTts({
   fetchStatus: fetchTtsStatus,
   synthesize: synthesizeSpeech,
+  // 优先取后端词级时间戳：Edge 有 WordBoundary，本地模型没有会回空数组
+  synthesizeWithTiming: synthesizeSpeechWithTiming,
   onEnd: () => stopSpeech(),
   // 播放中途出错：如实收尾，不假装仍在播报
   onError: () => stopSpeech()
 })
+
+/**
+ * 神经音频已响起时驱动口型：有真实时间戳走 timeline，否则按音频时长反推 cps。
+ * 来源写进 lipAlign（phoneme/timeline/text），供 noteHint 如实展示。
+ */
+function driveLipSync(text) {
+  const timing = neuralTts.lastTiming
+  if (timing.length && personaRef.value?.speakTimeline?.(text, timing)) {
+    // 带 viseme 说明服务端算出了真实韵母（piper-plus 音素级）；
+    // 只有边界时间戳（Edge WordBoundary）就如实降一档标注为词级
+    lipAlign.value = timing.some((item) => item.viseme) ? 'phoneme' : 'timeline'
+    return
+  }
+  lipAlign.value = 'text'
+  // 神经音频没有词边界事件时，用真实时长反推 cps，口型与音频同起同止
+  const seconds = neuralTts.lastDurationMs / 1000
+  const cps = seconds > 0.3 ? Math.max(2, Math.min(12, text.length / seconds)) : 5
+  personaRef.value?.speakText(text, { cps })
+}
 
 /* 递增令牌：合成/发起期间的旧任务在停止后不得再驱动口型或状态 */
 let speechToken = 0
@@ -746,19 +754,19 @@ function speakReply(text, gesture) {
   neuralTts.speak(text).then((started) => {
     if (token !== speechToken || !speaking.value) return
     if (started) {
-      // 神经音频没有词边界事件，但能拿到真实时长：用它反推 cps，
+      // 有后端词级时间戳就走 timeline；没有则按真实音频时长反推 cps，
       // 口型与音频同起同止（固定 5 字/秒在长句上会越播越不同步）
-      const seconds = neuralTts.lastDurationMs / 1000
-      const cps = seconds > 0.3 ? Math.max(2, Math.min(12, text.length / seconds)) : 5
-      personaRef.value?.speakText(text, { cps })
+      driveLipSync(text)
       return
     }
     // 兜底开关关闭（默认）时不回落浏览器语音：直接退化为纯文字口型（无声）
     if (store.speechFallback && speechSupported && petSpeech.speak(text)) {
+      lipAlign.value = 'text'
       personaRef.value?.speakText(text, { cps: 5 })
       return
     }
     // 没有任何可用语音：退化为纯文字时间线，UI 已如实标注
+    lipAlign.value = 'text'
     personaRef.value?.speakText(text, { cps: 5 })
     speaking.value = false
     if (voiceMode.value === 'speaking') voiceMode.value = 'idle'
@@ -953,6 +961,7 @@ function _pendingStillFresh(pending) {
 function stopSpeech() {
   speechToken += 1
   speaking.value = false
+  lipAlign.value = 'text'
   neuralTts.stop()
   petSpeech.stop?.()
   personaRef.value?.stopSpeaking()
@@ -986,7 +995,7 @@ onBeforeUnmount(() => {
   personaRef.value?.stopGesture?.()
   if (reactionTimer) clearTimeout(reactionTimer)
   faultUnsubscribe?.()
-  if (faultClearTimer) clearTimeout(faultClearTimer)
+  faultNotifier.dismiss() // 取消退醒定时并清气泡，幂等安全
 })
 </script>
 

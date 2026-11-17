@@ -11,7 +11,7 @@ import {
   resolvePetSize,
   usePersonaPetStore
 } from '../src/stores/personaPet.js'
-import { createLipSync, VISEMES } from '../src/components/persona/useLipSync.js'
+import { createLipSync, visemeTimeline, VISEMES } from '../src/components/persona/useLipSync.js'
 import { createPetSpeech } from '../src/components/persona/petSpeech.js'
 
 const VIEWPORT = { viewportWidth: 1200, viewportHeight: 900 }
@@ -355,5 +355,80 @@ describe('桌宠语音（petSpeech）', () => {
     } finally {
       speech.dispose()
     }
+  })
+})
+
+describe('口型 timeline 模式（后端词级时间戳）', () => {
+  test('visemeTimeline 按词的真实起止时间摊到字符上', () => {
+    const text = '你好，世界'
+    const planned = visemeTimeline(text, [
+      { text: '你好', offset_ms: 0, duration_ms: 400 },
+      { text: '世界', offset_ms: 600, duration_ms: 400 }
+    ])
+
+    assert.ok(planned)
+    // 4 个可发音字符（标点不占口型时间）
+    assert.equal(planned.entries.length, 4)
+    assert.equal(planned.duration, 1000)
+    // 第一个词的字符均分 400ms
+    assert.equal(planned.entries[0].start, 0)
+    assert.equal(planned.entries[0].end, 200)
+    // 第二个词从真实 offset 起步，不是紧跟上一段
+    assert.equal(planned.entries[2].start, 600)
+    assert.equal(planned.entries[2].end, 800)
+    assert.equal(planned.entries[2].charIndex, text.indexOf('世'))
+  })
+
+  test('服务端给出真实 viseme 时优先采用，缺省才按字符近似', () => {
+    const planned = visemeTimeline('你好', [
+      // piper-plus 的音节级时间戳：每个字一条，并带真实韵母
+      { text: '你', offset_ms: 0, duration_ms: 120, viseme: 'ih' },
+      { text: '好', offset_ms: 120, duration_ms: 160, viseme: 'aa' }
+    ])
+
+    assert.ok(planned)
+    assert.deepEqual(
+      planned.entries.map((entry) => entry.primary),
+      ['ih', 'aa']
+    )
+    // 非法 viseme 不能污染口型：退回字符近似映射
+    const fallback = visemeTimeline('好', [
+      { text: '好', offset_ms: 0, duration_ms: 100, viseme: 'not-a-viseme' }
+    ])
+    assert.notEqual(fallback.entries[0].primary, 'not-a-viseme')
+  })
+
+  test('timing 为空或全部非法时返回 null，绝不伪造时间线', () => {
+    assert.equal(visemeTimeline('你好', []), null)
+    assert.equal(visemeTimeline('你好', null), null)
+    assert.equal(
+      visemeTimeline('你好', [
+        { text: '你好', offset_ms: -1, duration_ms: 0 },
+        { text: '，', offset_ms: 100, duration_ms: 200 }
+      ]),
+      null
+    )
+  })
+
+  test('speakTimeline 成功后按时间戳推进口型，并如实报告 mode', () => {
+    const lip = createLipSync()
+    const aligned = lip.speakTimeline('你好世界', [
+      { text: '你好世界', offset_ms: 0, duration_ms: 1000 }
+    ])
+
+    assert.equal(aligned, true)
+    assert.equal(lip.isActive().mode, 'timeline')
+    const weights = lip.update(0.1)
+    assert.ok(VISEMES.some((name) => weights[name] > 0.01))
+    lip.dispose()
+  })
+
+  test('speakTimeline 没有时间戳时退回匀速近似，mode 标记为 text', () => {
+    const lip = createLipSync()
+    const aligned = lip.speakTimeline('你好世界', [])
+
+    assert.equal(aligned, false)
+    assert.equal(lip.isActive().mode, 'text')
+    lip.dispose()
   })
 })

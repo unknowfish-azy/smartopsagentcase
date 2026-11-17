@@ -120,6 +120,7 @@ defineExpose({
   attachAudio: (element) => stage?.attachAudio(element),
   resumeAudio: () => stage?.resumeAudio(),
   speakText: (text, options) => stage?.speakText(text, options),
+  speakTimeline: (text, timing) => stage?.speakTimeline(text, timing),
   seekSpeech: (charIndex) => stage?.seekSpeech(charIndex),
   stopSpeaking: () => stage?.stopSpeaking(),
   playGesture: (name, options) => stage?.playGesture(name, options) ?? false,

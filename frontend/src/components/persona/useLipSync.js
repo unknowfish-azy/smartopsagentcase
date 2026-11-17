@@ -1,10 +1,13 @@
 /**
  * 口型驱动：把「声音」或「文字」变成 VRM 的五个元音权重（aa / ih / ou / ee / oh）。
  *
- * 两条来源，互不冒充：
+ * 三条来源，互不冒充：
  *  - audio：<audio> → MediaElementAudioSourceNode → AnalyserNode，按实时频谱给权重；
- *  - text：没有音频时按字推一条近似时间线，只保证「有起伏、能闭嘴」，
- *    不代表与任何声音同步，UI 必须如实标注。
+ *  - timeline：后端 TTS 回传的边界时间戳，把每段真实起止时间摊到它的字符上，
+ *    口型与声音同起同止。Edge 是词级、piper-plus 是音节级（带真实韵母 viseme）；
+ *    粒度不同，UI 必须如实标注，不能把词级说成音素级；
+ *  - text：没有任何时间信息时按字推一条近似时间线，只保证「有起伏、能闭嘴」，
+ *    不代表与任何声音同步。
  *
  * 平滑自己做（默认 90ms 时间常数，60–120ms 内可调）。AnalyserNode 自带的
  * smoothingTimeConstant 只平滑频谱，权重还需要再过渡一层，否则口型会抖。
@@ -51,6 +54,69 @@ function neighbourViseme(primary) {
 }
 
 /**
+ * 把后端 TTS 的边界时间戳转成口型时间线（纯逻辑，可单测）。
+ *
+ * timing 形如 `[{ text, offset_ms, duration_ms, viseme? }]`：Edge 来自 WordBoundary，
+ * piper-plus 则是逐字的音节时间戳。每个词/字的真实时长按「可发音字符数」均分，
+ * 标点/空格不占口型时间。条目带合法 `viseme` 时优先采用服务端算出的真实韵母，
+ * 否则按字符近似映射。没有任何可用条目时返回 null —— 调用方据此降级到匀速推演，
+ * 绝不伪造时间戳。
+ *
+ * @param {string} text 原始播报文本（用于把词映射回 UTF-16 字符索引）
+ * @param {Array<{ text: string, offset_ms: number, duration_ms: number, viseme?: string }>} timing
+ * @returns {{ entries: Array<object>, duration: number } | null}
+ */
+export function visemeTimeline(text, timing) {
+  const words = Array.isArray(timing) ? timing : []
+  const source = String(text ?? '')
+  const entries = []
+  let duration = 0
+  let cursor = 0
+
+  for (const word of words) {
+    const label = String(word?.text ?? '')
+    const offset = Number(word?.offset_ms)
+    const span = Number(word?.duration_ms)
+    if (!label || !Number.isFinite(offset) || !Number.isFinite(span) || span <= 0) continue
+
+    const spoken = Array.from(label).filter(
+      (char) => !SPACE_PATTERN.test(char) && !PAUSE_PATTERN.test(char)
+    )
+    if (!spoken.length) continue
+
+    // 服务端给了真实韵母（piper-plus 音素级）就用它，缺省才退回字符近似
+    const hinted = VISEMES.includes(word?.viseme) ? word.viseme : ''
+
+    // 词在原文中的起点：找不到（如服务端改写了文本）就顺延到游标，索引仅用于调试
+    const found = source.indexOf(label, cursor)
+    const baseIndex = found >= 0 ? found : cursor
+
+    const charMs = span / spoken.length
+    let step = 0
+    let localIndex = 0
+    for (const char of label) {
+      const charIndex = baseIndex + localIndex
+      localIndex += char.length
+      if (SPACE_PATTERN.test(char) || PAUSE_PATTERN.test(char)) continue
+      const primary = hinted || visemeForChar(char)
+      entries.push({
+        start: offset + step * charMs,
+        end: offset + (step + 1) * charMs,
+        primary,
+        secondary: neighbourViseme(primary),
+        charIndex
+      })
+      step += 1
+    }
+
+    cursor = baseIndex + label.length
+    duration = Math.max(duration, offset + span)
+  }
+
+  return entries.length ? { entries, duration } : null
+}
+
+/**
  * @param {{ smoothMs?: number }} [options]
  */
 export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
@@ -62,6 +128,7 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
   let timeData = null
 
   let timeline = null
+  let timelineSource = ''
   let timelineClock = 0
   let weights = zeroWeights()
   let disposed = false
@@ -161,8 +228,26 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
       charIndex += char.length
     }
     timeline = entries.length ? { entries, duration: clock } : null
+    timelineSource = 'text'
     timelineClock = 0
     return clock
+  }
+
+  /**
+   * 用后端回传的词级时间戳驱动口型（优先于 speak 的匀速推演）。
+   *
+   * @returns {boolean} true = 已按真实时间戳驱动；false = 时间戳不可用，已退回 speak()
+   */
+  function speakTimeline(text, timing) {
+    const planned = visemeTimeline(text, timing)
+    if (!planned) {
+      speak(text)
+      return false
+    }
+    timeline = planned
+    timelineSource = 'timeline'
+    timelineClock = 0
+    return true
   }
 
   /**
@@ -184,6 +269,7 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
 
   function silence({ immediate = false } = {}) {
     timeline = null
+    timelineSource = ''
     timelineClock = 0
     if (immediate) weights = zeroWeights()
   }
@@ -193,6 +279,7 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     timelineClock += dt * 1000
     if (timelineClock >= timeline.duration) {
       timeline = null
+      timelineSource = ''
       return
     }
     const entry = timeline.entries.find(
@@ -268,10 +355,13 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     return weights
   }
 
+  /** 当前驱动来源：audio（频谱）/ timeline（词级时间戳）/ text（匀速近似）/ none */
   function isActive() {
+    const audio = Boolean(analyser && audioElement && !audioElement.paused)
     return {
-      audio: Boolean(analyser && audioElement && !audioElement.paused),
-      text: Boolean(timeline)
+      audio,
+      text: Boolean(timeline),
+      mode: audio ? 'audio' : timeline ? timelineSource : 'none'
     }
   }
 
@@ -279,9 +369,21 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     if (disposed) return
     disposed = true
     timeline = null
+    timelineSource = ''
     weights = zeroWeights()
     detachAudio()
   }
 
-  return { attachAudio, detachAudio, resume, speak, seek, silence, update, isActive, dispose }
+  return {
+    attachAudio,
+    detachAudio,
+    resume,
+    speak,
+    speakTimeline,
+    seek,
+    silence,
+    update,
+    isActive,
+    dispose
+  }
 }
