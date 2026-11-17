@@ -29,7 +29,50 @@
         <p class="scholar-meta scholar-muted">点击卡片翻转正面 / 背面。卡序按快照文档顺序排列（确定性组卷，无随机）。</p>
       </section>
 
-      <section class="scholar-card-zone" aria-label="背诵卡">
+      <!-- 知识树导航：课程 › 文档 › 章节，结构来自快照真实层级；已翻背面的章节节点点亮 -->
+      <section class="scholar-panel scholar-tree" aria-label="知识树导航">
+        <button
+          type="button"
+          class="scholar-tree__toggle"
+          :aria-expanded="treeOpen"
+          @click="treeOpen = !treeOpen"
+        >
+          <span>知识树 · 已学 {{ viewedInRange }}/{{ deck.length }}</span>
+          <span class="scholar-tree__hint">{{ treeOpen ? '收起 ▲' : '展开 课程 › 文档 › 章节 ▼' }}</span>
+        </button>
+        <div v-show="treeOpen" class="scholar-tree__body">
+          <div class="scholar-tree__bar" role="progressbar" :aria-valuenow="viewedInRange" :aria-valuemax="deck.length">
+            <span class="scholar-tree__bar-fill" :style="{ width: `${deck.length ? (viewedInRange / deck.length) * 100 : 0}%` }"></span>
+          </div>
+          <div v-for="group in treeCourses" :key="group.label" class="scholar-tree__course">
+            <button type="button" class="scholar-tree__course-name" :title="`切换到课程：${group.label}`" @click="jumpToCourse(group)">
+              {{ group.label }}
+            </button>
+            <ul class="scholar-tree__docs">
+              <li v-for="doc in group.docs" :key="doc.title">
+                <button type="button" class="scholar-tree__doc" :aria-expanded="expandedDocs.has(doc.title)" @click="toggleDoc(doc.title)">
+                  <span class="scholar-tree__doc-title">{{ doc.title }}</span>
+                  <span class="scholar-muted">{{ docViewedCount(doc) }}/{{ doc.cards.length }}</span>
+                </button>
+                <ul v-show="expandedDocs.has(doc.title)" class="scholar-tree__sections">
+                  <li v-for="card in doc.cards" :key="card.id">
+                    <button
+                      type="button"
+                      class="scholar-tree__section"
+                      :class="{ 'is-viewed': viewedCards.has(card.id) }"
+                      @click="jumpToCard(card.id, doc.title)"
+                    >
+                      {{ card.front }}
+                    </button>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section ref="cardZone" class="scholar-card-zone" aria-label="背诵卡">
         <button
           type="button"
           class="flip"
@@ -64,7 +107,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import snapshot from '../atlas/atlasDistilled.json'
 import { buildDeck } from '../../domain/scholar/scholarEngine.js'
 
@@ -72,6 +115,7 @@ const courseId = ref('')
 const index = ref(0)
 const flipped = ref(false)
 const flippedCount = ref(0)
+const cardZone = ref(null)
 
 const deck = computed(() => buildDeck(snapshot, { courseId: courseId.value || null, limit: 60 }))
 const current = computed(() => deck.value[index.value] ?? deck.value[0])
@@ -88,7 +132,95 @@ function step(delta) {
 }
 function flip() {
   flipped.value = !flipped.value
-  if (flipped.value) flippedCount.value += 1
+  if (flipped.value) {
+    flippedCount.value += 1
+    markViewed(current.value.id)
+  }
+}
+
+// ------------------------------------------------------------------
+// 知识树导航 + 进度点亮：树结构完全来自 deck（快照真实层级），
+// 点击章节节点定位到对应卡片；已翻背面的卡点亮（localStorage 持久真实浏览行为）。
+// ------------------------------------------------------------------
+
+const VIEWED_KEY = 'scholar-cards-viewed'
+const treeOpen = ref(false)
+const expandedDocs = ref(new Set())
+const viewedCards = ref(loadViewedCards())
+
+function loadViewedCards() {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(VIEWED_KEY) || '[]')
+    return new Set(Array.isArray(raw) ? raw : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function markViewed(cardId) {
+  if (!cardId || viewedCards.value.has(cardId)) return
+  const next = new Set(viewedCards.value)
+  next.add(cardId)
+  viewedCards.value = next
+  try {
+    window.localStorage.setItem(VIEWED_KEY, JSON.stringify([...next]))
+  } catch { /* 隐私模式等 localStorage 不可用时仅本次会话生效 */ }
+}
+
+/* 树仅渲染当前 deck 范围（与卡片组严格同步，定位永不落空） */
+const treeDocs = computed(() => {
+  const docs = new Map()
+  for (const card of deck.value) {
+    if (!docs.has(card.source)) {
+      docs.set(card.source, { title: card.source, courseId: card.courseId, cards: [] })
+    }
+    docs.get(card.source).cards.push({ id: card.id, front: card.front })
+  }
+  return [...docs.values()]
+})
+
+const treeCourses = computed(() => {
+  const groups = new Map()
+  for (const doc of treeDocs.value) {
+    const course = snapshot.courses.find(item => item.id === doc.courseId)
+    const label = course?.label || doc.courseId
+    if (!groups.has(label)) groups.set(label, { label, docs: [] })
+    groups.get(label).docs.push(doc)
+  }
+  return [...groups.values()]
+})
+
+const viewedInRange = computed(() => deck.value.filter(card => viewedCards.value.has(card.id)).length)
+
+function docViewedCount(doc) {
+  return doc.cards.filter(card => viewedCards.value.has(card.id)).length
+}
+
+/* 当前卡所在文档自动展开（其余保持用户手动状态），对齐「默认折叠仅当前域展开」惯例 */
+watch(() => current.value?.source, (docTitle) => {
+  if (!docTitle || expandedDocs.value.has(docTitle)) return
+  expandedDocs.value = new Set([...expandedDocs.value, docTitle])
+}, { immediate: true })
+
+function toggleDoc(docTitle) {
+  const next = new Set(expandedDocs.value)
+  if (next.has(docTitle)) next.delete(docTitle)
+  else next.add(docTitle)
+  expandedDocs.value = next
+}
+
+function jumpToCourse(group) {
+  const course = snapshot.courses.find(item => item.label === group.label)
+  if (course && courseId.value !== course.id) courseId.value = course.id
+}
+
+function jumpToCard(cardId, docTitle) {
+  const target = deck.value.findIndex(card => card.id === cardId)
+  if (target < 0) return
+  index.value = target
+  flipped.value = false
+  expandedDocs.value = new Set([...expandedDocs.value, docTitle])
+  nextTick(() => cardZone.value?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
 }
 </script>
 
@@ -110,6 +242,83 @@ function flip() {
 .scholar-meta { margin: 0; font-size: 12px; }
 .scholar-empty { border: 1px dashed var(--smart-border, #e5e7eb); border-radius: 12px; padding: 24px; text-align: center; }
 .scholar-empty p { margin: 0 auto; max-width: 560px; font-size: 13px; color: var(--smart-muted, #6b7280); line-height: 1.8; }
+
+/* 知识树导航：默认折叠仅显示进度行；展开后限高滚动，避免挤占卡片首屏 */
+.scholar-tree__toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--smart-text, #1f2937);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.scholar-tree__toggle:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 4px; border-radius: 6px; }
+.scholar-tree__hint { font-weight: 400; font-size: 12px; color: var(--smart-muted, #6b7280); }
+.scholar-tree__body { display: grid; gap: 10px; margin-top: 10px; max-height: 320px; overflow-y: auto; }
+.scholar-tree__bar { height: 4px; border-radius: 999px; background: rgba(37, 99, 235, .12); overflow: hidden; }
+.scholar-tree__bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--smart-primary-strong, #2563eb); transition: width .3s ease; }
+.scholar-tree__course { display: grid; gap: 6px; }
+.scholar-tree__course-name {
+  justify-self: start;
+  padding: 3px 10px;
+  border: 1px solid var(--smart-border, #e5e7eb);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, .06);
+  color: var(--smart-primary-strong, #2563eb);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.scholar-tree__course-name:hover { border-color: var(--smart-primary-strong, #2563eb); }
+.scholar-tree__course-name:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 2px; }
+.scholar-tree__docs { margin: 0; padding: 0 0 0 6px; list-style: none; display: grid; gap: 4px; }
+.scholar-tree__docs > li { border-left: 2px solid var(--smart-border, #e5e7eb); padding-left: 10px; }
+.scholar-tree__doc {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--smart-text, #1f2937);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.scholar-tree__doc:hover { background: rgba(37, 99, 235, .06); }
+.scholar-tree__doc:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 1px; }
+.scholar-tree__doc-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scholar-tree__sections { margin: 2px 0 6px; padding: 0 0 0 12px; list-style: none; display: grid; gap: 2px; }
+.scholar-tree__sections > li { border-left: 1px dashed var(--smart-border, #e5e7eb); padding-left: 10px; }
+.scholar-tree__section {
+  display: block;
+  width: 100%;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--smart-muted, #6b7280);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scholar-tree__section:hover { background: rgba(37, 99, 235, .06); color: var(--smart-text, #1f2937); }
+.scholar-tree__section:focus-visible { outline: 2px solid var(--smart-primary-strong, #2563eb); outline-offset: 1px; }
+.scholar-tree__section.is-viewed { color: var(--smart-primary-strong, #2563eb); }
+.scholar-tree__section.is-viewed::before { content: '● '; font-size: 9px; vertical-align: 1px; }
 
 /* 翻转卡：3D 翻转；reduced-motion 下退化为直接切换（无 transition） */
 .scholar-card-zone { display: grid; place-items: center; min-height: 340px; }
