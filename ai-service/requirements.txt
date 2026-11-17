@@ -11,9 +11,29 @@ pydantic-settings>=2.4,<3
 # HTTP Client
 httpx>=0.27,<1
 
+# Edge 神经语音的握手签名（Sec-MS-GEC v2 = CS64+SHA256 复合摘要）。
+# 只借用它的 drm 模块做签名，音频传输仍走本项目自己的 WebSocket 实现，
+# 所以升级到新版本时不会影响播放链路。未安装时 edge provider 自动判定不可用。
+edge-tts>=7.3,<8
+
 # Metrics（PERF-08：/metrics 真实出口）
 prometheus-client>=0.20,<1
 
 # Testing
 pytest>=8.3,<10
 pytest-asyncio>=0.24,<2
+
+# ------------------------------------------------------------
+# 可选：本地神经 TTS（桌宠「小鱼」播报，见 app/services/tts.py）
+# 默认不安装：体积大、依赖 GPU/显存，装与不装都不影响服务启动。
+# 未安装时 /api/tts/status 返回 available=false 与具体原因，
+# /api/tts/synthesize 返回 503，前端回落浏览器 speechSynthesis。
+#
+# VoxCPM2（4.4GB 权重，峰值显存约 5.3GB；本机 Python 3.14 上约半数加载会崩，慎用）：
+#   pip install voxcpm==2.0.3
+# F5-TTS（1.3GB 权重，峰值显存约 1.9GB，必须提供参考音频做声线克隆）：
+#   pip install f5-tts==1.1.22
+#   F5 另需 share 版 FFmpeg（torchaudio 2.9+ 的 torchcodec 解码依赖其 avcodec DLL）
+# 两者都需要 torch；本机已有 torch+cu126 时只需安装其一。
+# 注意：voxcpm 会把 datasets 降到 3.6.x（f5-tts 只要求 >=2.19，装完一起实测可用）。
+# ------------------------------------------------------------

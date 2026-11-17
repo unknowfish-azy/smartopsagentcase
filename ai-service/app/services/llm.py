@@ -58,6 +58,23 @@ class LLMService:
                 self._mark_degraded(exc)
                 return self._mock_generate(prompt)
 
+        # OpenAI 兼容端点：DashScope 百炼/微调模型、vLLM 等统一走 /chat/completions。
+        # 连接失败时与 ollama 同口径降级，degraded / effective_provider 如实上报。
+        if provider == "openai-compatible":
+            try:
+                result = await self._openai_generate(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    model=model,
+                )
+                self.effective_provider = "openai-compatible"
+                return result
+            except UpstreamSaturated:
+                raise
+            except Exception as exc:
+                self._mark_degraded(exc)
+                return self._mock_generate(prompt)
+
         raise LLMException(
             f"暂不支持的 LLM Provider: {provider}"
         )
@@ -105,7 +122,30 @@ class LLMService:
                     yield chunk
             return
 
-        # 真实 Provider 接入时在此按 stream=True 解析 SSE/NDJSON
+        if provider == "openai-compatible":
+            emitted = False
+            try:
+                async for chunk in self._openai_stream(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    model=model,
+                ):
+                    self.effective_provider = "openai-compatible"
+                    emitted = True
+                    yield chunk
+                if not emitted:
+                    raise LLMException("OpenAI 兼容返回为空")
+            except UpstreamSaturated:
+                raise
+            except Exception as exc:
+                if emitted:
+                    self._mark_degraded(exc, provider="openai-compatible")
+                    raise LLMException("真实模型输出中断，已保留部分回答，请重试") from exc
+                self._mark_degraded(exc)
+                async for chunk in self._mock_stream(prompt):
+                    yield chunk
+            return
+
         raise LLMException(
             f"暂不支持的 LLM Provider: {provider}"
         )
@@ -341,6 +381,154 @@ class LLMService:
             total_ms=round((time.perf_counter() - started) * 1000),
         )
         return answer
+
+    # ---------- OpenAI 兼容端点（DashScope 百炼 / vLLM / 微调模型） ----------
+
+    @staticmethod
+    def _openai_endpoint() -> str:
+        """拼接 /chat/completions。允许 base_url 直接写成完整的 chat/completions 地址，
+        避免把 DashScope 的完整 URL 粘进来后出现重复路径。"""
+        base = settings.llm_base_url.rstrip("/")
+        if base.endswith("/chat/completions"):
+            return base
+        return f"{base}/chat/completions"
+
+    @staticmethod
+    def _openai_headers() -> dict[str, str]:
+        if not settings.llm_api_key:
+            raise LLMException(
+                "OpenAI 兼容 Provider 缺少 LLM_API_KEY，无法调用"
+            )
+        return {
+            "Authorization": f"Bearer {settings.llm_api_key}",
+            "Content-Type": "application/json",
+        }
+
+    @staticmethod
+    def _openai_payload(
+        prompt: str,
+        system_prompt: str | None,
+        *,
+        stream: bool,
+        model: str | None = None,
+    ) -> dict[str, Any]:
+        messages: list[dict[str, str]] = []
+        # system 与 Ollama 分支保持同一份文本，训练/推理口径才一致。
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        return {
+            "model": model or settings.llm_model,
+            "messages": messages,
+            "stream": stream,
+        }
+
+    @staticmethod
+    def _perf_from_openai(
+        usage: Any, ttft_ms: int | None, total_ms: int
+    ) -> dict[str, Any]:
+        usage = usage if isinstance(usage, dict) else {}
+        return {
+            "provider": "openai-compatible",
+            "ttft_ms": ttft_ms,
+            "total_ms": total_ms,
+            "prompt_eval_count": usage.get("prompt_tokens"),
+            "eval_count": usage.get("completion_tokens"),
+        }
+
+    async def _openai_generate(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        model: str | None = None,
+    ) -> str:
+        payload = self._openai_payload(
+            prompt, system_prompt, stream=False, model=model
+        )
+        started = time.perf_counter()
+        async with http_pool.acquire() as client:
+            response = await client.post(
+                self._openai_endpoint(),
+                json=payload,
+                headers=self._openai_headers(),
+            )
+        if response.status_code != 200:
+            raise LLMException(
+                f"OpenAI 兼容调用失败：{response.status_code}"
+            )
+        data = response.json()
+        try:
+            answer = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise LLMException("OpenAI 兼容返回格式错误") from exc
+        if not isinstance(answer, str) or not answer.strip():
+            raise LLMException("OpenAI 兼容返回为空")
+        self.last_llm_perf = self._perf_from_openai(
+            data.get("usage"),
+            ttft_ms=None,
+            total_ms=round((time.perf_counter() - started) * 1000),
+        )
+        return answer
+
+    async def _openai_stream(
+        self,
+        prompt: str,
+        system_prompt: str | None,
+        model: str | None = None,
+    ):
+        """解析 OpenAI 兼容的 SSE：`data: {...}` 分片 + 末尾 `data: [DONE]`。"""
+        payload = self._openai_payload(
+            prompt, system_prompt, stream=True, model=model
+        )
+        started = time.perf_counter()
+        ttft_ms: int | None = None
+        usage: Any = None
+        completed = False
+        has_text = False
+        async with http_pool.acquire() as client:
+            async with client.stream(
+                "POST",
+                self._openai_endpoint(),
+                json=payload,
+                headers=self._openai_headers(),
+            ) as response:
+                if response.status_code != 200:
+                    raise LLMException(
+                        f"OpenAI 兼容调用失败：{response.status_code}"
+                    )
+                async for line in response.aiter_lines():
+                    if not line or not line.startswith("data:"):
+                        continue
+                    raw = line[len("data:"):].strip()
+                    if raw == "[DONE]":
+                        completed = True
+                        break
+                    data = json.loads(raw)
+                    if not isinstance(data, dict):
+                        raise LLMException("OpenAI 兼容流格式错误")
+                    if isinstance(data.get("usage"), dict):
+                        usage = data["usage"]
+                    choices = data.get("choices") or []
+                    if not choices:
+                        continue
+                    delta = choices[0].get("delta") or {}
+                    chunk = delta.get("content")
+                    if not isinstance(chunk, str):
+                        continue
+                    if chunk:
+                        if ttft_ms is None:
+                            ttft_ms = round(
+                                (time.perf_counter() - started) * 1000
+                            )
+                        has_text = has_text or bool(chunk.strip())
+                        yield chunk
+        if not completed or not has_text:
+            raise LLMException("OpenAI 兼容流未完整结束或返回为空")
+        self.last_llm_perf = self._perf_from_openai(
+            usage,
+            ttft_ms=ttft_ms,
+            total_ms=round((time.perf_counter() - started) * 1000),
+        )
 
     @staticmethod
     def _payload(prompt: str, system_prompt: str | None, *, stream: bool,
