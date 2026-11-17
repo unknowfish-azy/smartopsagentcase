@@ -283,15 +283,16 @@ onMounted(() => {
     CAR: '/models/robot/patrol-car.glb',
     SPIDER: '/models/robot/spider-bot.glb',
   }
-  let glbCache = null
+  /* 按 URL 缓存：同一模型只加载一次（不同形态各自缓存） */
+  const glbCache = new Map()
 
   function loadGltf(url) {
-    if (!glbCache) {
-      glbCache = new Promise((resolve, reject) => {
+    if (!glbCache.has(url)) {
+      glbCache.set(url, new Promise((resolve, reject) => {
         new GLTFLoader().load(url, resolve, undefined, reject)
-      })
+      }))
     }
-    return glbCache
+    return glbCache.get(url)
   }
 
   function disposeRobotMesh(target) {
