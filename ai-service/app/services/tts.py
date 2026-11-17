@@ -977,7 +977,7 @@ def _piper_syllables(phonemes: list[Any]) -> list[dict[str, Any]]:
 
 
 # 字母数字串内部允许出现这些连接符（A-07 / v1.2 / 10:30），整体算一个对齐单元
-_PIPER_RUN_CONNECTORS = frozenset("-_.:/#")
+_PIPER_RUN_CONNECTORS = frozenset("-_.:/#,")
 
 
 def _is_piper_cjk(char: str) -> bool:
@@ -998,7 +998,7 @@ def _piper_units(text: str) -> list[tuple[str, str]]:
 
     def flush() -> None:
         if buffer:
-            run = "".join(buffer).rstrip("-_./:#")
+            run = "".join(buffer).rstrip("-_./:#,")
             if run:
                 units.append(("run", run))
             buffer.clear()
@@ -1034,7 +1034,8 @@ def _allocate_run_syllables(total: int, weights: list[int]) -> list[int]:
 _PIPER_CN_DIGITS = "零一二三四五六七八九"
 _PIPER_CN_UNITS = ("", "十", "百", "千")
 _PIPER_CN_BIG_UNITS = ("", "万", "亿", "万亿")
-_PIPER_NUMBER_RE = re.compile(r"\d+(?:\.\d+)*")
+_PIPER_NUMBER_RE = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)*")
+_PIPER_DATE_RE = re.compile(r"(?<!\d)(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?!\d)")
 
 
 def _read_cn_group(group: int) -> str:
@@ -1082,6 +1083,7 @@ def _read_cn_digits(value: str) -> str:
 
 def _read_piper_number(number: str) -> str:
     """纯数字串 → 中文读法：小数逐位、多段编号逐段按位、前导零按位。"""
+    number = number.replace(",", "")
     parts = number.split(".")
     if len(parts) > 2:
         return "点".join(_read_cn_digits(part) for part in parts)
@@ -1090,6 +1092,17 @@ def _read_piper_number(number: str) -> str:
     if len(number) > 1 and number.startswith("0"):
         return _read_cn_digits(number)
     return _read_cn_int(int(number))
+
+
+def _read_cn_date(match: re.Match[str]) -> str:
+    """2026-11-17 → 二零二六年十一月十七日；月/日超范围时保持原样交给数字规则。"""
+    month, day = int(match.group(2)), int(match.group(3))
+    if not (1 <= month <= 12 and 1 <= day <= 31):
+        return match.group(0)
+    return (
+        f"{_read_cn_digits(match.group(1))}年"
+        f"{_read_cn_int(month)}月{_read_cn_int(day)}日"
+    )
 
 
 def _is_piper_run_char(char: str) -> bool:
@@ -1101,11 +1114,13 @@ def _normalize_piper_numbers(text: str) -> str:
 
     实测 ``温度07度`` 的音频只读「温度度」。改写规则：
     - 独立数字按数量读：``92`` → 九十二、``0.35`` → 零点三五、``1001`` → 一千零一；
+    - 千分位按整段数量读：``1,024`` → 一千零二十四；
+    - 日期按年月日读：``2026-11-17`` → 二零二六年十一月十七日；
     - 前导零按位读：``07`` → 零七；多段编号逐段读：``192.168.1.1`` → 一九二点一六八点一点一；
     - 字母数字串内逐位读：``A-07`` → A-零七；
     - 紧跟百分号加「百分之」，前导负号读「负」。
     """
-    source = str(text)
+    source = _PIPER_DATE_RE.sub(_read_cn_date, str(text))
     result: list[str] = []
     cursor = 0
     for match in _PIPER_NUMBER_RE.finditer(source):

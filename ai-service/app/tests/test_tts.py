@@ -593,8 +593,22 @@ def test_normalize_piper_numbers_覆盖告警常见数字形态():
     assert normalize("温度-5度") == "温度负五度"
     assert normalize("服务器A-07") == "服务器A-零七"
     assert normalize("地址192.168.1.1") == "地址一九二点一六八点一点一"
+    assert normalize("共1,024台") == "共一千零二十四台"
+    assert normalize("2026-11-17 到期") == "二零二六年十一月十七日 到期"
+    # 不是日期的连字符数字（范围）逐位读，不硬套年月日
+    assert normalize("范围1000-2000") == "范围一零零零-二零零零"
     # 已含中文读法的文本保持原样（幂等）
     assert normalize("温度九十二度") == "温度九十二度"
+
+
+def test_piper_units_千分位与日期各算一个数字串():
+    """对齐单元与数字规则保持一致：1,024 和日期都只占一个整串。"""
+    assert tts_module._piper_units("共1,024台") == [
+        ("cjk", "共"),
+        ("run", "1,024"),
+        ("cjk", "台"),
+    ]
+    assert tts_module._piper_units("2026-11-17") == [("run", "2026-11-17")]
 
 
 def test_piper_synthesize_合成前把数字改写成中文(monkeypatch):
