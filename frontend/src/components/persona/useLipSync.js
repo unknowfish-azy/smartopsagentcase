@@ -54,6 +54,16 @@ function neighbourViseme(primary) {
 }
 
 /**
+ * 时间线里是否含字母数字串：piper-plus 对这类串只能整串对齐，
+ * 标注口型精度时要降一档说明，不把它和逐字音素混为一谈。
+ */
+export function hasCoarseRun(timing) {
+  return (Array.isArray(timing) ? timing : []).some((item) =>
+    /[0-9A-Za-z]/.test(String(item?.text ?? ''))
+  )
+}
+
+/**
  * 把后端 TTS 的边界时间戳转成口型时间线（纯逻辑，可单测）。
  *
  * timing 形如 `[{ text, offset_ms, duration_ms, viseme? }]`：Edge 来自 WordBoundary，

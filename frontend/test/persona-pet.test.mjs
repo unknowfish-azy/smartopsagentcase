@@ -11,7 +11,7 @@ import {
   resolvePetSize,
   usePersonaPetStore
 } from '../src/stores/personaPet.js'
-import { createLipSync, visemeTimeline, VISEMES } from '../src/components/persona/useLipSync.js'
+import { createLipSync, hasCoarseRun, visemeTimeline, VISEMES } from '../src/components/persona/useLipSync.js'
 import { createPetSpeech } from '../src/components/persona/petSpeech.js'
 
 const VIEWPORT = { viewportWidth: 1200, viewportHeight: 900 }
@@ -396,6 +396,14 @@ describe('口型 timeline 模式（后端词级时间戳）', () => {
       { text: '好', offset_ms: 0, duration_ms: 100, viseme: 'not-a-viseme' }
     ])
     assert.notEqual(fallback.entries[0].primary, 'not-a-viseme')
+  })
+
+  test('hasCoarseRun 识别字母数字串，用于降一档标注精度', () => {
+    assert.equal(hasCoarseRun([{ text: '你', offset_ms: 0, duration_ms: 100 }]), false)
+    assert.equal(hasCoarseRun([{ text: 'A-07', offset_ms: 0, duration_ms: 100 }]), true)
+    assert.equal(hasCoarseRun([{ text: 'Pod', offset_ms: 0, duration_ms: 100 }]), true)
+    assert.equal(hasCoarseRun([]), false)
+    assert.equal(hasCoarseRun(null), false)
   })
 
   test('timing 为空或全部非法时返回 null，绝不伪造时间线', () => {

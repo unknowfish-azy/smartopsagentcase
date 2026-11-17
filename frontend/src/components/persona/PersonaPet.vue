@@ -129,6 +129,7 @@ import { useRouter } from 'vue-router'
 import AgentPersona from './AgentPersona.vue'
 import { createPetSpeech, isSpeechSynthesisAvailable } from './petSpeech.js'
 import { createPetNeuralTts } from './petNeuralTts.js'
+import { hasCoarseRun } from './useLipSync.js'
 import { fetchTtsStatus, synthesizeSpeech, synthesizeSpeechWithTiming } from '../../api/tts.ts'
 import { askAssistant, createVoiceInput, isVoiceInputAvailable } from './personaVoice.js'
 import { resolveNavigationIntent, hazardBubble, isHazardRoute } from './voiceCommandRegistry.js'
@@ -224,7 +225,10 @@ const noteHint = computed(() => {
   if (speaking.value || voiceMode.value === 'speaking') {
     if (ttsEngine.value) {
       if (lipAlign.value === 'phoneme') {
-        return '神经语音 · 按「听」或点我即可打断（口型按音素级时间戳对齐）'
+        // 字母数字串在 piper-plus 里只能整串对齐：如实说明，不把它说成逐字音素
+        return hasCoarseRun(neuralTts.lastTiming)
+          ? '神经语音 · 按「听」或点我即可打断（口型按音素级对齐，字母数字为整串近似）'
+          : '神经语音 · 按「听」或点我即可打断（口型按音素级时间戳对齐）'
       }
       if (lipAlign.value === 'timeline') {
         return '神经语音 · 按「听」或点我即可打断（口型按词级时间戳对齐）'
