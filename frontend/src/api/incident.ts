@@ -21,6 +21,11 @@ export function getIncident(id) {
   return http.get(`${BASE}/${encodeURIComponent(id)}`)
 }
 
+/** 从工单上下文生成恢复契约草案（未签发，签发必须由 Agent 侧完成）。 */
+export function createIncidentContractDraft(id) {
+  return http.post(`${BASE}/${encodeURIComponent(id)}/contract-draft`)
+}
+
 export function createIncident(payload) {
   return http.post(BASE, payload)
 }

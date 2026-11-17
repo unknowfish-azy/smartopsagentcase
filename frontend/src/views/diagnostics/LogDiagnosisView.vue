@@ -124,24 +124,12 @@
           <h2 class="ld-exp-title">运维经验匹配</h2>
           <span class="ld-exp-sub">按最高严重级指纹检索运维经验库</span>
         </header>
-        <p v-if="expLoading" class="ld-exp-note" role="status">正在检索经验库…</p>
-        <template v-else>
-          <ul v-if="expMatches.length" class="ld-exp-list">
-            <li v-for="(m, i) in expMatches" :key="i" class="ld-exp-item">
-              <p class="ld-exp-action">{{ m.action }}</p>
-              <p class="ld-exp-meta">
-                <span class="ld-exp-source">{{ expSourceLabel(m.source) }}</span>
-                <span class="ld-exp-conf">置信度 {{ Math.round((m.confidence || 0) * 100) }}%</span>
-                <span v-if="m.sourceRefs" class="ld-exp-refs">来源 {{ m.sourceRefs }}</span>
-              </p>
-              <p v-if="m.verification" class="ld-exp-verify">{{ m.verification }}</p>
-            </li>
-          </ul>
-          <p v-else-if="expError" class="ld-exp-note">经验库检索失败，已跳过（不影响诊断结论）。</p>
-          <p v-else class="ld-exp-note">
-            经验库暂无匹配的历史处理动作。经验由决策闭环与哨兵蒸馏自动沉淀——处理过同类工单后，下次诊断会在这里给出建议。
-          </p>
-        </template>
+        <ExperienceMatchCard
+          :matches="expMatches"
+          :loading="expLoading"
+          :error="expError"
+          :empty-text="expEmptyText"
+        />
       </section>
 
       <!-- 未解释错误样本 -->
@@ -178,6 +166,8 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { analyzeLog, toMarkdown } from '../../utils/logDiagnosisEngine.js'
 import { post } from '../../utils/request'
+import { getKnowledgeRecommendations } from '../../api/knowledgeRecommendations.ts'
+import ExperienceMatchCard from '../../components/knowledge/ExperienceMatchCard.vue'
 
 /* ---------------- 输入状态 ---------------- */
 
@@ -225,6 +215,9 @@ function clearInput() {
   result.value = null
   actionMessage.value = ''
   savedCandidate.value = null
+  expMatches.value = []
+  expLoading.value = false
+  expError.value = false
   if (fileInput.value) fileInput.value.value = ''
 }
 
@@ -234,6 +227,53 @@ function runDiagnosis() {
   actionMessage.value = ''
   savedCandidate.value = null
   result.value = analyzeLog(logText.value)
+  /* 回灌侧：诊断完成即检索经验库（失败静默，不阻断主流程） */
+  fetchExperience()
+}
+
+/* ---------------- 运维经验匹配（自学习闭环回灌侧） ---------------- */
+
+const SEVERITY_ORDER = { CRITICAL: 0, ERROR: 1, WARN: 2, INFO: 3 }
+const expLoading = ref(false)
+const expMatches = ref([])
+const expError = ref(false)
+
+/** 空结果的诚实文案：闭环如何转起来，说清楚不夸大。 */
+const expEmptyText = computed(() => (
+  '经验库暂无匹配的历史处理动作。经验由决策闭环与哨兵蒸馏自动沉淀——'
+  + '本报告沉淀审核后，处理过同类工单，下次诊断会在这里给出建议。'
+))
+
+/**
+ * 用最高严重级的命中指纹组装 IncidentPattern，调 /api/knowledge/recommendations
+ * 匹配运维经验库（决策闭环 / 哨兵蒸馏自动沉淀的历史处理动作）。
+ * 空结果同样是有效结论：如实说明"暂无匹配"，不编造建议。
+ */
+async function fetchExperience() {
+  const issues = result.value?.issues ?? []
+  if (!issues.length) {
+    expMatches.value = []
+    expError.value = false
+    return
+  }
+  const top = [...issues]
+    .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9))[0]
+  expLoading.value = true
+  expError.value = false
+  try {
+    const response = await getKnowledgeRecommendations({
+      service: top.category || '',
+      symptom: `${top.name}：${top.reason}`,
+      risk: top.severity,
+      evidence: (top.keywords || []).slice(0, 6)
+    })
+    expMatches.value = Array.isArray(response?.data) ? response.data : []
+  } catch {
+    expMatches.value = []
+    expError.value = true
+  } finally {
+    expLoading.value = false
+  }
 }
 
 /* ---------------- 报告复制 ---------------- */
@@ -565,6 +605,33 @@ function notify(message, isError) {
   background: var(--ds-surface-raised);
   font-size: var(--ds-type-body-size);
   line-height: var(--ds-line-height-base);
+}
+
+/* 运维经验匹配 */
+.ld-exp {
+  padding: var(--ds-space-4);
+  border: 1px dashed var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-overlay);
+}
+
+.ld-exp-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin-bottom: var(--ds-space-3);
+}
+
+.ld-exp-title {
+  margin: 0;
+  font-size: var(--ds-type-h3-size);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.ld-exp-sub {
+  font-size: var(--ds-type-caption-size);
+  color: var(--ds-color-muted);
 }
 
 /* 问题卡 */

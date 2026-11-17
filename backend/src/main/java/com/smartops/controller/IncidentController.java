@@ -10,6 +10,7 @@ import com.smartops.dto.IncidentUpdateRequest;
 import com.smartops.module.incident.IncidentSeverity;
 import com.smartops.module.incident.IncidentStatus;
 import com.smartops.service.IncidentService;
+import com.smartops.vo.IncidentContractDraftVO;
 import com.smartops.vo.IncidentEventVO;
 import com.smartops.vo.IncidentRelationVO;
 import com.smartops.vo.IncidentVO;
@@ -45,6 +46,12 @@ public class IncidentController {
     @GetMapping("/{id}")
     public ApiResponse<IncidentVO> getById(@PathVariable Long id) {
         return ApiResponse.success(incidentService.getById(id));
+    }
+
+    /** 从工单上下文生成恢复契约草案（未签发，签发必须由 Agent 侧完成）。 */
+    @PostMapping("/{id}/contract-draft")
+    public ApiResponse<IncidentContractDraftVO> buildContractDraft(@PathVariable Long id) {
+        return ApiResponse.success(incidentService.buildContractDraft(id));
     }
 
     @GetMapping

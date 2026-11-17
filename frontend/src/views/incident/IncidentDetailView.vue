@@ -42,6 +42,54 @@
         <p v-if="actionMessage" class="sentinel-hint" role="status">{{ actionMessage }}</p>
       </section>
 
+      <section class="sentinel-panel" aria-labelledby="incident-exp-title">
+        <h2 id="incident-exp-title">推荐处理动作（经验库匹配）</h2>
+        <p class="sentinel-hint">按工单上下文检索运维经验库；命中即可参考，执行与否由人决定。</p>
+        <ExperienceMatchCard
+          :matches="expMatches"
+          :loading="expLoading"
+          :error="expError"
+          :busy="expBusy"
+          actionable
+          empty-text="经验库暂无匹配的历史处理动作——处理并关闭同类工单后，决策闭环会蒸馏出经验供后续工单匹配。"
+          @execute="recordExpAction"
+        />
+      </section>
+
+      <section class="sentinel-panel" aria-labelledby="incident-contract-title">
+        <h2 id="incident-contract-title">恢复契约草案</h2>
+        <p class="sentinel-hint">
+          按工单上下文组装 Agent 契约 schema 的草案；草案不带 digest、不能直接执行，签发必须由 Agent 侧完成（人在环上）。
+        </p>
+        <div v-if="contractDraft" class="incident-contract">
+          <p class="incident-contract__summary">{{ contractDraft.summary }}</p>
+          <p class="incident-contract__meta">
+            <span class="incident-contract__id">{{ contractDraft.draft.id }}</span>
+            <span>
+              义务 {{ contractDraft.draft.obligations.length }} 条 ·
+              有效期 {{ Math.round(contractDraft.draft.expires_after / 60000) }} 分钟 ·
+              digest 空（未签发）
+            </span>
+          </p>
+          <ul class="incident-contract__notes">
+            <li v-for="(note, i) in contractDraft.notes" :key="i">{{ note }}</li>
+          </ul>
+          <details class="incident-contract__json">
+            <summary>展开草案 JSON（交 Agent 运行手册签发）</summary>
+            <pre>{{ contractDraftJson }}</pre>
+          </details>
+          <div class="incident-contract__actions">
+            <button type="button" :disabled="draftBusy" @click="copyDraftJson">复制草案 JSON</button>
+            <span v-if="copyHint" class="sentinel-hint">{{ copyHint }}</span>
+          </div>
+        </div>
+        <div v-else class="incident-contract__actions">
+          <button type="button" :disabled="draftBusy || status !== 'ready'" @click="generateDraft">
+            {{ draftBusy ? '正在生成…' : '生成契约草案' }}
+          </button>
+        </div>
+      </section>
+
       <section class="sentinel-panel" aria-labelledby="incident-actions-title">
         <h2 id="incident-actions-title">状态流转</h2>
         <p class="sentinel-hint">
@@ -166,6 +214,7 @@ import {
   addIncidentRelation,
   assignIncident,
   closeIncident,
+  createIncidentContractDraft,
   getIncident,
   listIncidentEvents,
   listIncidentRelations,
@@ -174,6 +223,8 @@ import {
   reopenIncident,
   resolveIncident
 } from '../../api/incident'
+import { getKnowledgeRecommendations } from '../../api/knowledgeRecommendations.ts'
+import ExperienceMatchCard from '../../components/knowledge/ExperienceMatchCard.vue'
 import {
   INCIDENT_RELATION_TYPES,
   allowedTransitions,
@@ -201,6 +252,20 @@ const actionMessage = ref('')
 const closeOpen = ref(false)
 const resolveText = ref('')
 const commentText = ref('')
+
+/* ---------------- 经验库匹配（推荐处理动作） ---------------- */
+const expLoading = ref(false)
+const expMatches = ref([])
+const expError = ref(false)
+const expBusy = ref(false)
+
+/* ---------------- 恢复契约草案（阶段 C） ---------------- */
+const contractDraft = ref(null)
+const draftBusy = ref(false)
+const copyHint = ref('')
+const contractDraftJson = computed(() =>
+  contractDraft.value ? JSON.stringify(contractDraft.value.draft, null, 2) : ''
+)
 
 const closeForm = reactive({ rootCause: '', resolution: '', postmortem: '' })
 const assignForm = reactive({ assigneeId: '' })
@@ -244,6 +309,8 @@ async function reload() {
     relations.value = Array.isArray(relationList.data?.data) ? relationList.data.data : []
     status.value = incident.value ? 'ready' : 'unavailable'
     if (!incident.value) reason.value = '工单不存在或已删除。'
+    /* 经验匹配不阻塞主加载：失败静默跳过，卡片内如实提示 */
+    fetchExperience()
   } catch (error) {
     const code = error?.response?.status
     if (code === 401) {
@@ -255,6 +322,79 @@ async function reload() {
   } finally {
     loading.value = false
   }
+}
+
+/**
+ * 组装经验匹配指纹并检索运维经验库：服务 / 症状 / 风险 / 证据。
+ * 字段缺失时留空交给后端 haystack 匹配；空结果是有效结论，不编造建议。
+ */
+async function fetchExperience() {
+  const item = incident.value
+  if (!item) {
+    expMatches.value = []
+    expError.value = false
+    return
+  }
+  expLoading.value = true
+  expError.value = false
+  try {
+    const response = await getKnowledgeRecommendations({
+      service: item.relatedService || item.category || '',
+      symptom: [item.title, item.description].filter(Boolean).join('：'),
+      risk: item.severity,
+      evidence: [item.category, item.tags, item.relatedService].filter(Boolean).slice(0, 6)
+    })
+    expMatches.value = Array.isArray(response?.data) ? response.data : []
+  } catch {
+    expMatches.value = []
+    expError.value = true
+  } finally {
+    expLoading.value = false
+  }
+}
+
+/** 一键「已执行该动作」：以评论形式记入时间线，形成可追溯记录（是否真的执行仍由人负责）。 */
+async function recordExpAction(match) {
+  if (!match?.action || expBusy.value) return
+  expBusy.value = true
+  actionMessage.value = ''
+  try {
+    await addIncidentComment(incidentId.value, { content: `【经验库建议已执行】${match.action}` })
+    actionMessage.value = '已记录到工单时间线。'
+    await reload()
+  } catch (error) {
+    actionMessage.value = failureMessage(error, '记录失败，请重试。')
+  } finally {
+    expBusy.value = false
+  }
+}
+
+/** 生成恢复契约草案：平台只负责组装草案，签发（digest + 内部端点登记）留在 Agent 侧。 */
+async function generateDraft() {
+  if (draftBusy.value) return
+  draftBusy.value = true
+  actionMessage.value = ''
+  try {
+    const response = await createIncidentContractDraft(incidentId.value)
+    contractDraft.value = response?.data?.data ?? null
+    if (!contractDraft.value) {
+      actionMessage.value = '草案生成返回为空，请稍后重试。'
+    }
+  } catch (error) {
+    actionMessage.value = failureMessage(error, '草案生成失败，请重试。')
+  } finally {
+    draftBusy.value = false
+  }
+}
+
+async function copyDraftJson() {
+  try {
+    await navigator.clipboard.writeText(contractDraftJson.value)
+    copyHint.value = '已复制，可粘贴到 Agent 运行手册。'
+  } catch {
+    copyHint.value = '复制失败，请展开 JSON 手动选择复制。'
+  }
+  setTimeout(() => { copyHint.value = '' }, 3000)
 }
 
 /** 单按钮状态流转：acknowledge / mitigate / reopen。 */

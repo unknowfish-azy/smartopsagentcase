@@ -329,7 +329,7 @@ class AdminFoundationIntegrationTest {
         jdbc.update("DELETE FROM model_gateway_key");
         String hash = "a".repeat(64);
         jdbc.update("INSERT INTO model_gateway_key(id,owner_user_id,name,key_prefix,key_hash,scope) VALUES(901,22,'foundation-key','sk-found',?, 'PERSONAL')", hash);
-        jdbc.update("INSERT INTO model_gateway_group(id,owner_user_id,name,slug) VALUES(902,22,'基础组','foundation-group')");
+        jdbc.update("INSERT INTO model_gateway_group(id,owner_user_id,name,slug,route_mode) VALUES(902,22,'基础组','foundation-group','MANUAL')");
         jdbc.update("INSERT INTO model_gateway_route(id,group_id,connection_id) VALUES(903,902,77)");
         jdbc.update("INSERT INTO model_gateway_invocation(id,key_id,group_slug,model_name,status,total_tokens) VALUES"
                 + "(904,901,'foundation-group','m1','SUCCESS',120),(905,901,'foundation-group','m1','SUCCESS',NULL),"

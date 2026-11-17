@@ -8,6 +8,7 @@ import com.smartops.dto.IncidentRelationRequest;
 import com.smartops.dto.IncidentUpdateRequest;
 import com.smartops.module.incident.IncidentSeverity;
 import com.smartops.module.incident.IncidentStatus;
+import com.smartops.vo.IncidentContractDraftVO;
 import com.smartops.vo.IncidentEventVO;
 import com.smartops.vo.IncidentRelationVO;
 import com.smartops.vo.IncidentVO;
@@ -72,6 +73,15 @@ public interface IncidentService {
      * <p>幂等：告警已关联事件时直接返回既有事件，不重复建单。</p>
      */
     IncidentVO createFromAlert(Long alertId, Long actorId);
+
+    /**
+     * 从工单上下文生成恢复契约草案（阶段 C）。
+     *
+     * <p>草案与 Agent 契约 schema（recovery-contract/v1）同形，但 digest 恒为空串——
+     * 签发（谓词核对 + digest 计算 + 内部端点登记）必须由 Agent 侧完成，
+     * 平台不越权替 Agent 签发可执行契约。</p>
+     */
+    IncidentContractDraftVO buildContractDraft(Long id);
 
     /** 把尚未关联事件的活动告警批量桥接成事件，返回本次新建数量。 */
     int bridgeUnlinkedAlerts(int limit);

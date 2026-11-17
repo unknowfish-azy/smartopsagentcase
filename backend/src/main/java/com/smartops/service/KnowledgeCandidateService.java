@@ -189,6 +189,64 @@ public class KnowledgeCandidateService {
                 (rs, row) -> candidate(rs), userId, traceId).get(0);
     }
 
+    /**
+     * 日志诊断候选：前端确定性规则引擎产出的诊断报告一键沉淀（无大模型参与）。
+     * trace_id = "log-diagnosis-" + sha256(title#content) 前 16 位，同一份报告重复提交幂等收敛；
+     * source_type = LOG_DIAGNOSIS，先入 PENDING_REVIEW，人工审核后才可发布。
+     */
+    @Transactional
+    public KnowledgeCandidate createFromLogDiagnosis(Long userId, String title, String contentMarkdown) {
+        String safeTitle = title == null || title.isBlank() ? "日志诊断候选" : title.trim();
+        String safeContent = contentMarkdown == null ? "" : contentMarkdown;
+        String traceId = "log-diagnosis-" + shortHash(safeTitle + "#" + safeContent);
+        List<KnowledgeCandidate> existing = jdbc.query(
+                "SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE user_id=? AND trace_id=?",
+                (rs, row) -> candidate(rs), userId, traceId);
+        if (!existing.isEmpty()) return existing.get(0);
+        String summary = "由日志诊断规则引擎生成的确定性归因报告，无大模型参与；需人工核对原始日志上下文与适用环境后发布。";
+        try {
+            jdbc.update(connection -> {
+                var statement = connection.prepareStatement(
+                        "INSERT INTO knowledge_candidate(user_id,source_type,trace_id,tool_id,title,summary,content_markdown,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                        Statement.RETURN_GENERATED_KEYS);
+                Instant now = Instant.now();
+                statement.setLong(1, userId);
+                statement.setString(2, "LOG_DIAGNOSIS");
+                statement.setString(3, traceId);
+                statement.setString(4, "LOG_DIAGNOSIS");
+                statement.setString(5, safeTitle);
+                statement.setString(6, summary);
+                statement.setString(7, logDiagnosisMarkdown(safeTitle, safeContent));
+                statement.setString(8, PENDING_REVIEW);
+                statement.setTimestamp(9, Timestamp.from(now));
+                statement.setTimestamp(10, Timestamp.from(now));
+                return statement;
+            });
+        } catch (DuplicateKeyException ignored) {
+            // 同一份诊断报告并发提交收敛为一个候选。
+        }
+        return jdbc.query("SELECT " + CANDIDATE_COLUMNS + " FROM knowledge_candidate WHERE user_id=? AND trace_id=?",
+                (rs, row) -> candidate(rs), userId, traceId).get(0);
+    }
+
+    /** 日志诊断候选正文：报告全文以未核验代码块保存，附人工审核清单。 */
+    private static String logDiagnosisMarkdown(String title, String content) {
+        var body = new StringBuilder();
+        body.append("# 日志诊断候选\n\n");
+        body.append("> 以下结论来自前端确定性规则引擎的日志指纹匹配，无大模型参与；未命中部分不做推断。采纳前必须人工核对原始日志。\n\n");
+        body.append("## 报告标题\n\n- ").append(inline(title)).append("\n\n");
+        body.append("## 诊断报告全文（未核验）\n\n");
+        String fence = codeFence(content);
+        body.append(fence).append("markdown\n").append(content.isBlank() ? "（无报告内容）" : content).append('\n').append(fence).append("\n\n");
+        body.append("## 审核清单\n\n");
+        body.append("- [ ] 核对命中行是否忠于原始日志（引擎已脱敏 Bearer/password/token 等凭据片段）\n");
+        body.append("- [ ] 区分规则命中的确定结论与未解释错误样本，不得夸大结论\n");
+        body.append("- [ ] 补充适用环境、版本、风险与回滚说明\n");
+        body.append("- [ ] 完成审核前不得发布为正式知识\n\n");
+        body.append("**状态：待人工审核**\n");
+        return body.toString();
+    }
+
     private static String sciverseMarkdown(String query, String docId, String locator, String title, String text, Instant fetchedAt) {
         var body = new StringBuilder();
         body.append("# SciVerse 文献蒸馏候选\n\n");

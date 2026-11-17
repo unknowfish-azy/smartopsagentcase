@@ -39,6 +39,21 @@ class KnowledgeCandidateControllerTest {
     }
 
     @Test
+    void createsCandidateFromLogDiagnosisReport() {
+        var service = mock(KnowledgeCandidateService.class);
+        var candidate = new KnowledgeCandidateService.KnowledgeCandidate(
+                9L, null, "log-diagnosis-ab12cd34", "LOG_DIAGNOSIS", "日志诊断报告", "摘要", "# 报告", "PENDING_REVIEW", Instant.EPOCH,
+                "LOG_DIAGNOSIS", null, null, null, null);
+        var request = new KnowledgeCandidateController.LogDiagnosisRequest("日志诊断报告", "# 报告");
+        when(service.createFromLogDiagnosis(7L, "日志诊断报告", "# 报告")).thenReturn(candidate);
+
+        var response = new KnowledgeCandidateController(service).createFromLogDiagnosis(7L, request);
+
+        assertThat(response.getData()).isSameAs(candidate);
+        verify(service).createFromLogDiagnosis(7L, "日志诊断报告", "# 报告");
+    }
+
+    @Test
     void listsAndReadsCandidatesForCurrentUser() {
         var service = mock(KnowledgeCandidateService.class);
         var candidate = new KnowledgeCandidateService.KnowledgeCandidate(

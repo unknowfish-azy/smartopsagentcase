@@ -21,6 +21,7 @@ import com.smartops.module.incident.IncidentSeverity;
 import com.smartops.module.incident.IncidentSource;
 import com.smartops.module.incident.IncidentStatus;
 import com.smartops.service.IncidentService;
+import com.smartops.vo.IncidentContractDraftVO;
 import com.smartops.vo.IncidentEventVO;
 import com.smartops.vo.IncidentRelationVO;
 import com.smartops.vo.IncidentVO;
@@ -29,7 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -320,6 +324,83 @@ public class IncidentServiceImpl implements IncidentService {
         return recorded;
     }
 
+    /**
+     * 从工单上下文生成恢复契约草案（阶段 C）。
+     *
+     * <p>草案与 recovery-contract/v1 schema 同形，digest 恒为空串——平台不越权签发：
+     * 谓词核对、canonical digest 计算、内部端点登记全部留在 Agent 侧。</p>
+     */
+    @Override
+    public IncidentContractDraftVO buildContractDraft(Long id) {
+        Incident incident = requireIncident(id);
+        String service = firstNonBlank(incident.getRelatedService(), incident.getCategory(), "unknown-service");
+        String ident = toIdent(service);
+
+        Map<String, Object> target = new LinkedHashMap<>();
+        target.put("target_id", ident + "-primary");
+        target.put("target_kind", "SERVICE");
+
+        Map<String, Object> obligation = new LinkedHashMap<>();
+        obligation.put("obligation_id", "service-health-observed");
+        obligation.put("predicate_id", "service-health-ok");
+        obligation.put("predicate_version", "v1");
+        obligation.put("required", true);
+        obligation.put("weight", 1);
+        obligation.put("collector_ids", List.of("metric-collector"));
+        obligation.put("source_groups", List.of("incident-evidence"));
+        obligation.put("binding_revision", "unspecified");
+        obligation.put("scope", ident);
+        obligation.put("target", target);
+        obligation.put("predicate_params", Map.of("service", service));
+
+        Map<String, Object> draft = new LinkedHashMap<>();
+        draft.put("schema_version", "recovery-contract/v1");
+        draft.put("id", "incident-" + incident.getId() + "-"
+                + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        draft.put("version", "v1");
+        draft.put("scope", ident);
+        draft.put("target", target);
+        draft.put("expected_revision", "unspecified");
+        draft.put("template_id", "incident-reactive");
+        draft.put("template_version", "v1");
+        draft.put("obligations", List.of(obligation));
+        draft.put("source_groups", List.of("incident-evidence", "sentinel-metrics"));
+        // window/budgets 是 semantics.md 冻结常量，草案直接给出冻结值，签发前不得修改。
+        draft.put("window", Map.of(
+                "sample_groups", 3,
+                "min_first_last_gap_ms", 4000,
+                "max_adjacent_gap_ms", 4000,
+                "max_intra_group_skew_ms", 1250,
+                "min_next_group_gap_ms", 2000));
+        draft.put("budgets", Map.of(
+                "max_probe_calls", 12,
+                "per_probe_timeout_ms", 1000,
+                "run_deadline_ms", 30000,
+                "evidence_ttl_ms", 15000,
+                "receipt_ttl_ms", 8000));
+        draft.put("expires_after", 3600000);
+        draft.put("digest", "");
+
+        // 草案生成是可追溯动作：写入时间线
+        IncidentEvent event = new IncidentEvent();
+        event.setIncidentId(incident.getId());
+        event.setKind(IncidentEventKind.SYSTEM);
+        event.setDetail("已生成恢复契约草案 " + draft.get("id") + "（未签发，待 Agent 校验 digest）。");
+        incidentEventMapper.insert(event);
+
+        return IncidentContractDraftVO.builder()
+                .incidentId(incident.getId())
+                .incidentTitle(incident.getTitle())
+                .summary("针对 " + service + " 的服务健康义务契约草案，模板 incident-reactive/v1，有效期 1 小时。")
+                .draft(draft)
+                .notes(List.of(
+                        "草案 digest 为空串，不是可执行契约——签发必须由 Agent 侧完成"
+                                + "（核对谓词绑定、计算 canonical digest、经内部端点登记）。",
+                        "predicate_id=service-health-ok 为占位谓词，签发前需按团队谓词库核对替换。",
+                        "source_groups 已给默认两项，可按采集面调整；window/budgets 为冻结常量，不可修改。"))
+                .build();
+    }
+
     // ---------------------------------------------------------------
     // 内部方法
     // ---------------------------------------------------------------
@@ -330,6 +411,32 @@ public class IncidentServiceImpl implements IncidentService {
             throw new BusinessException(404, "事件不存在");
         }
         return incident;
+    }
+
+    /** 依次取第一个非空白值，全空时返回兜底值。 */
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return values[values.length - 1];
+    }
+
+    /**
+     * 归一化为契约合法标识：^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$。
+     * 非法字符折叠为 "-"，数字开头不足时加 "svc-" 前缀。
+     */
+    private String toIdent(String raw) {
+        String cleaned = raw.toLowerCase().replaceAll("[^a-z0-9._:-]+", "-");
+        cleaned = cleaned.replaceAll("^-+", "").replaceAll("-+$", "");
+        if (cleaned.isEmpty()) {
+            cleaned = "unknown-service";
+        }
+        if (!cleaned.matches("^[A-Za-z0-9].*")) {
+            cleaned = "svc-" + cleaned;
+        }
+        return cleaned.length() > 96 ? cleaned.substring(0, 96) : cleaned;
     }
 
     /**
