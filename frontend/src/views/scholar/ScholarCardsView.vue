@@ -453,13 +453,17 @@ function jumpToCard(cardId, docTitle) {
 }
 
 /* 跳到依赖目标文档：必要时切课程并放大组卷上限，确保目标卡确实在组内 */
-function jumpToDoc(docTitle, { scroll = true } = {}) {
+function jumpToDoc(docTitle, { scroll = true, cardIndex = 0 } = {}) {
   if (!docTitle) return
   const target = snapshot.documents.find(doc => doc.title === docTitle)
   if (!target) return
-  const targetIndex = buildDeck(snapshot, { courseId: target.courseId, limit: Number.MAX_SAFE_INTEGER })
+  const docStart = buildDeck(snapshot, { courseId: target.courseId, limit: Number.MAX_SAFE_INTEGER })
     .findIndex(card => card.source === target.title)
-  if (targetIndex < 0) return
+  if (docStart < 0) return
+  /* 同文档内卡片在组卷里连续，故文档起始位 + 卡内序号即目标位；越界钳到文档末卡 */
+  const docCardCount = buildDocCards(target).length
+  const offset = Math.min(Math.max(cardIndex, 0), Math.max(docCardCount - 1, 0))
+  const targetIndex = docStart + offset
   if (deckLimit.value < targetIndex + 1) deckLimit.value = targetIndex + 1
   expandedDocs.value = new Set([...expandedDocs.value, target.title])
   /* 切课程会经 watch 归零索引，故在渲染更新后再定位 */
@@ -471,26 +475,44 @@ function jumpToDoc(docTitle, { scroll = true } = {}) {
   })
 }
 
-/* URL 回写：当前文档写入 ?doc=<id>，刷新或分享链接可直达同一文档 */
+/* URL 回写：当前文档写入 ?doc=<id>、卡内序号写入 ?card=<n>，刷新或分享链接可精确复位 */
 const DOC_QUERY = 'doc'
+const CARD_QUERY = 'card'
 
 function docIdByTitle(docTitle) {
   return snapshot.documents.find(doc => doc.title === docTitle)?.id || ''
+}
+
+/* 当前卡在其所属文档内的序号；找不到时返回 -1 */
+function cardOrdinal(card) {
+  if (!card?.source) return -1
+  const doc = snapshot.documents.find(item => item.title === card.source)
+  if (!doc) return -1
+  return buildDocCards(doc).findIndex(item => item.id === card.id)
 }
 
 onMounted(() => {
   const docId = String(route.query[DOC_QUERY] || '')
   if (!docId) return
   const doc = snapshot.documents.find(item => item.id === docId)
-  if (doc) jumpToDoc(doc.title, { scroll: false })
+  if (!doc) return
+  const parsed = Number.parseInt(String(route.query[CARD_QUERY] || ''), 10)
+  const cardIndex = Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+  jumpToDoc(doc.title, { scroll: false, cardIndex })
 })
 
-watch(() => current.value?.source, (docTitle) => {
-  const docId = docTitle ? docIdByTitle(docTitle) : ''
-  if (docId === String(route.query[DOC_QUERY] || '')) return
+watch(() => current.value?.id, (cardId) => {
+  const card = deck.value.find(item => item.id === cardId)
+  const docId = card?.source ? docIdByTitle(card.source) : ''
+  const ordinal = cardOrdinal(card)
+  const nextCard = ordinal >= 0 ? String(ordinal) : ''
+  if (docId === String(route.query[DOC_QUERY] || '') &&
+      nextCard === String(route.query[CARD_QUERY] || '')) return
   const query = { ...route.query }
   if (docId) query[DOC_QUERY] = docId
   else delete query[DOC_QUERY]
+  if (nextCard) query[CARD_QUERY] = nextCard
+  else delete query[CARD_QUERY]
   router.replace({ query })
 })
 </script>
