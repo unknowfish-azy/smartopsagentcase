@@ -1,0 +1,246 @@
+# ============================================================================
+# 智维Agent 安全基线目录（Security Baseline Catalog）
+#
+# 三层结构：
+#   L0_COMPLIANCE  合规红线——未授权扫描/逆向/爬虫越界等法律硬边界，命中即 BLOCK
+#   L1_GENERIC_AI  通用 AI 基线——注入检测、输出脱敏、RAG 投毒过滤、接口限流
+#   L2_OPERATIONS  运维专属基线——破坏性命令/操作红线、必审计事件、高危配额
+#   L3_MULTIMODAL  多模态联动基线——巡检机器人/视觉烟火/红外温感的多源交叉验证
+#
+# 本文件是基线的"单一事实源"；loader 内置同构默认值，文件缺失时 fail-closed 仍生效。
+# 规则 ID 一经发布不得复用，调整规则只允许新增或显式废弃。
+# ============================================================================
+
+version: 1
+
+enforcement:
+  # 护栏自身异常时的默认动作：true=拒绝执行（推荐），false=放行并留痕
+  fail_closed: true
+  # 未匹配任何显式规则时的兜底动作
+  default_decision: ALLOW
+
+# ----------------------------------------------------------------------------
+# L1 通用 AI 安全基线
+# 对接：agent.safety.InjectionDetector / OutputModerator
+#       ai-service.app.guard.input_guard.check_citations
+# ----------------------------------------------------------------------------
+L1_GENERIC_AI:
+  injection:
+    # HIGH 级注入直接 BLOCK；MEDIUM 级净化隐形字符后放行
+    block_on_risk: HIGH
+    sanitize_medium: true
+  output_moderation:
+    pii_redact: true
+    # 模型越权声称"已执行"的输出强制改写
+    unclaimed_action_rewrite: true
+  rag:
+    # 证据进入 prompt 前的投毒/脏文档过滤（对应 RAG 上下文投毒风险）
+    dirty_doc_action: FILTER
+    # 低于该可信分的知识源不得进入召回
+    min_source_trust: 0.6
+    # 只允许白名单域作为外部知识来源，空列表表示不限制
+    allowed_source_domains: []
+  quotas:
+    # 令牌桶：capacity 为桶容量，refill_per_second 为回填速率
+    model_api:
+      capacity: 60
+      refill_per_second: 1
+    tool_default:
+      capacity: 120
+      refill_per_second: 2
+    tool_high_risk:
+      capacity: 10
+      refill_per_second: 0.2
+
+# ----------------------------------------------------------------------------
+# L2 运维专属安全基线
+# match=regex 时对 shell 命令文本匹配；match=operation 时对 "工具名.动作" 精确匹配
+# ----------------------------------------------------------------------------
+L2_OPERATIONS:
+  redlines:
+    - id: OL-001
+      name: 递归强制删除关键路径
+      match: regex
+      pattern: '(?:^|[\s;|&])rm\s+[^\n;|&]*(?:--no-preserve-root|(?:^|\s)(?:/\*?|/etc|/var|/usr|/home|/root|~)(?=\s|$|[/*])|\.\.(?=\s|$)|\.(?=\s|$))'
+      message: 禁止对根目录/系统目录/家目录执行递归删除
+      risk: CRITICAL
+    - id: OL-002
+      name: 磁盘格式化与分区破坏
+      match: regex
+      pattern: '(?:^|[\s;|&])(mkfs(\.\w+)?|fdisk|parted)\b|dd\s+if=\S+\s+of=/dev/'
+      message: 禁止 Agent 自动执行格式化/分区/裸盘写入
+      risk: CRITICAL
+    - id: OL-003
+      name: 关机重启类断电动作
+      match: regex
+      pattern: '(?:^|[\s;|&])(shutdown|halt|poweroff|reboot|init\s+[06])\b'
+      message: 关机/重启必须走人工审批，不得自动执行
+      risk: HIGH
+    - id: OL-004
+      name: 停用边界防护
+      match: regex
+      pattern: '(iptables|ip6tables|nft)\s+[^\n;|&]*(-F|--flush|delete)\b|systemctl\s+(stop|disable)\s+(firewalld|iptables|ufw)\b|ufw\s+disable\b|netsh\s+advfirewall\s+set\s+allprofiles\s+state\s+off'
+      message: 禁止清空/关闭防火墙策略
+      risk: CRITICAL
+    - id: OL-005
+      name: 数据库破坏性语句
+      match: regex
+      pattern: '\b(DROP|TRUNCATE)\s+(DATABASE|TABLE|SCHEMA)\b'
+      message: DROP/TRUNCATE 属 CRITICAL 操作，禁止 Agent 自动执行
+      risk: CRITICAL
+    - id: OL-006
+      name: 审计日志清除
+      match: regex
+      pattern: 'history\s+-c\b|rm\s+[^\n;|&]*/var/log\b|journalctl\s+--vacuum|wevtutil\s+cl\b'
+      message: 禁止清除/压缩审计与命令历史，防留痕清账
+      risk: CRITICAL
+    - id: OL-007
+      name: 系统目录权限敞开
+      match: regex
+      pattern: 'chmod\s+-R\s+777\s+(/|/etc|/usr|/var|/home|/root)(\s|$)'
+      message: 禁止对系统目录递归 777 授权
+      risk: HIGH
+    - id: OL-008
+      name: 强杀一号进程
+      match: regex
+      pattern: 'kill\s+-9\s+1(\s|$)|kill\s+(-\w+\s+)*-9?\s*(systemd|init)\b'
+      message: 禁止强杀 init/systemd，主机将直接不可用
+      risk: CRITICAL
+    - id: OL-009
+      name: 灾备切换与强制回滚
+      match: regex
+      pattern: 'dr\s+switchover\b|rollback\s+--force\b|灾备切换'
+      message: 灾备切换/强制回滚需双人审批，禁止 Agent 自行触发
+      risk: CRITICAL
+    - id: OL-010
+      name: 影子凭据文件篡改
+      match: regex
+      pattern: 'chmod\s+777\s+/etc/(passwd|shadow)\b|sed\s+[^\n;|&]*etc/shadow'
+      message: 禁止改动系统凭据文件权限或内容
+      risk: CRITICAL
+    - id: OL-011
+      name: 数据库删除操作名
+      match: operation
+      pattern: 'database.drop'
+      message: 操作级红线：database.drop 永远禁止自动执行
+      risk: CRITICAL
+    - id: OL-012
+      name: 服务器删除操作名
+      match: operation
+      pattern: 'server.delete'
+      message: 操作级红线：server.delete 永远禁止自动执行
+      risk: CRITICAL
+  # 必须落审计的事件类型（对接 agent.executor.audit.AuditRecord）
+  audit_required_events:
+    - baseline.blocked
+    - baseline.redline_hit
+    - baseline.compliance_hit
+    - approval.requested
+    - approval.granted
+    - approval.rejected
+    - multimodal.escalation
+    - multimodal.destructive_allowed
+    - quota.exhausted
+
+# ----------------------------------------------------------------------------
+# L0 合规红线（法律硬边界）
+# 依据：网络安全法第27条、刑法第285/286条、著作权法、反不正当竞争法
+# 任何命中都不允许"审批后放行"，只能 BLOCK + 审计
+# ----------------------------------------------------------------------------
+L0_COMPLIANCE:
+  rules:
+    - id: CL-001
+      name: 未授权端口/漏洞扫描
+      pattern: '(?<![\w.-])(nmap|masscan|zmap|nikto|dirb|dirbuster|gobuster|wpscan|nessus)(?![\w.-])'
+      legal_ref: 网络安全法第27条/刑法第285条
+      message: 未经书面授权的扫描探测属违法行为，Agent 不得调用扫描器
+    - id: CL-002
+      name: 未授权逆向工程
+      pattern: '(?<![\w.-])(ida|ida64|ghidra|x64dbg|ollydbg|jadx|apktool|frida|objection|uncompyle6|pyinstxtractor|dnspy|ilspycmd)(?![\w.-])|upx\s+-d\b'
+      legal_ref: 著作权法/反不正当竞争法
+      message: 禁止对未授权商业软件执行逆向、脱壳、反编译
+    - id: CL-003
+      name: 口令暴力破解
+      pattern: '(?<![\w.-])(hydra|medusa|hashcat|john|fcrackzip)(?![\w.-])'
+      legal_ref: 刑法第285条
+      message: 禁止暴力破解/哈希碰撞类工具调用
+    - id: CL-004
+      name: 内网欺骗与凭证嗅探
+      pattern: '(?<![\w.-])(arpspoof|ettercap|bettercap|responder|dnsspoof)(?![\w.-])'
+      legal_ref: 网络安全法第27条/刑法第285条
+      message: 禁止 ARP/DNS 欺骗、LLMNR 投毒与凭证诱导
+    - id: CL-005
+      name: 未授权隧道穿透
+      pattern: '(?<![\w.-])(frpc|frps|ngrok|nps|chisel)(?![\w.-])'
+      legal_ref: 网络安全法第27条
+      message: 禁止私建内网穿透隧道，外联通道须走备案堡垒机
+    - id: CL-006
+      name: WebShell/木马载荷制作
+      pattern: '(?<![\w.-])(msfvenom|meterpreter|mimikatz)(?![\w.-])|菜刀|蚁剑|冰蝎|哥斯拉'
+      legal_ref: 刑法第285/286条
+      message: 禁止生成或投递 WebShell、内存马与凭证抓取载荷
+    - id: CL-007
+      name: 反爬绕过与验证码破解
+      pattern: 'stealth(?:mode)?|2captcha|anticaptcha|captcha[_-]?solver|proxy[_-]?pool'
+      legal_ref: 网络安全法/数据安全法
+      message: 爬虫不得绕过反爬、破解验证码或使用代理池规避限流
+  # 合规命中后是否允许人工审批豁免：永远 false
+  approval_exemptible: false
+
+# ----------------------------------------------------------------------------
+# L3 多模态联动安全基线（机房巡检机器人 / 视觉烟火 / 红外温感）
+# 对应现实风险：对抗贴纸、温感伪造、阈值篡改、与或逻辑旁路、
+#               自检告警被屏蔽、假正常冷气、单源误触发断电
+# ----------------------------------------------------------------------------
+L3_MULTIMODAL:
+  # 单源读数的物理可信边界；越界读数直接判 UNTRUSTED，不参与仲裁
+  sensors:
+    thermal:
+      weight: 1.0
+      physical_min: -20.0
+      physical_max: 120.0
+      alarm_threshold: 65.0
+      max_staleness_seconds: 30
+      # 相邻周期温度跳变上限（℃），超限且无 HVAC 事件标记则降权
+      max_change_per_cycle: 25.0
+      min_confidence: 0.5
+    vision_fire:
+      weight: 0.9
+      max_staleness_seconds: 15
+      min_confidence: 0.5
+    vision_smoke:
+      weight: 0.8
+      max_staleness_seconds: 15
+      min_confidence: 0.5
+    smoke_sensor:
+      weight: 1.0
+      max_staleness_seconds: 20
+      min_confidence: 0.7
+    robot_nav:
+      weight: 0.4
+      max_staleness_seconds: 60
+      min_confidence: 0.3
+  # 仲裁场景：policy 取值 AND / OR / QUORUM / WEIGHTED
+  scenarios:
+    fire_alarm:
+      policy: QUORUM
+      # 至少 2 个不同类型源同时告警才确认火情
+      required_distinct_types: 2
+      # 触发断电/消防等破坏性动作所需的最少异质源数量
+      destructive_min_types: 2
+      weighted_threshold: 1.5
+    overheat:
+      policy: AND
+      required_distinct_types: 2
+      destructive_min_types: 2
+      weighted_threshold: 1.5
+  # 同一位置连续告警达到该次数后，禁止自动屏蔽/自愈结案，强制升级人工
+  auto_suppression_limit: 3
+  # 破坏性动作白名单——只有这些动作需要多源仲裁保护，其余动作不得借仲裁升级
+  destructive_actions:
+    - power.off
+    - circuit.break
+    - fire_suppression.release
+    - dr.switchover
+  # 自检/模拟读数与真实读数物理隔离，永远不得用于压制真实告警
+  self_test_isolation: true
