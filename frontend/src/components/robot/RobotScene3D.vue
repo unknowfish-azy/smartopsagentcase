@@ -34,7 +34,12 @@
           :fill="p.detour ? '#e3a008' : 'none'"
           :stroke="p.detour ? '#e3a008' : 'var(--ds-color-primary, #5b8cff)'" stroke-width="1.5"
         />
-        <circle :cx="staticRobot.cx" :cy="staticRobot.cy" r="6" :fill="stale ? '#8a8f98' : 'var(--ds-color-text, #e8eaed)'" />
+        <!-- 机器人白点可点击打开详情（与 WebGL 模型点击拾取行为一致） -->
+        <circle
+          :cx="staticRobot.cx" :cy="staticRobot.cy" r="6"
+          :fill="stale ? '#8a8f98' : 'var(--ds-color-text, #e8eaed)'"
+          class="rs3-static-robot" @click="detailsOpen = true"
+        />
       </svg>
       <p class="rs3-static-note">{{ staticNote }}</p>
     </div>
@@ -73,7 +78,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   AmbientLight, AnimationMixer, BufferGeometry, BoxGeometry, CircleGeometry, Color, ConeGeometry,
   CylinderGeometry, DirectionalLight, GridHelper, Group, Line, LineBasicMaterial, Mesh,
-  MeshBasicMaterial, PerspectiveCamera, Scene, Vector3, WebGLRenderer
+  MeshBasicMaterial, PerspectiveCamera, Raycaster, Scene, Vector2, Vector3, WebGLRenderer
 } from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { isDegraded, subscribe } from '../../visual/motionScheduler.js'
@@ -182,7 +187,7 @@ const staticRobot = computed(() => {
   return worldToSvg(Number(pose.x) || 0, Number(pose.y) || 0)
 })
 const staticNote = computed(() =>
-  `静态俯视图（${staticReason.value}）· 路线 ${waypoints.value.length} 点 · 白点为机器人实时位置`
+  `静态俯视图（${staticReason.value}）· 路线 ${waypoints.value.length} 点 · 白点为机器人实时位置，点击可查看详情`
 )
 
 // ------------------------------------------------------------------
@@ -419,6 +424,32 @@ onMounted(() => {
   syncRoute()
   syncRouteRef = syncRoute
 
+  /* 模型点击拾取：射线命中机器人本体即打开设备详情弹窗（相机固定无轨道拖拽，click 可靠） */
+  const raycaster = new Raycaster()
+  const pointer = new Vector2()
+  function hitRobot(event) {
+    const rect = element.getBoundingClientRect()
+    if (!rect.width || !rect.height) return false
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+    raycaster.setFromCamera(pointer, camera)
+    /* robot 为 let 闭包变量，GLB 换装后自动指向当前模型 */
+    return raycaster.intersectObject(robot, true).length > 0
+  }
+  function onStageClick(event) {
+    if (hitRobot(event)) detailsOpen.value = true
+  }
+  /* 悬停指针反馈：120ms 节流的射线检测，命中模型显示 pointer 光标 */
+  let lastHoverCheck = 0
+  function onStageMove(event) {
+    const now = performance.now()
+    if (now - lastHoverCheck < 120) return
+    lastHoverCheck = now
+    element.style.cursor = hitRobot(event) ? 'pointer' : ''
+  }
+  element.addEventListener('click', onStageClick)
+  element.addEventListener('pointermove', onStageMove)
+
   /* 面板滚出视口时暂停渲染（motionScheduler 只在 document.hidden 停，此处补组件级离屏暂停）。
      用几何计算而非 IntersectionObserver：IO 在 headless/无合成器环境恒报不可见，几何判断跨环境一致。
      每 500ms 才算一次 rect，布局读取成本可忽略。 */
@@ -484,6 +515,9 @@ onMounted(() => {
     mixer?.stopAllAction()
     mixer = null
     ro?.disconnect()
+    element.removeEventListener('click', onStageClick)
+    element.removeEventListener('pointermove', onStageMove)
+    element.style.cursor = ''
     disposeGroupChildren(routeGroup)
     robot.traverse((node) => {
       node.geometry?.dispose?.()
@@ -559,6 +593,7 @@ onBeforeUnmount(() => {
 .rs3-stage :deep(canvas) { display: block; width: 100%; height: 100%; }
 .rs3-stage--static { display: grid; place-items: center; }
 .rs3-static-svg { width: 100%; height: 100%; }
+.rs3-static-robot { cursor: pointer; }
 .rs3-static-note { position: absolute; bottom: 8px; left: 12px; margin: 0; color: var(--ds-color-muted, var(--smart-muted)); font-size: 10px; }
 .rs3-caption { margin: 8px 0 0; color: var(--ds-color-muted, var(--smart-muted)); font-size: 11px; line-height: 1.6; }
 @media (max-width: 760px) { .rs3-stage { height: 180px; } .rs3-legend { display: none; } }
