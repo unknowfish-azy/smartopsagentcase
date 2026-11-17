@@ -79,7 +79,7 @@
                 v-for="edge in graph.edges"
                 :key="edge.id"
                 class="scholar-tree__edge"
-                :class="`is-${edge.kind}`"
+                :class="[`is-${edge.kind}`, { 'is-focus': edge.focus }]"
                 :d="edge.d"
               />
               <path
@@ -102,6 +102,10 @@
                 @click="jumpToDoc(node.title)"
                 @keydown.enter.prevent="jumpToDoc(node.title)"
                 @keydown.space.prevent="jumpToDoc(node.title)"
+                @mouseenter="hoveredDocId = node.docId"
+                @mouseleave="hoveredDocId = ''"
+                @focus="hoveredDocId = node.docId"
+                @blur="hoveredDocId = ''"
               >
                 <title>{{ node.title }}（已学 {{ node.viewed }}/{{ node.total }}）</title>
                 <rect :x="node.x" :y="node.y" :width="graph.nodeW" :height="graph.nodeH" rx="6" />
@@ -112,7 +116,7 @@
               </g>
             </svg>
             <p class="scholar-tree__legend">
-              实线＝原文“已完成第 N 课”；短虚线＝原文“建议先完成”；长虚线＝共用专业工具推得的弱关联（非先修）；竖线主干＝快照文档顺序；灰字＝原文提到但快照未收录。
+              实线＝原文“已完成第 N 课”；短虚线＝原文“建议先完成”；长虚线＝共用专业工具推得的弱关联（非先修）；竖线主干＝快照文档顺序；灰字＝原文提到但快照未收录；悬停节点高亮其全部关联边。
             </p>
           </div>
 
@@ -295,6 +299,8 @@ const dependencyMap = buildDependencyMap(snapshot)
 /* 弱关联：共用稀有专业工具（nsys/ncu 等）推得，属于关联而非先修 */
 const weakLinks = buildWeakLinkMap(snapshot)
 const showWeak = ref(true)
+/* 图谱悬停/聚焦的文档，用于联动高亮其全部关联边 */
+const hoveredDocId = ref('')
 
 const viewedInRange = computed(() => deck.value.filter(card => viewedCards.value.has(card.id)).length)
 
@@ -348,6 +354,9 @@ const graph = computed(() => {
 
   const edges = []
   const ghosts = []
+  /* 悬停节点优先；未悬停时回落到当前卡所在文档 */
+  const activeDocId = hoveredDocId.value ||
+    nodes.find(node => node.title === current.value?.source)?.docId || ''
   for (const doc of treeDocs.value) {
     const source = byTitle.get(doc.title)
     for (const dep of depsOf(doc)) {
@@ -361,6 +370,7 @@ const graph = computed(() => {
         edges.push({
           id: `${doc.docId}-${dep.kind}-${dep.label}`,
           kind: dep.kind,
+          focus: doc.docId === activeDocId || target.docId === activeDocId,
           d: `M${x1},${sy} C${bulge},${sy} ${bulge},${ty} ${x1},${ty}`
         })
       } else {
@@ -369,17 +379,17 @@ const graph = computed(() => {
         edges.push({
           id: `missing-${doc.docId}-${dep.label}`,
           kind: 'missing',
+          focus: doc.docId === activeDocId,
           d: `M${baseX + nodeW},${sy} L${gx - 4},${sy}`
         })
       }
     }
   }
 
-  /* 弱关联走更外侧的弧线，避免与先修弧线重叠；仅当前卡所在文档的关联高亮 */
+  /* 弱关联走更外侧的弧线，避免与先修弧线重叠；与激活节点相连的弱关联一并高亮 */
   const weakEdges = []
   if (showWeak.value) {
     const byDocId = new Map(nodes.map(node => [node.docId, node]))
-    const activeSource = current.value?.source || ''
     for (const link of weakLinks) {
       const from = byDocId.get(link.a)
       const to = byDocId.get(link.b)
@@ -390,7 +400,7 @@ const graph = computed(() => {
       const bulge = x1 + 120 + Math.min(Math.abs(y2 - y1) * 0.05, 60)
       weakEdges.push({
         id: `weak-${link.a}-${link.b}`,
-        focus: from.title === activeSource || to.title === activeSource,
+        focus: link.a === activeDocId || link.b === activeDocId,
         tools: link.shared.join('/'),
         d: `M${x1},${y1} C${bulge},${y1} ${bulge},${y2} ${x1},${y2}`
       })
@@ -612,6 +622,8 @@ function jumpToDoc(docTitle) {
 .scholar-tree__svg { display: block; width: 100%; max-width: 420px; height: auto; }
 .scholar-tree__rail { stroke: var(--smart-border, #d1d5db); stroke-width: 1.5; }
 .scholar-tree__edge { fill: none; stroke: var(--smart-primary-strong, #2563eb); stroke-width: 1.4; }
+/* 悬停节点联动：与该节点相连的边加粗提亮 */
+.scholar-tree__edge.is-focus { stroke-width: 2.2; opacity: 1; }
 .scholar-tree__edge.is-suggested { stroke-dasharray: 4 3; opacity: .85; }
 .scholar-tree__edge.is-missing { stroke: var(--smart-muted, #9ca3af); stroke-dasharray: 2 3; }
 .scholar-tree__node { cursor: pointer; }
