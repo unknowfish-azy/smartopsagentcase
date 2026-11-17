@@ -1,8 +1,10 @@
 """TTS 接口单测：Provider 探测、诚实降级、音色/文本校验与 WAV 输出。"""
 
+import base64
 import io
 import json
 import wave
+from types import SimpleNamespace
 
 import pytest
 
@@ -306,3 +308,219 @@ def test_auto_prefers_first_available_provider(monkeypatch):
     reset_provider_cache()
 
     assert tts_module.TtsService().status()["provider"] == "f5tts"
+
+
+class _TimingProvider(_FakeProvider):
+    """带真实词级时间戳的假 Provider（模拟 Edge WordBoundary）。"""
+
+    name = "timing"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.timing = [
+            {"text": "你好", "offset_ms": 0, "duration_ms": 400},
+            {"text": "世界", "offset_ms": 600, "duration_ms": 500},
+        ]
+
+    def synthesize_with_timing(self, text, preset, speed):
+        audio = self.synthesize(text, preset, speed)
+        return audio, self.timing
+
+
+@pytest.fixture
+def timing_provider(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "tts_provider", "timing")
+    monkeypatch.setitem(tts_module._PROVIDER_FACTORIES, "timing", _TimingProvider)
+    reset_provider_cache()
+    return tts_module._provider_instance("timing")
+
+
+def test_edge_timing_frame_把_word_boundary_换算成毫秒():
+    frame = (
+        "X-RequestId:abc\r\nContent-Type:application/json; charset=utf-8\r\n"
+        "Path:audio.metadata\r\n\r\n"
+        + json.dumps(
+            {
+                "Metadata": [
+                    {
+                        "Type": "WordBoundary",
+                        "Data": {
+                            "Offset": 12_500_000,  # 1250ms
+                            "Duration": 4_000_000,  # 400ms
+                            "text": {"Text": "你好", "Length": 2, "BoundaryType": "WordBoundary"},
+                        },
+                    },
+                    {"Type": "SessionEnd", "Data": {}},
+                ]
+            },
+            ensure_ascii=False,
+        )
+    )
+
+    assert tts_module._edge_timing_frame(frame) == [
+        {"text": "你好", "offset_ms": 1250, "duration_ms": 400}
+    ]
+
+
+def test_edge_timing_frame_忽略非元数据帧与坏_JSON():
+    assert tts_module._edge_timing_frame("Path:turn.start\r\n\r\n{}") == []
+    assert tts_module._edge_timing_frame("Path:audio.metadata\r\n\r\n{not json") == []
+
+
+def test_synthesize_with_timing_默认回空数组_不伪造时间戳(fake_provider):
+    audio, timing = fake_provider.synthesize_with_timing("你好", None, 1.0)
+
+    assert audio[:4] == b"RIFF"
+    assert timing == []
+
+
+def test_synthesize_timing_true_时返回_json_含_base64_音频(
+    client, auth_headers, timing_provider
+):
+    response = client.post(
+        "/api/tts/synthesize",
+        json={"text": "你好世界", "timing": True},
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["media_type"] == "audio/wav"
+    assert payload["provider"] == "timing"
+    assert payload["timing"] == timing_provider.timing
+    audio = base64.b64decode(payload["audio_base64"])
+    assert audio[:4] == b"RIFF"
+    # 二进制客户端不受影响：默认仍回原始音频
+    assert response.headers["x-tts-provider"] == "timing"
+
+
+def test_synthesize_timing_false_保持二进制音频(client, auth_headers, timing_provider):
+    response = client.post(
+        "/api/tts/synthesize",
+        json={"text": "你好世界"},
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "audio/wav"
+    assert response.content[:4] == b"RIFF"
+
+
+# ---------------------------------------------------------------- Piper-Plus
+
+
+def _piper_timing(*phones):
+    """按 piper_plus.TimingResult 的结构造时间戳（phone = (音素, 起, 止)）。"""
+    return SimpleNamespace(
+        phonemes=[
+            SimpleNamespace(phoneme=name, start_ms=start, end_ms=end)
+            for name, start, end in phones
+        ]
+    )
+
+
+def test_piper_viseme_按韵母最长匹配_音调令牌不参与():
+    assert tts_module._piper_viseme("aʊ") == "aa"
+    assert tts_module._piper_viseme("ueɪ") == "ee"
+    assert tts_module._piper_viseme("uo") == "oh"
+    assert tts_module._piper_viseme("ɻ̩") == "ih"
+    # 纯辅音与音调令牌都不产生口型
+    assert tts_module._piper_viseme("tʂ") is None
+    assert tts_module._piper_viseme("tone2") is None
+
+
+def test_piper_timing_entries_按音节对齐并给出真实韵母():
+    """音节以 toneN 收尾切分，每个汉字拿到自己的起止时间与韵母口型。"""
+    timing = _piper_timing(
+        ("n", 46.4, 60.0),
+        ("i", 60.0, 110.0),
+        ("tone2", 110.0, 127.7),
+        ("x", 232.2, 260.0),
+        ("aʊ", 260.0, 380.0),
+        ("tone3", 380.0, 394.7),
+    )
+
+    entries = tts_module.piper_timing_entries("你好。", timing)
+
+    assert entries == [
+        {"text": "你", "offset_ms": 46, "duration_ms": 82, "viseme": "ih"},
+        {"text": "好", "offset_ms": 232, "duration_ms": 163, "viseme": "aa"},
+    ]
+
+
+def test_piper_timing_entries_音节数与汉字数不一致时回空():
+    """中英混排/数字会改变音节数：宁可回空让前端降级，也不硬凑时间戳。"""
+    timing = _piper_timing(
+        ("p", 0.0, 10.0),
+        ("aŋ", 10.0, 40.0),
+        ("tone4", 40.0, 50.0),
+    )
+
+    assert tts_module.piper_timing_entries("泵站A区", timing) == []
+
+
+def test_piper_timing_entries_无音调令牌时不猜音节():
+    """英文模型不给 toneN：无法可靠切分音节，如实回空。"""
+    timing = _piper_timing(("h", 0.0, 10.0), ("ə", 10.0, 30.0), ("l", 30.0, 40.0))
+
+    assert tts_module.piper_timing_entries("hello", timing) == []
+
+
+def test_piper_probe_未配置模型时如实报原因(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "tts_piper_model", "")
+    monkeypatch.setattr(tts_module, "_module_available", lambda name: True)
+    provider = tts_module.PiperPlusProvider()
+
+    result = provider.probe()
+
+    assert result.available is False
+    assert "TTS_PIPER_MODEL" in result.reason
+
+
+def test_piper_probe_模型文件不存在时如实报原因(monkeypatch, tmp_path):
+    from app.core.config import settings
+
+    missing = tmp_path / "not-there.onnx"
+    monkeypatch.setattr(settings, "tts_piper_model", str(missing))
+    monkeypatch.setattr(settings, "tts_piper_config", "")
+    monkeypatch.setattr(tts_module, "_module_available", lambda name: True)
+
+    result = tts_module.PiperPlusProvider().probe()
+
+    assert result.available is False
+    assert "不存在" in result.reason
+
+
+class _FakePiperVoice:
+    """只记录调用参数并回固定音频/时间戳的假模型。"""
+
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def synthesize_with_timing(self, text, **kwargs):
+        self.calls.append({"text": text, **kwargs})
+        timing = _piper_timing(
+            ("n", 0.0, 20.0),
+            ("i", 20.0, 80.0),
+            ("tone2", 80.0, 100.0),
+        )
+        return encode_wav([0.0] * 160, 16000), timing
+
+
+def test_piper_synthesize_把语速换算成_length_scale(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "tts_piper_model", "model.onnx")
+    provider = tts_module.PiperPlusProvider()
+    voice = _FakePiperVoice()
+    monkeypatch.setattr(provider, "_ensure_voice", lambda: voice)
+
+    audio, timing = provider.synthesize_with_timing("你", None, 1.25)
+
+    assert audio[:4] == b"RIFF"
+    assert voice.calls == [{"text": "你", "length_scale": 1 / 1.25}]
+    assert timing == [{"text": "你", "offset_ms": 0, "duration_ms": 100, "viseme": "ih"}]

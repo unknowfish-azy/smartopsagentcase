@@ -157,4 +157,47 @@ describe('桌宠神经语音（petNeuralTts）', () => {
     assert.equal(probed, 1)
     assert.deepEqual(calls.synthesize, [])
   })
+
+  test('配置 synthesizeWithTiming 时公开后端词级时间戳', async () => {
+    const timing = [{ text: '你好', offset_ms: 0, duration_ms: 320 }]
+    const audios = []
+    const tts = createPetNeuralTts({
+      fetchStatus: async () => ({ available: true, provider: 'edge' }),
+      synthesize: async () => { throw new Error('不应该走无时间戳通道') },
+      synthesizeWithTiming: async () => ({ blob: new Blob(['ID3']), timing }),
+      createAudio: (url) => {
+        const audio = createFakeAudio(url)
+        audios.push(audio)
+        return audio
+      },
+      createObjectUrl: () => 'blob:timed',
+      revokeObjectUrl: () => {}
+    })
+
+    assert.deepEqual(tts.lastTiming, [])
+    assert.equal(await tts.speak('你好'), true)
+    assert.deepEqual(tts.lastTiming, timing)
+    assert.equal(audios.length, 1)
+  })
+
+  test('合成成功但播放被拦时，不公开时间戳（避免回落语音错位）', async () => {
+    const tts = createPetNeuralTts({
+      fetchStatus: async () => ({ available: true, provider: 'edge' }),
+      synthesize: async () => new Blob(['ID3']),
+      synthesizeWithTiming: async () => ({
+        blob: new Blob(['ID3']),
+        timing: [{ text: '你好', offset_ms: 0, duration_ms: 300 }]
+      }),
+      createAudio: (url) => {
+        const audio = createFakeAudio(url)
+        audio.play = () => Promise.reject(new Error('NotAllowedError'))
+        return audio
+      },
+      createObjectUrl: () => 'blob:timed',
+      revokeObjectUrl: () => {}
+    })
+
+    assert.equal(await tts.speak('你好'), false)
+    assert.deepEqual(tts.lastTiming, [])
+  })
 })

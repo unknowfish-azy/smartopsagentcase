@@ -1,6 +1,8 @@
 import asyncio
+import base64
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 
 from ..core.config import settings
 from ..core.run_token import RunTokenError, verify_run_token
@@ -44,7 +46,12 @@ async def tts_status(_: None = Depends(require_tts_identity)) -> TtsStatusRespon
 @router.post(
     "/synthesize",
     response_class=Response,
-    responses={200: {"content": {"audio/wav": {}, "audio/mpeg": {}}}},
+    responses={
+        200: {
+            "description": "默认二进制音频；请求体 timing=true 时改为 JSON（base64 音频 + 词级时间戳）",
+            "content": {"audio/wav": {}, "audio/mpeg": {}, "application/json": {}},
+        }
+    },
 )
 async def tts_synthesize(
     payload: TtsSynthesizeRequest,
@@ -54,19 +61,31 @@ async def tts_synthesize(
 
     不可用（依赖缺失/权重未配置/网络不可达/加载失败）返回 503 + 原因；
     模型已加载但本次推理失败返回 502。两种情况下都不会返回占位音频。
+
+    ``timing=true`` 时返回 JSON：``audio_base64`` + ``timing[]``（WordBoundary 词级
+    毫秒偏移）。``timing`` 为空表示该 Provider 没有边界事件，前端必须降级为近似口型。
     """
     audio, meta = await tts_service.synthesize(
         payload.text,
         voice=payload.voice,
         speed=payload.speed,
     )
-    return Response(
-        content=audio,
-        media_type=meta["media_type"],
-        headers={
-            "Cache-Control": "no-store",
-            "X-TTS-Provider": meta["provider"],
-            "X-TTS-Voice": meta["voice"],
-            "X-TTS-Speed-Applied": "true" if meta["speed_applied"] else "false",
-        },
-    )
+    headers = {
+        "Cache-Control": "no-store",
+        "X-TTS-Provider": meta["provider"],
+        "X-TTS-Voice": meta["voice"],
+        "X-TTS-Speed-Applied": "true" if meta["speed_applied"] else "false",
+    }
+    if payload.timing:
+        return JSONResponse(
+            content={
+                "audio_base64": base64.b64encode(audio).decode("ascii"),
+                "media_type": meta["media_type"],
+                "provider": meta["provider"],
+                "voice": meta["voice"],
+                "speed_applied": meta["speed_applied"],
+                "timing": meta["timing"],
+            },
+            headers=headers,
+        )
+    return Response(content=audio, media_type=meta["media_type"], headers=headers)

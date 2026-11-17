@@ -21,6 +21,7 @@ import re
 import sys
 import threading
 import time
+import unicodedata
 import urllib.parse
 import urllib.request
 import uuid
@@ -44,8 +45,10 @@ _PROVIDER_INSTANCES: dict[str, "TtsProvider"] = {}
 # → Edge 神经语音（无需本地权重，最甜）→ 百度在线音源兜底。
 # VoxCPM2 排在最后：实测默认音色是男声、热态 31s、峰值 5.3GB，且在本机 Python 3.14 +
 # torch 2.14 上约半数加载会 0xC0000005 崩进程，只能由 TTS_PROVIDER=voxcpm2 显式启用。
+# piper-plus 排最末：音色固定、以"音素级时间戳"见长，建议按需显式启用，
+# 不抢占现有默认音色（Edge / F5-TTS 的听感更贴合桌宠形象）。
 # edge/baidu 的 probe 都是实测 + 10 分钟缓存，不可用会被跳过。
-_AUTO_ORDER = ("f5tts", "edge", "baidu", "voxcpm2")
+_AUTO_ORDER = ("f5tts", "edge", "baidu", "voxcpm2", "piperplus")
 
 
 class TtsUnavailable(AIServiceException):
@@ -186,6 +189,16 @@ class TtsProvider:
 
     def synthesize(self, text: str, preset: VoicePreset | None, speed: float) -> bytes:
         raise NotImplementedError
+
+    def synthesize_with_timing(
+        self, text: str, preset: VoicePreset | None, speed: float
+    ) -> tuple[bytes, list[dict[str, Any]]]:
+        """合成音频 + 词级时间戳（毫秒）。
+
+        默认实现没有时间戳，如实回空数组：前端据此降级到"按字数匀速推断"的近似口型，
+        绝不拿估算值冒充真实音素对齐。只有真正收到边界事件的 Provider 才覆盖本方法。
+        """
+        return self.synthesize(text, preset, speed), []
 
     def _failed(self, reason: str, detail: dict[str, Any] | None = None) -> ProbeResult:
         return ProbeResult(available=False, reason=reason, detail=detail or {})
@@ -671,7 +684,9 @@ class EdgeTtsProvider(TtsProvider):
         connection = await self._connect(self._url(), self._headers())
         await connection.close()
 
-    async def _synthesize_async(self, text: str, speed: float) -> bytes:
+    async def _synthesize_async(
+        self, text: str, speed: float
+    ) -> tuple[bytes, list[dict[str, Any]]]:
         voice = (settings.tts_edge_voice or "zh-CN-XiaoyiNeural").strip()
         stamp = time.strftime(
             "%a %b %d %Y %H:%M:%S GMT+0000 (Coordinated Universal Time)", time.gmtime()
@@ -695,6 +710,7 @@ class EdgeTtsProvider(TtsProvider):
         # 这里只传调用方语速，避免两处重复取值导致口径漂移
         ssml = build_edge_ssml(text, voice=voice, speed=speed)
         audio = bytearray()
+        timing: list[dict[str, Any]] = []
         connection = await self._connect(self._url(), self._headers())
         try:
             await connection.send(
@@ -713,9 +729,13 @@ class EdgeTtsProvider(TtsProvider):
                         audio.extend(chunk)
                 elif "Path:turn.end" in message:
                     break
+                else:
+                    # 文本帧里混着 speech.config 回执和 audio.metadata 两类消息，
+                    # 只有后者带 WordBoundary；解析失败只丢时间戳，不影响音频
+                    timing.extend(_edge_timing_frame(message))
         finally:
             await connection.close()
-        return bytes(audio)
+        return bytes(audio), timing
 
     def probe(self) -> ProbeResult:
         detail = {
@@ -745,13 +765,61 @@ class EdgeTtsProvider(TtsProvider):
         return self._probe_result
 
     def synthesize(self, text: str, preset: VoicePreset | None, speed: float) -> bytes:
+        return self.synthesize_with_timing(text, preset, speed)[0]
+
+    def synthesize_with_timing(
+        self, text: str, preset: VoicePreset | None, speed: float
+    ) -> tuple[bytes, list[dict[str, Any]]]:
         try:
-            audio = _run_async_blocking(lambda: self._synthesize_async(text, speed), timeout=60.0)
+            audio, timing = _run_async_blocking(
+                lambda: self._synthesize_async(text, speed), timeout=60.0
+            )
         except Exception as exc:  # noqa: BLE001
             raise TtsSynthesisFailed(f"Edge 神经语音合成失败：{exc}") from exc
         if not audio:
             raise TtsSynthesisFailed("Edge 神经语音返回空音频")
-        return audio
+        return audio, timing
+
+
+def _edge_timing_frame(message: str) -> list[dict[str, Any]]:
+    """从 Edge 文本帧里取出 WordBoundary 词级时间戳（换算成毫秒）。
+
+    帧形如 ``X-RequestId:...\\r\\nPath:audio.metadata\\r\\n\\r\\n{json}``，
+    json 里 ``Metadata[i] = {Type: "WordBoundary", Data: {Offset, Duration, text: {Text}}}``；
+    Offset/Duration 的单位是 100ns（1 ms = 10000）。任何解析异常都只丢时间戳、
+    不影响音频——缺时间戳时前端会如实降级为近似口型。
+    """
+    separator = message.find("\r\n\r\n")
+    if separator < 0:
+        return []
+    header, payload = message[:separator], message[separator + 4 :]
+    if "Path:audio.metadata" not in header:
+        return []
+    try:
+        metadata = json.loads(payload).get("Metadata") or []
+    except (json.JSONDecodeError, AttributeError):
+        return []
+    result: list[dict[str, Any]] = []
+    for item in metadata:
+        if not isinstance(item, dict) or item.get("Type") != "WordBoundary":
+            continue
+        data = item.get("Data") or {}
+        text = (data.get("text") or {}).get("Text") or ""
+        try:
+            offset_ms = int(round(float(data.get("Offset")) / 10000))
+            duration_ms = int(round(float(data.get("Duration")) / 10000))
+        except (TypeError, ValueError):
+            continue
+        if not text.strip() or duration_ms <= 0:
+            continue
+        result.append(
+            {
+                "text": str(text),
+                "offset_ms": max(0, offset_ms),
+                "duration_ms": duration_ms,
+            }
+        )
+    return result
 
 
 def _edge_audio_chunk(message: bytes) -> bytes:
@@ -811,12 +879,226 @@ def _escape_ssml(text: str) -> str:
     )
 
 
+# ---------------------------------------------------------------- Piper-Plus
+
+# 中文音节以 tone1–4 收尾（piper-plus 的 multilingual 模型走 pypinyin，输出 IPA +
+# 音调 token）；没有音调收尾的音素组不构成一个汉字音节，不参与字符对齐。
+_PIPER_TONE_RE = re.compile(r"^tone\d$")
+
+# 音素 → 五元音 viseme。中文韵母常被整体输出（aʊ / ueɪ / iɛn / uaɪ），
+# 必须按长度降序做「最长匹配」，只查单字母表会把 uo / aʊ 判错。
+_PIPER_VISEME_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("uaɪ", "aa"),
+    ("aɪ", "aa"),
+    ("aʊ", "aa"),
+    ("ueɪ", "ee"),
+    ("uən", "ee"),
+    ("iɛn", "ee"),
+    ("iɛ", "ee"),
+    ("yɛ", "ee"),
+    ("ia", "ih"),
+    ("iŋ", "ih"),
+    ("in", "ih"),
+    ("aŋ", "aa"),
+    ("an", "aa"),
+    ("əŋ", "ee"),
+    ("uŋ", "ou"),
+    ("oʊ", "oh"),
+    ("uo", "oh"),
+    ("ou", "oh"),
+    ("eɪ", "ee"),
+    ("y_vowel", "ih"),
+    ("ɻ̩", "ih"),
+    ("ʐ̩", "ih"),
+    ("ɿ", "ih"),
+    ("ʅ", "ih"),
+    ("a", "aa"),
+    ("ɑ", "aa"),
+    ("ʌ", "aa"),
+    ("æ", "aa"),
+    ("o", "oh"),
+    ("ɔ", "oh"),
+    ("ɒ", "oh"),
+    ("ʊ", "oh"),
+    ("u", "ou"),
+    ("ʉ", "ou"),
+    ("e", "ee"),
+    ("ɛ", "ee"),
+    ("ɤ", "ee"),
+    ("ɜ", "ee"),
+    ("ə", "ee"),
+    ("ø", "ee"),
+    ("œ", "ee"),
+    ("i", "ih"),
+    ("ɪ", "ih"),
+    ("y", "ih"),
+    ("j", "ih"),
+    ("w", "ou"),
+)
+
+
+def _piper_viseme(token: str) -> str | None:
+    """单个音素 → 五元音之一；纯辅音（无元音字符）返回 None。"""
+    if _PIPER_TONE_RE.match(token):
+        return None
+    for pattern, viseme in _PIPER_VISEME_PATTERNS:
+        if pattern in token:
+            return viseme
+    return None
+
+
+def _piper_syllables(phonemes: list[Any]) -> list[dict[str, Any]]:
+    """把音素时间戳按 toneN 收尾切成音节，并给出每个音节的主口型。
+
+    尾部没有音调收尾的残余音素组直接丢弃：它通常是句末停顿/标点，
+    计入音节会让「音节数 == 汉字数」的校验失真。
+    """
+    syllables: list[dict[str, Any]] = []
+    current: list[Any] = []
+    for item in phonemes:
+        current.append(item)
+        if _PIPER_TONE_RE.match(str(getattr(item, "phoneme", ""))):
+            viseme: str | None = None
+            for phone in current:
+                viseme = _piper_viseme(str(getattr(phone, "phoneme", ""))) or viseme
+            syllables.append(
+                {
+                    "start_ms": float(getattr(current[0], "start_ms", 0.0)),
+                    "end_ms": float(getattr(current[-1], "end_ms", 0.0)),
+                    "viseme": viseme,
+                }
+            )
+            current = []
+    return syllables
+
+
+def _spoken_chars(text: str) -> list[str]:
+    """只保留真正会被读出的字符：去掉空白、标点、符号与控制字符。"""
+    return [
+        char
+        for char in str(text)
+        if unicodedata.category(char)[0] not in {"P", "Z", "S", "C"}
+    ]
+
+
+def piper_timing_entries(text: str, timing: Any) -> list[dict[str, Any]]:
+    """把 piper-plus 的音素时间戳折算成前端契约：每个汉字一条时间线。
+
+    输出 ``[{text, offset_ms, duration_ms, viseme}]``（毫秒）：
+    ``text`` 是原文中的一个字，``viseme`` 是该字真实韵母对应的五元音。
+    音节数必须与可发音字符数**完全一致**才输出：中英混排/数字时音节数会与
+    字符数不同，此时回空数组让前端如实降级，绝不硬凑时间戳。
+    """
+    phonemes = getattr(timing, "phonemes", None) or []
+    syllables = _piper_syllables(phonemes)
+    chars = _spoken_chars(text)
+    if not syllables or len(syllables) != len(chars):
+        return []
+    entries: list[dict[str, Any]] = []
+    for char, syllable in zip(chars, syllables):
+        start_ms = max(0, int(round(syllable["start_ms"])))
+        end_ms = max(start_ms + 1, int(round(syllable["end_ms"])))
+        entry: dict[str, Any] = {
+            "text": char,
+            "offset_ms": start_ms,
+            "duration_ms": end_ms - start_ms,
+        }
+        if syllable["viseme"]:
+            entry["viseme"] = syllable["viseme"]
+        entries.append(entry)
+    return entries
+
+
+class PiperPlusProvider(TtsProvider):
+    """piper-plus（Piper 的 MIT 分支）：本地 ONNX VITS，CPU 可实时，且带音素级时间戳。
+
+    模型来源必须锁到 piper-plus 自家 release：上游 rhasspy/piper-voices 的中文模型
+    config 是 ``phoneme_type: espeak``，piper-plus 2.x 只支持
+    ``openjtalk / bilingual / multilingual``，加载会直接 ``ValueError``（已实测）。
+    只有导出 ``durations`` 输出的模型才给得出时间戳，否则回空数组由前端降级。
+    """
+
+    name = "piperplus"
+    display_name = "Piper-Plus（本地音素对齐）"
+    # piper 用 length_scale 控制快慢（越大越慢），可如实应用调用方语速
+    supports_speed = True
+    media_type = "audio/wav"
+    _MODULE = "piper_plus"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._voice: Any = None
+
+    def probe(self) -> ProbeResult:
+        detail = {
+            "module": self._MODULE,
+            "model": settings.tts_piper_model,
+            "config": settings.tts_piper_config,
+            "loaded": self._loaded,
+        }
+        if not _module_available(self._MODULE):
+            return self._failed(
+                '未安装 piper-plus 依赖：pip install "piper-plus[cpu]"', detail
+            )
+        model_path = settings.tts_piper_model.strip()
+        if not model_path:
+            return self._failed(
+                "未配置 TTS_PIPER_MODEL（需 piper-plus 自家 release 的 .onnx 模型）", detail
+            )
+        if not Path(model_path).is_file():
+            return self._failed(f"Piper-Plus 模型文件不存在：{model_path}", detail)
+        config_path = settings.tts_piper_config.strip()
+        if config_path and not Path(config_path).is_file():
+            return self._failed(f"Piper-Plus 模型配置不存在：{config_path}", detail)
+        if self._load_error:
+            return self._failed(f"模型加载失败：{self._load_error}", detail)
+        return ProbeResult(available=True, detail=detail)
+
+    def _ensure_voice(self) -> Any:
+        with self._lock:
+            if self._voice is not None:
+                return self._voice
+            try:
+                from piper_plus import PiperVoice  # noqa: PLC0415 - 可选依赖懒加载
+            except Exception as exc:  # noqa: BLE001
+                self._load_error = str(exc)
+                raise TtsUnavailable(f"piper-plus 依赖导入失败：{exc}") from exc
+            model_path = settings.tts_piper_model.strip()
+            config_path = settings.tts_piper_config.strip() or None
+            try:
+                voice = PiperVoice.load(model_path, config_path=config_path)
+            except Exception as exc:  # noqa: BLE001 - 模型不兼容/权重损坏都如实上报
+                self._load_error = str(exc)
+                raise TtsUnavailable(f"Piper-Plus 模型加载失败：{exc}") from exc
+            self._voice = voice
+            self._loaded = True
+            return voice
+
+    def synthesize(self, text: str, preset: VoicePreset | None, speed: float) -> bytes:
+        return self.synthesize_with_timing(text, preset, speed)[0]
+
+    def synthesize_with_timing(
+        self, text: str, preset: VoicePreset | None, speed: float
+    ) -> tuple[bytes, list[dict[str, Any]]]:
+        voice = self._ensure_voice()
+        # length_scale 与语速成反比：speed=1.2 → 0.833（每个音素占更少帧）
+        length_scale = 1.0 / float(speed) if speed and speed > 0 else 1.0
+        try:
+            audio, timing = voice.synthesize_with_timing(text, length_scale=length_scale)
+        except Exception as exc:  # noqa: BLE001
+            raise TtsSynthesisFailed(f"Piper-Plus 合成失败：{exc}") from exc
+        if not audio:
+            raise TtsSynthesisFailed("Piper-Plus 返回空音频")
+        return audio, piper_timing_entries(text, timing)
+
+
 _PROVIDER_FACTORIES.update(
     {
         VoxCpm2Provider.name: VoxCpm2Provider,
         F5TtsProvider.name: F5TtsProvider,
         EdgeTtsProvider.name: EdgeTtsProvider,
         BaiduTtsProvider.name: BaiduTtsProvider,
+        PiperPlusProvider.name: PiperPlusProvider,
     }
 )
 
@@ -946,8 +1228,8 @@ class TtsService:
         total = settings.tts_timeout_sec
         async with self._semaphore:
             try:
-                audio = await asyncio.wait_for(
-                    asyncio.to_thread(provider.synthesize, content, preset, speed),
+                audio, timing = await asyncio.wait_for(
+                    asyncio.to_thread(provider.synthesize_with_timing, content, preset, speed),
                     timeout=total,
                 )
             except asyncio.TimeoutError:
@@ -962,6 +1244,8 @@ class TtsService:
             "voice": preset.name if preset else "",
             "speed_applied": provider.supports_speed and abs(speed - 1.0) > 1e-6,
             "chars": len(content),
+            # 词级时间戳（毫秒）；没有边界事件的 Provider 回空数组，前端据此降级
+            "timing": timing,
         }
 
 

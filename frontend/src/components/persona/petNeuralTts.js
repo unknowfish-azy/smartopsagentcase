@@ -5,13 +5,16 @@
  *  - 优先用后端合成的音频（本地 VoxCPM2/F5-TTS，或在线 Edge 神经语音 / 百度女声，
  *    由后端 provider 自动挑选，真实格式可能是 WAV 也可能是 MP3），音色统一；
  *  - 失败/不可用返回 false，由调用方回落 speechSynthesis —— 这里绝不假装播放成功；
- *  - 神经音频没有 boundary（词边界）事件，口型由调用方按真实音频时长反推 cps 近似驱动。
+ *  - 口型优先用后端回传的词级时间戳（Edge WordBoundary）；没有时间戳的 Provider
+ *    （本地 VoxCPM2/F5-TTS、百度音源）由调用方按真实音频时长反推 cps 近似驱动。
  */
 
 /**
  * @param {{
  *   fetchStatus: () => Promise<{ available: boolean, provider?: string | null, reason?: string }>,
  *   synthesize: (text: string, options?: { voice?: string, speed?: number }) => Promise<Blob>,
+ *   synthesizeWithTiming?: (text: string, options?: { voice?: string, speed?: number }) =>
+ *     Promise<{ blob: Blob, timing?: Array<{ text: string, offset_ms: number, duration_ms: number }> }>,
  *   createAudio?: (url: string) => any,
  *   createObjectUrl?: (blob: Blob) => string,
  *   revokeObjectUrl?: (url: string) => void,
@@ -24,6 +27,7 @@ export function createPetNeuralTts(options = {}) {
   const {
     fetchStatus,
     synthesize,
+    synthesizeWithTiming = null,
     createAudio = (url) => new globalThis.Audio(url),
     createObjectUrl = (blob) => globalThis.URL.createObjectURL(blob),
     revokeObjectUrl = (url) => globalThis.URL.revokeObjectURL(url),
@@ -42,6 +46,8 @@ export function createPetNeuralTts(options = {}) {
   let disposed = false
   let lastError = ''
   let lastDurationMs = 0
+  /** 最近一次合成拿到的词级时间戳；空数组 = 后端没有边界事件，调用方需降级 */
+  let lastTiming = []
   /** 播放代际：每次 stop/speak 递增，旧合成结果回来时据此作废，避免两句叠着播 */
   let generation = 0
   /** 负向状态（服务不可用）的缓存时间：超过就重新探测，不能把整场会话钉死在浏览器音色上 */
@@ -101,8 +107,17 @@ export function createPetNeuralTts(options = {}) {
     if (disposed || !current?.available) return false
     stop()
     const mine = generation
+    lastTiming = []
     try {
-      const blob = await synthesize(content, { voice, speed })
+      let blob
+      let timing = []
+      if (synthesizeWithTiming) {
+        const result = await synthesizeWithTiming(content, { voice, speed })
+        blob = result?.blob
+        timing = Array.isArray(result?.timing) ? result.timing : []
+      } else {
+        blob = await synthesize(content, { voice, speed })
+      }
       if (disposed || mine !== generation) return false
       if (!blob || (typeof blob.size === 'number' && blob.size === 0)) {
         throw new Error('后端返回空音频')
@@ -137,6 +152,9 @@ export function createPetNeuralTts(options = {}) {
       // 真实时长用于口型：播放倍率已折算回原速，供调用方算 cps
       const seconds = Number(element.duration)
       lastDurationMs = Number.isFinite(seconds) && seconds > 0 ? (seconds * 1000) / playbackRate : 0
+      // 播放真正起来了才公开时间戳：合成成功但自动播放被拦时，
+      // 调用方会回落浏览器语音，不能拿这份时间戳去驱动错位的口型
+      lastTiming = timing
       return true
     } catch (error) {
       // 合成/自动播放失败：不当作"播放成功"，交给调用方回落
@@ -171,6 +189,10 @@ export function createPetNeuralTts(options = {}) {
     /** 最近一次真正播放起来的音频时长（毫秒，已折算回原速）；0 表示未知 */
     get lastDurationMs() {
       return lastDurationMs
+    },
+    /** 最近一次合成的词级时间戳（毫秒）；空数组表示没有边界事件，只能近似驱动口型 */
+    get lastTiming() {
+      return lastTiming
     }
   }
 }

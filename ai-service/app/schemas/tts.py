@@ -17,6 +17,10 @@ class TtsSynthesizeRequest(BaseModel):
 
     speed: float = Field(default=1.0, ge=0.5, le=2.0)
 
+    # 需要词级时间戳（口型对齐）时置 true：响应改为 JSON（含 base64 音频 + timing），
+    # 默认 false 保持二进制音频直传，不改变既有调用方
+    timing: bool = False
+
     @field_validator("text", mode="before")
     @classmethod
     def _strip_text(cls, value):
@@ -38,6 +42,42 @@ class TtsSynthesizeRequest(BaseModel):
         text = str(value).strip()
 
         return text or None
+
+
+class TtsTimingWord(BaseModel):
+
+    """一个词/字在音频里的起止时间（毫秒），来自 Provider 的真实边界事件。"""
+
+    text: str
+
+    offset_ms: int = Field(ge=0)
+
+    duration_ms: int = Field(gt=0)
+
+    # 可选：Provider 能给出真实韵母时回传五元音之一（aa/ih/ou/ee/oh）。
+    # 有该字段说明是音素级对齐；缺省表示只有词/字边界，口型由前端近似映射。
+    viseme: str | None = None
+
+
+class TtsSynthesizeTimedResponse(BaseModel):
+
+    """请求 timing=true 时的响应：base64 音频 + 词级时间戳。
+
+    timing 为空数组表示该 Provider 不提供边界事件（不是对齐失败），
+    前端必须如实降级为近似口型，不能假装精确。
+    """
+
+    audio_base64: str
+
+    media_type: str
+
+    provider: str
+
+    voice: str = ""
+
+    speed_applied: bool = False
+
+    timing: list[TtsTimingWord] = Field(default_factory=list)
 
 
 class TtsProviderStatus(BaseModel):

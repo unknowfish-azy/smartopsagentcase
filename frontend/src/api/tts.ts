@@ -31,6 +31,23 @@ export interface TtsStatus {
   voices: TtsVoiceStatus[]
 }
 
+/** 边界时间戳（毫秒）：来自后端 TTS 的真实事件，不是前端估算。 */
+export interface TtsTimingWord {
+  text: string
+  offset_ms: number
+  duration_ms: number
+  /** 可选：服务端算出的真实韵母（音素级）；缺省表示只有边界、口型需前端近似 */
+  viseme?: string
+}
+
+export interface TimedSpeech {
+  blob: Blob
+  /** 空数组 = 该 Provider 没有边界事件，调用方必须降级为近似口型 */
+  timing: TtsTimingWord[]
+  provider: string
+  speedApplied: boolean
+}
+
 /** 取 Java 边缘签发的短时 run 令牌（TTS 复用聊天鉴权，只验签不消耗 run）。 */
 async function resolveRunToken(): Promise<string> {
   const { default: fetchChatRunToken } = await import('./chatRunToken.ts')
@@ -86,6 +103,63 @@ export async function synthesizeSpeech(
   const blob = await response.blob()
   if (!blob || blob.size === 0) throw new Error('神经语音返回空音频')
   return blob
+}
+
+function decodeBase64(content: string): Uint8Array {
+  const binary = globalThis.atob(content)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
+/**
+ * 合成语音并取回词级时间戳（口型 timeline 模式用）。
+ *
+ * 后端此时返回 JSON（base64 音频 + timing[]）；timing 为空数组表示该 Provider
+ * 没有边界事件（如本地 VoxCPM2/F5-TTS、百度音源），调用方必须如实降级。
+ */
+export async function synthesizeSpeechWithTiming(
+  text: string,
+  { voice, speed }: { voice?: string | null; speed?: number } = {}
+): Promise<TimedSpeech> {
+  const token = await resolveRunToken()
+  const body: Record<string, unknown> = { text, timing: true }
+  if (voice) body.voice = voice
+  if (typeof speed === 'number') body.speed = speed
+  const response = await fetch(`${AI_SERVICE_BASE}/api/tts/synthesize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Run-Token': token },
+    body: JSON.stringify(body)
+  })
+  if (!response.ok) throw new Error(await errorMessage(response))
+  const payload: any = await response.json()
+  const audioBase64 = typeof payload?.audio_base64 === 'string' ? payload.audio_base64 : ''
+  if (!audioBase64) throw new Error('神经语音返回空音频')
+  const bytes = decodeBase64(audioBase64)
+  if (!bytes.length) throw new Error('神经语音返回空音频')
+  const timing: TtsTimingWord[] = Array.isArray(payload?.timing)
+    ? payload.timing
+        .map((word: any) => ({
+          text: typeof word?.text === 'string' ? word.text : '',
+          offset_ms: Number(word?.offset_ms),
+          duration_ms: Number(word?.duration_ms),
+          ...(typeof word?.viseme === 'string' && word.viseme ? { viseme: word.viseme } : {})
+        }))
+        .filter(
+          (word: TtsTimingWord) =>
+            word.text &&
+            Number.isFinite(word.offset_ms) &&
+            word.offset_ms >= 0 &&
+            Number.isFinite(word.duration_ms) &&
+            word.duration_ms > 0
+        )
+    : []
+  return {
+    blob: new Blob([bytes], { type: payload?.media_type || 'audio/mpeg' }),
+    timing,
+    provider: typeof payload?.provider === 'string' ? payload.provider : '',
+    speedApplied: Boolean(payload?.speed_applied)
+  }
 }
 
 export default synthesizeSpeech

@@ -1,12 +1,15 @@
-"""P0-1 + P0-2 + P1-2 + P1-3 + P1-4 + P2-1 + P2-2 神经网络能力路由。
+"""P0-1 + P0-2 + P1-2 + P1-3 + P1-4 + P2-1 + P2-2 + P2-3 + P3 神经网络能力路由。
 
 所有路由走 /api/nn/*，Agent 通过 tool 调用。
 P0-1 AnomalyTransformer: /model-info, /anomaly
 P0-2 GCN RootCause:      /rootcause-info, /rootcause
 P1-2 TinyBERT LogClassify: /log-info, /log-classify
 P1-3 Case Retrieval:     /retrieve-info, /retrieve
+P1-4 Adaptive Threshold: /adaptive-threshold-info, /adaptive-threshold
 P2-1 Action Effect:      /action-info, /action-predict
 P2-2 Fault Simulator:    /simulator-info, /simulate
+P2-3 Reflection Loop:    /reflection-info, /learn-from-incident, /learn-history
+P3 Orchestrator:         /orchestrator-info, /orchestrate
 """
 
 from __future__ import annotations
@@ -43,12 +46,31 @@ from ..schemas.simulator import (
     SimulateRequest,
     SimulateResponse,
 )
+from ..schemas.adaptive_threshold import (
+    AdaptiveThresholdModelInfo,
+    AdaptiveThresholdRequest,
+    AdaptiveThresholdResponse,
+)
 from ..services import anomaly_detector
 from ..services import rootcause_detector
 from ..services import log_classifier
 from ..services import case_retriever
 from ..services import action_predictor
 from ..services import simulator as simulator_svc
+from ..services import reflection as reflection_svc
+from ..schemas.reflection import (
+    LearnModelInfo,
+    LearnFromIncidentRequest,
+    LearnFromIncidentResponse,
+    LearnHistoryRequest,
+    LearnHistoryResponse,
+)
+from ..schemas.orchestrator import (
+    OrchestratorModelInfo,
+    OrchestrateRequest,
+    OrchestrateResponse,
+)
+from ..services import adaptive_threshold as adaptive_threshold_svc
 
 
 router = APIRouter()
@@ -160,6 +182,36 @@ async def retrieve_cases(request: CaseRetrieveRequest) -> CaseRetrieveResponse:
 
 
 # ---------------------------------------------------------------------------
+# P1-4 指标自适应阈值（STL 分解 + ACF 周期推断）
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/adaptive-threshold-info",
+    response_model=AdaptiveThresholdModelInfo,
+    summary="查询自适应阈值检测器状态",
+)
+async def get_adaptive_threshold_info() -> AdaptiveThresholdModelInfo:
+    return AdaptiveThresholdModelInfo(**adaptive_threshold_svc.get_model_info())
+
+
+@router.post(
+    "/adaptive-threshold",
+    response_model=AdaptiveThresholdResponse,
+    summary="自适应阈值异常检测（STL + ACF 周期推断）",
+    description=(
+        "接收 calibration（正常基线）+ values（待检测段），返回：\n"
+        "  - ACF 自动推断的周期\n"
+        "  - STL 学到的 seasonal profile（前端可画正常周期基线）\n"
+        "  - 两个自适应检测器的命中 + span 聚合\n"
+        "Agent 用它解决'昼夜周期导致固定阈值误报/漏报'的场景。\n"
+        "statsmodels 缺了自动退化到 rolling_z + ewma。"
+    ),
+)
+async def detect_adaptive_threshold(request: AdaptiveThresholdRequest) -> AdaptiveThresholdResponse:
+    return AdaptiveThresholdResponse(**adaptive_threshold_svc.detect(request))
+
+
+# ---------------------------------------------------------------------------
 # P2-1 处置动作效果预测（双任务 MLP + heuristic）
 # ---------------------------------------------------------------------------
 
@@ -210,3 +262,122 @@ async def get_simulator_info() -> SimulatorModelInfo:
 )
 async def simulate_fault(request: SimulateRequest) -> SimulateResponse:
     return SimulateResponse(**simulator_svc.simulate(request))
+
+
+# ---------------------------------------------------------------------------
+# P2-3 策略自优化反思（处置后 append 新案例到 faiss）
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/reflection-info",
+    response_model=LearnModelInfo,
+    summary="查询反思学习环状态",
+)
+async def get_reflection_info() -> LearnModelInfo:
+    info = reflection_svc.get_model_info()
+    # 字段对齐：service 返回 index_store_mode，schema 叫 faiss_mode
+    info["faiss_mode"] = info.pop("index_store_mode", "unavailable")
+    return LearnModelInfo(**info)
+
+
+@router.post(
+    "/learn-from-incident",
+    response_model=LearnFromIncidentResponse,
+    summary="处置完一个故障 → 反思 → append 进案例库",
+    description=(
+        "Agent 处置完故障后调用，把本次决策循环（symptom → action → outcome → lesson）\n"
+        "写进 faiss 案例库，下次类似故障就能检索到。\n\n"
+        "反思逻辑：\n"
+        "  - lesson / recommendation 缺了自动按 outcome + category 补草稿\n"
+        "  - incident_key 重复自动跳过\n"
+        "  - 返回 review 报告（quality / signals / 自动补了什么）"
+    ),
+)
+async def learn_from_incident(request: LearnFromIncidentRequest) -> LearnFromIncidentResponse:
+    return LearnFromIncidentResponse(**reflection_svc.learn_from_incident(request))
+
+
+@router.post(
+    "/learn-history",
+    response_model=LearnHistoryResponse,
+    summary="查询学习历史（learn_history.jsonl）",
+    description="查 Agent 最近 learn 过哪些故障处置，可按 category / outcome 过滤。",
+)
+async def get_learn_history(request: LearnHistoryRequest) -> LearnHistoryResponse:
+    result = reflection_svc.get_history(
+        limit=request.limit,
+        category=request.category,
+        outcome=request.outcome,
+    )
+    return LearnHistoryResponse(**result)
+
+
+# ---------------------------------------------------------------------------
+# P3 多 Agent 协同调度（Orchestrator）
+# ---------------------------------------------------------------------------
+
+def _get_orchestrator():
+    """懒加载 Orchestrator（direct mode，ai-service 和 agent 包在同一 repo）。"""
+    import sys
+    from pathlib import Path
+    repo_root = Path(__file__).resolve().parents[3]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from agent.orchestrator import Orchestrator, ALL_PRESET_AGENTS
+    orch = Orchestrator(mode="direct")
+    return orch, ALL_PRESET_AGENTS
+
+
+@router.get(
+    "/orchestrator-info",
+    response_model=OrchestratorModelInfo,
+    summary="查询 Orchestrator 状态 + 已注册子 Agent 列表",
+)
+async def get_orchestrator_info() -> OrchestratorModelInfo:
+    orch, agents = _get_orchestrator()
+    return OrchestratorModelInfo(
+        available=True,
+        mode="direct" if orch._direct_executor else "unavailable",
+        agents=[a.to_dict() for a in agents],
+        max_concurrency=orch.max_concurrency,
+    )
+
+
+@router.post(
+    "/orchestrate",
+    response_model=OrchestrateResponse,
+    summary="多 Agent 协同调度：goal → 任务分解 → 并发执行 → 结果整合",
+    description=(
+        "P3 核心能力。输入 goal + context（时序数据、日志、故障类别等），\n"
+        "Orchestrator 自动拆分多个子任务，匹配专长对应的子 Agent，\n"
+        "并发执行 + 冲突检测 + 最终 synthesis。\n\n"
+        "内置 6 个子 Agent：AnomalySleuth / RootCauseHunter / LogInterpreter /\n"
+        "CaseRetriever / ActionAdvisor / Reflection，每个有独立 system prompt +\n"
+        "独立 tool_names 白名单（避免伪多 Agent）。\n\n"
+        "Context 字段按需传：values/calibration/metric_name（Anomaly），logs（Log），\n"
+        "category/severity/actions（Action），category/severity（Simulator）。"
+    ),
+)
+async def orchestrate(request: OrchestrateRequest) -> OrchestrateResponse:
+    orch, _ = _get_orchestrator()
+    orch.max_concurrency = request.max_concurrency
+
+    plan = orch.orchestrate(
+        goal=request.goal,
+        context=request.context,
+        enable_agents=request.enable_agents,
+        exclude_agents=request.exclude_agents,
+    )
+
+    # 让 _synthesize 能拿到 conflict_notes
+    orch._last_plan = plan
+
+    return OrchestrateResponse(
+        goal=plan.goal,
+        overall_status=plan.overall_status,
+        subtasks=[t.to_dict() for t in plan.subtasks],
+        results=[r.to_dict() for r in plan.results],
+        conflict_notes=plan.conflict_notes,
+        final_synthesis=plan.final_synthesis,
+        agent_count=len(plan.results),
+    )
