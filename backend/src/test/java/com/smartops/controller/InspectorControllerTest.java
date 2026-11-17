@@ -38,6 +38,10 @@ class InspectorControllerTest {
     @MockBean
     private InspectorEventService service;
 
+    /** 视觉巡检写入口是 InspectorController 的第 4 个依赖，切片测试必须显式替身。 */
+    @MockBean
+    private com.smartops.service.VisionInspectionService visionService;
+
     /** SEC-08：读侧从会话主体取身份；测试用 Authentication 作为 request principal。 */
     private static org.springframework.security.core.Authentication login() {
         return new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(

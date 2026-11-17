@@ -33,6 +33,10 @@ class InspectorWriteSecurityTest {
     @MockBean
     private InspectorEventService service;
 
+    /** 视觉巡检写入口是 InspectorController 的第 4 个依赖，切片测试必须显式替身。 */
+    @MockBean
+    private com.smartops.service.VisionInspectionService visionService;
+
     @Test
     void writeWithoutInternalTokenReturns401() throws Exception {
         mockMvc.perform(post("/api/inspector/check")

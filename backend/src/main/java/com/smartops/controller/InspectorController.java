@@ -4,11 +4,14 @@ import com.smartops.common.ApiResponse;
 import com.smartops.dto.inspector.InspectionRecordRequest;
 import com.smartops.dto.inspector.InspectionReplanRequest;
 import com.smartops.dto.inspector.InspectionVerifyRequest;
+import com.smartops.dto.inspector.VisionAnalysisRequest;
 import com.smartops.security.CurrentSessions;
+import com.smartops.security.CurrentUser;
 import com.smartops.security.SecurityAuditService;
 import com.smartops.security.SessionUser;
 import com.smartops.security.UserAccountService;
 import com.smartops.service.InspectorEventService;
+import com.smartops.service.VisionInspectionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +35,7 @@ public class InspectorController {
     private final InspectorEventService service;
     private final UserAccountService accounts;
     private final SecurityAuditService audit;
+    private final VisionInspectionService visionService;
 
     @GetMapping("/summary")
     public ApiResponse<Map<String, Object>> summary(HttpServletRequest request) {
@@ -79,6 +83,25 @@ public class InspectorController {
     public ApiResponse<Map<String, Object>> statistics(HttpServletRequest request) {
         ReadScope scope = readScope(request, "statistics");
         return ApiResponse.success(service.statistics(scope.viewerId(), scope.global()));
+    }
+
+    /**
+     * 视觉巡检：上传图片交本地多模态模型分析，结论写为真实纠察事件
+     * （status 固定 REVIEW、requiresHuman=true，处置前必须人工复核）。
+     * 写入口与 /check 同级，不走 readScope 读侧逻辑。
+     */
+    @PostMapping("/vision")
+    public ApiResponse<Map<String, Object>> vision(
+            @CurrentUser Long userId,
+            @Valid @RequestBody VisionAnalysisRequest request) {
+        return ApiResponse.success(visionService.inspect(
+                request.imageBase64(), request.target(), request.filename(), userId));
+    }
+
+    /** 视觉巡检配置状态：前端据此显示「已配置 / 未配置」徽标（fail-closed）。 */
+    @GetMapping("/vision/status")
+    public ApiResponse<Map<String, Object>> visionStatus() {
+        return ApiResponse.success(visionService.status());
     }
 
     /**
