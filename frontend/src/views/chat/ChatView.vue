@@ -20,19 +20,29 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Operation } from '@element-plus/icons-vue'
 import AiChatPanel from '../../components/ai/AiChatPanel.vue'
 import ChatHistory from '../../components/ai/ChatHistory.vue'
 import XiaoyuChatAvatar from '../../components/chat/XiaoyuChatAvatar.vue'
 import { useAiChatStore } from '../../stores/aiChat.js'
+import { useVoiceActionBus } from '../../components/persona/voiceActionRegistry.js'
 
 const store = useAiChatStore()
 store.syncAccount()
 const { activeConversation, sending, storageWarning, remoteError, accountEpoch } = storeToRefs(store)
 watch(accountEpoch, () => store.loadRemoteConversations(), { immediate: true })
 async function retryAttachments() { await store.loadRemoteConversations(); if (activeConversation.value?.backed) await store.loadRemoteDetail(activeConversation.value.id) }
+
+// 语音控屏：找最后一条 AI 回复来复制
+async function copyLastReply() {
+  const messages = store.activeConversation?.messages ?? []
+  const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant' && !m.pending)
+  if (!lastAssistant?.content) return
+  try { await navigator.clipboard.writeText(lastAssistant.content) } catch { /* 剪贴板不可用 */ }
+}
+
 const viewport = window.matchMedia('(max-width: 1023px)')
 const mobile = ref(viewport.matches)
 const historyOpen = ref(false)
@@ -42,7 +52,20 @@ function updateViewport(event) {
   if (!event.matches) historyOpen.value = false
 }
 viewport.addEventListener('change', updateViewport)
-onBeforeUnmount(() => viewport.removeEventListener('change', updateViewport))
+
+onMounted(() => {
+  // 语音控屏：注册 Chat 页面的按钮级意图 handler
+  const bus = useVoiceActionBus()
+  _voiceUnregister = [
+    bus.register('chat.clear', () => store.clearConversation()),
+    bus.register('chat.copy', () => copyLastReply()),
+  ]
+})
+onBeforeUnmount(() => {
+  viewport.removeEventListener('change', updateViewport)
+  if (_voiceUnregister) _voiceUnregister.forEach(fn => fn())
+})
+let _voiceUnregister = null
 </script>
 
 <style scoped>

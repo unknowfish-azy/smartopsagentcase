@@ -1,5 +1,4 @@
 <template>
-  <StellarOceanProvider state="thinking">
   <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode" :data-theme="resolvedTheme" @pointermove="moveBubbleLight" @pointerleave="resetBubbleLight">
     <!-- 静态背景图：深空星海（public/assets/login-cover.jpg，静态资源，各视觉档位通用；动效层叠加其上） -->
     <div class="login-cover-image" aria-hidden="true"></div>
@@ -306,7 +305,6 @@
     </div>
     <footer class="login-page-footer"><span>SMARTOPS AGENT</span><span>知识 · 记忆 · 受控智能体</span></footer>
   </main>
-  </StellarOceanProvider>
 </template>
 
 <script setup>
@@ -316,7 +314,6 @@ import { ArrowRight, Hide, Lock, User, View } from '@element-plus/icons-vue'
 import HumanVerification from '../../components/auth/HumanVerification.vue'
 import MfaChallenge from '../../components/auth/MfaChallenge.vue'
 import BrandMark from '../../components/common/BrandMark.vue'
-import StellarOceanProvider from '../../components/common/StellarOceanProvider.vue'
 import MeteorShower from '../../components/common/MeteorShower.vue'
 import { loginSession, registrationPolicy, registerAccount } from '../../security/session.js'
 import { sessionLanding } from '../../security/portalPolicy.js'

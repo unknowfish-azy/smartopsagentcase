@@ -6,10 +6,9 @@ import { parse, compileStyle } from '@vue/compiler-sfc'
 const variables = await readFile(new URL('../src/assets/styles/variables.css', import.meta.url), 'utf8')
 const globalStyles = await readFile(new URL('../src/assets/styles/global.css', import.meta.url), 'utf8')
 const orbitCarousel = await readFile(new URL('../src/components/ui/home-orbit-carousel.vue', import.meta.url), 'utf8')
-const milkyWay = await readFile(new URL('../src/components/ui/milky-way.vue', import.meta.url), 'utf8')
 
 test('effect theme selectors never dim the document root', async () => {
-  for (const name of ['AtcShaderBackground', 'LivingJellyfish']) {
+  for (const name of ['AtcShaderBackground']) {
     const filename = `${name}.vue`
     const source = await readFile(new URL(`../src/components/common/${filename}`, import.meta.url), 'utf8')
     const { descriptor } = parse(source, { filename })
@@ -43,10 +42,4 @@ test('light theme keeps the home stage and orbit cards readable', () => {
   assert.ok(orbitCarousel.includes('background: var(--smart-card)'))
   assert.ok(orbitCarousel.includes(":global([data-theme='light'] .card-description)"))
   assert.ok(orbitCarousel.includes(":global([data-theme='light'] .card-body h2)"))
-  assert.ok(milkyWay.includes(":global([data-theme='light'] .milky-way)"))
-  assert.ok(milkyWay.includes(":global([data-theme='light'] .milky-way canvas)"))
-  assert.match(milkyWay, /background: linear-gradient/)
-  assert.match(milkyWay, /visibility: hidden/)
-  assert.doesNotMatch(milkyWay, /\[data-theme='light'\] \.milky-way canvas\)[^}]*visibility:\s*hidden/)
-  assert.match(milkyWay, /observeCanvasTheme/)
 })

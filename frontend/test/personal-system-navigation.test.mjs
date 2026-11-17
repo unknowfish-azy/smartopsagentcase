@@ -31,23 +31,55 @@ test('exposes persisted remote operation runs under Memory', () => {
   assert.equal(item.cn, '运行记录')
 })
 
-test('keeps Harbor as an independent workbench route', () => {
-  const group = findPersonalSystemGroup('HarborWorkbench')
-  assert.equal(group.id, 'harbor')
-  assert.equal(group.to, '/harbor')
-})
-
-test('keeps cloud-native resources inside its workbench route', () => {
-  const group = findPersonalSystemGroup('CloudNativeWorkbench')
-  assert.equal(group.id, 'cloud-native')
-  assert.equal(group.to, '/cloud-native')
-  assert.equal(group.children.length, 0)
+test('harbor and cloud-native workbenches fold into the smart repository 3D space', () => {
+  /* 2026-11-16：Harbor 工作台与云原生工程并入智能仓库 3D 空间，侧栏不再单列（路由保留）。 */
+  assert.equal(findPersonalSystemGroup('HarborWorkbench'), null)
+  assert.equal(findPersonalSystemGroup('CloudNativeWorkbench'), null)
+  const repository = findPersonalSystemGroup('SmartRepository')
+  assert.equal(repository.id, 'repository')
+  assert.equal(repository.to, '/repository')
 })
 
 test('contains only groups with existing direct routes', () => {
   assert.deepEqual(visiblePersonalSystemGroups(personalSystemGroups).map(group => group.id), [
-    'home', 'ai-chat', 'insights', 'team-space', 'knowledge', 'research', 'cloud-native', 'plugins', 'skills', 'connections', 'harbor', 'operations', 'health', 'models', 'agent', 'memory', 'sentinel'
+    'home', 'ai-chat', 'repository', 'knowledge', 'research', 'extensions', 'operations', 'models', 'agent', 'memory', 'sentinel'
   ])
+})
+
+test('milestone hall is folded into token usage, no longer a sidebar item', () => {
+  /* 战报已并入 /token-usage?view=milestones：侧栏不留独立项，避免一级菜单冗余。
+     洞察组随后也并入智能仓库（2026-11-16 并行整合），两组入口均不再单列。 */
+  assert.equal(findPersonalSystemGroup('MilestoneHall'), null)
+  assert.equal(findPersonalSystemGroup('Insights'), null)
+  // 全部导航树里不得再有 /milestones 菜单项（redirect 兼容除外，属路由层）
+  const sidebarRefs = personalSystemGroups.flatMap(group => [group, ...(group.children || [])])
+    .filter(item => item.to === '/milestones')
+  assert.deepEqual(sidebarRefs, [])
+})
+
+test('scholar tools live inside the knowledge center group', () => {
+  const group = findPersonalSystemGroup('ScholarQa')
+
+  assert.equal(group.id, 'knowledge')
+  assert.equal(group.cn, '知识中心')
+  assert.equal(group.to, '/knowledge/space')
+  assert.deepEqual(group.children.map(item => item.routeName), ['KnowledgeSpace', 'KnowledgeSciverse', 'KnowledgeAtlas', 'ScholarQa', 'ScholarCards', 'ScholarReview', 'ScholarPipeline', 'SharedKnowledge'])
+  const atlas = group.children.find(child => child.routeName === 'KnowledgeAtlas')
+  assert.equal(atlas.to, '/atlas')
+  const pipeline = group.children.find(child => child.routeName === 'ScholarPipeline')
+  assert.equal(pipeline.to, '/scholar/pipeline')
+  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
+})
+
+test('re workbench joins the neural research group as a third destination', () => {
+  const group = findPersonalSystemGroup('ReWorkbench')
+
+  assert.equal(group.id, 'research')
+  assert.equal(group.cn, '联网研究')
+  assert.deepEqual(group.children.map(item => item.routeName), ['WebResearch', 'Radar', 'ReWorkbench'])
+  const item = group.children.find(child => child.routeName === 'ReWorkbench')
+  assert.equal(item.to, '/re-workbench')
+  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
 })
 
 test('sentinel groups dashboard, scripts, alerts and Guardian under one menu', () => {
@@ -56,10 +88,11 @@ test('sentinel groups dashboard, scripts, alerts and Guardian under one menu', (
   assert.equal(group.id, 'sentinel')
   assert.equal(group.to, '/sentinel')
   assert.equal(group.cn, '哨兵与自动化')
-  assert.deepEqual(group.children.map(item => item.routeName), ['SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'IncidentCenter', 'SentinelGuardian', 'ForecastPlane', 'EngineObservability'])
-  assert.deepEqual(group.children.map(item => item.to), ['/sentinel', '/sentinel/scripts', '/sentinel/alerts', '/incidents', '/sentinel/guardian', '/sentinel/forecast', '/sentinel/observability'])
+  assert.deepEqual(group.children.map(item => item.routeName), ['SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'IncidentCenter', 'SentinelGuardian', 'ForecastPlane', 'SectionAnalysis', 'EngineObservability'])
+  assert.deepEqual(group.children.map(item => item.to), ['/sentinel', '/sentinel/scripts', '/sentinel/alerts', '/incidents', '/sentinel/guardian', '/sentinel/forecast', '/sentinel/sections', '/sentinel/observability'])
   assert.equal(findPersonalSystemGroup('SentinelGuardian'), group)
   assert.equal(findPersonalSystemGroup('ForecastPlane'), group)
+  assert.equal(findPersonalSystemGroup('SectionAnalysis'), group)
   assert.equal(findPersonalSystemGroup('EngineObservability'), group)
   // 普通运维用户也要能用（不是管理员专属）。
   assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
@@ -79,30 +112,19 @@ test('model menu keeps the Astra6 group and exposes the gateway inside it', () =
   assert.equal(findPersonalSystemGroup('ModelStrength').id, 'models')
 })
 
-test('milestone hall is folded into token usage, no longer a sidebar item', () => {
-  /* 战报已并入 /token-usage?view=milestones：侧栏不留独立项，避免一级菜单冗余。 */
-  assert.equal(findPersonalSystemGroup('MilestoneHall'), null)
-  const insights = findPersonalSystemGroup('Insights')
-  assert.equal(insights.id, 'insights')
-  assert.deepEqual(insights.children.map(item => item.routeName), [])
-  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(insights))
-})
-
 test('uses concise Chinese for the Knowledge navigation label', () => {
   // 侧栏知识入口已指向 KnowledgeSpace（/knowledge/space）；兼容两种 routeName，
   // 断言的仍是「中文标签保持简洁」这一语义，不随入口改名而失效。
   const group = findPersonalSystemGroup('KnowledgeSpace') || findPersonalSystemGroup('Knowledge')
 
-  assert.equal(group.label, '知识库')
-  assert.equal(group.cn, '知识库')
+  assert.equal(group.label, 'KNOWLEDGE')
+  assert.equal(group.cn, '知识中心')
 })
 
-test('team collaboration has a real main-menu destination for ordinary users', () => {
-  const group = findPersonalSystemGroup('TeamSpaces')
-  assert.ok(group, 'team space must be reachable from the main menu, not just the top switcher')
-  assert.equal(group.to, '/teams')
-  assert.equal(group.cn, '团队协作')
-  assert.equal(group.children.length, 0, 'do not add links for unimplemented shared agents or tasks')
-  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
-  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'admin').includes(group))
+test('team collaboration entry lives in the top space switcher, not the sidebar', () => {
+  /* 2026-11-16：侧栏不再单列「团队协作」，顶部 SpaceSwitcher 的「团队空间」为唯一固定入口。 */
+  assert.equal(findPersonalSystemGroup('TeamSpaces'), null)
+  for (const role of ['operator', 'admin']) {
+    assert.ok(!visiblePersonalSystemGroups(personalSystemGroups, role).some(group => group.to === '/teams'), `${role} sidebar must not contain a /teams entry`)
+  }
 })

@@ -505,6 +505,21 @@ fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); fo
   .sentinel-stat dd { font-size: 18px; }
 }
 
+/* ── 告警事件流时间线（蒸馏自外部作品"处置事件流"标题语义）────────────
+   由告警真实字段推导（firedAt/acknowledgedAt/aiSummary/ticketId/resolvedAt/
+   closeNote/status），缺时间戳显示 —；完成=绿、进行中=琥珀（G7）。 */
+.aet-card { margin: 14px 0; }
+.aet-card .alert-card__head { margin-bottom: 4px; }
+.aet-note {
+  margin: 4px 16px 12px;
+  color: var(--ds-color-muted, var(--smart-muted, #92A6B5));
+  font: 10px Consolas, 'Cascadia Mono', ui-monospace, monospace;
+  letter-spacing: .04em;
+}
+@media (max-width: 767px) {
+  .aet-card .alert-card__head { flex-wrap: wrap; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sentinel-surface *, .sentinel-surface *::before, .sentinel-surface *::after { transition: none !important; animation: none !important; }
 }
@@ -611,3 +626,49 @@ fieldset.sentinel-field > legend { padding: 0 4px; color: var(--smart-muted); fo
   .sentinel-crawler-canvas { min-height: 200px; }
   .sentinel-crawler-desc { display: none; }
 }
+
+/* ── 告警闭环：PID 强度 + 蒸馏记忆 ──────────────────────────── */
+.alert-card__loop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 8px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent, #42d392) 20%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-soft, #0f1115) 80%, transparent);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.loop-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.loop-label {
+  font-weight: 600;
+  color: var(--accent, #42d392);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent, #42d392) 14%, transparent);
+}
+.loop-meta { color: var(--fg-dim, #8a99a6); }
+.loop-meta b { color: var(--fg, #e8ecef); font-weight: 600; }
+.loop-meta--note { flex: 1 1 100%; color: var(--fg-dim, #8a99a6); font-style: italic; }
+.loop-meta--conf { font-size: 11px; opacity: 0.8; }
+
+/* PID 强度条：颜色随强度变化（低=绿，中=黄，高=红） */
+.loop-bar {
+  flex: 1 1 80px;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fg-dim, #8a99a6) 20%, transparent);
+  overflow: hidden;
+  min-width: 40px;
+}
+.loop-bar__fill {
+  height: 100%;
+  border-radius: 3px;
+  background: hsl(var(--loop-hue, 142) 70% 55%);
+  transition: width 0.4s ease, background-color 0.3s ease;
+}
+.loop-row--memory .loop-label { color: #a78bfa; background: color-mix(in srgb, #a78bfa 14%, transparent); }

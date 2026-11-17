@@ -1,12 +1,5 @@
 <template>
-  <StellarOceanProvider :state="whaleState">
-    <div class="app-layout" :data-visual-mode="visualMode" :class="{ 'app-layout--tools': isToolsPage, 'app-layout--liquid': !isToolsPage, 'app-layout--sidebar-collapsed': appStore.sidebarCollapsed, 'app-layout--chat': route.path === '/chat', 'app-layout--lightweight': isLightweightVisualMode, 'app-layout--team': isTeamSpace, 'app-layout--admin-entry': currentRole === 'admin' }">
-      <MilkyWay v-if="showEnhancedHomeVisuals" class="home-galaxy" :particle-size="0.45" :rotation-speed="0.3" :viewport-coverage="0.78" :center-x="0.36" mouse-influence />
-      <CanvasAmbientField v-else-if="route.name === 'Dashboard'" />
-      <MeteorShower v-if="showEnhancedHomeVisuals" />
-      <ParticleWhale v-if="showEnhancedHomeVisuals && !personaPetActive" :placement="whalePlacement" :state="whaleState" />
-      <CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace && !isCompositionPlate && !personaPetActive" :placement="whalePlacement" :state="whaleState" />
-      <LivingJellyfish v-if="!isConnectionWorkspace && !isCompositionPlate && visualMode === 'balanced'" class="app-jellyfish" :class="`app-jellyfish--${whalePlacement}`" :state="jellyfishState" ecosystem="protected" />
+  <div class="app-layout" :data-visual-mode="visualMode" :class="{ 'app-layout--tools': isToolsPage, 'app-layout--liquid': !isToolsPage, 'app-layout--sidebar-collapsed': appStore.sidebarCollapsed, 'app-layout--chat': route.path === '/chat', 'app-layout--lightweight': isLightweightVisualMode, 'app-layout--team': isTeamSpace, 'app-layout--admin-entry': currentRole === 'admin' }">
       <OpsSpiderPet v-if="!isTeamSpace && !isKnowledgeSpace" :state="opsSpiderState" :agent-state="whaleState" :compact="route.name === 'Connections'" @navigate="openOpsSpiderAction" />
       <PersonaPet v-if="personaPetStore.enabled && route.name !== 'AgentPersona'" />
       <button v-if="opsSpider.hidden && !isTeamSpace && !isKnowledgeSpace" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
@@ -32,10 +25,6 @@
           @close-mobile="closeMobileNavigation"
         />
         <nav v-if="isTeamSpace" class="section-nav" aria-label="团队空间导航"><p class="nav-label nav-label--system"><b>TEAM SPACE</b><small>团队协作</small></p><RouterLink to="/teams" @click="closeMobileNavigation"><span class="nav-copy"><b>WORKSPACES</b><small>我的团队与邀请</small></span></RouterLink><RouterLink v-if="route.params.teamId" :to="`/teams/${route.params.teamId}/workspace`" @click="closeMobileNavigation"><span class="nav-copy"><b>TEAM TOOLS</b><small>Agent · 工具 · 会话</small></span></RouterLink><p class="team-scope-note">团队资源与个人资源独立。</p></nav>
-        <nav v-else class="section-nav" aria-label="System tools navigation">
-          <p class="nav-label nav-label--system"><b>SYSTEM TOOLS</b><small>系统工具</small></p>
-          <RouterLink v-for="item in systemNav" :key="item.to" :to="item.to" :aria-label="`${item.cn} / ${item.label}`" :title="`${item.cn} / ${item.label}`"><component :is="item.icon" class="nav-icon" aria-hidden="true" /><span class="nav-copy"><b>{{ item.label }}</b><small>{{ item.cn }}</small></span></RouterLink>
-        </nav>
         <div class="system-status"><div><span>SESSION / 登录会话</span><strong>{{ currentSession?.username || '未登录' }}</strong></div><div><span>AGENT / 智能体</span><strong>{{ whaleState.toUpperCase() }}</strong></div><time>{{ currentTime }}</time></div>
       </aside>
 
@@ -85,15 +74,11 @@
         <main id="main-content" class="content" tabindex="-1"><PageStepper v-if="!isTeamSpace" :route-name="route.name?.toString()" /><RouterView /></main>
       </div>
     </div>
-  </StellarOceanProvider>
 </template>
 
 <script setup>
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Connection } from '@element-plus/icons-vue'
-import LivingJellyfish from '../components/common/LivingJellyfish.vue'
-import StellarOceanProvider from '../components/common/StellarOceanProvider.vue'
 import OpsSpiderPet from '../components/common/OpsSpiderPet.vue'
 import CompanionStatus from '../components/companion/CompanionStatus.vue'
 import CommandPalette from '../components/navigation/CommandPalette.vue'
@@ -101,7 +86,6 @@ import { navigationEntries } from '../navigation/navigationDiscovery.js'
 import PersonalSystemNavigation from '../components/navigation/PersonalSystemNavigation.vue'
 import SpaceSwitcher from '../components/navigation/SpaceSwitcher.vue'
 import PageStepper from '../components/navigation/PageStepper.vue'
-import MeteorShower from '../components/common/MeteorShower.vue'
 import BrandMark from '../components/common/BrandMark.vue'
 import { useCompanionStore } from '../stores/companion.js'
 import { useOpsSpiderStore } from '../stores/opsSpider.js'
@@ -117,10 +101,6 @@ import { getVisibleNavigationGroups, ROLE_LABELS } from '../security/accessModel
 import { availableWorkspaces, useAppStore } from '../stores/app'
 import { startGlobalOpsPolling, useGlobalOpsStatus } from '../composables/useGlobalOpsStatus'
 
-const CanvasParticleWhale = defineAsyncComponent(() => import('../components/common/CanvasParticleWhale.vue'))
-const CanvasAmbientField = defineAsyncComponent(() => import('../components/common/CanvasAmbientField.vue'))
-const ParticleWhale = defineAsyncComponent({ loader: () => import('../components/common/ParticleWhale.vue'), loadingComponent: CanvasParticleWhale, errorComponent: CanvasParticleWhale })
-const MilkyWay = defineAsyncComponent({ loader: () => import('../components/ui/milky-way.vue'), loadingComponent: CanvasAmbientField, errorComponent: CanvasAmbientField })
 const SmartInquiryDrawer = defineAsyncComponent(() => import('../components/investigation/SmartInquiryDrawer.vue'))
 const PersonaPet = defineAsyncComponent(() => import('../components/persona/PersonaPet.vue'))
 
@@ -152,16 +132,9 @@ let toolCatalogPromise
 const isNarrowViewport = ref(false)
 const navigationPanel = ref(null)
 let timer
-// P0/P3 自适应视觉预算：工具层默认不加载 WebGL 装饰，首次访问即简约高性能；
-// 只有用户显式选择过视觉档位（且为 balanced）才启用增强层。保留计算属性名与模板字符串契约。
-const showEnhancedHomeVisuals = computed(() => route.name === 'Dashboard' && !isLightweightVisualMode.value && visualModeExplicit.value && hasExplicitVisualMode())
-
-const systemNav = [
-  { label: 'TRACE', cn: '执行轨迹', to: '/agent/trace', icon: Connection }
-]
-const whalePlacement = computed(() => route.meta.whalePlacement || (route.name === 'Knowledge' ? 'knowledge' : route.name === 'AgentCommandCenter' ? 'agent' : route.name?.toString().includes('Inspector') ? 'memory' : route.name?.toString().includes('Server') ? 'operations' : 'home'))
+// P0/P3 自适应视觉预算：氛围特效（银河/环境鲸/水母/流星/粒子场）已于 2026-11-16 彻底删除组件文件，
+// visualMode 档位继续控制其余 CSS 动效强度。
 const whaleState = computed(() => companion.states.whale === 'DEGRADED' ? 'warning' : 'idle')
-const jellyfishState = computed(() => companion.states.jellyfish === 'WAIT' ? 'idle' : 'observing')
 const currentWorkspace = computed(() => availableWorkspaces.find(workspace => workspace.id === appStore.currentWorkspaceId) || availableWorkspaces[0])
 const opsSpiderState = computed(() => companion.drawerOpen ? 'observing' : companion.attentionPolicy !== 'silent' ? 'warning' : 'idle')
 const routeContext = computed(() => route.meta.section || route.name?.toString().replace(/([A-Z])/g, ' $1').trim().toUpperCase() || 'PERSONAL SYSTEM')
@@ -243,8 +216,21 @@ async function toggleNavigation() {
 
 watch(() => route.name, routeName => appStore.setRouteNavigation(routeName?.toString()), { immediate: true })
 watch(() => route.fullPath, value => companion.setPage(value), { immediate: true })
-onMounted(() => { disconnectCompanion = companion.connectLegacyEvents(window); updateViewportMode(); updateTime(); startGlobalOpsPolling(); window.addEventListener('resize', updateViewportMode); timer = window.setInterval(updateTime, 30000); document.addEventListener('pointerdown', onDocumentPointerdown, true); document.addEventListener('keydown', onDocumentKeydown) })
-onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('resize', updateViewportMode); window.clearInterval(timer); document.removeEventListener('pointerdown', onDocumentPointerdown, true); document.removeEventListener('keydown', onDocumentKeydown) })
+// Ctrl/Cmd + 滚轮（含触控板双指捏合）会触发浏览器整页缩放：canvas 密集页面每次缩放都触发
+// 全页重排 + 所有图层重栅格化，内存与卡顿大户。这里直接拦截该手势（键盘 Ctrl +/- 的
+// 主动缩放不受影响），并用 rAF 合并高频 wheel 事件，避免滚动路径上的额外开销。
+let zoomGuardTrailing = false
+function onZoomGuardWheel(event) {
+  if (!event.ctrlKey && !event.metaKey) return
+  event.preventDefault()
+  if (zoomGuardTrailing) return
+  zoomGuardTrailing = true
+  requestAnimationFrame(() => { zoomGuardTrailing = false })
+}
+function onGestureStart(event) { event.preventDefault() }
+
+onMounted(() => { disconnectCompanion = companion.connectLegacyEvents(window); updateViewportMode(); updateTime(); startGlobalOpsPolling(); window.addEventListener('resize', updateViewportMode); timer = window.setInterval(updateTime, 30000); document.addEventListener('pointerdown', onDocumentPointerdown, true); document.addEventListener('keydown', onDocumentKeydown); window.addEventListener('wheel', onZoomGuardWheel, { passive: false }); window.addEventListener('gesturestart', onGestureStart) })
+onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('resize', updateViewportMode); window.clearInterval(timer); document.removeEventListener('pointerdown', onDocumentPointerdown, true); document.removeEventListener('keydown', onDocumentKeydown); window.removeEventListener('wheel', onZoomGuardWheel); window.removeEventListener('gesturestart', onGestureStart) })
 </script>
 
 <style scoped>
@@ -286,14 +272,12 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
 @media (max-width: 767px) { .sidebar-toggle { display: none; } }
 .topbar-right { flex-wrap: wrap; }
 .app-layout[data-visual-mode='reduced-motion'] :deep(*) { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-.home-galaxy { position: fixed; opacity: .7; }
 .workspace-context { display: flex; align-items: center; gap: 8px; padding: 8px 18px 0; color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .1em; }.workspace-context select { min-height: 26px; max-width: 220px; padding: 3px 20px 3px 7px; border: 1px solid var(--smart-border); border-radius: 4px; background: var(--smart-surface); color: var(--smart-text); font: 11px var(--font-cn); }.workspace-context small { color: var(--smart-primary-strong); font: 9px var(--font-mono); }
 .tools-menu { position: relative; margin-left: auto; }.tools-trigger { border: 0; background: transparent; color: var(--smart-primary-strong); font: 10px var(--font-mono); letter-spacing: .1em; cursor: pointer; }.tools-dropdown { position: absolute; z-index: 30; top: 28px; right: 0; display: grid; grid-template-columns: repeat(3, 170px); gap: 18px; padding: 18px; border: 1px solid var(--smart-border-strong); background: var(--smart-surface); box-shadow: 0 18px 45px rgba(0,0,0,.38); }.tools-dropdown section { display: grid; align-content: start; gap: 8px; }.tools-dropdown strong { color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .1em; }.tools-dropdown a { color: var(--smart-text); font: 12px var(--font-cn); text-decoration: none; }.tools-dropdown a:hover { color: var(--smart-primary-strong); }
 .theme-control { display: inline-flex; align-items: center; gap: 7px; color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .08em; }.theme-control select { min-height: 28px; padding: 3px 22px 3px 7px; border: 1px solid var(--smart-border); border-radius: 4px; background: var(--smart-surface); color: var(--smart-text); font: 10px var(--font-cn); cursor: pointer; }.theme-control select:hover { border-color: var(--smart-primary-strong); }
 .theme-control.visual-mode-control select { min-width: 96px; min-height: 44px; font-size: 12px; }
 .visual-mode-control select:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 3px; }
 .nav-icon { width: 14px; height: 14px; }.nav-copy { display: grid; gap: 1px; min-width: 0; }.nav-copy b { color: inherit; font: 10px var(--font-mono); letter-spacing: .1em; font-weight: 400; }.nav-copy small { color: var(--smart-muted); font: 12px var(--font-cn); letter-spacing: 0; }.nav-label { display: grid; gap: 3px; }.nav-label b { font: 10px var(--font-mono); letter-spacing: .13em; font-weight: 400; }.nav-label small { color: var(--smart-muted); font: 11px var(--font-cn); letter-spacing: 0; }.nav-label--system { margin-top: 28px; }
-.app-jellyfish { position: fixed; z-index: 0; top: 7vh; right: 4vw; width: min(24vw, 320px); height: min(40vh, 380px); opacity: .38; pointer-events: none; }.app-jellyfish--agent { top: 11vh; right: 7vw; width: min(32vw, 420px); height: min(52vh, 500px); opacity: .62; }.app-jellyfish--knowledge { top: 5vh; right: 1vw; opacity: .28; transform: scale(.84); }.app-jellyfish--operations { top: auto; right: 4vw; bottom: 4vh; opacity: .38; transform: scale(.82); }.app-jellyfish--memory { top: auto; right: -1vw; bottom: 4vh; opacity: .26; transform: scale(.76); }
 .app-companion-status{position:fixed;z-index:9;left:24px;bottom:18px;pointer-events:none}
 .spider-restore-control {
   position: fixed;
@@ -387,9 +371,8 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
     display: grid; opacity: 1; pointer-events: auto;
   }
 }
-@media (max-width: 767px) { .app-jellyfish { width: 230px; height: 280px; top: 54px; right: -44px; opacity: .24; }.app-jellyfish--agent { top: 62px; right: -18px; opacity: .4; }.app-jellyfish--operations, .app-jellyfish--memory { top: auto; bottom: 20px; right: -54px; }.section-nav { display: none; }.theme-control__label { display: none; }.theme-control select { min-height: 26px; } }
+@media (max-width: 767px) { .section-nav { display: none; }.theme-control__label { display: none; }.theme-control select { min-height: 26px; } }
 @media (max-width: 767px) { .spider-restore-control { right: 16px; bottom: 16px; } }
-@media (prefers-reduced-motion: reduce) { .app-jellyfish { opacity: .12; } }
 @media (max-width: 767px) {
   .topbar { justify-content: flex-start; flex-wrap: wrap; gap: 8px; padding-block: 6px; overflow: visible; }
   .menu-button { flex: 0 0 44px; min-height: 44px; white-space: nowrap; }
@@ -399,10 +382,8 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
   .topbar-right > time { font-size: 9px; }
   .tools-dropdown { width: min(330px, calc(100vw - 36px)); grid-template-columns: 1fr; max-height: 65dvh; overflow-y: auto; }
 }
-.app-jellyfish--home { top: 44vh; right: 3vw; width: min(23vw, 300px); height: min(38vh, 340px); opacity: .62; }
 .team-scope-note{padding:12px;color:var(--smart-muted);font-size:12px;line-height:1.7}
 .workspace-context{flex-wrap:wrap}
-@media (max-width: 767px) { .app-jellyfish--home { top: 52vh; right: -20px; left: auto; width: 180px; height: 230px; opacity: .36; } }
 .sidebar :deep(.nav-discovery-trigger) { width:100%; margin-bottom:20px; flex-shrink:0; }
 .sidebar :deep(.nav-discovery-trigger kbd) { margin-left:auto; font-size:8px; padding-left:6px; }
 @media(min-width:768px) {

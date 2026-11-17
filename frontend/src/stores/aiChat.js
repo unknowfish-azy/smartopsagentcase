@@ -306,7 +306,17 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     }
   }
 
-  async function sendMessageStreaming(prompt, { images, imageData, rag } = {}) {
+  // 页面上下文白名单化：只保留 path/section 两个字符串字段（各限长 200），
+  // 防止调用方误传大对象进请求体；无有效栏目时返回 null（不发送，行为与旧版一致）。
+  function normalizePageContext(context) {
+    if (!context || typeof context !== 'object') return null
+    const path = String(context.path ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200)
+    const section = String(context.section ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200)
+    if (!section) return null
+    return { path, section }
+  }
+
+  async function sendMessageStreaming(prompt, { images, imageData, rag, context = null } = {}) {
     syncAccount()
     if (activeConversation.value?.remote) return false
     const normalized = String(prompt || '').trim()
@@ -329,11 +339,25 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     const userMessage = { id: userId, role: 'user', content: normalized, ...(imageEvidence.length ? { images: imageEvidence } : {}) }
     conversation.messages.push(userMessage)
     if (imageBytes.length) visionImageCache.set(userId, imageBytes)
-    conversation.messages.push({ id: crypto.randomUUID(), role: 'assistant', content: '', pending: true, streaming: true, thinking: [], providerKey, prompt: normalized, attempt: 1, rag })
+    const pageContext = normalizePageContext(context)
+    conversation.messages.push({
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: '',
+      pending: true,
+      streaming: true,
+      thinking: [],
+      providerKey,
+      prompt: normalized,
+      attempt: 1,
+      rag,
+      // 上下文只落在内存/localStorage 的消息元数据里，供重试复用；不影响消息渲染。
+      ...(pageContext ? { context: pageContext } : {}),
+    })
     const pending = conversation.messages.at(-1)
     conversation.updatedAt = Date.now()
     persist()
-    return streamInto({ conversation, pending, prompt: normalized || '请分析这张图片', imageEvidence, imageBytes, rag, generation, attempt: 1 })
+    return streamInto({ conversation, pending, prompt: normalized || '请分析这张图片', imageEvidence, imageBytes, rag, context: pageContext, generation, attempt: 1 })
   }
 
   // 在失败的回答上原地重试：不追加用户消息、不追加回答，保证重试前后消息条数不变；
@@ -362,10 +386,11 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     if (imageEvidence.length && !imageBytes.length) {
       validationError.value = '原图已随页面刷新清除，本次重试仅按文字重新提问；如需看图请重新上传。'
     }
-    return streamInto({ conversation, pending: target, prompt, imageEvidence, imageBytes, rag: target.rag, generation, attempt })
+    // 重试沿用首次发送时的页面上下文（旧历史无该字段时为 undefined，行为不变）。
+    return streamInto({ conversation, pending: target, prompt, imageEvidence, imageBytes, rag: target.rag, context: normalizePageContext(target.context), generation, attempt })
   }
 
-  async function streamInto({ conversation, pending, prompt, imageEvidence, imageBytes, rag, generation, attempt }) {
+  async function streamInto({ conversation, pending, prompt, imageEvidence, imageBytes, rag, context, generation, attempt }) {
     // 首 token / 总耗时只统计本次流；重试时从新的开始点重新计时（字段在 retryMessageStreaming 中已清空）。
     const startedAt = performance.now()
     let firstTokenAt = null
@@ -421,7 +446,7 @@ export const useAiChatStore = defineStore('ai-chat', () => {
           pending.streaming = false
           pending.error = true
         },
-      }, { images: imageEvidence, imageData: imageBytes, rag, runToken: issued.runToken, correlation: { request_id: crypto.randomUUID(), task_id: conversation.id } })
+      }, { images: imageEvidence, imageData: imageBytes, rag, context: context || undefined, runToken: issued.runToken, correlation: { request_id: crypto.randomUUID(), task_id: conversation.id } })
       return true
     } catch (error) {
       if (!sameAccount(generation) || !conversations.value.includes(conversation)) return false

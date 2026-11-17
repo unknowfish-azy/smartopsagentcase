@@ -321,8 +321,21 @@ onMounted(() => {
   syncRoute()
   syncRouteRef = syncRoute
 
-  const unsubscribe = subscribe(() => {
-    if (staticMode.value) return
+  /* 面板滚出视口时暂停渲染（motionScheduler 只在 document.hidden 停，此处补组件级离屏暂停）。
+     用几何计算而非 IntersectionObserver：IO 在 headless/无合成器环境恒报不可见，几何判断跨环境一致。
+     每 500ms 才算一次 rect，布局读取成本可忽略。 */
+  let stageVisible = true
+  let lastVisCheck = 0
+  function updateStageVisible(now) {
+    if (now - lastVisCheck < 500) return
+    lastVisCheck = now
+    const r = element.getBoundingClientRect()
+    stageVisible = r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth
+  }
+
+  const unsubscribe = subscribe((dt, now) => {
+    updateStageVisible(now)
+    if (!stageVisible || staticMode.value) return
     /* 位姿插值：遥测几 Hz 推送，逐帧 12% 逼近，运动连续不跳变 */
     if (poseTarget.valid) {
       robot.position.x += (poseTarget.x - robot.position.x) * 0.12
@@ -361,6 +374,12 @@ onMounted(() => {
     grid.material.dispose()
     renderer.dispose()
     if (renderer.domElement.parentNode === element) element.removeChild(renderer.domElement)
+    delete window.__rs3d
+  }
+
+  /* DEV 调试钩子：性能诊断用（生产构建为 undefined） */
+  if (import.meta.env.DEV) {
+    window.__rs3d = { renderer, scene, camera, canvas: renderer.domElement, getStageVisible: () => stageVisible }
   }
 })
 

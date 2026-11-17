@@ -8,6 +8,7 @@
     "dev:admin": "vite --config vite.config.admin.mjs",
     "knowledge:export": "node ../scripts/knowledge/export-catalog.mjs",
     "knowledge:check": "node ../scripts/knowledge/export-catalog.mjs --check",
+    "atlas:distill": "node ../scripts/atlas/distill-atlas.mjs",
     "prebuild": "npm run knowledge:check",
     "build": "vite build",
     "build:admin": "vite build --config vite.config.admin.mjs",

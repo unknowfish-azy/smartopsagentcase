@@ -50,7 +50,8 @@ function tick(now) {
 
   const interval = degraded ? 1000 / 15 : 1000 / DEFAULT_FPS
   for (const entry of subscribers.values()) {
-    if (now - entry.last < interval - entry.fps * 0.5) continue
+    /* 门控：距上次执行不足一个完整间隔则跳过（原公式 interval - fps*0.5 会让 30fps 目标实际跑到 ~54fps） */
+    if (now - entry.last < interval) continue
     entry.last = now
     try {
       entry.fn(Math.min(elapsed, 100), now)

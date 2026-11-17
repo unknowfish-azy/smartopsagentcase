@@ -14,6 +14,58 @@ const FALLBACK_ARM_MS = 800
 /** 无 boundary 时的估算语速（字符/秒），与 useLipSync 的 DEFAULT_CPS 同量级 */
 const FALLBACK_CPS = 5
 
+/**
+ * 甜妹少女音的选型偏好（按顺序命中，越靠前越优先）。
+ * 各环境可用音色差异很大，这里只做「有就优先用」的软偏好：
+ *  - Windows 系统音色：慧慧 / 瑶瑶（女），康康（男，排除）；
+ *  - Edge / Chrome 的在线自然音色：晓伊（活泼少女）、晓晓（温柔）；
+ *  - 其他平台的中文女声若名字带 female / 女 也能兜底命中。
+ */
+const SWEET_VOICE_HINTS = Object.freeze([
+  'xiaoyi', '晓伊',
+  'xiaoxiao', '晓晓',
+  'xiaomo', '晓梦',
+  'xiaohan', '晓涵',
+  'huihui', '慧慧',
+  'yaoyao', '瑶瑶',
+  'female', '女'
+])
+/** 明确是男声的音色，直接排除，避免默认落到云希/康康这类音色上 */
+const MALE_VOICE_HINTS = Object.freeze([
+  'kangkang', 'yunxi', 'yunjian', 'yunyang',
+  '康康', '云希', '云健', '云扬',
+  'male'
+])
+
+/**
+ * 从系统音色表里挑一个最接近「甜妹少女音」的中文音色。
+ * @param {SpeechSynthesisVoice[]} voices
+ * @returns {SpeechSynthesisVoice | null} 无中文音色时返回 null（交给系统默认）
+ */
+export function pickSweetVoice(voices) {
+  if (!Array.isArray(voices) || voices.length === 0) return null
+  const chinese = voices.filter((voice) => {
+    const name = String(voice?.name ?? '').toLowerCase()
+    if (!/^zh/i.test(String(voice?.lang ?? ''))) return false
+    return !MALE_VOICE_HINTS.some((hint) => name.includes(hint))
+  })
+  if (chinese.length === 0) return null
+  let best = null
+  let bestScore = Number.POSITIVE_INFINITY
+  for (const voice of chinese) {
+    const name = String(voice?.name ?? '').toLowerCase()
+    const hint = SWEET_VOICE_HINTS.findIndex((item) => name.includes(item))
+    // 命中偏好词的按顺序排；natural 音色质量更好，在同档内优先
+    let score = hint >= 0 ? hint * 10 : 1000
+    if (name.includes('natural')) score -= 5
+    if (score < bestScore) {
+      bestScore = score
+      best = voice
+    }
+  }
+  return best
+}
+
 export function isSpeechSynthesisAvailable() {
   return typeof globalThis !== 'undefined' && typeof globalThis.speechSynthesis === 'object'
 }
@@ -38,6 +90,19 @@ export function createPetSpeech(handlers = {}) {
   let boundarySeen = false
   let startedAt = 0
   let disposed = false
+  let cachedVoice
+
+  /**
+   * 解析甜妹音色。音色表未加载完（空数组）时不缓存，留给下一次 speak 重试。
+   * @returns {SpeechSynthesisVoice | null}
+   */
+  function resolveVoice() {
+    if (cachedVoice) return cachedVoice
+    const voices = globalThis.speechSynthesis.getVoices?.() ?? []
+    if (voices.length === 0) return null
+    cachedVoice = pickSweetVoice(voices)
+    return cachedVoice
+  }
 
   function clearFallback() {
     if (fallbackTimer) {
@@ -74,10 +139,15 @@ export function createPetSpeech(handlers = {}) {
 
   /**
    * 播报一段文本。返回 false 表示当前环境不支持（调用方降级为纯文字口型）。
+   *
+   * 音色：默认挑一个甜妹少女音（pickSweetVoice）。getVoices 在部分环境首次调用
+   * 返回空数组（音色表异步加载），此时不缓存结果，下一次 speak 再试，
+   * 否则会永久锁死在系统默认（通常是男声）。
+   *
    * @param {string} text
-   * @param {{ lang?: string, rate?: number, voiceIndex?: number }} [options]
+   * @param {{ lang?: string, rate?: number, pitch?: number }} [options]
    */
-  function speak(text, { lang = 'zh-CN', rate = 1 } = {}) {
+  function speak(text, { lang = 'zh-CN', rate = 1.06, pitch = 1.2 } = {}) {
     if (disposed || !isSpeechSynthesisAvailable()) return false
     stop()
     const spoken = String(text ?? '').trim()
@@ -86,6 +156,13 @@ export function createPetSpeech(handlers = {}) {
     utterance = new globalThis.SpeechSynthesisUtterance(spoken)
     utterance.lang = lang
     utterance.rate = Math.min(3, Math.max(0.5, rate))
+    // 音高上抬是「少女感」的主要来源；上限 2 是 Web Speech 的规范上限。
+    // 1.2 与后端 Edge 甜度档位（pitch +18Hz ≈ 两个半音）同一取向，
+    // 浏览器合成器更"脆"，所以不再往 1.3 以上加，避免电子味；
+    // 语速 1.06 只为"轻快"，再快会显得催促。
+    utterance.pitch = Math.min(2, Math.max(0, pitch))
+    const voice = resolveVoice()
+    if (voice) utterance.voice = voice
     boundarySeen = false
     fallbackIndex = 0
 

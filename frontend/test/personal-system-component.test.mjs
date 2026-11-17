@@ -8,5 +8,6 @@ test('marks an expanded child group as toggleable while direct groups stay direc
   const knowledge = navigationGroupView(personalSystemGroups.find(group => group.id === 'knowledge'), ['agent'])
 
   assert.deepEqual(agent, { expandable: true, expanded: true })
-  assert.deepEqual(knowledge, { expandable: false, expanded: false })
+  // 知识中心已收纳图谱与科研助手，成为展开组；团队协作入口已收敛至顶部切换器，不在侧栏。
+  assert.deepEqual(knowledge, { expandable: true, expanded: false })
 })

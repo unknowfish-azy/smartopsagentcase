@@ -107,6 +107,11 @@ export function ingestSciverse(payload) {
   return http.post('/api/knowledge/sciverse/ingest', payload)
 }
 
+/* 手动配置 SciVerse API Key：运行期热更新 + 持久化到后端 .env.local（长期保存） */
+export function saveSciverseKey(apiKey: string) {
+  return http.put('/api/knowledge/sciverse/key', { apiKey })
+}
+
 export function startOperationTunnel(runtimeId, payload) {
   return http.post(`/api/operations/runtimes/${runtimeId}/tunnels`, null, { params: payload })
 }

@@ -53,6 +53,12 @@ const routes = [
                 meta: { section: 'NL INSIGHTS / 自然语言洞察' }
             },
             {
+                path: 'repository',
+                name: 'SmartRepository',
+                component: () => import('../views/repository/SmartRepositoryView.vue'),
+                meta: routeMetaFor('SmartRepository')
+            },
+            {
                 path: 'servers',
                 name: 'ServerList',
                 component: () => import('../views/server/ServerListView.vue'),
@@ -66,6 +72,10 @@ const routes = [
                 meta: routeMetaFor('ServerDetail')
             },
             { path: 'health', name: 'HealthCenter', component: () => import('../views/diagnostics/HealthCenterView.vue'), meta: { ...routeMetaFor('HealthCenter'), section: 'SERVICE DIAGNOSTICS / 健康诊断' } },
+            { path: 'log-diagnosis', name: 'LogDiagnosis', component: () => import('../views/diagnostics/LogDiagnosisView.vue'), meta: { ...routeMetaFor('LogDiagnosis'), section: 'LOG DIAGNOSIS / 日志诊断' } },
+            { path: 'devices', name: 'DeviceRegistry', component: () => import('../views/operations/DeviceRegistryView.vue'), meta: { ...routeMetaFor('DeviceRegistry'), section: 'DEVICE REGISTRY / 设备接入台账' } },
+            { path: 'patrol', name: 'PatrolPlan', component: () => import('../views/operations/PatrolPlanView.vue'), meta: { ...routeMetaFor('PatrolPlan'), section: 'PATROL PLAN / 巡检计划' } },
+            { path: 'robot', name: 'RobotConsole', component: () => import('../views/robot/RobotConsoleView.vue'), meta: { ...routeMetaFor('RobotConsole'), section: 'ROBOT CONSOLE / 机器人控制台' } },
             /* 里程碑战报已并入「用量与额度」子视图；旧链接保留可访问，透传 query（视频/外链/书签不失效） */
             { path: 'milestones', redirect: to => ({ path: '/token-usage', query: { ...to.query, view: 'milestones' } }) },
             { path: 'inspector/desk', name: 'InspectorDesk', component: () => import('../views/inspector/InspectorDeskView.vue'), meta: { ...routeMetaFor('InspectorDesk'), section: 'INSPECTOR DESK / 洞察台' } },
@@ -79,11 +89,19 @@ const routes = [
             { path: 'knowledge', redirect: '/knowledge/space' },
             { path: 'web-research', name: 'WebResearch', component: () => import('../views/research/WebResearchView.vue'), meta: { ...routeMetaFor('WebResearch'), section: 'NEURAL RESEARCH / 联网检索' } },
             { path: 'radar', name: 'Radar', component: () => import('../views/research/RadarView.vue'), meta: { ...routeMetaFor('Radar'), section: 'FRESHNESS RADAR / 时效雷达' } },
+            { path: 're-workbench', name: 'ReWorkbench', component: () => import('../views/research/ReWorkbenchView.vue'), meta: { ...routeMetaFor('ReWorkbench'), section: 'RE WORKBENCH / 逆向研究工作台' } },
             { path: 'knowledge/personal', name: 'PersonalKnowledge', component: () => import('../views/knowledge/PersonalKnowledgeView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'PERSONAL KNOWLEDGE / 个人知识库' } },
             { path: 'knowledge/quiz', name: 'KnowledgeQuiz', component: () => import('../views/knowledge/QuizView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'QUIZ BANK / 运维题库' } },
             { path: 'knowledge/generation', name: 'KnowledgeGeneration', component: () => import('../views/knowledge/GenerationCenterView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'ARTIFACT GENERATION / 生成中心' } },
             { path: 'knowledge/review', name: 'KnowledgeCandidateReview', component: () => import('../views/knowledge/KnowledgeCandidateReviewView.vue'), meta: { ...routeMetaFor('KnowledgeCandidateReview'), section: 'KNOWLEDGE REVIEW / 知识审核' } },
+            { path: 'knowledge/sciverse', name: 'KnowledgeSciverse', component: () => import('../views/knowledge/KnowledgeSciverseView.vue'), meta: { ...routeMetaFor('KnowledgeSciverse'), section: 'SCIVERSE INGEST / 科学文献蒸馏' } },
+            { path: 'knowledge/shared', name: 'SharedKnowledge', component: () => import('../views/knowledge/SharedKnowledgeView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'SHARED KNOWLEDGE / 共享知识' } },
             { path: 'knowledge/space', name: 'KnowledgeSpace', component: () => import('../views/knowledge/space/KnowledgeSpaceView.vue'), meta: { ...routeMetaFor('Knowledge'), section: 'KNOWLEDGE SPACE / 知识空间' } },
+            { path: 'atlas', name: 'KnowledgeAtlas', component: () => import('../views/atlas/KnowledgeAtlasView.vue'), meta: { ...routeMetaFor('KnowledgeAtlas'), section: 'KNOWLEDGE ATLAS / 知识蒸馏图谱' } },
+            { path: 'scholar/qa', name: 'ScholarQa', component: () => import('../views/scholar/ScholarQaView.vue'), meta: { ...routeMetaFor('ScholarQa'), section: 'TRACEABLE QA / 引用溯源问答' } },
+            { path: 'scholar/cards', name: 'ScholarCards', component: () => import('../views/scholar/ScholarCardsView.vue'), meta: { ...routeMetaFor('ScholarCards'), section: 'STUDY CARDS / 研究资料卡' } },
+            { path: 'scholar/review', name: 'ScholarReview', component: () => import('../views/scholar/ScholarReviewView.vue'), meta: { ...routeMetaFor('ScholarReview'), section: 'REVIEW BUILDER / 综述生成器' } },
+            { path: 'scholar/pipeline', name: 'ScholarPipeline', component: () => import('../views/scholar/ScholarPipelineView.vue'), meta: { ...routeMetaFor('ScholarPipeline'), section: 'RETRIEVAL PIPELINE / 检索编排' } },
             { path: 'plugins', name: 'PluginCenter', component: () => import('../views/plugins/PluginCenterView.vue'), meta: { ...routeMetaFor('PluginCenter'), section: 'EXTENSION LAB / 插件中心' } },
             { path: 'skills', name: 'SkillCenter', component: () => import('../views/skills/SkillCenterView.vue'), meta: { ...routeMetaFor('SkillCenter'), section: 'AGENT SKILLS / 技能中心' } },
             { path: 'sentinel', name: 'SentinelDashboard', component: () => import('../views/sentinel/SentinelDashboardView.vue'), meta: { section: 'SENTINEL / 哨兵监控' } },
@@ -91,6 +109,7 @@ const routes = [
             { path: 'sentinel/alerts', name: 'AlertCenter', component: () => import('../views/sentinel/AlertCenterView.vue'), meta: { section: 'ALERT CENTER / 告警中心' } },
             { path: 'sentinel/guardian', name: 'SentinelGuardian', component: () => import('../views/sentinel/SentinelGuardianView.vue'), meta: { section: 'SENTINEL / 守护 Agent' } },
             { path: 'sentinel/forecast', name: 'ForecastPlane', component: () => import('../views/sentinel/ForecastPlaneView.vue'), meta: { ...routeMetaFor('ForecastPlane'), section: 'FORECAST / 预测面' } },
+            { path: 'sentinel/sections', name: 'SectionAnalysis', component: () => import('../views/sentinel/SectionAnalysisView.vue'), meta: { ...routeMetaFor('SectionAnalysis'), section: 'SECTION ANALYSIS / 断面对比' } },
             { path: 'sentinel/observability', name: 'EngineObservability', component: () => import('../views/sentinel/EngineObservabilityView.vue'), meta: { ...routeMetaFor('EngineObservability'), section: 'ENGINE OBSERVABILITY / 引擎可观测' } },
             { path: 'incidents', name: 'IncidentCenter', component: () => import('../views/incident/IncidentCenterView.vue'), meta: { section: 'INCIDENT CENTER / 工单中心' } },
             { path: 'incidents/:id', name: 'IncidentDetail', component: () => import('../views/incident/IncidentDetailView.vue'), meta: { section: 'INCIDENT CENTER / 工单详情' } },

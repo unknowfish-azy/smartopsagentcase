@@ -38,6 +38,15 @@
       detail="每条告警有四个操作：研判给出建议与证据（不改状态、不执行）；通知发给相关人（站内真实发出，邮件与 Webhook 会如实标记为待投递）；沉淀把已关闭告警整理成知识候选进入团队复核；走团队审批则生成预览并在团队侧创建待审批运行，仍由人批准后才执行。"
     />
 
+    <section v-if="latestAlert" class="ops-card aet-card" aria-labelledby="aet-title">
+      <header class="alert-card__head">
+        <h2 id="aet-title" class="alert-card__title">事件流 · {{ latestAlert.title || '未命名告警' }}</h2>
+        <span class="ui-pill" :class="`ui-pill--${statusTone(latestAlert.status)}`">{{ statusLabel(latestAlert.status) }}</span>
+      </header>
+      <AlertEventTimeline :alert="latestAlert" />
+      <p class="aet-note">时间线由告警字段推导；时间缺省显示 —，处置动作（研判/通知/审批/关闭）在下方告警卡片操作。</p>
+    </section>
+
     <SentinelEmpty
       v-if="state.loaded && state.alerts.length === 0"
       title="还没有告警"
@@ -63,6 +72,28 @@
           <span>脚本：{{ scriptName(alert.recommendedScriptId) }}</span>
           <span>工单：{{ alert.ticketId || '—' }}</span>
           <time>{{ alert.firedAt || '—' }}</time>
+        </div>
+
+        <!-- PID 闭环 + 蒸馏记忆 嵌入式展示（有数据才显示，不占空行） -->
+        <div v-if="pidOf(alert) || memoryOf(alert)" class="alert-card__loop">
+          <div v-if="pidOf(alert)" class="loop-row loop-row--pid">
+            <span class="loop-label">PID 闭环</span>
+            <div class="loop-bar" :title="`强度 ${(pidOf(alert).lastIntensity * 100).toFixed(0)}%`">
+              <div class="loop-bar__fill" :style="{ width: `${Math.round(pidOf(alert).lastIntensity * 100)}%`, '--loop-hue': pidOf(alert).lastIntensity < 0.4 ? '142' : pidOf(alert).lastIntensity < 0.7 ? '38' : '0' }"></div>
+            </div>
+            <span class="loop-meta">
+              强度 <b>{{ (pidOf(alert).lastIntensity * 100).toFixed(0) }}%</b>
+              · 积分 <b>{{ pidOf(alert).integral.toFixed(2) }}</b>
+              <span v-if="pidOf(alert).executionCount">({{ pidOf(alert).executionCount }} 次收敛)</span>
+            </span>
+          </div>
+          <div v-if="memoryOf(alert)" class="loop-row loop-row--memory">
+            <span class="loop-label">蒸馏经验</span>
+            <span class="loop-meta loop-meta--note">
+              {{ memoryOf(alert).preferredAction }}
+            </span>
+            <span class="loop-meta loop-meta--conf">置信 <b>{{ (memoryOf(alert).confidence * 100).toFixed(0) }}%</b></span>
+          </div>
         </div>
 
         <p class="alert-card__ai" :class="{ 'is-empty': !alert.aiSummary }">
@@ -266,6 +297,8 @@ import {
   sentinelState as state
 } from './sentinelStore.js'
 import { ALERT_SEVERITIES, ALERT_STATUSES, NOTIFY_CHANNELS, requiresHumanBeforeRemediation } from './sentinelModel.js'
+import AlertEventTimeline from '../../components/sentinel/AlertEventTimeline.vue'
+import { useVoiceActionBus } from '../../components/persona/voiceActionRegistry.js'
 import './sentinel.css'
 
 const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
@@ -281,9 +314,23 @@ const actionMessage = ref('')
 const advice = ref(null)
 
 const countBy = status => state.alerts.filter(alert => alert.status === status).length
+const latestAlert = computed(() => state.alerts[0] || null)
 const statusLabel = id => ALERT_STATUSES.find(item => item.id === id)?.label ?? id ?? '—'
 const scriptName = id => state.scripts.find(script => script.id === id)?.name ?? (id ? `#${id}` : '—')
 const reload = () => loadSentinel()
+
+/** 从 PID 闭环状态里找出当前告警 metric 对应的状态。 */
+const pidOf = alert => state.pidStates.find(p => p.metric === alert?.metric) || null
+
+/** 从蒸馏记忆里找 metric+severity 匹配的经验（按 incident_key）。 */
+const memoryOf = alert => {
+  if (!alert?.metric) return null
+  const key = `sentinel:${alert.metric.toLowerCase()}${alert.severity ? ':' + alert.severity : ''}`
+  // 先精确匹配，再降级 metric 匹配
+  return state.distillMemories.find(m => m.incidentKey === key)
+      || state.distillMemories.find(m => m.incidentKey?.startsWith('sentinel:' + alert.metric.toLowerCase()))
+      || null
+}
 
 /** 级别 → 语义标签色：P0/P1 危险，P2 警告，P3 中性。 */
 const severityTone = severity => {
@@ -435,8 +482,21 @@ async function submitRule() {
   } finally { creating.value = false }
 }
 
-onMounted(() => { updateMobile(); window.addEventListener('resize', updateMobile); loadSentinel() })
-onBeforeUnmount(() => window.removeEventListener('resize', updateMobile))
+onMounted(() => {
+  updateMobile()
+  window.addEventListener('resize', updateMobile)
+  loadSentinel()
+  // 语音控屏：注册按钮级意图 handler
+  const bus = useVoiceActionBus()
+  _voiceUnregister = [
+    bus.register('sentinel.alerts.refresh', () => { reload(); actionMessage.value = '已从语音触发刷新' }),
+  ]
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateMobile)
+  if (_voiceUnregister) _voiceUnregister.forEach(fn => fn())
+})
+let _voiceUnregister = null
 </script>
 
 <style scoped>

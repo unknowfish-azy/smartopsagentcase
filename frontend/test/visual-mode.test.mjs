@@ -26,7 +26,7 @@ test('visual preference persists safely and does not overwrite theme', () => {
 })
 
 test('reduced visual preference reaches Canvas and stops carousel autoplay', async () => {
-  for (const path of ['components/common/CanvasParticleWhale.vue', 'components/common/CanvasAmbientField.vue', 'components/ui/home-orbit-carousel.vue']) {
+  for (const path of ['components/common/CanvasAmbientField.vue', 'components/ui/home-orbit-carousel.vue']) {
     const content = await readFile(new URL(`../src/${path}`, import.meta.url), 'utf8')
     assert.match(content, /visualMode/)
     assert.match(content, /reduced-motion/)

@@ -48,7 +48,9 @@ export const SENTINEL_API = Object.freeze({
   taskGroups: '/api/sentinel/task-groups',
   taskGroup: label => `/api/sentinel/task-groups/${encodeURIComponent(label)}/enabled`,
   taskGroupAssign: id => `/api/sentinel/tasks/${encodeURIComponent(id)}/group`,
-  scriptUpload: '/api/sentinel/scripts/upload'
+  scriptUpload: '/api/sentinel/scripts/upload',
+  pidStates: '/api/sentinel/pid-states',
+  distillMemories: '/api/sentinel/distill-memories'
 })
 
 export const sentinelState = reactive({
@@ -66,7 +68,9 @@ export const sentinelState = reactive({
   alertRules: [],
   alerts: [],
   schedules: [],
-  taskGroups: []
+  taskGroups: [],
+  pidStates: [],        // PID 闭环状态（task+metric → integral/intensity/lastError）
+  distillMemories: []  // 已蒸馏的哨兵经验（DECISION_LOOP + sentinel: 前缀）
 })
 
 /** 轮询定时器句柄（非响应式，避免被 Vue 追踪为依赖）。 */
@@ -109,16 +113,18 @@ export async function loadSentinel() {
   if (sentinelState.loading) return
   sentinelState.loading = true
   try {
-    const [tasksR, templatesR, scriptsR, alertRulesR, alertsR, schedulesR, taskGroupsR] = await collect([
+    const [tasksR, templatesR, scriptsR, alertRulesR, alertsR, schedulesR, taskGroupsR, pidR, distillR] = await collect([
       SENTINEL_API.tasks,
       SENTINEL_API.templates,
       SENTINEL_API.scripts,
       SENTINEL_API.alertRules,
       SENTINEL_API.alerts,
       SENTINEL_API.schedules,
-      SENTINEL_API.taskGroups
+      SENTINEL_API.taskGroups,
+      SENTINEL_API.pidStates,
+      SENTINEL_API.distillMemories
     ])
-    const results = [tasksR, templatesR, scriptsR, alertRulesR, alertsR, schedulesR, taskGroupsR]
+    const results = [tasksR, templatesR, scriptsR, alertRulesR, alertsR, schedulesR, taskGroupsR, pidR, distillR]
     // 全部失败：要么是未登录（401），要么是接口/网络问题
     if (results.every(r => !r.ok)) {
       const allUnauthorized = results.every(r => r.status === 401)
@@ -137,6 +143,8 @@ export async function loadSentinel() {
     sentinelState.alerts = unwrapList(alertsR.data)
     sentinelState.schedules = unwrapList(schedulesR.data)
     sentinelState.taskGroups = unwrapList(taskGroupsR.data)
+    sentinelState.pidStates = unwrapList(pidR.data)
+    sentinelState.distillMemories = unwrapList(distillR.data)
     sentinelState.status = 'ready'
     sentinelState.reason = ''
     sentinelState.lastPolledAt = Date.now()

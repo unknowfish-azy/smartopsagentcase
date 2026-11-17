@@ -42,12 +42,8 @@ try {
       assert.equal(await page.locator('.admin-policy-summary').count(), 0)
       await page.goto(`${base}/`, { waitUntil: 'networkidle' })
       await page.locator('.home').waitFor()
-      if (mode === 'balanced') {
-        await page.waitForFunction(() => performance.getEntriesByType('resource').some(entry => /vendor-three|\/three(?:\.js|\/)/.test(entry.name)))
-      } else {
-        await page.locator('.canvas-whale').waitFor()
-        assert.deepEqual(threeRequests(requests), [], 'lightweight homepage must not load Three.js')
-      }
+      // 氛围物种（银河/鲸/水母）已彻底删除：任何档位首页都不得加载 Three.js。
+      assert.deepEqual(threeRequests(requests), [], 'homepage must not load Three.js anymore')
       for (const theme of ['dark', 'light']) {
         await page.getByLabel('选择主题模式').selectOption(theme)
         assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), theme)
@@ -55,12 +51,6 @@ try {
       }
       await page.getByLabel('选择视觉模式').selectOption('reduced-motion')
       assert.ok((await page.getByLabel('选择视觉模式').boundingBox()).height >= 44, 'visual selector must be touch accessible')
-      await page.locator('.canvas-whale').waitFor()
-      await page.waitForTimeout(250)
-      assert.equal(await page.locator('.play-control').isDisabled(), true)
-      const still = await page.locator('.canvas-whale').evaluate(canvas => canvas.toDataURL())
-      await page.waitForTimeout(300)
-      assert.equal(await page.locator('.canvas-whale').evaluate(canvas => canvas.toDataURL()), still)
       await page.reload({ waitUntil: 'networkidle' })
       assert.equal(await page.getByLabel('选择视觉模式').inputValue(), 'reduced-motion')
       await noOverflow(page)

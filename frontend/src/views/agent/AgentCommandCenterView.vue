@@ -30,6 +30,20 @@
       <article><span>记忆回写次数</span><strong>{{ stats.learnedCount ?? 0 }}</strong></article>
     </section>
 
+    <section class="core-hud" aria-label="决策核心状态">
+      <div class="core-hud__core"><AgentCoreOrbit :progress="coreProgress" :loading="loading" /></div>
+      <div class="core-hud__readouts">
+        <div><span>TOTAL / 闭环总数</span><strong>{{ stats.total ?? 0 }}</strong></div>
+        <div><span>REVIEWED / 已复盘</span><strong>{{ stats.reviewed ?? 0 }}</strong></div>
+        <div><span>LEARNED / 记忆回写</span><strong>{{ stats.learnedCount ?? 0 }}</strong></div>
+        <div><span>STAGE / 当前阶段</span><strong>{{ detail ? `${stageIndex + 1}/5 ${stageLabel(detail.stage)}` : '待机' }}</strong></div>
+      </div>
+      <div class="core-hud__bar">
+        <span class="core-hud__bar-label">CORE SYNC · 复盘解决率 {{ resolveRate }}</span>
+        <div class="core-hud__track"><i :style="{ width: `${Math.round(coreProgress * 100)}%` }"></i></div>
+      </div>
+    </section>
+
     <section class="pipeline">
       <div v-for="(stage, index) in stages" :key="stage.key" class="stage"
            :class="{ active: stageIndex >= index, current: stageIndex === index }">
@@ -161,6 +175,7 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, reactive, ref, defineAsyncComponent } from 'vue'
 import AgentSkillGuidance from '../../components/agent/AgentSkillGuidance.vue'
+import AgentCoreOrbit from '../../components/agent/AgentCoreOrbit.vue'
 import AppEmpty from '../../components/common/AppEmpty.vue'
 import { resolvedTheme as _resolvedTheme } from '../../theme.js'
 import {
@@ -211,6 +226,8 @@ const resolveRate = computed(() => {
   const rate = Number(stats.value.resolveRate || 0)
   return `${Math.round(rate * 100)}%`
 })
+/* 决策核心 HUD 的进度弧：复盘解决率 0~1 */
+const coreProgress = computed(() => Math.min(1, Math.max(0, Number(stats.value.resolveRate || 0))))
 
 const sourceLabel = type => (type === 'INSPECTOR' ? '自动派生' : '手工创建')
 const stageLabel = stage => stages.find(item => item.key === stage)?.name || stage || '分析'
@@ -347,6 +364,22 @@ button:disabled{cursor:wait;opacity:.65}
 .stats span{display:block;color:var(--smart-muted);font-size:13px}
 .stats strong{display:block;margin-top:8px;font-size:26px}
 .pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+/* AI 决策核心 HUD：左核心光球 + 中数据读出 + 右解决率进度条 */
+.core-hud{position:relative;display:grid;grid-template-columns:200px 1fr 260px;gap:16px;align-items:center;padding:12px 16px;background:linear-gradient(180deg,color-mix(in srgb,var(--smart-primary-strong) 7%,var(--smart-surface)),var(--smart-surface));border:1px solid color-mix(in srgb,var(--smart-primary-strong) 26%,var(--smart-border));border-radius:12px;overflow:hidden}
+.core-hud::before,.core-hud::after{content:'';position:absolute;width:14px;height:14px;border:1px solid color-mix(in srgb,var(--smart-primary-strong) 55%,transparent)}
+.core-hud::before{top:6px;right:6px;border-left:none;border-bottom:none}
+.core-hud::after{bottom:6px;left:6px;border-right:none;border-top:none}
+.core-hud__core{height:132px}
+.core-hud__readouts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.core-hud__readouts div{display:grid;gap:5px;padding:10px 12px;border:1px solid var(--smart-border);border-radius:9px;background:color-mix(in srgb,var(--smart-primary-strong) 4%,transparent)}
+.core-hud__readouts span{color:var(--smart-muted);font:10px var(--font-mono,ui-monospace,monospace);letter-spacing:.08em}
+.core-hud__readouts strong{font-size:15px;font-variant-numeric:tabular-nums}
+.core-hud__bar{display:grid;gap:8px;align-content:center}
+.core-hud__bar-label{color:var(--smart-muted);font:10px var(--font-mono,ui-monospace,monospace);letter-spacing:.1em}
+.core-hud__track{height:8px;border:1px solid color-mix(in srgb,var(--smart-primary-strong) 30%,transparent);border-radius:999px;background:color-mix(in srgb,var(--smart-primary-strong) 6%,transparent);overflow:hidden}
+.core-hud__track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--smart-primary-strong) 55%,transparent),var(--smart-primary-strong));box-shadow:0 0 10px color-mix(in srgb,var(--smart-primary-strong) 60%,transparent);transition:width 600ms ease}
+@media(max-width:1100px){.core-hud{grid-template-columns:160px 1fr}.core-hud__bar{grid-column:1/-1}}
+@media(max-width:900px){.core-hud{grid-template-columns:1fr}.core-hud__core{height:120px}}
 .stage{padding:14px;background:var(--smart-surface);border:1px dashed var(--smart-border);border-radius:10px;display:grid;gap:4px;opacity:.55}
 .stage b{font-size:14px}
 .stage small{color:var(--smart-muted)}

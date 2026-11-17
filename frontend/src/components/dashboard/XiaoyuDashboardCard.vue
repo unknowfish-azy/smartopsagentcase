@@ -9,7 +9,7 @@
     </header>
 
     <div class="xiaoyu-body">
-      <!-- 3D 半身舞台：点击小鱼开口说话 -->
+      <!-- 3D 半身舞台：点击小鱼开口说话；情境气泡浮动在场景内（蒸馏 PetLive「角色住在空间里」） -->
       <button type="button" class="xiaoyu-stage" aria-label="小鱼 3D 形象 · 点击让小鱼说话" @click="speakGreeting">
         <AgentPersona
           ref="personaRef"
@@ -17,12 +17,10 @@
           mode="vrm"
           quality="auto"
         />
+        <p class="xiaoyu-bubble">{{ bubbleText }}</p>
       </button>
 
       <div class="xiaoyu-side">
-        <!-- 当前状态 + 情境一句话 -->
-        <p class="xiaoyu-bubble">{{ bubbleText }}</p>
-
         <!-- 就地对话流：不跳转 /chat，回答直接显示在这里 -->
         <div v-if="visibleMessages.length" ref="threadRef" class="xiaoyu-thread" aria-label="小鱼对话记录" role="log">
           <div v-for="msg in visibleMessages" :key="msg.id" class="xiaoyu-msg" :class="`xiaoyu-msg--${msg.role}`">
@@ -323,16 +321,26 @@ onBeforeUnmount(() => {
 }
 .xiaoyu-stage :deep(.webgl-host) { max-width: none; }
 
-/* 状态气泡 */
+/* 状态气泡：浮动在 3D 场景内（脚下光环上方），玻璃质感 */
 .xiaoyu-bubble {
-  margin: 0 0 10px;
-  padding: 10px 14px;
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 92%;
+  margin: 0;
+  padding: 8px 14px;
   border-radius: var(--ds-radius-md);
-  background: var(--ds-pill-info-bg);
+  background: color-mix(in srgb, var(--ds-color-surface-base) 72%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--ds-color-text);
   font-size: var(--ds-type-body-caption-size);
   line-height: var(--ds-line-height-base);
-  border-left: 2px solid var(--ds-color-primary);
+  border: 1px solid color-mix(in srgb, var(--ds-color-primary) 30%, transparent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+  pointer-events: none;
 }
 
 /* 就地对话流 */

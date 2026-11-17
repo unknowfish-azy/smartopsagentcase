@@ -94,16 +94,6 @@ test('main layout does not eagerly load the tools catalog or inquiry drawer', as
   assert.equal(layout.includes("import('../views/operations/toolCatalog.js')"), true)
 })
 
-test('Three.js visual modules use tree-shakeable named imports', async () => {
-  const whale = await source('src/components/common/ParticleWhale.vue')
-  const galaxy = await source('src/components/ui/milky-way-scene.js')
-
-  for (const content of [whale, galaxy]) {
-    assert.equal(content.includes("import * as THREE from 'three'"), false)
-    assert.match(content, /from 'three'/)
-  }
-})
-
 test('chat message list renders a bounded window instead of the full history', async () => {
   const panel = await source('src/components/ai/AiChatPanel.vue')
 
@@ -129,27 +119,25 @@ test('ECharts and the knowledge catalog stay behind lazy route boundaries', asyn
 })
 
 
-test('non-home surfaces use Canvas fallbacks and keep Three.js on the dashboard', async () => {
+test('ambient WebGL species stay deleted and login keeps the lightweight starfield', async () => {
   const mainLayout = await source('src/layouts/MainLayout.vue')
   const login = await source('src/views/auth/LoginView.vue')
-  const canvasWhale = await source('src/components/common/CanvasParticleWhale.vue')
   const ambientField = await source('src/components/common/CanvasAmbientField.vue')
   const theme = await source('src/components/common/canvasTheme.js')
 
-  assert.match(mainLayout, /ParticleWhale v-if="showEnhancedHomeVisuals && !personaPetActive"/)
-  assert.match(mainLayout, /CanvasParticleWhale v-if="!showEnhancedHomeVisuals && !isConnectionWorkspace && !isCompositionPlate && !personaPetActive"/)
+  assert.equal(mainLayout.includes('ParticleWhale'), false)
+  assert.equal(mainLayout.includes('MilkyWay'), false)
+  assert.equal(mainLayout.includes('LivingJellyfish'), false)
+  assert.equal(mainLayout.includes('StellarOceanProvider'), false)
   assert.ok(mainLayout.includes('\u9009\u62e9\u89c6\u89c9\u6a21\u5f0f'))
   assert.match(mainLayout, /isLightweightVisualMode/)
-  assert.match(mainLayout, /route.name === 'Dashboard' && !isLightweightVisualMode.value/)
   assert.equal(login.includes("import('../../components/common/ParticleWhale.vue')"), false)
   assert.equal(login.includes("import('../../components/ui/milky-way.vue')"), false)
   assert.equal(login.includes("CanvasParticleWhale"), false)
   assert.match(login, /CanvasAmbientField/)
   assert.match(login, /palette-root/)
-  for (const content of [canvasWhale, ambientField]) {
-    assert.equal(content.includes("from 'three'"), false)
-    assert.match(content, /readCanvasPalette/)
-  }
+  assert.equal(ambientField.includes("from 'three'"), false)
+  assert.match(ambientField, /readCanvasPalette/)
   assert.match(theme, /MutationObserver/)
   assert.match(theme, /data-theme/)
 })

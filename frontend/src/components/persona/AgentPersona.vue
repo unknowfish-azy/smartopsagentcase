@@ -122,6 +122,9 @@ defineExpose({
   speakText: (text, options) => stage?.speakText(text, options),
   seekSpeech: (charIndex) => stage?.seekSpeech(charIndex),
   stopSpeaking: () => stage?.stopSpeaking(),
+  playGesture: (name, options) => stage?.playGesture(name, options) ?? false,
+  stopGesture: () => stage?.stopGesture(),
+  setLookPoint: (x, y) => stage?.setLookPoint?.(x, y),
   readStats: () => stage?.stats() ?? null
 })
 

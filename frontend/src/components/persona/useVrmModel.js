@@ -8,13 +8,27 @@
  */
 import {
   AmbientLight,
+  AdditiveBlending,
+  BackSide,
   Box3,
+  BufferAttribute,
+  BufferGeometry,
+  CanvasTexture,
+  CircleGeometry,
   Color,
   DirectionalLight,
+  DoubleSide,
+  Group,
   LinearFilter,
+  Mesh,
+  MeshBasicMaterial,
   Object3D,
   PerspectiveCamera,
+  Points,
+  PointsMaterial,
+  RingGeometry,
   Scene,
+  CylinderGeometry,
   Vector3,
   WebGLRenderer
 } from 'three'
@@ -22,15 +36,38 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm'
 import { subscribe } from '../../visual/motionScheduler.js'
 import { PERSONA_POSE_BASE } from './personaStates.js'
+import {
+  sampleGesture,
+  sampleGestureExpressions,
+  PERSONA_GESTURES,
+  PERSONA_GESTURE_NAMES
+} from './personaGestures.js'
 import { createFrameBudget, frameDeltaSeconds } from './frameBudget.js'
 import { createLipSync, VISEMES } from './useLipSync.js'
 
 const FPS = 30
-const BLINK_INTERVAL = 3.2
+// 眨眼：早期是固定 3.2s 一次的节拍器，机械感明显。改为「随机间隔 + 偶发连眨」，
+// 间隔分布贴近真人（2.2~5.4s），约 12% 的概率紧接一次二次眨眼。
 const BLINK_DURATION = 0.24
+const BLINK_GAP = 0.16
+const BLINK_INTERVAL_MIN = 2.2
+const BLINK_INTERVAL_SPAN = 3.2
+const BLINK_DOUBLE_CHANCE = 0.12
 const BREATH_SPEED = 1.35
 const BREATH_AMPLITUDE = 0.012
-const POSE_BONES = ['head', 'chest', 'leftUpperArm', 'rightUpperArm']
+
+/** 口型通道的平均开合度，用来判断「是否真的在发声」 */
+function visemeEnergy(weights) {
+  let sum = 0
+  for (const name of VISEMES) sum += weights[name] ?? 0
+  return VISEMES.length ? sum / VISEMES.length : 0
+}
+
+// 手势层需要更细的上肢：前臂/手/颈。状态姿态只用到其中前四个（POSE_BONES），
+// 其余骨骼为手势专用，无手势时保持基准零旋转。
+const GESTURE_BONES = ['neck', 'leftLowerArm', 'rightLowerArm', 'leftHand', 'rightHand']
+const POSE_BONES = ['head', 'chest', 'leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm']
+const RIG_BONES = [...POSE_BONES, ...GESTURE_BONES]
 
 // 降级门槛见 frameBudget.js：CPU 成本 > 20ms，或真实渲染间隔 ≥ 60ms，连续 2s
 const FRAME_SAMPLES = 90
@@ -78,10 +115,211 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
   backGlow.target.position.set(0, 0.7, 0)
   scene.add(ambient, key, rim, fillOcean, backGlow)
 
+  // ------------------------------------------------------------------
+  // 环境空间层（蒸馏 PetLive「角色住在场景里 + 情绪光影」叙事）。
+  // 只往场景里 add 物体，VRM 模型加载/骨骼/口型/视线管线零改动。
+  // 组成：脚下地毯 + 情绪光环（随状态色 lerp）+ 深海气泡微光 + 弧形观景窗。
+  // ------------------------------------------------------------------
+  const GLOW_IDLE = '#3fb9c9'
+  const envGroup = new Group()
+  const glowRingColor = new Color(GLOW_IDLE)
+  const glowTarget = new Color(GLOW_IDLE)
+  const backdropTint = new Color('#16324f')
+  const backdropTarget = new Color('#16324f')
+  const ambientTarget = new Color(0x9fd8ee)
+  const rimTarget = new Color(0x2496ed)
+  const AMBIENT_BASE = new Color(0x9fd8ee)
+  const RIM_BASE = new Color(0x2496ed)
+  let bubbles = null
+  let bubbleData = null
+
+  /** 气泡 sprite：canvas 径向渐变，中心亮边缘透明，配 additive blending 有微光感 */
+  function makeBubbleTexture() {
+    const size = 64
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = size
+    const ctx = canvas.getContext('2d')
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, 2, size / 2, size / 2, size / 2)
+    gradient.addColorStop(0, 'rgba(255,255,255,0.95)')
+    gradient.addColorStop(0.45, 'rgba(190,235,255,0.5)')
+    gradient.addColorStop(1, 'rgba(190,235,255,0)')
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, size, size)
+    const texture = new CanvasTexture(canvas)
+    texture.minFilter = LinearFilter
+    return texture
+  }
+
+  /**
+   * 弧形观景窗背景：中性灰渐变纹理 + 窗棂剪影 + 斜光柱，
+   * 材质 color 做状态色调 tint（灰度纹理 × 彩色 tint），变色只 lerp material.color。
+   */
+  function makeBackdropTexture() {
+    const width = 1024
+    const height = 512
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    // 中性明度渐变（上亮下暗），后续靠 material.color 上色
+    const vertical = ctx.createLinearGradient(0, 0, 0, height)
+    vertical.addColorStop(0, 'rgb(190,200,210)')
+    vertical.addColorStop(0.55, 'rgb(120,135,150)')
+    vertical.addColorStop(1, 'rgb(38,52,68)')
+    ctx.fillStyle = vertical
+    ctx.fillRect(0, 0, width, height)
+    // 斜光柱：从上方斜射的两道宽光带
+    for (const [x, w] of [[180, 150], [620, 200]]) {
+      const beam = ctx.createLinearGradient(x, 0, x + w * 0.8, height)
+      beam.addColorStop(0, 'rgba(255,255,255,0.35)')
+      beam.addColorStop(1, 'rgba(255,255,255,0)')
+      ctx.fillStyle = beam
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x + w, 0)
+      ctx.lineTo(x + w * 1.8, height)
+      ctx.lineTo(x + w * 0.8, height)
+      ctx.closePath()
+      ctx.fill()
+    }
+    // 窗棂：4 根竖框 + 1 根横框，深色半透明
+    ctx.fillStyle = 'rgba(20,30,42,0.55)'
+    for (const x of [120, 360, 640, 900]) ctx.fillRect(x, 0, 14, height)
+    ctx.fillRect(0, height * 0.42, width, 12)
+    const texture = new CanvasTexture(canvas)
+    texture.minFilter = LinearFilter
+    return texture
+  }
+
+  function createEnvironment() {
+    // 脚下地毯：暗青圆盘，接住角色的「立足感」
+    const rug = new Mesh(
+      new CircleGeometry(1.55, 48),
+      new MeshBasicMaterial({ color: 0x0d2a3f, transparent: true, opacity: 0.5, depthWrite: false })
+    )
+    rug.rotation.x = -Math.PI / 2
+    rug.position.y = 0.001
+    // 情绪光环：颜色随状态 lerp，呼吸式明暗
+    const ring = new Mesh(
+      new RingGeometry(0.52, 1.18, 64),
+      new MeshBasicMaterial({
+        color: glowRingColor,
+        transparent: true,
+        opacity: 0.5,
+        depthWrite: false,
+        side: DoubleSide,
+        blending: AdditiveBlending
+      })
+    )
+    ring.rotation.x = -Math.PI / 2
+    ring.position.y = 0.004
+    envGroup.add(rug, ring)
+    // 弧形观景窗：大圆柱 BackSide 内壁，开口朝相机侧；灰度纹理 × 状态 tint
+    const backdrop = new Mesh(
+      new CylinderGeometry(6, 6, 9, 48, 1, true, Math.PI * 0.35, Math.PI * 1.3),
+      new MeshBasicMaterial({
+        map: makeBackdropTexture(),
+        side: BackSide,
+        transparent: true,
+        opacity: 0.92,
+        color: backdropTint,
+        depthWrite: false
+      })
+    )
+    backdrop.position.y = 2.6
+    envGroup.add(backdrop)
+    // 深海气泡微光：60 个上升光点（降级时隐藏）
+    const count = 60
+    const positions = new Float32Array(count * 3)
+    bubbleData = Array.from({ length: count }, (_, index) => ({
+      baseX: (Math.random() - 0.5) * 4.4,
+      z: (Math.random() - 0.5) * 2.6 - 0.6,
+      phase: Math.random() * TAU,
+      speed: 0.12 + Math.random() * 0.22,
+      driftFreq: 0.4 + Math.random() * 0.8,
+      driftAmp: 0.06 + Math.random() * 0.1
+    }))
+    bubbleData.forEach((bubble, index) => {
+      positions[index * 3] = bubble.baseX
+      positions[index * 3 + 1] = Math.random() * 2.6
+      positions[index * 3 + 2] = bubble.z
+    })
+    const geometry = new BufferGeometry()
+    geometry.setAttribute('position', new BufferAttribute(positions, 3))
+    bubbles = new Points(
+      geometry,
+      new PointsMaterial({
+        map: makeBubbleTexture(),
+        size: 0.13,
+        transparent: true,
+        opacity: 0.75,
+        depthWrite: false,
+        blending: AdditiveBlending,
+        sizeAttenuation: true
+      })
+    )
+    envGroup.add(bubbles)
+    scene.add(envGroup)
+  }
+
+  /** 状态色下发：光环主色 + 背景暗化 tint + 环境光微调目标，三处同步缓动 */
+  function setEnvironmentGlow(hex) {
+    glowTarget.set(hex)
+    backdropTarget.copy(glowTarget).lerp(new Color('#101d2e'), 0.68)
+    ambientTarget.copy(AMBIENT_BASE).lerp(glowTarget, 0.3)
+    rimTarget.copy(RIM_BASE).lerp(glowTarget, 0.45)
+  }
+
+  function applyEnvironment(dt) {
+    // 统一指数缓动（与姿态 fadeTau 同思路），换状态时光色平滑过渡
+    const k = 1 - Math.exp(-dt / 0.45)
+    glowRingColor.lerp(glowTarget, k)
+    backdropTint.lerp(backdropTarget, k)
+    ambient.color.lerp(ambientTarget, k)
+    rim.color.lerp(rimTarget, k)
+    // 光环呼吸
+    const ring = envGroup.children[1]
+    ring.material.color.copy(glowRingColor)
+    ring.material.opacity = 0.4 + Math.sin(elapsed * 1.6) * 0.1
+    // 气泡上升 + 左右摆动
+    if (bubbles?.visible) {
+      const positions = bubbles.geometry.attributes.position
+      for (let index = 0; index < bubbleData.length; index += 1) {
+        const bubble = bubbleData[index]
+        let y = positions.getY(index) + bubble.speed * dt
+        if (y > 2.7) y = 0.02
+        positions.setY(index, y)
+        positions.setX(index, bubble.baseX + Math.sin(elapsed * bubble.driftFreq + bubble.phase) * bubble.driftAmp)
+      }
+      positions.needsUpdate = true
+    }
+  }
+
+  function disposeEnvironment() {
+    if (!envGroup) return
+    scene.remove(envGroup)
+    envGroup.traverse((object) => {
+      const materials = Array.isArray(object.material) ? object.material : object.material ? [object.material] : []
+      for (const material of materials) {
+        for (const slot of ['map']) material[slot]?.dispose?.()
+        material.dispose()
+      }
+      object.geometry?.dispose()
+    })
+  }
+
+  createEnvironment()
+
   let vrm = null
   let disposed = false
   let elapsed = 0
   let blinkClock = 0
+  // 眨眼排程：blinkStart < 0 表示当前没在眨眼；blinkQueue 是剩余的连眨次数
+  let blinkStart = -1
+  let blinkAt = BLINK_INTERVAL_MIN
+  let blinkQueue = 0
+  // 微跳视：眼球不会完全静止，每隔一小段时间随机跳一点，避免"死盯"
+  const saccade = { yaw: 0, pitch: 0, nextAt: 0 }
   let stopLoop = () => {}
   let onFirstFrame = null
   const firstFrame = new Promise((resolve) => {
@@ -92,10 +330,20 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
   let poseCurrent = clonePose(PERSONA_POSE_BASE)
   let expressionWeights = {}
   let gazeCurrent = { yaw: 0, pitch: 0 }
+  // 指针朝向：鼠标悬停在桌宠画面内时，头与上半身朝光标方向轻转（限幅，不会转到背面）
+  const pointerLook = { x: 0, y: 0, active: false }
+  const lookCurrent = { yaw: 0, pitch: 0 }
+  const LOOK_YAW = 0.3 // 头+躯干合计最大偏转 ≈ 17°，侧头但不偏离镜头
+  const LOOK_PITCH = 0.1
   let activeProfile = null
   let fadeTau = 0.12
   let lookTarget = null
   let modelHeight = 1.6
+
+  // 手势层（personaGestures）：一次性动作，叠加在状态姿态之上，播完自动回零
+  let gestureName = null
+  let gestureClock = 0
+  let gestureOnEnd = null
 
   const lipSync = createLipSync()
   const visemeValues = { aa: 0, ih: 0, ou: 0, ee: 0, oh: 0 }
@@ -132,7 +380,7 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
 
   function initialiseRig(model) {
     poseNodes = {}
-    for (const bone of POSE_BONES) {
+    for (const bone of RIG_BONES) {
       poseNodes[bone] = model.humanoid?.getNormalizedBoneNode(bone) ?? null
     }
     poseCurrent = clonePose(PERSONA_POSE_BASE)
@@ -212,16 +460,52 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
       ? ((Math.sin(elapsed * 27) + Math.sin(elapsed * 31.7)) / 2) * motion.jitter
       : 0
 
+    // 指针朝向用同一套指数缓动：悬停时轻转过去，移出后自然回正
+    const lookYawTarget = pointerLook.active ? pointerLook.x * LOOK_YAW : 0
+    const lookPitchTarget = pointerLook.active ? pointerLook.y * LOOK_PITCH : 0
+    lookCurrent.yaw += (lookYawTarget - lookCurrent.yaw) * k
+    lookCurrent.pitch += (lookPitchTarget - lookCurrent.pitch) * k
+
     if (poseNodes.chest) {
-      poseNodes.chest.rotation.set(poseCurrent.chest.x + breath, poseCurrent.chest.y, poseCurrent.chest.z + jitter)
+      poseNodes.chest.rotation.set(
+        poseCurrent.chest.x + breath,
+        poseCurrent.chest.y + lookCurrent.yaw * 0.35,
+        poseCurrent.chest.z + jitter
+      )
     }
     if (poseNodes.head) {
-      poseNodes.head.rotation.set(poseCurrent.head.x + nod, poseCurrent.head.y + sway, poseCurrent.head.z)
+      poseNodes.head.rotation.set(
+        poseCurrent.head.x + nod + lookCurrent.pitch,
+        poseCurrent.head.y + sway + lookCurrent.yaw * 0.65,
+        poseCurrent.head.z
+      )
     }
-    for (const bone of ['leftUpperArm', 'rightUpperArm']) {
+    for (const bone of ['leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm']) {
       const node = poseNodes[bone]
       if (!node) continue
       node.rotation.set(poseCurrent[bone].x, poseCurrent[bone].y, poseCurrent[bone].z)
+    }
+    // 只由手势驱动的骨骼（颈、双手）每帧先清零，再叠加当帧手势增量。
+    // 不清零会逐帧累加：思考/大笑等带 neck 的手势会把脖子越转越多，
+    // 一秒钟就能转过头、手势结束后还停在背面（点「说」时最明显）。
+    for (const bone of ['neck', 'leftHand', 'rightHand']) {
+      poseNodes[bone]?.rotation.set(0, 0, 0)
+    }
+  }
+
+  /**
+   * 手势增量直接加在「状态姿态 + 呼吸/节律」的最终旋转上：
+   * 关键帧首尾为零、smoothstep 缓动，叠加与退出都无跳变。
+   */
+  function applyGesture(sample) {
+    if (!sample) return
+    for (const bone in sample) {
+      const node = poseNodes[bone]
+      const delta = sample[bone]
+      if (!node || !delta) continue
+      node.rotation.x += delta.x
+      node.rotation.y += delta.y
+      node.rotation.z += delta.z
     }
   }
 
@@ -229,32 +513,72 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
     const target = activeProfile?.gaze ?? { yaw: 0, pitch: 0 }
     gazeCurrent.yaw += (target.yaw - gazeCurrent.yaw) * k
     gazeCurrent.pitch += (target.pitch - gazeCurrent.pitch) * k
+    if (elapsed >= saccade.nextAt) {
+      saccade.yaw = (Math.random() - 0.5) * 0.05
+      saccade.pitch = (Math.random() - 0.5) * 0.04
+      saccade.nextAt = elapsed + 0.6 + Math.random() * 1.2
+    }
     if (!lookTarget) return
-    lookTarget.position.set(gazeCurrent.yaw * 0.8, modelHeight * 0.55 + gazeCurrent.pitch * 0.8, 2.2)
+    // 悬停时以视线为主跟随光标（头部只轻转），移出后回到状态视线
+    const yaw = pointerLook.active ? lookCurrent.yaw * 4 : gazeCurrent.yaw
+    const pitch = pointerLook.active ? lookCurrent.pitch * 3 : gazeCurrent.pitch
+    lookTarget.position.set(
+      (yaw + saccade.yaw) * 0.8,
+      modelHeight * 0.55 + (pitch + saccade.pitch) * 0.8,
+      2.2
+    )
   }
 
-  function applyExpressions(k) {
+  /**
+   * 表情：状态表情（长期）+ 手势表情（一次性增量），clamp 到 1。
+   * blink 不在这里写——它由 applyBlink 统一负责，否则两处互相覆盖会闪。
+   */
+  function applyExpressions(k, extra = {}) {
     const manager = vrm?.expressionManager
     if (!manager) return
     const targets = activeProfile?.expressions ?? {}
-    const names = new Set([...Object.keys(expressionWeights), ...Object.keys(targets)])
+    const names = new Set([
+      ...Object.keys(expressionWeights),
+      ...Object.keys(targets),
+      ...Object.keys(extra)
+    ])
     for (const name of names) {
+      if (name === 'blink') continue
       if (!manager.getExpression(name)) continue
       const current = expressionWeights[name] ?? 0
-      const target = targets[name] ?? 0
+      const target = Math.min(1, (targets[name] ?? 0) + (extra[name] ?? 0))
       const next = current + (target - current) * k
       expressionWeights[name] = next
       manager.setValue(name, next)
     }
   }
 
-  function applyBlink(dt) {
+  /**
+   * 眨眼：随机间隔 + 偶发连眨；手势表情轨道给了 blink 权重时取 max，
+   * 这样「打瞌睡闭眼」不会被自动眨眼抬开。
+   */
+  function applyBlink(dt, extra = 0) {
     const manager = vrm?.expressionManager
     if (!manager?.getExpression('blink')) return
     blinkClock += dt
-    const cycle = blinkClock % BLINK_INTERVAL
-    const weight = cycle < BLINK_DURATION ? Math.sin((cycle / BLINK_DURATION) * Math.PI) : 0
-    manager.setValue('blink', weight)
+    let weight = 0
+    if (blinkStart < 0 && blinkClock >= blinkAt) {
+      blinkStart = blinkClock
+      blinkQueue = Math.random() < BLINK_DOUBLE_CHANCE ? 1 : 0
+    }
+    if (blinkStart >= 0) {
+      const phase = blinkClock - blinkStart
+      if (phase >= 0 && phase < BLINK_DURATION) {
+        weight = Math.sin((phase / BLINK_DURATION) * Math.PI)
+      } else if (phase >= BLINK_DURATION && blinkQueue > 0) {
+        blinkQueue -= 1
+        blinkStart = blinkClock + BLINK_GAP
+      } else if (phase >= BLINK_DURATION) {
+        blinkStart = -1
+        blinkAt = blinkClock + BLINK_INTERVAL_MIN + Math.random() * BLINK_INTERVAL_SPAN
+      }
+    }
+    manager.setValue('blink', Math.max(weight, extra))
   }
 
   /** 口型只写 aa/ih/ou/ee/oh 五个通道，不碰状态表情 */
@@ -277,6 +601,8 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
   function degrade() {
     if (degraded) return
     degraded = true
+    // 环境层降级：先停气泡粒子（顶点动画每帧写 buffer），保留静态光环/背景
+    if (bubbles) bubbles.visible = false
     renderer.shadowMap.enabled = false
     renderer.setPixelRatio(1)
     if (vrm) {
@@ -315,11 +641,43 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
     const k = easeFactor(dt)
     const frameStart = timestamp
 
+    // 手势推进：按时长归一化采样；播完回零并回调，呼吸/眨眼照常
+    let gestureSample = null
+    let gestureExpressionSample = {}
+    if (gestureName) {
+      gestureClock += dt
+      const gesture = PERSONA_GESTURES[gestureName]
+      if (gesture) {
+        gestureSample = sampleGesture(gesture, gestureClock)
+        gestureExpressionSample = sampleGestureExpressions(gestureName, gestureClock)
+        if (gestureClock >= gesture.duration) {
+          const ended = gestureOnEnd
+          gestureName = null
+          gestureClock = 0
+          gestureOnEnd = null
+          ended?.()
+        }
+      } else {
+        gestureName = null
+        gestureClock = 0
+        gestureOnEnd = null
+      }
+    }
+
     applyPose(k, motion)
+    applyGesture(gestureSample)
     applyGaze(k)
-    applyExpressions(k)
-    applyVisemes(lipSync.update(dt))
-    applyBlink(dt)
+    applyExpressions(k, gestureExpressionSample)
+    const visemes = lipSync.update(dt)
+    applyVisemes(visemes)
+    // 说话时头部随音节轻微起伏：没有它，播报时只有嘴在动，脖子像被钉住
+    if (poseNodes.head) {
+      const energy = visemeEnergy(visemes)
+      if (energy > 0.02) poseNodes.head.rotation.x += Math.sin(elapsed * 9.5) * 0.02 * energy
+    }
+    applyBlink(dt, gestureExpressionSample.blink ?? 0)
+    // 环境层推进：光环呼吸/气泡上升/光色缓动（放渲染前，与模型同帧一致）
+    applyEnvironment(dt)
 
     vrm.update(dt)
     renderer.render(scene, camera)
@@ -364,8 +722,12 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
       const loaded = gltf.userData.vrm
       if (!loaded) throw new Error('模型缺少 VRM 扩展，无法按 VRM 加载')
 
-      // VRM 0.x 朝向为 -Z，先转成 +Z 再取景，否则会拍到后脑
-      if (loaded.meta?.metaVersion === '0') VRMUtils.rotateVRM0(loaded)
+      // VRM 0.x 朝向为 -Z，先转成 +Z 再取景，否则会拍到后脑。
+      // 判定不能只看 meta.metaVersion：部分 VRM0 资产（如 sendagaya-shino）的 meta
+      // 里没有该字段，但 glTF 里仍带旧版 `VRM` 扩展；两者任一命中即按 0.x 处理。
+      const isVrm0 = Boolean(gltf.parser?.json?.extensions?.VRM)
+        || String(loaded.meta?.metaVersion ?? '') === '0'
+      if (isVrm0) VRMUtils.rotateVRM0(loaded)
 
       loaded.scene.traverse((object) => {
         object.frustumCulled = false
@@ -394,6 +756,47 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
     activeProfile = profile ?? null
     const ms = fade ?? 350
     fadeTau = ms > 0 ? ms / 1000 / 3 : 0
+    // 环境光色随状态同步切换（光环/背景/环境光三处 lerp 过渡）
+    if (profile?.glow) setEnvironmentGlow(profile.glow)
+  }
+
+  /**
+   * 播一段一次性手势（personaGestures 纯数据关键帧），叠加在当前状态姿态上。
+   * @param {string} name PERSONA_GESTURES 的键（wave / nod / shake / bow / greet / laugh / tilt / stretch / sleep / cheer / shy / think / angry / applaud / shrug / salute / point / thumbUp / heart / shiver / facepalm / leanIn / leanBack / lookAround / sway / snap / deepBow / armsCrossed / handOnHip / pointUp / openArms / radioCall / signalStop / signalCover）
+   * @param {{ onEnd?: () => void }} [options] 播完回调（被新手势覆盖时不回调）
+   * @returns {boolean} false 表示手势名不存在
+   */
+  function playGesture(name, { onEnd } = {}) {
+    if (!PERSONA_GESTURE_NAMES.includes(name)) return false
+    gestureName = name
+    gestureClock = 0
+    gestureOnEnd = typeof onEnd === 'function' ? onEnd : null
+    return true
+  }
+
+  function stopGesture() {
+    gestureName = null
+    gestureClock = 0
+    gestureOnEnd = null
+  }
+
+  /**
+   * 指针朝向：鼠标悬停在画面内时，让数字人朝光标方向轻转（头 + 上半身 + 视线）。
+   * 传 null 表示指针移出，缓动回正。
+   * @param {number|null} x 归一化横坐标：-1 最左，1 最右
+   * @param {number} [y] 归一化纵坐标：-1 最下，1 最上
+   */
+  function setLookPoint(x, y = 0) {
+    if (disposed) return
+    if (x === null || x === undefined || !Number.isFinite(x)) {
+      pointerLook.active = false
+      pointerLook.x = 0
+      pointerLook.y = 0
+      return
+    }
+    pointerLook.active = true
+    pointerLook.x = Math.max(-1, Math.min(1, x))
+    pointerLook.y = Math.max(-1, Math.min(1, Number.isFinite(y) ? y : 0))
   }
 
   function dispose() {
@@ -415,6 +818,7 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
       VRMUtils.deepDispose(vrm.scene)
       vrm = null
     }
+    disposeEnvironment()
     renderer.dispose()
     // 主动释放上下文，并保证不触发上面的降级回调（监听已移除）
     renderer.forceContextLoss()
@@ -478,6 +882,9 @@ export function createVrmStage({ canvas, container, modelUrl, id = 'agent-person
     stats,
     resize,
     setState,
+    playGesture,
+    stopGesture,
+    setLookPoint,
     attachAudio: (element) => lipSync.attachAudio(element),
     resumeAudio: () => lipSync.resume(),
     speakText: (text, options) => lipSync.speak(text, options),

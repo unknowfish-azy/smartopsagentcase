@@ -1,6 +1,9 @@
 <template>
   <div class="inspector-page">
-    <header class="inspector-head">
+    <section class="inspector-hero" :class="{ 'inspector-hero--alert': hasAlerts }">
+      <!-- 星域带：数据板整体下移，把上方留白让给事件流光（星系单独呈现） -->
+      <div class="inspector-hero__sky" aria-hidden="true"></div>
+      <header class="inspector-head">
       <div class="inspector-head__copy">
         <p class="eyebrow">MEMORY · INSPECTOR CENTER</p>
         <h1>SmartOps Inspector</h1>
@@ -33,9 +36,17 @@
       </article>
     </section>
 
-    <section class="brief" aria-live="polite">
+    <section class="brief" :class="{ 'brief--alert': hasAlerts }" aria-live="polite">
+      <InspectorHeroStream
+        :events="displayEvents"
+        :total="Number(displaySummary?.total) || 0"
+        :warn="Number(displaySummary?.warning) || 0"
+        :high="Number(displaySummary?.high) || 0"
+        :critical="Number(displaySummary?.critical) || 0"
+      />
       <span class="brief__label">AGENT 巡检简报</span>
       <p>{{ briefText }}</p>
+    </section>
     </section>
 
     <InspectorDimensionGrid
@@ -104,6 +115,7 @@ import { dimensionKeyOf, summaryFromEvents } from '../../components/inspector/di
 import InspectorSeverityTag from '../../components/inspector/InspectorSeverityTag.vue'
 import InspectorDimensionGrid from '../../components/inspector/InspectorDimensionGrid.vue'
 import InspectorEventField from '../../components/inspector/InspectorEventField.vue'
+import InspectorHeroStream from '../../components/inspector/InspectorHeroStream.vue'
 import KpiNumber from '../../components/dashboard/KpiNumber.vue'
 
 const summary = ref({})
@@ -144,6 +156,12 @@ const kpiItems = computed(() => KPI_DEFS.map(([key, label]) => ({
   label,
   value: displaySummary.value?.[key] ?? '—'
 })))
+
+/* 头部数据流特效的报红开关：存在 WARN/HIGH/CRITICAL 即告警态 */
+const hasAlerts = computed(() => {
+  const value = displaySummary.value || {}
+  return ((Number(value.warning) || 0) + (Number(value.high) || 0) + (Number(value.critical) || 0)) > 0
+})
 
 const filteredEvents = computed(() => activeDimension.value
   ? displayEvents.value.filter(event => dimensionKeyOf(event) === activeDimension.value)
@@ -223,6 +241,34 @@ onMounted(load)
   border-radius: 12px;
 }
 .inspector-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
+/* 头部量化数据流特效层：流光 canvas 铺底，内容浮于其上 */
+.inspector-hero {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--ds-hairline, rgba(159, 190, 207, .18));
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 85% -10%, rgba(36, 150, 237, .12), transparent 60%),
+    linear-gradient(180deg, rgba(9, 16, 24, .92), rgba(7, 16, 24, .97));
+}
+.inspector-hero--alert { border-color: rgba(248, 81, 73, .45); box-shadow: inset 0 0 42px rgba(248, 81, 73, .08); }
+/* 星域带：专属留白让事件流光单独呈现，数据板（标题/KPI/简报）整体下移 */
+.inspector-hero__sky { height: clamp(96px, 13vw, 150px); }
+.inspector-hero > * { position: relative; z-index: 1; }
+.inspector-hero .inspector-head,
+.inspector-hero .state-banner,
+.inspector-hero .kpi-card,
+.inspector-hero .brief { background: rgba(13, 20, 28, .66); backdrop-filter: blur(3px); }
+.inspector-hero--alert .state-banner--demo { background: rgba(46, 30, 8, .72); }
+/* 量化数据流特效收进巡检简报区：canvas 铺满简报底面，文字浮于其上 */
+.brief { position: relative; overflow: hidden; }
+.brief > .hero-stream { z-index: 0; }
+.brief > span,
+.brief > p { position: relative; z-index: 1; }
+.brief--alert { border-left-color: rgba(248, 81, 73, .85); box-shadow: inset 0 0 26px rgba(248, 81, 73, .10); }
 .eyebrow { margin: 0 0 6px; color: var(--ds-color-primary-strong, #7ad7f5); font: 11px var(--font-mono, ui-monospace, monospace); letter-spacing: .1em; }
 .inspector-head h1 { margin: 0; font-size: var(--ds-type-h1-size, 28px); font-weight: var(--ds-type-h1-weight, 500); }
 .lede { margin: 6px 0 0; color: var(--ds-color-muted, #92a6b5); font-size: 13px; }
@@ -324,6 +370,7 @@ onMounted(load)
 @media (max-width: 767px) {
   .inspector-page { padding: 16px; }
   .kpi-band { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inspector-hero__sky { height: 72px; }
   .evidence-drawer dl { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {

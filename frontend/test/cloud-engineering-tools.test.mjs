@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { findOperationTool, operationToolGroups, previewOperationToolCommands } from '../src/views/operations/toolCatalog.js'
-import { personalSystemGroups } from '../src/navigation/personalSystemNavigation.js'
+import { personalSystemGroups, findPersonalSystemGroup } from '../src/navigation/personalSystemNavigation.js'
 import { cloudCoverage } from '../src/views/operations/cloudCoverage.js'
 
 const ids = ['docker-compose-status', 'helm-releases', 'k8s-storage', 'k8s-rbac-check', 'mesh-status', 'terraform-environment', 'harbor-endpoint-check', 'containerd-registry-inspect']
@@ -14,9 +14,8 @@ test('coverage links resolve and distinguish planned integrations from runtime h
   }
 })
 test('cloud engineering tools expose safe previews, Chinese guidance and navigable entries', () => {
-  const menu = personalSystemGroups.find(group => group.id === 'cloud-native')
-  assert.equal(menu.to, '/cloud-native')
-  assert.equal(personalSystemGroups.find(group => group.id === 'harbor').to, '/harbor')
+  /* 2026-11-16：云原生工程 / Harbor 工作台已并入智能仓库 3D 空间，侧栏不再单列，工具目录入口保留 */
+  assert.equal(findPersonalSystemGroup('CloudNativeWorkbench'), null, 'folded into the smart repository 3D space')
   for (const id of ids) {
     const tool = findOperationTool(id)
     assert.equal(tool.readOnly, true)

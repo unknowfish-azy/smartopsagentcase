@@ -10,6 +10,15 @@
    绝不生成看起来像真的运维数字。
    ============================================================================ */
 
+/* 书法标题字体：马善政毛笔楷书（SIL OFL 开源），仅子集化 10 个标题字（12KB，随包离线可用） */
+@font-face {
+  font-family: "Fable Art Calligraphy";
+  src: url("../fonts/FableArtCalligraphy.subset.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 .fable {
   /* 色板：对齐项目设计令牌（T18/T20 控制台色系），弃用独立的暖色复古纸色板。
      纸面→正文色，陶土→主色蓝，杏→主色强青，黄油→告警，鼠尾草→成功，梅→紫，注视→青。 */
@@ -33,8 +42,10 @@
   --fab-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --fab-ease-io: cubic-bezier(0.4, 0, 0.2, 1);
   --fab-mono: var(--ds-font-mono, ui-monospace, "Cascadia Mono", Consolas, monospace);
-  /* 中文字体走项目 Noto Sans SC；果冻感靠字重 500/600 + 柔化 + 微光实现，不引第三方字体 */
+  /* 中文字体走项目 Noto Sans SC；果冻感靠字重 500/600 + 柔化 + 微光实现 */
   --fab-cn: var(--ds-font-cn, "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif);
+  /* 艺术标题字体：书法子集随包内嵌（离线可用），缺失时回退系统行楷/楷体 */
+  --fab-art: "Fable Art Calligraphy", "STXingkai", "STKaiti", "KaiTi", "楷体", var(--fab-cn);
 
   /* 构成参数：由状态覆写，形状据此重排 */
   --fab-arc-x: 50%;
@@ -146,14 +157,14 @@
 
 .fable-title h1 {
   margin: 0;
-  font-family: var(--fab-cn);
-  font-size: clamp(46px, 6.4vw, 88px);
-  font-weight: 500;
-  line-height: 0.94;
-  letter-spacing: 0.02em;
-  /* 果冻感：柔焦微光让字形边缘不锐利，带一点糖衣高光 */
+  font-family: var(--fab-art);
+  font-size: clamp(50px, 7vw, 96px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  /* 毛笔字自带笔锋；糖衣柔光收窄成笔触光晕，避免盖掉笔画细节 */
   text-shadow:
-    0 0 1px color-mix(in srgb, var(--fab-apricot) 40%, transparent),
+    0 0 14px color-mix(in srgb, var(--fab-apricot) 22%, transparent),
     0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
@@ -178,9 +189,17 @@
   gap: 10px;
   min-width: 208px;
   padding: 16px 18px;
-  border: 1px solid var(--fab-rule-2);
+  /* 玻璃化：半透明 + 背景虚化，印章融进版面而不是贴在版面上 */
+  border: 1px solid color-mix(in srgb, var(--fab-paper) 14%, transparent);
   border-radius: var(--ds-radius-sm, 4px);
-  background: var(--fab-plane);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--fab-paper) 5%, transparent), transparent 52%),
+    color-mix(in srgb, var(--fab-plane) 58%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--fab-paper) 10%, transparent),
+    0 16px 36px rgba(0, 0, 0, 0.2);
 }
 
 .fable-seal b {
@@ -244,11 +263,17 @@
   grid-template-rows: minmax(0, 1fr) auto;
   min-height: clamp(520px, 56vh, 610px);
   overflow: hidden;
-  border: 1px solid var(--fab-rule-2);
+  /* 玻璃化：舞台不再是浮贴的实底卡片，而是嵌进纸面的一块观察窗 */
+  border: 1px solid color-mix(in srgb, var(--fab-paper) 14%, transparent);
   border-radius: var(--ds-radius-sm, 4px);
   background:
     linear-gradient(180deg, rgba(241, 232, 214, 0.035), transparent 42%),
-    var(--fab-plane);
+    color-mix(in srgb, var(--fab-plane) 66%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--fab-paper) 8%, transparent),
+    0 20px 44px rgba(0, 0, 0, 0.22);
 }
 
 .fable-stage::after {
@@ -432,16 +457,23 @@
 
 .stage-caption h2 {
   margin: 0;
-  font-family: var(--fab-cn);
-  font-size: clamp(44px, 5vw, 70px);
-  font-weight: 500;
-  line-height: 0.92;
-  letter-spacing: 0.03em;
-  /* 果冻感：状态名带糖衣高光 */
+  font-family: var(--fab-art);
+  font-size: clamp(48px, 5.6vw, 76px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  /* 书法状态名：笔锋 + 柔和光晕（光晕色随构成状态切换见下方 data-state 覆写） */
   text-shadow:
-    0 0 1px color-mix(in srgb, var(--fab-clay) 36%, transparent),
+    0 0 14px color-mix(in srgb, var(--fab-clay) 22%, transparent),
     0 1px 0 rgba(0, 0, 0, 0.25);
 }
+
+/* 光晕色跟随构成状态，让书法标题也成为状态信号的一部分 */
+.fable[data-state="idle"] .stage-caption h2 { text-shadow: 0 0 14px color-mix(in srgb, var(--fab-sage) 24%, transparent), 0 1px 0 rgba(0, 0, 0, 0.25); }
+.fable[data-state="analyze"] .stage-caption h2 { text-shadow: 0 0 14px color-mix(in srgb, var(--fab-butter) 24%, transparent), 0 1px 0 rgba(0, 0, 0, 0.25); }
+.fable[data-state="decide"] .stage-caption h2 { text-shadow: 0 0 14px color-mix(in srgb, var(--fab-clay) 24%, transparent), 0 1px 0 rgba(0, 0, 0, 0.25); }
+.fable[data-state="execute"] .stage-caption h2 { text-shadow: 0 0 14px color-mix(in srgb, var(--fab-gaze) 24%, transparent), 0 1px 0 rgba(0, 0, 0, 0.25); }
+.fable[data-state="reflect"] .stage-caption h2 { text-shadow: 0 0 14px color-mix(in srgb, var(--fab-plum) 24%, transparent), 0 1px 0 rgba(0, 0, 0, 0.25); }
 
 .cap-en {
   margin: 12px 0 0;
@@ -537,9 +569,17 @@
   display: flex;
   flex-direction: column;
   padding: 16px 16px 18px;
-  border: 1px solid var(--fab-rule);
+  /* 玻璃化：仪器面板与纸面同层渗透，去掉"贴纸"式的硬分界 */
+  border: 1px solid color-mix(in srgb, var(--fab-paper) 12%, transparent);
   border-radius: var(--ds-radius-sm, 4px);
-  background: var(--fab-plane);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--fab-paper) 4%, transparent), transparent 48%),
+    color-mix(in srgb, var(--fab-plane) 55%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--fab-paper) 8%, transparent),
+    0 14px 32px rgba(0, 0, 0, 0.18);
 }
 
 .fable-panel-head {

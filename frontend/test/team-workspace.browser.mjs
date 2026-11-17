@@ -55,12 +55,11 @@ try {
   page.on('pageerror', error => errors.push(error.message))
   page.on('dialog', dialog => dialog.accept())
   await page.goto(`${base}/`, { waitUntil: 'networkidle' })
-  const expandMenu = page.getByRole('button', { name: '展开主菜单', exact: true })
-  if (await expandMenu.count()) await expandMenu.click()
-  const collaborationMenu = page.getByRole('link', { name: '团队协作 / TEAM SPACE', exact: true })
-  await collaborationMenu.waitFor({ state: 'visible' })
-  assert.equal(await collaborationMenu.getAttribute('href'), '/teams')
-  await collaborationMenu.click()
+  /* 侧栏已移除「团队协作」（2026-11-16），顶部空间切换器的「团队空间」为唯一固定入口 */
+  const teamSwitcherLink = page.getByRole('navigation', { name: '工作空间切换' }).getByRole('link', { name: '团队空间' })
+  await teamSwitcherLink.waitFor({ state: 'visible' })
+  assert.equal(await teamSwitcherLink.getAttribute('href'), '/teams')
+  await teamSwitcherLink.click()
   await page.waitForURL('**/teams')
   await page.goto(`${base}/teams`, { waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: '团队空间', exact: true }).waitFor()
@@ -72,7 +71,7 @@ try {
   await page.waitForURL('**/teams/71')
   await page.getByRole('heading', { name: '测试协作团队', exact: true }).waitFor()
   await page.getByLabel('已有账号的用户名').fill('mock-member')
-  await page.getByLabel('授予角色').selectOption('viewer')
+  await page.getByRole('group').filter({ hasText: '已有账号的用户名' }).getByLabel('授予角色').selectOption('viewer')
   await page.getByRole('button', { name: '发送站内邀请' }).click()
   await page.getByText('邀请已发送，等待对方接受。', { exact: true }).waitFor()
   await page.getByRole('button', { name: '撤销邀请', exact: true }).click()
@@ -126,7 +125,9 @@ try {
   for (const width of [1440, 375]) {
     await page.setViewportSize({ width, height: 1000 })
     for (const theme of ['light', 'dark']) {
-      await page.getByLabel('选择主题模式').selectOption(theme)
+      /* AdminLayout 无主题选择控件（主题已收敛至主布局顶栏），经 localStorage + 刷新驱动主题 */
+      await page.evaluate(value => localStorage.setItem('smartops_theme', value), theme)
+      await page.reload({ waitUntil: 'networkidle' })
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `admin ${theme} ${width} overflow`)
       if (width === 375) assert.ok(await page.locator('.admin-sidebar').evaluate(element => element.getBoundingClientRect().height < 300), 'mobile admin navigation must remain compact')
       await page.screenshot({ path: `test-artifacts/team-workspace/admin-${theme}-${width}.png`, fullPage: true })
@@ -137,7 +138,8 @@ try {
   await page.getByRole('button', { name: '取消', exact: true }).click()
   assert.equal(await page.getByLabel('当前管理员密码').count(), 0)
   assert.equal(await page.evaluate(secret => JSON.stringify({ ...localStorage, ...sessionStorage }).includes(secret), password), false)
-  await page.getByRole('link', { name: '管理总览', exact: true }).click()
+  /* 管理布局同时有侧栏导航与已打开标签栏，链接需限定在侧栏内 */
+  await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '管理总览', exact: true }).click()
   await page.getByRole('link', { name: /团队与成员治理/ }).waitFor()
   assert.deepEqual(errors, [])
   assert.ok(calls.some(call => call.path === '/api/teams/71/members/92' && call.method === 'DELETE'))

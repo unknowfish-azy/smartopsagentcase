@@ -5,59 +5,84 @@
       <h1 class="persona-view__title">小鱼</h1>
       <p class="persona-view__desc">
         继鲸（基础设施）、蛛（集群）、水母（Agent 觉察）之后的第四个生命体：Agent 的人格化身。
-        当前处于加载链路验证阶段，形象为 CC0 sendagaya-shino 占位模型，不参与任何控制台决策。
+        她与控制台共用同一个 Agent 大脑——同一模型、同一知识库检索、同一份对话记忆。
+        这里的提问走真实对话链路，说话时驱动口型与状态机，但不进入执行闭环，不代为执行任何变更。
       </p>
     </header>
 
     <div class="persona-view__stage">
       <AgentPersona
         ref="personaRef"
-        :state="previewState"
+        :state="personaState"
         @ready="onReady"
         @error="onError"
         @context-lost="onLost"
       />
     </div>
 
-    <div class="persona-view__states" role="group" aria-label="状态预览">
-      <p class="persona-view__states-label">状态预览</p>
-      <div class="persona-view__state-buttons">
-        <button
-          v-for="state in PERSONA_STATES"
-          :key="state"
-          type="button"
-          class="persona-view__state-button"
-          :class="{ 'is-active': state === previewState }"
-          :aria-pressed="state === previewState"
-          @click="previewState = state"
-        >
-          {{ PERSONA_STATE_LABELS[state] }}
-        </button>
+    <section class="persona-view__chat" aria-label="与 Agent 对话">
+      <div class="persona-view__chat-head">
+        <p class="persona-view__states-label">与 Agent 对话</p>
+        <span class="persona-view__pill" :data-tone="chatTone">{{ CHAT_PHASE_LABELS[phase] }}</span>
       </div>
-    </div>
 
-    <div class="persona-view__speech">
-      <p class="persona-view__states-label">口型演示</p>
-      <div class="persona-view__state-buttons">
-        <button type="button" class="persona-view__state-button" @click="playDemoClip">
-          播放 10 秒示例音频
-        </button>
-        <button type="button" class="persona-view__state-button" @click="speakDemoText">
-          文字近似口型
-        </button>
-        <button type="button" class="persona-view__state-button" @click="stopSpeech">停止</button>
-      </div>
-      <audio ref="audioElement" class="persona-view__audio" controls preload="none" />
-      <p class="persona-view__note">
-        口型来源：<strong>{{ speechSource }}</strong>。示例音频是页面内合成的元音序列，走真实频谱分析；
-        文字模式按字推送时间线，<strong>不与音频同步</strong>，只验证「会动、停下后闭嘴」。
+      <ol v-if="messages.length" class="persona-view__messages">
+        <li
+          v-for="message in messages"
+          :key="message.id"
+          class="persona-view__message"
+          :class="[`is-${message.role}`, { 'is-error': message.error }]"
+        >
+          <p class="persona-view__message-role">
+            {{ message.role === 'user' ? '你' : '小鱼' }}
+            <span v-if="message.citations" class="persona-view__message-meta">
+              引用 {{ message.citations }} 条证据
+            </span>
+          </p>
+          <p class="persona-view__message-body">{{ message.content || '…' }}</p>
+        </li>
+      </ol>
+      <p v-else class="persona-view__note">
+        问一句运维问题试试，比如「nginx 502 怎么排查？」。回答会逐字显示，同时驱动口型。
       </p>
-    </div>
+
+      <form class="persona-view__composer" @submit.prevent="sendMessage">
+        <label class="persona-view__composer-label" for="persona-chat-input">输入问题</label>
+        <textarea
+          id="persona-chat-input"
+          v-model="draft"
+          class="persona-view__composer-input"
+          rows="2"
+          maxlength="2000"
+          :disabled="busy"
+          placeholder="例如：nginx 502 怎么排查？"
+          @keydown.enter.exact.prevent="sendMessage"
+        />
+        <p v-if="notice" class="persona-view__notice" role="alert">{{ notice }}</p>
+        <div class="persona-view__composer-actions">
+          <button type="submit" class="persona-view__state-button" :disabled="busy || !draft.trim()">
+            发送
+          </button>
+          <button type="button" class="persona-view__state-button" :disabled="!busy" @click="stopReply">
+            停止
+          </button>
+        </div>
+      </form>
+
+      <p class="persona-view__note">
+        口型按流式文字近似推进（<strong>不是音频同步</strong>），说完即闭嘴；
+        空输入与超长输入在本地拦下，不发请求。
+      </p>
+    </section>
 
     <dl class="persona-view__stats">
       <div class="persona-view__stat">
         <dt>渲染状态</dt>
         <dd><span class="persona-view__pill" :data-tone="statusTone">{{ statusText }}</span></dd>
+      </div>
+      <div class="persona-view__stat">
+        <dt>会话状态</dt>
+        <dd>{{ CHAT_PHASE_LABELS[phase] }}</dd>
       </div>
       <div class="persona-view__stat">
         <dt>Draw call</dt>
@@ -106,21 +131,38 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import AgentPersona from '../../components/persona/AgentPersona.vue'
-import { PERSONA_STATES, PERSONA_STATE_LABELS } from '../../components/persona/personaStates.js'
+import {
+  CHAT_PHASE_LABELS,
+  createSpeechPump,
+  normalizeChatMessage,
+  personaStateForChat
+} from '../../components/persona/personaChat.js'
+import { fetchChatRunToken } from '../../api/chatRunToken.ts'
+import { streamChat } from '../../api/stream.ts'
 
-const previewState = ref('idle')
+// phase: idle | connecting | streaming | error（错误保持到下一次发送，便于看清失败）
+const phase = ref('idle')
+const draft = ref('')
+const messages = ref([])
+const notice = ref('')
 const status = ref('loading')
 const stats = ref(null)
 const errorMessage = ref('')
 const personaRef = ref(null)
-const audioElement = ref(null)
-const speechSource = ref('静默')
 
-let demoAudioUrl = ''
-let textTimer = 0
 let statsTimer = 0
+let controller = null
+
+const busy = computed(() => phase.value === 'connecting' || phase.value === 'streaming')
+const personaState = computed(() => personaStateForChat(phase.value, { renderStatus: status.value }))
+const chatTone = computed(() => {
+  if (phase.value === 'error') return 'danger'
+  if (phase.value === 'connecting') return 'warning'
+  if (phase.value === 'streaming') return 'success'
+  return 'neutral'
+})
 
 const statusText = computed(() => {
   if (status.value === 'ready') return '加载完成'
@@ -134,6 +176,12 @@ const statusTone = computed(() => {
   if (status.value === 'error') return 'danger'
   if (status.value === 'lost') return 'warning'
   return 'neutral'
+})
+
+const speechPump = createSpeechPump({
+  speakText: (text, options) => personaRef.value?.speakText?.(text, options),
+  seekSpeech: (index) => personaRef.value?.seekSpeech?.(index),
+  stopSpeaking: () => personaRef.value?.stopSpeaking?.()
 })
 
 function onReady(payload) {
@@ -167,107 +215,85 @@ function stopStatsPolling() {
   statsTimer = 0
 }
 
-/** 页面内合成 10 秒元音序列，接进真实的 <audio> → AnalyserNode 链路 */
-async function playDemoClip() {
-  const element = audioElement.value
-  if (!element || !personaRef.value) return
-  if (!demoAudioUrl) demoAudioUrl = buildDemoAudioUrl(10)
-  if (element.src !== demoAudioUrl) element.src = demoAudioUrl
-  personaRef.value.attachAudio(element)
-  await personaRef.value.resumeAudio()
-  element.currentTime = 0
-  element.addEventListener('ended', () => { speechSource.value = '静默' }, { once: true })
+const unwrap = (value) => value?.data ?? value
+
+async function sendMessage() {
+  if (busy.value) return
+  const checked = normalizeChatMessage(draft.value)
+  notice.value = ''
+  if (!checked.ok) {
+    notice.value = checked.reason === 'too-long' ? '消息不能超过 2000 字符。' : '先输入一个问题再发送。'
+    return
+  }
+
+  // 用 reactive 包住助手消息：流式增量要逐字触发更新，直接改 push 进去的
+  // 原始对象不会让 Vue 的代理感知。
+  const reply = reactive({ id: crypto.randomUUID(), role: 'assistant', content: '' })
+  messages.value.push(
+    { id: crypto.randomUUID(), role: 'user', content: checked.text },
+    reply
+  )
+  draft.value = ''
+  phase.value = 'connecting'
+  controller = new AbortController()
+  let text = ''
+
   try {
-    await element.play()
-    speechSource.value = '合成音频 · 真实频谱'
-  } catch {
-    speechSource.value = '浏览器拦截了播放，请再点一次'
+    // 与控制台同一条链路：Java 签发短时 run 令牌，ai-service 只信令牌主体。
+    const issued = unwrap(await fetchChatRunToken())
+    if (typeof issued?.runToken !== 'string' || !issued.runToken) {
+      throw new Error('聊天鉴权令牌签发失败，请刷新页面后重试。')
+    }
+    await streamChat(checked.text, {
+      signal: controller.signal,
+      onToken: (delta) => {
+        if (!delta) return
+        text += delta
+        reply.content = text
+        if (phase.value !== 'streaming') phase.value = 'streaming'
+        // 边收边推进口型：重建时间线后跳到已播位置，避免每个 token 都从头动嘴。
+        speechPump.push(text)
+      },
+      onDone: (payload) => {
+        // 部分后端不逐 token，done 里带一次性完整答案；取更长的一份，不以空 delta 覆盖。
+        if (typeof payload?.answer === 'string' && payload.answer.length > text.length) {
+          text = payload.answer
+          reply.content = text
+        }
+        reply.citations = Array.isArray(payload?.citations) ? payload.citations.length : 0
+        phase.value = 'idle'
+      }
+    }, {
+      runToken: issued.runToken,
+      correlation: { request_id: crypto.randomUUID(), task_id: crypto.randomUUID() },
+      context: { path: window.location.pathname, section: 'AGENT PERSONA / 人格化身' }
+    })
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      reply.content = text || '已停止。'
+      phase.value = 'idle'
+    } else {
+      reply.error = true
+      reply.content = [text, error?.message || '暂时无法连接 AI 服务，请确认 ai-service 已启动。']
+        .filter(Boolean)
+        .join('\n\n')
+      phase.value = 'error'
+    }
+    speechPump.stop()
+  } finally {
+    controller = null
   }
 }
 
-/** 无音频时的近似口型：按字推进，UI 明确标注不是同步 */
-function speakDemoText() {
-  audioElement.value?.pause()
-  const text = '正在检查集群节点健康状态，发现两个副本延迟偏高，准备滚动重启。'
-  const duration = personaRef.value?.speakText(text, { cps: 5 }) ?? 0
-  speechSource.value = duration ? '文字近似 · 非音频同步' : '静默'
-  clearTimeout(textTimer)
-  if (duration) textTimer = setTimeout(() => { speechSource.value = '静默' }, duration + 400)
-}
-
-function stopSpeech() {
-  audioElement.value?.pause()
-  personaRef.value?.stopSpeaking()
-  clearTimeout(textTimer)
-  speechSource.value = '静默'
+function stopReply() {
+  controller?.abort()
 }
 
 onBeforeUnmount(() => {
   stopStatsPolling()
-  clearTimeout(textTimer)
-  if (demoAudioUrl) URL.revokeObjectURL(demoAudioUrl)
+  controller?.abort()
+  speechPump.stop()
 })
-
-/**
- * 合成一段「元音序列」音频：带音节包络与两处停顿。
- * 只为让频谱有起伏，不是真人声，也不代表任何 TTS 音色。
- */
-function buildDemoAudioUrl(seconds = 10, sampleRate = 22050) {
-  const totalSamples = Math.floor(seconds * sampleRate)
-  const bytes = new ArrayBuffer(44 + totalSamples * 2)
-  const view = new DataView(bytes)
-  const writeText = (offset, text) => {
-    for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i))
-  }
-  writeText(0, 'RIFF')
-  view.setUint32(4, 36 + totalSamples * 2, true)
-  writeText(8, 'WAVE')
-  writeText(12, 'fmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, 1, true)
-  view.setUint32(24, sampleRate, true)
-  view.setUint32(28, sampleRate * 2, true)
-  view.setUint16(32, 2, true)
-  view.setUint16(34, 16, true)
-  writeText(36, 'data')
-  view.setUint32(40, totalSamples * 2, true)
-
-  const harmonics = 18
-  const formants = [
-    [780, 1200], // aa
-    [500, 900], // oh
-    [400, 2000], // ih
-    [380, 800], // ou
-    [300, 2300] // ee
-  ]
-  // 每种元音的谐波权重只算一次，逐样本只剩 sin
-  const weightsByVowel = formants.map(([f1, f2]) =>
-    Array.from({ length: harmonics }, (_, index) => {
-      const hz = 155 * (index + 1)
-      return 0.12 + 1.5 * Math.exp(-(((hz - f1) / 190) ** 2)) + 1.1 * Math.exp(-(((hz - f2) / 230) ** 2))
-    })
-  )
-  const syllable = 0.22
-  const pauses = [[3, 3.45], [6.35, 6.8]]
-  const twoPi = Math.PI * 2
-  for (let i = 0; i < totalSamples; i += 1) {
-    const t = i / sampleRate
-    const paused = pauses.some(([start, end]) => t >= start && t < end)
-    const phase = (t % syllable) / syllable
-    const envelope = paused ? 0 : Math.min(1, phase / 0.2, (1 - phase) / 0.25)
-    if (envelope <= 0) continue
-    const f0 = 155 + 12 * Math.sin(twoPi * 3.1 * t)
-    const weights = weightsByVowel[Math.floor(t / syllable) % weightsByVowel.length]
-    let sample = 0
-    for (let h = 1; h <= harmonics; h += 1) {
-      sample += (Math.sin(twoPi * f0 * h * t + h * 0.7) / h) * weights[h - 1]
-    }
-    const value = Math.max(-1, Math.min(1, sample * envelope * 0.18))
-    view.setInt16(44 + i * 2, value * 0x7fff, true)
-  }
-  return URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
-}
 </script>
 
 <style scoped>
@@ -306,8 +332,15 @@ function buildDemoAudioUrl(seconds = 10, sampleRate = 22050) {
   color: var(--ds-color-muted);
 }
 
-.persona-view__states {
+.persona-view__chat {
   display: grid;
+  gap: var(--ds-space-2);
+}
+
+.persona-view__chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--ds-space-2);
 }
 
@@ -317,10 +350,92 @@ function buildDemoAudioUrl(seconds = 10, sampleRate = 22050) {
   color: var(--ds-color-muted);
 }
 
-.persona-view__state-buttons {
-  display: flex;
-  flex-wrap: wrap;
+.persona-view__messages {
+  display: grid;
   gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.persona-view__message {
+  display: grid;
+  gap: 2px;
+  padding: var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-card);
+}
+
+.persona-view__message.is-user {
+  border-color: var(--ds-color-border-strong);
+}
+
+.persona-view__message.is-error {
+  border-color: color-mix(in srgb, var(--smart-danger) 45%, transparent);
+}
+
+.persona-view__message-role {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--ds-space-2);
+  font-size: var(--ds-type-caption-size);
+  color: var(--ds-color-muted);
+}
+
+.persona-view__message-meta {
+  font-size: 11px;
+  color: var(--ds-color-primary-strong);
+}
+
+.persona-view__message-body {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-line-height-base);
+  color: var(--ds-color-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.persona-view__composer {
+  display: grid;
+  gap: var(--ds-space-2);
+}
+
+.persona-view__composer-label {
+  font-size: var(--ds-type-caption-size);
+  color: var(--ds-color-muted);
+}
+
+.persona-view__composer-input {
+  width: 100%;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-card);
+  color: var(--ds-color-text);
+  font: inherit;
+  line-height: var(--ds-line-height-base);
+  resize: vertical;
+}
+
+.persona-view__composer-input:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.persona-view__composer-actions {
+  display: flex;
+  gap: var(--ds-space-2);
+}
+
+.persona-view__notice {
+  margin: 0;
+  font-size: var(--ds-type-caption-size);
+  color: var(--ds-color-danger);
 }
 
 .persona-view__state-button {
@@ -334,23 +449,18 @@ function buildDemoAudioUrl(seconds = 10, sampleRate = 22050) {
   transition: color .18s ease, border-color .18s ease;
 }
 
-.persona-view__state-button:hover {
+.persona-view__state-button:hover:not(:disabled) {
   color: var(--ds-color-text);
+}
+
+.persona-view__state-button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
 }
 
 .persona-view__state-button.is-active {
   color: var(--ds-color-primary-strong);
   border-color: var(--ds-color-primary-strong);
-}
-
-.persona-view__speech {
-  display: grid;
-  gap: var(--ds-space-2);
-}
-
-.persona-view__audio {
-  width: 100%;
-  height: 36px;
 }
 
 .persona-view__stats {

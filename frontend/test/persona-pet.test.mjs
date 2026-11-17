@@ -4,7 +4,11 @@ import { createPinia, setActivePinia } from 'pinia'
 import {
   PERSONA_PET_INSET,
   PERSONA_PET_SIZE,
+  PERSONA_PET_SIZES,
+  clampCustomPetSize,
   clampPersonaPetPosition,
+  nearestPetSizeMode,
+  resolvePetSize,
   usePersonaPetStore
 } from '../src/stores/personaPet.js'
 import { createLipSync, VISEMES } from '../src/components/persona/useLipSync.js'
@@ -51,6 +55,99 @@ describe('桌宠位置钳制', () => {
     const result = clampPersonaPetPosition({ x: 5, y: 5 }, tiny)
     assert.equal(result.x, PERSONA_PET_INSET)
     assert.equal(result.y, PERSONA_PET_INSET)
+  })
+})
+
+describe('悬浮窗视口自适应缩放（resolvePetSize）', () => {
+  test('大屏（≥900 高）三档均返回设计基准，不放大也不收敛', () => {
+    const vp = { viewportWidth: 1200, viewportHeight: 900 }
+    assert.deepEqual(resolvePetSize('compact', vp), PERSONA_PET_SIZES.compact)
+    assert.deepEqual(resolvePetSize('regular', vp), PERSONA_PET_SIZES.regular)
+    assert.deepEqual(resolvePetSize('large', vp), PERSONA_PET_SIZES.large)
+    assert.deepEqual(resolvePetSize('unknown', vp), PERSONA_PET_SIZES.regular)
+  })
+
+  test('矮屏（笔记本 125% 缩放）regular 按视口高收敛，比例保持 2:3', () => {
+    const resolved = resolvePetSize('regular', { viewportWidth: 1280, viewportHeight: 640 })
+    // 0.40 × 640 = 256 < 基准 348 → 收敛到 256 高
+    assert.equal(resolved.height, 256)
+    assert.equal(resolved.width, Math.round(256 * 2 / 3))
+  })
+
+  test('large 在 800 高屏收敛到视口一半，compact 保持基准', () => {
+    const vp = { viewportWidth: 1440, viewportHeight: 800 }
+    assert.deepEqual(resolvePetSize('large', vp), { width: 267, height: 400 })
+    // compact: 0.34 × 800 = 272 ≥ 300？272 < 300 → 也收敛
+    const compact = resolvePetSize('compact', vp)
+    assert.equal(compact.height, 272)
+  })
+
+  test('超窄屏受视口宽 36% 约束，且不低于可读性下限', () => {
+    const resolved = resolvePetSize('regular', { viewportWidth: 380, viewportHeight: 800 })
+    // 高度 320 → 宽 213；宽上限 max(150, 137) = 150 → 收敛到 150×225
+    assert.deepEqual(resolved, { width: 150, height: 225 })
+  })
+
+  test('极矮视口触发高度下限 225（与宽度下限 150 自洽）', () => {
+    const resolved = resolvePetSize('regular', { viewportWidth: 1200, viewportHeight: 300 })
+    assert.deepEqual(resolved, { width: 150, height: 225 })
+  })
+
+  test('clamp 使用收敛后尺寸：矮屏右下角可贴得更近', () => {
+    const vp = { viewportWidth: 1280, viewportHeight: 640 }
+    const result = clampPersonaPetPosition({ x: 5000, y: 5000 }, vp, 'regular')
+    assert.equal(result.x, 1280 - PERSONA_PET_INSET - Math.round(256 * 2 / 3))
+    assert.equal(result.y, 640 - PERSONA_PET_INSET - 256)
+  })
+})
+
+describe('自定义尺寸（自由拖拽，clampCustomPetSize）', () => {
+  test('高度驱动、宽度按 2:3 回算', () => {
+    assert.deepEqual(clampCustomPetSize({ height: 400 }, VIEWPORT), { width: 267, height: 400 })
+    assert.deepEqual(clampCustomPetSize({ height: 450 }, VIEWPORT), { width: 300, height: 450 })
+  })
+
+  test('下限 150×225，上限视口高 60% 且不超视口宽 36%', () => {
+    assert.deepEqual(clampCustomPetSize({ height: 50 }, VIEWPORT), { width: 150, height: 225 })
+    // 900 × 0.6 = 540 高 → 360 宽；宽上限 432 不触发
+    assert.deepEqual(clampCustomPetSize({ height: 5000 }, VIEWPORT), { width: 360, height: 540 })
+    // 380 宽窄屏：宽上限 max(150, 137) = 150 → 收敛成 150×225
+    assert.deepEqual(
+      clampCustomPetSize({ height: 400 }, { viewportWidth: 380, viewportHeight: 800 }),
+      { width: 150, height: 225 }
+    )
+  })
+
+  test('非法高度回到下限，不产生 NaN', () => {
+    assert.deepEqual(clampCustomPetSize({ height: Number.NaN }, VIEWPORT), { width: 150, height: 225 })
+    assert.deepEqual(clampCustomPetSize({}, VIEWPORT), { width: 150, height: 225 })
+  })
+
+  test('resolvePetSize 优先使用自定义尺寸', () => {
+    assert.deepEqual(
+      resolvePetSize('compact', VIEWPORT, { height: 420 }),
+      { width: 280, height: 420 }
+    )
+  })
+})
+
+describe('右下角拖拽缩放的档位吸附（nearestPetSizeMode）', () => {
+  test('大屏按三档高度吸附到最近档位', () => {
+    const vp = { viewportWidth: 1200, viewportHeight: 900 }
+    // 三档高度：compact 300 / regular 348 / large 432
+    assert.equal(nearestPetSizeMode(120, vp), 'compact')
+    assert.equal(nearestPetSizeMode(340, vp), 'regular')
+    assert.equal(nearestPetSizeMode(372, vp), 'regular')
+    assert.equal(nearestPetSizeMode(400, vp), 'large')
+    assert.equal(nearestPetSizeMode(2000, vp), 'large')
+  })
+
+  test('矮屏用收敛后的高度吸附，不会把 regular 判成 large', () => {
+    const vp = { viewportWidth: 1280, viewportHeight: 640 }
+    // 收敛后：compact 225 / regular 256 / large 320
+    assert.equal(nearestPetSizeMode(230, vp), 'compact')
+    assert.equal(nearestPetSizeMode(260, vp), 'regular')
+    assert.equal(nearestPetSizeMode(300, vp), 'large')
   })
 })
 
@@ -108,6 +205,34 @@ describe('桌宠形态状态', () => {
     assert.deepEqual(store.position, { x: 140, y: 70 })
     store.moveBy(99999, 0, VIEWPORT)
     assert.equal(store.position.x, VIEWPORT.viewportWidth - PERSONA_PET_INSET - PERSONA_PET_SIZE.width)
+  })
+
+  test('自由拖拽：applyCustomSize 只改内存，setCustomSize 才落盘', () => {
+    const store = usePersonaPetStore()
+    store.applyCustomSize({ height: 400 }, VIEWPORT)
+    assert.deepEqual(store.customSize, { width: 267, height: 400 })
+    assert.equal(globalThis.localStorage.getItem('smartops_persona_pet'), null)
+
+    store.setCustomSize({ height: 420 }, VIEWPORT)
+    const persisted = JSON.parse(globalThis.localStorage.getItem('smartops_persona_pet'))
+    assert.deepEqual(persisted.customSize, { width: 280, height: 420 })
+  })
+
+  test('自定义尺寸参与位置钳制：贴右下角后按新尺寸回拉', () => {
+    const store = usePersonaPetStore()
+    store.setPosition({ x: 5000, y: 5000 }, VIEWPORT)
+    store.applyCustomSize({ height: 400 }, VIEWPORT)
+    assert.equal(store.position.x, VIEWPORT.viewportWidth - PERSONA_PET_INSET - 267)
+    assert.equal(store.position.y, VIEWPORT.viewportHeight - PERSONA_PET_INSET - 400)
+  })
+
+  test('切档清空自定义尺寸，并从最近档位继续循环', () => {
+    const store = usePersonaPetStore()
+    store.applyCustomSize({ height: 310 }, VIEWPORT)  // 最接近 compact(300)
+    assert.equal(store.cycleSize(VIEWPORT), 'regular')
+    assert.equal(store.sizeMode, 'regular')
+    assert.equal(store.customSize, null)
+    assert.equal(JSON.parse(globalThis.localStorage.getItem('smartops_persona_pet')).customSize, null)
   })
 })
 

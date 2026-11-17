@@ -148,34 +148,12 @@ try {
     const { page, errors, requests, mutations } = await open(1440, mode, 'dark')
     await page.goto(`${base}/`, { waitUntil: 'networkidle' })
     await page.locator('.home').waitFor()
-    const whaleSelector = mode === 'balanced' ? '.whale-host' : '.canvas-whale'
-    await page.locator(`${whaleSelector}[data-effect-theme="dark"]`).waitFor()
-    const originalWhale = await page.locator(whaleSelector).elementHandle()
-    const colors = []
-    for (const theme of ['light', 'dark', 'light']) {
-      await page.getByLabel('选择主题模式').selectOption(theme)
-      await page.locator(`${whaleSelector}[data-effect-theme="${theme}"]`).waitFor()
-      colors.push(await page.locator(whaleSelector).getAttribute('data-effect-color'))
-      assert.equal(await originalWhale.evaluate(element => element.isConnected), true)
-      if (mode === 'balanced') {
-        await page.locator(`.milky-way[data-effect-theme="${theme}"]`).waitFor()
-        assert.equal(await page.locator('.milky-way').getAttribute('data-state'), 'ready', 'WebGL is required for this scene verification')
-        assert.equal(await page.locator('.milky-way canvas').evaluate(canvas => getComputedStyle(canvas).visibility), 'visible')
-      }
-      if (theme === 'light') await page.screenshot({ path: `test-artifacts/effects-${mode}-light.png`, fullPage: true })
-    }
-    assert.notEqual(colors[0], colors[1])
-    assert.equal(colors[0], colors[2])
-    if (mode !== 'balanced') assert.equal(requests.some(url => /vendor-three|\/three(?:\.js|\/)|milky-way-scene/.test(url)), false)
-    await page.getByLabel('选择视觉模式').selectOption('reduced-motion')
-    await page.locator('.canvas-whale').waitFor()
-    await page.waitForTimeout(300)
-    const still = await page.locator('.canvas-whale').evaluate(canvas => canvas.toDataURL())
-    await page.waitForTimeout(300)
-    assert.equal(await page.locator('.canvas-whale').evaluate(canvas => canvas.toDataURL()), still)
+    // 氛围特效物种（银河/鲸/水母）已于 2026-11-16 彻底删除：任何档位下都不得出现，也不得加载 three。
+    assert.equal(await page.locator('.whale-host, .canvas-whale, .milky-way, .app-jellyfish').count(), 0)
+    assert.equal(requests.some(url => /vendor-three|\/three(?:\.js|\/)|milky-way-scene|ParticleWhale/.test(url)), false)
     assert.deepEqual(errors, [])
     assert.deepEqual(mutations, [])
     await page.close()
-    console.log(`PASS homepage ${mode}: live light/dark palette, stable scene identity, resource boundary, reduced-motion`)
+    console.log(`PASS homepage ${mode}: ambient species stay removed, resource boundary held`)
   }
 } finally { await browser.close() }

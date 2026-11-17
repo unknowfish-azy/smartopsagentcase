@@ -154,9 +154,11 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRoute } from 'vue-router'
 import { ArrowUp, Loading, Microphone, Paperclip, Plus } from '@element-plus/icons-vue'
 import { useAiChatStore } from '../../stores/aiChat.js'
 import { createSpeechInput } from '../../domain/chat/speechInput.ts'
+import { buildPageContext } from '../../domain/chat/pageContext.js'
 import AssistantSelector from './AssistantSelector.vue'
 import AssistantEvidence from './AssistantEvidence.vue'
 import ChatMessageActions from './ChatMessageActions.vue'
@@ -166,6 +168,10 @@ import { renderMarkdown } from './markdown.js'
 import './markdown.css'
 
 defineProps({ compact: { type: Boolean, default: false } })
+
+// 页面上下文感知：发送消息时读取当前路由（路径+栏目），作为只读参考随请求上报。
+// 在 sendMessage 时现场构造（而非 setup 时缓存一次），保证路由切换后上下文始终新鲜。
+const route = useRoute()
 
 const drafts = ref({})
 const attachmentNotice = ref('')
@@ -372,7 +378,12 @@ async function sendMessage() {
   adjustHeight(true)
   const conversationId = activeId.value
   const generation = accountEpoch.value
-  const success = await chatStore.sendMessageStreaming(text, { images, rag: buildRagPayload() })
+  const success = await chatStore.sendMessageStreaming(text, {
+    images,
+    rag: buildRagPayload(),
+    // 页面上下文（只读参考，非指令）：未处于任何栏目页时为 null，不随请求发送。
+    context: buildPageContext(route),
+  })
   if (success) attachmentComposer.value?.clearStaged?.()
   if (!success && !disposed && accountEpoch.value === generation && (!conversationId || activeId.value === conversationId) && !draft.value) draft.value = prompt
   if (!disposed && (!conversationId || activeId.value === conversationId)) await focusComposer()

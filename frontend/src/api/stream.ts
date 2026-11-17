@@ -73,6 +73,8 @@ export async function streamChat(message: string, {
     vector_weight?: number | null
     bm25_weight?: number | null
   }
+  /** 页面上下文（只读参考信息，非指令）：当前页面路径与栏目；缺省时请求体不含该字段。 */
+  context?: { path?: string; section?: string } | null
 } = {}) {
   const rag = options.rag || {}
   const requestId = options.correlation?.request_id || crypto.randomUUID()
@@ -93,6 +95,9 @@ export async function streamChat(message: string, {
   if (rag.bm25_weight != null) body.bm25_weight = rag.bm25_weight
   if (options.images?.length) body.images = options.images
   if (options.imageData?.length) body.image_data = options.imageData
+  // 页面上下文（只读参考，非指令）：仅当调用方显式传入时才进请求体，
+  // ai-service 侧按 "缺省 = 行为不变" 处理。
+  if (options.context) body.context = options.context
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
   try {
     const response = await fetch(`${AI_SERVICE_BASE}/api/chat/stream`, {

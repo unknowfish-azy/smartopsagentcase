@@ -27,7 +27,26 @@ export const PERSONA_POSE_BASE = Object.freeze({
   head: Object.freeze({ x: 0, y: 0, z: 0 }),
   chest: Object.freeze({ x: 0, y: 0, z: 0 }),
   leftUpperArm: Object.freeze({ x: 0, y: 0, z: 1.15 }),
-  rightUpperArm: Object.freeze({ x: 0, y: 0, z: -1.15 })
+  rightUpperArm: Object.freeze({ x: 0, y: 0, z: -1.15 }),
+  // 肘部自然弯（前臂略朝前 + 微外展）：消除"整条手臂笔直棍立"的僵硬感。
+  // 手势增量叠加在其上，手势结束回落到这个自然弯曲（2026-11-16 修复骨骼怪异）。
+  leftLowerArm: Object.freeze({ x: -0.22, y: 0, z: 0.06 }),
+  rightLowerArm: Object.freeze({ x: -0.22, y: 0, z: -0.06 })
+})
+
+/**
+ * 状态 → 环境光色（环境空间层用，蒸馏 PetLive「情绪光影」叙事）。
+ * 光环 / 环境光 / 背景色调三处共用；灰度下状态差异仍以姿态为主通道，
+ * 颜色只是辅助——色觉障碍用户依然能靠姿态分辨状态。
+ */
+export const PERSONA_STATE_GLOW = Object.freeze({
+  idle: '#3fb9c9',
+  thinking: '#7c9cff',
+  executing: '#38bdf8',
+  observing: '#34d399',
+  warning: '#fbbf24',
+  error: '#f87171',
+  recovering: '#6ee7b7'
 })
 
 /**
@@ -125,5 +144,7 @@ export function personaTransitionMs(previous, next) {
 }
 
 export function personaProfile(state) {
-  return PERSONA_STATE_PROFILES[state] ?? PERSONA_STATE_PROFILES.idle
+  const profile = PERSONA_STATE_PROFILES[state] ?? PERSONA_STATE_PROFILES.idle
+  // 环境光色随状态附带下发（环境空间层读取 profile.glow）
+  return { ...profile, glow: PERSONA_STATE_GLOW[state] ?? PERSONA_STATE_GLOW.idle }
 }
