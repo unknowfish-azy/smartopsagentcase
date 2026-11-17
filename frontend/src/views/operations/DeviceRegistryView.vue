@@ -110,7 +110,19 @@
           </p>
           <template v-else>
             <ul class="source-list">
-              <li v-for="robot in robotsSource.data.slice(0, 5)" :key="robot.deviceKey">
+              <li
+                v-for="robot in robotsSource.data.slice(0, 5)"
+                :key="robot.deviceKey"
+                class="robot-row"
+                :class="{ 'robot-row-selected': robot.deviceKey === selectedRobotKey }"
+                role="button"
+                tabindex="0"
+                :aria-pressed="robot.deviceKey === selectedRobotKey"
+                :aria-label="`选择机器人 ${robot.name || robot.deviceKey} 查看 3D 态势`"
+                @click="selectRobot(robot.deviceKey)"
+                @keydown.enter.prevent="selectRobot(robot.deviceKey)"
+                @keydown.space.prevent="selectRobot(robot.deviceKey)"
+              >
                 <span class="item-name">{{ robot.name || robot.deviceKey }}</span>
                 <span class="pill pill-neutral">{{ formFactorLabel(robot.formFactor) }}</span>
                 <span class="pill" :class="robot.enabled ? 'pill-ok' : 'pill-neutral'">
@@ -119,12 +131,34 @@
               </li>
             </ul>
             <p v-if="!robotsSource.data.length" class="source-note">暂无登记的巡检机器人（管理员可通过 POST /api/robot/devices 登记）</p>
-            <p v-else-if="robotsSource.data.length > 5" class="source-note">仅展示前 5 条，共 {{ robotsSource.data.length }} 条</p>
-            <p v-else class="source-note">蓝牙遥控通道 M1 上线，当前仅提供台账登记与启用门禁</p>
+            <p v-else-if="robotsSource.data.length > 5" class="source-note">仅展示前 5 条，共 {{ robotsSource.data.length }} 条；点击设备可查看 3D 态势</p>
+            <p v-else class="source-note">点击设备可查看 3D 态势</p>
           </template>
         </div>
 
       </div>
+    </section>
+
+    <!-- A+. 机器人实时态势：复用控制台 RobotScene3D，数据经 REST 轮询（无 WebSocket 依赖） -->
+    <section v-if="robotsSource.state === 'ok' && robotsSource.data.length" class="section" aria-labelledby="robot3d-heading">
+      <h2 id="robot3d-heading" class="section-title">机器人实时态势</h2>
+      <p v-if="!selectedRobotKey" class="source-note">点击上方「巡检机器人」列表中的设备，查看其 3D 态势（遥测经 GET /api/robot/live 轮询，路线来自真实任务数据）。</p>
+      <template v-else>
+        <div class="robot3d-head">
+          <span class="item-name mono">{{ selectedRobot?.name || selectedRobotKey }}</span>
+          <span class="pill" :class="robotStale ? 'pill-warning' : 'pill-ok'">
+            {{ robotTelemetry ? (robotStale ? '遥测超时' : '遥测正常') : '等待遥测' }}
+          </span>
+          <span class="pill pill-neutral">{{ formFactorLabel(selectedRobot?.formFactor) }}</span>
+        </div>
+        <RobotScene3D
+          :telemetry="robotTelemetry"
+          :stale="robotStale"
+          :device-key="selectedRobotKey"
+          :form-factor="selectedRobot?.formFactor || 'CAR'"
+          :mode="robotMode"
+        />
+      </template>
     </section>
 
     <!-- B. 视觉巡检区：本地多模态模型识别 + 纠察事件落库 -->
@@ -258,7 +292,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ElMessage } from 'element-plus/es/components/message/index.mjs'
 
@@ -266,8 +300,9 @@ import request from '../../utils/request'
 import { getServers } from '../../api/server'
 import { getModelConnections } from '../../api/model'
 import { getInspectorEvents } from '../../api/inspector'
-import { getRobotDevices } from '../../api/robot'
+import { getRobotDevices, getRobotLive } from '../../api/robot'
 import { summarizeLedger } from '../../utils/deviceRegistry'
+import RobotScene3D from '../../components/robot/RobotScene3D.vue'
 
 /* ============ 常量 ============ */
 
@@ -346,6 +381,66 @@ async function loadRobots() {
     robotsSource.value = { state: 'ok', data: Array.isArray(result?.data) ? result.data : [], error: '' }
   } catch (error) {
     robotsSource.value = { state: 'error', data: [], error: error?.message || '接口请求失败' }
+  }
+}
+
+/* ============ 机器人 3D 态势（复用控制台组件，REST 轮询驱动） ============ */
+
+const selectedRobotKey = ref('')
+const robotTelemetry = ref(null)
+const robotTelemetryAt = ref(0)
+const robotMode = ref('OFFLINE')
+const robotNowTick = ref(Date.now())
+let robotPollTimer = null
+
+const selectedRobot = computed(() =>
+  robotsSource.value.data.find((robot) => robot?.deviceKey === selectedRobotKey.value) || null
+)
+
+/* REST 轮询 2s 一次，超过 3s 未更新即视为超时（比控制台 WS 的 1.5s 宽松一档） */
+const robotStale = computed(() => {
+  if (!robotTelemetry.value) return true
+  return robotNowTick.value - robotTelemetryAt.value > 3000
+})
+
+function selectRobot(key) {
+  if (selectedRobotKey.value === key) return
+  selectedRobotKey.value = key
+  robotTelemetry.value = null
+  robotTelemetryAt.value = 0
+  robotMode.value = 'OFFLINE'
+  startRobotPoll()
+}
+
+async function pollRobotLive() {
+  if (!selectedRobotKey.value) return
+  try {
+    const response = await getRobotLive(selectedRobotKey.value)
+    const data = response?.data || {}
+    robotMode.value = data.mode || 'OFFLINE'
+    if (data.telemetry) {
+      robotTelemetry.value = data.telemetry
+      robotTelemetryAt.value = Date.now()
+    }
+  } catch {
+    /* 轮询失败保持上次值，由 stale 判定如实展示超时 */
+  }
+}
+
+function startRobotPoll() {
+  stopRobotPoll()
+  if (!selectedRobotKey.value) return
+  pollRobotLive()
+  robotPollTimer = window.setInterval(() => {
+    robotNowTick.value = Date.now()
+    pollRobotLive()
+  }, 2000)
+}
+
+function stopRobotPoll() {
+  if (robotPollTimer) {
+    window.clearInterval(robotPollTimer)
+    robotPollTimer = null
   }
 }
 
@@ -513,6 +608,10 @@ onMounted(() => {
   loadVisionStatus()
   loadRecentEvents()
 })
+
+onBeforeUnmount(() => {
+  stopRobotPoll()
+})
 </script>
 
 <style scoped>
@@ -618,6 +717,32 @@ onMounted(() => {
 
 .source-list li:last-child {
   border-bottom: 0;
+}
+
+/* 机器人列表行可点击选中（3D 态势联动） */
+.robot-row {
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.robot-row:hover,
+.robot-row:focus-visible {
+  background: var(--ds-pill-neutral-bg);
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: -2px;
+}
+
+.robot-row-selected {
+  background: var(--ds-pill-neutral-bg);
+  box-shadow: inset 2px 0 0 var(--ds-color-primary);
+}
+
+/* 3D 态势区头部 */
+.robot3d-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
 }
 
 .item-name {
