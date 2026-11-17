@@ -641,6 +641,10 @@ def test_normalize_piper_numbers_货币与单位换算():
     assert normalize("温度-5℃") == "温度负五摄氏度"
     assert normalize("转速3000rpm") == "转速三千转每分钟"
     assert normalize("布线100m") == "布线一百米"
+    # 像素与磁盘吞吐：单位带斜杠时整体匹配，不能只吃掉 GB 留下 /s
+    assert normalize("间距5px") == "间距五像素"
+    assert normalize("写入5GB/s") == "写入五吉字节每秒"
+    assert normalize("读取500MB/s") == "读取五百兆字节每秒"
 
 
 def test_normalize_piper_numbers_单位不误伤型号与版本():
