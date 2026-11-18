@@ -76,6 +76,8 @@ _ACTION_RE = re.compile(
 )
 _FINAL_RE = re.compile(r"Final Answer:\s*(?P<answer>.+)", re.DOTALL)
 _THOUGHT_RE = re.compile(r"Thought:\s*(?P<thought>[^\n]+)")
+_THINK_BLOCK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+_MARKDOWN_LABEL_RE = re.compile(r"\*\*(Thought|Action Input|Action|Final Answer)\*\*")
 
 
 # ---------------------------------------------------------------------------
@@ -181,7 +183,7 @@ class ReActPlanner:
         try:
             for iteration in range(1, self.max_iterations + 1):
                 prompt = self._build_prompt(catalog, goal, history)
-                response_text = self._call_model(prompt)
+                response_text = self._normalize_response(self._call_model(prompt))
 
                 # 1) Final Answer：证据充分，收尾
                 final = _FINAL_RE.search(response_text)
@@ -365,6 +367,13 @@ class ReActPlanner:
                 response = pool.submit(asyncio.run, coroutine).result()
 
         return response.content
+
+    @staticmethod
+    def _normalize_response(text: str) -> str:
+        """剥离推理模型的思考块，并兼容 Markdown 加粗的 ReAct 标签。"""
+        text = _THINK_BLOCK_RE.sub("", text)
+        text = re.sub(r"</think>", "", text, flags=re.IGNORECASE)
+        return _MARKDOWN_LABEL_RE.sub(r"\1", text)
 
     @staticmethod
     def _extract_thought(text: str) -> str:

@@ -125,6 +125,24 @@ def test_action_observation_then_final_answer():
     assert "0.87" in provider.prompts[1]
 
 
+def test_think_blocks_and_markdown_labels_are_normalized():
+    evidence = EvidenceTool()
+    provider = ScriptedProvider([
+        "<think>Final Answer: 思考中的草稿不能当结论</think>\n"
+        "**Thought**: 先取证据\n**Action**: nn.anomaly\n"
+        "**Action Input**: {\"metric\": \"redis_cpu\"}",
+        "<think>内部推理</think>\n**Final Answer**: 正式结论，不包含思考标签。",
+    ])
+    planner = _planner(provider, _registry(evidence))
+
+    result = planner.run("目标", _context())
+
+    assert result.status == "completed"
+    assert evidence.calls == 1
+    assert result.final_answer == "正式结论，不包含思考标签。"
+    assert "草稿" not in result.final_answer
+
+
 def test_hallucinated_tool_self_corrects():
     provider = ScriptedProvider([
         "Thought: 调用不存在的工具\nAction: nn.not_exist\nAction Input: {}",
