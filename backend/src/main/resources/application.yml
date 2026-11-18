@@ -115,15 +115,80 @@ smartops:
     api-key: ${SMARTOPS_SCIVERSE_API_KEY:}
     search-path: ${SMARTOPS_SCIVERSE_SEARCH_PATH:/agentic-search}
     content-path: ${SMARTOPS_SCIVERSE_CONTENT_PATH:/content}
+  # ── 模型接入配置：Java 侧所有模型出口的唯一配置源 ──────────────
+  # Mini 助手与视觉巡检共用同一个本地模型运行时地址与超时；换运行时、迁地址、
+  # 调超时只改这一段，不改调用方代码。
+  # 远端大模型（千问/自研等）的连接、密钥与降级顺序由模型网关的
+  # model_connection 表管理，同样不写在代码里。
+  model:
+    # 控制面：网关热加载生效配置的轮询间隔（只在读取版本号，不进入请求链路）
+    control-plane:
+      refresh-ms: ${SMARTOPS_MODEL_CONTROL_PLANE_REFRESH_MS:15000}
+      initial-delay-ms: ${SMARTOPS_MODEL_CONTROL_PLANE_INITIAL_DELAY_MS:5000}
+      # 发布所需审批级数：0=管理员可直接发布；>0=草稿须经他人审批后自动发布
+      required-approvals: ${SMARTOPS_MODEL_CONTROL_PLANE_REQUIRED_APPROVALS:0}
+      # 审批人用户名白名单（逗号分隔）：留空=任意管理员可审批；配置后仅名单内账号可审批并收到待办通知
+      approvers: ${SMARTOPS_MODEL_CONTROL_PLANE_APPROVERS:}
+    # 路由意图词表：命中即作为能力信号参与模型组打分；留空则使用内置默认词表
+    routing:
+      intent-patterns:
+        - keyword: 看图
+          capability: vision
+        - keyword: 截图
+          capability: vision
+        - keyword: 图片
+          capability: vision
+        - keyword: 图像
+          capability: vision
+        - keyword: vision
+          capability: vision
+        - keyword: 理解图
+          capability: vision
+        - keyword: 诊断
+          capability: reasoning
+        - keyword: 分析
+          capability: reasoning
+        - keyword: 排查
+          capability: reasoning
+        - keyword: 根因
+          capability: reasoning
+        - keyword: 复杂
+          capability: reasoning
+        - keyword: 规划
+          capability: reasoning
+        - keyword: temperature
+          capability: reasoning
+        - keyword: 工具
+          capability: tool-calling
+        - keyword: 调用
+          capability: tool-calling
+        - keyword: agent
+          capability: tool-calling
+        - keyword: function
+          capability: tool-calling
+        - keyword: tool
+          capability: tool-calling
+        - keyword: 简单
+          capability: fast
+        - keyword: 快速
+          capability: fast
+        - keyword: 快
+          capability: fast
+        - keyword: 便宜
+          capability: cheap
+        - keyword: 省钱
+          capability: cheap
+        - keyword: cheap
+          capability: cheap
+    local:
+      base-url: ${SMARTOPS_MODEL_LOCAL_BASE_URL:http://127.0.0.1:11434}
+      timeout-seconds: ${SMARTOPS_MODEL_LOCAL_TIMEOUT_SECONDS:120}
   mini:
-    base-url: ${SMARTOPS_MINI_BASE_URL:http://127.0.0.1:11434}
     model: ${SMARTOPS_MINI_MODEL:qwen3:1.7b}
     knowledge-root: ${SMARTOPS_MINI_KNOWLEDGE_ROOT:../knowledge}
   # 视觉巡检（本地多模态模型识别，如 llava / qwen2.5vl）。
-  # 2026-11-16 已启用：指向本地已装的 qwen2.5vl:3b（Ollama）。
   # 未配置时 /api/inspector/vision fail-closed 返回 503。
   vision:
-    base-url: ${SMARTOPS_VISION_BASE_URL:http://127.0.0.1:11434}
     model: ${SMARTOPS_VISION_MODEL:qwen2.5vl:3b}
   # 巡检机器人（M0 台账 + M1 双态控制；详见 docs/architecture/巡检机器人详细设计.md）。
   # bridge-token 未配置时桥端点一律拒连（fail-closed，SMARTOPS_ROBOT_BRIDGE_TOKEN 注入）。
