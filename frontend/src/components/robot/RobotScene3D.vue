@@ -99,7 +99,8 @@
  * 本体形态：
  * - DOG   → rigs/quadrupedRig.js（仿 Go2 四足：机身 + LiDAR 旋转 + 4 腿 3 段）
  * - ROBOT → rigs/humanoidRig.js（仿 G1 人形：躯干 + 双臂 + 双腿）
- * - CAR / SPIDER → 优先 GLB（patrol-car / spider-bot），失败或缺失回退占位几何
+ * - CAR / SPIDER → 优先 GLB（patrol-car / spider-bot），并在模型顶部挂 rigs/effectLayer.js
+ *   （状态灯 + LiDAR 扇面 + 地面扫描环）；GLB 缺失或解析失败回退占位几何
  *
  * 交互：拖拽环视（>6px 位移）、滚轮缩放；位移 <6px 视为点击 → 射线拾取打开设备详情。
  *
@@ -121,7 +122,9 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { buildQuadrupedRig } from './rigs/quadrupedRig'
 import { buildHumanoidRig } from './rigs/humanoidRig'
+import { buildEffectLayer, measureRobotBounds } from './rigs/effectLayer'
 import { humanoidPose, quadrupedPose } from './rigs/gait'
+import { resolveEffectConfig } from './rigs/effects'
 import { isDegraded, subscribe } from '../../visual/motionScheduler.js'
 import { isLightweightVisualMode, isReducedMotionMode } from '../../visual/visualMode.js'
 import { getRobotTasks } from '../../api/robot'
@@ -252,6 +255,11 @@ function resolveColor(cssVar, fallback) {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim()
   if (!raw || raw.startsWith('var(')) return fallback
   try { return new Color(raw).getHex() } catch { return fallback }
+}
+
+/** 当前主题：深色主题下 rig 需要压低加色光晕与点光，避免 Bloom 叠加过曝。 */
+function readTheme() {
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
 }
 
 /**
@@ -389,6 +397,9 @@ onMounted(() => {
     themeObserver = new MutationObserver(() => {
       bgColor.set(surfaceColor(element))
       lastSvgSignature = ''
+      /* 主题切换 → 光晕/点光衰减同步（深色背景下加色 + Bloom 易过曝） */
+      rig?.setTheme?.(readTheme())
+      fxLayer?.setTheme?.(readTheme())
     })
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
   }
@@ -421,14 +432,17 @@ onMounted(() => {
   }
 
   /* 后处理 Bloom：把状态灯光晕、LiDAR 激光线等自发光溢出成真实辉光。
-     strength 1.2 / radius 0.38 / threshold 0.7：辉光明显但不糊掉本体与网格；
+     强度 / 扩散 / 阈值由 `effects` prop 覆盖（调节面板的辉光三项），默认 1.2 / 0.38 / 0.7；
      isDegraded()（降级/低性能）时跳过 Bloom，直接走原始渲染。SVG 后端不支持后处理，跳过。 */
+  const bloomConfig = resolveEffectConfig(props.effects)
   let composer = null
   let bloomPass = null
   if (!isSvg) {
     composer = new EffectComposer(renderer)
     composer.addPass(new RenderPass(scene, camera))
-    bloomPass = new UnrealBloomPass(new Vector2(1, 1), 1.2, 0.38, 0.7)
+    bloomPass = new UnrealBloomPass(
+      new Vector2(1, 1), bloomConfig.bloomStrength, bloomConfig.bloomRadius, bloomConfig.bloomThreshold
+    )
     composer.addPass(bloomPass)
     composer.addPass(new OutputPass())
   }
@@ -473,6 +487,8 @@ onMounted(() => {
   let lampMats = []
   /* 程序化 rig（DOG / ROBOT 形态）：独立材质 + 关节阻尼由 rig 自己维护 */
   let rig = null
+  /* 通用动效层（CAR / SPIDER 的 GLB 形态）：灯效与扫描挂在模型包围盒顶部，随本体位姿移动 */
+  let fxLayer = null
   let gaitClock = 0
   let speedEma = 0
   /* 材质状态机：只在切换帧写材质 */
@@ -519,6 +535,12 @@ onMounted(() => {
     } else {
       disposeRobotMesh(robot)
     }
+    /* 动效层挂在场景根节点，需单独卸载 */
+    if (fxLayer) {
+      scene.remove(fxLayer.group)
+      fxLayer.dispose()
+      fxLayer = null
+    }
     mixer?.stopAllAction()
     mixer = null
     glbMaterials = []
@@ -526,6 +548,16 @@ onMounted(() => {
     staleApplied = false
     alarmApplied = false
     robot = null
+  }
+
+  /** 在 GLB 模型上挂通用动效层：按包围盒顶部定位 LiDAR 与状态灯，地面铺扫描环。 */
+  function attachEffectLayer() {
+    if (!robot || isSvg) return
+    /* 先量取模型自身包围盒，再把动效层挂到场景根：避免 GLB 的 scale 缩掉效果尺寸 */
+    const bounds = measureRobotBounds(robot)
+    fxLayer = buildEffectLayer({ accentHex: accent, effects: props.effects, bounds, theme: readTheme() })
+    fxLayer.sync(robot)
+    scene.add(fxLayer.group)
   }
 
   /** 挂载 GLB 场景并接管渲染状态（调用方保证先移除旧 robot）。 */
@@ -543,6 +575,7 @@ onMounted(() => {
       mixer.clipAction(clip).play()
     }
     scene.add(robot)
+    attachEffectLayer()
   }
 
   function usePlaceholder(formFactor) {
@@ -557,8 +590,8 @@ onMounted(() => {
   function useProceduralRig(formFactor) {
     teardownRobot()
     rig = formFactor === 'DOG'
-      ? buildQuadrupedRig({ accentHex: accent, effects: props.effects })
-      : buildHumanoidRig({ accentHex: accent, effects: props.effects })
+      ? buildQuadrupedRig({ accentHex: accent, effects: props.effects, theme: readTheme() })
+      : buildHumanoidRig({ accentHex: accent, effects: props.effects, theme: readTheme() })
     robot = rig.group
     /* 可视化放大：真实机身在 15m 地图上只有几十像素，按「态势图标」比例放大才看得清结构 */
     robot.scale.setScalar(formFactor === 'DOG' ? 2.2 : 1.6)
@@ -586,8 +619,17 @@ onMounted(() => {
   mountRobotFor(props.formFactor)
 
   replaceRobotRef = mountRobotFor
-  /* 动效参数热更新：rig 内部持可变配置，拖动调节滑杆无需重建几何 */
-  applyEffectsRef = (effects) => rig?.setEffects(effects)
+  /* 动效参数热更新：rig 内部持可变配置，Bloom 直接改 pass 属性，均无需重建几何 */
+  applyEffectsRef = (effects) => {
+    rig?.setEffects(effects)
+    fxLayer?.setEffects(effects)
+    if (bloomPass) {
+      const cfg = resolveEffectConfig(effects)
+      bloomPass.strength = cfg.bloomStrength
+      bloomPass.radius = cfg.bloomRadius
+      bloomPass.threshold = cfg.bloomThreshold
+    }
+  }
 
   function disposeGroupChildren(group) {
     for (const child of [...group.children]) {
@@ -776,6 +818,18 @@ onMounted(() => {
         stale: wantStale
       })
     } else if (glbMaterials.length) {
+      /* GLB 形态（CAR 轮式底盘 / SPIDER 六足）：动效层与 rig 同源，灯色/节奏完全一致 */
+      if (fxLayer) {
+        fxLayer.sync(robot)
+        fxLayer.update({ dt: dtSec })
+        fxLayer.setStale(wantStale)
+        fxLayer.setBeaconStatus({
+          mode: props.mode,
+          battery: props.telemetry?.battery,
+          obstacleDistance: props.telemetry?.obstacleDistance,
+          stale: wantStale
+        })
+      }
       if (wantStale !== staleApplied) {
         staleApplied = wantStale
         glbMaterials.forEach((m) => {
@@ -856,7 +910,32 @@ onMounted(() => {
     window.__rs3d = {
       renderer, scene, camera, backend, canvas: renderer.domElement,
       getStageVisible: () => stageVisible,
+      getBloom: () => (bloomPass
+        ? { strength: bloomPass.strength, radius: bloomPass.radius, threshold: bloomPass.threshold }
+        : null),
       getMixer: () => ({ present: !!mixer, time: mixer?.time ?? 0, clipCount: mixer?.clipActions?.length ?? 0 }),
+      /* GLB 形态的动效层状态：用于确认灯效已挂载、尺寸按模型归一化、跟随本体位姿 */
+      getEffectLayer: () => {
+        if (!fxLayer) return null
+        let lidarSpin = 0
+        let rings = 0
+        let lights = 0
+        fxLayer.group.traverse((node) => {
+          if (node.geometry?.type === 'RingGeometry') rings += 1
+          if (node.type === 'PointLight') lights += 1
+          if (node.geometry?.type === 'TorusGeometry') lidarSpin = node.parent.rotation.y
+        })
+        return {
+          beacon: fxLayer.beaconMat.color.getHexString(),
+          intensity: Number(fxLayer.beaconMat.emissiveIntensity.toFixed(3)),
+          lidarSpin: Number(lidarSpin.toFixed(3)),
+          rings,
+          lights,
+          bounds: fxLayer.bounds,
+          position: { x: Number(fxLayer.group.position.x.toFixed(2)), z: Number(fxLayer.group.position.z.toFixed(2)) },
+          yaw: Number(fxLayer.group.rotation.y.toFixed(2))
+        }
+      },
     }
   }
 })

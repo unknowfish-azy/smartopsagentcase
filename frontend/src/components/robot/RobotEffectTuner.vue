@@ -15,7 +15,7 @@
       </div>
     </header>
 
-    <p class="fx-note">状态灯与 LiDAR 扫描的可视化参数，拖动实时作用于上方 3D 场景；仅四足 / 人形形态生效。</p>
+    <p class="fx-note">状态灯、LiDAR 扫描与后处理辉光的可视化参数，拖动实时作用于上方 3D 场景；所有形态（四足 / 人形 / 轮式 / 六足）均生效，辉光仅 WebGL 后端生效。</p>
 
     <div v-show="open" class="fx-grid">
       <label v-for="item in FIELDS" :key="item.key" class="fx-row" :title="item.hint">
@@ -64,7 +64,10 @@ const FIELDS = [
   { key: 'lidarAlarmSpeed', label: '告警转速', unit: 'rad/s', min: 0, max: 20, step: 0.5, decimals: 1, hint: '告警态下 LiDAR 的旋转速度' },
   { key: 'ringMaxOpacity', label: '扫描环亮度', unit: '', min: 0, max: 1, step: 0.02, decimals: 2, hint: '扫描环刚出现时的不透明度' },
   { key: 'ringStaleOpacity', label: '超时环亮度', unit: '', min: 0, max: 1, step: 0.02, decimals: 2, hint: '心跳超时后扫描环的不透明度' },
-  { key: 'scanPeriod', label: '扫描环周期', unit: 's', min: 0.6, max: 6, step: 0.2, decimals: 1, hint: '地面扫描环从内到外扩散一圈的耗时' }
+  { key: 'scanPeriod', label: '扫描环周期', unit: 's', min: 0.6, max: 6, step: 0.2, decimals: 1, hint: '地面扫描环从内到外扩散一圈的耗时' },
+  { key: 'bloomStrength', label: '辉光强度', unit: '', min: 0, max: 2.5, step: 0.05, decimals: 2, hint: '后处理 Bloom 强度，越大自发光溢出越明显（仅 WebGL 后端）' },
+  { key: 'bloomRadius', label: '辉光扩散', unit: '', min: 0, max: 1, step: 0.02, decimals: 2, hint: '辉光扩散半径，越小越收紧；过大容易整屏发白' },
+  { key: 'bloomThreshold', label: '辉光阈值', unit: '', min: 0, max: 1, step: 0.02, decimals: 2, hint: '触发泛光的亮度阈值，调低会让车身高光也开始泛光' }
 ]
 
 const values = computed(() => resolveEffectConfig(props.modelValue))

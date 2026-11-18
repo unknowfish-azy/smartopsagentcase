@@ -71,6 +71,45 @@ export function isSpeechSynthesisAvailable() {
 }
 
 /**
+ * 浏览器兜底朗读前，把会被逐字母念出的技术缩写换成中文读法。
+ *
+ * 后端的数字/单位规范化只在 piper-plus 合成前生效；神经语音整条链路失败、
+ * 回落到 speechSynthesis 时拿到的是原文，QPS 会被念成「Q U P S」这种字母串。
+ * 这里只改写「读出来一定是错的」的缩写，其余内容原样朗读，不改写语义。
+ */
+const SPEECH_ABBREVIATIONS = Object.freeze([
+  [/(?<![A-Za-z])QPS(?![A-Za-z])/gi, '每秒查询数'],
+  [/(?<![A-Za-z])IOPS(?![A-Za-z])/gi, '每秒读写次数'],
+  [/(?<![A-Za-z])dpi(?![A-Za-z])/gi, '每英寸点数'],
+  [/(?<![A-Za-z])fps(?![A-Za-z])/gi, '帧每秒'],
+  [/(?<![A-Za-z])mAh(?![A-Za-z])/gi, '毫安时'],
+  [/(?<![A-Za-z])kWh(?![A-Za-z])/gi, '千瓦时'],
+  [/(?<![A-Za-z])Wh(?![A-Za-z])/g, '瓦时'],
+  // ms/px 只在跟在数字后时替换，避免把 MS SQL 这类专有名词读成"毫秒"
+  [/(?<=\d)\s*ms(?![A-Za-z])/gi, '毫秒'],
+  [/(?<=\d)\s*px(?![A-Za-z])/gi, '像素'],
+  // 带斜杠的速率单位单独处理：读成「GB 每秒」而不是逐字母
+  [/(\d)\s*GB\/s/gi, '$1GB每秒'],
+  [/(\d)\s*MB\/s/gi, '$1MB每秒']
+])
+
+/**
+ * 生成浏览器兜底播报用的文本：去 markdown 噪音与裸链接，再替换缩写读法。
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizeSpeechText(text) {
+  let spoken = String(text ?? '')
+  spoken = spoken.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // markdown 链接只念文字
+  spoken = spoken.replace(/https?:\/\/\S+/g, '')           // 裸链接不念
+  spoken = spoken.replace(/[*`]+/g, '')                    // 加粗/行内代码标记不念
+  for (const [pattern, replacement] of SPEECH_ABBREVIATIONS) {
+    spoken = spoken.replace(pattern, replacement)
+  }
+  return spoken.replace(/\s+/g, ' ').trim()
+}
+
+/**
  * @param {{ onBoundary?: (charIndex: number) => void, onEnd?: () => void, onError?: (reason: string) => void, now?: () => number, setTimeout?: typeof setTimeout, clearTimeout?: typeof clearTimeout }} [handlers]
  */
 export function createPetSpeech(handlers = {}) {

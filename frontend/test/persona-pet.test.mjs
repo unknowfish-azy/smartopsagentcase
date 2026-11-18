@@ -12,7 +12,7 @@ import {
   usePersonaPetStore
 } from '../src/stores/personaPet.js'
 import { createLipSync, hasCoarseRun, visemeTimeline, VISEMES } from '../src/components/persona/useLipSync.js'
-import { createPetSpeech } from '../src/components/persona/petSpeech.js'
+import { createPetSpeech, normalizeSpeechText } from '../src/components/persona/petSpeech.js'
 
 const VIEWPORT = { viewportWidth: 1200, viewportHeight: 900 }
 
@@ -355,6 +355,38 @@ describe('桌宠语音（petSpeech）', () => {
     } finally {
       speech.dispose()
     }
+  })
+})
+
+describe('浏览器兜底播报文本净化（normalizeSpeechText）', () => {
+  test('会被逐字母念的缩写换成中文读法', () => {
+    assert.equal(
+      normalizeSpeechText('QPS 峰值 5000 万，IOPS 1200'),
+      '每秒查询数 峰值 5000 万，每秒读写次数 1200'
+    )
+    assert.equal(normalizeSpeechText('5dpi 与 5fps'), '5每英寸点数 与 5帧每秒')
+  })
+
+  test('单位按中文读法展开，前面有数字才替换 ms/px', () => {
+    assert.equal(normalizeSpeechText('5 GB/s 写入，延迟 20ms'), '5GB每秒 写入，延迟 20毫秒')
+    assert.equal(normalizeSpeechText('100px 宽、5mAh 电量'), '100像素 宽、5毫安时 电量')
+    // 专有名词不能被误伤
+    assert.equal(normalizeSpeechText('MS SQL 集群'), 'MS SQL 集群')
+  })
+
+  test('去掉 markdown 噪音与裸链接', () => {
+    assert.equal(normalizeSpeechText('**告警**：`CPU` 偏高'), '告警：CPU 偏高')
+    assert.equal(
+      normalizeSpeechText('详见[处置文档](https://example.com/runbook)'),
+      '详见处置文档'
+    )
+    assert.equal(normalizeSpeechText('看 https://example.com/a 即可'), '看 即可')
+  })
+
+  test('空值与非字符串不抛错', () => {
+    assert.equal(normalizeSpeechText(''), '')
+    assert.equal(normalizeSpeechText(null), '')
+    assert.equal(normalizeSpeechText(undefined), '')
   })
 })
 

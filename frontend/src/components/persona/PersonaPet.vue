@@ -127,7 +127,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AgentPersona from './AgentPersona.vue'
-import { createPetSpeech, isSpeechSynthesisAvailable } from './petSpeech.js'
+import { createPetSpeech, isSpeechSynthesisAvailable, normalizeSpeechText } from './petSpeech.js'
 import { createPetNeuralTts } from './petNeuralTts.js'
 import { hasCoarseRun } from './useLipSync.js'
 import { fetchTtsStatus, synthesizeSpeech, synthesizeSpeechWithTiming } from '../../api/tts.ts'
@@ -353,7 +353,8 @@ async function speakLine(text, isCurrent = () => true) {
   // 偶发失败（合成超时、自动播放被拦）重试一次，避免同一句台词突然换成浏览器音色
   if (await neuralTts.speak(text)) return true
   // 兜底开关关闭（默认）时宁可无声，也不跳浏览器机械音
-  return store.speechFallback && speechSupported && petSpeech.speak(text)
+  // 兜底走的是原文（后端规范化只在 piper-plus 合成前生效），先换掉 QPS 这类会被逐字母念的缩写
+  return store.speechFallback && speechSupported && petSpeech.speak(normalizeSpeechText(text))
 }
 
 /* 手势口播代际：新的一句开始后，旧句的合成结果不得再重试、也不得再驱动口型，
@@ -764,7 +765,7 @@ function speakReply(text, gesture) {
       return
     }
     // 兜底开关关闭（默认）时不回落浏览器语音：直接退化为纯文字口型（无声）
-    if (store.speechFallback && speechSupported && petSpeech.speak(text)) {
+    if (store.speechFallback && speechSupported && petSpeech.speak(normalizeSpeechText(text))) {
       lipAlign.value = 'text'
       personaRef.value?.speakText(text, { cps: 5 })
       return

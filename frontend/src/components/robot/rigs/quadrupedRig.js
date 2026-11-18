@@ -13,9 +13,12 @@
 
 import {
   AdditiveBlending, BoxGeometry, CircleGeometry, CylinderGeometry, DoubleSide, Group, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, RingGeometry, SphereGeometry, TorusGeometry
+  MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, SphereGeometry, TorusGeometry
 } from 'three'
-import { BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, scanRing } from './effects.js'
+import {
+  BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, resolveGlowGain
+} from './effects.js'
+import { buildScanRings } from './scanRings.js'
 
 /* 机身尺寸（米级，与真实 Go2 同一量级，方便和 1m 网格对照） */
 const BODY = Object.freeze({ length: 0.62, height: 0.115, width: 0.26 })
@@ -35,8 +38,10 @@ function lerpAngle(current, target, k) {
   return current + (target - current) * k
 }
 
-export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, effects } = {}) {
+export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, effects, theme = 'light' } = {}) {
   let fx = resolveEffectConfig(effects)
+  let themeApplied = theme
+  let glowGain = resolveGlowGain(theme)
   const group = new Group()
   const torso = new Group()
   torso.position.y = BODY_Y
@@ -223,25 +228,9 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
   }
 
   /* ---------- 地面扫描环 ---------- */
-  /* 从本体向外扩散淡出的雷达波：纯视觉层，depthWrite=false 不参与遮挡与拾取排序 */
-  const scanRingMat = new MeshBasicMaterial({
-    color: accentHex, transparent: true, opacity: 0.35, depthWrite: false,
-    side: DoubleSide, blending: AdditiveBlending
-  })
-  const scanRingGeo = new RingGeometry(0.8, 1, 48)
-  scanRingGeo.rotateX(-Math.PI / 2)
-  const scanRingMesh = new Mesh(scanRingGeo, scanRingMat)
-  scanRingMesh.position.y = 0.008
-  group.add(scanRingMesh)
-
-  /* 错峰副环：与主环相差半个周期，形成连续向外扩散的雷达波 */
-  const scanEchoMat = new MeshBasicMaterial({
-    color: accentHex, transparent: true, opacity: 0.18, depthWrite: false,
-    side: DoubleSide, blending: AdditiveBlending
-  })
-  const scanEchoMesh = new Mesh(scanRingGeo, scanEchoMat)
-  scanEchoMesh.position.y = 0.009
-  group.add(scanEchoMesh)
+  /* 从本体向外扩散淡出的雷达波：主环 + 副环 + 描边环由共享模块构建 */
+  const rings = buildScanRings({ color: accentHex, innerRadius: 0.8, outerRadius: 1, baseY: 0.008 })
+  group.add(rings.group)
 
   /* ---------- 运行时状态 ---------- */
   let staleApplied = false
@@ -286,33 +275,17 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
     beaconMat.emissiveIntensity = pulse.intensity
     beacon.scale.setScalar(pulse.scale)
     /* 外发光光晕 + 局部点光：把呼吸亮度放大成肉眼可见的光圈，并照亮周围机壳 */
-    const glowState = beaconGlow(pulse)
+    const glowState = beaconGlow(pulse, themeApplied)
     glowMat.opacity = glowState.opacity
     glow.scale.setScalar(glowState.scale)
-    beaconLight.intensity = pulse.intensity * 0.38
+    beaconLight.intensity = pulse.intensity * 0.38 * glowGain.light
     /* 扫描扇面亮度随旋转轻微呼吸，拖尾保持更暗 */
     const sweepWave = 0.5 + 0.5 * Math.sin(elapsed * 4)
     sweepMat.opacity = 0.24 + 0.16 * sweepWave
     trailMat.opacity = 0.08 + 0.06 * sweepWave
     beamMat.opacity = 0.36 + 0.24 * sweepWave
-    /* 地面扫描环：主环 + 错峰副环向外扩散并淡出 */
-    const wave = scanRing(elapsed, {
-      stale: staleApplied,
-      period: fx.scanPeriod,
-      maxOpacity: fx.ringMaxOpacity,
-      staleOpacity: fx.ringStaleOpacity
-    })
-    scanRingMesh.scale.setScalar(wave.scale)
-    scanRingMat.opacity = wave.opacity
-    const echo = scanRing(elapsed, {
-      stale: staleApplied,
-      period: fx.scanPeriod,
-      maxOpacity: fx.ringMaxOpacity,
-      staleOpacity: fx.ringStaleOpacity,
-      phase: 0.5
-    })
-    scanEchoMesh.scale.setScalar(echo.scale)
-    scanEchoMat.opacity = echo.opacity * 0.6
+    /* 地面扫描环：主环 + 错峰副环向外扩散并淡出（含描边） */
+    rings.update(elapsed, fx, staleApplied)
   }
 
   function setStale(stale) {
@@ -337,6 +310,12 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
     fx = resolveEffectConfig(next)
   }
 
+  /** 主题切换时更新光晕 / 点光衰减（深色主题下抑制加色过曝）。 */
+  function setTheme(next) {
+    themeApplied = next
+    glowGain = resolveGlowGain(next)
+  }
+
   function dispose() {
     group.traverse((node) => {
       node.geometry?.dispose?.()
@@ -353,6 +332,7 @@ export function buildQuadrupedRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, ef
     setStale,
     setBeaconStatus,
     setEffects,
+    setTheme,
     dispose
   }
 }

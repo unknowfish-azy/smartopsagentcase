@@ -19,7 +19,12 @@ import {
 } from '../src/components/robot/rigs/gait.js'
 import { buildQuadrupedRig } from '../src/components/robot/rigs/quadrupedRig.js'
 import { buildHumanoidRig } from '../src/components/robot/rigs/humanoidRig.js'
-import { BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, scanRing, DEFAULT_EFFECT_CONFIG } from '../src/components/robot/rigs/effects.js'
+import { buildEffectLayer, measureRobotBounds } from '../src/components/robot/rigs/effectLayer.js'
+import { BoxGeometry, Group, Mesh } from 'three'
+import {
+  BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, resolveGlowGain,
+  scanRing, DEFAULT_EFFECT_CONFIG
+} from '../src/components/robot/rigs/effects.js'
 
 test('resolveGait：低速归为站立，显式 STAND 优先，其余落到 TROT/WALK', () => {
   assert.equal(resolveGait('TROT', 0), 'STAND')
@@ -199,13 +204,18 @@ test('rig 状态灯接入业务状态：颜色与节奏随真实模式切换', (
   rig.update({ dt: 0.5, pose })
   assert.ok(Math.abs(lidarGroup.rotation.y - spinBefore - 0.5 * DEFAULT_EFFECT_CONFIG.lidarAlarmSpeed) < 1e-9)
 
+  /* 点光统一系数 0.38：急停态上限 1.5 × 0.38 = 0.57，仍是各状态中最亮 */
+  let faultLight = 0
+  rig.group.traverse((node) => { if (node.type === 'PointLight') faultLight = node.intensity })
+  assert.ok(faultLight > 0 && faultLight <= 0.57 + 1e-9)
+
   /* 心跳中断：灰色离线 */
   rig.setBeaconStatus({ stale: true })
   assert.equal(rig.beaconMat.color.getHex(), 0x8a8f98)
 
-  let ringCount = 0
-  rig.group.traverse((node) => { if (node.geometry?.type === 'RingGeometry') ringCount += 1 })
-  assert.equal(ringCount, 2, '主环 + 错峰副环')
+  const ringNames = []
+  rig.group.traverse((node) => { if (node.geometry?.type === 'RingGeometry') ringNames.push(node.name) })
+  assert.deepEqual(ringNames.sort(), ['fx-ring-echo', 'fx-ring-main', 'fx-ring-stroke-echo', 'fx-ring-stroke-main'], '主环 + 副环 + 两圈描边环')
 
   /* 状态灯还应驱动外发光与局部点光 */
   let lightIntensity = 0
@@ -235,11 +245,12 @@ test('humanoidRig 同样带 LiDAR 扫描与状态灯', () => {
   const pose = humanoidPose({ speed: 0.3, t: 0.15 })
   rig.update({ dt: 0.1, pose })
   assert.ok(rig.beaconMat.emissiveIntensity > 0)
-  let ringCount = 0
+  const ringNames = []
   rig.group.traverse((node) => {
-    if (node.geometry?.type === 'RingGeometry') ringCount += 1
+    if (node.geometry?.type === 'RingGeometry') ringNames.push(node.name)
   })
-  assert.equal(ringCount, 2, '主环 + 错峰副环')
+  assert.equal(ringNames.length, 4, '主环 + 副环 + 两圈描边环')
+  assert.ok(ringNames.includes('fx-ring-stroke-main'), '人形同样带描边环')
   rig.dispose()
 })
 
@@ -253,6 +264,14 @@ test('resolveEffectConfig：缺省回落默认值，只接受非负有限数字'
   assert.equal(resolveEffectConfig({ lidarSpeed: 'abc' }).lidarSpeed, DEFAULT_EFFECT_CONFIG.lidarSpeed)
   /* 未知键不污染配置 */
   assert.equal('foo' in resolveEffectConfig({ foo: 1 }), false)
+  /* Bloom 三项同样走覆盖 + 非负校验 */
+  const bloom = resolveEffectConfig({ bloomStrength: 2, bloomRadius: 0.2, bloomThreshold: 0.5 })
+  assert.deepEqual(
+    [bloom.bloomStrength, bloom.bloomRadius, bloom.bloomThreshold],
+    [2, 0.2, 0.5]
+  )
+  assert.equal(resolveEffectConfig({ bloomStrength: -1 }).bloomStrength, DEFAULT_EFFECT_CONFIG.bloomStrength)
+  assert.equal(resolveEffectConfig({ bloomThreshold: 'abc' }).bloomThreshold, DEFAULT_EFFECT_CONFIG.bloomThreshold)
 })
 
 test('可配置项生效：LiDAR 转速与扫描周期按覆盖值运行', () => {
@@ -278,8 +297,15 @@ test('beaconGlow：亮度越高光晕越大越亮，并钳制上限', () => {
   const bright = beaconGlow({ intensity: 3, scale: 1.15 })
   assert.ok(bright.opacity > dim.opacity)
   assert.ok(bright.scale > dim.scale)
-  assert.ok(beaconGlow({ intensity: 10, scale: 2 }).opacity <= 0.7)
+  assert.ok(beaconGlow({ intensity: 10, scale: 2 }).opacity <= 0.55)
   assert.equal(beaconGlow().scale, 1, '缺省脉冲不放大光晕')
+})
+
+test('beaconGlow：深色主题压低光晕避免加色 + Bloom 过曝，浅色主题保持原值', () => {
+  const pulse = { intensity: 2, scale: 1.1 }
+  assert.deepEqual(beaconGlow(pulse, 'light'), beaconGlow(pulse))
+  assert.ok(beaconGlow(pulse, 'dark').opacity < beaconGlow(pulse, 'light').opacity)
+  assert.equal(resolveGlowGain('dark').light < resolveGlowGain('light').light, true, '深色下点光衰减')
 })
 
 test('setEffects：运行中热更新参数，无需重建 rig', () => {
@@ -301,4 +327,74 @@ test('setEffects：运行中热更新参数，无需重建 rig', () => {
   rig.update({ dt: 1, pose })
   assert.ok(Math.abs(lidarGroup.rotation.y - (DEFAULT_EFFECT_CONFIG.lidarSpeed + 5 + DEFAULT_EFFECT_CONFIG.lidarSpeed)) < 1e-9)
   rig.dispose()
+})
+
+test('measureRobotBounds：按模型包围盒推导锚点与尺寸系数', () => {
+  const group = new Group()
+  const body = new Mesh(new BoxGeometry(2, 1, 0.5))
+  body.position.y = 0.5
+  group.add(body)
+
+  const bounds = measureRobotBounds(group)
+  assert.ok(Math.abs(bounds.topY - 1) < 1e-9, '顶部锚点取包围盒上沿')
+  assert.ok(Math.abs(bounds.minY) < 1e-9, '底面锚点取包围盒下沿')
+  assert.ok(Math.abs(bounds.footprint - 2) < 1e-9)
+  /* 以四足 rig 放大后的机身为 1.0 归一化 */
+  assert.ok(Math.abs(bounds.scale - 2 / 1.36) < 1e-9)
+
+  /* 缺省 bounds 时不抛错，尺寸回落到参考值 */
+  const layer = buildEffectLayer()
+  assert.ok(layer.group.children.length > 0)
+  layer.dispose()
+})
+
+test('effectLayer：GLB 形态同样带状态灯、LiDAR 与地面扫描环', () => {
+  const bounds = { centerX: 0, centerZ: 0, minY: 0, topY: 1, footprint: 2, scale: 1.5 }
+  const layer = buildEffectLayer({ accentHex: 0x5b8cff, bounds })
+
+  let lidarGroup = null
+  layer.group.traverse((node) => { if (node.geometry?.type === 'TorusGeometry') lidarGroup = node.parent })
+  assert.ok(lidarGroup, '应能找到 LiDAR 组件')
+
+  layer.update({ dt: 1 })
+  assert.ok(Math.abs(lidarGroup.rotation.y - DEFAULT_EFFECT_CONFIG.lidarSpeed) < 1e-9)
+  assert.ok(layer.beaconMat.emissiveIntensity > 0, '状态灯应有自发光')
+
+  /* 急停：红色快闪 + LiDAR 切到告警转速 */
+  layer.setBeaconStatus({ mode: 'E_STOP' })
+  assert.equal(layer.beaconMat.color.getHex(), 0xe5484d)
+  layer.update({ dt: 0.5 })
+  assert.ok(Math.abs(lidarGroup.rotation.y - (DEFAULT_EFFECT_CONFIG.lidarSpeed + 0.5 * DEFAULT_EFFECT_CONFIG.lidarAlarmSpeed)) < 1e-9)
+
+  const rings = []
+  layer.group.traverse((node) => { if (node.geometry?.type === 'RingGeometry') rings.push(node) })
+  assert.equal(rings.length, 4, '主环 + 错峰副环 + 两圈描边环')
+  const ringNames = rings.map((node) => node.name)
+  assert.ok(ringNames.includes('fx-ring-stroke-main') && ringNames.includes('fx-ring-stroke-echo'), '描边环应存在')
+  const mainRing = rings.find((node) => node.name === 'fx-ring-main')
+  assert.ok(Math.abs(mainRing.position.y - 0.008) < 1e-9, '扫描环贴在模型底面')
+  /* 浅色主题下加色环几乎不可见，描边环必须是常态混合且更实 */
+  assert.ok(rings.find((node) => node.name === 'fx-ring-stroke-main').material.opacity
+    > mainRing.material.opacity, '描边环应比加色环更明显')
+
+  /* 心跳超时：动效层整体半透明，灯色转灰 */
+  layer.setStale(true)
+  assert.ok(Math.abs(layer.beaconMat.opacity - 0.3) < 1e-9)
+  layer.setBeaconStatus({ stale: true })
+  assert.equal(layer.beaconMat.color.getHex(), 0x8a8f98)
+
+  /* 跟随本体位姿：位置与朝向同步，高度保持在地面 */
+  layer.sync({ position: { x: 1.2, y: 0, z: -0.4 }, rotation: { y: 0.7 } })
+  assert.ok(Math.abs(layer.group.position.x - 1.2) < 1e-9)
+  assert.ok(Math.abs(layer.group.position.z + 0.4) < 1e-9)
+  assert.ok(Math.abs(layer.group.rotation.y - 0.7) < 1e-9)
+
+  /* 面板热更新：转速按覆盖值运行 */
+  layer.setStale(false)
+  layer.setBeaconStatus({ mode: 'IDLE' })
+  layer.setEffects({ lidarSpeed: 4 })
+  const spinBefore = lidarGroup.rotation.y
+  layer.update({ dt: 1 })
+  assert.ok(Math.abs(lidarGroup.rotation.y - spinBefore - 4) < 1e-9)
+  layer.dispose()
 })

@@ -14,9 +14,12 @@
 
 import {
   AdditiveBlending, BoxGeometry, CircleGeometry, CylinderGeometry, DoubleSide, Group, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, RingGeometry, SphereGeometry, TorusGeometry
+  MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, SphereGeometry, TorusGeometry
 } from 'three'
-import { BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, scanRing } from './effects.js'
+import {
+  BEACON_STATUS, beaconGlow, beaconPulse, resolveBeaconStatus, resolveEffectConfig, resolveGlowGain
+} from './effects.js'
+import { buildScanRings } from './scanRings.js'
 
 const HIP_Y = 0.53
 const THIGH_LEN = 0.24
@@ -32,8 +35,10 @@ function dampingFactor(dt) {
   return 1 - Math.exp(-DAMPING * Math.max(0, Math.min(dt, 0.1)))
 }
 
-export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, effects } = {}) {
+export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, effects, theme = 'light' } = {}) {
   let fx = resolveEffectConfig(effects)
+  let themeApplied = theme
+  let glowGain = resolveGlowGain(theme)
   const group = new Group()
   const pelvis = new Group()
   pelvis.position.y = HIP_Y
@@ -246,24 +251,9 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
   }
 
   /* ---------- 地面扫描环 ---------- */
-  const scanRingMat = new MeshBasicMaterial({
-    color: accentHex, transparent: true, opacity: 0.35, depthWrite: false,
-    side: DoubleSide, blending: AdditiveBlending
-  })
-  const scanRingGeo = new RingGeometry(0.38, 0.5, 48)
-  scanRingGeo.rotateX(-Math.PI / 2)
-  const scanRingMesh = new Mesh(scanRingGeo, scanRingMat)
-  scanRingMesh.position.y = 0.006
-  group.add(scanRingMesh)
-
-  /* 错峰副环：与主环相差半个周期，形成连续扩散的雷达波 */
-  const scanEchoMat = new MeshBasicMaterial({
-    color: accentHex, transparent: true, opacity: 0.18, depthWrite: false,
-    side: DoubleSide, blending: AdditiveBlending
-  })
-  const scanEchoMesh = new Mesh(scanRingGeo, scanEchoMat)
-  scanEchoMesh.position.y = 0.007
-  group.add(scanEchoMesh)
+  /* 主环 + 副环 + 描边环由共享模块构建，与四足、GLB 动效层保持一致 */
+  const rings = buildScanRings({ color: accentHex, innerRadius: 0.38, outerRadius: 0.5, baseY: 0.006 })
+  group.add(rings.group)
 
   /* ---------- 运行时 ---------- */
   let staleApplied = false
@@ -320,33 +310,17 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
     beaconMat.emissiveIntensity = pulse.intensity
     beacon.scale.setScalar(pulse.scale)
     /* 外发光光晕 + 局部点光：把呼吸亮度放大成可见光圈 */
-    const glowState = beaconGlow(pulse)
+    const glowState = beaconGlow(pulse, themeApplied)
     glowMat.opacity = glowState.opacity
     glow.scale.setScalar(glowState.scale)
-    beaconLight.intensity = pulse.intensity * 0.38
+    beaconLight.intensity = pulse.intensity * 0.38 * glowGain.light
     /* 扇面 / 拖尾 / 光束亮度随扫描轻微呼吸 */
     const sweepWave = 0.5 + 0.5 * Math.sin(elapsed * 4)
     sweepMat.opacity = 0.24 + 0.16 * sweepWave
     trailMat.opacity = 0.08 + 0.06 * sweepWave
     beamMat.opacity = 0.36 + 0.24 * sweepWave
-    /* 地面扫描环：主环 + 错峰副环扩散淡出 */
-    const wave = scanRing(elapsed, {
-      stale: staleApplied,
-      period: fx.scanPeriod,
-      maxOpacity: fx.ringMaxOpacity,
-      staleOpacity: fx.ringStaleOpacity
-    })
-    scanRingMesh.scale.setScalar(wave.scale)
-    scanRingMat.opacity = wave.opacity
-    const echo = scanRing(elapsed, {
-      stale: staleApplied,
-      period: fx.scanPeriod,
-      maxOpacity: fx.ringMaxOpacity,
-      staleOpacity: fx.ringStaleOpacity,
-      phase: 0.5
-    })
-    scanEchoMesh.scale.setScalar(echo.scale)
-    scanEchoMat.opacity = echo.opacity * 0.6
+    /* 地面扫描环：主环 + 错峰副环扩散淡出（含描边） */
+    rings.update(elapsed, fx, staleApplied)
   }
 
   function setStale(stale) {
@@ -371,6 +345,12 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
     fx = resolveEffectConfig(next)
   }
 
+  /** 主题切换时更新光晕 / 点光衰减（深色主题下抑制加色过曝）。 */
+  function setTheme(next) {
+    themeApplied = next
+    glowGain = resolveGlowGain(next)
+  }
+
   function dispose() {
     group.traverse((node) => {
       node.geometry?.dispose?.()
@@ -378,5 +358,5 @@ export function buildHumanoidRig({ accentHex = 0x5b8cff, darkHex = 0x22262e, eff
     })
   }
 
-  return { kind: 'humanoid', group, materials, beaconMat, update, setStale, setBeaconStatus, setEffects, dispose }
+  return { kind: 'humanoid', group, materials, beaconMat, update, setStale, setBeaconStatus, setEffects, setTheme, dispose }
 }

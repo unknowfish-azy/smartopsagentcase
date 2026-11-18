@@ -22,7 +22,13 @@ export const DEFAULT_EFFECT_CONFIG = Object.freeze({
   /** 扫描环最高不透明度 */
   ringMaxOpacity: 0.34,
   /** 心跳超时时扫描环不透明度 */
-  ringStaleOpacity: 0.1
+  ringStaleOpacity: 0.1,
+  /** 后处理 Bloom 强度（仅 WebGL 后端生效） */
+  bloomStrength: 1.2,
+  /** 后处理 Bloom 扩散半径（0~1，越小越收紧） */
+  bloomRadius: 0.38,
+  /** 后处理 Bloom 触发阈值（0~1，越高只有更亮处才泛光） */
+  bloomThreshold: 0.7
 })
 
 /** 低电量阈值（0~1 比例或百分数均可，见 resolveBeaconStatus） */
@@ -35,11 +41,11 @@ export const NEAR_OBSTACLE_METERS = 0.5
  * source 指「用调节面板里的哪一档基准频率」，factor 是相对倍率，保证面板滑杆依然有效。
  */
 export const BEACON_STATUS = Object.freeze({
-  idle: { color: 0x5ad691, emissive: 0x1c5a37, source: 'idle', factor: 1, intensity: [0.9, 2.6], scaleAmp: 0.24 },
+  idle: { color: 0x5ad691, emissive: 0x1c5a37, source: 'idle', factor: 1, intensity: [0.6, 1.2], scaleAmp: 0.24 },
   running: { color: 0x5b8cff, emissive: 0x14336b, source: 'idle', factor: 1.6, intensity: [1.1, 3], scaleAmp: 0.28 },
   manual: { color: 0x57c8d8, emissive: 0x14505a, source: 'idle', factor: 1.2, intensity: [0.9, 2.4], scaleAmp: 0.22 },
-  warn: { color: 0xe3a008, emissive: 0x5a3d00, source: 'alarm', factor: 0.5, intensity: [1, 2.8], scaleAmp: 0.34 },
-  fault: { color: 0xe5484d, emissive: 0x7a1418, source: 'alarm', factor: 1, intensity: [1.2, 4.4], scaleAmp: 0.52 },
+  warn: { color: 0xe3a008, emissive: 0x5a3d00, source: 'alarm', factor: 0.5, intensity: [0.8, 1.4], scaleAmp: 0.34 },
+  fault: { color: 0xe5484d, emissive: 0x7a1418, source: 'alarm', factor: 1, intensity: [0.6, 1.5], scaleAmp: 0.52 },
   offline: { color: 0x8a8f98, emissive: 0x2a2d33, source: 'idle', factor: 1, intensity: [0.35, 0.35], scaleAmp: 0 }
 })
 
@@ -129,15 +135,36 @@ export function beaconPulse(t, {
 }
 
 /**
+ * 主题相关的光晕衰减系数。
+ *
+ * 光晕用加色混合：深色背景上没有底色可以「吃掉」加色，再叠上 Bloom 后状态灯会过曝成白球
+ * （状态色信息丢失），点光也会把周围机身染色；浅色背景本身能压住加色，保持原样。
+ */
+export const THEME_GLOW_GAIN = Object.freeze({
+  light: { glow: 1, light: 1 },
+  dark: { glow: 0.55, light: 0.3 }
+})
+
+/**
+ * 取当前主题下的光晕 / 点光衰减系数。
+ * @param {string} [theme] 'light' | 'dark'
+ * @returns {{glow: number, light: number}}
+ */
+export function resolveGlowGain(theme) {
+  return theme === 'dark' ? THEME_GLOW_GAIN.dark : THEME_GLOW_GAIN.light
+}
+
+/**
  * 状态灯外发光光晕参数：亮度越高光晕越亮、越大，让呼吸在缩略的 3D 视角里也清晰可见。
  * @param {{intensity?: number, scale?: number}} pulse beaconPulse 的返回值
+ * @param {string} [theme] 场景主题，深色主题下压低光晕避免过曝
  * @returns {{opacity: number, scale: number}}
  */
-export function beaconGlow(pulse) {
+export function beaconGlow(pulse, theme = 'light') {
   const intensity = Number(pulse?.intensity) || 0
   const scale = Number(pulse?.scale) || 1
   return {
-    opacity: Math.min(0.7, intensity * 0.22),
+    opacity: Math.min(0.55, intensity * 0.22) * resolveGlowGain(theme).glow,
     scale: 1 + (scale - 1) * 3.4
   }
 }
