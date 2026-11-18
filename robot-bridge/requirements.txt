@@ -1,3 +1,4 @@
-# 巡检机器人蓝牙桥依赖：仅 bleak（BLE）+ websockets（M1 连 backend 桥通道用），不加其他依赖
+# 巡检机器人真机桥依赖：BLE、串口及 backend WebSocket 桥通道
 bleak>=0.21
+pyserial>=3.5
 websockets>=11

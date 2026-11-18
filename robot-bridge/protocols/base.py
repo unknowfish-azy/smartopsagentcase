@@ -28,3 +28,15 @@ class ProtocolAdapter(ABC):
     @abstractmethod
     def decode_notification(self, data: bytes) -> dict | None:
         """设备 notify 原始字节 → 遥测/事件 dict；无法解析返回 None。"""
+
+    def reset(self) -> None:
+        """新传输会话开始时清理半包/待确认状态；有序号要求的适配器可自行覆盖。"""
+
+    def feed(self, data: bytes) -> list[dict]:
+        """流式输入统一出口；支持粘包的适配器应覆盖本方法。
+
+        返回消息形如 ``{"channel": "telemetry|event|ack", "payload": {...}}``。
+        旧的单包 BLE 适配器默认只产生遥测消息。
+        """
+        decoded = self.decode_notification(data)
+        return [] if decoded is None else [{"channel": "telemetry", "payload": decoded}]
