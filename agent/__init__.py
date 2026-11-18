@@ -6,6 +6,7 @@ SmartOpsAgent Agent Module.
 """
 
 __all__ = [
+    "assembly",
     "executor",
     "memory",
     "planner",

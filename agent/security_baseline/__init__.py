@@ -11,14 +11,32 @@
 不修改任何既有模块的行为。
 """
 
+from .audit_rotation import RotatingJsonlAuditSink
 from .audit_sink import (
     AuditSink,
     BaselineEvent,
     InMemoryAuditSink,
     JsonlAuditSink,
 )
+from .bootstrap import (
+    DEFAULT_AUDIT_DIR,
+    DEFAULT_AUDIT_FILE_NAME,
+    DEFAULT_MAX_BYTES,
+    SecurityBaselineBundle,
+    build_security_baseline,
+)
 from .compliance import ComplianceGuard
 from .engine import SecurityBaselineEngine
+from .integrity import (
+    PIN_FILE_NAME,
+    IntegrityDecision,
+    PluginIntegrityGuard,
+    compute_directory_hashes,
+    generate_pin_file,
+    load_pin_file,
+    verify_pin_signature,
+    write_pin_file,
+)
 from .loader import BaselineConfig, load_baseline
 from .models import (
     ArbitrationAction,
@@ -39,6 +57,11 @@ from .robot_guard import RobotActionGuard
 
 __all__ = [
     "SecurityBaselineEngine",
+    "SecurityBaselineBundle",
+    "build_security_baseline",
+    "DEFAULT_AUDIT_DIR",
+    "DEFAULT_AUDIT_FILE_NAME",
+    "DEFAULT_MAX_BYTES",
     "BaselineConfig",
     "load_baseline",
     "BaselineLayer",
@@ -60,5 +83,14 @@ __all__ = [
     "BaselineEvent",
     "InMemoryAuditSink",
     "JsonlAuditSink",
+    "RotatingJsonlAuditSink",
     "RobotActionGuard",
+    "IntegrityDecision",
+    "PluginIntegrityGuard",
+    "PIN_FILE_NAME",
+    "generate_pin_file",
+    "write_pin_file",
+    "load_pin_file",
+    "compute_directory_hashes",
+    "verify_pin_signature",
 ]
