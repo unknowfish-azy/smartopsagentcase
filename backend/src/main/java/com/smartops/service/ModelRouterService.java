@@ -1,16 +1,20 @@
 package com.smartops.service;
 
 import com.smartops.dto.model.ModelInvocationRequest;
+import com.smartops.service.modelconfig.ModelConfigRegistry;
+import com.smartops.service.modelconfig.ModelConfigSnapshot;
+import com.smartops.service.modelconfig.ModelRoutingProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 模型路由器：按请求意图 + connection 能力标签自动选模型连接。
@@ -33,9 +37,14 @@ import java.util.Set;
 public class ModelRouterService {
 
     private final JdbcTemplate jdbc;
+    private final ModelConfigRegistry configRegistry;
+    private final ModelRoutingProperties routingProperties;
 
-    public ModelRouterService(JdbcTemplate jdbc) {
+    public ModelRouterService(JdbcTemplate jdbc, ModelConfigRegistry configRegistry,
+                              ModelRoutingProperties routingProperties) {
         this.jdbc = jdbc;
+        this.configRegistry = configRegistry;
+        this.routingProperties = routingProperties;
     }
 
     /** 路由结果：一组候选连接（按优先级排序）。 */
@@ -52,6 +61,14 @@ public class ModelRouterService {
     public List<RoutedConnection> selectConnections(String group, Long ownerUserId,
                                                      ModelInvocationRequest request) {
         if (group == null || ownerUserId == null) return List.of();
+
+        // 已发布配置版本：走内存快照，不查配置表；灰度期按"用户+模型组"稳定分桶
+        ModelConfigSnapshot snapshot = configRegistry.resolve(ownerUserId, group);
+        if (snapshot != null) {
+            var routed = selectFromSnapshot(snapshot, group, ownerUserId, request);
+            if (!routed.isEmpty()) return routed;
+            log.debug("router snapshot has no candidate for group {}, falling back to working copy", group);
+        }
 
         // 1) 查 group 配置
         var groupMeta = jdbc.query(
@@ -96,6 +113,76 @@ public class ModelRouterService {
         }
 
         return List.of();
+    }
+
+    /* ── 快照路由：已发布版本优先，语义与工作区直读一致 ───────── */
+
+    private List<RoutedConnection> selectFromSnapshot(ModelConfigSnapshot snapshot, String slug,
+                                                      Long ownerUserId, ModelInvocationRequest request) {
+        if (snapshot.groups() == null) return List.of();
+        var group = snapshot.groups().stream()
+                .filter(g -> g.enabled() && slug.equals(g.slug())
+                        && ownerUserId.equals(g.ownerUserId()) && "PERSONAL".equals(g.scope()))
+                .findFirst().orElse(null);
+        if (group == null) return List.of();
+
+        List<ModelConfigSnapshot.Connection> connections = snapshot.connections() == null
+                ? List.of()
+                : snapshot.connections().stream()
+                        .filter(c -> c.enabled() && ownerUserId.equals(c.userId()))
+                        .toList();
+
+        if ("AUTO".equalsIgnoreCase(group.routeMode())) {
+            var routed = autoSelectFromSnapshot(connections, request, group.defaultCapability());
+            if (!routed.isEmpty()) return routed;
+            log.debug("router snapshot AUTO returned no candidates for group {}, falling back to MANUAL", slug);
+        }
+
+        List<ModelConfigSnapshot.Route> routes = group.routes() == null ? List.of() : group.routes();
+        Set<Long> healthy = healthyRouteIds(routes);
+        var ordered = routes.stream()
+                .filter(ModelConfigSnapshot.Route::enabled)
+                .filter(route -> healthy.contains(route.id()))
+                .filter(route -> connections.stream().anyMatch(c -> c.id().equals(route.connectionId())))
+                .sorted(Comparator.comparingInt(ModelConfigSnapshot.Route::priority)
+                        .thenComparing(Comparator.comparingInt(ModelConfigSnapshot.Route::weight).reversed()))
+                .map(route -> new RoutedConnection(route.connectionId(), route.id(), "MANUAL route", 1.0))
+                .toList();
+        if (!ordered.isEmpty()) return ordered;
+
+        if (!connections.isEmpty()) {
+            return List.of(new RoutedConnection(connections.get(0).id(), null, "FALLBACK default", 0.5));
+        }
+        return List.of();
+    }
+
+    /** 只读一次库拿路由健康状态；配置本身仍全部来自快照。 */
+    private Set<Long> healthyRouteIds(List<ModelConfigSnapshot.Route> routes) {
+        if (routes.isEmpty()) return Set.of();
+        String ids = routes.stream().map(route -> String.valueOf(route.id())).collect(Collectors.joining(","));
+        return new HashSet<>(jdbc.query(
+                "SELECT id FROM model_gateway_route WHERE id IN (" + ids + ") "
+                        + "AND (unhealthy_until IS NULL OR unhealthy_until <= CURRENT_TIMESTAMP)",
+                (rs, n) -> rs.getLong("id")));
+    }
+
+    private List<RoutedConnection> autoSelectFromSnapshot(List<ModelConfigSnapshot.Connection> connections,
+                                                          ModelInvocationRequest request, String defaultCap) {
+        Set<String> signals = extractCapabilitySignals(request);
+        if (defaultCap != null && !defaultCap.isBlank()) signals.add(defaultCap);
+
+        List<RoutedConnection> scored = new ArrayList<>();
+        for (ModelConfigSnapshot.Connection connection : connections) {
+            List<String> caps = connection.capabilities() == null ? List.of() : connection.capabilities();
+            double score = score(signals, caps, request);
+            String reason = signals.isEmpty()
+                    ? "default chat"
+                    : "matched " + caps.stream().filter(signals::contains)
+                            .reduce((a, b) -> a + "," + b).orElse("none");
+            scored.add(new RoutedConnection(connection.id(), null, reason, score));
+        }
+        scored.sort((a, b) -> Double.compare(b.score(), a.score()));
+        return scored;
     }
 
     /* ── AUTO 路由：意图→能力→连接 ─────────────────────────── */
@@ -145,35 +232,29 @@ public class ModelRouterService {
      * 意图→能力信号抽取。借鉴 ExperienceRecall 教训：用"最长优先 + 输入清洗"避免
      * 短 pattern 抢先命中导致的误判（如 qwen3 误覆盖 qwen3.7-plus）。
      */
+    private List<ModelRoutingProperties.IntentPattern> orderedPatterns() {
+        List<ModelRoutingProperties.IntentPattern> source = routingProperties.getIntentPatterns();
+        if (source == null || source.isEmpty()) {
+            source = ModelRoutingProperties.defaultPatterns();
+        }
+        return source.stream()
+                .filter(pattern -> pattern.getKeyword() != null && !pattern.getKeyword().isBlank()
+                        && pattern.getCapability() != null)
+                .sorted(Comparator.comparingInt(
+                        (ModelRoutingProperties.IntentPattern pattern) -> pattern.getKeyword().length()).reversed())
+                .toList();
+    }
+
     private Set<String> extractCapabilitySignals(ModelInvocationRequest request) {
         Set<String> out = new HashSet<>();
         String text = (request.getSystemPrompt() == null ? "" : request.getSystemPrompt()) + " "
                 + (request.getPrompt() == null ? "" : request.getPrompt());
         text = text.toLowerCase();
 
-        // 关键词 → 能力信号（长 pattern 放前面，先匹配先锁死）
-        String[][] patterns = {
-                // vision：图像理解
-                {"看图", "vision"}, {"截图", "vision"}, {"图片", "vision"},
-                {"图像", "vision"}, {"vision", "vision"}, {"理解图", "vision"},
-                // reasoning：复杂诊断（高 temperature 也暗示需要推理）
-                {"诊断", "reasoning"}, {"分析", "reasoning"}, {"排查", "reasoning"},
-                {"根因", "reasoning"}, {"复杂", "reasoning"}, {"规划", "reasoning"},
-                {"temperature", "reasoning"},  // 用户显式要高 temperature → 推理
-                // tool-calling：agent 工具链
-                {"工具", "tool-calling"}, {"调用", "tool-calling"}, {"agent", "tool-calling"},
-                {"function", "tool-calling"}, {"tool", "tool-calling"},
-                // fast：简单问答
-                {"简单", "fast"}, {"快速", "fast"}, {"快", "fast"},
-                // cheap：成本敏感
-                {"便宜", "cheap"}, {"省钱", "cheap"}, {"cheap", "cheap"},
-        };
-
-        // 长 pattern 优先排序（避免 "快" 抢先匹配 "快速"）
-        Arrays.sort(patterns, (a, b) -> Integer.compare(b[0].length(), a[0].length()));
-        for (String[] p : patterns) {
-            if (text.contains(p[0])) {
-                out.add(p[1]);
+        // 关键词 → 能力信号：词表来自配置（运营可改），长 pattern 优先匹配
+        for (ModelRoutingProperties.IntentPattern pattern : orderedPatterns()) {
+            if (text.contains(pattern.getKeyword())) {
+                out.add(pattern.getCapability());
                 break;  // 一种信号命中一次即可，避免同词多义
             }
         }

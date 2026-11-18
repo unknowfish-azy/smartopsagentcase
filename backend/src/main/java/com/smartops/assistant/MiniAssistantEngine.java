@@ -44,11 +44,12 @@ public class MiniAssistantEngine {
 
     @Autowired
     public MiniAssistantEngine(ObjectMapper mapper,
-            @Value("${smartops.mini.base-url:http://127.0.0.1:11434}") String baseUrl,
+            @Value("${smartops.model.local.base-url:http://127.0.0.1:11434}") String baseUrl,
             @Value("${smartops.mini.model:qwen3:1.7b}") String model,
-            @Value("${smartops.mini.knowledge-root:../knowledge}") String knowledgeRoot) {
+            @Value("${smartops.mini.knowledge-root:../knowledge}") String knowledgeRoot,
+            @Value("${smartops.model.local.timeout-seconds:120}") int timeoutSeconds) {
         this(mapper, baseUrl, model, knowledgeRoot, Duration.ofSeconds(2),
-                Duration.ofSeconds(120), Duration.ofSeconds(3), true);
+                Duration.ofSeconds(timeoutSeconds), Duration.ofSeconds(3), true);
     }
 
     MiniAssistantEngine(ObjectMapper mapper, String baseUrl, String model, String knowledgeRoot,

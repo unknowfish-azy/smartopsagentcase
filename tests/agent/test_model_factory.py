@@ -15,7 +15,8 @@ from agent.planner.react_agent import build_react_planner
 @pytest.fixture(autouse=True)
 def _clean_llm_env(monkeypatch):
     for key in ("LLM_PROVIDER", "LLM_MODEL", "LLM_BASE_URL", "LLM_API_KEY",
-                "LLM_TIMEOUT", "LLM_TEMPERATURE", "LLM_MAX_TOKENS", "LLM_FALLBACK_PROVIDER"):
+                "LLM_TIMEOUT", "LLM_TEMPERATURE", "LLM_MAX_TOKENS", "LLM_FALLBACK_PROVIDER",
+                "SMARTOPS_MODEL_LOCAL_BASE_URL"):
         monkeypatch.delenv(key, raising=False)
 
 

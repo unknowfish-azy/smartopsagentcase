@@ -6,6 +6,8 @@ Provider 实现早已就绪（openai-compatible / mock / fallback 降级链）�
     LLM_PROVIDER   mock（默认，零依赖安全兜底）/ ollama / openai-compatible
     LLM_MODEL      模型名，openai-compatible 时填大模型（如 kimi-k2、deepseek-chat、qwen-plus）
     LLM_BASE_URL   openai-compatible 必填，需含 OpenAI 兼容路径（通常以 /v1 结尾）
+    SMARTOPS_MODEL_LOCAL_BASE_URL  本地模型运行时地址，与 Java 后端共用；
+                   ollama 未设 LLM_BASE_URL 时使用，缺省 http://localhost:11434/v1
     LLM_API_KEY    openai-compatible 必填（大模型密钥）；ollama 可留空（自动用占位）
     LLM_TIMEOUT    可选，默认 60s
     LLM_TEMPERATURE 可选，默认 0.2（研判类任务低温更稳）
@@ -63,8 +65,13 @@ def _build_openai_compatible(*, ollama: bool = False) -> OpenAICompatibleModelPr
     api_key = os.getenv("LLM_API_KEY", "").strip()
 
     if ollama:
-        # Ollama 本地服务：base_url 缺省补 /v1，api_key 不校验用占位
-        base_url = base_url or _OLLAMA_DEFAULT_BASE_URL
+        # Ollama 本地服务：地址与 Java 后端共用 SMARTOPS_MODEL_LOCAL_BASE_URL，
+        # LLM_BASE_URL 仍可单独覆盖；base_url 缺省补 /v1，api_key 不校验用占位
+        base_url = (
+            base_url
+            or os.getenv("SMARTOPS_MODEL_LOCAL_BASE_URL", "").strip()
+            or _OLLAMA_DEFAULT_BASE_URL
+        )
         if not base_url.rstrip("/").endswith("/v1"):
             base_url = base_url.rstrip("/") + "/v1"
         api_key = api_key or "ollama"

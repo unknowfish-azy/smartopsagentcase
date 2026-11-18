@@ -1,6 +1,8 @@
 package com.smartops.service;
 
 import com.smartops.dto.model.ModelInvocationRequest;
+import com.smartops.service.modelconfig.ModelConfigRegistry;
+import com.smartops.service.modelconfig.ModelRoutingProperties;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,7 +20,9 @@ import static org.mockito.Mockito.mock;
 class ModelRouterServiceTest {
 
     private final JdbcTemplate jdbc = mock(JdbcTemplate.class);
-    private final ModelRouterService router = new ModelRouterService(jdbc);
+    private final ModelConfigRegistry configRegistry = mock(ModelConfigRegistry.class);
+    private final ModelRouterService router = new ModelRouterService(jdbc, configRegistry,
+            new ModelRoutingProperties());
 
     private ModelInvocationRequest request(String prompt) {
         var r = new ModelInvocationRequest();

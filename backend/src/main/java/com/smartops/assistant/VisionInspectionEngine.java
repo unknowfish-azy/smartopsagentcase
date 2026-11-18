@@ -51,10 +51,14 @@ public class VisionInspectionEngine {
 
     @Autowired
     public VisionInspectionEngine(ObjectMapper mapper,
-            @Value("${smartops.vision.base-url:http://127.0.0.1:11434}") String baseUrl,
+            @Value("${smartops.model.local.base-url:http://127.0.0.1:11434}") String baseUrl,
+            @Value("${smartops.model.local.timeout-seconds:120}") int timeoutSeconds,
             @Value("${smartops.vision.model:}") String model) {
         this.mapper = mapper;
         this.baseUri = loopbackUri(baseUrl);
+        if (timeoutSeconds <= 0) {
+            throw new IllegalArgumentException("视觉巡检超时配置无效：smartops.model.local.timeout-seconds 必须为正数");
+        }
         // 空串 = 未配置（fail-closed，analyze 时拒绝）；非空但非法 = 配置错误，启动即失败。
         if (model != null && !model.isBlank()) {
             if (model.length() > 128
@@ -64,7 +68,7 @@ public class VisionInspectionEngine {
             }
         }
         this.model = model == null ? "" : model.strip();
-        this.generationTimeout = Duration.ofSeconds(120);
+        this.generationTimeout = Duration.ofSeconds(timeoutSeconds);
         this.transport = new OllamaTransport(Duration.ofSeconds(2));
     }
 

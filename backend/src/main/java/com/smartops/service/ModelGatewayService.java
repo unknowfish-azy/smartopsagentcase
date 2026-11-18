@@ -3,6 +3,7 @@ package com.smartops.service;
 import com.smartops.dto.model.ModelInvocationRequest;
 import com.smartops.dto.model.ModelInvocationResponse;
 import com.smartops.exception.BusinessException;
+import com.smartops.service.modelconfig.ModelConfigRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class ModelGatewayService {
     private final ModelConnectionService connections;
     private final ModelSemanticCacheService semanticCache;
     private final ModelRouterService router;
+    private final ModelConfigRegistry configRegistry;
     private final SecureRandom random = new SecureRandom();
 
     public record IssuedKey(Long id, String name, String key, String prefix, String scope, Instant expiresAt) {}
@@ -57,13 +59,15 @@ public class ModelGatewayService {
         if (group == null || !group.matches("[a-zA-Z0-9._-]{1,120}")) throw new BusinessException(400, "Invalid model group");
         if (!"PERSONAL".equals(principal.scope())) throw new BusinessException(403, "Key scope not supported");
         enforceQuota(principal.id(), principal.ownerUserId(), group);
+        // 审计归因：灰度期同一用户可能由 canary 版本服务，不能统一记 stable 版本号
+        Integer configVersion = configRegistry.resolveVersion(principal.ownerUserId(), group);
         long started = System.nanoTime();
 
         // 语义缓存（LLM 推理加速）：精确/语义命中直接返回，省下一次完整的模型调用
         ModelInvocationResponse cached = semanticCache.lookup(principal.id(), group, request).orElse(null);
         if (cached != null) {
             cached.setCached(Boolean.TRUE);
-            recordSafely(principal.id(), group, cached.getModel(), "CACHE_HIT", elapsed(started), cached.getUsage());
+            recordSafely(principal.id(), group, configVersion, cached.getModel(), "CACHE_HIT", elapsed(started), cached.getUsage());
             return cached;
         }
 
@@ -78,14 +82,14 @@ public class ModelGatewayService {
                 if (route.routeId() != null) markRouteSuccess(route.routeId());
                 semanticCache.store(principal.id(), group, request, result);
                 result.setCached(Boolean.FALSE);
-                recordSafely(principal.id(), group, result.getModel(), "SUCCESS", elapsed(started), result.getUsage());
+                recordSafely(principal.id(), group, configVersion, result.getModel(), "SUCCESS", elapsed(started), result.getUsage());
                 return result;
             } catch (RuntimeException ex) {
                 if (route.routeId() != null) markRouteFailure(route.routeId(), ex);
                 lastFailure = ex;
             }
         }
-        recordSafely(principal.id(), group, null, "FAILED", elapsed(started), Map.of());
+        recordSafely(principal.id(), group, configVersion, null, "FAILED", elapsed(started), Map.of());
         throw lastFailure == null ? new BusinessException(503, "Model provider unavailable") : lastFailure;
     }
 
@@ -221,7 +225,7 @@ public class ModelGatewayService {
     public Map<String, Object> analytics(Long ownerUserId) {
         if (ownerUserId == null) throw new BusinessException(401, "User required");
         Map<String, Object> summary = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(status='SUCCESS'),0) successes, COALESCE(AVG(duration_ms),0) latency, COALESCE(SUM(total_tokens),0) tokens FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? AND i.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.<String,Object>of("calls", rs.getLong("calls"), "successes", rs.getLong("successes"), "latencyMs", Math.round(rs.getDouble("latency")), "tokens", rs.getLong("tokens")), ownerUserId).stream().findFirst().orElse(Map.of("calls", 0L, "successes", 0L, "latencyMs", 0L, "tokens", 0L));
-        List<Map<String, Object>> recent = jdbc.query("SELECT i.group_slug,i.status,i.duration_ms,i.total_tokens,i.created_at FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? ORDER BY i.created_at DESC LIMIT 20", (rs, n) -> Map.of("group", rs.getString("group_slug"), "status", rs.getString("status"), "durationMs", rs.getLong("duration_ms"), "tokens", rs.getObject("total_tokens") == null ? 0L : rs.getLong("total_tokens"), "createdAt", rs.getTimestamp("created_at").toInstant().toString()), ownerUserId);
+        List<Map<String, Object>> recent = jdbc.query("SELECT i.group_slug,i.status,i.duration_ms,i.total_tokens,i.config_version,i.created_at FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? ORDER BY i.created_at DESC LIMIT 20", (rs, n) -> Map.of("group", rs.getString("group_slug"), "status", rs.getString("status"), "durationMs", rs.getLong("duration_ms"), "tokens", rs.getObject("total_tokens") == null ? 0L : rs.getLong("total_tokens"), "configVersion", rs.getObject("config_version") == null ? 0 : rs.getInt("config_version"), "createdAt", rs.getTimestamp("created_at").toInstant().toString()), ownerUserId);
         return Map.of("summary", summary, "recent", recent);
     }
 
@@ -259,7 +263,7 @@ public class ModelGatewayService {
         int updated = jdbc.update("DELETE FROM model_gateway_route WHERE id=? AND group_id IN (SELECT id FROM model_gateway_group WHERE owner_user_id=? AND scope='PERSONAL')", routeId, ownerUserId);
         if (updated == 0) throw new BusinessException(404, "Model route unavailable");
     }
-    private void recordSafely(Long keyId, String group, String model, String status, long duration, Map<String,Object> usage) { try { jdbc.update("INSERT INTO model_gateway_invocation(id,key_id,group_slug,model_name,status,duration_ms,input_tokens,output_tokens,total_tokens) VALUES(?,?,?,?,?,?,?,?,?)", nextId(), keyId, group, model, status, duration, number(usage,"prompt_tokens"), number(usage,"completion_tokens"), number(usage,"total_tokens")); } catch (RuntimeException ex) { org.slf4j.LoggerFactory.getLogger(ModelGatewayService.class).warn("Gateway audit write failed for group {}", group); } }
+    private void recordSafely(Long keyId, String group, Integer configVersion, String model, String status, long duration, Map<String,Object> usage) { try { jdbc.update("INSERT INTO model_gateway_invocation(id,key_id,group_slug,model_name,config_version,status,duration_ms,input_tokens,output_tokens,total_tokens) VALUES(?,?,?,?,?,?,?,?,?,?)", nextId(), keyId, group, model, configVersion, status, duration, number(usage,"prompt_tokens"), number(usage,"completion_tokens"), number(usage,"total_tokens")); } catch (RuntimeException ex) { org.slf4j.LoggerFactory.getLogger(ModelGatewayService.class).warn("Gateway audit write failed for group {}", group); } }
     private Long number(Map<String,Object> map, String key) { Object value = map.get(key); return value instanceof Number n ? n.longValue() : null; }
     private long elapsed(long start) { return (System.nanoTime() - start) / 1_000_000; }
     private String randomPart(int length) { byte[] bytes = new byte[length]; random.nextBytes(bytes); return HexFormat.of().formatHex(bytes); }

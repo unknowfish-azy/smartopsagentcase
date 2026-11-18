@@ -260,7 +260,7 @@ class MiniAssistantEngineTest {
             "http://user:pass@127.0.0.1:11434", "http://127.0.0.1:11434/proxy",
             "http://127.0.0.1:11434?host=cloud", "http://127.0.0.1:11434#fragment", "file:///tmp/model"})
     void refusesUnsafeBaseUrlBeforeNetworkAccess(String unsafeUrl) {
-        assertThatThrownBy(() -> new MiniAssistantEngine(mapper, unsafeUrl, MODEL, knowledge.toString()))
+        assertThatThrownBy(() -> new MiniAssistantEngine(mapper, unsafeUrl, MODEL, knowledge.toString(), 120))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(tagsCalls).hasValue(0);
     }
@@ -268,14 +268,14 @@ class MiniAssistantEngineTest {
     @ParameterizedTest
     @ValueSource(strings = {"qwen3:cloud", "gpt-oss:120b-cloud", "https://ollama.com/model", "../model", ""})
     void refusesRemoteOrMalformedModelConfiguration(String model) {
-        assertThatThrownBy(() -> new MiniAssistantEngine(mapper, baseUrl, model, knowledge.toString()))
+        assertThatThrownBy(() -> new MiniAssistantEngine(mapper, baseUrl, model, knowledge.toString(), 120))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void allowsLocalhostButKeepsRequestsOnLoopback() {
         MiniAssistantEngine engine = new MiniAssistantEngine(mapper,
-                baseUrl.replace("127.0.0.1", "localhost"), MODEL, knowledge.toString());
+                baseUrl.replace("127.0.0.1", "localhost"), MODEL, knowledge.toString(), 120);
         assertThat(engine.status().available()).isTrue();
     }
 

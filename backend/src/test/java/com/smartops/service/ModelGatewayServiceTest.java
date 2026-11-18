@@ -3,6 +3,7 @@ package com.smartops.service;
 import com.smartops.exception.BusinessException;
 import com.smartops.dto.model.ModelInvocationRequest;
 import com.smartops.dto.model.ModelInvocationResponse;
+import com.smartops.service.modelconfig.ModelConfigRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -24,7 +25,8 @@ class ModelGatewayServiceTest {
     private final ModelConnectionService connections = mock(ModelConnectionService.class);
     private final ModelSemanticCacheService cache = mock(ModelSemanticCacheService.class);
     private final ModelRouterService router = mock(ModelRouterService.class);
-    private final ModelGatewayService gateway = new ModelGatewayService(jdbc, connections, cache, router);
+    private final ModelConfigRegistry configRegistry = mock(ModelConfigRegistry.class);
+    private final ModelGatewayService gateway = new ModelGatewayService(jdbc, connections, cache, router, configRegistry);
 
     @Test void unsupportedScopeCannotIssueKey() {
         assertEquals(400, assertThrows(BusinessException.class,
@@ -61,6 +63,25 @@ class ModelGatewayServiceTest {
         var result = gateway.invoke(principal, "ops", new ModelInvocationRequest());
 
         assertEquals("ok", result.getContent());
+    }
+
+    @Test void auditRecordsResolvedConfigVersionInsteadOfStable() {
+        var principal = new ModelGatewayService.GatewayPrincipal(4L, 9L, "PERSONAL");
+        when(jdbc.query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), eq(4L)))
+                .thenReturn(List.of(Map.of("requests", -1L, "tokens", -1L)));
+        when(router.selectConnections(eq("ops"), eq(9L), any(ModelInvocationRequest.class)))
+                .thenReturn(List.of(new ModelRouterService.RoutedConnection(12L, null, "MANUAL route", 1.0)));
+        when(connections.invoke(eq(9L), eq(12L), any(ModelInvocationRequest.class)))
+                .thenReturn(ModelInvocationResponse.builder().model("backup").content("ok").usage(Map.of()).build());
+        // 灰度分桶把该用户分到 v7：审计必须记录 7，而不是 stable 版本号
+        when(configRegistry.resolveVersion(9L, "ops")).thenReturn(7);
+
+        gateway.invoke(principal, "ops", new ModelInvocationRequest());
+
+        org.mockito.ArgumentCaptor<Object[]> args = org.mockito.ArgumentCaptor.forClass(Object[].class);
+        org.mockito.Mockito.verify(jdbc).update(
+                org.mockito.ArgumentMatchers.startsWith("INSERT INTO model_gateway_invocation"), args.capture());
+        assertEquals(7, args.getValue()[4]);
     }
 
     @Test void groupQuotaStillAppliesWhenKeyHasNoLimit() {
