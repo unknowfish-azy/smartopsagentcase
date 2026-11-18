@@ -1,5 +1,1093 @@
 [
   {
+    "question": "第1课 AI Systems Performance Engineering概述怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\01 第1课 AI Systems Performance Engineering概述.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第1课 AI Systems Performance Engineering概述 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\01 第1课 AI Systems Performance Engineering概述.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第2课 AI系统性能指标体系怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\02 第2课 AI系统性能指标体系.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第2课 AI系统性能指标体系 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\02 第2课 AI系统性能指标体系.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第3课 现代AI系统全栈架构怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\03 第3课 现代AI系统全栈架构.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第3课 现代AI系统全栈架构 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\03 第3课 现代AI系统全栈架构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第4课 DeepSeek软件优化案例怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\04 第4课 DeepSeek软件优化案例.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第4课 DeepSeek软件优化案例 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\04 第4课 DeepSeek软件优化案例.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第5课 GPU架构深度解析怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\05 第5课 GPU架构深度解析.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第5课 GPU架构深度解析 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\05 第5课 GPU架构深度解析.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第6课 GPU Memory体系优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\06 第6课 GPU Memory体系优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第6课 GPU Memory体系优化 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\06 第6课 GPU Memory体系优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第7课 Tensor Core与低精度计算优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\07 第7课 Tensor Core与低精度计算优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第7课 Tensor Core与低精度计算优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\07 第7课 Tensor Core与低精度计算优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第8课 NVLink NVSwitch与AI集群互联怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\08 第8课 NVLink NVSwitch与AI集群互联.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第8课 NVLink NVSwitch与AI集群互联 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\08 第8课 NVLink NVSwitch与AI集群互联.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第9课 Linux Docker Kubernetes GPU性能优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\09 第9课 Linux Docker Kubernetes GPU性能优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第9课 Linux Docker Kubernetes GPU性能优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\09 第9课 Linux Docker Kubernetes GPU性能优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第10课 CUDA编程模型怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\10 第10课 CUDA编程模型.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第10课 CUDA编程模型 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\10 第10课 CUDA编程模型.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第11课 GPU Memory访问优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\11 第11课 GPU Memory访问优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第11课 GPU Memory访问优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\11 第11课 GPU Memory访问优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第12课 GPU性能分析方法怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\12 第12课 GPU性能分析方法.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第12课 GPU性能分析方法 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\12 第12课 GPU性能分析方法.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第13课 Kernel Fusion与高性能算子开发怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\13 第13课 Kernel Fusion与高性能算子开发.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第13课 Kernel Fusion与高性能算子开发 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\13 第13课 Kernel Fusion与高性能算子开发.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第14课 Triton Kernel开发怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\14 第14课 Triton Kernel开发.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第14课 Triton Kernel开发 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\14 第14课 Triton Kernel开发.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第15课 大模型分布式训练体系怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\15 第15课 大模型分布式训练体系.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第15课 大模型分布式训练体系 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\15 第15课 大模型分布式训练体系.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第16课 NCCL深度优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\16 第16课 NCCL深度优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第16课 NCCL深度优化 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\16 第16课 NCCL深度优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第17课 GPU通信性能优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\17 第17课 GPU通信性能优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第17课 GPU通信性能优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\17 第17课 GPU通信性能优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第18课 FSDP与超大模型训练优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\18 第18课 FSDP与超大模型训练优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第18课 FSDP与超大模型训练优化 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\18 第18课 FSDP与超大模型训练优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第19课 PyTorch性能分析体系怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\19 第19课 PyTorch性能分析体系.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第19课 PyTorch性能分析体系 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\19 第19课 PyTorch性能分析体系.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第20课 torch compile深度解析怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\20 第20课 torch compile深度解析.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第20课 torch compile深度解析 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\20 第20课 torch compile深度解析.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第21课 CUDA Graph与Runtime优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\21 第21课 CUDA Graph与Runtime优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第21课 CUDA Graph与Runtime优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\21 第21课 CUDA Graph与Runtime优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第22课 AI Runtime优化思想怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\22 第22课 AI Runtime优化思想.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第22课 AI Runtime优化思想 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\22 第22课 AI Runtime优化思想.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第23课 LLM推理系统架构怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\23 第23课 LLM推理系统架构.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第23课 LLM推理系统架构 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\23 第23课 LLM推理系统架构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第24课 Continuous Batching与Scheduler优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\24 第24课 Continuous Batching与Scheduler优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第24课 Continuous Batching与Scheduler优化 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\24 第24课 Continuous Batching与Scheduler优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第25课 KV Cache性能优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\25 第25课 KV Cache性能优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第25课 KV Cache性能优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\25 第25课 KV Cache性能优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第26课 Speculative Decoding与推理加速怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\26 第26课 Speculative Decoding与推理加速.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第26课 Speculative Decoding与推理加速 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\26 第26课 Speculative Decoding与推理加速.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第27课 Disaggregated Inference架构怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\27 第27课 Disaggregated Inference架构.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "第27课 Disaggregated Inference架构 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\27 第27课 Disaggregated Inference架构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "第28课 MoE推理与未来AI Runtime怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\28 第28课 MoE推理与未来AI Runtime.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 第28课 MoE推理与未来AI Runtime 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\28 第28课 MoE推理与未来AI Runtime.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "项目1 GPU性能分析实验怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\29 项目1 GPU性能分析实验.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "项目1 GPU性能分析实验 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\29 项目1 GPU性能分析实验.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "项目2 CUDA Kernel优化项目怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\30 项目2 CUDA Kernel优化项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 项目2 CUDA Kernel优化项目 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\30 项目2 CUDA Kernel优化项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "项目3 PyTorch训练性能优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\31 项目3 PyTorch训练性能优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "项目3 PyTorch训练性能优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\31 项目3 PyTorch训练性能优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "项目4 7B模型训练性能Benchmark怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\32 项目4 7B模型训练性能Benchmark.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 项目4 7B模型训练性能Benchmark 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\32 项目4 7B模型训练性能Benchmark.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "项目5 vLLM推理优化怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\33 项目5 vLLM推理优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "项目5 vLLM推理优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\33 项目5 vLLM推理优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "项目6 KV Cache优化实验怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\34 项目6 KV Cache优化实验.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 项目6 KV Cache优化实验 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\34 项目6 KV Cache优化实验.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "项目7 Disaggregated Inference系统设计怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\35 项目7 Disaggregated Inference系统设计.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "项目7 Disaggregated Inference系统设计 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\35 项目7 Disaggregated Inference系统设计.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "项目8 AI Systems Performance Engineering综合项目怎么操作",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\36 项目8 AI Systems Performance Engineering综合项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 项目8 AI Systems Performance Engineering综合项目 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI Infra训练营二期_分课\\36 项目8 AI Systems Performance Engineering综合项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 概览与学习路线怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\00-概览与学习路线.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 是什么：五层分层体系 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\00-概览与学习路线.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Linux、Docker 与 GPU 环境基础怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\01-Linux-Docker-GPU环境.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 Day1：Linux 系统夯实 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\01-Linux-Docker-GPU环境.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "本地推理与推理服务部署怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\02-本地推理部署.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Day8：Transformers 原生推理跑通大模型 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\02-本地推理部署.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "LoRA/QLoRA 微调训练链路怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\03-LoRA微调训练.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 全量微调 LoRA QLoRA 三者对比 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\03-LoRA微调训练.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "K8s AI 编排、监控与端到端项目怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\04-K8s-AI编排与综合项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "K8s 核心概念与 GPU 调度机制 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\04-K8s-AI编排与综合项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 训练概览与硬件基础怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\05-训练概览与硬件基础.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 大模型训练的核心矛盾与时代背景 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\05-训练概览与硬件基础.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 分布式并行策略怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\06-分布式并行策略.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "数据并行 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\06-分布式并行策略.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 分布式通信与网络优化怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\07-分布式通信与网络优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 四大集合通信原语 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\07-分布式通信与网络优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 显存优化怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\08-显存优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "显存都去哪了：四大消耗源 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\08-显存优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 计算与精度优化怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\09-计算与精度优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 浮点格式与混合精度训练 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\09-计算与精度优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 数据与 IO 优化怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\10-数据与IO优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "PyTorch DataLoader 深度优化 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\10-数据与IO优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 训练稳定性与可观测性怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\11-训练稳定性与可观测性.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 Loss Spike 的检测与恢复 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\11-训练稳定性与可观测性.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 前沿技术与实战项目怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\12-前沿技术与实战项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "实战项目一：7B 模型分布式训练 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\12-前沿技术与实战项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 性能工程方法论怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\13-性能工程方法论.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 体系总览 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\13-性能工程方法论.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "GPU 硬件与系统优化怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\14-GPU硬件与系统优化.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "模块二总览 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\14-GPU硬件与系统优化.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "CUDA 与高性能算子怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\15-CUDA与高性能算子.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 模块三总览 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\15-CUDA与高性能算子.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "分布式训练与通信怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\16-分布式训练与通信-二期.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "模块四总览 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\16-分布式训练与通信-二期.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "PyTorch 编译与 Runtime怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\17-PyTorch编译与Runtime.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 模块五总览 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\17-PyTorch编译与Runtime.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "LLM 推理系统怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\18-LLM推理系统.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "模块六总览 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\18-LLM推理系统.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "性能工程综合项目怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\19-性能工程综合项目.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 项目体系总览 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\19-性能工程综合项目.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "CUDA 编程与大模型核心算子怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\20-CUDA编程与核心算子.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "三期总览 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\20-CUDA编程与核心算子.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "分布式训练优化怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\21-分布式训练优化三期.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 NCCL 通信库机制 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\21-分布式训练优化三期.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 面试指南与免费学习资源全集怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\22-面试指南与学习资源.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "岗位全景：AI Infra 三大方向 一般怎么处理？",
+    "expected_sources": [
+      "reference/AI-Infra\\22-面试指南与学习资源.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "AI Infra 知识库索引怎么操作",
+    "expected_sources": [
+      "reference/AI-Infra\\README.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 系列一 · 30 天入门实操 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/AI-Infra\\README.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "daemon.json 配置示例怎么操作",
+    "expected_sources": [
+      "reference/Docker运维课\\daemon配置示例.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "课堂用的完整设置 一般怎么处理？",
+    "expected_sources": [
+      "reference/Docker运维课\\daemon配置示例.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Docker 基础与镜像管理实操手册怎么操作",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker基础与镜像管理实操手册.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 学习目标 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker基础与镜像管理实操手册.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "docker容器命令怎么操作",
+    "expected_sources": [
+      "reference/Docker运维课\\docker容器命令.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "看一下构建历史 一般怎么处理？",
+    "expected_sources": [
+      "reference/Docker运维课\\docker容器命令.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Docker 重点背诵卡怎么操作",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker重点背诵卡.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 换源四步 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Docker运维课\\Docker重点背诵卡.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Zabbix 容器化部署怎么操作",
+    "expected_sources": [
+      "reference/Docker运维课\\Zabbix容器化部署五步.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "新建专用上网 一般怎么处理？",
+    "expected_sources": [
+      "reference/Docker运维课\\Zabbix容器化部署五步.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "课堂记录 1112 —— Docker 理论与部署怎么操作",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1112-Docker理论与部署.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 环境准备 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1112-Docker理论与部署.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "课堂记录 1113 —— 容器命令怎么操作",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1113-容器命令.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "镜像删掉与构建历史 一般怎么处理？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1113-容器命令.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "课堂记录 1115 下午 —— 文件系统与 Dockerfile 分层实验怎么操作",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1115下午-Dockerfile分层实验.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 理论要点 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Docker运维课\\课堂记录-1115下午-Dockerfile分层实验.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
     "question": "MySQL 图形化开发工具 DataGrip怎么操作",
     "expected_sources": [
       "reference/MySQL8 数据服务管理.md"
@@ -32,193 +1120,881 @@
     "version": "reference"
   },
   {
+    "question": "prometheus简介怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\01.prometheus简介.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "prometheus优势 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\01.prometheus简介.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "数据模型怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\02.数据模型.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 指标定义 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\02.数据模型.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "指标类型怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\03.指标类型.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Counter 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\03.指标类型.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Jobs和Instances怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\04.Jobs和Instances.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 Jobs和Instances 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\04.Jobs和Instances.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "源码包部署监控组件怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\05.源码包部署监控组件.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "装prometheus 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\05.源码包部署监控组件.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "docker部署监控组件怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\06.docker部署监控组件.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 node-export上线 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\06.docker部署监控组件.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "PromQL基本使用怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\07.PromQL基本使用.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "正数 浮点数 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\07.PromQL基本使用.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Prometheus基础查询怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\08.Prometheus基础查询.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 查询介绍 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\08.Prometheus基础查询.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "查询操作符怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\09.查询操作符.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "计算二元使用符 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\09.查询操作符.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "内置函数怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\10.内置函数.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 vector 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\10.内置函数.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "在HTTP API中使用PromQL怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\11.在HTTP API中使用PromQL.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "获取targets数据 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\11.在HTTP API中使用PromQL.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "最佳实践怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\12.最佳实践.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 最佳实践 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\12.最佳实践.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "告警简介怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\13.告警简介.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "告警简介 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\13.告警简介.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "自定义Prometheus告警规则怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\14.自定义Prometheus告警规则.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 自定义Prometheus告警规则 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\14.自定义Prometheus告警规则.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "常见告警规则怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\15.常见告警规则.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Linux系统监控 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\15.常见告警规则.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "部署Alertmanager怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\16.部署Alertmanager.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 上线Alertmanager 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\16.部署Alertmanager.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Alertmanager配置概述怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\17.Alertmanager配置概述.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Alertmanager设置概述 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\17.Alertmanager配置概述.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "基于标签的告警处理路由怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\18.基于标签的告警处理路由.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 基于标签的告警处理路由 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\18.基于标签的告警处理路由.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "使用Receiver接收告警信息怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\19.使用Receiver接收告警信息.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "使用Receiver接收告警信息 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\19.使用Receiver接收告警信息.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "自定义告警模板怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\20.自定义告警模板.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 自定义告警模板 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\20.自定义告警模板.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "屏蔽告警通知怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\21.屏蔽告警通知.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "屏蔽告警通知 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\21.屏蔽告警通知.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "使用Recoding Rules优化性能怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\22.使用Recoding Rules优化性能.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 使用Recoding Rules优化性能 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\22.使用Recoding Rules优化性能.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "exporter怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\23.exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "exporter 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\23.exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Node Exporter怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\24.Node Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 参考文档 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\24.Node Exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Process Exporter怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\25.Process Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Process Exporter简介 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\25.Process Exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "cAdvisor怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\26.cAdvisor.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 cAdvisor 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\26.cAdvisor.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Mysql Exporter怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\27.Mysql Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Mysql Exporter 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\27.Mysql Exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Blackbox Exporter怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\28.Blackbox Exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 设置文件简介 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\28.Blackbox Exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Ipmi export怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\30.Ipmi export.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "装ipmitool 并加载相应模块 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\30.Ipmi export.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Pushgateway怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\31.Pushgateway.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 Pushgateway 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\31.Pushgateway.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "grafana基本概念怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\32.grafana基本概念.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "grafana基本概念 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\32.grafana基本概念.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "创建dashboard与Panel怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\33.创建dashboard与Panel.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 新建dashboard与Panel 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\33.创建dashboard与Panel.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "变化趋势：Graph面板怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\34.变化趋势：Graph面板.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "变化趋势：Graph面板 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\34.变化趋势：Graph面板.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "graph面板常用操作怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\35.graph面板常用操作.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 graph面板常用使用 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\35.graph面板常用操作.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "分布统计：Heatmap面板怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\36.分布统计：Heatmap面板.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "分布统计：Heatmap面板 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\36.分布统计：Heatmap面板.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "当前状态：SingleStat面板怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\37.当前状态：SingleStat面板.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 当前状态：SingleStat面板 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\37.当前状态：SingleStat面板.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "grafana报警怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\39.grafana报警.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "grafana报警 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\39.grafana报警.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "本地存储怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\40.本地存储.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 本地存储 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\40.本地存储.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "远程存储怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\41.远程存储.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "远程存储 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\41.远程存储.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "联邦集群怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\42.联邦集群.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 联邦集群 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\42.联邦集群.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "prometheus高可用怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\43.prometheus高可用.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "prometheus高可用 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\43.prometheus高可用.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Alertmanager高可用怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\44.Alertmanager高可用.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 Alertmanager高可用 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\44.Alertmanager高可用.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Prometheus与服务发现怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\45.Prometheus与服务发现.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Prometheus与服务发现 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\45.Prometheus与服务发现.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "基于文件的服务发现怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\46.基于文件的服务发现.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 基于文件的服务发现 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\46.基于文件的服务发现.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "标签管理怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\47.标签管理.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "标签维护 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\47.标签管理.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "什么是Prometheus Operator怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\48.什么是Prometheus Operator.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 什么是Prometheus Operator 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\48.什么是Prometheus Operator.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Prometheus Operator自定义监控项怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\49.Prometheus Operator自定义监控项.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Prometheus Operator自定义监控项 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\49.Prometheus Operator自定义监控项.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "配置blackbox-exporter怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\50.配置blackbox-exporter.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 改成blackbox设置文件 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\50.配置blackbox-exporter.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "添加prometheus自定义配置怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\51.添加prometheus自定义配置.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "添加prometheus自定义设置 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\51.添加prometheus自定义配置.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "配置PrometheusRule怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\52.配置PrometheusRule.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 看一下prometheus web页面 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\52.配置PrometheusRule.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "配置blackbox-exporter监控项怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\53.配置blackbox-exporter监控项.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "ping 检测 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\53.配置blackbox-exporter监控项.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "基础入门怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\54.基础入门.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 prometheus告警介绍 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\54.基础入门.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "配置详解怎么操作",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\55.配置详解.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "设置概述 一般怎么处理？",
+    "expected_sources": [
+      "reference/Prometheus监控课_分节md\\55.配置详解.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
     "question": "Red Hat Training and Certification怎么操作",
     "expected_sources": [
-      "reference/RH124_分章md\\00.封面目录与简介.md"
+      "reference/RH教材\\RH124_p1-200.md"
     ],
     "style": "verbatim",
     "version": "reference"
   },
   {
-    "question": "参考文献 一般怎么处理？",
+    "question": "同事问 红帽系统维护一 这块该怎么入手，怎么回答？",
     "expected_sources": [
-      "reference/RH124_分章md\\00.封面目录与简介.md"
+      "reference/RH教材\\RH124_p1-200.md"
     ],
     "style": "paraphrase",
     "version": "reference"
   },
   {
-    "question": "红帽企业LINUX入门怎么操作",
+    "question": "Password aging controls怎么操作",
     "expected_sources": [
-      "reference/RH124_分章md\\01.红帽企业Linux入门.md"
+      "reference/RH教材\\RH124_p201-400.md"
     ],
     "style": "verbatim",
     "version": "reference"
   },
   {
-    "question": "同事问 什么是LINUX? 这块该怎么入手，怎么回答？",
+    "question": "设置密码期限 一般怎么处理？",
     "expected_sources": [
-      "reference/RH124_分章md\\01.红帽企业Linux入门.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "访问命令行怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\02.访问命令行.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "访问命令行 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH124_分章md\\02.访问命令行.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "从命令行管理文件怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\03.从命令行管理文件.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 文件系统层次结构 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH124_分章md\\03.从命令行管理文件.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "在红帽企业LINUX中获取帮助怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\04.在红帽企业Linux中获取帮助.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "在你开始之前 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH124_分章md\\04.在红帽企业Linux中获取帮助.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "创建、查看和编辑文本文件怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\05.创建、查看和编辑文本文件.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 将输出重定向到文件或程序 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH124_分章md\\05.创建、查看和编辑文本文件.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "管理本地用户和组怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\06.管理本地用户和组.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "描述用户和组概念 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH124_分章md\\06.管理本地用户和组.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "控制对文件的访问怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\07.控制对文件的访问.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 解释LINUX文件系统能不能访问 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH124_分章md\\07.控制对文件的访问.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "监控和管理LINUX进程怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\08.监控和管理Linux进程.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "列出程序 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH124_分章md\\08.监控和管理Linux进程.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "控制服务和守护进程怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\09.控制服务和守护进程.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 识别自动开机的系统程序 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH124_分章md\\09.控制服务和守护进程.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "配置和保护SSH怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\10.配置和保护SSH.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "使用SSH访问远程命令行 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH124_分章md\\10.配置和保护SSH.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "分析和存储日志怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\11.分析和存储日志.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 描述系统记录架构 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH124_分章md\\11.分析和存储日志.md"
+      "reference/RH教材\\RH124_p201-400.md"
     ],
     "style": "paraphrase",
     "version": "reference"
@@ -226,183 +2002,39 @@
   {
     "question": "从命令行配置网络怎么操作",
     "expected_sources": [
-      "reference/RH124_分章md\\12.管理网络.md"
+      "reference/RH教材\\RH124_p401-600.md"
     ],
     "style": "verbatim",
     "version": "reference"
   },
   {
-    "question": "维护上网 一般怎么处理？",
+    "question": "同事问 services ping biosdevname 和 udev man page 这块该怎么入手，怎么回答？",
     "expected_sources": [
-      "reference/RH124_分章md\\12.管理网络.md"
+      "reference/RH教材\\RH124_p401-600.md"
     ],
     "style": "paraphrase",
     "version": "reference"
   },
   {
-    "question": "归档和传输文件怎么操作",
+    "question": "RH124_p601-634怎么操作",
     "expected_sources": [
-      "reference/RH124_分章md\\13.归档和传输文件.md"
+      "reference/RH教材\\RH124_p601-634.md"
     ],
     "style": "verbatim",
     "version": "reference"
   },
   {
-    "question": "同事问 tar命令 这块该怎么入手，怎么回答？",
+    "question": "章17 | 总复习 一般怎么处理？",
     "expected_sources": [
-      "reference/RH124_分章md\\13.归档和传输文件.md"
+      "reference/RH教材\\RH124_p601-634.md"
     ],
     "style": "paraphrase",
     "version": "reference"
   },
   {
-    "question": "安装和更新软件包怎么操作",
+    "question": "同事问 红帽系统维护二 这块该怎么入手，怎么回答？",
     "expected_sources": [
-      "reference/RH124_分章md\\14.安装和更新软件包.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "注册系统以获取红帽支持 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH124_分章md\\14.安装和更新软件包.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "访问LINUX文件系统怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\15.访问Linux文件系统.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 识别文件系统和设备 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH124_分章md\\15.访问Linux文件系统.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "分析服务器和获取支持怎么操作",
-    "expected_sources": [
-      "reference/RH124_分章md\\16.分析服务器和获取支持.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "分析和维护远程服务器 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH124_分章md\\16.分析服务器和获取支持.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 参考文献 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH134_分章md\\00.封面目录与简介.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "提高命令行生产率怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\01.提高命令行生产率.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "编写简单的BASH脚本 出了问题，第一步先看什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\01.提高命令行生产率.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "计划将来的任务怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\02.计划将来的任务.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "线上遇到 计划延迟的用户作业 相关问题时，排查顺序是什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\02.计划将来的任务.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "调优系统性能怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\03.调优系统性能.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "调整调优设置文件 出了问题，第一步先看什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\03.调优系统性能.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "使用ACL控制对文件的访问怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\04.使用ACL控制对文件的访问.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "线上遇到 解释文件ACL 相关问题时，排查顺序是什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\04.使用ACL控制对文件的访问.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "管理SELINUX安全性怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\05.管理SELinux安全性.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "更改SELINUX到强制模式 出了问题，第一步先看什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\05.管理SELinux安全性.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "管理基本存储怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\06.管理基本存储.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "线上遇到 对硬盘进行分区 相关问题时，排查顺序是什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\06.管理基本存储.md"
+      "reference/RH教材\\RH134_p1-200.md"
     ],
     "style": "paraphrase",
     "version": "reference"
@@ -410,7 +2042,7 @@
   {
     "question": "管理逻辑卷怎么操作",
     "expected_sources": [
-      "reference/RH134_分章md\\07.管理逻辑卷.md"
+      "reference/RH教材\\RH134_p201-398.md"
     ],
     "style": "verbatim",
     "version": "reference"
@@ -418,175 +2050,15 @@
   {
     "question": "新建逻辑卷 出了问题，第一步先看什么？",
     "expected_sources": [
-      "reference/RH134_分章md\\07.管理逻辑卷.md"
+      "reference/RH教材\\RH134_p201-398.md"
     ],
     "style": "paraphrase",
     "version": "reference"
   },
   {
-    "question": "实施高级存储功能怎么操作",
+    "question": "线上遇到 红帽系统维护 III: LINUX 自动化 相关问题时，排查顺序是什么？",
     "expected_sources": [
-      "reference/RH134_分章md\\08.实施高级存储功能.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "线上遇到 描述STRATIS架构 相关问题时，排查顺序是什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\08.实施高级存储功能.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "访问网络附加存储怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\09.访问网络附加存储.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "通过NFS挂载上网附加存储 出了问题，第一步先看什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\09.访问网络附加存储.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "控制启动过程怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\10.控制启动过程.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "线上遇到 选择开机目标 相关问题时，排查顺序是什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\10.控制启动过程.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "管理网络安全怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\11.管理网络安全.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "维护服务器防火墙 出了问题，第一步先看什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\11.管理网络安全.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "安装红帽企业LINUX怎么操作",
-    "expected_sources": [
-      "reference/RH134_分章md\\12.安装红帽企业Linux.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "线上遇到 装红帽企业LINUX 相关问题时，排查顺序是什么？",
-    "expected_sources": [
-      "reference/RH134_分章md\\12.安装红帽企业Linux.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "红帽系统维护I:LINUX自动化 出了问题，第一步先看什么？",
-    "expected_sources": [
-      "reference/RH294_分章md\\00.封面目录与简介.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "介绍ANSIBLE怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\01.介绍Ansible.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "自动化与LINUX系统维护 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH294_分章md\\01.介绍Ansible.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "部署ANSIBLE怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\02.部署Ansible.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 构建ANSIBLE清单 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH294_分章md\\02.部署Ansible.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "实施PLAYBOOK怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\03.实施Playbook.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "编写和运行PLAYBOOK 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH294_分章md\\03.实施Playbook.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "管理变量和事实怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\04.管理变量和事实.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 维护变量 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH294_分章md\\04.管理变量和事实.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "实施任务控制怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\05.实施任务控制.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "编写循环和条件任务 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH294_分章md\\05.实施任务控制.md"
+      "reference/RH教材\\RH294_p1-200.md"
     ],
     "style": "paraphrase",
     "version": "reference"
@@ -594,111 +2066,31 @@
   {
     "question": "在被管理节点上创建文件或目录怎么操作",
     "expected_sources": [
-      "reference/RH294_分章md\\06.在被管理节点上创建文件或目录.md"
+      "reference/RH教材\\RH294_p201-400.md"
     ],
     "style": "verbatim",
     "version": "reference"
   },
   {
-    "question": "同事问 描述文件模块 这块该怎么入手，怎么回答？",
+    "question": "同事问 章5 | 实施任务控制 这块该怎么入手，怎么回答？",
     "expected_sources": [
-      "reference/RH294_分章md\\06.在被管理节点上创建文件或目录.md"
+      "reference/RH教材\\RH294_p201-400.md"
     ],
     "style": "paraphrase",
     "version": "reference"
   },
   {
-    "question": "管理大项目怎么操作",
+    "question": "管理引导过程和调度的进程怎么操作",
     "expected_sources": [
-      "reference/RH294_分章md\\07.管理大项目.md"
+      "reference/RH教材\\RH294_p401-494.md"
     ],
     "style": "verbatim",
     "version": "reference"
   },
   {
-    "question": "引用清单主机 一般怎么处理？",
+    "question": "以 user1 用户身份 使用 SSH 登录 servera 服务器 登录后 使用 sudo su - 命令将身份切换为 root 用户 一般怎么处理？",
     "expected_sources": [
-      "reference/RH294_分章md\\07.管理大项目.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "利用角色简化PLAYBOOK怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\08.利用角色简化Playbook.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 描述角色结构 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH294_分章md\\08.利用角色简化Playbook.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "对ANSIBLE进行故障排除怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\09.对Ansible进行故障排除.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "ANSIBLE记录文件 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH294_分章md\\09.对Ansible进行故障排除.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "自动执行LINUX管理任务怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\10.自动执行Linux管理任务.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 维护软件和订阅 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH294_分章md\\10.自动执行Linux管理任务.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "总复习：使用ANSIBLE实现自动怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\11.总复习-使用Ansible实现自动化.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "复习红帽系统维护III:LINUX自动化 一般怎么处理？",
-    "expected_sources": [
-      "reference/RH294_分章md\\11.总复习-使用Ansible实现自动化.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "补充主题怎么操作",
-    "expected_sources": [
-      "reference/RH294_分章md\\12.补充主题与Lightbulb许可.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 看一下设置选项 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/RH294_分章md\\12.补充主题与Lightbulb许可.md"
+      "reference/RH教材\\RH294_p401-494.md"
     ],
     "style": "paraphrase",
     "version": "reference"
@@ -712,7 +2104,7 @@
     "version": "reference"
   },
   {
-    "question": "什么是函数？ 一般怎么处理？",
+    "question": "同事问 什么是函数？ 这块该怎么入手，怎么回答？",
     "expected_sources": [
       "reference/Shell函数.md"
     ],
@@ -728,9 +2120,73 @@
     "version": "reference"
   },
   {
-    "question": "同事问 什么是流程结构？ 这块该怎么入手，怎么回答？",
+    "question": "什么是流程结构？ 一般怎么处理？",
     "expected_sources": [
       "reference/Shell流程结构.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "SciVerse 文献接入契约怎么操作",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\01-SciVerse文献接入契约.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 平台定位 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\01-SciVerse文献接入契约.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "后端配置优先级与启动链路怎么操作",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\02-后端配置优先级与启动链路.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "核心结论 一般怎么处理？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\02-后端配置优先级与启动链路.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "SciVerse 联调排障手册怎么操作",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\03-SciVerse联调排障手册.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 先记住三条反直觉事实 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\03-SciVerse联调排障手册.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "SmartOpsAgent 项目知识索引怎么操作",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\README.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "卡片清单 一般怎么处理？",
+    "expected_sources": [
+      "reference/SmartOpsAgent-项目知识\\README.md"
     ],
     "style": "paraphrase",
     "version": "reference"
@@ -744,153 +2200,9 @@
     "version": "reference"
   },
   {
-    "question": "Shell三剑客 一般怎么处理？",
+    "question": "同事问 Shell三剑客 这块该怎么入手，怎么回答？",
     "expected_sources": [
       "reference/了解Shell三剑客.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "开场与介绍怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\00.开场与课程介绍.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 P01 · 封面:聊聊为什么所有IT人都要学习云原生 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\00.开场与课程介绍.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "云计算发展历程与云原生定义怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\01.云计算发展历程与云原生定义.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "P06 · 云计算的发展历程 一般怎么处理？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\01.云计算发展历程与云原生定义.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "Netflix云原生实践案例怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\02.Netflix云原生实践案例.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 P11 · 从云原生拓荒者Netflix 的故事说起 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\02.Netflix云原生实践案例.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "容器技术与Spring Cloud框架怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\03.容器技术与Spring Cloud框架.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "P25 · 容器技术和Spring Cloud框架的诞生 一般怎么处理？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\03.容器技术与Spring Cloud框架.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "Kubernetes编排标准怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\04.Kubernetes编排标准.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 P30 · Kubernetes横空出世 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\04.Kubernetes编排标准.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "ServiceMesh服务治理演进怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\05.ServiceMesh服务治理演进.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "P34 · 但是 等等…… 一般怎么处理？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\05.ServiceMesh服务治理演进.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "企业IT数字化转型与岗位影响怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\06.企业IT数字化转型与岗位影响.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 P43 · 企业IT数字化转型的“三阶段两转变” 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\06.企业IT数字化转型与岗位影响.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "云原生技术趋势-多运行时微服务怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\07.云原生技术趋势-多运行时微服务.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "P53 · 分布式应用程序的需求 一般怎么处理？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\07.云原生技术趋势-多运行时微服务.md"
-    ],
-    "style": "paraphrase",
-    "version": "reference"
-  },
-  {
-    "question": "参考资料与致谢怎么操作",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\08.参考资料与致谢.md"
-    ],
-    "style": "verbatim",
-    "version": "reference"
-  },
-  {
-    "question": "同事问 P60 · 参考资料 这块该怎么入手，怎么回答？",
-    "expected_sources": [
-      "reference/云原生公开课_分章md\\08.参考资料与致谢.md"
     ],
     "style": "paraphrase",
     "version": "reference"
@@ -907,6 +2219,70 @@
     "question": "Nginx 服务上线与设置 一般怎么处理？",
     "expected_sources": [
       "reference/安装Nginx.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "进程状态深度诊断：D/Z/X 与系统资源关联怎么操作",
+    "expected_sources": [
+      "reference/运维知识补遗\\01-进程状态深度诊断-D-Z-X与资源关联.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 程序状态全景 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/运维知识补遗\\01-进程状态深度诊断-D-Z-X与资源关联.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "Incident 处理标准化流程与证据链怎么操作",
+    "expected_sources": [
+      "reference/运维知识补遗\\02-Incident处理标准化流程与证据链.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "Incident 记录标准化 一般怎么处理？",
+    "expected_sources": [
+      "reference/运维知识补遗\\02-Incident处理标准化流程与证据链.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "SNAT 与 MASQUERADE：机制、返回路径与诊断边界怎么操作",
+    "expected_sources": [
+      "reference/运维知识补遗\\03-SNAT与MASQUERADE诊断要点.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "同事问 SNAT 与 MASQUERADE 的区别 这块该怎么入手，怎么回答？",
+    "expected_sources": [
+      "reference/运维知识补遗\\03-SNAT与MASQUERADE诊断要点.md"
+    ],
+    "style": "paraphrase",
+    "version": "reference"
+  },
+  {
+    "question": "PHP 运行时与 Apache 集成：架构差异与日志排障怎么操作",
+    "expected_sources": [
+      "reference/运维知识补遗\\04-PHP运行时与Apache集成排障.md"
+    ],
+    "style": "verbatim",
+    "version": "reference"
+  },
+  {
+    "question": "PHP 与 Apache 的三种集成方式 一般怎么处理？",
+    "expected_sources": [
+      "reference/运维知识补遗\\04-PHP运行时与Apache集成排障.md"
     ],
     "style": "paraphrase",
     "version": "reference"
