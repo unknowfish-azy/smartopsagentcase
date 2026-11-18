@@ -78,6 +78,11 @@ class OpenAICompatibleModelProvider(
             config.base_url.rstrip("/")
         )
 
+    @property
+    def name(self) -> str:
+        """Provider 标识：用模型名（如 kimi-k2），供降级链日志与可观测归因。"""
+        return self.config.model
+
     async def generate(
         self,
         prompt: str,
@@ -179,6 +184,11 @@ class OpenAICompatibleModelProvider(
                     self.config.model,
                 )
             ),
+            provider="openai-compatible",
+            metadata={
+                "base_url": self.base_url,
+                "configured_model": self.config.model,
+            },
             usage=usage,
             raw=data,
         )
