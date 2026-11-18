@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from .api.router import api_router
+from .core.baseline import bootstrap as bootstrap_baseline, teardown as teardown_baseline
 from .core.exceptions import AIServiceException
 from .core.http_pool import http_pool
 from .core.logging import setup_logging
@@ -20,11 +21,17 @@ setup_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """应用生命周期：管理共享 HTTP transport + Ollama KV 心跳。
+    """应用生命周期：管理共享 HTTP transport + Ollama KV 心跳 + 安全基线。
 
-    startup → 先启动 http_pool（心跳也需要），再启动心跳
-    shutdown → 先停心跳，再关 http_pool
+    startup → security_baseline.bootstrap（fail-closed，哈希链恢复失败则
+    抛异常中断启动，绝不让服务以"无审计裸奔"态对外）→ http_pool → heartbeat
+    shutdown → heartbeat → http_pool → security_baseline.teardown（只释放引用）
     """
+    # SECURITY BASELINE v0：生命周期起点装配（同步 fail-closed）。
+    # 装配期间哈希链/清单校验失败时 build_security_baseline 直接抛 ValueError，
+    # 让 lifespan 中断、uvicorn 拒绝对外——这是我们故意要求的 fail-closed。
+    bootstrap_baseline()
+
     await http_pool.startup()
 
     # KV-CACHE 心跳：仅 ollama provider 时 heartbeat.start() 内部会自动跳过
@@ -41,6 +48,9 @@ async def lifespan(app: FastAPI):
     finally:
         await heartbeat.stop()
         await http_pool.shutdown()
+        # 安全基线 teardown：只释放模块级引用，审计接收器本身无后台线程需要停。
+        # 审计哈希链已在进程生命周期内全部 flush+fsync 落盘，进程崩溃不丢。
+        teardown_baseline()
 
 
 app = FastAPI(

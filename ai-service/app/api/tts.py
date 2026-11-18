@@ -75,6 +75,8 @@ async def tts_synthesize(
         "X-TTS-Provider": meta["provider"],
         "X-TTS-Voice": meta["voice"],
         "X-TTS-Speed-Applied": "true" if meta["speed_applied"] else "false",
+        # 首选 Provider 合成失败、由后面的兜底时如实标注，避免前端以为还是首选音色
+        "X-TTS-Fallback-From": meta.get("fallback_from", ""),
     }
     if payload.timing:
         return JSONResponse(
@@ -84,6 +86,7 @@ async def tts_synthesize(
                 "provider": meta["provider"],
                 "voice": meta["voice"],
                 "speed_applied": meta["speed_applied"],
+                "fallback_from": meta.get("fallback_from", ""),
                 "timing": meta["timing"],
             },
             headers=headers,

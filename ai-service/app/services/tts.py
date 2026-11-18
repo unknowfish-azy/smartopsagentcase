@@ -17,6 +17,7 @@ import asyncio
 import importlib.util
 import io
 import json
+import os
 import re
 import sys
 import threading
@@ -41,13 +42,13 @@ _PROVIDER_FACTORIES: dict[str, type["TtsProvider"]] = {}
 _PROVIDER_INSTANCES: dict[str, "TtsProvider"] = {}
 
 # auto 模式下的优选顺序：F5-TTS（有参考音频时最像目标声线，1.9GB 显存、热态 3s）
-# → Edge 神经语音（无需本地权重，最甜）→ 百度在线音源兜底。
+# → piper-plus → Edge 神经语音（无需本地权重，最甜）→ 百度在线音源兜底。
 # VoxCPM2 排在最后：实测默认音色是男声、热态 31s、峰值 5.3GB，且在本机 Python 3.14 +
 # torch 2.14 上约半数加载会 0xC0000005 崩进程，只能由 TTS_PROVIDER=voxcpm2 显式启用。
-# piper-plus 排最末：音色固定、以"音素级时间戳"见长，建议按需显式启用，
-# 不抢占现有默认音色（Edge / F5-TTS 的听感更贴合桌宠形象）。
+# piper-plus 紧随 f5tts：它是唯一在合成前做中文数字/单位规范化的 Provider，
+# 首选失败时优先由它兜底，避免落到 edge/baidu 后把 QPS 这类缩写按字母念出来。
 # edge/baidu 的 probe 都是实测 + 10 分钟缓存，不可用会被跳过。
-_AUTO_ORDER = ("f5tts", "edge", "baidu", "voxcpm2", "piperplus")
+_AUTO_ORDER = ("f5tts", "piperplus", "edge", "baidu", "voxcpm2")
 
 
 class TtsUnavailable(AIServiceException):
@@ -166,6 +167,35 @@ def _resolve_device() -> str | None:
         return "cuda" if torch.cuda.is_available() else "cpu"
     except Exception:  # noqa: BLE001 - torch 缺失/损坏时退回 CPU 语义
         return None
+
+
+_FFMPEG_DLL_DIR_REGISTERED = ""
+
+
+def _register_ffmpeg_shared_dlls() -> str:
+    """把 FFmpeg 共享库目录挂进 DLL 搜索路径，返回已注册目录（未配置时为空）。
+
+    torchaudio 2.9+ 的 ``load()`` 走 torchcodec，会去加载 ``libtorchcodec_coreN.dll``，
+    这些 DLL 动态依赖 ``avcodec-*.dll`` / ``avutil-*.dll``。官方 ffmpeg full_build 只有
+    静态 exe，没有这些 DLL，于是 f5tts 一读参考音频就报 "Could not load ..."。
+    这里不做"自动下载"，只按配置注册；没配就如实留给上层报错。
+    """
+    global _FFMPEG_DLL_DIR_REGISTERED
+    if _FFMPEG_DLL_DIR_REGISTERED:
+        return _FFMPEG_DLL_DIR_REGISTERED
+    configured = (settings.tts_ffmpeg_shared_dir or "").strip()
+    if not configured:
+        return ""
+    path = Path(configured)
+    if not path.is_dir():
+        raise TtsUnavailable(f"TTS_FFMPEG_SHARED_DIR 不是有效目录：{configured}")
+    # 两条路都走：add_dll_directory 供 ctypes/torch 加载 DLL 依赖，
+    # PATH 供 pydub 等调用 ffmpeg.exe 的子进程（共享构建的 bin 里同样有 exe）。
+    if hasattr(os, "add_dll_directory"):
+        os.add_dll_directory(str(path))
+    os.environ["PATH"] = str(path) + os.pathsep + os.environ.get("PATH", "")
+    _FFMPEG_DLL_DIR_REGISTERED = str(path)
+    return _FFMPEG_DLL_DIR_REGISTERED
 
 
 class TtsProvider:
@@ -419,6 +449,9 @@ class F5TtsProvider(TtsProvider):
         with self._lock:
             if self._engine is not None:
                 return self._engine
+            # 必须在导入 f5_tts（连带 torchaudio/torchcodec）之前注册共享库目录，
+            # 否则读参考音频时 torchcodec 找不到 avcodec/avutil 动态库。
+            _register_ffmpeg_shared_dlls()
             try:
                 from f5_tts.api import F5TTS  # noqa: PLC0415 - 重依赖懒加载
             except Exception as exc:  # noqa: BLE001
@@ -1038,6 +1071,40 @@ _PIPER_NUMBER_RE = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)*")
 _PIPER_DATE_RE = re.compile(r"(?<!\d)(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?!\d)")
 # 时刻：10:30 / 10:30:45。前后紧邻数字或冒号时不算（避免把端口 8080 或 1:100 当时间）
 _PIPER_TIME_RE = re.compile(r"(?<![\d:])(\d{1,2})[:：](\d{2})(?:[:：](\d{2}))?(?![\d:])")
+# 「数字+单位」倒装写法（300dpi / 500QPS / 1200IOPS）：需要改写成中文前置语序，
+# 左右都要求不是字母数字，避免 img300dpis 这类型号被误吃。
+_PIPER_RATE_RE = re.compile(
+    r"(?<![A-Za-z0-9_.])(\d[\d,]*(?:\.\d+)?)\s*(万|亿)?\s*(dpi|IOPS|iops|QPS|qps)(?![A-Za-z0-9_.])"
+)
+# 「单位在前」的中文语序（QPS 5000万 / QPS：5000万 / QPS高达5000万 / QPS（5000万））：
+# 先把单位挪到数字后面，再交给 _PIPER_RATE_RE 统一读成「每秒…次查询」，否则单位字母会被念出来。
+# 中间允许冒号与最多 4 个中文字（高达/已达/峰值…，不穷举词表），也允许数字被括号包住。
+_PIPER_RATE_SWAP_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(dpi|IOPS|iops|QPS|qps)\s*[:：]?\s*"
+    r"(峰值|最高|平均|当前)?\s*"
+    r"[^\x00-\x7f，。；！？、]{0,4}?\s*"
+    r"(?:[（(]\s*)?([\d,]*\d(?:\.\d+)?\s*(?:万|亿)?)(?:\s*[）)])?"
+)
+# 「中文名（QPS）」这类注释：前面已经有中文全称，括号里的缩写删掉，避免念字母
+_PIPER_RATE_ANNOT_RE = re.compile(r"\s*[（(]\s*(?:QPS|qps|dpi|IOPS|iops)\s*[）)]")
+# 反向：缩写后面跟中文注释（QPS（每秒查询数）5000万），注释删掉但保留缩写，
+# 让后续交换规则仍能把它读成「每秒…次查询」，否则括号里的全称会被念两遍。
+# 只删不含数字的括号：QPS（5000万）里的括号装的是数值，交给交换规则处理。
+_PIPER_RATE_GLOSS_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(dpi|IOPS|iops|QPS|qps)\s*[（(][^）)\d]{0,12}[）)]"
+)
+
+
+# 全角数字/字母 → 半角。只转这两类，不动全角标点：``，``、``！`` 等要保留原样，
+# 免得改写停顿符号；中文文档里复制的「５０００万ＱＰＳ」因此也能命中规则。
+_FULLWIDTH_ALNUM = {
+    cp: cp - 0xFEE0
+    for cp in (
+        *range(0xFF10, 0xFF1A),  # ０-９
+        *range(0xFF21, 0xFF3B),  # Ａ-Ｚ
+        *range(0xFF41, 0xFF5B),  # ａ-ｚ
+    )
+}
 
 
 def _read_cn_group(group: int) -> str:
@@ -1060,6 +1127,7 @@ def _read_cn_int(value: int) -> str:
     """整数 → 中文读法：92 → 九十二、1001 → 一千零一、10000 → 一万。"""
     if value == 0:
         return "零"
+    total = value
     groups: list[int] = []
     while value:
         groups.append(value % 10000)
@@ -1076,7 +1144,12 @@ def _read_cn_int(value: int) -> str:
         prefix = "零" if parts and group < 1000 and not parts[-1].endswith("零") else ""
         parts.append(prefix + _read_cn_group(group) + _PIPER_CN_BIG_UNITS[index])
     text = "".join(parts)
-    return text[1:] if text.startswith("一十") else text
+    if text.startswith("一十"):
+        return text[1:]
+    # 口语里千位及以上的 2 读「两」（两千/两万/两亿）；两位数的 2 仍是「二十」
+    if total >= 2000 and text.startswith("二"):
+        return "两" + text[1:]
+    return text
 
 
 def _read_cn_digits(value: str) -> str:
@@ -1105,6 +1178,54 @@ def _read_cn_date(match: re.Match[str]) -> str:
         f"{_read_cn_digits(match.group(1))}年"
         f"{_read_cn_int(month)}月{_read_cn_int(day)}日"
     )
+
+
+def _read_cn_money(number: str, main: str, sub: str) -> str:
+    """金额读法：人民币按元/角/分，其他货币按主币 + 辅币。
+
+    ``5.50`` → 五元五角 / 十二美元五十美分；``5.05`` → 五元零五分；``0.50`` → 五角。
+    """
+    integer, _, frac = number.partition(".")
+    whole = int(integer or "0")
+    cents = int((frac + "00")[:2])
+    if main == "元":
+        jiao, fen = cents // 10, cents % 10
+        parts: list[str] = []
+        if whole or not cents:
+            parts.append(_read_cn_int(whole) + main)
+        if jiao:
+            parts.append(_PIPER_CN_DIGITS[jiao] + "角")
+        elif fen and whole:
+            parts.append("零")
+        if fen:
+            parts.append(_PIPER_CN_DIGITS[fen] + "分")
+        return "".join(parts)
+    parts = []
+    if whole or not cents:
+        parts.append(_read_cn_int(whole) + main)
+    if cents:
+        parts.append(_read_cn_int(cents) + sub)
+    return "".join(parts)
+
+
+def _read_cn_rate(match: re.Match[str]) -> str:
+    """倒装单位改成中文前置语序：300dpi → 每英寸三百点、5000万QPS → 每秒五千万次查询。
+
+    这类单位放数字后面读成「五千万QPS」不通顺，所以单独前置，不走后缀表；
+    数字自带「万/亿」量级时保留量级词（5000万 → 五千万）。
+    """
+    value = _read_piper_number(match.group(1)) + (match.group(2) or "")
+    unit = match.group(3)
+    if unit.lower() == "dpi":
+        return f"每英寸{value}点"
+    if unit.lower() == "iops":
+        return f"每秒{value}次读写"
+    return f"每秒{value}次查询"
+
+
+def _swap_cn_rate(match: re.Match[str]) -> str:
+    """把「QPS 5000万」改成「5000万QPS」，交给后续规则统一读；峰值/平均这类限定词保留。"""
+    return f"{match.group(2) or ''}{match.group(3)}{match.group(1)}"
 
 
 def _read_cn_min_sec(value: int) -> str:
@@ -1138,14 +1259,14 @@ def _is_piper_run_char(char: str) -> bool:
     return bool(char) and (char in _PIPER_RUN_CONNECTORS or (char.isascii() and char.isalnum()))
 
 
-# 货币符号 → 单位词（符号在数字前）。金额小数按点读，不做角/分拆分。
+# 货币符号 → （主币, 辅币）。辅币为空表示该币种不拆小数，按点读。
 _PIPER_CURRENCY = {
-    "¥": "元",
-    "￥": "元",
-    "$": "美元",
-    "€": "欧元",
-    "£": "英镑",
-    "₩": "韩元",
+    "¥": ("元", "分"),
+    "￥": ("元", "分"),
+    "$": ("美元", "美分"),
+    "€": ("欧元", "欧分"),
+    "£": ("英镑", "便士"),
+    "₩": ("韩元", ""),
 }
 
 # 单位后缀 → 中文读法。只收运维话术里高频且不歧义的单位；
@@ -1185,8 +1306,18 @@ _PIPER_UNIT_SUFFIXES = {
     "Pa": "帕",
     "Hz": "赫兹",
     "rpm": "转每分钟",
+    "fps": "帧每秒",
+    "rps": "请求每秒",
+    "pps": "每秒包数",
+    "mAh": "毫安时",
+    "Wh": "瓦时",
     "dB": "分贝",
     "px": "像素",
+    "cd": "坎德拉",
+    "Ω": "欧姆",
+    "kΩ": "千欧",
+    "MΩ": "兆欧",
+    "°": "度",
     "℃": "摄氏度",
     "°C": "摄氏度",
     "g": "克",
@@ -1232,13 +1363,21 @@ def _normalize_piper_numbers(text: str) -> str:
     - 千分位按整段数量读：``1,024`` → 一千零二十四；
     - 日期按年月日读：``2026-11-17`` → 二零二六年十一月十七日；
     - 时刻按时分读：``10:30`` → 十点三十分、``10:00`` → 十点整、``10:30:45`` → 十点三十分四十五秒；
-    - 货币按单位词读：``¥5`` → 五元、``$12.50`` → 十二点五美元（金额尾零去掉，不拆角分）；
+    - 货币按单位词读：``¥5`` → 五元、``¥5.50`` → 五元五角、``$12.50`` → 十二美元五十美分；
     - 单位按中文读：``5kg`` → 五公斤、``30ms`` → 三十毫秒、``3.5kW`` → 三点五千瓦；
+    - 倒装单位改前置语序：``300dpi`` → 每英寸三百点、``500QPS`` → 每秒五百次查询；
     - 前导零按位读：``07`` → 零七；多段编号逐段读：``192.168.1.1`` → 一九二点一六八点一点一；
     - 字母数字串内逐位读：``A-07`` → A-零七；
     - 紧跟百分号加「百分之」，前导负号读「负」。
     """
-    source = _PIPER_TIME_RE.sub(_read_cn_time, _PIPER_DATE_RE.sub(_read_cn_date, str(text)))
+    # 全角字母数字先转半角，中文文档里复制的「５０００万ＱＰＳ」也能命中规则
+    source = _PIPER_RATE_ANNOT_RE.sub("", str(text).translate(_FULLWIDTH_ALNUM))
+    source = _PIPER_RATE_GLOSS_RE.sub(r"\1", source)
+    source = _PIPER_RATE_SWAP_RE.sub(_swap_cn_rate, source)
+    source = _PIPER_RATE_RE.sub(
+        _read_cn_rate,
+        _PIPER_TIME_RE.sub(_read_cn_time, _PIPER_DATE_RE.sub(_read_cn_date, source)),
+    )
     result: list[str] = []
     cursor = 0
     for match in _PIPER_NUMBER_RE.finditer(source):
@@ -1252,27 +1391,31 @@ def _normalize_piper_numbers(text: str) -> str:
                 sign = "负"
                 remove_from = start - 1
         unit = _piper_unit_at(source, end, source[remove_from - 1] if remove_from else "")
-        currency = ""
+        currency: tuple[str, str] = ("", "")
         if remove_from > 0 and source[remove_from - 1] in _PIPER_CURRENCY:
             currency = _PIPER_CURRENCY[source[remove_from - 1]]
             remove_from -= 1
-        if currency and "." in number:
-            # 12.50 元读「十二点五元」，不读「十二点五零元」
-            number = number.rstrip("0").rstrip(".")
         inside_run = _is_piper_run_char(source[start - 1] if start else "") or _is_piper_run_char(
             source[end] if end < len(source) else ""
         )
-        if inside_run and "." not in number and unit is None:
-            # 带单位的数字必须按数量读（120MB → 一百二十兆字节），
-            # 逐位读法只留给型号/编号串（A-07 → A-零七）
-            spoken = _read_cn_digits(number)
+        if currency[1] and "." in number:
+            # 有辅币的金额按主币/辅币读，「元/美元」已经包含在读法里
+            spoken = _read_cn_money(number.replace(",", ""), currency[0], currency[1])
+            tail = ""
         else:
-            spoken = _read_piper_number(number)
+            if currency[0] and "." in number:
+                # 不拆小数的币种只去掉无意义的尾零：12.50 → 十二点五
+                number = number.rstrip("0").rstrip(".")
+            if inside_run and "." not in number and unit is None:
+                # 带单位的数字必须按数量读（120MB → 一百二十兆字节），
+                # 逐位读法只留给型号/编号串（A-07 → A-零七）
+                spoken = _read_cn_digits(number)
+            else:
+                spoken = _read_piper_number(number)
+            tail = currency[0] or (unit[0] if unit else "")
         percent = source[end : end + 1] in {"%", "％"}
         result.append(source[cursor:remove_from])
-        result.append(
-            ("百分之" if percent else "") + sign + spoken + (currency or (unit[0] if unit else ""))
-        )
+        result.append(("百分之" if percent else "") + sign + spoken + tail)
         if percent:
             cursor = end + 1
         elif unit:
@@ -1472,6 +1615,29 @@ class TtsService:
     def requested(self) -> str:
         return (self._explicit or settings.tts_provider or "auto").strip().lower()
 
+    def _candidates(self) -> list[str]:
+        """按优先级返回本次合成可尝试的 Provider：配置首选在前，其余按 _AUTO_ORDER 兜底。
+
+        显式 TTS_PROVIDER 也参与兜底（用户的诉求是「后端自动换 Provider」）：
+        首选探测可用就排第一，其后是其余可用 Provider，合成失败时依次尝试。
+        实际用了哪个由返回的 meta.provider 如实回传，前端不会以为是首选。
+        """
+        requested = self.requested
+        if requested == "none":
+            return []
+        order = [requested] if requested != "auto" else []
+        order += [name for name in _AUTO_ORDER if name not in order]
+        picked: list[str] = []
+        for name in order:
+            if name not in _PROVIDER_FACTORIES:
+                continue
+            try:
+                if _provider_instance(name).probe().available:
+                    picked.append(name)
+            except Exception:  # noqa: BLE001 - 探测异常等同于不可用，继续看下一个
+                continue
+        return picked
+
     def _select(self) -> tuple[str | None, str]:
         """返回 (选中的 provider, 不可用原因)。"""
         requested = self.requested
@@ -1551,8 +1717,9 @@ class TtsService:
                 code="TTS_TEXT_TOO_LONG",
             )
 
-        provider_name, reason = self._select()
-        if provider_name is None:
+        candidates = self._candidates()
+        if not candidates:
+            _, reason = self._select()
             raise TtsUnavailable(reason)
 
         presets = load_voice_presets()
@@ -1570,31 +1737,50 @@ class TtsService:
             # 也避免 F5-TTS（必须带参考音频）因未传 voice 而无谓失败。
             preset = next(iter(presets.values()))
 
-        provider = _provider_instance(provider_name)
-        if not provider.supports_presets:
-            preset = None
         total = settings.tts_timeout_sec
+        failures: list[str] = []
         async with self._semaphore:
-            try:
-                audio, timing = await asyncio.wait_for(
-                    asyncio.to_thread(provider.synthesize_with_timing, content, preset, speed),
-                    timeout=total,
-                )
-            except asyncio.TimeoutError:
-                raise TtsSynthesisFailed(
-                    f"{provider.display_name} 合成超时（>{total:.0f}s），首次运行可能仍在加载权重"
-                ) from None
+            for name in candidates:
+                provider = _provider_instance(name)
+                # 调用方点名了音色时，不换到不支持预设的 Provider，否则音色会被悄悄换掉
+                if voice and not provider.supports_presets:
+                    failures.append(f"{provider.display_name}: 不支持音色预设「{voice}」")
+                    continue
+                try:
+                    audio, timing = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            provider.synthesize_with_timing,
+                            content,
+                            preset if provider.supports_presets else None,
+                            speed,
+                        ),
+                        timeout=total,
+                    )
+                except asyncio.TimeoutError:
+                    failures.append(
+                        f"{provider.display_name}: 合成超时（>{total:.0f}s），首次运行可能仍在加载权重"
+                    )
+                    continue
+                except Exception as exc:  # noqa: BLE001 - 记录真实原因后换下一个 Provider
+                    failures.append(
+                        f"{provider.display_name}: {getattr(exc, 'message', str(exc))}"
+                    )
+                    continue
 
-        return audio, {
-            "provider": provider.name,
-            "display_name": provider.display_name,
-            "media_type": provider.media_type,
-            "voice": preset.name if preset else "",
-            "speed_applied": provider.supports_speed and abs(speed - 1.0) > 1e-6,
-            "chars": len(content),
-            # 词级时间戳（毫秒）；没有边界事件的 Provider 回空数组，前端据此降级
-            "timing": timing,
-        }
+                return audio, {
+                    "provider": provider.name,
+                    "display_name": provider.display_name,
+                    "media_type": provider.media_type,
+                    "voice": preset.name if preset and provider.supports_presets else "",
+                    "speed_applied": provider.supports_speed and abs(speed - 1.0) > 1e-6,
+                    "chars": len(content),
+                    # 词级时间戳（毫秒）；没有边界事件的 Provider 回空数组，前端据此降级
+                    "timing": timing,
+                    # 首选失败、由后面的 Provider 兜底时如实回传，便于前端/日志追溯
+                    "fallback_from": candidates[0] if provider.name != candidates[0] else "",
+                }
+
+        raise TtsSynthesisFailed("所有可用 Provider 均合成失败：" + "；".join(failures))
 
 
 def reset_provider_cache() -> None:
@@ -1653,12 +1839,12 @@ class TtsPreheatCoordinator:
         }
 
     async def start(self) -> None:
-        """后台线程里触发权重加载 + 一次 dummy 推理。best-effort：失败只记状态，不抛异常。
+        """后台线程里只触发权重加载（不跑推理）。best-effort：失败只记状态，不抛异常。
 
-        预热分两步：
-        1) _ensure_engine() —— 加载主权重 + vocos 声码器（≈36s，驻留 1847MiB）
-        2) dummy infer —— 用 1 字文本跑一次完整推理（≈2s，把推理 workspace 提前扩张到缓存池）
-           这样首次合成时显存已是稳态 2770MiB，不会再冲 3326MiB 峰值。
+        预热只调 _ensure_engine() / _ensure_model() 加载主权重。
+        刻意不跑 dummy infer——虽然它能把首次合成峰值从 5856MiB 降到稳态，
+        但它自身会把冷启动峰值推到 5856MiB（推理 workspace 瞬态扩张）。
+        改为让预热只加载权重（驻留 ~2000MiB），首次合成时才扩张 workspace。
         """
         with self._lock:
             if self.state in (_PREHEAT_RUNNING, _PREHEAT_DONE):
@@ -1680,48 +1866,11 @@ class TtsPreheatCoordinator:
             provider = _provider_instance(provider_name)
 
             if provider_name == "f5tts":
-                # Step 1: 加载权重（主模型 + vocos）
+                # 只加载权重（主模型 + vocos），不跑推理
                 await asyncio.to_thread(provider._ensure_engine)
 
-                # Step 2: dummy infer —— 跑一次完整推理，把 workspace 提前扩张
-                # 选 1 字"好"：触发完整推理链路但耗时最短（≈1.86s）
-                try:
-                    presets = load_voice_presets()
-                    preset = next(iter(presets.values()), None)
-                    if preset is not None:
-                        engine = provider._engine
-                        audio_path = preset.audio_path()
-                        if audio_path is not None and audio_path.is_file():
-                            await asyncio.to_thread(
-                                engine.infer,
-                                ref_file=str(audio_path),
-                                ref_text=preset.text.strip(),
-                                gen_text="好",
-                                speed=1.0,
-                            )
-                            # 释放 dummy wav 引用（engine.infer 返回的 tensor 会留在 GPU）
-                            import gc as _gc
-
-                            _gc.collect()
-                            try:
-                                import torch
-
-                                if torch.cuda.is_available():
-                                    torch.cuda.empty_cache()
-                            except Exception:  # noqa: BLE001 - 清理失败不影响主流程
-                                pass
-                except Exception as dummy_exc:  # noqa: BLE001 - dummy infer 失败不应算预热整体失败
-                    # dummy infer 只是优化峰值，失败可忽略；主权重已加载，服务仍可用
-                    import logging as _logging
-
-                    _logging.getLogger("tts.preheat").warning(
-                        "F5-TTS dummy infer 跳过（不影响主权重已加载）：%s", dummy_exc
-                    )
-
             elif provider_name == "voxcpm2":
-                # VoxCPM2 没有单独的声码器加载阶段，_ensure_model 已覆盖全部
                 await asyncio.to_thread(provider._ensure_model)
-                # VoxCPM2 推理极慢（≈31s/句），不值得跑 dummy；跳过
 
             # Edge/baidu 是在线音源，probe 已测通，不需要额外预热
 

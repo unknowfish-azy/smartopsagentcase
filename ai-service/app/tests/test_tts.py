@@ -45,6 +45,16 @@ class _UnavailableProvider(TtsProvider):
         raise AssertionError("不可用 Provider 不应被调用")
 
 
+class _FailingProvider(_FakeProvider):
+    """探测可用但合成必失败：用于验证后端自动换下一个 Provider。"""
+
+    name = "broken"
+    display_name = "Broken TTS"
+
+    def synthesize(self, text, preset, speed):
+        raise tts_module.TtsSynthesisFailed("模拟合成失败")
+
+
 @pytest.fixture(autouse=True)
 def reset_tts_state(monkeypatch):
     """每个用例从干净状态开始：清 Provider 缓存 + 固定默认配置。"""
@@ -142,11 +152,45 @@ def test_synthesize_returns_wav_and_meta(client, auth_headers, fake_provider):
     assert fake_provider.calls == [{"text": "你好，小鱼", "voice": None, "speed": 1.25}]
 
 
+def test_synthesize_首选失败后自动换下一个可用Provider(client, auth_headers, monkeypatch):
+    """显式指定 broken 时，探测可用但合成失败，应自动由后面的 fake 兜底。"""
+    from app.core.config import settings
+
+    monkeypatch.setattr(tts_module, "_AUTO_ORDER", ("broken", "fake"))
+    monkeypatch.setitem(tts_module._PROVIDER_FACTORIES, "broken", _FailingProvider)
+    monkeypatch.setitem(tts_module._PROVIDER_FACTORIES, "fake", _FakeProvider)
+    monkeypatch.setattr(settings, "tts_provider", "broken")
+    reset_provider_cache()
+
+    response = client.post(
+        "/api/tts/synthesize", json={"text": "你好"}, headers=auth_headers()
+    )
+
+    assert response.status_code == 200
+    # 实际发音的是兜底 Provider，响应头如实回传，不能让前端以为还是 broken
+    assert response.headers["x-tts-provider"] == "fake"
+
+
+def test_synthesize_全部Provider失败时报出各自原因(client, auth_headers, monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(tts_module, "_AUTO_ORDER", ("broken",))
+    monkeypatch.setitem(tts_module._PROVIDER_FACTORIES, "broken", _FailingProvider)
+    monkeypatch.setattr(settings, "tts_provider", "broken")
+    reset_provider_cache()
+
+    response = client.post(
+        "/api/tts/synthesize", json={"text": "你好"}, headers=auth_headers()
+    )
+
+    assert response.status_code == 502
+    assert "Broken TTS" in response.json()["message"]
+
+
 def test_synthesize_503_when_no_provider(client, auth_headers, monkeypatch):
     from app.core.config import settings
 
     monkeypatch.setattr(settings, "tts_provider", "none")
-
     response = client.post(
         "/api/tts/synthesize", json={"text": "你好"}, headers=auth_headers()
     )
@@ -575,6 +619,10 @@ def test_read_cn_int_按十百千万亿读():
         10000: "一万",
         10010: "一万零一十",
         100000001: "一亿零一",
+        200: "二百",
+        2000: "两千",
+        2001: "两千零一",
+        20000: "两万",
     }
 
     for value, expected in cases.items():
@@ -591,6 +639,9 @@ def test_normalize_piper_numbers_覆盖告警常见数字形态():
     assert normalize("编号1001") == "编号一千零一"
     assert normalize("增长98%") == "增长百分之九十八"
     assert normalize("温度-5度") == "温度负五度"
+    # 数量口语化：千位及以上的 2 读「两」
+    assert normalize("共2000台") == "共两千台"
+    assert normalize("数量200台") == "数量二百台"
     assert normalize("服务器A-07") == "服务器A-零七"
     assert normalize("地址192.168.1.1") == "地址一九二点一六八点一点一"
     assert normalize("共1,024台") == "共一千零二十四台"
@@ -629,8 +680,17 @@ def test_normalize_piper_numbers_货币与单位换算():
 
     assert normalize("金额¥5") == "金额五元"
     assert normalize("报价￥1,024") == "报价一千零二十四元"
-    assert normalize("费用$12.50") == "费用十二点五美元"
+    assert normalize("费用$12.50") == "费用十二美元五十美分"
     assert normalize("运费€30") == "运费三十欧元"
+    assert normalize("费用€0.50") == "费用五十欧分"
+    assert normalize("费用£5.50") == "费用五英镑五十便士"
+    assert normalize("费用$0.05") == "费用五美分"
+    # 人民币按元/角/分读，其他有辅币的币种按主币+辅币读
+    assert normalize("金额¥5.50") == "金额五元五角"
+    assert normalize("金额¥5.05") == "金额五元零五分"
+    assert normalize("金额¥0.50") == "金额五角"
+    assert normalize("金额¥5.00") == "金额五元"
+    assert normalize("金额¥1,024.50") == "金额一千零二十四元五角"
     assert normalize("重量5kg") == "重量五公斤"
     assert normalize("包体积120MB") == "包体积一百二十兆字节"
     assert normalize("带宽100Mbps") == "带宽一百兆比特每秒"
@@ -645,6 +705,42 @@ def test_normalize_piper_numbers_货币与单位换算():
     assert normalize("间距5px") == "间距五像素"
     assert normalize("写入5GB/s") == "写入五吉字节每秒"
     assert normalize("读取500MB/s") == "读取五百兆字节每秒"
+    # 补齐监控/硬件常见单位：长单位优先（kWh 先于 Wh、mAh 先于 mA、°C 先于 °）
+    assert normalize("帧率60fps") == "帧率六十帧每秒"
+    assert normalize("吞吐2000rps") == "吞吐两千请求每秒"
+    assert normalize("电量5000mAh") == "电量五千毫安时"
+    assert normalize("电量2.5kWh") == "电量二点五千瓦时"
+    assert normalize("亮度300cd") == "亮度三百坎德拉"
+    assert normalize("阻值4.7kΩ") == "阻值四点七千欧"
+    assert normalize("倾角45°") == "倾角四十五度"
+    assert normalize("温度25°C") == "温度二十五摄氏度"
+    # 倒装单位：改成中文前置语序，不读成「五百每秒查询数」
+    assert normalize("分辨率300dpi") == "分辨率每英寸三百点"
+    assert normalize("吞吐500QPS") == "吞吐每秒五百次查询"
+    assert normalize("磁盘1200IOPS") == "磁盘每秒一千二百次读写"
+    # 带中文量级的倒装写法：量级词要保留（5000万 → 五千万）
+    assert normalize("峰值5000万QPS") == "峰值每秒五千万次查询"
+    assert normalize("峰值1.5万QPS") == "峰值每秒一点五万次查询"
+    assert normalize("上传3亿QPS") == "上传每秒三亿次查询"
+    # 带空格的写法：5000 万 QPS
+    assert normalize("峰值 5000 万 QPS") == "峰值 每秒五千万次查询"
+    assert normalize("峰值5000 万 QPS，已恢复") == "峰值每秒五千万次查询，已恢复"
+    # 单位在前的语序：先把单位挪到数字后面再统一读，避免直接念出 QPS 三个字母
+    assert normalize("QPS 5000万") == "每秒五千万次查询"
+    assert normalize("QPS峰值 5000 万") == "峰值每秒五千万次查询"
+    # UI / 告警文案里的真实写法：冒号、括号注释、中间夹副词
+    assert normalize("QPS：5000万") == "每秒五千万次查询"
+    assert normalize("QPS: 5000万") == "每秒五千万次查询"
+    assert normalize("QPS（每秒查询数）5000万") == "每秒五千万次查询"
+    assert normalize("QPS 已达 5000 万") == "每秒五千万次查询"
+    # 未穷举在词表里的中间词与括号包裹的数字，同样不能把 QPS 留给模型念
+    assert normalize("QPS高达5000万") == "每秒五千万次查询"
+    assert normalize("QPS（5000万）") == "每秒五千万次查询"
+    assert normalize("每秒查询数（QPS）5000万") == "每秒查询数五千万"
+    assert normalize("25℃") == "二十五摄氏度"
+    # 全角输入（中文文档常见）先归一化再匹配
+    assert normalize("峰值５０００万ＱＰＳ") == "峰值每秒五千万次查询"
+    assert normalize("图片img300dpis") == "图片img三零零dpis"
 
 
 def test_normalize_piper_numbers_单位不误伤型号与版本():
@@ -753,3 +849,41 @@ def test_piper_synthesize_把语速换算成_length_scale(monkeypatch):
     assert audio[:4] == b"RIFF"
     assert voice.calls == [{"text": "你", "length_scale": 1 / 1.25}]
     assert timing == [{"text": "你", "offset_ms": 0, "duration_ms": 100, "viseme": "ih"}]
+
+
+def test_ffmpeg_shared_dir_未配置时不注册(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "tts_ffmpeg_shared_dir", "")
+    monkeypatch.setattr(tts_module, "_FFMPEG_DLL_DIR_REGISTERED", "")
+
+    assert tts_module._register_ffmpeg_shared_dlls() == ""
+    assert tts_module._FFMPEG_DLL_DIR_REGISTERED == ""
+
+
+def test_ffmpeg_shared_dir_目录不存在时如实报配置错误(monkeypatch, tmp_path):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "tts_ffmpeg_shared_dir", str(tmp_path / "missing"))
+    monkeypatch.setattr(tts_module, "_FFMPEG_DLL_DIR_REGISTERED", "")
+
+    with pytest.raises(tts_module.TtsUnavailable) as failure:
+        tts_module._register_ffmpeg_shared_dlls()
+
+    assert "TTS_FFMPEG_SHARED_DIR" in str(failure.value.message)
+
+
+def test_ffmpeg_shared_dir_注册后进入_PATH且只注册一次(monkeypatch, tmp_path):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "tts_ffmpeg_shared_dir", str(tmp_path))
+    monkeypatch.setattr(tts_module, "_FFMPEG_DLL_DIR_REGISTERED", "")
+    monkeypatch.setenv("PATH", "C:\\Windows")
+
+    first = tts_module._register_ffmpeg_shared_dlls()
+    second = tts_module._register_ffmpeg_shared_dlls()
+
+    assert first == second == str(tmp_path)
+    # 目录被前置到 PATH（pydub 调 ffmpeg.exe 用），且不重复追加
+    assert tts_module.os.environ["PATH"].split(tts_module.os.pathsep)[0] == str(tmp_path)
+    assert tts_module.os.environ["PATH"].count(str(tmp_path)) == 1

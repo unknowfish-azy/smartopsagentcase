@@ -137,6 +137,17 @@ class Settings(BaseSettings):
     # 仅本地/内网联调时显式打开；生产不得开启（等同放弃聊天鉴权）。
     chat_allow_anonymous: bool = False
 
+    # SECURITY BASELINE v0（agent.security_baseline）：独立于 GUARDRAIL v1 的
+    # 硬闸门，负责 L0 合规/L2 运维红线/L1 通用 AI 基线的 fail-closed 拦截
+    # + 轮转哈希链审计落盘。默认关闭，生产入口（部署脚本/容器镜像）显式开。
+    # 与 GUARDRAIL v1 的关系：基线先于 guard 执行（L0/L2 命中即短路），
+    # guard 负责 PII 脱敏/提示词劫持等更细颗粒度的 L1 补充，两者独立开关。
+    security_baseline_enabled: bool = False
+    # 审计落盘目录，相对仓库根（/data/ 整体在 .gitignore 中忽略，落盘天然不入库）。
+    security_audit_dir: str = "data/security_audit"
+    # 外部基线 YAML；空 = 用 agent/security_baseline/baseline.yaml + 内置兜底深度合并。
+    security_baseline_config_path: str = ""
+
     # GUARDRAIL v1（docs/design/llm-guardrail-v1）：对话内容护栏，全部
     # 为确定性规则（正则/解码/字符控制），不做 AI 语义判定（F10 红线）。
     # 总开关：False 时输入/输出检查全部放行，仅审计记录跳过事件。
@@ -180,6 +191,11 @@ class Settings(BaseSettings):
     # F5-TTS 的 vocos 声码器本地目录（需含 config.yaml 与 pytorch_model.bin）。
     # 留空 = 首次合成时从 HF 的 charactr/vocos-mel-24khz 下载（国内直连常超时）。
     tts_f5_vocoder_dir: str = ""
+    # FFmpeg **共享库**目录（bin 下含 avcodec-*.dll / avutil-*.dll 等）。
+    # torchaudio 2.9+ 的 load() 走 torchcodec，需要动态链接 FFmpeg；
+    # 官方 ffmpeg full_build 只有静态 exe，缺 DLL 时 F5-TTS 读参考音频会报
+    # "Could not load libtorchcodec_coreN.dll"。留空 = 不注册（沿用系统 PATH）。
+    tts_ffmpeg_shared_dir: str = ""
     # 音色预设（JSON 对象）：name → {audio, text, description}，也允许简写 name → audio 路径。
     # audio 是参考音频（VoxCPM2 做音色克隆、F5-TTS 做参考声线），相对路径按仓库根解析。
     # 例：{"sweet_girl": {"audio": "assets/tts/sweet_girl.wav", "text": "参考音频的转写文本"}}

@@ -8,7 +8,9 @@ repo_root = Path(__file__).resolve().parents[3]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 from agent.runtime_events import RunIdentity, terminal_event
+from agent.security_baseline import GateAction
 
+from ..core.baseline import get_bundle
 from ..core.exceptions import LLMException, UpstreamSaturated
 from ..core.context_budget import (
     ContextBudget,
@@ -204,9 +206,80 @@ class ChatService:
             or str(uuid4())
         )
 
-        # GUARDRAIL v1（DESIGN §4②）：输入先过确定性规则，BLOCK 不进模型。
+        # SECURITY BASELINE v0：L0 合规 / L2 运维红线 / L1 注入 先于 GUARDRAIL v1
+        # 执行；命中即短路返回，不进 guard、不进模型、审计自动落盘。
+        # baseline 未启用（get_bundle 返回 None）时整段跳过，guard 独立生效。
         message = request.message
         guard_action = "NONE"
+
+        bundle = get_bundle()
+        if bundle is not None:
+            # L0 + L2：以 chat.message 文本为"命令"单独过合规与红线。
+            # consume_quota=False：AI 服务不消耗执行配额，配额只针对 agent 工具调用链。
+            op_decision = bundle.engine.evaluate_operation(
+                tool_name="ai_service.chat",
+                command=message,
+                consume_quota=False,
+            )
+            if not op_decision.allowed:
+                bundle.engine.emit_event(
+                    "baseline.blocked",
+                    layer=op_decision.layer,
+                    decision=op_decision.action.value,
+                    reasons=op_decision.reasons,
+                    request_id=identity.request_id,
+                    extra={"side": "ai_service.chat.input"},
+                )
+                logger.info(
+                    "chat.terminal request_id=%s task_id=%s run_id=%s status=blocked_by_baseline layer=%s reason=%s",
+                    identity.request_id, identity.task_id, identity.run_id,
+                    op_decision.layer.value if op_decision.layer else "-",
+                    op_decision.reasons[:1],
+                )
+                return ChatResponse(
+                    answer=GUARD_BLOCK_ANSWER,
+                    conversation_id=conversation_id,
+                    model=routing_fallback_model(),
+                    provider=self._get_provider(),
+                    trust_score=0.0,
+                    guard_action="BLOCK",
+                    metadata={
+                        "guard_action": "BLOCK",
+                        "guard_reasons": list(op_decision.reasons),
+                        "guard_rule_version": "baseline",
+                        "blocked_by": "security_baseline",
+                    },
+                )
+            # L1：注入/脱敏（evaluate_operation 不覆盖，单独调）。
+            in_decision = bundle.engine.evaluate_input(message)
+            if not in_decision.allowed:
+                bundle.engine.emit_event(
+                    "baseline.blocked",
+                    layer=in_decision.layer,
+                    decision=in_decision.action.value,
+                    reasons=in_decision.reasons,
+                    request_id=identity.request_id,
+                    extra={"side": "ai_service.chat.input"},
+                )
+                return ChatResponse(
+                    answer=GUARD_BLOCK_ANSWER,
+                    conversation_id=conversation_id,
+                    model=routing_fallback_model(),
+                    provider=self._get_provider(),
+                    trust_score=0.0,
+                    guard_action="BLOCK",
+                    metadata={
+                        "guard_action": "BLOCK",
+                        "guard_reasons": list(in_decision.reasons),
+                        "guard_rule_version": "baseline",
+                        "blocked_by": "security_baseline",
+                    },
+                )
+            if in_decision.action is GateAction.REDACT and in_decision.redacted_text:
+                message = in_decision.redacted_text
+
+        # GUARDRAIL v1（DESIGN §4②）：输入先过确定性规则，BLOCK 不进模型。
+        # baseline 已做 L0/L2/L1 前置拦截；未命中时 guard 继续做提示词劫持/PII 补充筛查。
         if guard_policy.guard_enabled():
             decision = guard_input.ensure_safe(
                 guard_input.check_input, message, fail_closed=guard_policy.fail_closed()
@@ -316,21 +389,53 @@ class ChatService:
                 model=routing.model,
             )
 
-        # GUARDRAIL v1（DESIGN §4⑤）：answer 返回用户前过输出检查。
-        output_guard_action = "NONE"
-        if guard_policy.guard_enabled():
-            out_decision = guard_output.check_output_safe(
-                answer, fail_closed=guard_policy.fail_closed()
-            ).with_version(guard_policy.rule_version())
-            _log_guard_event(identity, "output", out_decision)
-            if not out_decision.passed:
+        # SECURITY BASELINE v0（输出侧）：L1 内置 PII/密钥/私钥块审核先于 guard。
+        bundle = get_bundle()
+        if bundle is not None:
+            out_decision = bundle.engine.review_output(answer)
+            if not out_decision.allowed:
+                bundle.engine.emit_event(
+                    "baseline.blocked",
+                    layer=out_decision.layer,
+                    decision=out_decision.action.value,
+                    reasons=out_decision.reasons,
+                    request_id=identity.request_id,
+                    extra={"side": "ai_service.chat.output"},
+                )
+                logger.info(
+                    "chat.output request_id=%s task_id=%s run_id=%s status=blocked_by_baseline",
+                    identity.request_id, identity.task_id, identity.run_id,
+                )
                 answer = GUARD_BLOCK_ANSWER
-                output_guard_action = "BLOCK"
-            elif out_decision.action == ACTION_REDACT:
-                answer = out_decision.redacted
-                output_guard_action = "REDACT"
-            if output_guard_action != "NONE":
-                guard_action = output_guard_action
+                guard_action = "BLOCK"
+            elif out_decision.action is GateAction.REDACT and out_decision.redacted_text:
+                bundle.engine.emit_event(
+                    "baseline.redacted",
+                    layer=out_decision.layer,
+                    decision=out_decision.action.value,
+                    reasons=out_decision.reasons,
+                    request_id=identity.request_id,
+                    extra={"side": "ai_service.chat.output"},
+                )
+                answer = out_decision.redacted_text
+                guard_action = "REDACT"
+
+        # GUARDRAIL v1（DESIGN §4⑤）：answer 返回用户前过输出检查。
+        if guard_action != "BLOCK":  # 基线 BLOCK 已短路，guard 不再介入
+            output_guard_action = "NONE"
+            if guard_policy.guard_enabled():
+                out_decision = guard_output.check_output_safe(
+                    answer, fail_closed=guard_policy.fail_closed()
+                ).with_version(guard_policy.rule_version())
+                _log_guard_event(identity, "output", out_decision)
+                if not out_decision.passed:
+                    answer = GUARD_BLOCK_ANSWER
+                    output_guard_action = "BLOCK"
+                elif out_decision.action == ACTION_REDACT:
+                    answer = out_decision.redacted
+                    output_guard_action = "REDACT"
+                if output_guard_action != "NONE":
+                    guard_action = output_guard_action
 
         inspection = self._inspect_request(request, rag_data)
 
@@ -487,9 +592,62 @@ class ChatService:
             or str(uuid4())
         )
 
+        # SECURITY BASELINE v0：流式入口同样先过 L0/L2/L1 基线硬闸门；
+        # 命中 BLOCK 直接终止 SSE，不进 guard、不进模型，审计自动落盘。
+        message = request.message
+
+        bundle = get_bundle()
+        if bundle is not None:
+            op_decision = bundle.engine.evaluate_operation(
+                tool_name="ai_service.chat",
+                command=message,
+                consume_quota=False,
+            )
+            if not op_decision.allowed:
+                bundle.engine.emit_event(
+                    "baseline.blocked",
+                    layer=op_decision.layer,
+                    decision=op_decision.action.value,
+                    reasons=op_decision.reasons,
+                    request_id=identity.request_id,
+                    extra={"side": "ai_service.chat.stream"},
+                )
+                logger.info(
+                    "chat.stream request_id=%s task_id=%s run_id=%s status=blocked_by_baseline layer=%s",
+                    identity.request_id, identity.task_id, identity.run_id,
+                    op_decision.layer.value if op_decision.layer else "-",
+                )
+                yield {"event": "error", "data": {
+                    "code": "BASELINE_BLOCK",
+                    "message": GUARD_BLOCK_ANSWER,
+                    "guard_reasons": list(op_decision.reasons),
+                    "guard_rule_version": "baseline",
+                    "blocked_by": "security_baseline",
+                }}
+                return
+            in_decision = bundle.engine.evaluate_input(message)
+            if not in_decision.allowed:
+                bundle.engine.emit_event(
+                    "baseline.blocked",
+                    layer=in_decision.layer,
+                    decision=in_decision.action.value,
+                    reasons=in_decision.reasons,
+                    request_id=identity.request_id,
+                    extra={"side": "ai_service.chat.stream"},
+                )
+                yield {"event": "error", "data": {
+                    "code": "BASELINE_BLOCK",
+                    "message": GUARD_BLOCK_ANSWER,
+                    "guard_reasons": list(in_decision.reasons),
+                    "guard_rule_version": "baseline",
+                    "blocked_by": "security_baseline",
+                }}
+                return
+            if in_decision.action is GateAction.REDACT and in_decision.redacted_text:
+                message = in_decision.redacted_text
+
         # GUARDRAIL v1（W2.4）：流式入口同样先过输入检查；BLOCK 直接终止，
         # 不给模型任何透传机会。
-        message = request.message
         if guard_policy.guard_enabled():
             input_decision = guard_input.ensure_safe(
                 guard_input.check_input, message, fail_closed=guard_policy.fail_closed()
@@ -670,12 +828,41 @@ class ChatService:
         if inspection:
             yield {"event": "inspection", "data": inspection}
 
+        # SECURITY BASELINE v0（输出侧）：done 前对累积全文做 PII/密钥审核；
+        # 流式已发出的 token 无法召回，这里仅做「事后标记」（与 guard 一致），
+        # 审计落盘 + guard_action 写入 metadata 供下游观测。
+        stream_baseline_action = "NONE"
+        bundle = get_bundle()
+        if bundle is not None and answer_parts:
+            full_answer = "".join(answer_parts)
+            out_decision = bundle.engine.review_output(full_answer)
+            if not out_decision.allowed:
+                bundle.engine.emit_event(
+                    "baseline.blocked",
+                    layer=out_decision.layer,
+                    decision=out_decision.action.value,
+                    reasons=out_decision.reasons,
+                    request_id=identity.request_id,
+                    extra={"side": "ai_service.chat.stream"},
+                )
+                stream_baseline_action = "BLOCK"
+            elif out_decision.action is GateAction.REDACT:
+                bundle.engine.emit_event(
+                    "baseline.redacted",
+                    layer=out_decision.layer,
+                    decision=out_decision.action.value,
+                    reasons=out_decision.reasons,
+                    request_id=identity.request_id,
+                    extra={"side": "ai_service.chat.stream"},
+                )
+                stream_baseline_action = "REDACT"
+
         # GUARDRAIL v1（W2.4）：done 前对累积全文做输出检查。
         # 流式的 token 已发出、无法召回，因此这里只做「事后标记」：
         # guard_action 写进 done 的 metadata 供审计与下游观测，
         # 不影响前端已渲染的内容——这是流式的固有限制，如实声明。
-        stream_guard_action = "NONE"
-        if guard_policy.guard_enabled() and answer_parts:
+        stream_guard_action = stream_baseline_action  # baseline BLOCK/REDACT 优先
+        if stream_baseline_action == "NONE" and guard_policy.guard_enabled() and answer_parts:
             full_answer = "".join(answer_parts)
             out_decision = guard_output.check_output_safe(
                 full_answer, fail_closed=guard_policy.fail_closed()
