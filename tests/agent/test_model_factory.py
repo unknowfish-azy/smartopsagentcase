@@ -15,7 +15,7 @@ from agent.planner.react_agent import build_react_planner
 @pytest.fixture(autouse=True)
 def _clean_llm_env(monkeypatch):
     for key in ("LLM_PROVIDER", "LLM_MODEL", "LLM_BASE_URL", "LLM_API_KEY",
-                "LLM_TIMEOUT", "LLM_TEMPERATURE", "LLM_FALLBACK_PROVIDER"):
+                "LLM_TIMEOUT", "LLM_TEMPERATURE", "LLM_MAX_TOKENS", "LLM_FALLBACK_PROVIDER"):
         monkeypatch.delenv(key, raising=False)
 
 
@@ -102,10 +102,12 @@ def test_timeout_and_temperature_from_env(monkeypatch):
     monkeypatch.setenv("LLM_API_KEY", "sk-x")
     monkeypatch.setenv("LLM_TIMEOUT", "120")
     monkeypatch.setenv("LLM_TEMPERATURE", "0.1")
+    monkeypatch.setenv("LLM_MAX_TOKENS", "1536")
 
     provider = build_model_provider_from_env()
     assert provider.config.timeout == 120.0
     assert provider.config.temperature == 0.1
+    assert provider.config.max_tokens == 1536
 
 
 # ---------------------------------------------------------------------------

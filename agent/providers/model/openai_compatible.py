@@ -55,6 +55,8 @@ class OpenAICompatibleConfig:
 
     temperature: float = 0.2
 
+    max_tokens: int | None = None
+
     extra_headers: dict[str, str] = field(
         default_factory=dict
     )
@@ -125,6 +127,8 @@ class OpenAICompatibleModelProvider(
                 else temperature
             ),
         }
+        if self.config.max_tokens is not None:
+            payload["max_tokens"] = self.config.max_tokens
 
         payload.update(
             kwargs

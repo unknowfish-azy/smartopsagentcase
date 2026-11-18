@@ -9,6 +9,7 @@ Provider 实现早已就绪（openai-compatible / mock / fallback 降级链）�
     LLM_API_KEY    openai-compatible 必填（大模型密钥）；ollama 可留空（自动用占位）
     LLM_TIMEOUT    可选，默认 60s
     LLM_TEMPERATURE 可选，默认 0.2（研判类任务低温更稳）
+    LLM_MAX_TOKENS 可选，限制单次输出；推理模型建议显式设置以避免 TPM 限额
 
 安全约束：
 * 默认 mock——未配置密钥时绝不向任何外部端点发请求；
@@ -45,6 +46,17 @@ def _float_env(name: str, default: float) -> float:
         return default
 
 
+def _int_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        logger.warning("env %s=%r 非法，回退默认 %s", name, raw, default)
+        return default
+
+
 def _build_openai_compatible(*, ollama: bool = False) -> OpenAICompatibleModelProvider:
     base_url = os.getenv("LLM_BASE_URL", "").strip()
     model = os.getenv("LLM_MODEL", "").strip()
@@ -69,6 +81,7 @@ def _build_openai_compatible(*, ollama: bool = False) -> OpenAICompatibleModelPr
         model=model,
         timeout=_float_env("LLM_TIMEOUT", 60.0),
         temperature=_float_env("LLM_TEMPERATURE", 0.2),
+        max_tokens=_int_env("LLM_MAX_TOKENS", 0) or None,
     )
     # 不打印 api_key；只记录脱敏后的接入信息
     logger.info(
