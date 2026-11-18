@@ -155,12 +155,39 @@ def test_service_unreachable_returns_structured_error():
 # ---------------------------------------------------------------------------
 
 
-def test_build_tools_returns_six_low_risk_tools():
+def test_build_tools_returns_seven_low_risk_tools():
     tools = build_nn_perception_tools(base_url="http://127.0.0.1:8001")
     names = {t.name for t in tools}
-    assert names == {"nn.anomaly", "nn.rootcause", "nn.log_classify", "nn.retrieve", "nn.trace", "nn.tgat"}
+    assert names == {
+        "nn.anomaly", "nn.rootcause", "nn.log_classify", "nn.retrieve",
+        "nn.trace", "nn.forecast", "nn.tgat",
+    }
     for t in tools:
         assert t.requires_approval is False  # 全部只读低风险
+
+
+def test_forecast_payload_and_url():
+    from agent.tools.builtin.nn_perception import ForecastTool
+    http = FakeHttp({"/api/nn/forecast": {"ok": True, "points": [], "model_status": "fallback"}})
+    tool = ForecastTool(base_url="http://127.0.0.1:8001", http_post=http)
+    values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+
+    result = _run(tool, {"values": values, "horizon": 4, "upper_threshold": 10.0})
+
+    assert result["ok"] is True
+    url, payload = http.calls[0]
+    assert url.endswith("/api/nn/forecast")
+    assert payload["values"] == values
+    assert payload["horizon"] == 4
+    assert payload["upper_threshold"] == 10.0
+
+
+def test_forecast_short_series_returns_error():
+    from agent.tools.builtin.nn_perception import ForecastTool
+    tool = ForecastTool(http_post=FakeHttp())
+    result = _run(tool, {"values": [1.0, 2.0]})
+    assert result["ok"] is False
+    assert "至少 8 个点" in result["error"]
 
 
 def test_tgat_payload_and_url():

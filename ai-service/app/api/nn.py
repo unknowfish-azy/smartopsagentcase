@@ -9,6 +9,7 @@ P1-4 Adaptive Threshold: /adaptive-threshold-info, /adaptive-threshold
 P2-1 Action Effect:      /action-info, /action-predict
 P2-2 Fault Simulator:    /simulator-info, /simulate
 P2-3 Reflection Loop:    /reflection-info, /learn-from-incident, /learn-history
+P2-4 PatchTST Forecast:  /forecast-info, /forecast
 P3 Orchestrator:         /orchestrator-info, /orchestrate
 """
 
@@ -73,6 +74,8 @@ from ..schemas.orchestrator import (
 from ..services import adaptive_threshold as adaptive_threshold_svc
 from ..schemas.trace import TraceAnalyzeRequest, TraceAnalyzeResponse
 from ..services import trace_detector as trace_svc
+from ..schemas.forecast import ForecastModelInfo, ForecastRequest, ForecastResponse
+from ..services import forecast_detector as forecast_svc
 from ..schemas.tgat import TGATRequest, TGATResponse
 from ..services import tgat_detector as tgat_svc
 
@@ -410,6 +413,36 @@ async def trace_info() -> dict:
 )
 async def analyze_trace(request: TraceAnalyzeRequest) -> TraceAnalyzeResponse:
     return TraceAnalyzeResponse(**trace_svc.analyze(request))
+
+
+# ---------------------------------------------------------------------------
+# P2 阶段 4：PatchTST 时序预测
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/forecast-info",
+    response_model=ForecastModelInfo,
+    tags=["neural-networks"],
+    summary="PatchTST 时序预测模型状态",
+)
+async def forecast_info() -> ForecastModelInfo:
+    return ForecastModelInfo(**forecast_svc.get_model_info())
+
+
+@router.post(
+    "/forecast",
+    response_model=ForecastResponse,
+    tags=["neural-networks"],
+    summary="PatchTST 单指标多步预测",
+    description=(
+        "输出未来点值、95% 残差近似区间、趋势与启发式风险依据。"
+        "无权重或输入不满足模型上下文/horizon 时显式降级 linear/seasonal_naive；"
+        "risk_score 不是校准后的故障概率。"
+    ),
+)
+async def forecast_series(request: ForecastRequest) -> ForecastResponse:
+    return ForecastResponse(**forecast_svc.forecast(request))
 
 
 # ---------------------------------------------------------------------------
