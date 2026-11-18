@@ -799,6 +799,8 @@ SmartOps-Dataset/asr/
 # 视觉训练产物：YOLO 训练 run 与权重（本地跑出来的，可由 scripts/train_vision_yolo.py 重建）
 /ai-service/runs/
 /ai-service/weights/
+/ai-service/*.pt
+/ai-service/*.onnx
 
 # 第三方教材语料（AI Infra 训练营/Docker 课/RH 教材，版权敏感不入公开仓库）
 /knowledge/reference/
