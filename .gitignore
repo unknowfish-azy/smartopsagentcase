@@ -801,6 +801,7 @@ SmartOps-Dataset/asr/
 /ai-service/weights/
 /ai-service/*.pt
 /ai-service/*.onnx
+/ai-service/data/
 
 # 第三方教材语料（AI Infra 训练营/Docker 课/RH 教材，版权敏感不入公开仓库）
 /knowledge/reference/
