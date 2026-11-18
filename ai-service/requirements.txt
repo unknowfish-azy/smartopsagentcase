@@ -24,6 +24,18 @@ pytest>=8.3,<10
 pytest-asyncio>=0.24,<2
 
 # ------------------------------------------------------------
+# 可选：YOLO 训练（视觉数据蒸馏后的离线训练，见 scripts/train_vision_yolo.py）
+# 默认不安装：推理侧走本地 VLM，不依赖 YOLO；装 torch 会显著拉大镜像。
+# 未安装时 train_vision_yolo.py 给出安装提示；导出/蒸馏脚本不受影响。
+#   pip install ultralytics
+# CPU 也能训，但 --batch 要调小、--epochs 建议 20 起；有 CUDA 时加 --device 0。
+# ------------------------------------------------------------
+# 可选：GroundingDINO 弱标注出框（见 app/vision/grounding.py）
+# 默认不安装：权重约 700MB，未安装时 weak_label_vision.py 的 --engine grounding
+# 会报缺依赖，--engine vlm 不受影响。
+#   pip install transformers torch pillow
+# HuggingFace 直连在国内常超时，代码默认走 hf-mirror，可用 HF_ENDPOINT 覆盖。
+# ------------------------------------------------------------
 # 可选：本地神经 TTS（桌宠「小鱼」播报，见 app/services/tts.py）
 # 默认不安装：体积大、依赖 GPU/显存，装与不装都不影响服务启动。
 # 未安装时 /api/tts/status 返回 available=false 与具体原因，
