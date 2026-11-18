@@ -796,6 +796,10 @@ SmartOps-Dataset/asr/
 # 运行时数据产物（建模导出/输出与 SFT 训练数据，体积超 1GB，可由脚本重建）
 /data/
 
+# 视觉训练产物：YOLO 训练 run 与权重（本地跑出来的，可由 scripts/train_vision_yolo.py 重建）
+/ai-service/runs/
+/ai-service/weights/
+
 # 第三方教材语料（AI Infra 训练营/Docker 课/RH 教材，版权敏感不入公开仓库）
 /knowledge/reference/
 
