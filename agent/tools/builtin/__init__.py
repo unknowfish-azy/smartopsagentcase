@@ -32,6 +32,17 @@ from .shell import (
     ShellCommandTimeout,
 )
 
+from .nn_perception import (
+    NNPerceptionTool,
+    AnomalyDetectTool,
+    RootCauseTool,
+    LogClassifyTool,
+    CaseRetrieveTool,
+    TraceAnalyzeTool,
+    TGATAnalyzeTool,
+    build_nn_perception_tools,
+)
+
 __all__ = [
     "FilesystemTool",
     "FilesystemToolError",
@@ -49,4 +60,12 @@ __all__ = [
     "ShellToolError",
     "ShellCommandDenied",
     "ShellCommandTimeout",
+    "NNPerceptionTool",
+    "AnomalyDetectTool",
+    "RootCauseTool",
+    "LogClassifyTool",
+    "CaseRetrieveTool",
+    "TraceAnalyzeTool",
+    "TGATAnalyzeTool",
+    "build_nn_perception_tools",
 ]
