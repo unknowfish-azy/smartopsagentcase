@@ -34,13 +34,15 @@ class RobotFrameServiceTest {
 
     private VisionInspectionService vision;
     private RobotTelemetryHub hub;
+    private RobotFrameArchiveService archive;
     private RobotFrameService frames;
 
     @BeforeEach
     void setUp() {
         vision = mock(VisionInspectionService.class);
         hub = mock(RobotTelemetryHub.class);
-        frames = new RobotFrameService(vision, hub, 2000);
+        archive = mock(RobotFrameArchiveService.class);
+        frames = new RobotFrameService(vision, hub, archive, 2000);
     }
 
     @AfterEach

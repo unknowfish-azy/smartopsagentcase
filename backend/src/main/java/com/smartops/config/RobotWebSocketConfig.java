@@ -36,3 +36,4 @@ public class RobotWebSocketConfig implements WebSocketConfigurer {
                 .setAllowedOriginPatterns("*");
     }
 }
+

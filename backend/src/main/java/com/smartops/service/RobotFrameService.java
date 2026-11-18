@@ -37,6 +37,7 @@ public class RobotFrameService {
 
     private final VisionInspectionService visionService;
     private final RobotTelemetryHub hub;
+    private final RobotFrameArchiveService archiveService;
     private final long minInspectIntervalMs;
     private final ExecutorService executor = Executors.newFixedThreadPool(2, runnable -> {
         Thread thread = new Thread(runnable, "robot-vision");
@@ -55,9 +56,11 @@ public class RobotFrameService {
 
     public RobotFrameService(VisionInspectionService visionService,
             RobotTelemetryHub hub,
+            RobotFrameArchiveService archiveService,
             @Value("${smartops.robot.frame-interval-ms:2000}") long minInspectIntervalMs) {
         this.visionService = visionService;
         this.hub = hub;
+        this.archiveService = archiveService;
         this.minInspectIntervalMs = minInspectIntervalMs;
     }
 
@@ -86,7 +89,10 @@ public class RobotFrameService {
         latestFrames.put(deviceKey, frame);
 
         CaptureIntent intent = intents.remove(deviceKey);
-        if (intent == null || intent.expiresAt() < System.currentTimeMillis()) {
+        boolean intentValid = intent != null && intent.expiresAt() >= System.currentTimeMillis();
+        // 视觉数据资产：所有真实回传帧都归档（含无意图的自主态帧），巡检目标随帧记录
+        archiveService.archive(deviceKey, intentValid ? intent.target() : null, imageBase64, payload);
+        if (!intentValid) {
             return; // 普通帧：只缓存供控制台查看，不消耗本地模型
         }
         long now = System.currentTimeMillis();

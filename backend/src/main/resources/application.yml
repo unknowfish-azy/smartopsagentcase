@@ -129,6 +129,9 @@ smartops:
   # bridge-token 未配置时桥端点一律拒连（fail-closed，SMARTOPS_ROBOT_BRIDGE_TOKEN 注入）。
   robot:
     bridge-token: ${SMARTOPS_ROBOT_BRIDGE_TOKEN:}
+    # 桥 WS 文本帧上限（字节）：图像以 base64 塞在 JSON 里，servlet 容器默认 8KB，
+    # 一张真实关键帧（数十 KB）就会断链。取 12MB ≈ frame-archive.max-bytes(8MB) 的 base64 膨胀后上限
+    bridge-max-text-bytes: ${SMARTOPS_ROBOT_BRIDGE_MAX_TEXT_BYTES:12582912}
     # 心跳沉默阈值（毫秒）：超过即自动 FAULT + STOP，默认 3 个心跳周期
     heartbeat-timeout-ms: ${SMARTOPS_ROBOT_HEARTBEAT_TIMEOUT_MS:600}
     # 同一设备两次视觉巡检的最小间隔（毫秒）：防止连点拍照打爆本地多模态模型
@@ -137,6 +140,14 @@ smartops:
     brain-parallelism: ${SMARTOPS_ROBOT_BRAIN_PARALLELISM:4}
     # 机队并发上限（与 DAG 并发上限一致，默认 3 台同时启动）
     fleet-concurrency: ${SMARTOPS_ROBOT_FLEET_CONCURRENCY:3}
+    # 关键帧归档（视觉数据资产）：落盘 + 登记 robot_frame，供蒸馏/标注/YOLO 训练使用
+    frame-archive:
+      enabled: ${SMARTOPS_ROBOT_FRAME_ARCHIVE_ENABLED:true}
+      # 与 ai-service/scripts/export_vision_dataset.py 的 --frames-root 默认值保持一致，
+      # 都指向仓库根 data/robot-frames（/data/ 已被 .gitignore 忽略，不会把图片提进仓库）
+      dir: ${SMARTOPS_ROBOT_FRAME_ARCHIVE_DIR:../data/robot-frames}
+      # 单帧上限（字节），超过直接跳过并在日志里说明，不截断（截断会毁样本）
+      max-bytes: ${SMARTOPS_ROBOT_FRAME_ARCHIVE_MAX_BYTES:8388608}
     # M6+M7 重规划配置
     replan:
       # 触发阈值：窗口内连续 WARN/CRITICAL 条数
