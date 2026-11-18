@@ -21,6 +21,7 @@ from agent.tools.errors import (
 from agent.tools.validation import truncate_output, validate_arguments
 
 from .audit import AuditRecord
+from .event_persistence import persist_execution_event
 from .models import ExecutionContext
 from .result import ExecutionResult
 
@@ -136,6 +137,17 @@ class AgentExecutor:
         event.update(status=status)
         self._run_events.append(event)
         result.metadata["run_event"] = event.copy()
+        # P0-2：执行事件落库（best-effort，DB 不可用时降级 JSONL，不阻塞链路）
+        try:
+            persist_execution_event(
+                event=event,
+                tool_name=step.tool_name,
+                error_category=result.error_category,
+                failure_class=result.metadata.get("failure_class"),
+                duration_ms=result.duration_ms,
+            )
+        except Exception:  # noqa: BLE001 — 持久化失败绝不影响执行
+            pass
         logger.info(
             "executor.terminal request_id=%s task_id=%s run_id=%s status=%s step_id=%s category=%s",
             identity.request_id, identity.task_id, identity.run_id, status, event["step_id"],
