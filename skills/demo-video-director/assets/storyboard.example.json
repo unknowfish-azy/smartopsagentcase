@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "project": "Acme 运维平台",
+    "title": "让 AI 从会回答，走向可信执行",
+    "target_seconds": 420,
+    "resolution": "1920x1080",
+    "fps": 30,
+    "output_name": "acme-demo.mp4",
+    "audio": "edge-tts 或本地克隆声线，成片 1.5 倍语速，-16 LUFS",
+    "visual_style": "真实页面录制 + 章节卡 + 红框 + 红箭头 + 合成鼠标 + 点击环 + 底部大字幕",
+    "honesty": "DEMO 与模拟数据保留标识，不展示未复核的性能数字"
+  },
+  "shots": [
+    {
+      "id": "S00A",
+      "chapter": "00 开场",
+      "target": 9,
+      "visual": "深色片头，项目名与可信执行闭环线条渐次点亮",
+      "card_title": "让 AI 可信地完成下一步",
+      "card_points": ["证据驱动", "风险可控", "全程留痕"],
+      "text": "这是 Acme 运维平台的真实演示。我们把每一次建议、每一次变更，都留在同一条证据链上。",
+      "overlay": "Acme 运维平台｜可信智能运维"
+    },
+    {
+      "id": "S00B",
+      "chapter": "00 开场",
+      "target": 9,
+      "route": "/",
+      "visual": "首页全景，红框标出核心入口",
+      "text": "它不只是聊天框，更连接监测、知识、审批与执行。下面按真实页面逐一演示。",
+      "overlay": "证据｜边界｜留痕",
+      "actions": [
+        {"action": "wait", "seconds": 1.2},
+        {"action": "box", "selector": "main", "label": "真实工作台", "seconds": 3}
+      ]
+    },
+    {
+      "id": "S01A",
+      "chapter": "01 问题与架构",
+      "target": 10,
+      "visual": "五层架构卡：交互、治理、智能、证据、执行",
+      "card_title": "从能给答案，到敢交给它做",
+      "card_points": ["交互层", "治理层", "智能层", "证据层", "执行层"],
+      "text": "运维知识散、版本杂、执行风险高。平台要补上的，是从智能建议到可信执行之间的信任缺口。",
+      "overlay": "五层各司其职，任何一层都不能绕开其余约束"
+    },
+    {
+      "id": "S01B",
+      "chapter": "01 问题与架构",
+      "target": 12,
+      "route": "/chat",
+      "visual": "真实提问，红框标出答案与引用",
+      "text": "先看典型故障：连接数打满怎样排查？用户直接描述问题，系统给出答案，并把引用和处理过程一起展示。",
+      "spoken": "先看典型故障：连接数打满怎样排查？用户直接描述问题，系统给出答案，并把引用和处理过程一起展示。",
+      "overlay": "真实输入 · 证据随答案返回",
+      "actions": [
+        {"action": "click", "selector": "text=新建问答", "label": "新建问答"},
+        {"action": "type", "selector": "textarea", "text": "MySQL 连接数打满了怎么排查？", "label": "输入真实问题"},
+        {"action": "click", "selector": "button[type=submit]", "label": "发送问题", "hold": 5},
+        {"action": "box", "selector": ".answer-card", "label": "答案与引用", "seconds": 3},
+        {"action": "arrow", "from_selector": ".answer-card", "to_selector": ".citation", "label": "回到原文核对", "seconds": 3}
+      ]
+    },
+    {
+      "id": "S02A",
+      "chapter": "02 证据驱动问答",
+      "target": 10,
+      "route": "/knowledge",
+      "visual": "知识空间列表与版本信息",
+      "text": "回答为什么可信？因为每条结论都能回到知识原文，看到它适用的版本和出处。",
+      "overlay": "版本是一等公民",
+      "events": [
+        {"type": "box", "start": 1.0, "end": 4.0, "box": [420, 260, 1080, 420], "label": "来源与版本"},
+        {"type": "arrow", "start": 4.2, "end": 7.0, "from": [360, 860], "to": [700, 520], "label": "回到原始出处"}
+      ],
+      "actions": [
+        {"action": "wait", "seconds": 1.5}
+      ]
+    }
+  ]
+}
