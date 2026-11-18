@@ -167,6 +167,17 @@ def test_validate_arguments_supports_enum_and_nested():
         validate_arguments(schema, {"level": "low", "tags": [1]})
 
 
+def test_validate_arguments_supports_union_type():
+    schema = {
+        "type": "object",
+        "properties": {"parent_id": {"type": ["string", "null"]}},
+    }
+    validate_arguments(schema, {"parent_id": "root"})
+    validate_arguments(schema, {"parent_id": None})
+    with pytest.raises(ToolExecutionError):
+        validate_arguments(schema, {"parent_id": 123})
+
+
 # ---------------------------------------------------------------------------
 # 超时 / 重试 / 死循环 / 失败分级
 # ---------------------------------------------------------------------------

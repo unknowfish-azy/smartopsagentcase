@@ -65,10 +65,15 @@ def validate_arguments(
 
 def _validate_property(key: str, rule: dict[str, Any], value: Any) -> None:
     expected = rule.get("type")
-    allowed_types = _SUPPORTED_TYPES.get(expected)
+    expected_names = expected if isinstance(expected, list) else [expected]
+    allowed_types = tuple(
+        python_type
+        for name in expected_names
+        for python_type in _SUPPORTED_TYPES.get(name, ())
+    )
     if allowed_types and not isinstance(value, allowed_types):
         # integer 接受值为整数的 float（JSON 里 1.0 语义上仍是整数）
-        if expected == "integer" and isinstance(value, float) and value.is_integer():
+        if "integer" in expected_names and isinstance(value, float) and value.is_integer():
             pass
         else:
             raise ToolExecutionError(
