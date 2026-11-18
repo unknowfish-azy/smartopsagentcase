@@ -217,7 +217,7 @@ def detect(request) -> dict:
     return {
         "ok": True,
         "mode": state.kind,
-        "model_status": "ok" if state.kind in ("pyg_gcn", "pytorch_gcn") else "unavailable",
+        "model_status": "ok" if state.kind in deep_kinds else "unavailable",
         "event_id": request.event_id,
         "event_key": request.event_key,
         "total_nodes": n,

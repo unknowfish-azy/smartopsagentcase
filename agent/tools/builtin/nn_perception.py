@@ -385,6 +385,59 @@ class TraceAnalyzeTool(NNPerceptionTool):
 
 
 # ---------------------------------------------------------------------------
+# P2 阶段 4 时序预测（PatchTST）
+# ---------------------------------------------------------------------------
+
+
+class ForecastTool(NNPerceptionTool):
+    """单指标多步预测（PatchTST / linear / seasonal_naive）。"""
+
+    endpoint = "/api/nn/forecast"
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(
+            ToolDefinition(
+                name="nn.forecast",
+                description=(
+                    "时序预测：传一段按时间升序的单指标序列，返回未来点值、95% 残差近似区间、"
+                    "趋势和启发式风险依据。用于判断指标走势与是否将越过业务上下限；"
+                    "risk_score 不是校准概率。至少传 8 个点，可传 horizon、seasonal_period、"
+                    "upper_threshold、lower_threshold。"
+                ),
+                risk=RiskLevel.LOW,
+                target_type="AI_SERVICE",
+                idempotency="SAFE_RETRY",
+                input_schema={
+                    "type": "object",
+                    "required": ["values"],
+                    "properties": {
+                        "values": {"type": "array", "minItems": 8,
+                                   "items": {"type": "number"}, "description": "单指标历史序列"},
+                        "horizon": {"type": "integer", "default": 6, "minimum": 1, "maximum": 64},
+                        "metric_name": {"type": "string"},
+                        "seasonal_period": {"type": "integer", "default": 0},
+                        "upper_threshold": {"type": ["number", "null"]},
+                        "lower_threshold": {"type": ["number", "null"]},
+                    },
+                },
+            ),
+            **kwargs,
+        )
+
+    def build_payload(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        values = arguments.get("values")
+        if not values or not isinstance(values, list) or len(values) < 8:
+            raise ValueError("必须提供至少 8 个点的 values（单指标历史序列）")
+        payload: dict[str, Any] = {"values": values}
+        for key in (
+            "horizon", "metric_name", "seasonal_period", "upper_threshold", "lower_threshold",
+        ):
+            if arguments.get(key) is not None:
+                payload[key] = arguments[key]
+        return payload
+
+
+# ---------------------------------------------------------------------------
 # P2 阶段 3 动态拓扑根因感知（TGAT）
 # ---------------------------------------------------------------------------
 
@@ -460,6 +513,7 @@ def build_nn_perception_tools(
         LogClassifyTool(**kwargs),
         CaseRetrieveTool(**kwargs),
         TraceAnalyzeTool(**kwargs),
+        ForecastTool(**kwargs),
         TGATAnalyzeTool(**kwargs),
     ]
 
@@ -471,6 +525,7 @@ __all__ = [
     "LogClassifyTool",
     "CaseRetrieveTool",
     "TraceAnalyzeTool",
+    "ForecastTool",
     "TGATAnalyzeTool",
     "build_nn_perception_tools",
     "DEFAULT_AI_SERVICE_URL",
