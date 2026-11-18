@@ -9,8 +9,11 @@
 -- 2) file_path 存相对路径，迁移目录时不用改库；
 -- 3) target 保留巡检目标，蒸馏时可据此分层抽样；
 -- 4) distilled_at 由 Python 蒸馏脚本回写，避免后端耦合训练侧逻辑。
+--
+-- IF NOT EXISTS：本机曾手工建过同名表（表结构与下面完全一致，已有 32 行归档数据），
+-- 迁移重跑时不能因「表已存在」而中断 Flyway；新环境仍会正常建表。
 
-CREATE TABLE robot_frame (
+CREATE TABLE IF NOT EXISTS robot_frame (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     device_key VARCHAR(64) NOT NULL,
     target VARCHAR(128) NULL,
