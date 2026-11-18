@@ -71,6 +71,10 @@ from ..schemas.orchestrator import (
     OrchestrateResponse,
 )
 from ..services import adaptive_threshold as adaptive_threshold_svc
+from ..schemas.trace import TraceAnalyzeRequest, TraceAnalyzeResponse
+from ..services import trace_detector as trace_svc
+from ..schemas.tgat import TGATRequest, TGATResponse
+from ..services import tgat_detector as tgat_svc
 
 
 router = APIRouter()
@@ -381,3 +385,53 @@ async def orchestrate(request: OrchestrateRequest) -> OrchestrateResponse:
         final_synthesis=plan.final_synthesis,
         agent_count=len(plan.results),
     )
+
+
+# ---------------------------------------------------------------------------
+# P2 阶段 2：调用链 Trace 感知（TraceFormer）
+# ---------------------------------------------------------------------------
+
+
+@router.get("/trace-info", tags=["neural-networks"], summary="Trace 感知模型状态")
+async def trace_info() -> dict:
+    return trace_svc.get_model_info()
+
+
+@router.post(
+    "/trace",
+    response_model=TraceAnalyzeResponse,
+    tags=["neural-networks"],
+    summary="P2 调用链 Trace 异常感知",
+    description=(
+        "TraceFormer（轻量 Transformer）对 SkyWalking/Jaeger span 序列打分，"
+        "定位慢节点/错误 span/关键路径，输出 top-k 可疑 span 结构化证据。"
+        "无权重时降级 heuristic（慢+错误+耗时离群）。"
+    ),
+)
+async def analyze_trace(request: TraceAnalyzeRequest) -> TraceAnalyzeResponse:
+    return TraceAnalyzeResponse(**trace_svc.analyze(request))
+
+
+# ---------------------------------------------------------------------------
+# P2 阶段 3：TGAT 动态拓扑根因感知
+# ---------------------------------------------------------------------------
+
+
+@router.get("/tgat-info", tags=["neural-networks"], summary="TGAT 模型状态")
+async def tgat_info() -> dict:
+    return tgat_svc.get_model_info()
+
+
+@router.post(
+    "/tgat",
+    response_model=TGATResponse,
+    tags=["neural-networks"],
+    summary="P2 TGAT 动态拓扑根因感知",
+    description=(
+        "TGAT（时序图注意力）对**多个时间切片的动态图序列**建模：逐切片图编码 + 时间维 GRU 聚合，"
+        "输出跨时间根因候选、异常传播路径 spread_path、拓扑动态变化。"
+        "适配 K8s 动态扩缩容下拓扑随时间变化的场景；无权重降级 heuristic。"
+    ),
+)
+async def analyze_tgat(request: TGATRequest) -> TGATResponse:
+    return TGATResponse(**tgat_svc.analyze(request))
