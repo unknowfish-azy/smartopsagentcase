@@ -26,7 +26,6 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'keydown'])
 
-const showContent  = computed(() => ['mid', 'near', 'focus'].includes(props.lod))
 const showTypeChip = computed(() => ['mid', 'near', 'focus'].includes(props.lod))
 const showTitle    = computed(() => ['mid', 'near', 'focus'].includes(props.lod))
 const showFooter   = computed(() => ['near', 'focus'].includes(props.lod))

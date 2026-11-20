@@ -5,6 +5,8 @@
  * 生产环境：设置 VITE_AI_SERVICE_URL 指向 ai-service（或由网关代理的 /ai 前缀）。
  */
 
+import { describeAiError } from './runtime'
+
 const AI_SERVICE_BASE = import.meta.env.VITE_AI_SERVICE_URL || '/ai'
 
 /**
@@ -13,7 +15,7 @@ const AI_SERVICE_BASE = import.meta.env.VITE_AI_SERVICE_URL || '/ai'
  */
 function parseSse(raw: string): { event: string; data: any } | null {
   let event = 'message'
-  const dataLines = []
+  const dataLines: string[] = []
   for (const line of raw.split(/\r?\n/)) {
     if (line.startsWith('event:')) {
       event = line.slice(6).trim()
@@ -73,8 +75,16 @@ export async function streamChat(message: string, {
     vector_weight?: number | null
     bm25_weight?: number | null
   }
-  /** 页面上下文（只读参考信息，非指令）：当前页面路径与栏目；缺省时请求体不含该字段。 */
-  context?: { path?: string; section?: string } | null
+  /**
+   * 页面上下文（只读参考信息，非指令）：当前页面路径、栏目，以及 W5 侧翼携带的本页实体与只读摘要。
+   * 缺省时请求体不含该字段；字段白名单化由 domain/chat/pageContext.js 保证。
+   */
+  context?: {
+    path?: string
+    section?: string
+    entity?: { type: string; id: string } | null
+    snapshot?: Record<string, string | number | boolean> | null
+  } | null
 } = {}) {
   const rag = options.rag || {}
   const requestId = options.correlation?.request_id || crypto.randomUUID()
@@ -114,7 +124,16 @@ export async function streamChat(message: string, {
     })
 
     if (!response.ok) {
-      throw new Error(response.status === 401 ? '聊天鉴权失败，请刷新页面后重试' : `AI 服务返回 ${response.status}`)
+      // 尽量取服务端返回的错误码（如 CHAT_RUN_TOKEN_NOT_CONFIGURED）并翻译成可执行提示
+      let code = ''
+      try {
+        const text = await response.text()
+        const parsed = JSON.parse(text)
+        code = String(parsed?.detail?.code || parsed?.detail || parsed?.code || '')
+      } catch { /* 非 JSON 响应，走通用文案 */ }
+      throw new Error(code
+        ? describeAiError(code)
+        : (response.status === 401 ? '聊天鉴权失败，请刷新页面后重试' : `AI 服务返回 ${response.status}`))
     }
     if (!response.body) {
       throw new Error('当前环境不支持流式读取')
@@ -129,7 +148,10 @@ export async function streamChat(message: string, {
       const parsed = parseSse(raw)
       if (!parsed || completed) return
       if (parsed.event === 'error') {
-        const error: Error & { runEvent?: any } = new Error(parsed.data?.message || 'AI 模型输出中断，请重试')
+        const rawMessage = parsed.data?.message
+        const error: Error & { runEvent?: any } = new Error(
+          rawMessage ? describeAiError(String(parsed.data?.code || rawMessage)) : 'AI 模型输出中断，请重试',
+        )
         error.runEvent = parsed.data?.run_event
         throw error
       }
@@ -169,7 +191,7 @@ export async function streamChat(message: string, {
     if (!completed && buffer.trim()) dispatch(buffer)
     if (!completed) throw new Error('AI 流响应提前结束，请重试')
   } catch (error) {
-    if (error?.name === 'AbortError') throw error
+    if (error instanceof Error && error.name === 'AbortError') throw error
     if (onError) onError(error)
     throw error
   } finally {

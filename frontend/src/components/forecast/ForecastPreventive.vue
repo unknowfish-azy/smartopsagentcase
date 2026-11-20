@@ -118,8 +118,6 @@ const items = computed(() =>
   }))
 )
 
-const emptyHint = computed(() => '越界预测未达到预防阈值。')
-
 async function generate(item) {
   if (busy.value) return
   busy.value = true

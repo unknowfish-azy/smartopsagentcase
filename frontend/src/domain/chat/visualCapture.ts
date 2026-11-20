@@ -15,7 +15,9 @@ async function frameToFile(video, source, { documentRef = globalThis.document } 
   const canvas = documentRef.createElement('canvas')
   canvas.width = video.videoWidth || 1280
   canvas.height = video.videoHeight || 720
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+  const context2d = canvas.getContext('2d')
+  if (!context2d) throw new Error('VISUAL_CAPTURE_EMPTY')
+  context2d.drawImage(video, 0, 0, canvas.width, canvas.height)
   const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
   if (!blob) throw new Error('VISUAL_CAPTURE_EMPTY')
   return new File([blob], `${source.toLowerCase()}-${Date.now()}.png`, { type: 'image/png', lastModified: Date.now() })
@@ -29,7 +31,10 @@ async function capture(kind, { mediaDevices = globalThis.navigator?.mediaDevices
     const video = documentRef.createElement('video'); video.muted = true; video.playsInline = true; video.srcObject = stream
     await video.play?.()
     return await frameToFile(video, kind, { documentRef })
-  } catch (error) { throw error?.message?.startsWith('VISUAL_') || error?.message?.includes('UNAVAILABLE') ? error : mediaError(error, 'VISUAL_CAPTURE_FAILED') }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    throw message.startsWith('VISUAL_') || message.includes('UNAVAILABLE') ? error : mediaError(error, 'VISUAL_CAPTURE_FAILED')
+  }
   finally { stopMediaStream(stream) }
 }
 

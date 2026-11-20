@@ -132,7 +132,7 @@ import { createPetNeuralTts } from './petNeuralTts.js'
 import { hasCoarseRun } from './useLipSync.js'
 import { fetchTtsStatus, synthesizeSpeech, synthesizeSpeechWithTiming } from '../../api/tts.ts'
 import { askAssistant, createVoiceInput, isVoiceInputAvailable } from './personaVoice.js'
-import { resolveNavigationIntent, hazardBubble, isHazardRoute } from './voiceCommandRegistry.js'
+import { resolveNavigationIntent, hazardBubble } from './voiceCommandRegistry.js'
 import {
   HAZARD_LEVELS,
   actionBlockedBubble,

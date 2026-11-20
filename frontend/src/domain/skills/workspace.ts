@@ -22,8 +22,12 @@ export function decodeSkills(raw) {
   if (!raw) return emptySkills()
   const data = JSON.parse(raw)
   if (data?.version !== 1 || !Array.isArray(data.skills) || typeof data.goal !== 'string' || data.goal.length > 2000) throw new Error('技能配置无效。')
-  let state = { version: 1, skills: [], goal: data.goal }
-  for (const item of data.skills) { state = installSkill(state, item.markdown, typeof item.source === 'string' ? item.source : ''); state.skills.at(-1).enabled = item.enabled === true }
+  let state = { version: 1, skills: [] as any[], goal: data.goal }
+  for (const item of data.skills) {
+    state = installSkill(state, item.markdown, typeof item.source === 'string' ? item.source : '')
+    const installed = state.skills.at(-1)
+    if (installed) installed.enabled = item.enabled === true
+  }
   return state
 }
 export function skillPrompt(state) {

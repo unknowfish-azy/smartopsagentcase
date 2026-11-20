@@ -45,7 +45,7 @@ export function groupConversations(conversations, query = '', now = Date.now()) 
   yesterday.setDate(yesterday.getDate() - 1)
   const week = new Date(today)
   week.setDate(week.getDate() - 7)
-  const groups = ['今天', '昨天', '最近 7 天', '更早'].map(label => ({ label, items: [] }))
+  const groups = ['今天', '昨天', '最近 7 天', '更早'].map(label => ({ label, items: [] as any[] }))
   const search = query.trim().toLocaleLowerCase()
   for (const conversation of [...conversations].sort((first, second) => second.updatedAt - first.updatedAt)) {
     if (search && ![conversation.title, ...conversation.messages.map(message => message.content)].some(text => text.toLocaleLowerCase().includes(search))) continue
@@ -103,7 +103,7 @@ export function replyMetadata(value: any) {
 }
 
 export function assistantHistory(messages) {
-  const exchanges = []
+  const exchanges: any[] = []
   for (let index = 0; index < messages.length - 1; index++) {
     const question = messages[index]
     const answer = messages[index + 1]
@@ -111,7 +111,7 @@ export function assistantHistory(messages) {
     if ([question, answer].some(message => message.error || message.pending || typeof message.content !== 'string' || !message.content.trim())) continue
     exchanges.push([question, answer].map(({ role, content }) => ({ role, content: content.slice(0, 4000) })))
   }
-  const result = []
+  const result: any[] = []
   let total = 0
   for (const pair of exchanges.reverse()) {
     const size = pair.reduce((sum, message) => sum + message.content.length, 0)

@@ -51,7 +51,7 @@ export function decodeWorkspace(raw) {
   if (!raw) return initialWorkspace()
   const data = JSON.parse(raw)
   if (data?.version !== 1 || !Array.isArray(data.custom) || !data.installed || typeof data.installed !== 'object' || Array.isArray(data.installed)) throw new Error('保存的插件配置格式无效。')
-  const state = { version: 1, custom: [], installed: {} }
+  const state: { version: number; custom: any[]; installed: Record<string, boolean> } = { version: 1, custom: [], installed: {} }
   for (const item of data.custom) {
     const input = Object.fromEntries(['id', 'name', 'version', 'description', 'category', 'entry', 'dependencies'].map(key => [key, item[key]]))
     const plugin = validateManifest(input, catalogFor(state))

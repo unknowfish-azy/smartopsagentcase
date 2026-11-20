@@ -3,7 +3,6 @@ import { describe, test } from 'node:test'
 
 import {
   HAZARD_ROUTES,
-  NAVIGATION_INTENTS,
   hazardBubble,
   isHazardRoute,
   normalizeRoutePath,

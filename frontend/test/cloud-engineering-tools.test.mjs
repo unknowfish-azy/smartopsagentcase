@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { findOperationTool, operationToolGroups, previewOperationToolCommands } from '../src/views/operations/toolCatalog.js'
-import { personalSystemGroups, findPersonalSystemGroup } from '../src/navigation/personalSystemNavigation.js'
+import { findPersonalSystemGroup } from '../src/navigation/personalSystemNavigation.js'
 import { cloudCoverage } from '../src/views/operations/cloudCoverage.js'
 
 const ids = ['docker-compose-status', 'helm-releases', 'k8s-storage', 'k8s-rbac-check', 'mesh-status', 'terraform-environment', 'harbor-endpoint-check', 'containerd-registry-inspect']

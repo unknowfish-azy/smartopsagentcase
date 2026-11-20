@@ -9,7 +9,7 @@ export function splitPane(state, paneId, direction = 'vertical') {
   }
 }
 
-export function orderOperationSessions(sessions = []) {
+export function orderOperationSessions(sessions: any[] = []) {
   return [...sessions].sort((left, right) => {
     const leftTime = Date.parse(left.lastConnectedAt || '')
     const rightTime = Date.parse(right.lastConnectedAt || '')

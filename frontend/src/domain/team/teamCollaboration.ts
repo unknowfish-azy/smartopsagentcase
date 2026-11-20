@@ -1,4 +1,4 @@
-export function teamToolGroups(tools = []) {
+export function teamToolGroups(tools: any[] = []) {
   const values = Array.isArray(tools) ? tools : []
   return [
     { id: 'diagnostics', label: '诊断工具', items: values.filter(tool => tool.readOnly) },

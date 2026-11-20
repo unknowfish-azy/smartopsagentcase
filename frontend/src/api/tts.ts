@@ -51,9 +51,15 @@ export interface TimedSpeech {
 /** 取 Java 边缘签发的短时 run 令牌（TTS 复用聊天鉴权，只验签不消耗 run）。 */
 async function resolveRunToken(): Promise<string> {
   const { default: fetchChatRunToken } = await import('./chatRunToken.ts')
-  const issued: any = await fetchChatRunToken()
-  const payload = issued?.data ?? issued
-  const token = typeof payload?.runToken === 'string' ? payload.runToken : ''
+  const issued = (await fetchChatRunToken()) as
+    | { data?: { runToken?: string }; runToken?: string }
+    | undefined
+  const token =
+    typeof issued?.data?.runToken === 'string'
+      ? issued.data.runToken
+      : typeof issued?.runToken === 'string'
+        ? issued.runToken
+        : ''
   if (!token) throw new Error('聊天鉴权令牌签发失败，无法调用神经语音')
   return token
 }
@@ -105,11 +111,25 @@ export async function synthesizeSpeech(
   return blob
 }
 
-function decodeBase64(content: string): Uint8Array {
+function decodeBase64(content: string): Uint8Array<ArrayBuffer> {
   const binary = globalThis.atob(content)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
   return bytes
+}
+
+/** /api/tts/synthesize 的 JSON 响应（timing 模式）。 */
+interface TtsTimingPayload {
+  audio_base64?: string
+  timing?: Array<{
+    text?: string
+    offset_ms?: number
+    duration_ms?: number
+    viseme?: string
+  }>
+  provider?: string
+  speed_applied?: boolean
+  media_type?: string
 }
 
 /**
@@ -132,14 +152,14 @@ export async function synthesizeSpeechWithTiming(
     body: JSON.stringify(body)
   })
   if (!response.ok) throw new Error(await errorMessage(response))
-  const payload: any = await response.json()
+  const payload = (await response.json()) as Partial<TtsTimingPayload>
   const audioBase64 = typeof payload?.audio_base64 === 'string' ? payload.audio_base64 : ''
   if (!audioBase64) throw new Error('神经语音返回空音频')
   const bytes = decodeBase64(audioBase64)
   if (!bytes.length) throw new Error('神经语音返回空音频')
   const timing: TtsTimingWord[] = Array.isArray(payload?.timing)
     ? payload.timing
-        .map((word: any) => ({
+        .map((word) => ({
           text: typeof word?.text === 'string' ? word.text : '',
           offset_ms: Number(word?.offset_ms),
           duration_ms: Number(word?.duration_ms),

@@ -207,7 +207,6 @@ import {
   robotConsoleEndpoint,
   robotEmergencyStop,
   resetRobot,
-  sendRobotCommand,
   switchRobotMode
 } from '../../api/robot'
 
@@ -419,7 +418,7 @@ async function loadFrame() {
       frameSimulated.value = Boolean(data.simulated)
     }
     if (data?.lastAnalysis) visionResult.value = data.lastAnalysis
-  } catch (error) {
+  } catch {
     // 首屏回填失败不阻塞控制台；后续帧仍会经 WebSocket 到达
   }
 }
@@ -428,7 +427,7 @@ async function loadVisionStatus() {
   try {
     const response = await getVisionStatus()
     visionConfigured.value = Boolean(response?.data?.configured)
-  } catch (error) {
+  } catch {
     visionConfigured.value = false
   }
 }
@@ -452,7 +451,7 @@ function connect() {
   if (disposed || !selectedKey.value) return
   try {
     socket = new WebSocket(robotConsoleEndpoint())
-  } catch (error) {
+  } catch {
     wsState.value = 'closed'
     pushEvent('通道', 'WebSocket 创建失败，遥控不可用', 'error')
     return
@@ -489,7 +488,7 @@ function closeSocket() {
     current.onclose = null
     try {
       current.close()
-    } catch (error) {
+    } catch {
       // 已关闭
     }
   }
@@ -510,7 +509,7 @@ function handleMessage(raw) {
   let envelope
   try {
     envelope = JSON.parse(raw)
-  } catch (error) {
+  } catch {
     return
   }
   const payload = envelope?.payload || {}

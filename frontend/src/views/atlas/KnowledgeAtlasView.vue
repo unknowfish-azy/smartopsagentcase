@@ -140,8 +140,6 @@ function clearFilter() {
 /* ── 图谱布局（确定性旭日式布局，无物理模拟、无动画循环） ───────────── */
 
 let layout = []
-let canvasW = 0
-let canvasH = 0
 
 function buildLayout(width, height) {
   const margin = 48
@@ -216,8 +214,6 @@ function drawGraph() {
   const ctx = canvas.getContext('2d')
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, width, height)
-  canvasW = width
-  canvasH = height
   layout = buildLayout(width, height)
 
   // 连线：课程 → 文档

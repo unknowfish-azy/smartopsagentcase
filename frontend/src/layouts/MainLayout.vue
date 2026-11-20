@@ -94,7 +94,7 @@ import { useAiChatStore } from '../stores/aiChat.js'
 import { currentSession, logoutSession } from '../security/session.js'
 import { isAdminSession } from '../security/portalPolicy.js'
 import { setThemeMode, themeMode } from '../theme.js'
-import { hasExplicitVisualMode, isLightweightVisualMode, setVisualMode, visualMode, visualModeExplicit } from '../visual/visualMode.js'
+import { isLightweightVisualMode, setVisualMode, visualMode } from '../visual/visualMode.js'
 import { personalSystemGroups } from '../navigation/personalSystemNavigation.js'
 import { navHealthBadgeMap } from '../navigation/navigationHealth.js'
 import { getVisibleNavigationGroups, ROLE_LABELS } from '../security/accessModel.js'
@@ -108,8 +108,6 @@ const appStore = useAppStore()
 const companion = useCompanionStore()
 const opsSpider = useOpsSpiderStore()
 const personaPetStore = usePersonaPetStore()
-// 桌宠展开期间鲸让位（同屏 WebGL 主体 ≤ 1，PET.md §2）；收起小球与关闭后恢复
-const personaPetActive = computed(() => personaPetStore.enabled && !personaPetStore.collapsed && route.name !== 'AgentPersona')
 const aiChat = useAiChatStore()
 aiChat.syncAccount()
 let disconnectCompanion
@@ -118,9 +116,6 @@ const isTeamSpace = computed(() => route.meta.space === 'team')
 /* 知识库为长文阅读页，桌宠漫游会遮挡检索结果，因此该区不显示桌宠。 */
 const isKnowledgeSpace = computed(() => route.path.startsWith('/knowledge'))
 const router = useRouter()
-const isConnectionWorkspace = computed(() => route.name === 'Connections')
-/* 智能体模块是一张完整的构成版面，环境鲸/水母会穿过版面正文，因此该区只保留桌宠。 */
-const isCompositionPlate = computed(() => route.name === 'AgentModule')
 const isToolsPage = computed(() => route.name === 'Tools')
 const currentTime = ref('')
 const toolsOpen = ref(false)

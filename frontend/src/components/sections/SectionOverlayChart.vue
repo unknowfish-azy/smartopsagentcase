@@ -66,8 +66,6 @@ function draw() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, rect.width, rect.height)
 
-  const styles = getComputedStyle(host)
-  const c_text = styles.getPropertyValue('--so-text').trim() || '#E8F2F7'
   const c_dim = '#5D6B78'
   const c_zero = 'rgba(232,242,247,.35)'
   const c_grid = 'rgba(255,255,255,.06)'

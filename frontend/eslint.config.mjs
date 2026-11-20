@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import pluginVue from "eslint-plugin-vue";
 import globals from "globals";
+import tsParser from "@typescript-eslint/parser";
 
 export default [
   {
@@ -22,6 +23,19 @@ export default [
 
   js.configs.recommended,
   ...pluginVue.configs["flat/essential"],
+
+  {
+    // vue-eslint-parser 只解析模板与脚本结构；<script setup lang="ts"> 内的类型标注
+    // 需要显式指定 TS 解析器，否则首个 ":" 就会解析失败。
+    files: ["**/*.vue"],
+    languageOptions: {
+      parserOptions: {
+        parser: tsParser,
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
+    },
+  },
 
   {
     files: ["**/*.{js,mjs,vue}"],

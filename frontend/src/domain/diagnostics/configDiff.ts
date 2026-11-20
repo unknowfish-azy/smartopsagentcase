@@ -31,7 +31,7 @@ export function compareConfigTexts(left, right, { ignoreTrailingWhitespace = fal
         : Math.max(scores[(oldIndex + 1) * stride + newIndex], scores[oldIndex * stride + newIndex + 1])
     }
   }
-  const rows = []
+  const rows: any[] = []
   let removed = 0
   let added = 0
   const equal = (oldIndex, newIndex) => rows.push({ type: 'equal', before: oldIndex + 1, after: newIndex + 1, text: afterMasked[newIndex] })

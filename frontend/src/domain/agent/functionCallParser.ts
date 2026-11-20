@@ -4,7 +4,7 @@ function parseJsonText(value) {
   return JSON.parse(fenced ? fenced[1] : text)
 }
 
-export function parseFunctionCallResponse(response, tools = []) {
+export function parseFunctionCallResponse(response: any, tools: any[] = []) {
   try {
     const raw = typeof response === 'string' ? parseJsonText(response) : response
     const call = raw?.tool_call || raw?.toolCall || raw?.function_call || raw

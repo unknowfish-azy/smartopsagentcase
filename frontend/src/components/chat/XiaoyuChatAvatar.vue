@@ -119,14 +119,6 @@ const STATE_LABELS = {
 }
 const stateLabel = computed(() => STATE_LABELS[personaState.value] ?? '待机')
 
-const bubbleText = computed(() => {
-  switch (personaState.value) {
-    case 'warning': return '有活跃告警，我来帮你看看'
-    case 'error': return '故障排查中，需要你关注'
-    default: return '我在，说吧'
-  }
-})
-
 const ragTotal = ref(284)
 const agentStats = ref({ conversations: 156, skills: 8 })
 

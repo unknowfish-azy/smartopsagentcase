@@ -22,7 +22,8 @@ export async function readRemoteSource(link, kind, signal) {
   if (!response.ok) throw new Error(`读取失败（HTTP ${response.status}）。请使用公开的原始文件链接。`)
   const limit = kind === 'skill' ? 65536 : 20000
   if (Number(response.headers.get('content-length')) > limit) throw new Error('远程文件过大。')
-  const reader = response.body.getReader()
+  const reader = response.body?.getReader()
+  if (!reader) throw new Error('远程文件为空。')
   const decoder = new TextDecoder('utf-8', { fatal: true })
   let content = '', size = 0
   try {

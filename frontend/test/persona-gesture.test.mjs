@@ -11,7 +11,6 @@ import {
   sampleGestureExpressions,
   validateGestures
 } from '../src/components/persona/personaGestures.js'
-import { PERSONA_POSE_BASE } from '../src/components/persona/personaStates.js'
 
 /** 渲染层实际持有的骨骼集合（useVrmModel.js 的 RIG_BONES 同源约定） */
 const RIG_BONES = ['head', 'chest', 'leftUpperArm', 'rightUpperArm', 'neck', 'leftLowerArm', 'rightLowerArm', 'leftHand', 'rightHand']

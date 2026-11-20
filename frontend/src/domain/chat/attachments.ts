@@ -54,7 +54,7 @@ export function createAttachmentQueue({ createUrl = (file: File) => URL.createOb
             if (!stored?.id) throw new Error('上传响应缺少附件标识')
             item.stored = stored; item.status = 'uploaded'
           } catch (error) {
-            if (epoch === generation) { item.status = 'failed'; item.error = error.message || '上传失败' }
+            if (epoch === generation) { item.status = 'failed'; item.error = error instanceof Error && error.message ? error.message : '上传失败' }
             throw error
           }
         }
