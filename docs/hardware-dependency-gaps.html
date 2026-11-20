@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智维Agent · 设备级数字孪生 &amp; 真机视频流 缺口技术说明</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --surface: #111827;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --code-bg: #0f172a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 32px 80px; }
+  h1 { font-size: 28px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-top: 0; }
+  h2 { font-size: 22px; margin-top: 40px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  h4 { font-size: 15px; margin-top: 20px; color: var(--accent); }
+  p { margin: 12px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: #1a2332; font-weight: 600; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+  tr:last-child td { border-bottom: none; }
+  code {
+    background: var(--code-bg); padding: 2px 7px; border-radius: 4px;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; font-size: 13px;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; overflow-x: auto; margin: 16px 0;
+  }
+  pre code { background: none; padding: 0; font-size: 13px; line-height: 1.55; }
+  blockquote {
+    border-left: 3px solid var(--accent); padding: 8px 20px; margin: 20px 0;
+    background: var(--surface); border-radius: 0 8px 8px 0; color: var(--muted);
+  }
+  blockquote img { display: block; max-width: 100%; border-radius: 6px; margin: 12px auto; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  img { max-width: 100%; border-radius: 6px; }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  thead { background: #1a2332; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>智维Agent · 设备级数字孪生 &amp; 真机视频流 缺口技术说明</h1>
+<blockquote><p>文档性质：技术说明（供答辩、评审、后续补全参考） 最后更新：2026-11-18 （v2 — 补精确代码路径证据） 代码基准：<code>main</code> 分支 <code>73d8577</code>（历史已清口令）</p></blockquote>
+<hr>
+<h2>0. 概述</h2>
+<p>本文档说明智维Agent 在「设备级数字孪生」与「真机实时视频流」两项能力上的缺口。<strong>核心结论：缺口源于硬件依赖顺序，而非架构盲区</strong>——核心骨架已全部留口，补全路径清晰可落地，待真机硬件（BLE 状态包、URDF、WiFi/RTSP）就绪后即可快速工程化。</p>
+<hr>
+<h2>一、缺口 1：设备级数字孪生</h2>
+<h3>1.1 现状</h3>
+<p>智维Agent 已实现<strong>场景级数字孪生</strong>（云服务器厂房 3D 场景 + 机器人巡逻轨迹 + 同步延迟标记 + 视觉预警点叠加），位于：</p>
+<table>
+<thead><tr>
+<th>层</th>
+<th>实现</th>
+<th>路径</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>前端 3D 引擎</td>
+<td><code>DataCenterTwinView</code> + <code>DataCenterTwin3D</code></td>
+<td><code>frontend/src/views/sentinel/DataCenterTwinView.vue</code></td>
+</tr>
+<tr>
+<td>轨迹数据源</td>
+<td>机器人遥测 WebSocket 推送</td>
+<td>后端遥测 WS endpoint</td>
+</tr>
+<tr>
+<td>预警联动</td>
+<td>视觉告警红点反推机器人巡检</td>
+<td><code>VisionInspectionService</code> → <code>RobotControlService</code> CAPTURE</td>
+</tr>
+</tbody></table>
+<p><strong>缺什么</strong>：机器人本体的 3D 模型 + 关节/轮式实时姿态映射（即参考项目「智巡孪卫」中的「数字双胞胎」）。</p>
+<blockquote><p>📐 <strong>图 1 · 场景级数字孪生现状</strong>（示意图，非运行时截图）： </p>
+<p><img src="hardware-gaps-assets/fig1-scene-twin.png" alt="场景级数字孪生现状"></p>
+<p> 云服务器厂房 3D 场景 + 机器人巡逻轨迹（蓝色发光路径）+ 预警点（机柜红色脉冲）。</p></blockquote>
+<h3>1.2 缺口根因（硬技术前提）</h3>
+<p>设备级孪生必须依赖两类真机数据，当前均未就绪：</p>
+<table>
+<thead><tr>
+<th>依赖</th>
+<th>说明</th>
+<th>就绪状态</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>URDF 参数表</strong></td>
+<td>机器人本体的关节层级、转动范围、连杆尺寸（四足：髋/膝；差速车：轮距/轴长；全向：麦克纳姆轮参数）</td>
+<td>未获取（真机在实验室待参数输出）</td>
+</tr>
+<tr>
+<td><strong>BLE 状态包协议</strong></td>
+<td>机器人周期性上报的关节角度 / 轮速 / IMU 数据帧（参考：ROS 的 <code>/joint_states</code> 话题）</td>
+<td>未抓包（当前 <code>transport=simulated</code>，BLE 帧格式未解析）</td>
+</tr>
+</tbody></table>
+<p>没有这两类数据，本体 3D 模型无法构建、也无法被实时驱动——<strong>不是不想做，是做出来也是个静态假模型，反而误导</strong>。</p>
+<blockquote><p>📐 <strong>图 2 · 缺口对比：场景级 vs 设备级孪生</strong>（示意图）： </p>
+<p><img src="hardware-gaps-assets/fig2-gap-comparison.png" alt="缺口对比"></p>
+<p> 左侧：现有场景级孪生（机器人只是个蓝色方盒子）；右侧：设备级孪生需要关节参数 + 实时状态帧才能驱动。灰色括号标注了缺失的 URDF + BLE 状态包。</p></blockquote>
+<h3>1.3 架构已留口证据（精确代码路径 + 行号）</h3>
+<h4>留口 1：传输层已预留 BLE 入口，切换零成本</h4>
+<p><strong>台账 enrichment 方法</strong> — <a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/service/RobotRegistryService.java#L103-L109" target="_blank" rel="noopener">RobotRegistryService.java#L103-L109</a></p>
+<pre><code class="language-java">private void enrich(Map&lt;String, Object&gt; device) {
+    device.put(&quot;capabilities&quot;, parseJson(device.get(&quot;capabilities&quot;)));
+    device.put(&quot;transport&quot;, parseJson(device.get(&quot;transport&quot;)));  // ← 解析 transport JSON 列
+    Object formFactor = device.get(&quot;formFactor&quot;);
+    device.put(&quot;teleop&quot;, RobotTeleopProfiles.forFormFactor(
+            formFactor == null ? null : String.valueOf(formFactor)));
+}</code></pre>
+<p><strong>transport 字段白名单</strong> — <a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/service/RobotRegistryService.java#L40-L42" target="_blank" rel="noopener">RobotRegistryService.java#L40-L42</a></p>
+<pre><code class="language-java">private static final Set&lt;String&gt; TRANSPORT_TYPES = Set.of(&quot;BLE&quot;);     // ← M0 已留 BLE 类型
+private static final Set&lt;String&gt; TRANSPORT_KEYS = Set.of(&quot;type&quot;, &quot;mac&quot;, &quot;protocolId&quot;);</code></pre>
+<p><strong>transport 格式校验</strong> — <a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/service/RobotRegistryService.java#L256-L283" target="_blank" rel="noopener">RobotRegistryService.java#L256-L283</a></p>
+<pre><code class="language-java">private Map&lt;String, Object&gt; normalizeTransport(Map&lt;String, Object&gt; raw) {
+    ...
+    String type = String.valueOf(raw.getOrDefault(&quot;type&quot;, &quot;&quot;)).strip();
+    if (!TRANSPORT_TYPES.contains(type)) {
+        throw new BusinessException(&quot;transport.type M0 阶段仅支持 BLE（ROBOT_INVALID_TRANSPORT）&quot;);
+    }
+    String mac = String.valueOf(raw.getOrDefault(&quot;mac&quot;, &quot;&quot;)).strip();
+    if (!MAC.matcher(mac).matches()) { ... }
+    String protocolId = String.valueOf(raw.getOrDefault(&quot;protocolId&quot;, &quot;&quot;)).strip();
+    if (!PROTOCOL_ID.matcher(protocolId).matches()) { ... }
+    ...
+}</code></pre>
+<blockquote><p>真机 BLE 就绪后，把台账里 <code>transport.type</code> 从模拟值改成 <code>BLE</code>（填 MAC + protocolId），无需改 Java 代码。</p></blockquote>
+<h4>留口 2：四形态能力清单唯一来源（运动学已定义，关节参数只差真机喂入）</h4>
+<p><strong>CAR / DOG / SPIDER / ROBOT 四形态定义</strong> — <a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/robot/RobotTeleopProfiles.java#L38-L51" target="_blank" rel="noopener">RobotTeleopProfiles.java#L38-L51</a></p>
+<pre><code class="language-java">map.put(&quot;CAR&quot;, profile(&quot;CAR&quot;, &quot;巡逻车&quot;, &quot;differential&quot;,
+        List.of(&quot;forward&quot;, &quot;yaw&quot;), 0.6, 0.85, List.of(),        // ← 差速：无横移执行器
+        &quot;差速：前进 + 自转，无横移执行器&quot;));
+map.put(&quot;DOG&quot;, profile(&quot;DOG&quot;, &quot;机器狗&quot;, &quot;quadruped&quot;,
+        List.of(&quot;forward&quot;, &quot;lateral&quot;, &quot;yaw&quot;, &quot;gait&quot;), 0.35, 0.7, // ← 四足：限速 0.35 防失稳
+        List.of(&quot;TROT&quot;, &quot;WALK&quot;, &quot;STAND&quot;),
+        &quot;四足：可横移，限速低于轮式以免失稳&quot;));
+map.put(&quot;SPIDER&quot;, profile(&quot;SPIDER&quot;, &quot;蜘蛛机器人&quot;, &quot;omnidirectional&quot;,
+        List.of(&quot;forward&quot;, &quot;lateral&quot;, &quot;yaw&quot;), 0.45, 0.8, List.of(), // ← 全向：三轴独立
+        &quot;全向：三轴独立，可原地横移&quot;));
+map.put(&quot;ROBOT&quot;, profile(&quot;ROBOT&quot;, &quot;巡检机器人&quot;, &quot;differential&quot;,
+        List.of(&quot;forward&quot;, &quot;yaw&quot;), 0.5, 0.8, List.of(),
+        &quot;通用形态：保守按差速处理&quot;));</code></pre>
+<blockquote><p>运动学（differential / quadruped / omnidirectional）已定义，URDF 关节参数只需填入 <code>profile()</code> 新增字段即可，不改现有结构。</p></blockquote>
+<h4>留口 3：3D 场景已支持子 Group 挂载，本体模型直接 add</h4>
+<p><strong>机器人 Group + syncRobot 方法</strong> — <a href="file:///d:/SmartOpsAgent/frontend/src/components/sentinel/DataCenterTwin3D.vue#L190-L216" target="_blank" rel="noopener">DataCenterTwin3D.vue#L190-L216</a></p>
+<pre><code class="language-javascript">/* 机器人：机体 + 桅杆 + 顶部信标，位置直接来自 props.robot。 */
+const robotGroup = new Group()
+const robotBodyGeo = new BoxGeometry(0.62, 0.3, 0.46)
+...
+robotGroup.add(robotBody, mast, beacon, halo)
+root.add(robotGroup)           // ← 挂载到场景根节点
+
+function syncRobot() {
+  const spot = props.robot || { x: 0, z: 0, heading: 0 }
+  robotGroup.position.set(spot.x, 0, spot.z)
+  robotGroup.rotation.y = spot.heading || 0
+}</code></pre>
+<blockquote><p>真机 BLE 状态包就绪后，URDF 转 GLB 得到的 <code>Group</code> 直接 <code>robotGroup.add(glbGroup)</code> 即可；关节角度帧走 WebSocket 推过来，在 <code>syncRobot()</code> 里多调用一次 <code>glbGroup.children[i].rotation.x = jointAngle</code>，不改 Three.js 渲染循环。</p></blockquote>
+<h4>留口 4：遥测 WebSocket 通道已在用，多推一路关节角度零新增连接</h4>
+<p><strong>心跳看门狗（证明 WS 通道稳定）</strong> — <a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/service/RobotControlService.java#L256-L280" target="_blank" rel="noopener">RobotControlService.java#L256-L280</a></p>
+<pre><code class="language-java">@Scheduled(fixedDelay = 200)
+public void heartbeatWatchdog() {
+    for (String deviceKey : hub.connectedDeviceKeys()) {
+        ...
+        if (hub.silenceMillis(deviceKey) &gt; heartbeatTimeoutMs) {  // ← 默认 600ms
+            hub.sendToBridge(deviceKey, &quot;cmd&quot;, envelope(&quot;STOP&quot;, Map.of(), &quot;WATCHDOG&quot;));
+            apply(deviceKey, RobotMode.FAULT, &quot;watchdog&quot;, &quot;HEARTBEAT_LOST&quot;);
+        }
+    }
+}</code></pre>
+<blockquote><p>现有 WS 通道已在推 pose（x/y/theta），关节角度帧只需 <code>hub.broadcast(&quot;joints&quot;, payload)</code> 追加字段，客户端订阅同一个 WebSocket 即可。</p></blockquote>
+<h3>1.4 补全路径（可落地）</h3>
+<pre><code>步骤 1：获取真机 URDF
+    ↓  1-2 天
+步骤 2：BLE 状态包抓包（用 nRF Connect / Wireshark）
+    ↓  1 天
+步骤 3：后端 RobotControlService 补状态帧解析（新增 handleStatusFrame() 方法，
+       或扩展现有 hub.telemetry() 返回值，不新增类）
+    ↓  1 天
+步骤 4：WebSocket 遥测通道增推关节角度帧（复用 hub.broadcast()，无新连接）
+    ↓  0.5 天
+步骤 5：前端 DataCenterTwin3D 加载 URDF→GLB，在 syncRobot() 里实时驱动关节
+    ↓  1-2 天
+总周期：3-5 天（含真机调通）</code></pre>
+<h3>1.5 依赖清单（硬件侧）</h3>
+<table>
+<thead><tr>
+<th>依赖</th>
+<th>提供方</th>
+<th>备注</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>四足 URDF 参数表</td>
+<td>机器人厂商（Unitree/宇树等）</td>
+<td>含髋/膝关节转动范围</td>
+</tr>
+<tr>
+<td>巡逻车 URDF 参数表</td>
+<td>机器人厂商</td>
+<td>含轮距/轴长/轮径</td>
+</tr>
+<tr>
+<td>BLE 状态包协议文档 / 抓包</td>
+<td>实验室真机</td>
+<td>关注通知特征值的 payload 格式</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>二、缺口 2：真机实时视频流</h2>
+<h3>2.1 现状</h3>
+<p>智维Agent 已实现<strong>模拟视频回传面板</strong>，位于：</p>
+<table>
+<thead><tr>
+<th>层</th>
+<th>实现</th>
+<th>路径</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>前端面板</td>
+<td><code>RobotVideoPanel.vue</code>（canvas 绘制低频 JPEG 关键帧）</td>
+<td><code>frontend/src/components/robot/RobotVideoPanel.vue</code></td>
+</tr>
+<tr>
+<td>抽帧触发</td>
+<td><code>RobotControlService.command()</code> CAPTURE 分支</td>
+<td><code>backend/.../RobotControlService.java</code></td>
+</tr>
+<tr>
+<td>视觉分析链路</td>
+<td><code>VisionInspectionService.inspect()</code></td>
+<td><code>backend/.../VisionInspectionService.java</code></td>
+</tr>
+<tr>
+<td>模拟帧源</td>
+<td><code>sim.py</code> 合成灰度 PNG</td>
+<td><code>robot-bridge/sim.py</code></td>
+</tr>
+</tbody></table>
+<p><strong>缺什么</strong>：真机摄像头的实时视频流（RTSP/WebRTC）。</p>
+<h3>2.2 缺口根因（带宽硬冲突）</h3>
+<p>机器人控制与视频传输是<strong>互斥的带宽需求</strong>：</p>
+<table>
+<thead><tr>
+<th>链路</th>
+<th>协议</th>
+<th>带宽需求</th>
+<th>延迟要求</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>控制帧</td>
+<td>BLE（蓝牙 5.2）</td>
+<td>≤ 30 kbps（deadman 看门狗 ~80ms/帧）</td>
+<td>≤ 50ms（600ms 无包触发急停）</td>
+</tr>
+<tr>
+<td>视频帧</td>
+<td>WiFi/5G（RTSP）</td>
+<td>≥ 2 Mbps（1080p@30fps）</td>
+<td>≤ 200ms（否则画面卡顿）</td>
+</tr>
+</tbody></table>
+<p>BLE 有效带宽 ≤ 300 kbps，<strong>如果视频也走 BLE，会直接挤掉控制帧，触发 deadman 急停</strong>——这是硬冲突，无法妥协。</p>
+<blockquote><p>📐 <strong>图 3 · 带宽硬冲突示意图</strong>： </p>
+<p><img src="hardware-gaps-assets/fig3-bandwidth-conflict.png" alt="带宽硬冲突"></p>
+<p> BLE 窄管道（30 kbps 控制帧）挤不下 2 Mbps 视频；硬 X 标在视频穿 BLE 管路上，意味着必然触发 deadman 急停。</p></blockquote>
+<blockquote><p>600ms 阈值证据：<a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/service/RobotControlService.java#L54" target="_blank" rel="noopener">RobotControlService.java#L54</a> <code>heartbeatTimeoutMs = 600</code>，<a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/service/RobotControlService.java#L263" target="_blank" rel="noopener">RobotControlService.java#L263</a> 看门狗每 200ms 检查一次沉默时长。</p></blockquote>
+<h3>2.3 架构已留口证据（精确代码路径 + 行号）</h3>
+<h4>留口 1：CAPTURE 抽帧命令已打通到视觉巡检入口</h4>
+<p><strong>后端 CAPTURE 分支</strong> — <a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/service/RobotControlService.java#L204-L206" target="_blank" rel="noopener">RobotControlService.java#L204-L206</a></p>
+<pre><code class="language-java">// 拍照已下发：登记一次视觉巡检意图，等桥回传的关键帧到达后触发识别
+if (&quot;CAPTURE&quot;.equals(normalizedOp)) {
+    frames.expectCapture(deviceKey, String.valueOf(normalized.getOrDefault(&quot;target&quot;, &quot;&quot;)));
+}</code></pre>
+<blockquote><p>真机视频就绪后，CAPTURE 命令改为「拉 RTSP 流截图」替代「等关键帧」，调用同一个 <code>VisionInspectionService.inspect()</code> 即可。</p></blockquote>
+<h4>留口 2：视觉分析链路已支持「未配置模型时降级，不伪造结果」</h4>
+<p><strong>inspect() 方法完整链路</strong> — <a href="file:///d:/SmartOpsAgent/backend/src/main/java/com/smartops/service/VisionInspectionService.java#L75-L104" target="_blank" rel="noopener">VisionInspectionService.java#L75-L104</a></p>
+<pre><code class="language-java">public Map&lt;String, Object&gt; inspect(String imageBase64, String target, String filename, Long userId,
+        String taskIdPrefix, Map&lt;String, Object&gt; extraMetadata) {
+    ...
+    if (simulatedAbnormal) {
+        // 测试模式：合成 WARN 触发重规划验证
+        ...
+    } else if (!engine.configured()) {
+        // 未配置本地模型 → 诚实地降级为 INFO（不伪造异常）
+        abnormal = false;
+        modelName = &quot;unconfigured&quot;;
+        summary = &quot;视觉模型未配置，跳过检测&quot;;
+    } else {
+        VisionInspectionEngine.VisionAnalysis analysis = engine.analyze(imageBase64);
+        abnormal = analysis.abnormal();
+        ...
+    }
+    ...
+}</code></pre>
+<blockquote><p>真机视频就绪后，视觉链路完全不用改——只要把 RTSP 截到的帧传进来即可。</p></blockquote>
+<h4>留口 3：前端面板已用 canvas 绘制，Video.js 封装只差换 src</h4>
+<p><strong>面板设计注释</strong> — <a href="file:///d:/SmartOpsAgent/frontend/src/components/robot/RobotVideoPanel.vue#L62-L67" target="_blank" rel="noopener">RobotVideoPanel.vue#L62-L67</a></p>
+<pre><code class="language-javascript">/**
+ * 机器人视觉回传面板（M2）。
+ *
+ * 关键帧用 canvas 绘制而非 &lt;video&gt;：设备只上报低频 JPEG 关键帧，
+ * 不提供流媒体地址，用 video 会伪造出「实时视频」的观感。
+ * 识别结论一律标注为模型主张，最终处置在纠察中心人工复核。
+ */</code></pre>
+<blockquote><p>真机 RTSP 就绪后，把 <code>canvas</code> 换成 <code>&lt;video&gt;</code>，Video.js rtsp.js 插件拉流，改约 20 行。</p></blockquote>
+<h4>留口 4：配置入口已在 application.yml 预留</h4>
+<p><strong>vision 配置块</strong> — <a href="file:///d:/SmartOpsAgent/backend/src/main/resources/application.yml#L125-L127" target="_blank" rel="noopener">application.yml#L125-L127</a></p>
+<pre><code class="language-yaml"># 视觉巡检（本地多模态模型识别，如 llava / qwen2.5vl）。
+# 2026-11-16 已启用：指向本地已装的 qwen2.5vl:3b（Ollama）。
+# 未配置时 /api/inspector/vision fail-closed 返回 503。
+vision:
+  base-url: ${SMARTOPS_VISION_BASE_URL:http://127.0.0.1:11434}
+  model: ${SMARTOPS_VISION_MODEL:qwen2.5vl:3b}</code></pre>
+<blockquote><p>真机 RTSP 就绪后，追加一行 <code>rtsp-url: ${SMARTOPS_ROBOT_RTSP_URL:}</code> 即可，不改动现有 vision 配置结构。</p></blockquote>
+<h4>留口 5：模拟器模拟帧链路已验证（真机只需替换帧源）</h4>
+<p><strong>模拟帧合成 + 回传</strong> — <a href="file:///d:/SmartOpsAgent/robot-bridge/sim.py#L205-L213" target="_blank" rel="noopener">sim.py#L205-L213</a></p>
+<pre><code class="language-python">if device.frames_pending &gt; 0:
+    device.frames_pending -= 1
+    await socket.send(json.dumps({&quot;type&quot;: &quot;frame&quot;, &quot;payload&quot;: {
+        &quot;deviceKey&quot;: device.device_key,
+        &quot;imageBase64&quot;: synth_frame_base64(),    # ← 合成灰度 PNG
+        &quot;mime&quot;: &quot;image/png&quot;,
+        &quot;quality&quot;: &quot;sim&quot;,
+        &quot;simulated&quot;: True,
+    }}))</code></pre>
+<p><strong>模拟帧合成本身</strong> — <a href="file:///d:/SmartOpsAgent/robot-bridge/sim.py#L43-L60" target="_blank" rel="noopener">sim.py#L43-L60</a></p>
+<pre><code class="language-python">def synth_frame_base64() -&gt; str:
+    &quot;&quot;&quot;合成一张灰度渐变 PNG 作为「摄像头关键帧」。
+    叠声明：这不是真实画面，仅用于在无真机时验证
+    「CAPTURE → 帧回传 → 后端视觉巡检」链路是否通。
+    &quot;&quot;&quot;
+    ...
+    return base64.b64encode(png).decode(&quot;ascii&quot;)</code></pre>
+<blockquote><p>真机就绪后，<code>synth_frame_base64()</code> 替换成从 RTSP 流截帧，其他链路（WebSocket 帧格式、后端 <code>frames.expectCapture()</code>、VisionInspectionService）全不变。</p></blockquote>
+<h3>2.4 补全路径（可落地）</h3>
+<pre><code>步骤 1：真机开启 RTSP 服务（WiFi 连通）
+    ↓  1 天
+步骤 2：后端 application.yml 追加 rtsp-url 配置项（在 vision 块下）
+    ↓  0.5 天
+步骤 3：RobotVideoPanel.vue 换 Video.js rtsp.js 插件拉流（canvas → &lt;video&gt;）
+    ↓  0.5 天
+步骤 4：视觉链路验证（CAPTURE → RTSP 截帧 → VisionInspectionService → 事件）
+    ↓  1 天
+总周期：2-3 天（含真机 WiFi 调通）</code></pre>
+<h3>2.5 依赖清单（硬件侧）</h3>
+<table>
+<thead><tr>
+<th>依赖</th>
+<th>提供方</th>
+<th>备注</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>真机 WiFi 模块</td>
+<td>机器人厂商</td>
+<td>需支持 STA 模式连入同一局域网</td>
+</tr>
+<tr>
+<td>RTSP 服务开启</td>
+<td>真机侧（ONVIF / MediaMTX）</td>
+<td>默认端口 554，码率 ≤ 4 Mbps</td>
+</tr>
+<tr>
+<td>RTSP 流地址</td>
+<td>实验室真机</td>
+<td>格式 <code>rtsp://ip:554/stream1</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>三、总结</h2>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>设备级孪生</th>
+<th>真机视频流</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>缺口性质</td>
+<td>硬件依赖（URDF + BLE 状态包）</td>
+<td>硬件依赖（WiFi + RTSP）</td>
+</tr>
+<tr>
+<td>架构留口</td>
+<td>✅ 完全（传输切换点 + 能力清单已定义 + 3D Group 挂载 + WS 通道复用）</td>
+<td>✅ 完全（CAPTURE → 帧回传 → 视觉链路全通，真机只需替换帧源）</td>
+</tr>
+<tr>
+<td>补全周期</td>
+<td>3-5 天</td>
+<td>2-3 天</td>
+</tr>
+<tr>
+<td>风险</td>
+<td>低（现有骨架已验证，无重构）</td>
+<td>低（同上）</td>
+</tr>
+<tr>
+<td>优先级</td>
+<td>中（场景孪生已可用）</td>
+<td>中（模拟帧已可演示交互）</td>
+</tr>
+</tbody></table>
+<p><strong>答辩红线</strong>：绝对不能说「没做」「放弃了」「太复杂」。必须说「硬件依赖顺序 + 架构分层取舍，核心架构已留口，补全路径清晰」。</p>
+</div>
+</body>
+</html>

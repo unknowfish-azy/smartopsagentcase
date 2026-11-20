@@ -1,0 +1,12 @@
+# SmartOpsAgent 桌面手 机器 → 云端端口注册表
+#
+# 规则（与 ARCHITECTURE §3.5 一致）：
+#   1. 每台被控端一个固定 machine_index，云端监听端口 = 19200 + machine_index；
+#   2. 端口禁止动态抢占——两台机器用同一个 index 会互相覆盖 driver；
+#   3. 新机器上线时先在本文件分配新 index，再跑 desktop_hand_tunnel.ps1；
+#   4. 云端 sshd 必须 allowtcpforwarding=yes + gatewayports=no，脚本 Test-RemotePort 会验证。
+#
+# machine_id, machine_index, cloud_user, cloud_host, cloud_port, notes
+WIN-ACCT-01, 01, ops, aliyun-a.example.com, 22, 测试机房会计系统
+WIN-ACCT-02, 02, ops, aliyun-a.example.com, 22, 测试机房采购系统
+WIN-ACCT-03, 03, ops, aliyun-a.example.com, 22, 待分配
