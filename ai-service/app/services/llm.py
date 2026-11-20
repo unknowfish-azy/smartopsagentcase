@@ -8,6 +8,26 @@ from ..core.config import settings
 from ..core.exceptions import LLMException, UpstreamSaturated
 from ..core.http_pool import http_pool
 
+# 用户原话在提示词里的结构化标记（chat 层用 <user_input> 包裹，防注入）。
+_USER_INPUT_PATTERN = re.compile(r"<user_input>(.*?)</user_input>", re.S)
+
+
+def _mock_question(prompt: str) -> str:
+    """只取用户原话，绝不回显整段提示词。
+
+    提示词里的「要求：/知识库证据：/<user_input> 包裹」是给模型看的脚手架，
+    不是回答内容。mock 若整段回显，桌宠会把模板一起念出来（联调已复现）。
+    """
+    text = prompt or ""
+    match = _USER_INPUT_PATTERN.search(text)
+    question = match.group(1) if match else text
+    if not match:
+        marker = question.rfind("用户问题：")
+        if marker >= 0:
+            question = question[marker + len("用户问题："):]
+    question = re.sub(r"\s+", " ", question).strip()
+    return question[:200] or "（空问题）"
+
 
 class LLMService:
     """
@@ -30,6 +50,7 @@ class LLMService:
         *,
         system_prompt: str | None = None,
         model: str | None = None,
+        response_format: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
 
@@ -37,9 +58,7 @@ class LLMService:
 
         if provider == "mock":
             self.effective_provider = "mock"
-            return self._mock_generate(
-                prompt
-            )
+            return self._mock_generate(prompt, response_format=response_format)
 
         if provider == "ollama":
             try:
@@ -47,6 +66,7 @@ class LLMService:
                     prompt=prompt,
                     system_prompt=system_prompt,
                     model=model,
+                    response_format=response_format,
                     **kwargs,
                 )
                 self.effective_provider = "ollama"
@@ -56,7 +76,7 @@ class LLMService:
                 raise
             except Exception as exc:
                 self._mark_degraded(exc)
-                return self._mock_generate(prompt)
+                return self._mock_generate(prompt, response_format=response_format)
 
         # OpenAI 兼容端点：DashScope 百炼/微调模型、vLLM 等统一走 /chat/completions。
         # 连接失败时与 ollama 同口径降级，degraded / effective_provider 如实上报。
@@ -66,6 +86,7 @@ class LLMService:
                     prompt=prompt,
                     system_prompt=system_prompt,
                     model=model,
+                    response_format=response_format,
                 )
                 self.effective_provider = "openai-compatible"
                 return result
@@ -73,7 +94,7 @@ class LLMService:
                 raise
             except Exception as exc:
                 self._mark_degraded(exc)
-                return self._mock_generate(prompt)
+                return self._mock_generate(prompt, response_format=response_format)
 
         raise LLMException(
             f"暂不支持的 LLM Provider: {provider}"
@@ -158,7 +179,7 @@ class LLMService:
             "的开发阶段模拟回答。\n\n"
             "当前系统已经完成请求接收、RAG 编排和 "
             "LLM 服务接口预留。\n\n"
-            f"用户问题：{prompt}"
+            f"你问的是：{_mock_question(prompt)}"
         )
 
         for piece in re.split(r"(\s+)", text):
@@ -343,14 +364,27 @@ class LLMService:
     @staticmethod
     def _mock_generate(
         prompt: str,
+        response_format: dict[str, Any] | None = None,
     ) -> str:
-
+        # DS-04：给定判定 schema 时，mock 也返回合规 JSON，保证降级链路不破坏输出契约；
+        # 未给 schema 时保留原文案（与旧版逐字节等价）。
+        if response_format is not None:
+            return json.dumps({
+                "verdict": "INSUFFICIENT",
+                "label": None,
+                "used_refs": [],
+                "confidence": 0.0,
+                "gaps_acknowledged": [],
+                "next_probe": {"decision": "WAIT", "probe_id": None,
+                               "reason": "mock 降级，无法完成真实判定"},
+                "rationale": "mock 降级返回，未执行真实模型判定。",
+            }, ensure_ascii=False)
         return (
             "这是 SmartOpsAgent AI Service "
             "的开发阶段模拟回答。\n\n"
             "当前系统已经完成请求接收、RAG 编排和 "
             "LLM 服务接口预留。\n\n"
-            f"用户问题：{prompt}"
+            f"你问的是：{_mock_question(prompt)}"
         )
 
     async def _ollama_generate(
@@ -358,10 +392,13 @@ class LLMService:
         prompt: str,
         system_prompt: str | None = None,
         model: str | None = None,
+        response_format: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
 
-        payload = self._payload(prompt, system_prompt, stream=False, model=model)
+        payload = self._payload(
+            prompt, system_prompt, stream=False, model=model, response_format=response_format
+        )
         started = time.perf_counter()
         async with http_pool.acquire() as client:
             response = await client.post(
@@ -411,17 +448,21 @@ class LLMService:
         *,
         stream: bool,
         model: str | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         messages: list[dict[str, str]] = []
         # system 与 Ollama 分支保持同一份文本，训练/推理口径才一致。
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
-        return {
+        payload: dict[str, Any] = {
             "model": model or settings.llm_model,
             "messages": messages,
             "stream": stream,
         }
+        if response_format is not None:
+            payload["response_format"] = response_format
+        return payload
 
     @staticmethod
     def _perf_from_openai(
@@ -441,9 +482,10 @@ class LLMService:
         prompt: str,
         system_prompt: str | None = None,
         model: str | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> str:
         payload = self._openai_payload(
-            prompt, system_prompt, stream=False, model=model
+            prompt, system_prompt, stream=False, model=model, response_format=response_format
         )
         started = time.perf_counter()
         async with http_pool.acquire() as client:
@@ -532,7 +574,8 @@ class LLMService:
 
     @staticmethod
     def _payload(prompt: str, system_prompt: str | None, *, stream: bool,
-                 model: str | None = None) -> dict[str, Any]:
+                 model: str | None = None,
+                 response_format: dict[str, Any] | None = None) -> dict[str, Any]:
         payload: dict[str, Any] = {
             # PERF-07：调用方可按复杂度路由指定模型；未指定时沿用全局配置。
             "model": model or settings.llm_model,
@@ -547,6 +590,9 @@ class LLMService:
         # 前缀复用失效（实测见 scripts/bench_kv_prefix.py）。0 = 不传沿用默认。
         if settings.llm_num_ctx > 0:
             payload["options"] = {"num_ctx": settings.llm_num_ctx}
+        # DS-04：仅当显式给定判定 schema 时才注入 format，未给定时与旧版逐字节等价。
+        if response_format is not None:
+            payload["format"] = response_format
         return payload
 
     def _reset_call_state(self) -> str:

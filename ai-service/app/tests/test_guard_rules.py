@@ -12,7 +12,7 @@ import pytest
 
 from app.guard.contract import ACTION_BLOCK, ACTION_REDACT, ALLOW, GuardDecision
 from app.guard.input_guard import check_citations, check_input, ensure_safe
-from app.guard.output_guard import check_output
+from app.guard.output_guard import check_decision_citations, check_output
 
 
 @pytest.mark.parametrize(
@@ -160,3 +160,23 @@ def test_guard_decision_version():
     d = GuardDecision(action="BLOCK", reasons=("INJ_OVERRIDE",), rule_version="1.0.0")
     assert d.with_version("1.0.0") is d
     assert d.with_version("1.0.1").rule_version == "1.0.1"
+
+
+# ---------- DS-04：rationale 引用不存在的 ev id = 幻觉 ----------
+
+
+def test_decision_citations_allow_known_refs():
+    answer = '{"verdict":"SUPPORTED","used_refs":["ev-1"],"rationale":"依据 ev-1 的指标越限"}'
+    assert check_decision_citations(answer, {"ev-1", "ev-2"}) == ALLOW
+
+
+def test_decision_citations_block_unknown_ref():
+    answer = '{"verdict":"SUPPORTED","used_refs":["ev-1"],"rationale":"结合 ev-999 可确认"}'
+    decision = check_decision_citations(answer, {"ev-1"})
+    assert decision.action == ACTION_BLOCK
+    assert decision.reasons == ("RATIONALE_CITES_UNKNOWN_REF",)
+    assert not decision.passed
+
+
+def test_decision_citations_empty_answer_passes():
+    assert check_decision_citations("", {"ev-1"}) == ALLOW

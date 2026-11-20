@@ -122,14 +122,15 @@ def check_citations(items: list) -> GuardDecision:
     return ALLOW
 
 
-def ensure_safe(check, message: str, *, fail_closed: bool) -> GuardDecision:
+def ensure_safe(check, message: str, *, fail_closed: bool, **kwargs) -> GuardDecision:
     """fail-closed 包装：护栏自身抛异常时按配置拒绝，绝不静默放行。
 
     fail_closed=True 返回 BLOCK（reasons=GUARD_ERROR）；
     fail_closed=False 放行并记录异常——两条路都留痕，不存在第三种。
+    **kwargs 透传给被包装函数（如 check_output 的 allowed_refs），不传时行为不变。
     """
     try:
-        return check(message)
+        return check(message, **kwargs)
     except Exception as exc:  # noqa: BLE001 - 护栏不得向业务链路抛异常
         logger.exception("guard.error fail_closed=%s", fail_closed)
         if fail_closed:

@@ -425,9 +425,14 @@ def test_edge_timing_frame_把_word_boundary_换算成毫秒():
         )
     )
 
-    assert tts_module._edge_timing_frame(frame) == [
-        {"text": "你好", "offset_ms": 1250, "duration_ms": 400}
-    ]
+    entries = tts_module._edge_timing_frame(frame)
+    assert len(entries) == 1
+    entry = entries[0]
+    assert entry["text"] == "你好"
+    assert entry["offset_ms"] == 1250
+    assert entry["duration_ms"] == 400
+    # 拼音是可选增强：装了 pypinyin 才有，未装时前端如实退回字符近似
+    assert entry.get("pinyin") in (None, "ni hao")
 
 
 def test_edge_timing_frame_忽略非元数据帧与坏_JSON():
@@ -887,3 +892,45 @@ def test_ffmpeg_shared_dir_注册后进入_PATH且只注册一次(monkeypatch, t
     # 目录被前置到 PATH（pydub 调 ffmpeg.exe 用），且不重复追加
     assert tts_module.os.environ["PATH"].split(tts_module.os.pathsep)[0] == str(tmp_path)
     assert tts_module.os.environ["PATH"].count(str(tmp_path)) == 1
+
+
+@pytest.mark.asyncio
+async def test_preheat_piperplus_runs_short_synthesis(monkeypatch):
+    """piper-plus 只加载权重挡不住 phonemizer/g2p 冷启动，预热必须真跑一次短合成。"""
+    from app.core.config import settings
+
+    class _PiperFake(_FakeProvider):
+        name = "piperplus"
+        display_name = "Fake Piper-Plus"
+
+    monkeypatch.setattr(settings, "tts_provider", "piperplus")
+    monkeypatch.setitem(tts_module._PROVIDER_FACTORIES, "piperplus", _PiperFake)
+    reset_provider_cache()
+    provider = tts_module._provider_instance("piperplus")
+
+    coordinator = tts_module.TtsPreheatCoordinator()
+    await coordinator.start()
+
+    assert [call["text"] for call in provider.calls] == ["你好。"]
+    assert coordinator.state == "done"
+    assert coordinator.provider == "piperplus"
+
+
+@pytest.mark.asyncio
+async def test_preheat_failure_is_best_effort(monkeypatch):
+    """预热失败只记状态，不抛异常：绝不能因为它炸掉服务启动。"""
+    from app.core.config import settings
+
+    class _BrokenPiper(_FailingProvider):
+        name = "piperplus"
+        display_name = "Broken Piper-Plus"
+
+    monkeypatch.setattr(settings, "tts_provider", "piperplus")
+    monkeypatch.setitem(tts_module._PROVIDER_FACTORIES, "piperplus", _BrokenPiper)
+    reset_provider_cache()
+
+    coordinator = tts_module.TtsPreheatCoordinator()
+    await coordinator.start()
+
+    assert coordinator.state == "failed"
+    assert "模拟合成失败" in coordinator.error

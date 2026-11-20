@@ -9,18 +9,40 @@ from pydantic import BaseModel, Field, field_validator
 _PAGE_CONTEXT_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
 _PAGE_CONTEXT_MAX_LENGTH = 200
 
+# W5：侧翼可携带的本页实体类型白名单；未知类型一律丢弃，避免任意字符串进入提示与审计。
+_ENTITY_TYPES = frozenset(
+    {
+        "alert",
+        "event",
+        "finding",
+        "device",
+        "doc",
+        "incident",
+        "server",
+        "connection",
+        "diagnostic",
+    }
+)
+_MAX_SNAPSHOT_KEYS = 20
+_MAX_SNAPSHOT_VALUE = 300
+
 
 class PageContext(BaseModel):
 
-    """页面上下文（只读参考信息，非指令）：前端上报的当前页面路径与栏目。
+    """页面上下文（只读参考信息，非指令）：前端上报的当前页面路径、栏目与本页实体。
 
-    服务端仅按固定模板回填这两个字段进 system 提示，绝不拼接页面 DOM 内容，
-    也不把其中的文字当作指令执行。
+    服务端仅按固定模板回填白名单字段进 system 提示，绝不拼接页面 DOM 内容，
+    也不把其中的文字当作指令执行。W5 起支持 entity（type + id）与 snapshot（只读摘要，
+    仅存不进提示词），用于侧翼"带着本页实体提问"。
     """
 
     path: str = ""
 
     section: str = ""
+
+    entity: dict[str, str] | None = None
+
+    snapshot: dict[str, Any] | None = None
 
     @field_validator("path", "section", mode="before")
     @classmethod
@@ -33,6 +55,64 @@ class PageContext(BaseModel):
         cleaned = _PAGE_CONTEXT_CONTROL_CHARS.sub("", value.strip())
 
         return cleaned[:_PAGE_CONTEXT_MAX_LENGTH]
+
+    @field_validator("entity", mode="before")
+    @classmethod
+    def _sanitize_entity(cls, value):
+
+        if value is None:
+            return None
+
+        if not isinstance(value, dict):
+            raise ValueError("entity 必须是对象")
+
+        entity_type = _PAGE_CONTEXT_CONTROL_CHARS.sub(
+            "", str(value.get("type", "")).strip()
+        ).lower()[:64]
+        entity_id = _PAGE_CONTEXT_CONTROL_CHARS.sub(
+            "", str(value.get("id", "")).strip()
+        )[:_PAGE_CONTEXT_MAX_LENGTH]
+
+        # 类型不在白名单或 id 为空：按"未带实体"处理，而不是报错阻断对话。
+        if not entity_type or not entity_id or entity_type not in _ENTITY_TYPES:
+            return None
+
+        return {"type": entity_type, "id": entity_id}
+
+    @field_validator("snapshot", mode="before")
+    @classmethod
+    def _sanitize_snapshot(cls, value):
+
+        if value is None:
+            return None
+
+        if not isinstance(value, dict):
+            raise ValueError("snapshot 必须是对象")
+
+        cleaned: dict[str, Any] = {}
+        for index, (raw_key, raw_value) in enumerate(value.items()):
+            if index >= _MAX_SNAPSHOT_KEYS:
+                break
+
+            key = _PAGE_CONTEXT_CONTROL_CHARS.sub("", str(raw_key).strip())[:64]
+            if not key or raw_value is None:
+                continue
+
+            if isinstance(raw_value, str):
+                item = _PAGE_CONTEXT_CONTROL_CHARS.sub("", raw_value.strip())[:_MAX_SNAPSHOT_VALUE]
+            elif isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
+                item = raw_value
+            elif isinstance(raw_value, bool):
+                item = raw_value
+            else:
+                continue
+
+            if item == "":
+                continue
+
+            cleaned[key] = item
+
+        return cleaned or None
 
 
 class ChatRequest(BaseModel):
@@ -123,6 +203,10 @@ class ChatResponse(BaseModel):
     evidence: list[dict[str, Any]] = Field(
         default_factory=list
     )
+
+    # W2：安全意识结构化简报（smartops.security_brief.v1）。
+    # 由确定性规则生成；生成失败时为 None，不阻断对话主链路。
+    security_brief: dict[str, Any] | None = None
 
     metadata: dict[str, Any] = Field(
         default_factory=dict

@@ -58,6 +58,10 @@ class TtsTimingWord(BaseModel):
     # 有该字段说明是音素级对齐；缺省表示只有词/字边界，口型由前端近似映射。
     viseme: str | None = None
 
+    # 可选：该词/字的拼音（空格分隔、不带声调），供前端中文韵母表映射口型。
+    # Edge 的 WordBoundary 只有词边界，由服务端用 pypinyin 补齐；缺省表示没有拼音信息。
+    pinyin: str | None = None
+
 
 class TtsSynthesizeTimedResponse(BaseModel):
 

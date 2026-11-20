@@ -76,6 +76,16 @@ from ..schemas.trace import TraceAnalyzeRequest, TraceAnalyzeResponse
 from ..services import trace_detector as trace_svc
 from ..schemas.forecast import ForecastModelInfo, ForecastRequest, ForecastResponse
 from ..services import forecast_detector as forecast_svc
+from ..schemas.vision_forecast import (
+    VisionFeedbackRequest,
+    VisionFeedbackResponse,
+    VisionForecastModelInfo,
+    VisionForecastRequest,
+    VisionForecastResponse,
+)
+from ..services import vision_forecast as vision_forecast_svc
+from ..schemas.vision_pipeline import VisionPipelineRequest, VisionPipelineResponse
+from ..services import vision_pipeline as vision_pipeline_svc
 from ..schemas.tgat import TGATRequest, TGATResponse
 from ..services import tgat_detector as tgat_svc
 
@@ -367,7 +377,11 @@ async def get_orchestrator_info() -> OrchestratorModelInfo:
 )
 async def orchestrate(request: OrchestrateRequest) -> OrchestrateResponse:
     orch, _ = _get_orchestrator()
-    orch.max_concurrency = request.max_concurrency
+    orch.configure(
+        max_concurrency=request.max_concurrency,
+        task_timeout_seconds=request.task_timeout_seconds,
+        max_task_retries=request.max_task_retries,
+    )
 
     plan = orch.orchestrate(
         goal=request.goal,
@@ -375,9 +389,6 @@ async def orchestrate(request: OrchestrateRequest) -> OrchestrateResponse:
         enable_agents=request.enable_agents,
         exclude_agents=request.exclude_agents,
     )
-
-    # 让 _synthesize 能拿到 conflict_notes
-    orch._last_plan = plan
 
     return OrchestrateResponse(
         goal=plan.goal,
@@ -387,6 +398,8 @@ async def orchestrate(request: OrchestrateRequest) -> OrchestrateResponse:
         conflict_notes=plan.conflict_notes,
         final_synthesis=plan.final_synthesis,
         agent_count=len(plan.results),
+        trace_id=plan.trace_id,
+        metrics=plan.metrics,
     )
 
 
@@ -468,3 +481,67 @@ async def tgat_info() -> dict:
 )
 async def analyze_tgat(request: TGATRequest) -> TGATResponse:
     return TGATResponse(**tgat_svc.analyze(request))
+
+
+# ---------------------------------------------------------------------------
+# 巡检视觉事件预测：多目标跟踪 + 恒速轨迹外推 + 区域事件
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/vision-forecast-info",
+    response_model=VisionForecastModelInfo,
+    tags=["neural-networks"],
+    summary="巡检视觉事件预测模型状态",
+)
+async def vision_forecast_info() -> VisionForecastModelInfo:
+    return VisionForecastModelInfo(**vision_forecast_svc.get_model_info())
+
+
+@router.post(
+    "/vision-forecast",
+    response_model=VisionForecastResponse,
+    tags=["neural-networks"],
+    summary="巡检视觉事件预测（几何基线）",
+    description=(
+        "消费归一化检测框序列，输出多目标轨迹、未来路径、区域进入/离开/停留超时事件与 ETA。"
+        "当前为恒速几何基线，probability 未经校准；帧数或检测质量不足时显式降级，"
+        "不伪造学习型模型状态。"
+    ),
+)
+async def vision_forecast(request: VisionForecastRequest) -> VisionForecastResponse:
+    return VisionForecastResponse(**vision_forecast_svc.forecast(request))
+
+
+@router.post(
+    "/vision-feedback",
+    response_model=VisionFeedbackResponse,
+    tags=["neural-networks"],
+    summary="巡检视觉预测人工复核回流",
+    description=(
+        "把人工复核结论追加到本地 JSONL，供离线训练使用。"
+        "在线只收集标签，不触发训练、不修改阈值与权重。"
+    ),
+)
+async def vision_feedback(request: VisionFeedbackRequest) -> VisionFeedbackResponse:
+    return VisionFeedbackResponse(**vision_forecast_svc.record_feedback(request.model_dump()))
+
+
+@router.post(
+    "/vision-pipeline",
+    response_model=VisionPipelineResponse,
+    tags=["neural-networks"],
+    summary="取帧 → 检测 → 预测（目录/视频/RTSP 端到端）",
+    description=(
+        "给一个图片目录或视频/RTSP 地址，服务端逐帧跑 torchvision FasterRCNN 检测，"
+        "把归一化检测框按时间轴组装后直接喂给 /vision-forecast 的几何预测引擎。\n\n"
+        "口径：\n"
+        "  - 目录帧源没有真实采集时间，captured_at_ms = 序号 × sample_every_ms（响应里标 assumed_uniform）；"
+        "视频帧源用视频 FPS；\n"
+        "  - 解码失败的帧进 frames_skipped，不静默丢；\n"
+        "  - 无目标/帧数不足返回 ok=false + error_kind，不返回空轨迹；\n"
+        "  - detector.pretrained=true 时首次会下载 COCO 权重，离线环境请给 weights_path 或置 false。"
+    ),
+)
+async def vision_pipeline(request: VisionPipelineRequest) -> VisionPipelineResponse:
+    return VisionPipelineResponse(**vision_pipeline_svc.run(request))

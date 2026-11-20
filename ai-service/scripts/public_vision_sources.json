@@ -1,0 +1,157 @@
+{
+  "schema_version": "smartops.vision_sources.v1",
+  "policy": {
+    "url_scheme": "https",
+    "default_license_allowlist": [
+      "CC0-1.0",
+      "CC-BY-4.0",
+      "CC-BY-3.0",
+      "MIT",
+      "Apache-2.0",
+      "PDDL-1.0",
+      "public-domain"
+    ],
+    "rule": [
+      "只有许可证在 allowlist 内的数据才允许自动下载并进入训练集；",
+      "research-only / 未知许可证默认拒绝，必须显式人工核验后 --allow-restricted 才登记；",
+      "任何包含可识别人脸/工牌等个人信息的数据集不得直接入库，需先脱敏；",
+      "公共数据只做预训练与辅助类，评测集必须使用自有真实巡检帧；",
+      "官方只提供 http 的数据集（如 COCO）一律标 delivery=manual，人工下载后 --register，脚本不自动走 http。"
+    ]
+  },
+  "sources": [
+    {
+      "id": "openimages_v7_class_descriptions",
+      "dataset": "Open Images V7",
+      "kind": "annotations",
+      "delivery": "http",
+      "url": "https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv",
+      "filename": "oidv7-class-descriptions-boxable.csv",
+      "license": "CC-BY-4.0",
+      "license_url": "https://storage.googleapis.com/openimages/web/index.html",
+      "verified": true,
+      "class_map": {},
+      "notes": "Open Images 标注由 Google 以 CC BY 4.0 发布；图片版权归各原作者，仅用于类名对照与筛选。"
+    },
+    {
+      "id": "openimages_v7_train_bbox_annotations",
+      "dataset": "Open Images V7",
+      "kind": "annotations",
+      "delivery": "http",
+      "url": "https://storage.googleapis.com/openimages/v6/oidv6-train-annotations-bbox.csv",
+      "filename": "oidv6-train-annotations-bbox.csv",
+      "license": "CC-BY-4.0",
+      "license_url": "https://storage.googleapis.com/openimages/web/index.html",
+      "verified": true,
+      "class_map": {
+        "Person": "person"
+      },
+      "notes": "官方 V7 下载页（download_v7.html）给出的 train 标注就是 v6 累积文件；2026-11-20 本机实测 HTTP 200，2,258,447,590 字节（约 2.1GiB）。只取 Person → person 做检测预训练；不要把 person 直接标成 person_intrusion（入侵是区域事件，不是物体类别）。"
+    },
+    {
+      "id": "openimages_v7_validation_bbox_annotations",
+      "dataset": "Open Images V7",
+      "kind": "annotations",
+      "delivery": "http",
+      "url": "https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv",
+      "filename": "validation-annotations-bbox.csv",
+      "license": "CC-BY-4.0",
+      "license_url": "https://storage.googleapis.com/openimages/web/index.html",
+      "verified": true,
+      "class_map": {
+        "Person": "person"
+      },
+      "notes": "官方 V7 下载页给出的 validation 标注为 v5 文件；2026-11-20 本机实测 HTTP 200，25,105,048 字节（约 24MiB）。仅用于预训练阶段的泛化评估，不能替代自有巡检评测集。"
+    },
+    {
+      "id": "openimages_v7_validation_image_urls",
+      "dataset": "Open Images V7",
+      "kind": "annotations",
+      "delivery": "http",
+      "url": "https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv",
+      "filename": "validation-images-with-rotation.csv",
+      "license": "CC-BY-4.0",
+      "license_url": "https://storage.googleapis.com/openimages/web/index.html",
+      "verified": true,
+      "class_map": {},
+      "notes": "图片清单（含 OriginalURL / License / OriginalMD5 / Rotation），2026-11-20 实测 HTTP 200、15,245,485 字节。图片版权与许可证逐行不同，下载时按 License 列过滤并逐图记录。"
+    },
+    {
+      "id": "coco_2017_trainval_annotations",
+      "dataset": "COCO 2017",
+      "kind": "annotations",
+      "delivery": "manual",
+      "url": "http://images.cocodataset.org/annotations/annotations_trainval2017.zip",
+      "filename": null,
+      "license": "CC-BY-4.0",
+      "license_url": "https://cocodataset.org/#termsofuse",
+      "verified": false,
+      "class_map": {
+        "person": "person"
+      },
+      "notes": "官方下载页 cocodataset.org/dataset/download.htm 只提供 http 直链；2026-11-20 本机实测 HTTP 200，252,907,541 字节（约 241MiB）。同一地址的 https 因证书 hostname 不匹配无法验证，故按人工获取处理：浏览器下载后 --register。",
+      "instructions": "从官方页 http://images.cocodataset.org/annotations/annotations_trainval2017.zip 下载（仅 http，需自行确认来源与完整性），再用 --register 登记；不要在训练脚本里自动走 http。"
+    },
+    {
+      "id": "coco_2017_val_images",
+      "dataset": "COCO 2017",
+      "kind": "images",
+      "delivery": "manual",
+      "url": "http://images.cocodataset.org/zips/val2017.zip",
+      "filename": null,
+      "license": "CC-BY-4.0",
+      "license_url": "https://cocodataset.org/#termsofuse",
+      "verified": false,
+      "class_map": {
+        "person": "person"
+      },
+      "notes": "官方页标注 [5K/1GB]；2026-11-20 本机实测 HTTP 200，815,585,330 字节（约 778MiB）。只作为 person 类补充样本，入库前需按巡检场景筛选。",
+      "instructions": "从官方页 http://images.cocodataset.org/zips/val2017.zip 下载后 --register；https 入口证书异常，脚本不自动下载。"
+    },
+    {
+      "id": "coco_2017_train_images",
+      "dataset": "COCO 2017",
+      "kind": "images",
+      "delivery": "manual",
+      "url": "http://images.cocodataset.org/zips/train2017.zip",
+      "filename": null,
+      "license": "CC-BY-4.0",
+      "license_url": "https://cocodataset.org/#termsofuse",
+      "verified": false,
+      "class_map": {
+        "person": "person"
+      },
+      "notes": "官方页标注 [118K/18GB]，未在本机完整探测（只确认了同域 val2017.zip 的 http 200）。仅在需要大规模 person 预训练时使用。",
+      "instructions": "从官方页 http://images.cocodataset.org/zips/train2017.zip 下载后 --register；体积大，务必先确认磁盘与哈希。"
+    },
+    {
+      "id": "dfire_fire_smoke",
+      "dataset": "D-Fire",
+      "kind": "dataset",
+      "delivery": "manual",
+      "url": null,
+      "filename": null,
+      "license": "unknown",
+      "license_url": "https://github.com/pedropro/D-Fire",
+      "verified": false,
+      "class_map": {
+        "fire": "fire_or_smoke",
+        "smoke": "fire_or_smoke"
+      },
+      "instructions": "按仓库 README 获取数据集；下载后先人工核对许可证，再用 --register 登记。未核验前不得进入训练集。"
+    },
+    {
+      "id": "roboflow_universe_vision",
+      "dataset": "Roboflow Universe",
+      "kind": "dataset",
+      "delivery": "manual",
+      "url": null,
+      "filename": null,
+      "license": "per-dataset",
+      "license_url": "https://universe.roboflow.com/",
+      "verified": false,
+      "class_map": {},
+      "instructions": "在 Universe 内按许可证筛选（CC BY 4.0 / Public Domain），导出 YOLO 格式后 --register；未标注许可证的数据集一律不用。"
+    }
+  ]
+}

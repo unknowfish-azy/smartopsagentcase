@@ -17,6 +17,7 @@ import asyncio
 import importlib.util
 import io
 import json
+import logging
 import os
 import re
 import sys
@@ -34,6 +35,8 @@ from ..core.config import settings
 from ..core.exceptions import AIServiceException
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+
+logger = logging.getLogger(__name__)
 
 # 推理 Provider 的注册表。测试通过替换它注入假 Provider。
 _PROVIDER_FACTORIES: dict[str, type["TtsProvider"]] = {}
@@ -816,6 +819,37 @@ class EdgeTtsProvider(TtsProvider):
         return audio, timing
 
 
+_EDGE_PAUSE_CHARS = frozenset("，。！？；：、,.!?;:\n")
+
+
+def _pinyin_hint(text: str) -> str:
+    """把 WordBoundary 文本转成与可发音字符一一对应的拼音串（空格分隔、无声调）。
+
+    Edge 只给词边界，前端拿不到韵母就只能按码位瞎猜。这里补一层拼音，
+    前端据此查中文韵母表把口型精度从 char 提升到 pinyin。
+    不装 pypinyin 或任何异常时返回空串，前端如实退回字符近似，绝不伪造。
+    """
+    if not any("\u4e00" <= char <= "\u9fff" for char in text):
+        return ""
+    try:
+        from pypinyin import Style, lazy_pinyin  # noqa: PLC0415 - 可选依赖，按需导入
+    except Exception:  # noqa: BLE001 - 未安装就退回字符近似
+        return ""
+    syllables: list[str] = []
+    try:
+        for char in text:
+            if char.isspace() or char in _EDGE_PAUSE_CHARS:
+                continue
+            if "\u4e00" <= char <= "\u9fff":
+                syllables.append(lazy_pinyin(char, style=Style.NORMAL)[0])
+            else:
+                # 数字/字母原样保留，保持与前端"可发音字符数"逐位对齐
+                syllables.append(char)
+    except Exception:  # noqa: BLE001
+        return ""
+    return " ".join(syllables)
+
+
 def _edge_timing_frame(message: str) -> list[dict[str, Any]]:
     """从 Edge 文本帧里取出 WordBoundary 词级时间戳（换算成毫秒）。
 
@@ -847,13 +881,15 @@ def _edge_timing_frame(message: str) -> list[dict[str, Any]]:
             continue
         if not text.strip() or duration_ms <= 0:
             continue
-        result.append(
-            {
-                "text": str(text),
-                "offset_ms": max(0, offset_ms),
-                "duration_ms": duration_ms,
-            }
-        )
+        entry: dict[str, Any] = {
+            "text": str(text),
+            "offset_ms": max(0, offset_ms),
+            "duration_ms": duration_ms,
+        }
+        pinyin = _pinyin_hint(str(text))
+        if pinyin:
+            entry["pinyin"] = pinyin
+        result.append(entry)
     return result
 
 
@@ -1839,12 +1875,14 @@ class TtsPreheatCoordinator:
         }
 
     async def start(self) -> None:
-        """后台线程里只触发权重加载（不跑推理）。best-effort：失败只记状态，不抛异常。
+        """后台线程里预热主 Provider。best-effort：失败只记状态，不抛异常。
 
-        预热只调 _ensure_engine() / _ensure_model() 加载主权重。
-        刻意不跑 dummy infer——虽然它能把首次合成峰值从 5856MiB 降到稳态，
-        但它自身会把冷启动峰值推到 5856MiB（推理 workspace 瞬态扩张）。
-        改为让预热只加载权重（驻留 ~2000MiB），首次合成时才扩张 workspace。
+        - f5tts / voxcpm2：只调 _ensure_engine() / _ensure_model() 加载主权重，
+          不跑 dummy infer——它能把首次合成峰值从 5856MiB 降到稳态，但自身会把
+          冷启动峰值推到 5856MiB（推理 workspace 瞬态扩张）。
+        - piperplus：必须跑一次**短合成**。它的 phonemizer 有惰性初始化（英文 g2p
+          依赖 NLTK 数据，离线时会尝试下载并阻塞 20-45s），只加载权重挡不住这段
+          冷启动；不预热的话演示现场第一句话会长时间没声音。
         """
         with self._lock:
             if self.state in (_PREHEAT_RUNNING, _PREHEAT_DONE):
@@ -1872,6 +1910,10 @@ class TtsPreheatCoordinator:
             elif provider_name == "voxcpm2":
                 await asyncio.to_thread(provider._ensure_model)
 
+            elif provider_name == "piperplus":
+                # 短合成吞掉 phonemizer/g2p 冷启动；音频丢弃，仅为预热
+                await asyncio.to_thread(provider.synthesize_with_timing, "你好。", None, 1.0)
+
             # Edge/baidu 是在线音源，probe 已测通，不需要额外预热
 
             self._finish(_PREHEAT_DONE)
@@ -1883,6 +1925,14 @@ class TtsPreheatCoordinator:
             self.state = state
             self.finished_at = time.time()
             self.error = error
+            log = logger.warning if state == _PREHEAT_FAILED else logger.info
+            log(
+                "tts.preheat state=%s provider=%s elapsed=%ss error=%s",
+                state,
+                self.provider,
+                self.elapsed,
+                error or "-",
+            )
 
 
 # 进程内单例，由 main.py lifespan 触发

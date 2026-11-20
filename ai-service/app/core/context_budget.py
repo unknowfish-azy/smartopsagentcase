@@ -17,11 +17,11 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import time
 from dataclasses import dataclass, field
 from typing import Any
+
+from app.core.canonical import canonical_digest
 
 
 # ---------------------------------------------------------------------------
@@ -261,7 +261,9 @@ class RagQueryCache:
         vector_weight: float | None,
         bm25_weight: float | None,
     ) -> str:
-        material = json.dumps(
+        # 摘要算法只有一份：走 app.core.canonical（转发 recovery_contracts），
+        # 不再本地 json.dumps + sha256 —— 那会与 canonical 规则悄悄分叉。
+        return canonical_digest(
             {
                 "query": query,
                 "tenant": tenant,
@@ -273,11 +275,8 @@ class RagQueryCache:
                 "score_threshold": score_threshold,
                 "vector_weight": vector_weight,
                 "bm25_weight": bm25_weight,
-            },
-            sort_keys=True,
-            ensure_ascii=False,
-        )
-        return hashlib.sha256(material.encode("utf-8")).hexdigest()
+            }
+        ).removeprefix("sha256:")
 
     def get(self, key: str) -> dict[str, Any] | None:
         entry = self._store.get(key)

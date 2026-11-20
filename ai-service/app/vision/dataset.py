@@ -249,3 +249,155 @@ def read_jsonl(path: Path | str) -> list[dict[str, Any]]:
             except json.JSONDecodeError as error:
                 raise ValueError(f"{path} 第 {lineno} 行不是合法 JSON：{error}") from error
     return records
+
+
+# ---------------------------------------------------------------------------
+# 读回：给 torchvision 训练脚本用（不依赖 PyYAML / ultralytics）
+# ---------------------------------------------------------------------------
+
+IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png", ".bmp", ".webp")
+
+
+def label_path_for(image_path: Path) -> Path:
+    """`.../images/train/x.jpg` → `.../labels/train/x.txt`（YOLO 目录约定）。"""
+    parts = list(image_path.parts)
+    for index in range(len(parts) - 1, -1, -1):
+        if parts[index] == "images":
+            parts[index] = "labels"
+            return Path(*parts).with_suffix(".txt")
+    return image_path.parent / "labels" / f"{image_path.stem}.txt"
+
+
+def read_data_yaml(path: Path | str) -> dict[str, Any]:
+    """解析 `_render_data_yaml` 写出的 data.yaml。
+
+    只支持该形态（`path:` / `train:` / `val:` / `names:` + `  0: name`），
+    不是通用 YAML 解析器——刻意不引入 PyYAML。遇到不认识的段直接报错带行号，
+    不做"猜一下"。
+    """
+    target = Path(path)
+    if not target.is_file():
+        raise ValueError(f"data.yaml 不存在：{target}")
+
+    root: Path | None = None
+    split_dirs: dict[str, str] = {}
+    classes: dict[int, str] = {}
+    in_names = False
+
+    for lineno, raw in enumerate(target.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw.split("#", 1)[0].rstrip()
+        if not line.strip():
+            continue
+        if line.startswith("names:"):
+            in_names = True
+            continue
+        key, _, value = line.strip().partition(":")
+        key, value = key.strip(), value.strip()
+        if in_names:
+            if not key.isdigit():
+                raise ValueError(f"{target}:{lineno} names 段必须是 `  序号: 类别名`，实际 {raw!r}")
+            classes[int(key)] = value.strip("'\"")
+            continue
+        if key == "path":
+            root = Path(value)
+        elif key in {"train", "val"}:
+            split_dirs[key] = value
+
+    if not classes:
+        raise ValueError(f"{target} 没有解析到 names")
+    missing = [index for index in range(max(classes) + 1) if index not in classes]
+    if missing:
+        raise ValueError(f"{target} names 序号不连续，缺：{missing}")
+
+    base = root if root and root.is_absolute() else (target.parent / (root or Path(".")))
+    splits = {
+        name: (base / value if not Path(value).is_absolute() else Path(value))
+        for name, value in split_dirs.items()
+    }
+    return {
+        "root": base,
+        "splits": splits,
+        "classes": [classes[index] for index in sorted(classes)],
+    }
+
+
+def parse_yolo_labels(path: Path | str) -> list[tuple[int, float, float, float, float]]:
+    """读 YOLO 标注：`class cx cy w h`（归一化）。空文件 = 负样本，返回 []。"""
+    target = Path(path)
+    boxes: list[tuple[int, float, float, float, float]] = []
+    if not target.is_file():
+        return boxes
+
+    for lineno, raw in enumerate(target.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw.strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) != 5:
+            raise ValueError(f"{target}:{lineno} 需要 5 列（class cx cy w h），实际 {len(parts)} 列")
+        try:
+            class_id = int(parts[0])
+            cx, cy, width, height = (float(value) for value in parts[1:])
+        except ValueError as error:
+            raise ValueError(f"{target}:{lineno} 含非数值：{raw!r}") from error
+        if class_id < 0:
+            raise ValueError(f"{target}:{lineno} 类别 id 为负：{class_id}")
+        for name, value in (("cx", cx), ("cy", cy), ("w", width), ("h", height)):
+            if not 0.0 <= value <= 1.0:
+                raise ValueError(f"{target}:{lineno} {name}={value} 不在 [0,1]")
+        if width <= 0 or height <= 0:
+            raise ValueError(f"{target}:{lineno} 框宽高必须为正：w={width} h={height}")
+        boxes.append((class_id, cx, cy, width, height))
+    return boxes
+
+
+def dataset_health(data_yaml: Path | str) -> dict[str, Any]:
+    """训练前自检：类别、样本数、空标注比例、越界类别 id。
+
+    空标注是合法的负样本，所以只统计不报警；**越界类别 id 和格式错误才是问题**，
+    全部写进 `problems`，由训练脚本决定是否中止。
+    """
+    parsed = read_data_yaml(data_yaml)
+    class_count = len(parsed["classes"])
+    histogram: dict[str, int] = {name: 0 for name in parsed["classes"]}
+    problems: list[str] = []
+    splits: dict[str, dict[str, int]] = {}
+
+    for split, image_dir in parsed["splits"].items():
+        images = sorted(
+            path for path in image_dir.glob("*") if path.suffix.lower() in IMAGE_SUFFIXES
+        ) if image_dir.is_dir() else []
+        stats = {"images": len(images), "empty_labels": 0, "boxes": 0, "missing_labels": 0}
+        if not image_dir.is_dir():
+            problems.append(f"{split} 图片目录不存在：{image_dir}")
+
+        for image in images:
+            label = label_path_for(image)
+            if not label.is_file():
+                stats["missing_labels"] += 1
+                continue
+            try:
+                boxes = parse_yolo_labels(label)
+            except ValueError as error:
+                problems.append(str(error))
+                continue
+            if not boxes:
+                stats["empty_labels"] += 1
+            for class_id, *_ in boxes:
+                stats["boxes"] += 1
+                if class_id >= class_count:
+                    problems.append(
+                        f"{label} 类别 id {class_id} 超出范围（共 {class_count} 类）"
+                    )
+                else:
+                    histogram[parsed["classes"][class_id]] += 1
+        splits[split] = stats
+
+    return {
+        "data_yaml": str(data_yaml),
+        "classes": parsed["classes"],
+        "splits": splits,
+        "class_histogram": histogram,
+        "problems": problems,
+        "ok": not problems,
+    }

@@ -30,6 +30,12 @@ class OrchestrateRequest(BaseModel):
     enable_agents: list[str] | None = Field(default=None, description="只启用这些 agent_id")
     exclude_agents: list[str] | None = Field(default=None, description="排除这些 agent_id")
     max_concurrency: int = Field(default=3, ge=1, le=10)
+    task_timeout_seconds: float | None = Field(
+        default=None, gt=0, description="单波子任务时间预算（秒），不传用服务默认值"
+    )
+    max_task_retries: int | None = Field(
+        default=None, ge=0, le=5, description="子任务异常后的额外重试次数"
+    )
     mode: Literal["direct", "http"] = "direct"
 
 
@@ -41,6 +47,8 @@ class OrchestrateResponse(BaseModel):
     conflict_notes: list[str] = Field(default_factory=list)
     final_synthesis: str = ""
     agent_count: int = 0
+    trace_id: str = ""
+    metrics: dict[str, Any] = Field(default_factory=dict)
 
 
 class OrchestratorModelInfo(BaseModel):
