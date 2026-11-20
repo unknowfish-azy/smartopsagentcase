@@ -138,6 +138,9 @@ DEFAULT_BASELINE: dict[str, Any] = {
             "multimodal.escalation",
             "multimodal.destructive_allowed",
             "quota.exhausted",
+            "agent.write.requested",
+            "agent.write.succeeded",
+            "agent.write.failed",
         ],
     },
     "L0_COMPLIANCE": {

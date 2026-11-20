@@ -26,6 +26,10 @@ class EventBus:
         if handler in handlers:
             handlers.remove(handler)
 
+    def has_subscribers(self, event_name: str) -> bool:
+        """同步上下文（如 Orchestrator）发事件前判断是否有订阅者，避免空转。"""
+        return bool(self._handlers.get(event_name))
+
     async def publish(self, event: AgentEvent) -> None:
         handlers = list(self._handlers.get(event.name, []))
 

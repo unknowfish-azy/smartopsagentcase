@@ -17,16 +17,44 @@ provider=mock（安全兜底）、感知工具指向 SMARTOPS_AI_SERVICE_URL。
 
 from __future__ import annotations
 
+import threading
+from pathlib import Path
 from typing import Any, Iterable
 
 from agent.executor.executor import AgentExecutor, ExecutionPolicy
 from agent.policies.policy_engine import PolicyEngine
 from agent.providers.model.factory import build_model_provider_from_env
 from agent.sdk.model import ModelProvider
+from agent.security_baseline import (
+    DEFAULT_AUDIT_DIR,
+    SecurityBaselineBundle,
+    build_security_baseline,
+)
 from agent.tools.builtin.nn_perception import build_nn_perception_tools
 from agent.tools.registry import ToolRegistry
 
 from .react_planner import ReActPlanner
+
+# 进程内按审计目录复用同一份基线 bundle：
+# 多个组合根重复装配会各自持有 sink 并写同一条哈希链，容易把链写乱。
+_DEFAULT_BASELINE_LOCK = threading.Lock()
+_DEFAULT_BASELINES: dict[str, SecurityBaselineBundle] = {}
+
+
+def _default_baseline(
+    audit_dir: str | Path | None,
+    config_path: str | Path | None,
+) -> SecurityBaselineBundle:
+    key = f"{Path(audit_dir or DEFAULT_AUDIT_DIR).resolve()}|{config_path or ''}"
+    with _DEFAULT_BASELINE_LOCK:
+        bundle = _DEFAULT_BASELINES.get(key)
+        if bundle is None:
+            bundle = build_security_baseline(
+                audit_dir=audit_dir or DEFAULT_AUDIT_DIR,
+                config_path=config_path,
+            )
+            _DEFAULT_BASELINES[key] = bundle
+        return bundle
 
 
 def build_react_planner(
@@ -40,6 +68,10 @@ def build_react_planner(
     execution_policy: ExecutionPolicy | None = None,
     max_iterations: int = 8,
     llm_timeout_seconds: float = 30.0,
+    security_enabled: bool = True,
+    security_engine=None,
+    audit_dir: str | Path | None = None,
+    baseline_config_path: str | Path | None = None,
 ) -> ReActPlanner:
     """装配一个可直接运行的 ReActPlanner。
 
@@ -53,6 +85,12 @@ def build_react_planner(
         execution_policy: 执行闭环参数（重试/超时）。
         max_iterations: ReAct 最大轮次。
         llm_timeout_seconds: 单次 LLM 调用超时。
+        security_enabled: 是否给执行器挂安全基线，默认 True（fail-closed）；
+            False 是显式逃生口，执行链回到历史行为。
+        security_engine: 可注入的基线引擎；不传但 security_enabled=True 时
+            按审计目录复用进程级 bundle（L0 合规 / L2 红线 / L1 限流生效）。
+        audit_dir: 审计落盘目录，默认 data/security_audit。
+        baseline_config_path: 可选外部基线 YAML。
     """
     if provider is None:
         provider = build_model_provider_from_env()
@@ -67,11 +105,19 @@ def build_react_planner(
             tool_registry.register(tool)
 
     if executor is None:
+        engine = security_engine
+        if engine is None and security_enabled:
+            # 默认挂基线：ReAct 路径不能再绕过 L0/L1/L2。
+            engine = _default_baseline(audit_dir, baseline_config_path).engine
         executor = AgentExecutor(
             tool_registry,
             PolicyEngine(),
             execution_policy=execution_policy or ExecutionPolicy(),
+            security_engine=engine,
         )
+    elif security_engine is not None:
+        # 注入执行器时只接受显式引擎，避免悄悄改变调用方已装配的行为。
+        executor.security_engine = security_engine
 
     return ReActPlanner(
         provider,

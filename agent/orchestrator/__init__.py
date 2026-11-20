@@ -7,7 +7,7 @@ from .models import (
     SubTaskResult,
     OrchestrationPlan,
 )
-from .orchestrator import Orchestrator
+from .orchestrator import Orchestrator, OrchestratorPolicy
 from .dispatcher import decompose_goal
 from .presets import ALL_PRESET_AGENTS, SPECIALTY_INDEX
 
@@ -18,6 +18,7 @@ __all__ = [
     "SubTaskResult",
     "OrchestrationPlan",
     "Orchestrator",
+    "OrchestratorPolicy",
     "decompose_goal",
     "ALL_PRESET_AGENTS",
     "SPECIALTY_INDEX",

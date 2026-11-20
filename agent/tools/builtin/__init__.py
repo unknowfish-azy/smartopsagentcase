@@ -40,7 +40,24 @@ from .nn_perception import (
     CaseRetrieveTool,
     TraceAnalyzeTool,
     TGATAnalyzeTool,
+    VisionForecastTool,
     build_nn_perception_tools,
+)
+
+from .product_bus import (
+    AuditChainTool,
+    ProductApiClient,
+    ProductApiResult,
+    ProductReadTool,
+    ProductToolMeta,
+    READ_TOOL_METAS,
+    build_product_read_tools,
+)
+
+from .product_actions import (
+    ProductWriteTool,
+    WRITE_TOOL_METAS,
+    build_product_action_tools,
 )
 
 __all__ = [
@@ -67,5 +84,16 @@ __all__ = [
     "CaseRetrieveTool",
     "TraceAnalyzeTool",
     "TGATAnalyzeTool",
+    "VisionForecastTool",
     "build_nn_perception_tools",
+    "AuditChainTool",
+    "ProductApiClient",
+    "ProductApiResult",
+    "ProductReadTool",
+    "ProductToolMeta",
+    "READ_TOOL_METAS",
+    "build_product_read_tools",
+    "ProductWriteTool",
+    "WRITE_TOOL_METAS",
+    "build_product_action_tools",
 ]

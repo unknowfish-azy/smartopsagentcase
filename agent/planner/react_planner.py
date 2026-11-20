@@ -32,7 +32,15 @@ from typing import Any
 from agent.executor.executor import AgentExecutor
 from agent.executor.models import ExecutionContext
 from agent.sdk.model import ModelProvider
+from agent.tools.priority import (
+    RouteTier,
+    classify_tool,
+    is_unavailable,
+    sort_by_priority,
+    TIER_LABELS,
+)
 
+from .evidence import EVIDENCE_TOOL_NAMES, EvidenceBundle
 from .llm_planner import extract_json_payload
 from .models import AgentPlan
 from .planner import AgentPlanner
@@ -47,7 +55,20 @@ logger = logging.getLogger(__name__)
 
 REACT_SYSTEM_PROMPT = """你是智能运维诊断 Agent，用 ReAct 方式一步步排查问题并给出根因研判。
 
-每一轮你必须严格按以下格式输出（不要输出任何额外解释或 markdown 代码块）：
+## 工具路由优先级（硬规则，必须遵守）
+同一意图同时存在多种工具时，**永远按以下优先级选**：
+
+```
+API / 神经网络工具（nn.* / ai-service 端点）  >  CLI（shell.* 命令行）  >  UI 操作（desktop.*）
+```
+
+- 能走 API 绝不走 shell，能走 shell 绝不点 UI。
+- UI 操作最慢、最脆、最难审计，只在前两者**明确不可用**时才作为兜底。
+- **调用报错 ≠ 明确不可用**：一次网络超时或参数校验失败，不代表整个 API 层不可用；
+  先换同层的另一个 API 工具，再考虑降级。
+- 明确不可用的工具会在目录里标注 "(不可用)"，不要选它们。
+
+## 每一轮你必须严格按以下格式输出（不要输出任何额外解释或 markdown 代码块）
 
 如果还需要调用工具获取证据：
 Thought: 你对当前情况的分析，以及下一步想验证什么
@@ -57,7 +78,7 @@ Action Input: 该工具的参数，JSON 对象
 如果你已经有足够证据得出结论：
 Final Answer: 根因研判结论与处置建议
 
-规则：
+## 规则
 1. 一次只调用一个工具，拿到 Observation 后再决定下一步。
 2. 感知类工具（异常检测 / 根因打分 / 日志分类）只提供客观证据，根因结论由你综合研判。
 3. 优先用只读的检查/感知工具收集证据；高危变更工具不要在自主循环里调用。
@@ -95,6 +116,7 @@ class ReActStep:
     action_input: dict[str, Any] = field(default_factory=dict)
     observation: str = ""  # 工具返回（已截断）
     success: bool | None = None  # 工具执行是否成功；Final Answer 轮为 None
+    duplicate: bool = False  # 同工具同参数重复调用被守卫拦截
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -104,6 +126,7 @@ class ReActStep:
             "action_input": self.action_input,
             "observation": self.observation,
             "success": self.success,
+            "duplicate": self.duplicate,
         }
 
 
@@ -116,6 +139,8 @@ class ReActResult:
     trajectory: list[ReActStep] = field(default_factory=list)
     # 已执行步骤折算成的计划，兼容下游按 AgentPlan 消费；fallback 时是规则计划
     plan: AgentPlan | None = None
+    # 本轮多路感知证据的统一视图；收尾（IncidentClosure）据此抽取分类/根因
+    evidence: EvidenceBundle | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -129,6 +154,7 @@ class ReActResult:
             "iterations": len(self.trajectory),
             "trajectory": [s.to_dict() for s in self.trajectory],
             "planner": self.plan.planner if self.plan else None,
+            "evidence": self.evidence.to_dict() if self.evidence else None,
             "metadata": self.metadata,
         }
 
@@ -176,13 +202,17 @@ class ReActPlanner:
         history = ""  # 累积的「Thought/Action/Observation」文本轨迹
         trajectory: list[ReActStep] = []
         executed_steps: list[PlanStep] = []
+        evidence = EvidenceBundle()  # 多路感知证据统一视图
+        stats = {"tool_calls": 0, "duplicate_calls": 0}
+        executed_keys: set[str] = set()  # (tool, canonical args) 去重守卫
 
         if failure_context:
             history += f"上一次失败上下文（避免重复失败路径）：{failure_context}\n"
 
         try:
             for iteration in range(1, self.max_iterations + 1):
-                prompt = self._build_prompt(catalog, goal, history)
+                evidence_text = evidence.render() if evidence.items else ""
+                prompt = self._build_prompt(catalog, goal, history, evidence_text)
                 response_text = self._normalize_response(self._call_model(prompt))
 
                 # 1) Final Answer：证据充分，收尾
@@ -201,6 +231,8 @@ class ReActPlanner:
                         trajectory=trajectory,
                         executed_steps=executed_steps,
                         goal=goal,
+                        evidence=evidence,
+                        stats=stats,
                     )
 
                 # 2) Action：解析工具调用
@@ -236,7 +268,29 @@ class ReActPlanner:
 
                 arguments = self._parse_arguments(raw_input)
 
-                # 3) 安全红线：高危工具暂停自主循环，交审批
+                # 3) 重复调用守卫：同工具同参数不再真实执行，避免小模型空转烧调用
+                call_key = self._call_key(tool_name, arguments)
+                if call_key in executed_keys:
+                    stats["duplicate_calls"] += 1
+                    observation = (
+                        f"检测到重复调用：{tool_name} 使用相同参数已执行过，本次已跳过。"
+                        "请基于已有 Observation 继续推进，或直接给出 Final Answer。"
+                    )
+                    trajectory.append(
+                        ReActStep(
+                            iteration=iteration,
+                            thought=thought,
+                            action=tool_name,
+                            action_input=arguments,
+                            observation=observation,
+                            success=True,
+                            duplicate=True,
+                        )
+                    )
+                    history += self._format_step(thought, tool_name, raw_input, observation)
+                    continue
+
+                # 4) 安全红线：高危工具暂停自主循环，交审批
                 if bool(getattr(tool, "requires_approval", False)) and not context.dry_run:
                     step = PlanStep(
                         step_id=len(executed_steps) + 1,
@@ -263,9 +317,11 @@ class ReActPlanner:
                         executed_steps=executed_steps,
                         goal=goal,
                         metadata={"pending_tool": tool_name, "pending_arguments": arguments},
+                        evidence=evidence,
+                        stats=stats,
                     )
 
-                # 4) 执行工具（复用执行闭环），拿 Observation
+                # 5) 执行工具（复用执行闭环），拿 Observation
                 step = PlanStep(
                     step_id=len(executed_steps) + 1,
                     action=thought or tool_name,
@@ -275,6 +331,16 @@ class ReActPlanner:
                 )
                 result = self.executor.execute(step, context)
                 executed_steps.append(step)
+                stats["tool_calls"] += 1
+                # 仅成功的调用进入去重集合：失败后允许模型重试同一调用
+                if result.success:
+                    executed_keys.add(call_key)
+                # 感知工具输出归一进统一证据视图，下一轮注入 Prompt
+                if tool_name in EVIDENCE_TOOL_NAMES:
+                    evidence.add(
+                        tool_name,
+                        result.output if result.output is not None else result.message,
+                    )
                 observation = self._format_observation(result)
 
                 trajectory.append(
@@ -297,6 +363,8 @@ class ReActPlanner:
                 executed_steps=executed_steps,
                 goal=goal,
                 metadata={"reason": f"达到最大轮次 {self.max_iterations}，未给出 Final Answer"},
+                evidence=evidence,
+                stats=stats,
             )
 
         except Exception as exc:  # noqa: BLE001 - 决策链路不允许因 LLM 故障而中断
@@ -309,7 +377,8 @@ class ReActPlanner:
                 status="rule-fallback",
                 trajectory=trajectory,
                 plan=fallback,
-                metadata={"fallback_reason": reason},
+                evidence=evidence,
+                metadata={"fallback_reason": reason, "stats": dict(stats)},
             )
 
     # 与 AgentPlanner.create_plan 兼容的别名，便于上层统一按规划器调用
@@ -321,30 +390,62 @@ class ReActPlanner:
     # ------------------------------------------------------------------
 
     def _build_catalog(self) -> str:
-        items = []
-        for tool in self.tool_registry.list_tools():
+        tools = sort_by_priority(self.tool_registry.list_tools())
+        if not tools:
+            return "（无工具）"
+
+        # 按 tier 分组，组前加标题；不可用工具标注 `(不可用)`。
+        groups: dict[RouteTier, list[str]] = {}
+        for tool in tools:
+            tier = classify_tool(tool)
             definition = getattr(tool, "definition", None)
             risk = getattr(definition, "risk", getattr(tool, "risk_level", "LOW"))
             schema = getattr(definition, "input_schema", None) or {}
-            items.append(
+            unavailable = is_unavailable(tool)
+            suffix = " (不可用)" if unavailable else ""
+            groups.setdefault(tier, []).append(
                 CATALOG_ITEM_PROMPT.format(
-                    name=tool.name,
+                    name=tool.name + suffix,
                     description=getattr(tool, "description", ""),
                     risk=risk,
                     schema=json.dumps(schema, ensure_ascii=False),
                 )
             )
-        return "\n".join(items) or "（无工具）"
 
-    def _build_prompt(self, catalog: str, goal: str, history: str) -> str:
+        sections: list[str] = []
+        for tier in (RouteTier.API, RouteTier.SHELL, RouteTier.UI, RouteTier.UNKNOWN):
+            items = groups.get(tier)
+            if not items:
+                continue
+            label = TIER_LABELS[tier]
+            sections.append(f"### {label}")
+            sections.extend(items)
+        return "\n".join(sections)
+
+    def _build_prompt(
+        self,
+        catalog: str,
+        goal: str,
+        history: str,
+        evidence_text: str = "",
+    ) -> str:
         sections = [
             REACT_SYSTEM_PROMPT.format(catalog=catalog),
             f"目标：{goal}",
         ]
+        if evidence_text:
+            sections.append(evidence_text)
         if history:
             sections.append(f"已执行的排查过程（Thought/Action/Observation 轨迹）：\n{history}")
         sections.append("请输出下一轮（Thought/Action/Action Input 或 Final Answer）：")
         return "\n\n".join(sections)
+
+    @staticmethod
+    def _call_key(tool_name: str, arguments: dict[str, Any]) -> str:
+        """重复调用判定键：工具名 + 规范化参数（键排序，避免顺序差异绕过守卫）。"""
+
+        payload = json.dumps(arguments, sort_keys=True, ensure_ascii=False, default=str)
+        return f"{tool_name}:{payload}"
 
     def _call_model(self, prompt: str) -> str:
         """同步上下文调用异步模型 Provider，带独立超时（与 LLMPlanner 同策略）。"""
@@ -418,21 +519,27 @@ class ReActPlanner:
         goal: str,
         final_answer: str = "",
         metadata: dict[str, Any] | None = None,
+        evidence: EvidenceBundle | None = None,
+        stats: dict[str, int] | None = None,
     ) -> ReActResult:
+        meta = dict(metadata or {})
+        if stats is not None:
+            meta["stats"] = dict(stats)
         plan = AgentPlan(
             request_id=goal[:32],
             goal=goal,
             steps=executed_steps,
             requires_human_approval=any(s.requires_approval for s in executed_steps),
             planner="react",
-            metadata=dict(metadata or {}),
+            metadata=dict(meta),
         )
         return ReActResult(
             status=status,
             final_answer=final_answer,
             trajectory=trajectory,
             plan=plan,
-            metadata=dict(metadata or {}),
+            evidence=evidence,
+            metadata=meta,
         )
 
 

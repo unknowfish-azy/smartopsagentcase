@@ -6,14 +6,143 @@ ai-service 必须在 sys.path 里（Orchestrator._try_init_direct_executor 已�
 
 from __future__ import annotations
 
+import http.cookiejar
+import json
 import os
+import threading
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote
+from urllib.request import HTTPCookieProcessor, Request, build_opener
 
 import numpy as np
+
+from .models import AgentProfile, SubTask
 
 # Windows CPU crash 防护——在 transformers import 之前设
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
+
+# ---------------------------------------------------------------------------
+# 机器人后端会话
+#
+# 优先级：
+#   1. SMARTOPS_AGENT_TOKEN —— 直接作为 Bearer 使用；
+#   2. SMARTOPS_AGENT_USERNAME / SMARTOPS_AGENT_PASSWORD —— 自动登录，
+#      复用 Cookie 与 CSRF 令牌，401 时重登一次。
+# 两者都未配置时保持匿名请求，由调用方得到明确的 401 提示。
+# ---------------------------------------------------------------------------
+
+_session_lock = threading.Lock()
+_cookie_jar = http.cookiejar.CookieJar()
+_opener = build_opener(HTTPCookieProcessor(_cookie_jar))
+_session_state: dict[str, Any] = {"active": False, "csrf": ""}
+
+
+def _backend_base() -> str:
+    return os.environ.get("SMARTOPS_BACKEND_URL", "http://127.0.0.1:8080").rstrip("/")
+
+
+def _agent_credentials() -> tuple[str, str]:
+    return (
+        os.environ.get("SMARTOPS_AGENT_USERNAME", "").strip(),
+        os.environ.get("SMARTOPS_AGENT_PASSWORD", ""),
+    )
+
+
+def _unwrap(raw: str) -> Any:
+    parsed = json.loads(raw) if raw else {}
+    if isinstance(parsed, dict) and "data" in parsed and "code" in parsed:
+        return parsed.get("data")
+    return parsed
+
+
+def _open_request(method: str, path: str, body: dict[str, Any] | None = None) -> Any:
+    headers = {"Accept": "application/json"}
+    token = os.environ.get("SMARTOPS_AGENT_TOKEN", "")
+    payload = None
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    if body is not None:
+        payload = json.dumps(body).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+        if _session_state.get("csrf"):
+            headers["X-CSRF-TOKEN"] = str(_session_state["csrf"])
+    request = Request(f"{_backend_base()}{path}", data=payload, headers=headers, method=method)
+    with _opener.open(request, timeout=8) as response:  # noqa: S310 - 仅内网后端
+        return _unwrap(response.read().decode("utf-8"))
+
+
+def _reset_session() -> None:
+    _cookie_jar.clear()
+    _session_state["active"] = False
+    _session_state["csrf"] = ""
+
+
+def _login_session() -> None:
+    """登录后端并缓存会话；并发调用只登录一次。"""
+    username, password = _agent_credentials()
+    if not username or not password:
+        return
+    if _session_state.get("active"):
+        return
+    with _session_lock:
+        if _session_state.get("active"):
+            return
+        _reset_session()
+        session = _open_request("GET", "/api/auth/session")
+        csrf = (session or {}).get("csrfToken") if isinstance(session, dict) else None
+        request = Request(
+            f"{_backend_base()}/api/auth/login",
+            data=json.dumps({"username": username, "password": password}).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                **({"X-CSRF-TOKEN": str(csrf)} if csrf else {}),
+            },
+            method="POST",
+        )
+        try:
+            with _opener.open(request, timeout=8) as response:  # noqa: S310 - 仅内网后端
+                payload = json.loads(response.read().decode("utf-8") or "{}")
+        except HTTPError as exc:
+            detail = exc.read().decode("utf-8", "ignore")[:160]
+            raise RuntimeError(f"后端登录失败 {exc.code}: {detail}") from exc
+        code = payload.get("code") if isinstance(payload, dict) else None
+        if code not in (200, 0, None):
+            raise RuntimeError(f"后端登录失败: {payload.get('message') or code}")
+        _session_state["active"] = True
+        _session_state["csrf"] = str(csrf or "")
+
+
+def _backend_call(method: str, path: str, body: dict[str, Any] | None = None) -> Any:
+    """调用后端；会话模式下 401 自动重登并重试一次。"""
+    username, password = _agent_credentials()
+    use_session = bool(username and password) and not os.environ.get("SMARTOPS_AGENT_TOKEN")
+    if use_session:
+        _login_session()
+    try:
+        return _open_request(method, path, body)
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8", "ignore")[:200]
+        if exc.code == 401 and use_session:
+            _reset_session()
+            _login_session()
+            try:
+                return _open_request(method, path, body)
+            except HTTPError as retry_exc:
+                retry_detail = retry_exc.read().decode("utf-8", "ignore")[:200]
+                raise RuntimeError(
+                    f"后端 {method} {path} 返回 {retry_exc.code}: {retry_detail}"
+                ) from retry_exc
+        if exc.code == 401 and not os.environ.get("SMARTOPS_AGENT_TOKEN"):
+            raise RuntimeError(
+                f"后端 {method} {path} 需要登录：请配置 SMARTOPS_AGENT_TOKEN 或 "
+                "SMARTOPS_AGENT_USERNAME / SMARTOPS_AGENT_PASSWORD"
+            ) from exc
+        raise RuntimeError(f"后端 {method} {path} 返回 {exc.code}: {detail}") from exc
+    except URLError as exc:
+        raise RuntimeError(f"后端不可达 {method} {path}: {exc.reason}") from exc
 
 from .models import AgentProfile, SubTask
 
@@ -71,6 +200,12 @@ class DirectExecutor:
             return self._run_simulator(task, context)
         elif specialty.value == "reflection":
             return self._run_reflection(task, context)
+        elif specialty.value == "patrol_planner":
+            return self._run_patrol_planner(task, context)
+        elif specialty.value == "device_diagnostician":
+            return self._run_device_diagnostician(task, context)
+        elif specialty.value == "compliance_auditor":
+            return self._run_compliance_auditor(task, context)
         else:
             raise RuntimeError(f"unknown specialty: {specialty}")
 
@@ -84,7 +219,7 @@ class DirectExecutor:
         输入从 context 里拿：values + calibration + metric_name
         """
         import numpy as np
-        from app.training.anomaly import DetectorConfig, detect_all, binary_metrics
+        from app.training.anomaly import DetectorConfig, detect_all
 
         values = np.asarray(context.get("values") or [], dtype=float)
         calibration = np.asarray(context.get("calibration") or [], dtype=float)
@@ -283,6 +418,174 @@ class DirectExecutor:
                 "mode": raw.get("mode"),
                 "index_size": raw.get("index_size"),
                 "review": raw.get("review"),
+            },
+        }
+
+    # ------------------------------------------------------------------
+    # 机器人域子智能体：通过 Java 后端 REST 读取真实设备数据
+    # ------------------------------------------------------------------
+
+    def _backend_request(self, method: str, path: str, body: dict[str, Any] | None = None) -> Any:
+        """调用 Java 后端，返回 data 字段。Bearer 或服务账号会话二选一。"""
+        return _backend_call(method, path, body)
+
+    @staticmethod
+    def _device_key(context: dict[str, Any]) -> str:
+        value = context.get("device_key") or context.get("device") or ""
+        return str(value).strip()
+
+    def _run_patrol_planner(self, task: SubTask, context: dict[str, Any]) -> dict[str, Any]:
+        """巡检调度：读取机队状态与现有任务，默认只给建议，不下发。"""
+        fleet = self._backend_request("GET", "/api/robot/fleet/status") or {}
+        device = self._device_key(context)
+        current_tasks: list[Any] = []
+        if device:
+            current_tasks = self._backend_request(
+                "GET", f"/api/robot/devices/{quote(device)}/tasks"
+            ) or []
+
+        route = context.get("route")
+        submitted = False
+        if context.get("submit") is True and device and route:
+            self._backend_request(
+                "POST",
+                f"/api/robot/devices/{quote(device)}/tasks",
+                {"route": route, "planId": context.get("plan_id")},
+            )
+            submitted = True
+
+        running = [
+            item for item in current_tasks
+            if isinstance(item, dict) and str(item.get("status", "")).upper() == "RUNNING"
+        ]
+        summary = (
+            f"巡检调度：机队状态已读取，设备 {device or '未指定'} "
+            f"当前运行任务 {len(running)} 个；"
+            + ("已按授权下发巡检任务" if submitted else "仅生成建议，未下发任务")
+        )
+        return {
+            "summary": summary,
+            "findings": {
+                "device": device or None,
+                "fleet_status": fleet,
+                "running_tasks": len(running),
+                "proposed_route": route if isinstance(route, list) else None,
+                "submitted": submitted,
+                "requires_approval": not submitted,
+            },
+        }
+
+    def _run_device_diagnostician(self, task: SubTask, context: dict[str, Any]) -> dict[str, Any]:
+        """设备诊断：真实遥测阈值判定，无数据不编造。"""
+        device = self._device_key(context)
+        if not device:
+            return {
+                "summary": "未提供 device_key，无法读取设备遥测",
+                "findings": {"device": None, "risk_level": "UNKNOWN", "evidence": []},
+            }
+
+        live = self._backend_request("GET", f"/api/robot/devices/{quote(device)}/live") or {}
+        tasks = self._backend_request("GET", f"/api/robot/devices/{quote(device)}/tasks") or []
+
+        telemetry = live.get("telemetry") if isinstance(live, dict) else None
+        mode = str((live or {}).get("mode") or "UNKNOWN").upper()
+        evidence: list[str] = []
+        level = "OK"
+
+        def _raise_risk(candidate: str) -> None:
+            nonlocal level
+            order = {"OK": 0, "UNKNOWN": 1, "WARN": 2, "CRITICAL": 3}
+            if order[candidate] > order[level]:
+                level = candidate
+
+        if mode in {"E_STOP", "FAULT", "OFFLINE"}:
+            _raise_risk("CRITICAL")
+            evidence.append(f"运行模式={mode}")
+        if live.get("bridgeConnected") is False:
+            _raise_risk("WARN")
+            evidence.append("控制桥未连接")
+
+        battery_raw = telemetry.get("battery") if isinstance(telemetry, dict) else None
+        battery = None
+        if isinstance(battery_raw, (int, float)):
+            battery = round(battery_raw * 100) if battery_raw <= 1 else round(battery_raw)
+            if battery < 15:
+                _raise_risk("CRITICAL")
+            elif battery < 30:
+                _raise_risk("WARN")
+            evidence.append(f"电量={battery}%")
+
+        obstacle_raw = telemetry.get("obstacleDistance") if isinstance(telemetry, dict) else None
+        if isinstance(obstacle_raw, (int, float)):
+            if obstacle_raw < 0.5:
+                _raise_risk("WARN")
+            evidence.append(f"障碍距离={obstacle_raw:.2f}m")
+
+        if not isinstance(telemetry, dict):
+            # 无遥测只代表「未知」，不能覆盖已判定出的高危结论。
+            _raise_risk("UNKNOWN")
+            evidence.append("无遥测数据")
+
+        status_counts: dict[str, int] = {}
+        for item in tasks:
+            if not isinstance(item, dict):
+                continue
+            key = str(item.get("status") or "UNKNOWN").upper()
+            status_counts[key] = status_counts.get(key, 0) + 1
+
+        summary = (
+            f"设备 {device} 诊断完成：风险={level}，模式={mode}，"
+            + ("；".join(evidence) if evidence else "无异常证据")
+        )
+        return {
+            "summary": summary,
+            "findings": {
+                "device": device,
+                "risk_level": level,
+                "mode": mode,
+                "battery_percent": battery,
+                "evidence": evidence,
+                "task_status_counts": status_counts,
+            },
+        }
+
+    def _run_compliance_auditor(self, task: SubTask, context: dict[str, Any]) -> dict[str, Any]:
+        """合规审计：只读核查，输出违规清单，不做自动处置。"""
+        fleet = self._backend_request("GET", "/api/robot/fleet/status") or {}
+        device_keys = context.get("device_keys")
+        if not isinstance(device_keys, list) or not device_keys:
+            single = self._device_key(context)
+            device_keys = [single] if single else []
+
+        violations: list[dict[str, Any]] = []
+        checked: list[dict[str, Any]] = []
+        for key in device_keys[:10]:
+            device = str(key)
+            live = self._backend_request("GET", f"/api/robot/devices/{quote(device)}/live") or {}
+            tasks = self._backend_request("GET", f"/api/robot/devices/{quote(device)}/tasks") or []
+            mode = str((live or {}).get("mode") or "UNKNOWN").upper()
+            running = [
+                item for item in tasks
+                if isinstance(item, dict) and str(item.get("status", "")).upper() == "RUNNING"
+            ]
+            checked.append({"device": device, "mode": mode, "running_tasks": len(running)})
+            if mode in {"E_STOP", "FAULT"} and running:
+                violations.append({
+                    "device": device,
+                    "rule": "estop_or_fault_with_running_task",
+                    "detail": f"{mode} 状态下仍有 {len(running)} 个运行任务",
+                })
+
+        summary = (
+            f"合规审计完成：检查 {len(checked)} 台设备，发现 {len(violations)} 项违规"
+        )
+        return {
+            "summary": summary,
+            "findings": {
+                "checked": checked,
+                "violations": violations,
+                "fleet_status": fleet,
+                "requires_human": bool(violations),
             },
         }
 

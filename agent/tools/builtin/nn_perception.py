@@ -492,6 +492,192 @@ class TGATAnalyzeTool(NNPerceptionTool):
 
 
 # ---------------------------------------------------------------------------
+# 巡检视觉事件预测（多目标跟踪 + 轨迹外推 + 区域事件）
+# ---------------------------------------------------------------------------
+
+
+class VisionForecastTool(NNPerceptionTool):
+    """巡检视觉事件预测：检测框序列 → 未来轨迹与区域事件。"""
+
+    endpoint = "/api/nn/vision-forecast"
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(
+            ToolDefinition(
+                name="nn.vision_forecast",
+                description=(
+                    "巡检视觉事件预测：传**按时间排列的检测框序列**（每帧 detections，"
+                    "bbox 为 0..1 归一化 x1,y1,x2,y2），返回多目标轨迹、未来路径、"
+                    "区域进入/离开/停留超时事件与 ETA。可选 zones 指定禁入区/关注区"
+                    "（kind=danger/inspect/normal）。当前为恒速几何基线，probability "
+                    "是启发式打分、未经校准，**不能当作故障概率**；帧数或检测质量不足时"
+                    "会标 model_status=degraded。需要检测结果时先用目标检测器产出 bbox。"
+                ),
+                risk=RiskLevel.LOW,
+                target_type="AI_SERVICE",
+                idempotency="SAFE_RETRY",
+                input_schema={
+                    "type": "object",
+                    "required": ["frames"],
+                    "properties": {
+                        "frames": {
+                            "type": "array",
+                            "description": "帧观测序列，按采集顺序，至少 2 帧",
+                            "items": {
+                                "type": "object",
+                                "required": ["frame_id"],
+                                "properties": {
+                                    "frame_id": {"type": "string"},
+                                    "captured_at_ms": {"type": "number"},
+                                    "detections": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "required": ["label", "confidence", "bbox"],
+                                            "properties": {
+                                                "label": {"type": "string"},
+                                                "confidence": {"type": "number"},
+                                                "bbox": {"type": "array",
+                                                         "items": {"type": "number"}},
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        "zones": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["zone_id", "bbox"],
+                                "properties": {
+                                    "zone_id": {"type": "string"},
+                                    "kind": {"type": "string",
+                                             "enum": ["danger", "inspect", "normal"]},
+                                    "bbox": {"type": "array", "items": {"type": "number"}},
+                                },
+                            },
+                        },
+                        "labels": {"type": "array", "items": {"type": "string"}},
+                        "horizon": {"type": "integer", "default": 5},
+                        "frame_interval_ms": {"type": "number", "default": 500},
+                        "lost_after_frames": {"type": "integer", "default": 2},
+                        "dwell_ms": {"type": "number"},
+                    },
+                },
+            ),
+            **kwargs,
+        )
+
+    def build_payload(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        frames = arguments.get("frames")
+        if not isinstance(frames, list) or len(frames) < 2:
+            raise ValueError("frames 必须是至少 2 帧的数组")
+        if not any((frame or {}).get("detections") for frame in frames):
+            raise ValueError("frames 中没有任何 detections，请先运行目标检测器")
+
+        payload: dict[str, Any] = {"frames": frames}
+        for key in (
+            "zones", "labels", "horizon", "frame_interval_ms",
+            "lost_after_frames", "dwell_ms",
+        ):
+            if arguments.get(key) is not None:
+                payload[key] = arguments[key]
+        return payload
+
+
+class VisionPipelineTool(NNPerceptionTool):
+    """取帧 → 检测 → 预测：给目录/视频，服务端自动出检测序列与预测。"""
+
+    endpoint = "/api/nn/vision-pipeline"
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(
+            ToolDefinition(
+                name="nn.vision_pipeline",
+                description=(
+                    "巡检视觉端到端分析：传一个**服务端可读的图片目录或视频/RTSP 地址**，"
+                    "服务端逐帧跑目标检测（torchvision FasterRCNN，BSD-3），再按时间轴"
+                    "做多目标跟踪、未来轨迹外推与区域进入/离开事件。\n\n"
+                    "口径必须如实转述：目录帧源没有真实采集时间，captured_at_ms 是"
+                    "「序号 × sample_every_ms」的假设，响应里标 time_basis=assumed_uniform；"
+                    "解码失败的帧进 frames_skipped；无目标/帧数不足返回 ok=false + error_kind。"
+                    "返回的 probability 是几何启发式打分、未经校准，**不能当作故障概率**。\n"
+                    "若已有检测框序列，直接用 nn.vision_forecast，不必重跑检测。"
+                ),
+                risk=RiskLevel.LOW,
+                target_type="AI_SERVICE",
+                idempotency="SAFE_RETRY",
+                input_schema={
+                    "type": "object",
+                    "required": ["source"],
+                    "properties": {
+                        "source": {
+                            "type": "object",
+                            "required": ["kind", "path"],
+                            "properties": {
+                                "kind": {"type": "string", "enum": ["directory", "video"]},
+                                "path": {"type": "string",
+                                         "description": "服务端本地目录或视频/RTSP 地址"},
+                                "sample_every_ms": {"type": "number", "default": 500},
+                            },
+                        },
+                        "detector": {
+                            "type": "object",
+                            "properties": {
+                                "weights_path": {"type": "string"},
+                                "class_names": {"type": "array", "items": {"type": "string"}},
+                                "score_threshold": {"type": "number", "default": 0.35},
+                                "pretrained": {"type": "boolean", "default": True},
+                                "num_classes": {"type": "integer"},
+                                "device": {"type": "string"},
+                            },
+                        },
+                        "zones": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["zone_id", "bbox"],
+                                "properties": {
+                                    "zone_id": {"type": "string"},
+                                    "kind": {"type": "string",
+                                             "enum": ["danger", "inspect", "normal"]},
+                                    "bbox": {"type": "array", "items": {"type": "number"}},
+                                },
+                            },
+                        },
+                        "labels": {"type": "array", "items": {"type": "string"}},
+                        "horizon": {"type": "integer", "default": 5},
+                        "frame_interval_ms": {"type": "number", "default": 500},
+                        "lost_after_frames": {"type": "integer", "default": 2},
+                        "dwell_ms": {"type": "number"},
+                        "max_frames": {"type": "integer", "default": 60},
+                    },
+                },
+            ),
+            **kwargs,
+        )
+
+    def build_payload(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        source = arguments.get("source")
+        if not isinstance(source, dict):
+            raise ValueError("source 必须是对象，含 kind 与 path")
+        if source.get("kind") not in ("directory", "video"):
+            raise ValueError("source.kind 只能是 directory 或 video")
+        if not str(source.get("path") or "").strip():
+            raise ValueError("source.path 不能为空")
+
+        payload: dict[str, Any] = {"source": source}
+        for key in (
+            "detector", "zones", "labels", "horizon", "frame_interval_ms",
+            "lost_after_frames", "dwell_ms", "max_frames",
+        ):
+            if arguments.get(key) is not None:
+                payload[key] = arguments[key]
+        return payload
+
+
+# ---------------------------------------------------------------------------
 # 注册入口
 # ---------------------------------------------------------------------------
 
@@ -515,6 +701,8 @@ def build_nn_perception_tools(
         TraceAnalyzeTool(**kwargs),
         ForecastTool(**kwargs),
         TGATAnalyzeTool(**kwargs),
+        VisionForecastTool(**kwargs),
+        VisionPipelineTool(**kwargs),
     ]
 
 
@@ -527,6 +715,8 @@ __all__ = [
     "TraceAnalyzeTool",
     "ForecastTool",
     "TGATAnalyzeTool",
+    "VisionForecastTool",
+    "VisionPipelineTool",
     "build_nn_perception_tools",
     "DEFAULT_AI_SERVICE_URL",
 ]

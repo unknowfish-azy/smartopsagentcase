@@ -141,6 +141,9 @@ L2_OPERATIONS:
     - multimodal.escalation
     - multimodal.destructive_allowed
     - quota.exhausted
+    - agent.write.requested
+    - agent.write.succeeded
+    - agent.write.failed
 
 # ----------------------------------------------------------------------------
 # L0 合规红线（法律硬边界）

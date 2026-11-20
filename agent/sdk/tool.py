@@ -45,6 +45,11 @@ class ToolDefinition:
     # SAFE_RETRY（只读，可安全重试）/ AT_MOST_ONCE（写操作，最多一次）
     idempotency: str = "SAFE_RETRY"
     verification: str = ""
+    # 审批声明：None = 按风险默认（HIGH/CRITICAL 需审批）；
+    # 显式 True/False 用于"高危但必须免审批"的安全兜底动作。
+    requires_approval: bool | None = None
+    # 安全兜底动作（如机器人急停）：唯一允许绕过 CRITICAL 自动执行禁令的工具。
+    safety_bypass: bool = False
 
 
 class PluginTool(ABC):
@@ -67,7 +72,13 @@ class PluginTool(ABC):
 
     @property
     def requires_approval(self) -> bool:
+        if self.definition.requires_approval is not None:
+            return self.definition.requires_approval
         return self.definition.risk in (RiskLevel.HIGH, RiskLevel.CRITICAL)
+
+    @property
+    def safety_bypass(self) -> bool:
+        return bool(self.definition.safety_bypass)
 
     @abstractmethod
     async def execute(

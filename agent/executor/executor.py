@@ -598,19 +598,23 @@ class AgentExecutor:
         return result
 
     def _invoke_with_timeout(self, tool, arguments, context, deadline_ms):
-        """在独立线程执行工具调用并强制超时，防止单个工具卡死整个执行循环。"""
+        """有界等待工具调用；超时后停止等待，但不谎称已强杀工作线程。"""
 
         timeout_seconds = max(deadline_ms, 1) / 1000.0
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(self._invoke, tool, arguments, context)
-            try:
-                return future.result(timeout=timeout_seconds)
-            except FutureTimeoutError:
-                future.cancel()
-                raise ToolExecutionError(
-                    ToolErrorCategory.TIMEOUT,
-                    f"工具执行超过 {deadline_ms}ms 预算被终止",
-                ) from None
+        pool = ThreadPoolExecutor(max_workers=1)
+        future = pool.submit(self._invoke, tool, arguments, context)
+        try:
+            return future.result(timeout=timeout_seconds)
+        except FutureTimeoutError:
+            future.cancel()
+            raise ToolExecutionError(
+                ToolErrorCategory.TIMEOUT,
+                f"工具执行超过 {deadline_ms}ms 预算，已停止等待；结果未知，后台调用可能仍在执行",
+            ) from None
+        finally:
+            # with ThreadPoolExecutor 会在退出时 wait=True，导致超时仍被工具线程拖住。
+            # Python 无法安全强杀运行中的线程，因此这里只 detach，并由上层按未知结果处理。
+            pool.shutdown(wait=False, cancel_futures=True)
 
     def _build_failure_result(
         self,
@@ -629,6 +633,10 @@ class AgentExecutor:
         }
         if timeout_ms is not None:
             metadata["timeout_ms"] = timeout_ms
+        if exc.category == ToolErrorCategory.TIMEOUT:
+            # 超时只说明等待预算耗尽；工具是否已经产生副作用无法由此判定。
+            metadata["execution_state"] = "TIMEOUT_UNKNOWN"
+            metadata["result_unknown"] = True
 
         result = ExecutionResult(
             success=False,

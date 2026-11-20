@@ -27,6 +27,9 @@ class AgentSpecialty(str, Enum):
     - simulator:         故障仿真 → 合成序列 + 检测器验证（P2-2）
     - reflection:        反思学习 → 处置后 append 新案例（P2-3）
     - orchestrator:      协调者自己（不执行子任务）
+    - patrol_planner:    巡检调度 → 机队状态 + 巡检任务建议/下发
+    - device_diagnostician: 设备诊断 → 遥测 + 任务状态，给出风险结论
+    - compliance_auditor: 安全合规 → 设备状态与任务记录的合规核查
     """
 
     ANOMALY_SLEUTH = "anomaly_sleuth"
@@ -37,6 +40,9 @@ class AgentSpecialty(str, Enum):
     SIMULATOR = "simulator"
     REFLECTION = "reflection"
     ORCHESTRATOR = "orchestrator"
+    PATROL_PLANNER = "patrol_planner"
+    DEVICE_DIAGNOSTICIAN = "device_diagnostician"
+    COMPLIANCE_AUDITOR = "compliance_auditor"
 
 
 @dataclass
@@ -88,7 +94,11 @@ class SubTask:
 
 @dataclass
 class SubTaskResult:
-    """子 Agent 完成一个子任务的产出。"""
+    """子 Agent 完成一个子任务的产出。
+
+    skipped 表示因上游依赖失败而未执行（不是子 Agent 自身失败），
+    attempts / error_category / trace_id 用于企业级运行审计与问题定位。
+    """
 
     task_id: str
     agent_id: str
@@ -97,16 +107,24 @@ class SubTaskResult:
     findings: dict[str, Any] = field(default_factory=dict)
     error: str | None = None
     duration_ms: int = 0
+    skipped: bool = False
+    attempts: int = 1
+    error_category: str | None = None
+    trace_id: str | None = None
 
     def to_dict(self) -> dict:
         return {
             "task_id": self.task_id,
             "agent_id": self.agent_id,
             "success": self.success,
+            "skipped": self.skipped,
             "summary": self.summary,
             "findings": self.findings,
             "error": self.error,
+            "error_category": self.error_category,
+            "attempts": self.attempts,
             "duration_ms": self.duration_ms,
+            "trace_id": self.trace_id,
         }
 
 
@@ -120,6 +138,9 @@ class OrchestrationPlan:
     conflict_notes: list[str] = field(default_factory=list)
     overall_status: Literal["completed", "partial", "failed"] = "completed"
     final_synthesis: str = ""
+    # 企业级运行元数据：一次协同对应唯一 trace，指标用于 SLO 与答辩量化
+    trace_id: str = ""
+    metrics: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -129,4 +150,6 @@ class OrchestrationPlan:
             "results": [r.to_dict() for r in self.results],
             "conflict_notes": self.conflict_notes,
             "final_synthesis": self.final_synthesis,
+            "trace_id": self.trace_id,
+            "metrics": self.metrics,
         }

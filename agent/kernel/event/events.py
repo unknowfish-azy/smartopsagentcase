@@ -29,6 +29,11 @@ APPROVAL_DENIED = "approval.denied"
 EXECUTION_STARTED = "execution.started"
 EXECUTION_FINISHED = "execution.finished"
 
+ORCHESTRATION_STARTED = "orchestration.started"
+ORCHESTRATION_SUBTASK_STARTED = "orchestration.subtask_started"
+ORCHESTRATION_SUBTASK_FINISHED = "orchestration.subtask_finished"
+ORCHESTRATION_FINISHED = "orchestration.finished"
+
 VERIFICATION_STARTED = "verification.started"
 VERIFICATION_FINISHED = "verification.finished"
 

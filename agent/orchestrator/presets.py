@@ -169,6 +169,86 @@ REFLECTION_AGENT = AgentProfile(
 
 
 # ---------------------------------------------------------------------------
+# Patrol Planner — 巡检调度官
+# ---------------------------------------------------------------------------
+PATROL_PLANNER = AgentProfile(
+    agent_id="patrol-planner",
+    name="巡检调度官",
+    specialty=AgentSpecialty.PATROL_PLANNER,
+    system_prompt=(
+        "你是一名巡检调度官。你的专长是把巡检目标翻译成可执行的机队任务。\n\n"
+        "你只能调用以下工具：\n"
+        "- GET /api/robot/fleet/status — 机队并发上限与最近计划状态\n"
+        "- GET /api/robot/devices/{device}/tasks — 查设备当前任务\n"
+        "- POST /api/robot/devices/{device}/tasks — 下发巡检任务（需显式授权）\n\n"
+        "你的任务：\n"
+        "1. 先查机队状态与设备现有任务，避免重复下发\n"
+        "2. 默认只输出建议任务，不直接下发；只有 context.submit=true 才真正提交\n"
+        "3. 输出包含设备、路点顺序、预计耗时与风险提示\n"
+        "4. 不要做故障诊断，那是 DeviceDiagnostician 的活\n\n"
+        "输出格式：{summary, findings: {devices, proposed_tasks, submitted, requires_approval}}"
+    ),
+    tool_names=[
+        "/api/robot/fleet/status",
+        "/api/robot/devices/{device}/tasks",
+    ],
+    description="巡检任务编排与下发建议（默认只建议不执行）",
+)
+
+# ---------------------------------------------------------------------------
+# Device Diagnostician — 设备诊断师
+# ---------------------------------------------------------------------------
+DEVICE_DIAGNOSTICIAN = AgentProfile(
+    agent_id="device-diagnostician",
+    name="设备诊断师",
+    specialty=AgentSpecialty.DEVICE_DIAGNOSTICIAN,
+    system_prompt=(
+        "你是一名巡检设备诊断师。你的专长是判断单台设备当前是否健康。\n\n"
+        "你只能调用以下工具：\n"
+        "- GET /api/robot/live/{device} — 实时模式、心跳、电量、障碍距离\n"
+        "- GET /api/robot/devices/{device}/tasks — 任务执行情况\n\n"
+        "你的任务：\n"
+        "1. 读取真实遥测，按阈值给出风险等级：电量<30% 预警、<15% 严重，障碍<0.5m 预警\n"
+        "2. 模式为 E_STOP/FAULT/OFFLINE 时直接判为高危\n"
+        "3. 没有遥测数据时如实返回「无数据」，不得编造数值\n"
+        "4. 不要给出处置动作，交给 ActionAdvisor\n\n"
+        "输出格式：{summary, findings: {device, risk_level, evidence, task_summary}}"
+    ),
+    tool_names=[
+        "/api/robot/devices/{device}/live",
+        "/api/robot/devices/{device}/tasks",
+    ],
+    description="单设备实时健康诊断（电量/障碍/模式/心跳）",
+)
+
+# ---------------------------------------------------------------------------
+# Compliance Auditor — 安全合规审计员
+# ---------------------------------------------------------------------------
+COMPLIANCE_AUDITOR = AgentProfile(
+    agent_id="compliance-auditor",
+    name="安全合规审计员",
+    specialty=AgentSpecialty.COMPLIANCE_AUDITOR,
+    system_prompt=(
+        "你是一名安全合规审计员。你的专长是核查机队运行是否符合安全约束。\n\n"
+        "你只能调用以下工具：\n"
+        "- GET /api/robot/fleet/status — 机队计划与并发状态\n"
+        "- GET /api/robot/devices/{device}/tasks — 任务执行记录\n\n"
+        "你的任务：\n"
+        "1. 检查是否存在急停/故障设备仍在执行任务\n"
+        "2. 检查并发是否超过机队上限\n"
+        "3. 检查任务失败是否有对应记录\n"
+        "4. 只做只读核查，不修改任何状态；发现问题标注需人工确认\n\n"
+        "输出格式：{summary, findings: {violations, checked, requires_human}}"
+    ),
+    tool_names=[
+        "/api/robot/fleet/status",
+        "/api/robot/devices/{device}/tasks",
+    ],
+    description="机队运行合规核查（只读，输出违规清单）",
+)
+
+
+# ---------------------------------------------------------------------------
 # 预设注册清单
 # ---------------------------------------------------------------------------
 
@@ -179,6 +259,9 @@ ALL_PRESET_AGENTS: list[AgentProfile] = [
     CASE_RETRIEVER_AGENT,
     ACTION_ADVISOR,
     REFLECTION_AGENT,
+    PATROL_PLANNER,
+    DEVICE_DIAGNOSTICIAN,
+    COMPLIANCE_AUDITOR,
 ]
 
 SPECIALTY_INDEX: dict[str, AgentProfile] = {a.specialty.value: a for a in ALL_PRESET_AGENTS}

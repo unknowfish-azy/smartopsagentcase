@@ -69,6 +69,7 @@ def build_agent_assembly(
     with_robot_guard: bool = True,
     tools: Iterable[Any] = (),
     clock=None,
+    bundle: SecurityBaselineBundle | None = None,
 ) -> AgentAssembly:
     """装配生产可用的 Agent 执行链组合。
 
@@ -85,6 +86,9 @@ def build_agent_assembly(
             security_enabled=False 时该参数无效（守卫必然为 None）。
         tools: 预注册到执行器 ToolRegistry 的工具序列，重名会抛 ValueError。
         clock: 可选时钟注入，主要供固定时钟测试使用。
+        bundle: 可复用已装配的基线 bundle（如 ai-service lifespan 单例）；
+            传入时忽略 audit_dir / config_path / with_robot_guard，
+            避免多份 sink 并写同一条哈希链。
 
     抛出：
         ValueError: 工具重名、审计参数非法，或既有审计历史哈希链/清单
@@ -98,12 +102,13 @@ def build_agent_assembly(
 
     if security_enabled:
         # build_security_baseline 内部完成 sink 恢复校验，失败即抛，不吞异常。
-        bundle = build_security_baseline(
-            audit_dir=audit_dir,
-            config_path=config_path,
-            with_robot_guard=with_robot_guard,
-            clock=clock,
-        )
+        if bundle is None:
+            bundle = build_security_baseline(
+                audit_dir=audit_dir,
+                config_path=config_path,
+                with_robot_guard=with_robot_guard,
+                clock=clock,
+            )
         security_engine = bundle.engine
         robot_plugin = RobotPlugin(guard=bundle.robot_guard)
         logger.info(

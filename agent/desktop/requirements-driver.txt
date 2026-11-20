@@ -1,0 +1,14 @@
+# 桌面手 Windows 被控端驱动依赖（DH-03）
+#
+# 只在被纳管的 Windows 机器上安装，阿里云 Linux 上**不要**装这份。
+# 非 Windows 平台上 `WindowsDriver.available()` 会返回 (False, 原因)，
+# 桌面手整体降级为不可用，服务照常启动。
+#
+# 实测通过版本：CPython 3.14.3 / Windows 11（2026-11-19）
+#   pywinauto 0.6.9 —— 装得上且 UIA backend 可枚举窗口，故钉死此版本
+#   Pillow 12.2   —— 截图编码需要；下限 10.0 即可
+#
+# 安装：  pip install -r agent/desktop/requirements-driver.txt
+
+pywinauto==0.6.9
+Pillow>=10.0
