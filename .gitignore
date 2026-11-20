@@ -174,8 +174,13 @@ node_modules/
 
 # Vite
 frontend/dist/
-# 管理员层独立服务的构建产物（vite.config.admin.mjs）
+# 各平级门户独立服务的构建产物（vite.config.<portal>.mjs → dist-<portal>）
 frontend/dist-admin/
+frontend/dist-enterprise/
+frontend/dist-audit/
+frontend/dist-command/
+frontend/dist-open/
+frontend/dist-*/
 frontend/.vite/
 
 # Vue
@@ -508,6 +513,9 @@ tests/artifacts/
 tests/e2e/screenshots/
 tests/e2e/videos/
 tests/e2e/artifacts/
+
+# 桌面手运行态证据（截图 + receipts.jsonl 属于运行产物，不进仓库）
+agent/desktop/shots/
 
 # Playwright
 playwright-report/
