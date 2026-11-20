@@ -1,0 +1,21 @@
+base_model: Qwen/Qwen3-1.7B
+base_ollama_model: qwen3:1.7b
+load_in_4bit: true
+dataset: data/training/distill/distill-cases-expanded2000.jsonl/distill-chatml.clean.jsonl
+output_dir: data/models/distill/qwen3-1.7b-lora-exp-20261119c
+max_length: 2048
+
+lora:
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj]
+
+training:
+  epochs: 3
+  learning_rate: 0.0001
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  warmup_steps: 10
+  logging_steps: 10
+  seed: 42

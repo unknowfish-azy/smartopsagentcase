@@ -191,10 +191,13 @@ else {
 # ============================================================
 # Frontend
 # ============================================================
-# 用户层（5173）与管理员层（5174）是两个独立的 Vite dev server：
-#   5173 用户层   -> vite.config.js
-#   5174 管理员层 -> vite.config.admin.mjs
-# 两者共用同一后端与同一套会话 / CSRF。
+# 六个平级门户各自是独立的 Vite dev server，共用同一后端与同一套会话 / CSRF：
+#   5173 用户层     -> vite.config.js            （公开入口）
+#   5174 管理层     -> vite.config.admin.mjs     （受限，不在用户层登录页广告）
+#   5175 企业管理层 -> vite.config.enterprise.mjs
+#   5176 审计合规层 -> vite.config.audit.mjs
+#   5177 决策指挥层 -> vite.config.command.mjs
+#   5178 开放生态层 -> vite.config.open.mjs
 # NODE_OPTIONS 限制 Vite 内存上限（512MB），避免大项目 OOM。
 
 Write-Host ""
@@ -209,6 +212,22 @@ if (Test-Path $FrontendDir) {
     Start-Process `
         -FilePath "cmd.exe" `
         -ArgumentList "/k", "cd /d `"$FrontendDir`" && set `"NODE_OPTIONS=--max-old-space-size=512`" && npm run dev:admin"
+
+    Start-Process `
+        -FilePath "cmd.exe" `
+        -ArgumentList "/k", "cd /d `"$FrontendDir`" && set `"NODE_OPTIONS=--max-old-space-size=512`" && npm run dev:enterprise"
+
+    Start-Process `
+        -FilePath "cmd.exe" `
+        -ArgumentList "/k", "cd /d `"$FrontendDir`" && set `"NODE_OPTIONS=--max-old-space-size=512`" && npm run dev:audit"
+
+    Start-Process `
+        -FilePath "cmd.exe" `
+        -ArgumentList "/k", "cd /d `"$FrontendDir`" && set `"NODE_OPTIONS=--max-old-space-size=512`" && npm run dev:command"
+
+    Start-Process `
+        -FilePath "cmd.exe" `
+        -ArgumentList "/k", "cd /d `"$FrontendDir`" && set `"NODE_OPTIONS=--max-old-space-size=512`" && npm run dev:open"
 
 }
 else {
@@ -230,7 +249,15 @@ Write-Host "AI Service : http://localhost:8001"
 
 Write-Host "用户层     : http://localhost:5173"
 
-Write-Host "管理员层   : http://localhost:5174"
+Write-Host "管理层     : http://localhost:5174  (受限入口，不在用户层登录页广告)"
+
+Write-Host "企业管理层 : http://localhost:5175"
+
+Write-Host "审计合规层 : http://localhost:5176"
+
+Write-Host "决策指挥层 : http://localhost:5177"
+
+Write-Host "开放生态层 : http://localhost:5178"
 
 Write-Host "MySQL      : localhost:3306"
 

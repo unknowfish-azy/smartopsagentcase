@@ -1,0 +1,284 @@
+{
+  "$schema": "registry-schema-v1",
+  "generated_for": "DS-07 许可证核验",
+  "source_doc": "docs/design/llm-distill-stack/ARCHITECTURE.md",
+  "items": [
+    {
+      "section": "4.1",
+      "name": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "type": "hf-model",
+      "ref": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "4.1",
+      "name": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "url": "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "type": "hf-model",
+      "ref": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "4.1",
+      "name": "internlm/internlm2_5-1_8b-chat",
+      "url": "https://huggingface.co/internlm/internlm2_5-1_8b-chat",
+      "type": "hf-model",
+      "ref": "internlm/internlm2_5-1_8b-chat",
+      "claimed_license": "需核（Apache-2.0 口径）"
+    },
+    {
+      "section": "4.1",
+      "name": "microsoft/Phi-3.5-mini-instruct",
+      "url": "https://huggingface.co/microsoft/Phi-3.5-mini-instruct",
+      "type": "hf-model",
+      "ref": "microsoft/Phi-3.5-mini-instruct",
+      "claimed_license": "MIT"
+    },
+    {
+      "section": "4.1",
+      "name": "google/gemma-2-2b-it",
+      "url": "https://huggingface.co/google/gemma-2-2b-it",
+      "type": "hf-model",
+      "ref": "google/gemma-2-2b-it",
+      "claimed_license": "Gemma Terms（非 OSI）"
+    },
+    {
+      "section": "4.1",
+      "name": "meta-llama/Llama-3.2-1B-Instruct",
+      "url": "https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct",
+      "type": "hf-model",
+      "ref": "meta-llama/Llama-3.2-1B-Instruct",
+      "claimed_license": "Llama 3.2 社区许可（非 OSI）"
+    },
+
+    {
+      "section": "6.1",
+      "name": "argilla-io/distilabel",
+      "url": "https://github.com/argilla-io/distilabel",
+      "type": "github",
+      "ref": "argilla-io/distilabel",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.1",
+      "name": "argilla-io/argilla",
+      "url": "https://github.com/argilla-io/argilla",
+      "type": "github",
+      "ref": "argilla-io/argilla",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.1",
+      "name": "NVIDIA-NeMo/Curator",
+      "url": "https://github.com/NVIDIA-NeMo/Curator",
+      "type": "github",
+      "ref": "NVIDIA-NeMo/Curator",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.1",
+      "name": "modelscope/data-juicer",
+      "url": "https://github.com/modelscope/data-juicer",
+      "type": "github",
+      "ref": "modelscope/data-juicer",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.1",
+      "name": "HumanSignal/label-studio",
+      "url": "https://github.com/HumanSignal/label-studio",
+      "type": "github",
+      "ref": "HumanSignal/label-studio",
+      "claimed_license": "Apache-2.0"
+    },
+
+    {
+      "section": "6.2",
+      "name": "hiyouga/LLaMA-Factory",
+      "url": "https://github.com/hiyouga/LLaMA-Factory",
+      "type": "github",
+      "ref": "hiyouga/LLaMA-Factory",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.2",
+      "name": "huggingface/peft",
+      "url": "https://github.com/huggingface/peft",
+      "type": "github",
+      "ref": "huggingface/peft",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.2",
+      "name": "huggingface/trl",
+      "url": "https://github.com/huggingface/trl",
+      "type": "github",
+      "ref": "huggingface/trl",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.2",
+      "name": "unslothai/unsloth",
+      "url": "https://github.com/unslothai/unsloth",
+      "type": "github",
+      "ref": "unslothai/unsloth",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.2",
+      "name": "axolotl-ai-cloud/axolotl",
+      "url": "https://github.com/axolotl-ai-cloud/axolotl",
+      "type": "github",
+      "ref": "axolotl-ai-cloud/axolotl",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.2",
+      "name": "vllm-project/vllm",
+      "url": "https://github.com/vllm-project/vllm",
+      "type": "github",
+      "ref": "vllm-project/vllm",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.2",
+      "name": "sgl-project/sglang",
+      "url": "https://github.com/sgl-project/sglang",
+      "type": "github",
+      "ref": "sgl-project/sglang",
+      "claimed_license": "Apache-2.0"
+    },
+
+    {
+      "section": "6.3",
+      "name": "dottxt-ai/outlines",
+      "url": "https://github.com/dottxt-ai/outlines",
+      "type": "github",
+      "ref": "dottxt-ai/outlines",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.3",
+      "name": "guidance-ai/guidance",
+      "url": "https://github.com/guidance-ai/guidance",
+      "type": "github",
+      "ref": "guidance-ai/guidance",
+      "claimed_license": "MIT"
+    },
+    {
+      "section": "6.3",
+      "name": "noamgat/lm-format-enforcer",
+      "url": "https://github.com/noamgat/lm-format-enforcer",
+      "type": "github",
+      "ref": "noamgat/lm-format-enforcer",
+      "claimed_license": "MIT"
+    },
+    {
+      "section": "6.3",
+      "name": "guardrails-ai/guardrails",
+      "url": "https://github.com/guardrails-ai/guardrails",
+      "type": "github",
+      "ref": "guardrails-ai/guardrails",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.3",
+      "name": "NVIDIA/NeMo-Guardrails",
+      "url": "https://github.com/NVIDIA/NeMo-Guardrails",
+      "type": "github",
+      "ref": "NVIDIA/NeMo-Guardrails",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.3",
+      "name": "stanfordnlp/dspy",
+      "url": "https://github.com/stanfordnlp/dspy",
+      "type": "github",
+      "ref": "stanfordnlp/dspy",
+      "claimed_license": "MIT"
+    },
+
+    {
+      "section": "6.4",
+      "name": "bentoml/BentoML",
+      "url": "https://github.com/bentoml/BentoML",
+      "type": "github",
+      "ref": "bentoml/BentoML",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.4",
+      "name": "triton-inference-server/server",
+      "url": "https://github.com/triton-inference-server/server",
+      "type": "github",
+      "ref": "triton-inference-server/server",
+      "claimed_license": "BSD-3-Clause"
+    },
+    {
+      "section": "6.4",
+      "name": "kserve/kserve",
+      "url": "https://github.com/kserve/kserve",
+      "type": "github",
+      "ref": "kserve/kserve",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.4",
+      "name": "mlflow/mlflow",
+      "url": "https://github.com/mlflow/mlflow",
+      "type": "github",
+      "ref": "mlflow/mlflow",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.4",
+      "name": "iterative/dvc",
+      "url": "https://github.com/iterative/dvc",
+      "type": "github",
+      "ref": "iterative/dvc",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.4",
+      "name": "feast-dev/feast",
+      "url": "https://github.com/feast-dev/feast",
+      "type": "github",
+      "ref": "feast-dev/feast",
+      "claimed_license": "Apache-2.0"
+    },
+
+    {
+      "section": "6.5",
+      "name": "salesforce/Merlion",
+      "url": "https://github.com/salesforce/Merlion",
+      "type": "github",
+      "ref": "salesforce/Merlion",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.5",
+      "name": "online-ml/river",
+      "url": "https://github.com/online-ml/river",
+      "type": "github",
+      "ref": "online-ml/river",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.5",
+      "name": "chaos-mesh/chaos-mesh",
+      "url": "https://github.com/chaos-mesh/chaos-mesh",
+      "type": "github",
+      "ref": "chaos-mesh/chaos-mesh",
+      "claimed_license": "Apache-2.0"
+    },
+    {
+      "section": "6.5",
+      "name": "chaosblade-io/chaosblade",
+      "url": "https://github.com/chaosblade-io/chaosblade",
+      "type": "github",
+      "ref": "chaosblade-io/chaosblade",
+      "claimed_license": "Apache-2.0"
+    }
+  ]
+}

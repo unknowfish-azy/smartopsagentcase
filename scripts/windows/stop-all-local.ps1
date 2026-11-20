@@ -6,7 +6,7 @@
     通过 Win32_Process 扫描命令行中包含项目根路径的 java / node / python /
     ollama / cmd / powershell 进程，先杀启动器再杀子进程，避免 reload
     父进程重新拉起 worker。然后停止 docker compose 里的 mysql / redis 容器
-    （保留数据卷）。最后核对 5173/5174/8080/8001/11434 端口是否释放。
+    （保留数据卷）。最后核对 5173/5174/5175/5176/5177/5178/8080/8001/11434 端口是否释放。
 
     新手一般用 handoff-kit/4-停止平台.bat 即可；本脚本适合需要精确回收
     或用 start-all.ps1 / start-dev.ps1 启动后停止的场景。
@@ -114,8 +114,8 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
 } else { Write-Host 'Docker not installed; skipping containers.' }
 
 if (!$WhatIfPreference) {
-    # 5174 是管理员层前端服务；5173 是用户层前端服务。
-    $remaining = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object LocalPort -in @(5173,5174,8080,8001,11434))
+    # 5173 用户层 / 5174 管理层 / 5175 企业管理层 / 5176 审计合规层 / 5177 决策指挥层 / 5178 开放生态层。
+    $remaining = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object LocalPort -in @(5173,5174,5175,5176,5177,5178,8080,8001,11434))
     if ($remaining.Count) {
         Write-Warning 'Service ports still occupied (unrelated processes are left running):'
         $remaining | Select-Object LocalPort,OwningProcess -Unique | Format-Table -AutoSize

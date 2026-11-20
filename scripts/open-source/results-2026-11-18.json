@@ -1,0 +1,4250 @@
+{
+  "date": "2026-11-18",
+  "generated_at": "2026-11-18T16:02:24.620Z",
+  "command": "node scripts/open-source/verify-licenses.mjs --date=2026-11-18 --from-results",
+  "hf_host_probe": {
+    "url": "https://huggingface.co/api/models/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "status": 0,
+    "ok": false,
+    "error": "This operation was aborted",
+    "cause_code": "CONNECT_TIMEOUT_ABORTED",
+    "used_host": "https://hf-mirror.com",
+    "note": "官方 huggingface.co 不可达（TCP 连接超时 / 被阻断），改用镜像 hf-mirror.com 拉取 cardData.license 与原始文件"
+  },
+  "mode": "from-results",
+  "item_count": 34,
+  "results": [
+    {
+      "name": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "type": "hf-model",
+      "section": "4.1",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://hf-mirror.com/api/models/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+          "host": "https://hf-mirror.com",
+          "trace": {
+            "url": "https://hf-mirror.com/api/models/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:29:13.777Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6401
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "requirements.txt",
+          "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:47.425Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/pyproject.toml",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:50.551Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:51.823Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "tokenizer_config.json",
+          "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/tokenizer_config.json",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:53.085Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 3764
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "config.json",
+          "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/config.json",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/main/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:53.863Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 908
+          }
+        }
+      ],
+      "license_spdx": "apache-2.0",
+      "gated": false,
+      "hf_tags": [
+        "transformers",
+        "tensorboard",
+        "onnx",
+        "safetensors",
+        "llama",
+        "text-generation",
+        "transformers.js",
+        "conversational"
+      ],
+      "source_host": "https://hf-mirror.com",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 2
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:54:54.638Z"
+    },
+    {
+      "name": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "url": "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "type": "hf-model",
+      "section": "4.1",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://hf-mirror.com/api/models/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+          "host": "https://hf-mirror.com",
+          "trace": {
+            "url": "https://hf-mirror.com/api/models/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:29:31.933Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 5524
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "requirements.txt",
+          "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:54.639Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/pyproject.toml",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:56.644Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:57.918Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "tokenizer_config.json",
+          "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/tokenizer_config.json",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:59.181Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 1289
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "config.json",
+          "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/config.json",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/TinyLlama/TinyLlama-1.1B-Chat-v1.0/raw/main/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:54:59.947Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 608
+          }
+        }
+      ],
+      "license_spdx": "apache-2.0",
+      "gated": false,
+      "hf_tags": [
+        "transformers",
+        "safetensors",
+        "llama",
+        "text-generation",
+        "conversational",
+        "en",
+        "dataset:cerebras/SlimPajama-627B",
+        "dataset:bigcode/starcoderdata"
+      ],
+      "source_host": "https://hf-mirror.com",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 2
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:55:01.401Z"
+    },
+    {
+      "name": "internlm/internlm2_5-1_8b-chat",
+      "url": "https://huggingface.co/internlm/internlm2_5-1_8b-chat",
+      "type": "hf-model",
+      "section": "4.1",
+      "claimed_license": "需核（Apache-2.0 口径）",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://hf-mirror.com/api/models/internlm/internlm2_5-1_8b-chat",
+          "host": "https://hf-mirror.com",
+          "trace": {
+            "url": "https://hf-mirror.com/api/models/internlm/internlm2_5-1_8b-chat",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:30:07.261Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 2413
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "requirements.txt",
+          "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:01.402Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/pyproject.toml",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:02.680Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:03.941Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "tokenizer_config.json",
+          "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/tokenizer_config.json",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:05.957Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 2511
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "config.json",
+          "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/config.json",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/internlm/internlm2_5-1_8b-chat/raw/main/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:06.815Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 992
+          }
+        }
+      ],
+      "license_spdx": "other",
+      "gated": false,
+      "hf_tags": [
+        "transformers",
+        "safetensors",
+        "internlm2",
+        "feature-extraction",
+        "text-generation",
+        "conversational",
+        "custom_code",
+        "arxiv:2403.17297"
+      ],
+      "source_host": "https://hf-mirror.com",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 2
+      },
+      "conclusion": "仅隔离使用（非 OSI 许可）",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:55:07.630Z"
+    },
+    {
+      "name": "microsoft/Phi-3.5-mini-instruct",
+      "url": "https://huggingface.co/microsoft/Phi-3.5-mini-instruct",
+      "type": "hf-model",
+      "section": "4.1",
+      "claimed_license": "MIT",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://hf-mirror.com/api/models/microsoft/Phi-3.5-mini-instruct",
+          "host": "https://hf-mirror.com",
+          "trace": {
+            "url": "https://hf-mirror.com/api/models/microsoft/Phi-3.5-mini-instruct",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:30:46.201Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 5878
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "requirements.txt",
+          "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:07.632Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/pyproject.toml",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:08.966Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:10.494Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 15
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "tokenizer_config.json",
+          "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/tokenizer_config.json",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:11.808Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 3984
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "config.json",
+          "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/config.json",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/microsoft/Phi-3.5-mini-instruct/raw/main/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:14.944Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 3451
+          }
+        }
+      ],
+      "license_spdx": "mit",
+      "gated": false,
+      "hf_tags": [
+        "transformers",
+        "safetensors",
+        "phi3",
+        "text-generation",
+        "nlp",
+        "code",
+        "conversational",
+        "custom_code"
+      ],
+      "source_host": "https://hf-mirror.com",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 2
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:55:18.475Z"
+    },
+    {
+      "name": "google/gemma-2-2b-it",
+      "url": "https://huggingface.co/google/gemma-2-2b-it",
+      "type": "hf-model",
+      "section": "4.1",
+      "claimed_license": "Gemma Terms（非 OSI）",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://hf-mirror.com/api/models/google/gemma-2-2b-it",
+          "host": "https://hf-mirror.com",
+          "trace": {
+            "url": "https://hf-mirror.com/api/models/google/gemma-2-2b-it",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:31:36.856Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6116
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "requirements.txt",
+          "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/requirements.txt",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:18.475Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 128
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/pyproject.toml",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:21.706Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 128
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/setup.py",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:26.391Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 128
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "tokenizer_config.json",
+          "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/tokenizer_config.json",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:29.878Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 128
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "config.json",
+          "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/config.json",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/google/gemma-2-2b-it/raw/main/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:34.165Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 128
+          }
+        }
+      ],
+      "license_spdx": "gemma",
+      "gated": "manual",
+      "hf_tags": [
+        "transformers",
+        "safetensors",
+        "gemma2",
+        "text-generation",
+        "conversational",
+        "arxiv:2009.03300",
+        "arxiv:1905.07830",
+        "arxiv:1911.11641"
+      ],
+      "source_host": "https://hf-mirror.com",
+      "qwen_dependency": {
+        "level": "未核验",
+        "reason": "依赖文件全部取不到（根目录及 python/src 子目录均 404 / 或 401 gated / 网络），按 §6 不得默认 none",
+        "evidence": [],
+        "files_scanned": 0
+      },
+      "conclusion": "仅隔离使用（非 OSI 许可）",
+      "clause_hint": "Gemma Terms of Use（非 OSI）：商用需阅读 https://ai.google.dev/gemma/terms ；允许商用但含使用限制与禁止条款（不得用于违反法律的用途、不得生成误导性内容等），需逐项核对。",
+      "verified_at": "2026-11-18T15:55:37.898Z"
+    },
+    {
+      "name": "meta-llama/Llama-3.2-1B-Instruct",
+      "url": "https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct",
+      "type": "hf-model",
+      "section": "4.1",
+      "claimed_license": "Llama 3.2 社区许可（非 OSI）",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://hf-mirror.com/api/models/meta-llama/Llama-3.2-1B-Instruct",
+          "host": "https://hf-mirror.com",
+          "trace": {
+            "url": "https://hf-mirror.com/api/models/meta-llama/Llama-3.2-1B-Instruct",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:32:17.955Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 23496
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "requirements.txt",
+          "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/requirements.txt",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:37.898Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 140
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/pyproject.toml",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:41.586Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 140
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/setup.py",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:45.575Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 140
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "tokenizer_config.json",
+          "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/tokenizer_config.json",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:49.172Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 140
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "config.json",
+          "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/config.json",
+          "ok": false,
+          "status": 401,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://hf-mirror.com/meta-llama/Llama-3.2-1B-Instruct/raw/main/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:52.580Z",
+            "status": 401,
+            "status_text": "Unauthorized",
+            "body_bytes": 140
+          }
+        }
+      ],
+      "license_spdx": "llama3.2",
+      "gated": "manual",
+      "hf_tags": [
+        "transformers",
+        "safetensors",
+        "llama",
+        "text-generation",
+        "facebook",
+        "meta",
+        "pytorch",
+        "llama-3"
+      ],
+      "source_host": "https://hf-mirror.com",
+      "qwen_dependency": {
+        "level": "未核验",
+        "reason": "依赖文件全部取不到（根目录及 python/src 子目录均 404 / 或 401 gated / 网络），按 §6 不得默认 none",
+        "evidence": [],
+        "files_scanned": 0
+      },
+      "conclusion": "仅隔离使用（非 OSI 许可）",
+      "clause_hint": "Llama 3.2 Community License（非 OSI，Meta）：商用需阅读 https://ai.meta.com/llama/license/ ；含「月活用户超 7 亿需另行授权」条款，分发受限制，需法务确认适用场景。",
+      "verified_at": "2026-11-18T15:55:56.024Z"
+    },
+    {
+      "name": "argilla-io/distilabel",
+      "url": "https://github.com/argilla-io/distilabel",
+      "type": "github",
+      "section": "6.1",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/argilla-io/distilabel",
+          "trace": {
+            "url": "https://api.github.com/repos/argilla-io/distilabel",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:33:15.278Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6660
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:58.566Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:55:59.956Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 3799
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:02.613Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:05.871Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/distilabel/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:09.057Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:56:10.444Z"
+    },
+    {
+      "name": "argilla-io/argilla",
+      "url": "https://github.com/argilla-io/argilla",
+      "type": "github",
+      "section": "6.1",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/argilla-io/argilla",
+          "trace": {
+            "url": "https://api.github.com/repos/argilla-io/argilla",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:33:22.298Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6657
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:12.224Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "src/pyproject.toml",
+          "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/pyproject.toml",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:15.497Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:18.689Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:21.890Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/argilla-io/argilla/develop/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:25.072Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "develop",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "未核验",
+        "reason": "依赖文件全部取不到（根目录及 python/src 子目录均 404 / 或 401 gated / 网络），按 §6 不得默认 none",
+        "evidence": [],
+        "files_scanned": 0
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:56:26.508Z"
+    },
+    {
+      "name": "NVIDIA-NeMo/Curator",
+      "url": "https://github.com/NVIDIA-NeMo/Curator",
+      "type": "github",
+      "section": "6.1",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/NVIDIA-NeMo/Curator",
+          "trace": {
+            "url": "https://api.github.com/repos/NVIDIA-NeMo/Curator",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:33:29.152Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6644
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:28.308Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 3,
+          "matches": [
+            {
+              "line": 150,
+              "text": "# Do not use qwen-asr[vllm], whose vLLM 0.14.0 pin conflicts with Curator's shared vLLM version."
+            },
+            {
+              "line": 151,
+              "text": "\"qwen-asr==0.0.6; platform_machine == 'x86_64' and platform_system != 'Darwin'\","
+            },
+            {
+              "line": 152,
+              "text": "\"qwen-omni-utils>=0.0.9\","
+            }
+          ],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:29.712Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 18064
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:32.408Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:35.621Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA-NeMo/Curator/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:38.830Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "optional",
+        "reason": "代码/配置中出现 qwen/dashscope/tongyi 引用，但非默认运行时强依赖；可切换至其他底座",
+        "evidence": [
+          {
+            "file": "pyproject.toml",
+            "line": 150,
+            "text": "# Do not use qwen-asr[vllm], whose vLLM 0.14.0 pin conflicts with Curator's shared vLLM version."
+          },
+          {
+            "file": "pyproject.toml",
+            "line": 151,
+            "text": "\"qwen-asr==0.0.6; platform_machine == 'x86_64' and platform_system != 'Darwin'\","
+          },
+          {
+            "file": "pyproject.toml",
+            "line": 152,
+            "text": "\"qwen-omni-utils>=0.0.9\","
+          }
+        ],
+        "files_scanned": 1
+      },
+      "conclusion": "允许（optional，需写明替代路径）",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:56:40.266Z"
+    },
+    {
+      "name": "modelscope/data-juicer",
+      "url": "https://github.com/modelscope/data-juicer",
+      "type": "github",
+      "section": "6.1",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/modelscope/data-juicer",
+          "trace": {
+            "url": "https://api.github.com/repos/modelscope/data-juicer",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:33:36.004Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6703
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:42.075Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 3,
+          "matches": [
+            {
+              "line": 6,
+              "text": "{name = \"SysML Team of Alibaba Tongyi Lab\"}"
+            },
+            {
+              "line": 75,
+              "text": "\"qwen-vl-utils==0.0.14\",  # for Qwen-VL"
+            },
+            {
+              "line": 162,
+              "text": "\"dashscope\",  # Alibaba Cloud AI"
+            }
+          ],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:43.509Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 8449
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:46.233Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:49.440Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/modelscope/data-juicer/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:52.698Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "required",
+        "reason": "依赖清单中 dashscope 作为运行时依赖",
+        "evidence": [
+          {
+            "file": "pyproject.toml",
+            "line": 6,
+            "text": "{name = \"SysML Team of Alibaba Tongyi Lab\"}"
+          },
+          {
+            "file": "pyproject.toml",
+            "line": 75,
+            "text": "\"qwen-vl-utils==0.0.14\",  # for Qwen-VL"
+          },
+          {
+            "file": "pyproject.toml",
+            "line": 162,
+            "text": "\"dashscope\",  # Alibaba Cloud AI"
+          }
+        ],
+        "files_scanned": 1
+      },
+      "conclusion": "仅隔离使用",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:56:54.118Z"
+    },
+    {
+      "name": "HumanSignal/label-studio",
+      "url": "https://github.com/HumanSignal/label-studio",
+      "type": "github",
+      "section": "6.1",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/HumanSignal/label-studio",
+          "trace": {
+            "url": "https://api.github.com/repos/HumanSignal/label-studio",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:33:44.423Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6986
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:55.922Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:57.317Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 5211
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:56:59.984Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:03.148Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/HumanSignal/label-studio/develop/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:06.276Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "develop",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:57:07.664Z"
+    },
+    {
+      "name": "hiyouga/LLaMA-Factory",
+      "url": "https://github.com/hiyouga/LLaMA-Factory",
+      "type": "github",
+      "section": "6.2",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/hiyouga/LLaMA-Factory",
+          "trace": {
+            "url": "https://api.github.com/repos/hiyouga/LLaMA-Factory",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:33:51.806Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 5558
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:09.444Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:10.830Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 3383
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:13.490Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:16.646Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/hiyouga/LLaMA-Factory/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:19.827Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:57:21.261Z"
+    },
+    {
+      "name": "huggingface/peft",
+      "url": "https://github.com/huggingface/peft",
+      "type": "github",
+      "section": "6.2",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/huggingface/peft",
+          "trace": {
+            "url": "https://api.github.com/repos/huggingface/peft",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:34:00.777Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6389
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "requirements.txt",
+          "url": "https://raw.githubusercontent.com/huggingface/peft/main/requirements.txt",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/peft/main/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:21.261Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 127
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/huggingface/peft/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/peft/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:22.150Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 2307
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://raw.githubusercontent.com/huggingface/peft/main/setup.py",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/peft/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:23.051Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 4780
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/huggingface/peft/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/peft/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:25.720Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/huggingface/peft/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/peft/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:28.946Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 3
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:57:30.361Z"
+    },
+    {
+      "name": "huggingface/trl",
+      "url": "https://github.com/huggingface/trl",
+      "type": "github",
+      "section": "6.2",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/huggingface/trl",
+          "trace": {
+            "url": "https://api.github.com/repos/huggingface/trl",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:34:08.944Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 11697
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/huggingface/trl/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/trl/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:32.261Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/huggingface/trl/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/trl/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:33.708Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 11239
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/huggingface/trl/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/trl/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:36.441Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/huggingface/trl/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/trl/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:39.649Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/huggingface/trl/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/huggingface/trl/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:42.893Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:57:44.325Z"
+    },
+    {
+      "name": "unslothai/unsloth",
+      "url": "https://github.com/unslothai/unsloth",
+      "type": "github",
+      "section": "6.2",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/unslothai/unsloth",
+          "trace": {
+            "url": "https://api.github.com/repos/unslothai/unsloth",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:34:16.666Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6515
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:46.139Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:47.589Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 149420
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:50.328Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:53.611Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/unslothai/unsloth/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:57:56.852Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:57:58.298Z"
+    },
+    {
+      "name": "axolotl-ai-cloud/axolotl",
+      "url": "https://github.com/axolotl-ai-cloud/axolotl",
+      "type": "github",
+      "section": "6.2",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/axolotl-ai-cloud/axolotl",
+          "trace": {
+            "url": "https://api.github.com/repos/axolotl-ai-cloud/axolotl",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:34:27.175Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6680
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:00.103Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:01.524Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 8839
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:04.174Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:07.416Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/axolotl-ai-cloud/axolotl/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:10.705Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:58:12.107Z"
+    },
+    {
+      "name": "vllm-project/vllm",
+      "url": "https://github.com/vllm-project/vllm",
+      "type": "github",
+      "section": "6.2",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/vllm-project/vllm",
+          "trace": {
+            "url": "https://api.github.com/repos/vllm-project/vllm",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:34:34.984Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6497
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:13.961Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:15.425Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 7877
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/setup.py",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:16.410Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 68523
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:19.392Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/vllm-project/vllm/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:22.654Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 2
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:58:24.090Z"
+    },
+    {
+      "name": "sgl-project/sglang",
+      "url": "https://github.com/sgl-project/sglang",
+      "type": "github",
+      "section": "6.2",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/sgl-project/sglang",
+          "trace": {
+            "url": "https://api.github.com/repos/sgl-project/sglang",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:34:43.052Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6533
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:25.928Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "python/pyproject.toml",
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/python/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/python/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:28.262Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 7530
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "python/setup.py",
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/python/setup.py",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/python/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:30.101Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 10580
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:32.938Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/sgl-project/sglang/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:36.230Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 2
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:58:37.651Z"
+    },
+    {
+      "name": "dottxt-ai/outlines",
+      "url": "https://github.com/dottxt-ai/outlines",
+      "type": "github",
+      "section": "6.3",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/dottxt-ai/outlines",
+          "trace": {
+            "url": "https://api.github.com/repos/dottxt-ai/outlines",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:34:50.160Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6339
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:39.453Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:40.862Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 5118
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:43.562Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:46.769Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/dottxt-ai/outlines/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:49.944Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:58:51.314Z"
+    },
+    {
+      "name": "guidance-ai/guidance",
+      "url": "https://github.com/guidance-ai/guidance",
+      "type": "github",
+      "section": "6.3",
+      "claimed_license": "MIT",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/guidance-ai/guidance",
+          "trace": {
+            "url": "https://api.github.com/repos/guidance-ai/guidance",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:34:57.266Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6359
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:53.405Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:54.790Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 2826
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:58:57.472Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:00.660Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guidance-ai/guidance/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:03.855Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "MIT",
+      "license_name": "MIT License",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:59:05.267Z"
+    },
+    {
+      "name": "noamgat/lm-format-enforcer",
+      "url": "https://github.com/noamgat/lm-format-enforcer",
+      "type": "github",
+      "section": "6.3",
+      "claimed_license": "MIT",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/noamgat/lm-format-enforcer",
+          "trace": {
+            "url": "https://api.github.com/repos/noamgat/lm-format-enforcer",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:35:04.139Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 5558
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:07.042Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:08.445Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 2665
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:11.104Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:14.299Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/noamgat/lm-format-enforcer/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:17.466Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "MIT",
+      "license_name": "MIT License",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:59:18.841Z"
+    },
+    {
+      "name": "guardrails-ai/guardrails",
+      "url": "https://github.com/guardrails-ai/guardrails",
+      "type": "github",
+      "section": "6.3",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/guardrails-ai/guardrails",
+          "trace": {
+            "url": "https://api.github.com/repos/guardrails-ai/guardrails",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:35:11.202Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6653
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:20.615Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:22.025Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 4283
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:24.704Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:27.884Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/guardrails-ai/guardrails/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:31.051Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:59:32.466Z"
+    },
+    {
+      "name": "NVIDIA/NeMo-Guardrails",
+      "url": "https://github.com/NVIDIA/NeMo-Guardrails",
+      "type": "github",
+      "section": "6.3",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/NVIDIA/NeMo-Guardrails",
+          "trace": {
+            "url": "https://api.github.com/repos/NVIDIA/NeMo-Guardrails",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:35:18.893Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6630
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:34.236Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:35.648Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6731
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:38.406Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:41.623Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/NVIDIA/NeMo-Guardrails/develop/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:44.807Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "develop",
+      "archived": false,
+      "license_spdx": "NOASSERTION",
+      "license_name": "Other",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "未核验（许可声明不明确）",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:59:46.208Z"
+    },
+    {
+      "name": "stanfordnlp/dspy",
+      "url": "https://github.com/stanfordnlp/dspy",
+      "type": "github",
+      "section": "6.3",
+      "claimed_license": "MIT",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/stanfordnlp/dspy",
+          "trace": {
+            "url": "https://api.github.com/repos/stanfordnlp/dspy",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:35:26.940Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6227
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:48.001Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:49.420Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6345
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:52.115Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:55.315Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/stanfordnlp/dspy/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:59:58.558Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "MIT",
+      "license_name": "MIT License",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T15:59:59.977Z"
+    },
+    {
+      "name": "bentoml/BentoML",
+      "url": "https://github.com/bentoml/BentoML",
+      "type": "github",
+      "section": "6.4",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/bentoml/BentoML",
+          "trace": {
+            "url": "https://api.github.com/repos/bentoml/BentoML",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:35:34.153Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6465
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:02.001Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:03.879Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 9947
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:06.624Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:09.863Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/bentoml/BentoML/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:13.053Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:00:14.443Z"
+    },
+    {
+      "name": "triton-inference-server/server",
+      "url": "https://github.com/triton-inference-server/server",
+      "type": "github",
+      "section": "6.4",
+      "claimed_license": "BSD-3-Clause",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/triton-inference-server/server",
+          "trace": {
+            "url": "https://api.github.com/repos/triton-inference-server/server",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:35:42.061Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 7378
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:16.248Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:17.637Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 2302
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:20.366Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:23.557Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/triton-inference-server/server/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:26.756Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "BSD-3-Clause",
+      "license_name": "BSD 3-Clause \"New\" or \"Revised\" License",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:00:28.173Z"
+    },
+    {
+      "name": "kserve/kserve",
+      "url": "https://github.com/kserve/kserve",
+      "type": "github",
+      "section": "6.4",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/kserve/kserve",
+          "trace": {
+            "url": "https://api.github.com/repos/kserve/kserve",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:35:49.007Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6357
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/kserve/kserve/master/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/kserve/kserve/master/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:29.982Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "python/pyproject.toml",
+          "url": "https://raw.githubusercontent.com/kserve/kserve/master/python/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/kserve/kserve/master/python/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:32.271Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 1566
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/kserve/kserve/master/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/kserve/kserve/master/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:34.985Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/kserve/kserve/master/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/kserve/kserve/master/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:38.222Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/kserve/kserve/master/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/kserve/kserve/master/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:41.359Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "master",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:00:42.757Z"
+    },
+    {
+      "name": "mlflow/mlflow",
+      "url": "https://github.com/mlflow/mlflow",
+      "type": "github",
+      "section": "6.4",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/mlflow/mlflow",
+          "trace": {
+            "url": "https://api.github.com/repos/mlflow/mlflow",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:35:56.138Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6447
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:44.594Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:46.029Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 20424
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:48.868Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:52.205Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/mlflow/mlflow/master/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:55.495Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "master",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:00:56.961Z"
+    },
+    {
+      "name": "iterative/dvc",
+      "url": "https://github.com/iterative/dvc",
+      "type": "github",
+      "section": "6.4",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/iterative/dvc",
+          "trace": {
+            "url": "https://api.github.com/repos/iterative/dvc",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:36:03.833Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6189
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/iterative/dvc/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/iterative/dvc/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:00:58.755Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/iterative/dvc/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/iterative/dvc/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:00.138Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 8763
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/iterative/dvc/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/iterative/dvc/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:02.847Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/iterative/dvc/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/iterative/dvc/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:06.187Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/iterative/dvc/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/iterative/dvc/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:09.384Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:01:10.815Z"
+    },
+    {
+      "name": "feast-dev/feast",
+      "url": "https://github.com/feast-dev/feast",
+      "type": "github",
+      "section": "6.4",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/feast-dev/feast",
+          "trace": {
+            "url": "https://api.github.com/repos/feast-dev/feast",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:36:11.838Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6292
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/feast-dev/feast/master/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/feast-dev/feast/master/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:12.607Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/feast-dev/feast/master/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/feast-dev/feast/master/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:14.012Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 11923
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/feast-dev/feast/master/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/feast-dev/feast/master/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:16.741Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/feast-dev/feast/master/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/feast-dev/feast/master/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:19.918Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/feast-dev/feast/master/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/feast-dev/feast/master/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:23.089Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "master",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:01:24.525Z"
+    },
+    {
+      "name": "salesforce/Merlion",
+      "url": "https://github.com/salesforce/Merlion",
+      "type": "github",
+      "section": "6.5",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/salesforce/Merlion",
+          "trace": {
+            "url": "https://api.github.com/repos/salesforce/Merlion",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:36:20.208Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6454
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:26.268Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "src/pyproject.toml",
+          "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/src/pyproject.toml",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/src/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:29.580Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "setup.py",
+          "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/setup.py",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:30.997Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 3080
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:33.696Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/salesforce/Merlion/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:36.987Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": true,
+      "license_spdx": "BSD-3-Clause",
+      "license_name": "BSD 3-Clause \"New\" or \"Revised\" License",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:01:38.386Z"
+    },
+    {
+      "name": "online-ml/river",
+      "url": "https://github.com/online-ml/river",
+      "type": "github",
+      "section": "6.5",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/online-ml/river",
+          "trace": {
+            "url": "https://api.github.com/repos/online-ml/river",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:36:27.654Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6403
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/online-ml/river/main/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/online-ml/river/main/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:40.143Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "pyproject.toml",
+          "url": "https://raw.githubusercontent.com/online-ml/river/main/pyproject.toml",
+          "ok": true,
+          "status": 200,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/online-ml/river/main/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:41.640Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 9328
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/online-ml/river/main/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/online-ml/river/main/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:44.350Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/online-ml/river/main/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/online-ml/river/main/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:47.593Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/online-ml/river/main/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/online-ml/river/main/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:50.773Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "main",
+      "archived": false,
+      "license_spdx": "BSD-3-Clause",
+      "license_name": "BSD 3-Clause \"New\" or \"Revised\" License",
+      "qwen_dependency": {
+        "level": "none",
+        "reason": "已抓取的依赖文件中未出现 qwen / dashscope / tongyi 关键词",
+        "evidence": [],
+        "files_scanned": 1
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:01:52.194Z"
+    },
+    {
+      "name": "chaos-mesh/chaos-mesh",
+      "url": "https://github.com/chaos-mesh/chaos-mesh",
+      "type": "github",
+      "section": "6.5",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/chaos-mesh/chaos-mesh",
+          "trace": {
+            "url": "https://api.github.com/repos/chaos-mesh/chaos-mesh",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:36:36.622Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6653
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:53.967Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "src/pyproject.toml",
+          "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/pyproject.toml",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:01:57.224Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:02:00.469Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:02:03.700Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaos-mesh/chaos-mesh/master/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:02:06.890Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "master",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "未核验",
+        "reason": "依赖文件全部取不到（根目录及 python/src 子目录均 404 / 或 401 gated / 网络），按 §6 不得默认 none",
+        "evidence": [],
+        "files_scanned": 0
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:02:08.308Z"
+    },
+    {
+      "name": "chaosblade-io/chaosblade",
+      "url": "https://github.com/chaosblade-io/chaosblade",
+      "type": "github",
+      "section": "6.5",
+      "claimed_license": "Apache-2.0",
+      "requests": [
+        {
+          "kind": "license",
+          "url": "https://api.github.com/repos/chaosblade-io/chaosblade",
+          "trace": {
+            "url": "https://api.github.com/repos/chaosblade-io/chaosblade",
+            "method": "GET",
+            "requested_at": "2026-11-18T15:36:43.282Z",
+            "status": 200,
+            "status_text": "OK",
+            "body_bytes": 6841
+          }
+        }
+      ],
+      "qwen_files": [
+        {
+          "file": "requirements.txt",
+          "path_used": "src/requirements.txt",
+          "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/requirements.txt",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/requirements.txt",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:02:10.178Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "pyproject.toml",
+          "path_used": "src/pyproject.toml",
+          "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/pyproject.toml",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/pyproject.toml",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:02:13.447Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "setup.py",
+          "path_used": "src/setup.py",
+          "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/setup.py",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/setup.py",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:02:16.711Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "tokenizer_config.json",
+          "path_used": "src/tokenizer_config.json",
+          "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/tokenizer_config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/tokenizer_config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:02:19.925Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        },
+        {
+          "file": "config.json",
+          "path_used": "src/config.json",
+          "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/config.json",
+          "ok": false,
+          "status": 404,
+          "match_count": 0,
+          "matches": [],
+          "trace": {
+            "url": "https://raw.githubusercontent.com/chaosblade-io/chaosblade/master/src/config.json",
+            "method": "GET",
+            "requested_at": "2026-11-18T16:02:23.216Z",
+            "status": 404,
+            "status_text": "Not Found",
+            "body_bytes": 14
+          }
+        }
+      ],
+      "default_branch": "master",
+      "archived": false,
+      "license_spdx": "Apache-2.0",
+      "license_name": "Apache License 2.0",
+      "qwen_dependency": {
+        "level": "未核验",
+        "reason": "依赖文件全部取不到（根目录及 python/src 子目录均 404 / 或 401 gated / 网络），按 §6 不得默认 none",
+        "evidence": [],
+        "files_scanned": 0
+      },
+      "conclusion": "允许",
+      "clause_hint": "",
+      "verified_at": "2026-11-18T16:02:24.620Z"
+    }
+  ]
+}
