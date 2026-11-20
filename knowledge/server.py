@@ -299,7 +299,7 @@ SEED_SUMMARY = _seed_reference_corpus()
 
 # catalog.json 位置：backend resources（Phase A knowledge:export 产出）
 _CATALOG_PATH_DEFAULT = (
-    Path(__file__).resolve().parents[2]
+    Path(__file__).resolve().parents[1]
     / "backend" / "src" / "main" / "resources"
     / "knowledge" / "catalog.json"
 )

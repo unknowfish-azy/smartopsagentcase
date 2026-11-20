@@ -34,7 +34,7 @@ def seed_corpus(
         documents.append(
             {
                 "content": content,
-                "source": f"reference/{path.relative_to(root)}",
+                "source": f"reference/{path.relative_to(root).as_posix()}",
                 "version": version,
             }
         )

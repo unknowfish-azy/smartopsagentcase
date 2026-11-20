@@ -22,11 +22,14 @@ class KnowledgeConfig:
 
     top_k_vector: int = 10
     top_k_bm25: int = 10
-    top_k_hybrid: int = 10
+    # top_k_hybrid / 两路权重基于 reference 语料 370 条黄金集 A/B 调定（2026-11-19）：
+    # 中文 bigram 分词修复后 BM25 已是有效信号，0.6/0.4 实测 hit@5=0.792，
+    # 0.5/0.5 + 候选池 20 实测 hit@5=0.900、MRR=0.838。
+    top_k_hybrid: int = 20
     top_k_rerank: int = 5
 
-    vector_weight: float = 0.6
-    bm25_weight: float = 0.4
+    vector_weight: float = 0.5
+    bm25_weight: float = 0.5
 
     default_version: str = "latest"
 

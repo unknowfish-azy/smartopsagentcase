@@ -22,6 +22,11 @@ from typing import Protocol, runtime_checkable
 
 from .models import RetrievalResult
 
+try:  # numpy 仅作加速用，缺失时退回纯 Python 精确 cosine
+    import numpy as _np
+except ImportError:  # pragma: no cover
+    _np = None
+
 
 # ---------------------------------------------------------------------------
 # 公共工具
@@ -100,9 +105,52 @@ class InMemoryVectorStore:
 
     def __init__(self) -> None:
         self.items: list[dict] = []
+        self._matrix = None
+        self._norms = None
+        self._indexed_count = -1
 
     def add(self, chunk, vector: list[float]) -> None:
         self.items.append({"chunk": chunk, "vector": vector})
+
+    def _ensure_index(self) -> None:
+        """把向量堆成 numpy 矩阵并预计算模长（懒构建，add 后自动失效）。
+
+        旧实现每次查询都对全部 item 重算模长并逐个做 Python 级点积，
+        几千 chunk 后单次查询要几百万次浮点运算。
+        """
+        if self._indexed_count == len(self.items):
+            return
+        self._indexed_count = len(self.items)
+        self._matrix = None
+        self._norms = None
+        if _np is None or not self.items:
+            return
+        self._matrix = _np.array(
+            [item["vector"] for item in self.items], dtype=_np.float64
+        )
+        self._norms = _np.linalg.norm(self._matrix, axis=1)
+
+    def _search_numpy(self, query_vector, top_k, version):
+        q = _np.asarray(query_vector, dtype=_np.float64)
+        qnorm = _np.linalg.norm(q) if q.size else 0.0
+        scores = _np.zeros(len(self.items), dtype=_np.float64)
+        if qnorm > 0:
+            denominator = self._norms * qnorm
+            valid = denominator > 0
+            dots = self._matrix @ q
+            scores[valid] = dots[valid] / denominator[valid]
+        values = scores.tolist()
+        matched = [
+            index
+            for index, item in enumerate(self.items)
+            if _version_matches(item["chunk"], version)
+        ]
+        # 与旧实现一致：按分数降序、同分保持摄入顺序，只构造 top_k 个结果对象
+        matched.sort(key=values.__getitem__, reverse=True)
+        return [
+            _to_retrieval_result(self.items[index]["chunk"], values[index])
+            for index in matched[:top_k]
+        ]
 
     def search(
         self,
@@ -110,6 +158,11 @@ class InMemoryVectorStore:
         top_k: int = 10,
         version: str | None = None,
     ) -> list[RetrievalResult]:
+        if _np is not None and self.items:
+            self._ensure_index()
+            if self._matrix is not None:
+                return self._search_numpy(query_vector, top_k, version)
+
         results = []
         for item in self.items:
             chunk = item["chunk"]
@@ -122,6 +175,9 @@ class InMemoryVectorStore:
 
     def clear(self) -> None:
         self.items.clear()
+        self._matrix = None
+        self._norms = None
+        self._indexed_count = -1
 
     def __len__(self) -> int:
         return len(self.items)

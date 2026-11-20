@@ -211,6 +211,111 @@ class KnowledgeService:
     # Spatial Field Phase B：catalog.json ingest + chunk 查询
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _entry_to_text(entry: dict) -> str:
+        """把 catalog.json 里一条 entry 转成适合检索的纯文本。
+
+        原始 entry.content 是污染态："entry_id + title + 完整 JSON 串"。
+        JSON 里 symptoms/observed 经常重复、title 在多处重复、hypothesis/risk/
+        executionAllowed/relatedIds 对检索无增益。这里改为从结构化字段组装
+        干净文本：标题 → 症状 → 排查 → 验证 → 回滚 → 适用域 → 标签 → 自由文本。
+
+        故意用 '# 标题' 开头，让 TextChunker 走「有标题」分支，
+        后续 chunk 自动带 title 前缀（prefix limit 已在 chunker 内截断）。
+
+        注意：后端导出时 diagnosis/verification/rollback/symptoms/observed/
+        hypothesis 等字段没放到 entry 顶层，都嵌在 content 尾部的 JSON 里。
+        这里先尝试从 content 里解析出这些字段 merge 回来。
+        """
+        import json as _json
+        import re as _re
+
+        # 从 content 尾部尝试解析内嵌 JSON，把有检索价值的字段 merge 回来
+        inner_entry: dict = {}
+        raw_content = entry.get("content") or ""
+        _json_match = _re.search(r"\n?(\{[\s\S]*\})\s*$", raw_content)
+        if _json_match:
+            try:
+                inner_entry = _json.loads(_json_match.group(1))
+            except (_json.JSONDecodeError, ValueError):
+                inner_entry = {}
+
+        # 用内嵌 JSON 补齐 entry 里缺失的关键字段（只补 entry 顶层没有的）
+        _merge_fields = ("symptoms", "observed", "diagnosis", "verification",
+                         "rollback", "hypothesis", "status", "type", "category")
+        for _f in _merge_fields:
+            if not entry.get(_f) and inner_entry.get(_f):
+                entry[_f] = inner_entry[_f]
+
+        entry_id = entry.get("id", "")
+        title = (entry.get("title") or "").strip()
+        summary = (entry.get("summary") or "").strip()
+
+        # 从原始 content 里剥离内嵌 JSON 串，保留自由文本描述部分。
+        free_text = _re.sub(r"\n?\{[\s\S]*\}\s*$", "", raw_content)
+        free_text = _re.sub(rf"^{_re.escape(entry_id)}\s*\n", "", free_text)
+        free_text = _re.sub(rf"^{_re.escape(title)}\s*\n", "", free_text, count=1)
+        free_text = free_text.strip()
+
+        lines: list[str] = []
+        lines.append(f"# {title or entry_id}")
+
+        # 核心症状：优先 symptoms，observed 相同则合并为一次
+        symptoms = (entry.get("symptoms") or "").strip()
+        observed = (entry.get("observed") or "").strip()
+        if symptoms and observed and symptoms != observed:
+            lines.append(f"## 症状/现象\n{symptoms}（{observed}）")
+        elif symptoms or observed:
+            lines.append(f"## 症状/现象\n{symptoms or observed}")
+
+        # 摘要（如果有且和症状不重复）
+        if summary and summary not in (symptoms, observed):
+            lines.append(f"## 摘要\n{summary}")
+
+        # 排查步骤
+        diagnosis = entry.get("diagnosis") or []
+        if isinstance(diagnosis, str):
+            diagnosis = [diagnosis] if diagnosis.strip() else []
+        diagnosis = [str(d).strip() for d in diagnosis if str(d).strip()]
+        if diagnosis:
+            lines.append("## 排查步骤\n" + "\n".join(f"- {d}" for d in diagnosis))
+
+        # 验证
+        verification = (entry.get("verification") or "").strip()
+        if verification and not verification.startswith("Only approved") and len(verification) > 20:
+            lines.append(f"## 验证\n{verification}")
+
+        # 回滚（只在非模板化时加）
+        rollback = (entry.get("rollback") or "").strip()
+        if rollback and not rollback.startswith("Only approved") and len(rollback) > 20:
+            lines.append(f"## 回滚\n{rollback}")
+
+        # 适用域
+        domain = (entry.get("domain") or "").strip()
+        platform = (entry.get("platform") or "").strip()
+        service_name = (entry.get("service") or "").strip()
+        scope_parts = [x for x in (domain, platform, service_name) if x]
+        if scope_parts:
+            lines.append(f"## 适用\n{' / '.join(scope_parts)}")
+
+        # 标签：去 title/summary 已覆盖的项
+        tags = entry.get("tags") or []
+        tags = [str(t).strip() for t in tags if str(t).strip()]
+        title_lower = title.lower()
+        filtered_tags = [t for t in tags
+                         if t != entry_id
+                         and t.lower() != title_lower
+                         and t not in (summary, symptoms, observed)]
+        if filtered_tags:
+            lines.append("## 标签\n" + ", ".join(filtered_tags))
+
+        # 自由文本（剥离 JSON 和重复标题后的残留，可能有正文描述）
+        if free_text:
+            lines.append(f"## 正文\n{free_text}")
+
+        text = "\n\n".join(lines).strip()
+        return text
+
     def ingest_catalog(
         self,
         catalog_path: str | Path,
@@ -257,7 +362,7 @@ class KnowledgeService:
 
         documents: list[dict[str, Any]] = []
         for entry in entries:
-            content = entry.get("content") or ""
+            content = self._entry_to_text(entry)
             if not content.strip():
                 continue
             documents.append({

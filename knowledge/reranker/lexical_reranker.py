@@ -1,16 +1,13 @@
-import re
+from knowledge.retrieval.bm25 import tokenize
 
 
 class LexicalReranker:
 
     @staticmethod
     def _tokens(text: str):
-        return set(
-            re.findall(
-                r"[\u4e00-\u9fff]+|[a-zA-Z0-9_]+",
-                text.lower(),
-            )
-        )
+        # 与 BM25 共用同一套分词（中文 bigram），
+        # 否则中文整段一个 token，重叠率恒为 0，重排对中文不起作用。
+        return set(tokenize(text))
 
     def rerank(
         self,

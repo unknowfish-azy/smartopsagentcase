@@ -143,7 +143,7 @@ def build_cases(root: Path = REFERENCE_ROOT) -> list[dict]:
         if len(title) < 4 or title in _GENERIC_TITLES:
             continue
 
-        source = f"reference/{path.relative_to(root)}"
+        source = f"reference/{path.relative_to(root).as_posix()}"
 
         # 改写组尽量用正文小节话题，与标题词表形成语义差距。
         topic = _first_section(text) or title

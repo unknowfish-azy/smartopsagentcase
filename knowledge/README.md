@@ -44,6 +44,19 @@ Trust Score
 Evaluation
 ```
 
+### 检索实现要点（2026-11-19 A/B 调定）
+
+- **切块**：Markdown 结构感知——按标题路径 + 段落/代码块边界组织，每块带
+  `【文档标题 / 小节路径】` 前缀；无标题纯文本（catalog 故障条目）仍走定长 + 重叠切片。
+  PDF 转写稿里的 `# 注释` 按代码处理，不会污染标题路径。
+- **分词**：中文连续串切 bigram，英文/数字整词。BM25 与 LexicalReranker 共用
+  `knowledge/retrieval/bm25.py::tokenize`，避免两路口径不一致。
+- **BM25**：词频 / df / idf 在索引期预计算，查询只累加分数并构造 top_k 结果对象。
+- **向量检索**：`InMemoryVectorStore` 用 numpy 矩阵 + 预计算模长（numpy 缺失时退回纯
+  Python 精确 cosine），3000×512 维单次查询约 3ms，原纯 Python 实现约 376ms。
+- **融合权重**：`vector_weight=0.5` / `bm25_weight=0.5` / `top_k_hybrid=20`。
+  同一黄金集（370 条）上 hit@5=0.900，优于旧配比 0.6/0.4 + 池 10 的 0.792。
+
 ---
 
 ## 2. 向量后端
