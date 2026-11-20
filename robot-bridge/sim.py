@@ -9,6 +9,11 @@
 叠声明：本模块是**模拟器**，不连接任何物理设备；遥测数值由运动积分算出，
 仅用于联调，不得作为设备真实性能或巡检结论的依据。
 
+形态独立遥测（不影响 DOG/ROBOT 既有字段）：
+  - CAR：wheels（左右轮线速度/角速度、轮半径、轮距、LiDAR 转速）+ odometer；
+  - SPIDER：joints（8 足 16 关节，Leg{i}_hip / Leg{i}_knee，与 spider-bot.rig.json 同名）
+    + gait（步态相位、8 足触地状态、机身高度）。
+
 用法：
     $env:SMARTOPS_ROBOT_BRIDGE_TOKEN = "dev-token"
     python robot-bridge\\bridge.py sim --device robot-car-01 --form-factor CAR
@@ -28,11 +33,44 @@ import sys
 import time
 import zlib
 
+# 本地 gait_solver：同目录下相对导入，桥进程（__main__）需要 sys.path 调整
+try:
+    from gait_solver import quadruped_joints, humanoid_joints, spider_joints, spider_gait  # type: ignore
+except ImportError:
+    from .gait_solver import quadruped_joints, humanoid_joints, spider_joints, spider_gait  # type: ignore
+
 TELEMETRY_INTERVAL = 0.2      # 5Hz 遥测上报
 HEARTBEAT_TIMEOUT = 0.5       # 超过该时长未收到 MOVE 即视为松手
 FRAME_WIDTH = 160
 FRAME_HEIGHT = 90
 SUPPORTED_FORM_FACTORS = ("CAR", "DOG", "SPIDER", "ROBOT")
+
+# 巡检车（CAR）差速底盘参数，与 frontend/models/patrolCarModel.js 的轮半径一致
+CAR_WHEEL_RADIUS = 0.075
+CAR_TRACK_WIDTH = 0.32
+CAR_LIDAR_RPM = 600
+
+
+def car_wheel_speeds(linear: float, angular: float) -> dict:
+    """差速车左右轮遥测：直行等速、转向时内外轮差速。
+
+    Args:
+        linear: 车体前进线速度（m/s）
+        angular: 转向输入（-1..1），与 tick() 中 heading += angular * 60°/s 同口径
+    """
+    omega = math.radians(angular * 60.0)   # rad/s
+    half = CAR_TRACK_WIDTH / 2
+    left = linear - omega * half
+    right = linear + omega * half
+    return {
+        "radius": CAR_WHEEL_RADIUS,
+        "trackWidth": CAR_TRACK_WIDTH,
+        "leftSpeed": round(left, 3),
+        "rightSpeed": round(right, 3),
+        "leftAngular": round(left / CAR_WHEEL_RADIUS, 2),
+        "rightAngular": round(right / CAR_WHEEL_RADIUS, 2),
+        "lidarRpm": CAR_LIDAR_RPM,
+    }
 
 
 def _png_chunk(kind: bytes, data: bytes) -> bytes:
@@ -83,6 +121,8 @@ class SimulatedDevice:
         self.last_command_at = 0.0
         self.last_tick = time.monotonic()
         self.frames_pending = 0
+        self.sim_start_time = time.monotonic()
+        self.odometer = 0.0
 
     @property
     def drive_mode(self) -> str:
@@ -140,15 +180,34 @@ class SimulatedDevice:
                 self.angular = 0.0
         self.heading = (self.heading + self.angular * 60.0 * dt) % 360
         radians = math.radians(self.heading)
+        prev_x, prev_y = self.x, self.y
         self.x += (math.cos(radians) * self.linear - math.sin(radians) * self.lateral) * dt
         self.y += (math.sin(radians) * self.linear + math.cos(radians) * self.lateral) * dt
+        # 里程按实际位移积分（含横移），供 CAR 遥测 odometer 使用
+        self.odometer += math.hypot(self.x - prev_x, self.y - prev_y)
         # 电量：DOG/ROBOT 能耗略高（四足走路/人形关节更多）
         drain_factor = {"CAR": 1.0, "DOG": 1.5, "SPIDER": 1.2, "ROBOT": 1.3}[self.form_factor]
         self.battery = max(0.05, min(1.0, self.battery - abs(self.linear) * 0.0004 * drain_factor * dt))
         self.obstacle = max(0.2, 2.4 - abs(self.x) * 0.05)
 
+    def _sim_joints(self) -> dict | None:
+        """步态求解 → 关节角；CAR 无关节返回 None。"""
+        t = time.monotonic() - self.sim_start_time
+        if self.form_factor == "DOG":
+            return quadruped_joints(self.linear, self.angular, t)
+        if self.form_factor == "ROBOT":
+            return humanoid_joints(self.linear, self.angular, t)
+        if self.form_factor == "SPIDER":
+            return spider_joints(self.linear, self.lateral, self.angular, t)
+        return None
+
+    def _sim_gait(self) -> dict:
+        """蜘蛛形态专属步态遥测（相位 / 触地 / 机身高度）。"""
+        t = time.monotonic() - self.sim_start_time
+        return spider_gait(self.linear, self.lateral, self.angular, t)
+
     def telemetry(self) -> dict:
-        return {
+        payload = {
             "deviceKey": self.device_key,
             "formFactor": self.form_factor,
             "driveMode": self.drive_mode,
@@ -157,6 +216,16 @@ class SimulatedDevice:
             "obstacleDistance": round(self.obstacle, 2),
             "simulated": True,
         }
+        joints = self._sim_joints()
+        if joints:
+            payload["joints"] = joints
+        # 形态独立遥测：CAR 上报左右轮速与里程，SPIDER 上报步态相态（DOG/ROBOT 不变）
+        if self.form_factor == "CAR":
+            payload["wheels"] = car_wheel_speeds(self.linear, self.angular)
+            payload["odometer"] = round(self.odometer, 2)
+        elif self.form_factor == "SPIDER":
+            payload["gait"] = self._sim_gait()
+        return payload
 
 
 async def run(backend: str, token: str, device_key: str, form_factor: str = "CAR") -> int:

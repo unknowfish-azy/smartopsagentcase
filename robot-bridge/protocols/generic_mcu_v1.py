@@ -9,6 +9,17 @@
   speed 为 [0,100] 的 uint8，ttlMs 为 uint16；单片机超过 ttl 未续传必须停车。
 - TELEMETRY：battery:u8(%)，x/y:int16(cm)，theta:int16(0.1°)，
   obstacle:u16(cm, 0xFFFF=未知)，flags:u8（bit0 急停、bit1 障碍停、bit2 低电）。
+  基础帧之后可追加 0..N 个扩展块（TLV），用于形态专属遥测::
+
+      extType:u8 | extLen:u8 | extPayload[extLen]
+
+  - extType=0x01 WHEELS（CAR，extLen=18）：radius:u16(mm)，trackWidth:u16(mm)，
+    leftSpeed/rightSpeed:int16(mm/s)，leftAngular/rightAngular:int16(0.01rad/s)，
+    lidarRpm:u16，odometer:u32(cm)。
+  - extType=0x02 GAIT（SPIDER，extLen=7）：legCount:u8，strideHz:u8(0.1Hz)，
+    phase:u16(0.001rad)，bodyHeight:u16(mm)，contactMask:u8（bit i = Leg i 触地）。
+
+  未知扩展按长度安全跳过（前向兼容）；已知扩展长度不符、越界或关键值非法则整帧丢弃，不猜测。
 - CMD_ACK：commandSeq:u16，status:u8，reason:u8。
 - EVENT：kind:u8，value:u8。
 
@@ -30,6 +41,8 @@ _ACK = struct.Struct(">HBB")
 _EVENT = struct.Struct(">BB")
 _HELLO = struct.Struct(">HH")
 _MOVE = struct.Struct(">bbbBH")
+_WHEELS = struct.Struct(">HHhhhhHI")
+_GAIT = struct.Struct(">BBHHB")
 
 _ACK_STATUS = {0: "OK", 1: "INVALID", 2: "BUSY", 3: "EXPIRED", 4: "FAILED"}
 _EVENT_KIND = {
@@ -65,6 +78,10 @@ class GenericMcuV1Adapter(ProtocolAdapter):
     CAP_MOVE = 0x01
     CAP_TELEMETRY = 0x02
     CAP_ACK = 0x04
+
+    # TELEMETRY 扩展块类型
+    EXT_WHEELS = 0x01
+    EXT_GAIT = 0x02
 
     def __init__(self, service_uuid: str = "", write_char_uuid: str = "", notify_char_uuid: str = ""):
         # 自定义 BLE 服务 UUID 由部署方按固件配置显式提供；串口模式无需填写。
@@ -168,10 +185,58 @@ class GenericMcuV1Adapter(ProtocolAdapter):
                 messages.append(message)
         return messages
 
+    def _decode_telemetry_extensions(self, data: bytes, telemetry: dict) -> bool:
+        """解析 TELEMETRY 尾部 TLV 扩展块；结构非法返回 False（整帧丢弃）。
+
+        未知 extType 按 extLen 安全跳过，便于固件后续增加新块而不影响旧桥。
+        """
+        offset = 0
+        while offset < len(data):
+            if offset + 2 > len(data):
+                return False
+            ext_type = data[offset]
+            ext_len = data[offset + 1]
+            start = offset + 2
+            end = start + ext_len
+            if end > len(data):
+                return False
+            body = data[start:end]
+            if ext_type == self.EXT_WHEELS:
+                if ext_len != _WHEELS.size:
+                    return False
+                radius, track, left, right, left_ang, right_ang, rpm, odometer = _WHEELS.unpack(body)
+                # 轮径/轮距为 0 说明固件未标定，不输出不可信轮速
+                if radius > 0 and track > 0:
+                    telemetry["wheels"] = {
+                        "radius": round(radius / 1000, 3),
+                        "trackWidth": round(track / 1000, 3),
+                        "leftSpeed": round(left / 1000, 3),
+                        "rightSpeed": round(right / 1000, 3),
+                        "leftAngular": round(left_ang / 100, 2),
+                        "rightAngular": round(right_ang / 100, 2),
+                        "lidarRpm": rpm,
+                    }
+                    telemetry["odometer"] = round(odometer / 100, 2)
+            elif ext_type == self.EXT_GAIT:
+                if ext_len != _GAIT.size:
+                    return False
+                leg_count, stride, phase, height, contact_mask = _GAIT.unpack(body)
+                if not 1 <= leg_count <= 8:
+                    return False
+                telemetry["gait"] = {
+                    "legCount": leg_count,
+                    "strideHz": round(stride / 10, 1),
+                    "phase": round(phase / 1000, 3),
+                    "footContacts": [bool(contact_mask >> i & 0x01) for i in range(leg_count)],
+                    "bodyHeight": round(height / 1000, 3),
+                }
+            offset = end
+        return True
+
     def _decode_frame(self, frame_type: int, sequence: int, payload: bytes) -> dict | None:
         try:
-            if frame_type == self.TYPE_TELEMETRY and len(payload) == _TELEMETRY.size:
-                battery, x, y, theta, obstacle, flags = _TELEMETRY.unpack(payload)
+            if frame_type == self.TYPE_TELEMETRY and len(payload) >= _TELEMETRY.size:
+                battery, x, y, theta, obstacle, flags = _TELEMETRY.unpack_from(payload)
                 if battery > 100:
                     return None
                 telemetry = {
@@ -187,6 +252,8 @@ class GenericMcuV1Adapter(ProtocolAdapter):
                     telemetry["obstacleStopped"] = True
                 if flags & 0x04:
                     telemetry["lowBattery"] = True
+                if not self._decode_telemetry_extensions(payload[_TELEMETRY.size:], telemetry):
+                    return None
                 return {"channel": "telemetry", "payload": telemetry}
 
             if frame_type == self.TYPE_CMD_ACK and len(payload) == _ACK.size:

@@ -84,6 +84,111 @@ class GenericMcuV1Test(unittest.TestCase):
         self.assertTrue(message["obstacleStopped"])
         self.assertTrue(message["lowBattery"])
 
+    @staticmethod
+    def _ext(ext_type: int, body: bytes) -> bytes:
+        return bytes((ext_type, len(body))) + body
+
+    def test_telemetry_decodes_car_wheels_extension(self):
+        payload = struct.pack(">BhhhHB", 82, 120, -340, 900, 45, 0)
+        payload += self._ext(
+            self.adapter.EXT_WHEELS,
+            # 轮径 75mm、轮距 320mm、左右 0.316/0.484m/s、4.22/6.45rad/s、600rpm、1.28m
+            struct.pack(">HHhhhhHI", 75, 320, 316, 484, 422, 645, 600, 128),
+        )
+        message = self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 1, payload))[0]["payload"]
+        self.assertEqual(message["wheels"], {
+            "radius": 0.075,
+            "trackWidth": 0.32,
+            "leftSpeed": 0.316,
+            "rightSpeed": 0.484,
+            "leftAngular": 4.22,
+            "rightAngular": 6.45,
+            "lidarRpm": 600,
+        })
+        self.assertEqual(message["odometer"], 1.28)
+        self.assertEqual(message["battery"], 0.82)
+
+    def test_telemetry_decodes_spider_gait_extension(self):
+        payload = struct.pack(">BhhhHB", 82, 0, 0, 0, 45, 0)
+        payload += self._ext(
+            self.adapter.EXT_GAIT,
+            # 8 足、1.3Hz、1.234rad、0.29m、Leg0/2/4/6 触地
+            struct.pack(">BBHHB", 8, 13, 1234, 290, 0b01010101),
+        )
+        gait = self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 1, payload))[0]["payload"]["gait"]
+        self.assertEqual(gait, {
+            "legCount": 8,
+            "strideHz": 1.3,
+            "phase": 1.234,
+            "footContacts": [True, False, True, False, True, False, True, False],
+            "bodyHeight": 0.29,
+        })
+
+    def test_unknown_extension_is_skipped(self):
+        payload = struct.pack(">BhhhHB", 82, 0, 0, 0, 45, 0)
+        payload += self._ext(0x7F, b"\x00\x01")
+        message = self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 1, payload))[0]["payload"]
+        self.assertEqual(message["battery"], 0.82)
+        self.assertNotIn("wheels", message)
+        self.assertNotIn("gait", message)
+
+    def test_malformed_extensions_are_dropped(self):
+        base = struct.pack(">BhhhHB", 82, 0, 0, 0, 45, 0)
+        truncated = base + bytes((self.adapter.EXT_WHEELS, 18)) + b"\x00\x01"
+        self.assertEqual(self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 1, truncated)), [])
+        wrong_length = base + self._ext(self.adapter.EXT_WHEELS, b"\x00" * 17)
+        self.assertEqual(self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 2, wrong_length)), [])
+        bad_leg_count = base + self._ext(self.adapter.EXT_GAIT, struct.pack(">BBHHB", 9, 13, 0, 290, 0))
+        self.assertEqual(self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 3, bad_leg_count)), [])
+
+    def test_wheels_extension_negative_speeds_and_split_chunks(self):
+        payload = struct.pack(">BhhhHB", 82, 0, 0, 0, 45, 0)
+        payload += self._ext(
+            self.adapter.EXT_WHEELS,
+            struct.pack(">HHhhhhHI", 75, 320, -120, 80, -160, 107, 600, 25),
+        )
+        frame = make_frame(self.adapter.TYPE_TELEMETRY, 1, payload)
+
+        # 在扩展块中间切断，验证半包跨 BLE notify 仍能拼出完整帧
+        split = 8 + 10 + 4
+        self.assertEqual(self.adapter.feed(frame[:split]), [])
+        message = self.adapter.feed(frame[split:])[0]["payload"]
+        self.assertEqual(message["wheels"]["leftSpeed"], -0.12)
+        self.assertEqual(message["wheels"]["rightSpeed"], 0.08)
+        self.assertEqual(message["wheels"]["leftAngular"], -1.6)
+        self.assertEqual(message["wheels"]["rightAngular"], 1.07)
+        self.assertEqual(message["odometer"], 0.25)
+
+    def test_multiple_extensions_in_one_frame(self):
+        payload = struct.pack(">BhhhHB", 82, 0, 0, 0, 45, 0)
+        payload += self._ext(self.adapter.EXT_WHEELS, struct.pack(">HHhhhhHI", 75, 320, 0, 0, 0, 0, 600, 0))
+        payload += self._ext(self.adapter.EXT_GAIT, struct.pack(">BBHHB", 8, 13, 0, 290, 0xFF))
+        message = self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 1, payload))[0]["payload"]
+        self.assertIn("wheels", message)
+        self.assertEqual(message["gait"]["footContacts"], [True] * 8)
+
+    def test_zero_wheel_geometry_keeps_base_telemetry(self):
+        payload = struct.pack(">BhhhHB", 82, 0, 0, 0, 45, 0)
+        payload += self._ext(self.adapter.EXT_WHEELS, struct.pack(">HHhhhhHI", 0, 0, 100, 100, 100, 100, 600, 50))
+        message = self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 1, payload))[0]["payload"]
+        self.assertEqual(message["battery"], 0.82)
+        self.assertNotIn("wheels", message)
+        self.assertNotIn("odometer", message)
+
+    def test_partial_leg_count_only_uses_low_bits(self):
+        payload = struct.pack(">BhhhHB", 82, 0, 0, 0, 45, 0)
+        payload += self._ext(self.adapter.EXT_GAIT, struct.pack(">BBHHB", 4, 10, 0, 290, 0b11111010))
+        gait = self.adapter.feed(make_frame(self.adapter.TYPE_TELEMETRY, 1, payload))[0]["payload"]["gait"]
+        self.assertEqual(gait["footContacts"], [False, True, False, True])
+        self.assertEqual(gait["strideHz"], 1.0)
+
+    def test_extension_frame_with_bad_crc_is_dropped(self):
+        payload = struct.pack(">BhhhHB", 82, 0, 0, 0, 45, 0)
+        payload += self._ext(self.adapter.EXT_WHEELS, struct.pack(">HHhhhhHI", 75, 320, 100, 100, 100, 100, 600, 0))
+        frame = make_frame(self.adapter.TYPE_TELEMETRY, 1, payload)
+        corrupted = frame[:-1] + bytes((frame[-1] ^ 0xFF,))
+        self.assertEqual(self.adapter.feed(corrupted), [])
+
 
 if __name__ == "__main__":
     unittest.main()

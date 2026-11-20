@@ -191,12 +191,118 @@ async def _run_forever(args, adapter, transport, backend: str, token: str) -> in
         delay = min(delay * 2, 5)
 
 
+async def _run_udp_session(args, backend: str, token: str) -> None:
+    """宇树旧 UDP 协议（unitree_legged_sdk，默认 8000 端口）运行会话。
+
+    与 BLE/串口的 adapter+HELLO 流程不同：UDP 是无状态订阅，直接绑端口 → 解码 LowState → 上报后端。
+    """
+    try:
+        import websockets
+    except ImportError as error:
+        raise BridgeFatalError("缺少 websockets：请先执行 pip install -r requirements.txt") from error
+
+    from transports import UdpTransport
+    from unitree_protocol import decode_low_state, go2_joint_dict
+
+    transport = UdpTransport(
+        bind_ip=getattr(args, "bind_ip", "0.0.0.0"),
+        bind_port=int(getattr(args, "bind_port", 8000)),
+        robot_ip=getattr(args, "robot_ip", ""),
+        robot_port=int(getattr(args, "robot_port", 8000)),
+    )
+
+    url = backend.replace("http://", "ws://").replace("https://", "wss://").rstrip("/")
+    url = f"{url}/ws/robot/bridge"
+    async with websockets.connect(
+        url,
+        additional_headers={"X-Robot-Bridge-Token": token},
+        ping_interval=20,
+        ping_timeout=20,
+        close_timeout=5,
+    ) as socket:
+        await transport.connect()
+        await _send_json(socket, "bridge_hello", {
+            "deviceKeys": [args.device],
+            "protocols": ["unitree-go2-udp-v1"],
+            "formFactor": args.form_factor,
+            "transport": "udp",
+            "simulated": False,
+        })
+        print(f"[bridge] UDP 链路已建立：{args.device}（unitree_legged_sdk LowState 解码）")
+
+        # 关节缓存：只在 LowState 可用时覆盖，缺失帧保留上次值
+        joints_cache: dict[str, float] = {}
+        imu_cache: dict | None = None
+        battery_cache: float | None = None
+        tick_last = 0
+        pose_t = 0.0
+
+        async def pump() -> None:
+            nonlocal tick_last, joints_cache, imu_cache, battery_cache, pose_t
+            last_emit = 0.0
+            while True:
+                import time
+                chunk = await transport.read()
+                if not chunk:
+                    raise BridgeTransportError("UDP socket 关闭")
+                decoded = decode_low_state(chunk)
+                if not decoded.get("ok"):
+                    continue
+                if decoded.get("motorState"):
+                    joints = go2_joint_dict(decoded)
+                    if joints:
+                        joints_cache = joints
+                if decoded.get("imu"):
+                    imu_cache = decoded["imu"]
+                # tick 计数做节奏门限：Go2 LowState 大约 200Hz，桥端限 5Hz 上报
+                tick_now = decoded.get("tick", 0)
+                if tick_now != tick_last or (time.time() - last_emit) > 0.2:
+                    tick_last = tick_now
+                    last_emit = time.time()
+                    payload = {
+                        "deviceKey": args.device,
+                        "formFactor": args.form_factor,
+                        "driveMode": "quadruped" if args.form_factor == "DOG" else "custom",
+                    }
+                    if joints_cache:
+                        payload["joints"] = joints_cache
+                    if imu_cache:
+                        payload["imu"] = imu_cache
+                    if battery_cache is not None:
+                        payload["battery"] = battery_cache
+                    await _send_json(socket, "telemetry", payload)
+
+        try:
+            await asyncio.gather(pump())
+        finally:
+            await transport.close()
+
+
+async def _run_udp_forever(args, backend: str, token: str) -> int:
+    delay = 1
+    while True:
+        try:
+            await _run_udp_session(args, backend, token)
+        except BridgeFatalError as error:
+            print(f"[bridge] UDP 不可重连错误：{error}", file=sys.stderr)
+            return 1
+        except (BridgeTransportError, OSError) as error:
+            print(f"[bridge] UDP 链路断开：{error}")
+        except Exception as error:
+            print(f"[bridge] UDP 链路异常：{type(error).__name__}: {error}")
+        print(f"[bridge] {delay}s 后重连 UDP 订阅")
+        await asyncio.sleep(delay)
+        delay = min(delay * 2, 5)
+
+
 def run(args) -> int:
     token = os.environ.get(TOKEN_ENV, "").strip()
     if not token:
         print(f"[bridge] fail-closed：环境变量 {TOKEN_ENV} 未配置，拒绝启动", file=sys.stderr)
         return 2
     backend = (args.backend or os.environ.get(BACKEND_ENV, "http://127.0.0.1:8080")).strip()
+    if args.transport == "udp":
+        return _run_udp_forever(args, backend, token)
     if args.transport == "ble" and not all((args.mac, args.service_uuid, args.write_char_uuid, args.notify_char_uuid)):
         print("[bridge] BLE 模式必须提供 --mac/--service-uuid/--write-char-uuid/--notify-char-uuid", file=sys.stderr)
         return 2
@@ -240,18 +346,23 @@ def main(argv: list[str] | None = None) -> int:
     sim_parser.add_argument("--form-factor", default=None,
                              help="形态 CAR/DOG/SPIDER/ROBOT（默认按 deviceKey 尾缀推断）")
 
-    run_parser = sub.add_parser("run", help="真机模式：BLE/串口设备接入后端桥通道")
+    run_parser = sub.add_parser("run", help="真机模式：BLE/串口/UDP 设备接入后端桥通道")
     run_parser.add_argument("--backend", default=None, help=f"后端地址，默认读取 {BACKEND_ENV}")
     run_parser.add_argument("--device", required=True, help="已登记并启用的设备 deviceKey")
     run_parser.add_argument("--form-factor", choices=["CAR", "DOG", "SPIDER", "ROBOT"], default="CAR")
     run_parser.add_argument("--protocol", choices=["generic-mcu-v1"], default="generic-mcu-v1")
-    run_parser.add_argument("--transport", choices=["ble", "serial"], required=True)
+    run_parser.add_argument("--transport", choices=["ble", "serial", "udp"], required=True)
     run_parser.add_argument("--mac", help="BLE 设备 MAC/系统地址")
     run_parser.add_argument("--service-uuid", default="", help="BLE 自定义服务 UUID")
     run_parser.add_argument("--write-char-uuid", default="", help="BLE 指令写特征值 UUID")
     run_parser.add_argument("--notify-char-uuid", default="", help="BLE 遥测通知特征值 UUID")
     run_parser.add_argument("--port", help="串口名，如 COM5 或 /dev/ttyUSB0")
     run_parser.add_argument("--baud", type=int, default=115200, help="串口波特率，默认 115200")
+    # UDP（宇树 unitree_legged_sdk 旧协议）
+    run_parser.add_argument("--bind-ip", default="0.0.0.0", help="UDP 本地绑定 IP（默认 0.0.0.0）")
+    run_parser.add_argument("--bind-port", type=int, default=8000, help="UDP 本地绑定端口（Go2 默认 8000）")
+    run_parser.add_argument("--robot-ip", default="192.168.123.161", help="机器人目标 IP（Go2 默认 192.168.123.161）")
+    run_parser.add_argument("--robot-port", type=int, default=8000, help="机器人目标端口（默认 8000）")
 
     args = parser.parse_args(raw_args)
     if args.command == "scan":

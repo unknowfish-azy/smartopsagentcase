@@ -1,8 +1,9 @@
-"""真机传输层：BLE 与串口统一为异步 connect/read/write/close。"""
+"""真机传输层：BLE / 串口 / UDP 统一为异步 connect/read/write/close。"""
 
 from __future__ import annotations
 
 import asyncio
+import socket
 from abc import ABC, abstractmethod
 
 
@@ -45,7 +46,6 @@ class BleTransport(McuTransport):
         except ImportError as error:
             raise BridgeTransportError("缺少 bleak：请先执行 pip install -r requirements.txt") from error
 
-        # 每次连接使用独立队列，旧连接的断开/通知回调不会污染重连后的会话。
         queue: asyncio.Queue[bytes | None] = asyncio.Queue()
         self._queue = queue
         client = BleakClient(self.address, disconnected_callback=lambda _client: queue.put_nowait(None))
@@ -117,7 +117,6 @@ class SerialTransport(McuTransport):
         print(f"[bridge] 串口已打开 {self.port} @ {self.baudrate}")
 
     async def read(self) -> bytes:
-        # pyserial 超时会返回空 bytes；空读只是暂无数据，持续等待，只有关闭才返回空给上层。
         while True:
             port = self._serial
             if port is None:
@@ -148,5 +147,72 @@ class SerialTransport(McuTransport):
         if port is not None:
             try:
                 await asyncio.to_thread(port.close)
+            except Exception:
+                pass
+
+
+class UdpTransport(McuTransport):
+    """面向宇树 unitree_legged_sdk 旧协议（默认 8000 端口）的 UDP 传输层。
+
+    Go2 出厂固件同时支持 DDS (8080) 和旧 UDP (8000) 两种协议，本传输层订阅后者；
+    协议编解码由 unitree_protocol.py 独立负责（LowState / MotorState packed(1) struct）。
+    G1 人形仅支持 unitree_sdk2 (DDS) 协议，不走本传输层。
+    """
+
+    def __init__(self, bind_ip: str = "0.0.0.0", bind_port: int = 8000,
+                 robot_ip: str = "192.168.123.161", robot_port: int = 8000):
+        self.bind_ip = bind_ip
+        self.bind_port = bind_port
+        self.robot_ip = robot_ip
+        self.robot_port = robot_port
+        self._sock: socket.socket | None = None
+        self._closing = False
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    async def connect(self) -> None:
+        loop = asyncio.get_running_loop()
+        self._loop = loop
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((self.bind_ip, self.bind_port))
+            sock.setblocking(False)
+        except OSError as error:
+            raise BridgeTransportError(
+                f"UDP 绑定 {self.bind_ip}:{self.bind_port} 失败：{error}"
+            ) from error
+        self._sock = sock
+        print(f"[bridge] UDP 已绑定 {self.bind_ip}:{self.bind_port}，机器人目标 {self.robot_ip}:{self.robot_port}")
+
+    async def read(self) -> bytes:
+        sock, loop = self._sock, self._loop
+        if sock is None or loop is None:
+            return b""
+        while not self._closing:
+            try:
+                data, _addr = await loop.sock_recvfrom(sock, 4096)
+                return bytes(data)
+            except (BlockingIOError, InterruptedError):
+                await asyncio.sleep(0.001)
+            except OSError:
+                if self._closing:
+                    return b""
+                raise
+        return b""
+
+    async def write(self, data: bytes) -> None:
+        sock, loop = self._sock, self._loop
+        if sock is None or loop is None:
+            raise BridgeTransportError("UDP 未连接，拒绝写入")
+        if not (self.robot_ip and self.robot_port):
+            raise BridgeTransportError("未指定机器人 IP/端口，无法发送命令")
+        await loop.sock_sendto(sock, data, (self.robot_ip, self.robot_port))
+
+    async def close(self) -> None:
+        self._closing = True
+        sock, self._sock = self._sock, None
+        if sock is not None:
+            try:
+                sock.close()
             except Exception:
                 pass

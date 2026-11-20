@@ -191,6 +191,38 @@ class BridgeRuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(socket.sent[2]["payload"]["op"], "MOVE")
         self.assertEqual(socket.sent[2]["payload"]["status"], "OK")
 
+    async def test_device_pump_forwards_form_extension_bytes_unchanged(self):
+        wheels_body = struct.pack(">HHhhhhHI", 75, 320, 316, 484, 422, 645, 600, 128)
+        gait_body = struct.pack(">BBHHB", 8, 13, 1234, 290, 0b01010101)
+        car_payload = (struct.pack(">BhhhHB", 82, 120, -340, 900, 45, 0)
+                       + bytes((0x01, len(wheels_body))) + wheels_body)
+        spider_payload = (struct.pack(">BhhhHB", 76, 0, 0, 0, 0xFFFF, 0)
+                          + bytes((0x02, len(gait_body))) + gait_body)
+        socket = FakeSocket()
+
+        with self.assertRaises(BridgeTransportError):
+            await bridge._device_pump(
+                socket,
+                FakeTransport([
+                    make_frame(self.adapter.TYPE_TELEMETRY, 1, car_payload)
+                    + make_frame(self.adapter.TYPE_TELEMETRY, 2, spider_payload),
+                ]),
+                self.adapter,
+                "robot-car-01",
+            )
+
+        self.assertEqual([item["type"] for item in socket.sent], ["telemetry", "telemetry"])
+        car, spider = socket.sent[0]["payload"], socket.sent[1]["payload"]
+        for payload in (car, spider):
+            self.assertEqual(payload["deviceKey"], "robot-car-01")
+            self.assertEqual(payload["protocolId"], "generic-mcu-v1")
+            self.assertFalse(payload["simulated"])
+        self.assertEqual(car["wheels"]["leftSpeed"], 0.316)
+        self.assertEqual(car["wheels"]["rightAngular"], 6.45)
+        self.assertEqual(car["odometer"], 1.28)
+        self.assertEqual(spider["gait"]["footContacts"], [True, False, True, False, True, False, True, False])
+        self.assertEqual(spider["gait"]["bodyHeight"], 0.29)
+
     async def test_run_session_announces_device_only_after_real_hello_ack(self):
         socket = FakeSocket()
         transport = FakeTransport([hello_ack()])
