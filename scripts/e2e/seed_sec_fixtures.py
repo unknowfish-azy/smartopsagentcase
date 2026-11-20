@@ -9,30 +9,31 @@
   python scripts/e2e/seed_sec_fixtures.py            # 建/确保夹具存在，打印 ID
   python scripts/e2e/seed_sec_fixtures.py --cleanup  # 清理夹具（账号/事件/审计/闭环）
 
-夹具：
-  e2e_admin  / E2eAdmin#R2-7k2p!vN  role=admin   + platform_admin_profile(level=root)
-  e2e_admin2 / E2eAdmin#R2-7k2p!vN  role=admin   无治理档案（SEC-07 最小只读用例）
-  e2e_op1    / E2eOp#R2-4x9m!qW     role=operator
-  e2e_op2    / E2eOp#R2-4x9m!qW     role=operator
+夹具（口令从 scripts/e2e/.env.e2e 读取，见 _e2e_config.py）：
+  e2e_admin  role=admin   + platform_admin_profile(level=root)
+  e2e_admin2 role=admin   无治理档案（SEC-07 最小只读用例）
+  e2e_op1    role=operator
+  e2e_op2    role=operator
   inspector_event: e2e-op1-0001(op1) / e2e-op2-0001(op2) / e2e-internal-0001(NULL 归属)
 """
 
 from __future__ import annotations
 
+import pathlib
 import sys
 
 import bcrypt
 import pymysql
 
-MYSQL = dict(host="127.0.0.1", user="root", password="password",
-             database="smartops", charset="utf8mb4", autocommit=True)
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _e2e_config import ADMIN_PASSWORD, MYSQL, OPERATOR_PASSWORD  # noqa: E402
 
 ACCOUNTS = [
     # username, password, role, governance_level
-    ("e2e_admin", "E2eAdmin#R2-7k2p!vN", "admin", "root"),
-    ("e2e_admin2", "E2eAdmin#R2-7k2p!vN", "admin", None),
-    ("e2e_op1", "E2eOp#R2-4x9m!qW", "operator", None),
-    ("e2e_op2", "E2eOp#R2-4x9m!qW", "operator", None),
+    ("e2e_admin", ADMIN_PASSWORD, "admin", "root"),
+    ("e2e_admin2", ADMIN_PASSWORD, "admin", None),
+    ("e2e_op1", OPERATOR_PASSWORD, "operator", None),
+    ("e2e_op2", OPERATOR_PASSWORD, "operator", None),
 ]
 
 EVENTS = [

@@ -23,11 +23,13 @@ _EVENT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _db_config() -> dict[str, Any]:
+    # 不设明文默认口令：未配置 MYSQL_PASSWORD 时直接判定不可用，降级 JSONL。
+    password = os.environ.get("MYSQL_PASSWORD", "")
     return {
         "host": os.environ.get("MYSQL_HOST", "localhost"),
         "port": int(os.environ.get("MYSQL_PORT", "3306")),
         "user": os.environ.get("MYSQL_USERNAME", "root"),
-        "password": os.environ.get("MYSQL_PASSWORD", "root"),
+        "password": password,
         "database": os.environ.get("MYSQL_DATABASE", "smartops"),
     }
 

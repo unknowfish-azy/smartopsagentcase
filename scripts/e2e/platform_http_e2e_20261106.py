@@ -4,10 +4,10 @@
 
 前置条件：
   1. MySQL(smartops)/Redis 已启动，后端以 local profile 运行在 127.0.0.1:8080。
-  2. 已通过 SQL 建好 E2E 账号：
-     - e2e_admin / E2eAdmin#R2-7k2p!vN（admin，platform_admin_profile level=root）
-     - e2e_op1  / E2eOp#R2-4x9m!qW（operator）
-     - e2e_op2  / E2eOp#R2-4x9m!qW（operator）
+  2. 已通过 SQL 建好 E2E 账号（口令从 scripts/e2e/.env.e2e 读取）：
+     - e2e_admin（admin，platform_admin_profile level=root）
+     - e2e_op1 （operator）
+     - e2e_op2 （operator）
   3. 已插入归属测试用的 inspector_event 数据（见 docs E2E 执行记录）。
 
 覆盖项（对应整改清单 next_batch「平台 E2E 8 项验收」）：
@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import http.cookiejar
 import json
+import pathlib
 import re
 import sys
 import threading
@@ -39,6 +40,14 @@ import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _e2e_config import (  # noqa: E402
+    ADMIN_PASSWORD,
+    MYSQL,
+    OPERATOR_PASSWORD,
+    SEC14_PASSWORD,
+)
 
 BASE = "http://127.0.0.1:8080"
 KNOWLEDGE = "http://127.0.0.1:8002"
@@ -51,8 +60,7 @@ def _resolve_fixture_ids() -> tuple[int, int, int]:
     except ImportError:  # 无驱动时退回历史固定 ID
         return 12, 13, 11
     try:
-        conn = pymysql.connect(host="127.0.0.1", user="root", password="password",
-                               database="smartops", charset="utf8mb4")
+        conn = pymysql.connect(**MYSQL)
     except Exception:
         return 12, 13, 11
     try:
@@ -360,9 +368,9 @@ def e2e_07_knowledge_auth():
 
 
 def e2e_08_governance_minimal():
-    # 无档案管理员 = e2e_admin2（无 platform_admin_profile），SQL 预建，密码同 E2eAdmin#R2-7k2p!vN
+    # 无档案管理员 = e2e_admin2（无 platform_admin_profile），SQL 预建，密码同 E2E_ADMIN_PASSWORD
     try:
-        client = login("e2e_admin2", "E2eAdmin#R2-7k2p!vN", "admin")
+        client = login("e2e_admin2", ADMIN_PASSWORD, "admin")
     except AssertionError as err:
         check("E2E-08", "无档案管理员最小只读", False, f"登录失败: {err}")
         return
@@ -452,7 +460,7 @@ def register_operator() -> Client:
     """临时注册一个 operator 账号并登录（夹具已清理时使用，账号名打印出来供清理）。"""
     stamp = int(time.time())
     username = f"e2e_sec14_{stamp}"
-    password = "E2eSec14#2026!"
+    password = SEC14_PASSWORD
     client = Client()
     client.refresh_csrf()
     token = human_token(client, "register")
@@ -482,9 +490,9 @@ def main():
     op1 = admin = None
     if any(want(n) for n in ("e2e_02", "e2e_04", "e2e_05", "e2e_06", "e2e_09")):
         op1 = register_operator() if "--register" in sys.argv \
-            else login("e2e_op1", "E2eOp#R2-4x9m!qW", "user")
+            else login("e2e_op1", OPERATOR_PASSWORD, "user")
     if want("e2e_03"):
-        admin = login("e2e_admin", "E2eAdmin#R2-7k2p!vN", "admin")
+        admin = login("e2e_admin", ADMIN_PASSWORD, "admin")
 
     if want("e2e_02"):
         e2e_02_scope_isolation(op1)

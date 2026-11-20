@@ -8,7 +8,7 @@
   3. 运行 frontend/test/knowledge-review-live.browser.mjs 校验泳道、审核写入与 409；
   4. 传 --cleanup 删除全部夹具。
 
-账号：e2e_knowledge / E2eOp#R2-4x9m!qW（口令与其它 e2e 套件一致）。
+账号：e2e_knowledge（口令与其它 e2e 套件一致，从 scripts/e2e/.env.e2e 读取）。
 
 用法：
   C:/Users/33908/AppData/Local/Programs/Python/Python314/python.exe scripts/e2e/knowledge_review_live_seed.py

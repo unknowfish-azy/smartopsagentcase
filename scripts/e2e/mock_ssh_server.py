@@ -8,8 +8,8 @@
 最小 SSH 服务器（paramiko），供后端拨号注册 runtime；exec 命令不真正执行，
 回显命令并返回退出码 0（验收断言的是安全链路，不是远端执行结果）。
 
-凭据（与 E2E 脚本约定一致）：
-  host 127.0.0.1  port 2222  user e2eops  password E2eSsh#R2-5t8w!xZ
+凭据从 scripts/e2e/.env.e2e 或环境变量读取（见 _e2e_config.py）：
+  host/port/user/password 分别对应 E2E_SSH_HOST / E2E_SSH_PORT / E2E_SSH_USER / E2E_SSH_PASSWORD
 
 用法（Python 3.14，已装 paramiko 5.0）：
   C:/Users/33908/AppData/Local/Programs/Python/Python314/python.exe scripts/e2e/mock_ssh_server.py
@@ -20,13 +20,17 @@ from __future__ import annotations
 import socket
 import sys
 import threading
+import pathlib
 
 import paramiko
 
-HOST = "127.0.0.1"
-PORT = 2222
-USERNAME = "e2eops"
-PASSWORD = "E2eSsh#R2-5t8w!xZ"
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _e2e_config import SSH_HOST, SSH_PASSWORD, SSH_PORT, SSH_USER  # noqa: E402
+
+HOST = SSH_HOST
+PORT = SSH_PORT
+USERNAME = SSH_USER
+PASSWORD = SSH_PASSWORD
 
 # 启动时生成一次性主机密钥（仅本进程生命周期内有效，验收完即弃）
 HOST_KEY = paramiko.RSAKey.generate(2048)
