@@ -1,6 +1,7 @@
 """P0 执行闭环加固测试：错误分类、参数校验、超时/重试/死循环检测/失败分级、模型降级链。"""
 
 import asyncio
+import time
 
 import pytest
 
@@ -63,6 +64,7 @@ class WriteNetworkTool(PluginTool):
 
 class StuckTool(PluginTool):
     def __init__(self, deadline_ms: int = 200):
+        self.calls = 0
         self.definition = ToolDefinition(
             name="stuck.call",
             description="卡死工具",
@@ -70,8 +72,7 @@ class StuckTool(PluginTool):
         )
 
     async def execute(self, arguments, context):
-        import time
-
+        self.calls += 1
         time.sleep(1.0)
         return {"ok": True}
 
@@ -206,15 +207,37 @@ def test_write_tool_never_retried():
     assert tool.calls == 1  # AT_MOST_ONCE：写操作绝不自动重试
 
 
-def test_stuck_tool_killed_by_deadline():
+def test_stuck_tool_returns_within_deadline_with_unknown_state():
     policy = ExecutionPolicy(max_retries=0, sleep_fn=lambda s: None)
     tool = StuckTool(deadline_ms=200)
+
+    started = time.perf_counter()
+    result = _run_with_policy(tool, policy, {})
+    elapsed = time.perf_counter() - started
+
+    assert result.success is False
+    assert result.error_category == ToolErrorCategory.TIMEOUT.value
+    assert result.metadata["timeout_ms"] == 200
+    assert result.metadata["execution_state"] == "TIMEOUT_UNKNOWN"
+    assert result.metadata["result_unknown"] is True
+    assert "可能仍在执行" in (result.error or "")
+    assert elapsed < 0.8  # 工具仍 sleep 1s，但调用方不能被拖到线程自然结束
+
+
+def test_non_idempotent_tool_is_not_retried_after_timeout():
+    sleeps = []
+    policy = ExecutionPolicy(max_retries=3, sleep_fn=sleeps.append)
+    tool = StuckTool(deadline_ms=100)
+    tool.definition.idempotency = "AT_MOST_ONCE"
 
     result = _run_with_policy(tool, policy, {})
 
     assert result.success is False
     assert result.error_category == ToolErrorCategory.TIMEOUT.value
-    assert result.metadata["timeout_ms"] == 200
+    assert result.metadata["execution_state"] == "TIMEOUT_UNKNOWN"
+    assert result.metadata["attempts"] == 1
+    assert tool.calls == 1
+    assert sleeps == []
 
 
 def _run_with_policy(tool, policy, arguments):

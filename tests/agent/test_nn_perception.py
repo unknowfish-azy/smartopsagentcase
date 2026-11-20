@@ -155,12 +155,13 @@ def test_service_unreachable_returns_structured_error():
 # ---------------------------------------------------------------------------
 
 
-def test_build_tools_returns_seven_low_risk_tools():
+def test_build_tools_returns_nine_low_risk_tools():
     tools = build_nn_perception_tools(base_url="http://127.0.0.1:8001")
     names = {t.name for t in tools}
     assert names == {
         "nn.anomaly", "nn.rootcause", "nn.log_classify", "nn.retrieve",
-        "nn.trace", "nn.forecast", "nn.tgat",
+        "nn.trace", "nn.forecast", "nn.tgat", "nn.vision_forecast",
+        "nn.vision_pipeline",
     }
     for t in tools:
         assert t.requires_approval is False  # 全部只读低风险
@@ -234,6 +235,76 @@ def test_trace_missing_spans_returns_error():
     result = _run(tool, {"trace_id": "t-1"})
     assert result["ok"] is False
     assert "spans" in result["error"]
+
+
+def _vision_frames():
+    return [
+        {"frame_id": "f1", "detections": [
+            {"label": "person", "confidence": 0.9, "bbox": [0.1, 0.1, 0.2, 0.3]},
+        ]},
+        {"frame_id": "f2", "detections": [
+            {"label": "person", "confidence": 0.9, "bbox": [0.2, 0.1, 0.3, 0.3]},
+        ]},
+    ]
+
+
+def test_vision_forecast_payload_and_url():
+    from agent.tools.builtin.nn_perception import VisionForecastTool
+    http = FakeHttp({"/api/nn/vision-forecast": {"ok": True, "tracks": [], "events": []}})
+    tool = VisionForecastTool(base_url="http://127.0.0.1:8001", http_post=http)
+    frames = _vision_frames()
+    zones = [{"zone_id": "cabinet", "kind": "danger", "bbox": [0.5, 0.0, 0.9, 0.5]}]
+
+    result = _run(tool, {"frames": frames, "zones": zones, "horizon": 4})
+
+    assert result["ok"] is True
+    url, payload = http.calls[0]
+    assert url.endswith("/api/nn/vision-forecast")
+    assert payload["frames"] == frames
+    assert payload["zones"] == zones
+    assert payload["horizon"] == 4
+
+
+def test_vision_forecast_requires_two_frames():
+    from agent.tools.builtin.nn_perception import VisionForecastTool
+    tool = VisionForecastTool(http_post=FakeHttp())
+    result = _run(tool, {"frames": _vision_frames()[:1]})
+    assert result["ok"] is False
+    assert "至少 2 帧" in result["error"]
+
+
+def test_vision_forecast_requires_detections():
+    from agent.tools.builtin.nn_perception import VisionForecastTool
+    tool = VisionForecastTool(http_post=FakeHttp())
+    frames = [{"frame_id": "f1"}, {"frame_id": "f2"}]
+    result = _run(tool, {"frames": frames})
+    assert result["ok"] is False
+    assert "detections" in result["error"]
+
+
+def test_vision_pipeline_payload_and_url():
+    from agent.tools.builtin.nn_perception import VisionPipelineTool
+    http = FakeHttp({"/api/nn/vision-pipeline": {"ok": True, "frames_analyzed": 3}})
+    tool = VisionPipelineTool(base_url="http://127.0.0.1:8001", http_post=http)
+    source = {"kind": "directory", "path": "D:/frames", "sample_every_ms": 250}
+
+    result = _run(tool, {"source": source, "horizon": 4, "max_frames": 20})
+
+    assert result["ok"] is True
+    url, payload = http.calls[0]
+    assert url.endswith("/api/nn/vision-pipeline")
+    assert payload["source"] == source
+    assert payload["horizon"] == 4
+    assert payload["max_frames"] == 20
+
+
+def test_vision_pipeline_rejects_bad_source():
+    from agent.tools.builtin.nn_perception import VisionPipelineTool
+    tool = VisionPipelineTool(http_post=FakeHttp())
+
+    assert "source" in _run(tool, {})["error"]
+    assert "kind" in _run(tool, {"source": {"kind": "webcam", "path": "x"}})["error"]
+    assert "path" in _run(tool, {"source": {"kind": "directory", "path": "  "}})["error"]
 
 
 def test_tools_register_and_execute_via_executor():
