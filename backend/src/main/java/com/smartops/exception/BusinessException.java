@@ -16,4 +16,12 @@ public class BusinessException extends RuntimeException {
         super(message);
         this.code = code;
     }
+
+    /**
+     * 保留根因，便于日志与问题定位；对外响应仍只暴露业务消息。
+     */
+    public BusinessException(int code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+    }
 }

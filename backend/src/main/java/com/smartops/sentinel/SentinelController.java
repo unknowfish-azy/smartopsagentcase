@@ -228,8 +228,25 @@ public class SentinelController {
         return ApiResponse.success();
     }
 
+    /**
+     * 告警列表。
+     *
+     * <p>内部令牌通道（无浏览器会话）只用于 W7 的系统只读初诊，返回单任务范围；
+     * 浏览器会话仍按当前用户隔离。</p>
+     */
     @GetMapping("/alerts")
-    public ApiResponse<List<SentinelService.AlertView>> alerts(@AuthenticationPrincipal SessionUser actor) {
+    public ApiResponse<List<SentinelService.AlertView>> alerts(
+            jakarta.servlet.http.HttpServletRequest request,
+            @AuthenticationPrincipal SessionUser actor,
+            @RequestParam(required = false) Long taskId) {
+        if (actor == null && com.smartops.security.CurrentSessions.optional(request) == null) {
+            // 只有真正通过内部令牌校验的调用才允许系统范围读取；开发绕过不算。
+            if (Boolean.TRUE.equals(request.getAttribute(
+                    com.smartops.security.InternalTokenAuthenticationFilter.VALIDATED_ATTRIBUTE))) {
+                return ApiResponse.success(sentinel.listAlertsForSystem(taskId));
+            }
+            throw new com.smartops.exception.BusinessException(401, "需要登录后查看告警");
+        }
         return ApiResponse.success(sentinel.listAlerts(actor));
     }
 

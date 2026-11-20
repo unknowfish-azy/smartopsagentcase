@@ -18,6 +18,9 @@ public class InternalTokenAuthenticationFilter extends OncePerRequestFilter {
 
     public static final String HEADER = "X-SmartOps-Internal-Token";
 
+    /** 仅令牌校验通过才写入；供内部只读通道区分"真的内部调用"与开发绕过。 */
+    public static final String VALIDATED_ATTRIBUTE = "smartops.internal-token-validated";
+
     private final String expectedToken;
     private final boolean developmentBypass;
 
@@ -37,12 +40,17 @@ public class InternalTokenAuthenticationFilter extends OncePerRequestFilter {
                 && (path.equals("/api/inspector/check")
                 || path.equals("/api/inspector/verify")
                 || path.equals("/api/inspector/replan"));
-        // 恢复契约与对话记忆写入只允许 agent / ai-service 侧调用，浏览器会话不得代替内部身份。
+        // 恢复契约、对话记忆与 Agent 账本写入只允许 agent / ai-service 侧调用，浏览器会话不得代替内部身份。
         boolean internalWrite = path.startsWith("/api/internal/recovery/")
-                || path.startsWith("/api/internal/memory/");
+                || path.startsWith("/api/internal/memory/")
+                || path.startsWith("/api/internal/agent-ledger/")
+                || path.equals("/api/internal/agent/trigger");
+        // W7：系统触发的只读初诊没有浏览器会话，只允许内部令牌读取告警面（GET，精确路径）。
+        boolean internalRead = "GET".equalsIgnoreCase(request.getMethod())
+                && path.equals("/api/sentinel/alerts");
         // CRUD endpoints are called by the web application. Only runtime and
         // invoke remain internal tool boundaries.
-        return !runtime && !inspectorWrite && !internalWrite;
+        return !runtime && !inspectorWrite && !internalWrite && !internalRead;
     }
 
     @Override
@@ -78,6 +86,7 @@ public class InternalTokenAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        request.setAttribute(VALIDATED_ATTRIBUTE, Boolean.TRUE);
         filterChain.doFilter(request, response);
     }
 

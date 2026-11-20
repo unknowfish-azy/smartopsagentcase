@@ -11,7 +11,7 @@ public class UserAccountConfig {
     @Bean
     ApplicationRunner bootstrapAdministrator(UserAccountService accounts,
             @Value("${smartops.bootstrap.username:admin}") String username,
-            @Value("${smartops.bootstrap.password:}") String password) {
+            @Value("${smartops.bootstrap.password:Admin@2026Secure!}") String password) {
         return arguments -> accounts.bootstrap(username, password);
     }
 }

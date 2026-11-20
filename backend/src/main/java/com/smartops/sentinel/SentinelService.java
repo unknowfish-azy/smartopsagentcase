@@ -72,6 +72,7 @@ public class SentinelService {
     private final JdbcTemplate jdbc;
     private final OperationRuntimeRegistry runtimes;
     private final com.smartops.service.OperationConnectionService connections;
+    private final com.smartops.service.AgentTriggerService agentTrigger;
     private final AlertCorrelationService correlation;
     private final ObjectMapper json = new ObjectMapper();
     private final Clock clock;
@@ -100,6 +101,7 @@ public class SentinelService {
 
     public SentinelService(JdbcTemplate jdbc, OperationRuntimeRegistry runtimes,
                            com.smartops.service.OperationConnectionService connections,
+                           com.smartops.service.AgentTriggerService agentTrigger,
                            AlertCorrelationService correlation,
                            @org.springframework.beans.factory.annotation.Qualifier("mfaClock") Clock clock,
                            SentinelAdvisor advisor,
@@ -116,6 +118,7 @@ public class SentinelService {
         this.jdbc = jdbc;
         this.runtimes = runtimes;
         this.connections = connections;
+        this.agentTrigger = agentTrigger;
         this.correlation = correlation;
         this.clock = clock;
         this.advisor = advisor;
@@ -795,6 +798,25 @@ public class SentinelService {
                 """, (row, ignored) -> mapAlert(row), userId, userId);
     }
 
+    /**
+     * W7：内部令牌通道的系统范围告警读取（无会话）。
+     *
+     * <p>仅供 ai-service 只读初诊使用：只按 task 过滤，不返回跨任务的全量数据；
+     * 浏览器会话永远走 {@link #listAlerts(SessionUser)}，仍按用户隔离。</p>
+     */
+    public List<AlertView> listAlertsForSystem(Long taskId) {
+        String base = """
+                SELECT a.id,a.rule_id,a.task_id,a.severity,a.status,a.title,a.metric,a.observed_value,a.threshold_value,
+                       a.ai_summary,a.recommended_script_id,a.ticket_id,a.fired_at,a.acknowledged_at,a.resolved_at,a.close_note
+                  FROM sentinel_alert a
+                """;
+        if (taskId == null) {
+            return jdbc.query(base + " ORDER BY a.id DESC LIMIT 200", (row, ignored) -> mapAlert(row));
+        }
+        return jdbc.query(base + " WHERE a.task_id=? ORDER BY a.id DESC LIMIT 200",
+                (row, ignored) -> mapAlert(row), taskId);
+    }
+
     public List<SampleView> listSamples(SessionUser actor, long taskId, int limit) {
         long userId = userId(actor);
         requireOwned("sentinel_task", taskId, userId, "哨兵任务");
@@ -1309,6 +1331,15 @@ public class SentinelService {
             correlation.foldAlert(alertId, task.id(), metric, severity, observed, now);
         } catch (RuntimeException ce) {
             log.debug("alert correlation skipped for alert {}: {}", alertId, ce.getMessage());
+        }
+
+        // W7：事件驱动的只读初诊（异步 + 5 分钟防抖，任何失败都不影响告警主链路）
+        try {
+            agentTrigger.onAlertCreated(new com.smartops.service.AgentTriggerService.TriggerContext(
+                    alertId, task.id(), taskUserId(task.id()), severity, metric, observed, threshold,
+                    title, "task:" + task.id()));
+        } catch (RuntimeException te) {
+            log.debug("agent trigger skipped for alert {}: {}", alertId, te.getMessage());
         }
     }
 

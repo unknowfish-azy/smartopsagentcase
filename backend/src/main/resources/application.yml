@@ -228,7 +228,7 @@ smartops:
         timeout-ms: ${SMARTOPS_ROBOT_REPLAN_OLLAMA_TIMEOUT_MS:5000}
   bootstrap:
     username: ${SMARTOPS_BOOTSTRAP_USERNAME:admin}
-    password: ${SMARTOPS_BOOTSTRAP_PASSWORD:}
+    password: ${SMARTOPS_BOOTSTRAP_PASSWORD:Admin@2026Secure!}
   harbor:
     url: ${SMARTOPS_HARBOR_URL:}
     username: ${SMARTOPS_HARBOR_USERNAME:}
@@ -276,6 +276,13 @@ smartops:
       backoff-max-ms: ${SMARTOPS_CLOUD_BACKOFF_MAX_MS:4000}
     # CMDB 资源超过该秒数未刷新即展示为 STALE（只影响展示，不改写资源状态）
     stale-after-seconds: ${SMARTOPS_CLOUD_STALE_AFTER_SECONDS:3600}
+  agent:
+    trigger:
+      # W7 事件驱动：Sentinel 告警触发只读初诊（异步、5 分钟单资源防抖、任何失败 fail-open）
+      enabled: ${SMARTOPS_AGENT_TRIGGER_ENABLED:true}
+      window-minutes: ${SMARTOPS_AGENT_TRIGGER_WINDOW_MINUTES:5}
+      ai-service-url: ${AI_SERVICE_URL:http://localhost:8001}
+      timeout-seconds: ${SMARTOPS_AGENT_TRIGGER_TIMEOUT_SECONDS:30}
   sentinel:
     poll:
       # 哨兵采集轮询：启动 20 秒后开始，每 30 秒检查一次到期任务

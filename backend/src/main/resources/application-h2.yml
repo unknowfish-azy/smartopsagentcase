@@ -1,0 +1,79 @@
+# ============================================================
+# application-h2.yml
+# ------------------------------------------------------------
+# 本地开发 / 单机联调 Profile：用 H2 文件数据库替代 MySQL。
+#
+# 使用方式：
+#     mvn spring-boot:run -Dspring-boot.run.profiles=h2
+#   或
+#     java -jar smartops-backend.jar --spring.profiles.active=h2
+#
+# 与 dev 的区别：
+#     - 数据库：H2 文件模式（data/smartops-local），MySQL 兼容模式
+#     - 不依赖 MySQL 服务，首次启动自动建库建表
+#     - Redis 仍指向 localhost:6379（连接失败不阻塞启动，仅缓存失效）
+#
+# 数据持久化：H2 文件保存在 ./data/smartops-local.mv.db，
+# 重启后端数据保留。删除该文件即可重置。
+# ============================================================
+
+spring:
+
+  datasource:
+    # H2 文件模式 + MySQL 兼容 + 关键字小写
+    url: jdbc:h2:file:./data/smartops-local;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: SmartOpsH2Pool
+
+  # Flyway：H2 兼容（项目迁移脚本已做 MySQL/H2 双方言适配）
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    # 全新 H2 库：从 0 开始跑所有迁移
+    baseline-version: 0
+
+  # Redis：仍指向 localhost，连接失败不阻塞启动
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 1
+          max-wait: 2000ms
+
+  # 缓存：Redis 不可用时降级为内存缓存
+  cache:
+    type: simple
+
+# 日志级别：本地开发用 DEBUG
+logging:
+  level:
+    root: INFO
+    com.smartops: DEBUG
+
+# 本地开发专用 AES-GCM 加密密钥（32 字节 Base64，勿用于生产）
+smartops:
+  security:
+    api-key-encryption-key: ${SMARTOPS_API_KEY_ENCRYPTION_KEY:U21hcnRPcHNBZ2VudFRlc3RLZXkhMjAyNiFhYmNkZWY=}
+    internal-token: ${SMARTOPS_INTERNAL_TOKEN:h2-local-internal-token}
+    internal-bypass: false
+    human-verification:
+      enabled: false
+  attachments:
+    cleanup-enabled: false

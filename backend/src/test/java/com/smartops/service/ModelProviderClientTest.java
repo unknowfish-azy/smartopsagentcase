@@ -74,6 +74,47 @@ class ModelProviderClientTest {
     }
 
     @Test
+    void retriesOnceAfterRateLimitedResponse() throws Exception {
+        server = HttpServer.create(new InetSocketAddress(HOST, 0), 0);
+        server.createContext("/v1/chat/completions", exchange -> {
+            int hit = hits.incrementAndGet();
+            if (hit <= 2) {
+                // Retry-After: 0 让测试不真正等待，只验证重试链路
+                byte[] limited = "{\"error\":\"rate limited\"}".getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Retry-After", "0");
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(429, limited.length);
+                exchange.getResponseBody().write(limited);
+                exchange.close();
+                return;
+            }
+            String response = "{\"choices\":[{\"message\":{\"content\":\"healthy\"}}]}";
+            byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        });
+        server.start();
+
+        ModelConnection connection = new ModelConnection();
+        connection.setId(1L);
+        connection.setProvider("openai-compatible");
+        connection.setModelName("ops-model");
+        connection.setTimeoutSeconds(5);
+        connection.setBaseUrl("http://" + HOST + ":" + server.getAddress().getPort() + "/v1");
+        ModelInvocationRequest request = new ModelInvocationRequest();
+        request.setPrompt("status");
+        PinnedDns.pin(HOST, List.of(InetAddress.getByName(HOST)));
+
+        ModelInvocationResponse response = new ModelProviderClient(new ObjectMapper())
+                .invoke(connection, "secret-for-test-only", request);
+
+        assertThat(hits.get()).isEqualTo(3);
+        assertThat(response.getContent()).isEqualTo("healthy");
+    }
+
+    @Test
     void unpinnedHostFailsClosedWithoutConnecting() {
         ModelConnection connection = new ModelConnection();
         connection.setId(1L);

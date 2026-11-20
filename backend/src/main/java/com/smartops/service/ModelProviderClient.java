@@ -17,6 +17,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.util.Timeout;
@@ -44,6 +45,14 @@ import java.util.Map;
 public class ModelProviderClient {
 
     private static final int CONNECT_TIMEOUT_SECONDS = 10;
+
+    /**
+     * 429 只代表网关限流、请求未被受理（不计费），按退避重试一次是安全的；
+     * 其余状态码不重试，避免重复计费或重复副作用。
+     */
+    private static final int MAX_ATTEMPTS = 4;
+    private static final long[] RETRY_BACKOFF_MS = {2_000L, 6_000L, 12_000L};
+    private static final long MAX_RETRY_AFTER_MS = 20_000L;
 
     private final ObjectMapper objectMapper;
     private final CloseableHttpClient client;
@@ -92,43 +101,74 @@ public class ModelProviderClient {
         payload.put("model", connection.getModelName());
         payload.put("messages", messages);
         payload.put("temperature", request.getTemperature() == null ? 0.2 : request.getTemperature());
+        if (request.getMaxTokens() != null) {
+            payload.put("max_tokens", request.getMaxTokens());
+        }
 
         int timeoutSeconds = connection.getTimeoutSeconds() == null ? 60 : connection.getTimeoutSeconds();
         try {
-            HttpPost httpRequest = new HttpPost(endpoint);
-            httpRequest.setConfig(RequestConfig.custom()
-                    .setConnectionRequestTimeout(Timeout.ofSeconds(Math.min(timeoutSeconds, CONNECT_TIMEOUT_SECONDS)))
-                    .setResponseTimeout(Timeout.ofSeconds(timeoutSeconds))
-                    .build());
-            httpRequest.setHeader("Authorization", "Bearer " + apiKey);
-            httpRequest.setEntity(new StringEntity(
-                    objectMapper.writeValueAsString(payload), ContentType.APPLICATION_JSON));
-            try (CloseableHttpResponse response = client.execute(httpRequest)) {
-                int status = response.getCode();
-                String body = response.getEntity() == null ? ""
-                        : EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                if (status < 200 || status >= 300) {
-                    throw new BusinessException(502,
-                            "模型服务调用失败（HTTP " + status + "）");
-                }
+            String payloadJson = objectMapper.writeValueAsString(payload);
+            for (int attempt = 1; ; attempt++) {
+                HttpPost httpRequest = new HttpPost(endpoint);
+                httpRequest.setConfig(RequestConfig.custom()
+                        .setConnectionRequestTimeout(Timeout.ofSeconds(Math.min(timeoutSeconds, CONNECT_TIMEOUT_SECONDS)))
+                        .setResponseTimeout(Timeout.ofSeconds(timeoutSeconds))
+                        .build());
+                httpRequest.setHeader("Authorization", "Bearer " + apiKey);
+                httpRequest.setEntity(new StringEntity(payloadJson, ContentType.APPLICATION_JSON));
+                try (CloseableHttpResponse response = client.execute(httpRequest)) {
+                    int status = response.getCode();
+                    if (status == 429 && attempt < MAX_ATTEMPTS) {
+                        sleepBeforeRetry(response, attempt);
+                        continue;
+                    }
+                    String body = response.getEntity() == null ? ""
+                            : EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                    if (status < 200 || status >= 300) {
+                        throw new BusinessException(502,
+                                "模型服务调用失败（HTTP " + status + "）");
+                    }
 
-                Map<String, Object> responseBody = objectMapper.readValue(
-                        body, new TypeReference<>() {});
-                String content = extractContent(responseBody);
-                Map<String, Object> usage = responseBody.get("usage") instanceof Map<?, ?> raw
-                        ? objectMapper.convertValue(raw, new TypeReference<>() {})
-                        : Map.of();
-                return ModelInvocationResponse.builder()
-                        .connectionId(connection.getId())
-                        .provider(connection.getProvider())
-                        .model(connection.getModelName())
-                        .content(content)
-                        .usage(usage)
-                        .build();
+                    Map<String, Object> responseBody = objectMapper.readValue(
+                            body, new TypeReference<>() {});
+                    String content = extractContent(responseBody);
+                    Map<String, Object> usage = responseBody.get("usage") instanceof Map<?, ?> raw
+                            ? objectMapper.convertValue(raw, new TypeReference<>() {})
+                            : Map.of();
+                    return ModelInvocationResponse.builder()
+                            .connectionId(connection.getId())
+                            .provider(connection.getProvider())
+                            .model(connection.getModelName())
+                            .content(content)
+                            .usage(usage)
+                            .build();
+                }
             }
         } catch (BusinessException ex) {
             throw ex;
         } catch (Exception ex) {
+            throw new BusinessException(502, "模型服务调用失败", ex);
+        }
+    }
+
+    /**
+     * 429 退避：优先遵循网关 Retry-After（秒），否则用固定退避序列。
+     */
+    private void sleepBeforeRetry(CloseableHttpResponse response, int attempt) {
+        long delayMs = RETRY_BACKOFF_MS[Math.min(attempt - 1, RETRY_BACKOFF_MS.length - 1)];
+        Header retryAfter = response.getFirstHeader("Retry-After");
+        if (retryAfter != null) {
+            try {
+                long seconds = Long.parseLong(retryAfter.getValue().trim());
+                delayMs = Math.max(0L, Math.min(seconds * 1000L, MAX_RETRY_AFTER_MS));
+            } catch (NumberFormatException ignored) {
+                // HTTP-date 形式不解析，沿用固定退避
+            }
+        }
+        try {
+            Thread.sleep(delayMs);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
             throw new BusinessException(502, "模型服务调用失败");
         }
     }

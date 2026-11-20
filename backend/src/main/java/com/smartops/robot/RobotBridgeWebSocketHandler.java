@@ -96,7 +96,10 @@ public class RobotBridgeWebSocketHandler extends TextWebSocketHandler {
                 }
                 Map<String, Object> body = mapper.convertValue(payload, Map.class);
                 switch (type) {
-                    case "telemetry" -> hub.onTelemetry(deviceKey, body);
+                    case "telemetry" -> {
+                        log.info("[DEBUG] telemetry from {} keys={} hasJoints={}", deviceKey, body.keySet(), body.containsKey("joints"));
+                        hub.onTelemetry(deviceKey, body);
+                    }
                     case "frame" -> {
                         hub.onFrame(deviceKey, body);
                         frames.accept(deviceKey, body);

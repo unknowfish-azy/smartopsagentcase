@@ -23,25 +23,36 @@ public class HumanVerificationService {
     private final HumanVerificationSettings settings;
     private final HumanVerificationProvider provider;
     private final Clock clock;
+    private final PortalCatalog portals;
     private final AccountAttemptLimiter requests = new AccountAttemptLimiter();
     private final Map<String, FailureWindow> failures = new HashMap<>();
     private final Map<String, Integer> inFlight = new HashMap<>();
     private Instant saturatedUntil = Instant.MIN;
 
-    @Autowired
     public HumanVerificationService(HumanVerificationSettings settings, HumanVerificationProvider provider) {
-        this(settings, provider, Clock.systemUTC());
+        this(settings, provider, Clock.systemUTC(), new PortalCatalog());
+    }
+
+    @Autowired
+    public HumanVerificationService(HumanVerificationSettings settings, HumanVerificationProvider provider, PortalCatalog portals) {
+        this(settings, provider, Clock.systemUTC(), portals);
     }
 
     HumanVerificationService(HumanVerificationSettings settings, HumanVerificationProvider provider, Clock clock) {
+        this(settings, provider, clock, new PortalCatalog());
+    }
+
+    HumanVerificationService(HumanVerificationSettings settings, HumanVerificationProvider provider, Clock clock, PortalCatalog portals) {
         this.settings = settings;
         this.provider = provider;
         this.clock = clock;
+        this.portals = portals;
     }
 
+    /** 登录人机验证动作：高敏门户共用更严的 admin_login 计数，其余门户用 login。 */
     public String loginAction(String portal) {
         if (portal == null || "user".equals(portal)) return "login";
-        if ("admin".equals(portal)) return "admin_login";
+        if (portals.isAllowed(portal)) return portals.isSensitive(portal) ? "admin_login" : "login";
         throw new BusinessException(400, "登录入口无效");
     }
 

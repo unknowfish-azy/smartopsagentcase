@@ -35,12 +35,29 @@ public class RobotConsoleWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws IOException {
-        if (!(session.getPrincipal() instanceof SessionUser)) {
+        SessionUser user = resolveUser(session);
+        if (user == null) {
             session.close(CloseStatus.POLICY_VIOLATION);
             return;
         }
         hub.attachConsole(session);
         send(session, "hello", Map.of("capabilities", java.util.List.of("MOVE", "PTZ", "SPEAK", "CAPTURE", "STOP")));
+    }
+
+    /** 从 HTTP session 里取 Spring Security Authentication principal（WebSocketSession.getPrincipal() 不会自动传递）。 */
+    private SessionUser resolveUser(WebSocketSession session) {
+        // 先尝试 WebSocketSession.getPrincipal()（如果 Spring Security WS 集成配置了）
+        if (session.getPrincipal() instanceof SessionUser u) return u;
+        // 回退：从 HTTP session attributes 里取 SecurityContext → Authentication → SessionUser
+        Object httpSession = session.getAttributes().get("SMARTOPS_HTTP_SESSION");
+        if (httpSession instanceof jakarta.servlet.http.HttpSession hs) {
+            Object ctx = hs.getAttribute("SPRING_SECURITY_CONTEXT");
+            if (ctx instanceof org.springframework.security.core.context.SecurityContext sc) {
+                var auth = sc.getAuthentication();
+                if (auth != null && auth.getPrincipal() instanceof SessionUser su) return su;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -50,12 +67,11 @@ public class RobotConsoleWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
-        if (!(session.getPrincipal() instanceof SessionUser user)) {
+        SessionUser user = resolveUser(session);
+        if (user == null) {
             try {
                 session.close(CloseStatus.POLICY_VIOLATION);
-            } catch (IOException ignored) {
-                // 会话已失效
-            }
+            } catch (IOException ignored) { }
             return;
         }
         JsonNode root;

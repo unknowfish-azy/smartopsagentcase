@@ -49,6 +49,12 @@ public class RobotBrainService {
     private static final int MOVE_TTL_MS = 400;
     /** 到达单路点后的等待时间（毫秒）：无真机里程计，用固定等待模拟「到达 + 识别」。 */
     private static final long WAYPOINT_DWELL_MS = 2500L;
+    /** 目标坐标路点：到达判定半径（米）。 */
+    private static final double NAV_ARRIVE_RADIUS = 0.35;
+    /** 目标坐标路点：单点闭环导航超时（毫秒）。 */
+    private static final long NAV_TIMEOUT_MS = 30_000L;
+    /** 目标坐标路点：闭环导航控制节拍（毫秒）。 */
+    private static final long NAV_TICK_MS = 400L;
     /** 执行并发上限（多机队调度时会由 FleetService 的外部并发进一步限制）。 */
     private final int parallelism;
 
@@ -272,7 +278,7 @@ public class RobotBrainService {
                     break; // DB 侧已被人工暂停/取消
                 }
                 Map<String, Object> point = activeRoute.get(i);
-                executeWaypoint(deviceKey, point, operator);
+                executeWaypoint(deviceKey, point, operator, taskId);
                 progress = i + 1;
                 jdbcTemplate.update("UPDATE robot_task SET progress = ? WHERE id = ?", progress, taskId);
 
@@ -368,28 +374,34 @@ public class RobotBrainService {
         return success.newRoute();
     }
 
-    /** 单个路点的执行：下发 MOVE → 等待 → 下发 actions（默认 CAPTURE）→ 等待到达。 */
-    private void executeWaypoint(String deviceKey, Map<String, Object> point, String operator) {
-        double x = num(point.get("x"));
-        double y = num(point.get("y"));
-        double theta = num(point.get("theta"));
+    /** 单个路点的执行：目标坐标走闭环导航，否则沿用归一化向量步进；随后执行 actions。 */
+    private void executeWaypoint(String deviceKey, Map<String, Object> point, String operator, long taskId) {
+        boolean hasTarget = point.get("targetX") != null && point.get("targetY") != null;
+        if (hasTarget) {
+            // 地图规划出的绝对坐标路点：按真实遥测闭环趋近，到达后再执行动作
+            if (!navigateTo(deviceKey, num(point.get("targetX")), num(point.get("targetY")), taskId, operator)) {
+                return;
+            }
+        } else {
+            double theta = num(point.get("theta"));
 
-        // MOVE 命令参数：policy 已把 x/y/theta 都定义为 [-1,1] 归一化量
-        // （theta 这里当作 angular velocity 方向用，而非绝对角度）
-        Map<String, Object> moveParams = new LinkedHashMap<>();
-        moveParams.put("x", clamp(num(point.get("x")), -1.0, 1.0));
-        moveParams.put("y", clamp(num(point.get("y")), -1.0, 1.0));
-        moveParams.put("theta", clamp(theta, -1.0, 1.0));
-        moveParams.put("speed", 0.4);
-        moveParams.put("ttlMs", MOVE_TTL_MS);
-        control.command(deviceKey, "BRAIN", "MOVE", moveParams, operator);
+            // MOVE 命令参数：policy 已把 x/y/theta 都定义为 [-1,1] 归一化量
+            // （theta 这里当作 angular velocity 方向用，而非绝对角度）
+            Map<String, Object> moveParams = new LinkedHashMap<>();
+            moveParams.put("x", clamp(num(point.get("x")), -1.0, 1.0));
+            moveParams.put("y", clamp(num(point.get("y")), -1.0, 1.0));
+            moveParams.put("theta", clamp(theta, -1.0, 1.0));
+            moveParams.put("speed", 0.4);
+            moveParams.put("ttlMs", MOVE_TTL_MS);
+            control.command(deviceKey, "BRAIN", "MOVE", moveParams, operator);
 
-        // 模拟运动：等待后认为到达（无真机里程计）
-        try {
-            Thread.sleep(WAYPOINT_DWELL_MS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return;
+            // 模拟运动：等待后认为到达（无真机里程计）
+            try {
+                Thread.sleep(WAYPOINT_DWELL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
 
         @SuppressWarnings("unchecked")
@@ -417,6 +429,71 @@ public class RobotBrainService {
             }
         }
     }
+
+    /**
+     * 绝对坐标路点的闭环导航：读取最近遥测位姿，计算方位误差后按节拍续发 MOVE，
+     * 到达判定半径内或超时即停。任务被暂停/取消时立即中断，最终一定补发 STOP。
+     *
+     * @return true 表示可继续执行该路点动作；false 表示任务已中断
+     */
+    private boolean navigateTo(String deviceKey, double targetX, double targetY,
+            long taskId, String operator) {
+        long deadline = System.currentTimeMillis() + NAV_TIMEOUT_MS;
+        boolean arrived = false;
+        try {
+            while (System.currentTimeMillis() < deadline) {
+                if (!"RUNNING".equals(currentStatus(taskId))) {
+                    return false;
+                }
+                Map<String, Object> snapshot = hub.telemetry(deviceKey);
+                Object poseRaw = snapshot == null ? null : snapshot.get("pose");
+                if (!(poseRaw instanceof Map<?, ?> pose)) {
+                    Thread.sleep(NAV_TICK_MS);
+                    continue;
+                }
+                double x = num(pose.get("x"));
+                double y = num(pose.get("y"));
+                double dx = targetX - x;
+                double dy = targetY - y;
+                double distance = Math.hypot(dx, dy);
+                if (distance <= NAV_ARRIVE_RADIUS) {
+                    arrived = true;
+                    break;
+                }
+                double error = normalizeDegrees(
+                        Math.toDegrees(Math.atan2(dy, dx)) - num(pose.get("theta")));
+                boolean turning = Math.abs(error) > 35.0;
+                Map<String, Object> moveParams = new LinkedHashMap<>();
+                // 大角度先原地转向，小角度再边走边修正；x/y 仍是车体归一化分量
+                moveParams.put("x", turning ? 0.0 : clamp(Math.cos(Math.toRadians(error)), -1.0, 1.0));
+                moveParams.put("y", turning ? 0.0 : clamp(Math.sin(Math.toRadians(error)), -1.0, 1.0));
+                moveParams.put("theta", clamp(error / 45.0, -1.0, 1.0));
+                // 临近目标减速，避免在到达半径附近来回振荡
+                moveParams.put("speed", distance < 1.2 ? 0.25 : 0.6);
+                moveParams.put("ttlMs", MOVE_TTL_MS);
+                control.command(deviceKey, "BRAIN", "MOVE", moveParams, operator);
+                Thread.sleep(NAV_TICK_MS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (RuntimeException e) {
+            log.warn("路点导航异常 device={} target=({},{}): {}", deviceKey,
+                    targetX, targetY, e.getMessage());
+        } finally {
+            try {
+                control.command(deviceKey, "BRAIN", "STOP", Map.of(), operator);
+            } catch (RuntimeException e) {
+                log.debug("导航结束补发 STOP 失败 device={}: {}", deviceKey, e.getMessage());
+            }
+        }
+        if (!arrived) {
+            log.warn("路点导航未在 {}ms 内到达 device={} target=({},{})",
+                    NAV_TIMEOUT_MS, deviceKey, targetX, targetY);
+        }
+        return true;
+    }
+
 
     // ------------------------------------------------------------------
     // helpers
@@ -461,6 +538,14 @@ public class RobotBrainService {
 
     private static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    /** 角度归一化到 (-180, 180]，用于计算最短转向方向。 */
+    private static double normalizeDegrees(double value) {
+        double angle = value % 360.0;
+        if (angle > 180.0) angle -= 360.0;
+        if (angle < -180.0) angle += 360.0;
+        return angle;
     }
 
     @PreDestroy

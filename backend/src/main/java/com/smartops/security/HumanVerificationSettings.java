@@ -34,7 +34,7 @@ public class HumanVerificationSettings {
             @Value("${smartops.security.human-verification.min-response-ms:600}") long minResponseMillis,
             @Value("${smartops.security.human-verification.always-require-login:true}") boolean alwaysRequireLogin,
             Environment environment) {
-        boolean development = environment.acceptsProfiles(Profiles.of("dev", "test", "local"))
+        boolean development = environment.acceptsProfiles(Profiles.of("dev", "test", "local", "h2"))
                 && !environment.acceptsProfiles(Profiles.of("prod"));
         if (!enabled && !development) throw new IllegalStateException("Human verification may only be disabled in dev/test");
         if (!development && (testKey(siteKey) || testKey(secretKey))) {

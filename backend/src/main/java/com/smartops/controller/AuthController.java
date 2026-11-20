@@ -2,6 +2,7 @@ package com.smartops.controller;
 
 import com.smartops.common.ApiResponse;
 import com.smartops.admin.SysLoginLogService;
+import com.smartops.security.PortalCatalog;
 import com.smartops.security.SessionUser;
 import com.smartops.security.UserAccountService;
 import com.smartops.security.AccountSessionRegistry;
@@ -43,12 +44,14 @@ public class AuthController {
     private final AdminMfaService mfa;
     private final MfaLoginService mfaLogin;
     private final SysLoginLogService loginLog;
+    private final PortalCatalog portals;
 
-    public AuthController(UserAccountService accounts, CsrfTokenRepository csrf, AccountSessionRegistry sessions, SecurityAuditService audit, SessionRevocationService revocations, HumanVerificationService humanVerification, AdminMfaService mfa, MfaLoginService mfaLogin, SysLoginLogService loginLog) {
+    public AuthController(UserAccountService accounts, CsrfTokenRepository csrf, AccountSessionRegistry sessions, SecurityAuditService audit, SessionRevocationService revocations, HumanVerificationService humanVerification, AdminMfaService mfa, MfaLoginService mfaLogin, SysLoginLogService loginLog, PortalCatalog portals) {
         this.accounts = accounts; this.csrf = csrf; this.sessions = sessions; this.audit = audit; this.revocations = revocations;
         this.humanVerification = humanVerification;
         this.mfa = mfa; this.mfaLogin = mfaLogin;
         this.loginLog = loginLog;
+        this.portals = portals;
     }
 
     @GetMapping("/api/auth/human-verification")
@@ -98,7 +101,7 @@ public class AuthController {
             throw rejected;
         } finally { permit.close(); }
         var mfaState = mfa.state(user.id());
-        if ("admin".equals(user.role()) && mfaState.enabled()) {
+        if (portals.isSensitive(user.portal()) && mfaState.enabled()) {
             var session = request.getSession(true);
             SecurityContextHolder.clearContext();
             session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
@@ -129,9 +132,9 @@ public class AuthController {
         }
         request.getSession(true);
         request.changeSessionId();
-        request.getSession(false).setMaxInactiveInterval("admin".equals(user.portal()) ? 600 : 1800);
+        request.getSession(false).setMaxInactiveInterval(portals.idleSecondsOf(user.portal()));
         request.getSession(false).setAttribute(AdminMfaService.SESSION_VERSION, version);
-        String authority = user.mustChangePassword() ? "ROLE_PASSWORD_CHANGE" : "admin".equals(user.portal()) ? "ROLE_ADMIN" : "ROLE_OPERATOR";
+        String authority = user.mustChangePassword() ? "ROLE_PASSWORD_CHANGE" : portals.authorityOf(user.portal());
         var authentication = UsernamePasswordAuthenticationToken.authenticated(user, null,
                 List.of(new SimpleGrantedAuthority(authority)));
         var context = SecurityContextHolder.createEmptyContext();

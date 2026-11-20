@@ -28,7 +28,7 @@ import java.io.IOException;
 
 @Configuration
 public class SecurityConfig {
-    private static final String[] INTERNAL = { "/api/model-connections/*/runtime", "/api/model-connections/*/invoke", "/api/inspector/check", "/api/inspector/verify", "/api/inspector/replan", "/api/internal/recovery/**", "/api/internal/memory/**" };
+    private static final String[] INTERNAL = { "/api/model-connections/*/runtime", "/api/model-connections/*/invoke", "/api/inspector/check", "/api/inspector/verify", "/api/inspector/replan", "/api/internal/recovery/**", "/api/internal/memory/**", "/api/internal/agent-ledger/**", "/api/internal/agent/trigger", "/api/sentinel/alerts" };
     private final InternalTokenAuthenticationFilter internal;
     public SecurityConfig(InternalTokenAuthenticationFilter internal) { this.internal = internal; }
 
@@ -62,6 +62,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/v1/models").permitAll()
                         .requestMatchers(HttpMethod.POST, "/v1/chat/completions").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/mfa/complete", "/api/auth/mfa/cancel").permitAll()
+                        // 本地 AI 运行时：状态所有登录用户可读，启停仅管理员（控制器还会校验 loopback）
+                        .requestMatchers(HttpMethod.GET, "/api/runtime/ai/status").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/runtime/ai/start", "/api/runtime/ai/stop").hasRole("ADMIN")
                         .requestMatchers(administrativeRoutes).hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/servers", "/api/servers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/servers/**").hasRole("ADMIN")

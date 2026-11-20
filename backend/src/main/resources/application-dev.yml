@@ -72,6 +72,11 @@ logging:
 # 仅用于本地开发；生产环境必须通过环境变量
 # SMARTOPS_API_KEY_ENCRYPTION_KEY 覆盖，不允许使用此默认值。
 smartops:
+  # 本地 AI 能力链（Ollama 运行时 + ai-service）启停开关：
+  # 仅本地开发 profile 打开；生产部署保持 false，不暴露进程控制。
+  runtime:
+    control:
+      enabled: ${SMARTOPS_RUNTIME_CONTROL_ENABLED:true}
   security:
     human-verification:
       # 本地开发默认关闭：前端算术题/图形点选答对后无法生成后端认可的 token。

@@ -1,6 +1,8 @@
 package com.smartops.security;
 
 import com.smartops.exception.BusinessException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,37 +23,46 @@ import java.util.Locale;
 
 @Service
 public class UserAccountService {
+    private static final Logger log = LoggerFactory.getLogger(UserAccountService.class);
     private static final String ACCOUNT_SQL = "SELECT u.id,u.username,u.role,u.enabled,u.password_hash,u.created_at,u.dept_id,u.post_id,u.real_name,u.phone,u.email,COALESCE(s.auth_version,0) AS auth_version,COALESCE(s.must_change_password,FALSE) AS must_change_password FROM app_user u LEFT JOIN account_security s ON s.user_id=u.id";
     private final JdbcTemplate jdbc;
     private final SecurityAuditService audit;
     private final AccountSessionRegistry sessions;
+    private final PortalCatalog portals;
     private final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder(12);
     private final String dummyHash = passwords.encode("unused-password-for-timing");
     private final AccountAttemptLimiter attempts = new AccountAttemptLimiter();
 
-    public UserAccountService(JdbcTemplate jdbc, SecurityAuditService audit, AccountSessionRegistry sessions) {
-        this.jdbc = jdbc; this.audit = audit; this.sessions = sessions;
+    public UserAccountService(JdbcTemplate jdbc, SecurityAuditService audit, AccountSessionRegistry sessions, PortalCatalog portals) {
+        this.jdbc = jdbc; this.audit = audit; this.sessions = sessions; this.portals = portals;
     }
 
     public SessionUser authenticate(String username, String password, String address, String requestedPortal) {
         String portal = requestedPortal == null ? "user" : requestedPortal;
-        if (!List.of("user", "admin").contains(portal)) throw new BusinessException(400, "登录入口无效");
+        if (!portals.isAllowed(portal)) throw new BusinessException(400, "登录入口无效");
+        PortalCatalog.RateLimit portalLimit = portals.rateLimitForPortal(portal);
         String ipKey = "login-ip:" + portal + ":" + address;
-        int limit = portal.equals("admin") ? 5 : 10;
-        long window = portal.equals("admin") ? 900 : 300;
-        attempts.consume(ipKey, limit, window);
+        attempts.consume(ipKey, portalLimit.attempts(), portalLimit.windowSeconds());
         var accounts = jdbc.query(ACCOUNT_SQL + " WHERE u.username=?", this::readAccount, username);
         Account account = accounts.isEmpty() ? null : accounts.get(0);
         String accountKey = "login-account:" + (account == null ? "unknown:" + normalizedName(username) : account.id);
-        boolean administrative = portal.equals("admin") || (account != null && "admin".equals(account.role));
-        attempts.consume(accountKey, administrative ? 5 : 10, administrative ? 900 : 300);
+        boolean administrative = portals.isSensitive(portal) || (account != null && "admin".equals(account.role));
+        PortalCatalog.RateLimit accountLimit = portals.rateLimitForAccount(administrative);
+        attempts.consume(accountKey, accountLimit.attempts(), accountLimit.windowSeconds());
         boolean valid = matches(password, account == null ? dummyHash : account.hash);
         if (account == null || !account.enabled || !valid) {
             throw new BusinessException(401, "账号或密码错误");
         }
-        if (portal.equals("admin") && !account.role.equals("admin")) throw new BusinessException(403, "此账号无管理员入口权限，请选择用户层登录");
-        if (portal.equals("user") && account.role.equals("admin")) {
-            throw new BusinessException(403, "\u7ba1\u7406\u5458\u8d26\u53f7\u5fc5\u987b\u9009\u62e9\u7ba1\u7406\u5458\u5c42\u767b\u5f55");
+        // 角色与入口必须匹配：每个门户只接受注册中心规约的对应角色，
+        // 防止普通账号登录受限门户、或管理员误用普通入口。
+        String requiredRole = portals.roleOf(portal);
+        if (requiredRole != null && !account.role.equals(requiredRole)) {
+            PortalCatalog.PortalSpec spec = portals.spec(portal);
+            String label = spec != null ? spec.label() : portal;
+            if ("admin".equals(account.role)) {
+                throw new BusinessException(403, "管理员账号必须选择管理层登录");
+            }
+            throw new BusinessException(403, "此账号无" + label + "入口权限，请使用对应门户登录");
         }
         attempts.clear(ipKey);
         attempts.clear(accountKey);
@@ -350,6 +361,10 @@ public class UserAccountService {
         validateDeptPost(deptId, postId); validateRoleIds(roleIds);
         var administrators = requireMutationAuthority(actor, true);
         Account account = requireAccount(id);
+        // 职责分离（SoD）：审计合规层与系统管理互斥，审计员不得持有有效的平台管理员档案。
+        if ("auditor".equals(role) && hasActiveAdminProfile(id)) {
+            throw new BusinessException(409, "审计员与系统管理员职责互斥（SoD），请先撤销该账号的平台管理员档案");
+        }
         if (account.role.equals("admin") && account.enabled && (!role.equals("admin") || !enabled) && administrators.size() <= 1) {
             throw new BusinessException(409, "至少保留一个启用的管理员，不能禁用或降权最后一个管理员");
         }
@@ -469,13 +484,17 @@ public class UserAccountService {
 
     @Transactional
     public void bootstrap(String username, String password) {
-        if (password == null || password.isBlank() || count("SELECT COUNT(*) FROM app_user") != 0) return;
+        long existing = count("SELECT COUNT(*) FROM app_user");
+        log.info("BOOTSTRAP: username=[{}] passwordBlank=[{}] existingUsers=[{}]",
+                username, password == null || password.isBlank(), existing);
+        if (password == null || password.isBlank() || existing != 0) return;
         AccountView created = createAccount(username, password, "admin", false, null);
         // SEC-07：首个管理员显式建档为 root 并授予全部能力；
         // 后续管理员一律走能力目录显式任命，不再有“缺档案=ROOT”。
         jdbc.update("UPDATE platform_admin_profile SET level='root' WHERE user_id=?", created.id());
         PlatformAdminGovernance.ROOT_CAPABILITIES.forEach(capability ->
                 jdbc.update("INSERT INTO platform_admin_capability(user_id,capability) VALUES(?,?)", created.id(), capability));
+        log.info("BOOTSTRAP DONE: admin id={} username={}", created.id(), created.username());
     }
 
     /** SEC-07：为管理员补建最小档案（deputy、无能力行）；已有档案（含已撤销）保持不动。 */
@@ -511,13 +530,18 @@ public class UserAccountService {
         return password != null && password.getBytes(StandardCharsets.UTF_8).length <= 72 && passwords.matches(password, hash);
     }
     private void validateRole(String role) {
-        if (role == null || !List.of("admin", "operator").contains(role)) throw new BusinessException(400, "角色无效");
+        if (role == null || !portals.isValidRole(role)) throw new BusinessException(400, "角色无效");
     }
     private void validatePassword(String password, String role) {
-        int minimum = "admin".equals(role) ? 16 : 12;
+        boolean strong = portals.isSensitiveRole(role);
+        int minimum = strong ? 16 : 12;
         if (password == null || password.length() < minimum || password.getBytes(StandardCharsets.UTF_8).length > 72) {
-            throw new BusinessException(400, ("admin".equals(role) ? "管理员" : "用户") + "密码至少 " + minimum + " 个字符，UTF-8 编码不得超过 72 字节");
+            throw new BusinessException(400, (strong ? "管理/审计/指挥类" : "普通") + "密码至少 " + minimum + " 个字符，UTF-8 编码不得超过 72 字节");
         }
+    }
+    private boolean hasActiveAdminProfile(long userId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM platform_admin_profile WHERE user_id=? AND revoked_at IS NULL", Integer.class, userId);
+        return count != null && count > 0;
     }
     private Account readAccount(ResultSet result, int row) throws SQLException {
         return new Account(result.getLong("id"), result.getString("username"), result.getString("role"), result.getBoolean("enabled"), result.getString("password_hash"), result.getBoolean("must_change_password"), result.getLong("auth_version"), result.getTimestamp("created_at").toInstant().toString(),

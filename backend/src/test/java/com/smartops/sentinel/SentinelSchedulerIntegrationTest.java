@@ -210,6 +210,7 @@ class SentinelSchedulerIntegrationTest {
 
     private SentinelService scheduler(String instanceId) {
         SentinelService service = new SentinelService(jdbc, runtimes, connections,
+                mock(com.smartops.service.AgentTriggerService.class),  // W7 触发链不在本用例范围内
                 mock(AlertCorrelationService.class),  // 集成测试不关心关联，Mock 一个
                 clock, advisor, notifications,
                 notifier, MAX_CONCURRENCY, BATCH, 20_000L, 3_600L, 2_000L, SLOW_LANE, 20_000L, instanceId);
