@@ -1,11 +1,11 @@
 <template>
-  <section class="ai-chat-panel" :class="{ 'ai-chat-panel--compact': compact }" aria-label="AI 对话面板" @dragover.prevent="dragging = true" @dragleave.self="dragging = false" @drop.prevent="handleDrop">
-    <AssistantSelector v-if="!activeConversation?.remote" allow-create />
+  <section class="ai-chat-panel" :class="{ 'ai-chat-panel--compact': compact, 'ai-chat-panel--agent': agentMode }" aria-label="AI 对话面板" @dragover.prevent="dragging = true" @dragleave.self="dragging = false" @drop.prevent="handleDrop">
+    <AssistantSelector v-if="!activeConversation?.remote" allow-create :collapsed="true" />
     <p v-else class="ai-chat-hint">附件会话 · 不调用模型 · <button type="button" class="attachment-text-action" @click="chatStore.newConversation()">新建文本问答</button></p>
     <div v-if="messages.length" ref="messageList" class="ai-chat-messages" aria-live="polite" role="log" aria-label="会话消息" tabindex="-1">
       <button v-if="hiddenCount" type="button" class="ai-chat-earlier" @click="showEarlierMessages">加载更早的消息（还有 {{ hiddenCount }} 条）</button>
       <article v-for="message in visibleMessages" :key="message.id" class="ai-chat-message" :class="`ai-chat-message--${message.role}`">
-        <div class="ai-chat-message__meta">{{ message.role === 'user' ? 'YOU' : message.providerKey === 'attachment-receipt' ? '附件保存回执 · 非 AI 分析' : 'SMARTOPS AGENT' }}</div>
+        <div class="ai-chat-message__meta">{{ message.role === 'user' ? 'YOU' : message.providerKey === 'attachment-receipt' ? '附件保存回执 · 非 AI 分析' : (agentMode ? 'AGENT · 后台已接管' : 'SMARTOPS AGENT') }}</div>
         <details v-if="message.thinking && message.thinking.length" class="ai-trace" :open="message.streaming">
           <summary class="ai-trace__head">
             <span class="ai-trace__title">处理过程</span>
@@ -97,10 +97,10 @@
       <div><strong>从一个运维问题开始</strong><p>描述现象、目标或需要核对的指标，默认使用智维 Mini，也可选择自己的模型连接；仅提供建议，不执行命令。</p></div>
     </div>
 
-    <form class="ai-chat-composer" :class="{ 'is-dragging': dragging }" @submit.prevent="sendMessage">
+    <form class="ai-chat-composer" :class="{ 'is-dragging': dragging, 'rag-open': showRagDebug }" @submit.prevent="sendMessage">
       <p v-if="dragging" class="ai-chat-hint">松开以添加图像证据或附件；仅图像证据参与 AI 分析</p>
       <ChatAttachmentComposer ref="attachmentComposer" @context-change="preserveDraft" />
-      <textarea ref="textareaRef" v-model="draft" rows="1" maxlength="2000" aria-label="输入消息" aria-keyshortcuts="Alt+C" title="Enter 发送 · Shift+Enter 换行 · Alt+C 聚焦输入框" :placeholder="activeConversation?.remote ? '补充附件说明（可留空）…' : compact ? '输入一个运维问题…' : '描述你要完成的运维目标…'" :disabled="sending || attachmentBusy" @paste="attachmentComposer?.paste($event)" @input="adjustHeight()" @keydown="handleKeyDown"></textarea>
+      <textarea ref="textareaRef" v-model="draft" rows="1" maxlength="2000" aria-label="输入消息" aria-keyshortcuts="Alt+C" title="Enter 发送 · Shift+Enter 换行 · 可拖动右下角纵向拉伸 · Alt+C 聚焦输入框" :placeholder="activeConversation?.remote ? '补充附件说明（可留空）…' : agentMode ? '下达运维指令，智能体将在后台执行（加锁资源除外）…' : compact ? '输入一个运维问题…' : '描述你要完成的运维目标…'" :disabled="sending || attachmentBusy" @paste="attachmentComposer?.paste($event)" @input="adjustHeight()" @keydown="handleKeyDown"></textarea>
       <div class="ai-chat-composer__footer">
         <div class="ai-chat-composer__tools">
           <button v-if="speechSupported" type="button" class="ai-chat-icon-button" :class="{ 'is-recording': speechListening }" :disabled="sending || attachmentBusy" :aria-pressed="speechListening" :aria-label="speechListening ? '停止语音输入' : '语音输入'" :title="speechListening ? '停止语音输入' : '语音输入（需浏览器支持）'" @click="toggleVoice">
@@ -109,19 +109,24 @@
           <button type="button" class="ai-chat-icon-button" :disabled="sending || attachmentBusy" aria-label="添加附件" title="添加图像证据（参与 AI 分析）或文本附件（私有保存）" @click="attachmentComposer?.pick()">
             <Paperclip :size="16" aria-hidden="true" />
           </button>
-          <button type="button" class="ai-chat-project" @click="attachmentNotice = '当前会话使用默认运维工作空间'">
-            <Plus :size="15" aria-hidden="true" /> 项目
+          <button type="button" class="ai-chat-icon-button ai-chat-project" aria-label="工作空间" title="当前会话使用默认运维工作空间" @click="attachmentNotice = '当前会话使用默认运维工作空间'">
+            <Plus :size="16" aria-hidden="true" />
           </button>
         </div>
-        <button type="submit" class="ai-chat-send" :disabled="sending || attachmentBusy || remoteLoading || (!activeConversation?.remote && !canSend) || (!draft.trim() && !attachmentCount)" aria-label="发送消息" title="发送消息">
-          <Loading v-if="sending" class="is-loading" :size="16" aria-hidden="true" />
-          <ArrowUp v-else :size="16" aria-hidden="true" />
-        </button>
+        <div class="ai-chat-composer__send-group">
+          <button type="button" class="ai-chat-rag-toggle" :aria-pressed="showRagDebug" :aria-expanded="showRagDebug" :title="showRagDebug ? '隐藏 RAG 调试参数' : '显示 RAG 调试参数'" @click="showRagDebug = !showRagDebug">
+            <Search :size="13" aria-hidden="true" /> RAG
+          </button>
+          <button type="submit" class="ai-chat-send" :disabled="sending || attachmentBusy || remoteLoading || (!activeConversation?.remote && !canSend) || (!draft.trim() && !attachmentCount)" aria-label="发送消息" title="发送消息">
+            <Loading v-if="sending" class="is-loading" :size="16" aria-hidden="true" />
+            <ArrowUp v-else :size="16" aria-hidden="true" />
+          </button>
+        </div>
       </div>
       <p v-if="attachmentNotice" class="ai-chat-hint" role="status">{{ attachmentNotice }}</p>
       <p v-if="speechHint" class="ai-chat-hint" role="status">{{ speechHint }}</p>
       <p v-if="errorMessage" class="ai-chat-error" role="alert">{{ errorMessage }}</p>
-      <details class="ai-chat-rag-debug">
+      <details v-if="showRagDebug" class="ai-chat-rag-debug" open>
         <summary>检索调试 · RAG 参数</summary>
         <div class="rag-debug-grid">
           <label class="rag-debug-item">
@@ -152,10 +157,10 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRefs, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
-import { ArrowUp, Loading, Microphone, Paperclip, Plus } from '@element-plus/icons-vue'
+import { ArrowUp, Loading, Microphone, Paperclip, Plus, Search } from '@element-plus/icons-vue'
 import { useAiChatStore } from '../../stores/aiChat.js'
 import { createSpeechInput } from '../../domain/chat/speechInput.ts'
 import { buildPageContext } from '../../domain/chat/pageContext.js'
@@ -167,7 +172,8 @@ import ChatMessageAttachments from './ChatMessageAttachments.vue'
 import { renderMarkdown } from './markdown.js'
 import './markdown.css'
 
-defineProps({ compact: { type: Boolean, default: false } })
+const props = defineProps({ compact: { type: Boolean, default: false }, agentMode: { type: Boolean, default: false } })
+const { agentMode } = toRefs(props)
 
 // 页面上下文感知：发送消息时读取当前路由（路径+栏目），作为只读参考随请求上报。
 // 在 sendMessage 时现场构造（而非 setup 时缓存一次），保证路由切换后上下文始终新鲜。
@@ -177,6 +183,7 @@ const drafts = ref({})
 const attachmentNotice = ref('')
 const textareaRef = ref(null)
 let disposed = false
+let textareaResizeObserver = null
 const speechSupported = ref(false)
 const speechListening = ref(false)
 const speechHint = ref('')
@@ -201,6 +208,7 @@ function showEarlierMessages() { visibleCount.value += MESSAGE_BATCH }
 
 // 检索调试参数——默认值对齐 knowledge 服务 config。
 const ragTopK = ref(5)
+const showRagDebug = ref(false)
 const ragScoreThreshold = ref(0)      // 0 = 不传 = 不截断
 const ragVectorWeight = ref(0.6)     // 0.6 = knowledge 默认 vector_weight
 const ragSource = ref('')             // '' = 不传 = 全源
@@ -302,6 +310,12 @@ onMounted(() => {
     onError: message => { speechHint.value = message },
   })
   speechSupported.value = speech.supported
+  // 感知用户手动拖拽输入框右下角拉伸：与 adjustHeight 的程序化增高区分开。
+  textareaResizeObserver = new ResizeObserver(() => {
+    if (resizeToken) return
+    userResized.value = true
+  })
+  textareaResizeObserver.observe(textareaRef.value)
   window.addEventListener('keydown', focusShortcut)
   if (autoFocusAllowed()) focusComposer()
 })
@@ -319,21 +333,42 @@ function toggleVoice() {
   else speech.start(draft.value)
 }
 
-const quickActions = [
-  { label: '诊断 CPU 过载', prompt: '帮我诊断一台服务器 CPU 持续过载的问题，列出需要核对的指标、日志和处置步骤。' },
-  { label: '生成巡检计划', prompt: '为中小企业生产环境生成一份今天的服务器巡检计划。' },
-  { label: '查询运维知识', prompt: '解释如何快速判断 Kubernetes Pod 反复重启的根因。' }
-]
+const quickActions = computed(() => agentMode.value
+  ? [
+      { label: '巡检全部服务器', prompt: '执行一次全量服务器巡检，回报健康分、磁盘占用和异常进程。' },
+      { label: '重启 Nginx 集群', prompt: '分批重启生产 Nginx 集群，保留 2 台节点持续提供服务，输出执行日志。' },
+      { label: '清理磁盘垃圾', prompt: '扫描 /var/log 下超过 30 天的旧日志，按服务分批归档或清理，加锁目录跳过。' }
+    ]
+  : [
+      { label: '诊断 CPU 过载', prompt: '帮我诊断一台服务器 CPU 持续过载的问题，列出需要核对的指标、日志和处置步骤。' },
+      { label: '生成巡检计划', prompt: '为中小企业生产环境生成一份今天的服务器巡检计划。' },
+      { label: '查询运维知识', prompt: '解释如何快速判断 Kubernetes Pod 反复重启的根因。' }
+    ])
 
+// 输入框高度：自动增高到 AUTO_MAX；用户拖动右下角手动拉伸后（ResizeObserver 感知），
+// 不再用程序高度覆盖用户选择，发送/清空时再重置回 MIN。
+const COMPOSER_MIN = 52
+const COMPOSER_AUTO_MAX = 240
+const userResized = ref(false)
+let resizeToken = 0
+function programmaticResize() {
+  resizeToken++
+  const token = resizeToken
+  setTimeout(() => { if (resizeToken === token) resizeToken = 0 }, 100)
+}
 function adjustHeight(reset = false) {
   const textarea = textareaRef.value
   if (!textarea) return
   if (reset) {
-    textarea.style.height = '60px'
+    programmaticResize()
+    textarea.style.height = `${COMPOSER_MIN}px`
+    userResized.value = false
     return
   }
-  textarea.style.height = '60px'
-  textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 60), 200)}px`
+  if (userResized.value) return
+  programmaticResize()
+  textarea.style.height = `${COMPOSER_MIN}px`
+  textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, COMPOSER_MIN), COMPOSER_AUTO_MAX)}px`
 }
 
 function handleKeyDown(event) {
@@ -431,16 +466,20 @@ onBeforeUnmount(() => {
   disposed = true
   speech?.dispose()
   speech = null
+  textareaResizeObserver?.disconnect()
+  textareaResizeObserver = null
   Object.values(copyTimers).forEach(timer => window.clearTimeout(timer))
   window.removeEventListener('keydown', focusShortcut)
 })
 </script>
 
 <style scoped>
-.ai-chat-panel { display: grid; gap: 14px; width: 100%; max-width: 860px; margin: 0 auto; }
+.ai-chat-panel { display: grid; gap: 6px; width: 100%; max-width: 860px; margin: 0 auto; }
 .ai-chat-panel button svg { flex: 0 0 16px; width: 16px; height: 16px; }
-.ai-chat-panel--compact { max-width: none; }
-.ai-chat-messages { display: grid; gap: 10px; max-height: 420px; overflow-y: auto; padding: 2px; }
+.ai-chat-panel--compact, .ai-chat-panel--agent { max-width: none; }
+/* 消息区不再卡死 420px；让 ChatView 的 flex 链撑满视口，长对话自然滚动 */
+.ai-chat-messages { display: grid; gap: 10px; flex: 1; min-height: 0; overflow-y: auto; padding: 2px; }
+.ai-chat-panel--agent .ai-chat-message__meta { color: var(--smart-primary-strong); font-weight: 600; letter-spacing: .08em; }
 .ai-chat-earlier { justify-self: center; padding: 6px 14px; border: 1px solid var(--smart-border); border-radius: 999px; background: var(--smart-surface); color: var(--smart-muted); font-size: 12px; cursor: pointer; }
 .ai-chat-earlier:hover { color: var(--smart-text); border-color: var(--smart-border-strong); }
 .ai-chat-earlier:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
@@ -483,19 +522,33 @@ onBeforeUnmount(() => {
 .ai-chat-empty { display: flex; align-items: center; gap: 14px; padding: 16px 2px 4px; color: var(--smart-muted); }
 .ai-chat-empty__mark { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 1px solid var(--smart-border-strong); border-radius: 10px; color: var(--smart-primary-strong); font: 11px var(--font-mono); }
 .ai-chat-empty strong { display: block; color: var(--smart-text); font-size: 14px; font-weight: 500; }.ai-chat-empty p { margin: 5px 0 0; font-size: 12px; line-height: 1.6; }
-.ai-chat-composer { border: 1px solid var(--smart-border-strong); border-radius: 12px; background: color-mix(in srgb, var(--smart-surface) 94%, transparent); box-shadow: 0 14px 34px rgba(0,0,0,.12); overflow: hidden; }
+.ai-chat-composer { border: 1px solid var(--smart-border-strong); border-radius: 10px; background: color-mix(in srgb, var(--smart-surface) 94%, transparent); box-shadow: 0 8px 24px rgba(0,0,0,.10); overflow: hidden; }
 .ai-chat-composer.is-dragging { border-color: var(--smart-primary-strong); outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
-.ai-chat-composer:focus-within { border-color: var(--smart-primary-strong); box-shadow: 0 0 0 2px color-mix(in srgb, var(--smart-primary-strong) 45%, transparent), 0 14px 34px rgba(0,0,0,.12); }
+.ai-chat-composer:focus-within { border-color: var(--smart-primary-strong); box-shadow: 0 0 0 2px color-mix(in srgb, var(--smart-primary-strong) 45%, transparent), 0 8px 24px rgba(0,0,0,.10); }
 .attachment-text-action { min-height: 32px; padding: 4px 9px; border: 1px solid var(--smart-border-strong); border-radius: 6px; background: var(--smart-surface); color: var(--smart-text); cursor: pointer; font: inherit; }.attachment-text-action:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
-.ai-chat-composer textarea { display: block; width: 100%; min-height: 60px; max-height: 200px; box-sizing: border-box; padding: 15px 16px 8px; border: 0; resize: none; overflow-y: auto; background: transparent; color: var(--smart-text); font: 13px/1.6 var(--font-cn); outline: none; }
-.ai-chat-composer textarea::placeholder { color: var(--smart-muted); }.ai-chat-composer__footer { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 7px 10px; border-top: 1px solid var(--smart-border); }
+.ai-chat-composer textarea { display: block; width: 100%; min-height: 52px; max-height: 60vh; box-sizing: border-box; padding: 11px 14px 4px; border: 0; resize: vertical; overflow-y: auto; background: transparent; color: var(--smart-text); font: 13px/1.6 var(--font-cn); outline: none; }
+.ai-chat-composer textarea::placeholder { color: var(--smart-muted); }.ai-chat-composer__footer { display: flex; align-items: center; justify-content: space-between; min-height: 38px; padding: 4px 8px; border-top: 1px solid var(--smart-border); }
 .ai-chat-composer__tools { display: flex; align-items: center; gap: 5px; }.ai-chat-icon-button, .ai-chat-project, .ai-chat-send, .ai-chat-quick-actions button { border: 1px solid transparent; background: transparent; color: var(--smart-muted); cursor: pointer; transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast); }
-.ai-chat-icon-button { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 7px; }.ai-chat-icon-button:hover, .ai-chat-icon-button:focus-visible { color: var(--smart-text); background: var(--smart-primary-soft); }
+.ai-chat-icon-button { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; }.ai-chat-icon-button:hover, .ai-chat-icon-button:focus-visible { color: var(--smart-text); background: var(--smart-primary-soft); }
 .ai-chat-icon-button.is-recording { color: var(--smart-danger, #f08d9c); background: color-mix(in srgb, var(--smart-danger, #f08d9c) 14%, transparent); }
 .ai-chat-icon-button.is-recording svg { animation: chat-pulse 1s infinite ease-in-out; }
-.ai-chat-project { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 9px; border-style: dashed; border-color: var(--smart-border); border-radius: 7px; font-size: 11px; }.ai-chat-project:hover, .ai-chat-project:focus-visible { color: var(--smart-text); border-color: var(--smart-border-strong); }
-.ai-chat-send { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; border-color: var(--smart-border); }.ai-chat-send:not(:disabled) { color: var(--smart-primary-foreground, #041018); background: var(--smart-primary); border-color: transparent; }.ai-chat-send:disabled { opacity: .42; cursor: not-allowed; }.ai-chat-send:focus-visible, .ai-chat-project:focus-visible, .ai-chat-quick-actions button:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
-.ai-chat-hint, .ai-chat-error { margin: 0; padding: 0 13px 9px; font-size: 11px; }.ai-chat-hint { color: var(--smart-muted); }
+.ai-chat-project { border-style: dashed; border-color: var(--smart-border); border-radius: 7px; }.ai-chat-project:hover, .ai-chat-project:focus-visible { color: var(--smart-text); border-color: var(--smart-border-strong); }
+.ai-chat-send { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; border-color: var(--smart-border); }.ai-chat-send:not(:disabled) { color: var(--smart-primary-foreground, #041018); background: var(--smart-primary); border-color: transparent; }.ai-chat-send:disabled { opacity: .42; cursor: not-allowed; }.ai-chat-send:focus-visible, .ai-chat-project:focus-visible, .ai-chat-quick-actions button:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
+.ai-chat-composer__send-group { display: inline-flex; align-items: center; gap: 6px; }
+/* RAG 开关：与发送按钮同排，位于其左侧 */
+.ai-chat-rag-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 30px; padding: 0 10px;
+  border: 1px solid var(--smart-border); border-radius: 8px;
+  background: transparent; color: var(--smart-muted);
+  font: 10px var(--font-mono); letter-spacing: .04em;
+  cursor: pointer; transition: color .15s, border-color .15s, background-color .15s;
+}
+.ai-chat-rag-toggle svg { flex: 0 0 14px; }
+.ai-chat-rag-toggle:hover { color: var(--smart-text); border-color: var(--smart-border-strong); }
+.ai-chat-rag-toggle[aria-pressed='true'] { color: var(--smart-primary-strong); border-color: var(--smart-primary); background: color-mix(in srgb, var(--smart-primary) 8%, transparent); }
+.ai-chat-rag-toggle:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
+.ai-chat-hint, .ai-chat-error { margin: 0; padding: 0 11px 7px; font-size: 11px; }.ai-chat-hint { color: var(--smart-muted); }
 .ai-chat-quick-actions { display: flex; flex-wrap: wrap; gap: 7px; }.ai-chat-quick-actions button { min-height: 32px; padding: 0 10px; border-color: var(--smart-border); border-radius: 999px; font-size: 11px; }.ai-chat-quick-actions button:hover { color: var(--smart-text); background: var(--smart-surface); border-color: var(--smart-border-strong); }
 .is-loading { animation: chat-spin 1s linear infinite; } @keyframes chat-spin { to { transform: rotate(360deg); } } @keyframes chat-pulse { 0%, 80%, 100% { opacity: .35; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
 /* T20：处理过程升级为竖线时间线，步骤标签区分「检索 / 工具 / 推理」。 */

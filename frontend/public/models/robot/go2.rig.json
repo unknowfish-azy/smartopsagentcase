@@ -1,0 +1,169 @@
+{
+  "name": "go2",
+  "dof": 12,
+  "joints": {
+    "FL_hip_joint": {
+      "node": "FL_hip_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -1.0472,
+        1.0472
+      ]
+    },
+    "FL_thigh_joint": {
+      "node": "FL_thigh_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.9,
+      "range": [
+        -1.5708,
+        3.4907
+      ]
+    },
+    "FL_calf_joint": {
+      "node": "FL_calf_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": -1.8,
+      "range": [
+        -2.7227,
+        -0.83776
+      ]
+    },
+    "FR_hip_joint": {
+      "node": "FR_hip_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -1.0472,
+        1.0472
+      ]
+    },
+    "FR_thigh_joint": {
+      "node": "FR_thigh_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.9,
+      "range": [
+        -1.5708,
+        3.4907
+      ]
+    },
+    "FR_calf_joint": {
+      "node": "FR_calf_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": -1.8,
+      "range": [
+        -2.7227,
+        -0.83776
+      ]
+    },
+    "RL_hip_joint": {
+      "node": "RL_hip_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -1.0472,
+        1.0472
+      ]
+    },
+    "RL_thigh_joint": {
+      "node": "RL_thigh_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.9,
+      "range": [
+        -0.5236,
+        4.5379
+      ]
+    },
+    "RL_calf_joint": {
+      "node": "RL_calf_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": -1.8,
+      "range": [
+        -2.7227,
+        -0.83776
+      ]
+    },
+    "RR_hip_joint": {
+      "node": "RR_hip_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -1.0472,
+        1.0472
+      ]
+    },
+    "RR_thigh_joint": {
+      "node": "RR_thigh_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.9,
+      "range": [
+        -0.5236,
+        4.5379
+      ]
+    },
+    "RR_calf_joint": {
+      "node": "RR_calf_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": -1.8,
+      "range": [
+        -2.7227,
+        -0.83776
+      ]
+    }
+  },
+  "groundOffset": 0.28856246608011177,
+  "source": {
+    "repo": "https://github.com/unitreerobotics/unitree_mujoco",
+    "path": "unitree_robots/go2/go2.xml",
+    "commit": "1eb6642e3f3fdfb7fb13a9794fd6a2dd93ea0e7d",
+    "license": "BSD-3-Clause"
+  }
+}

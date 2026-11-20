@@ -49,6 +49,8 @@
     </section>
     </section>
 
+    <InspectorAiDiagnosis v-if="!demo" :events="displayEvents" />
+
     <InspectorDimensionGrid
       :events="displayEvents"
       :active-key="activeDimension"
@@ -92,10 +94,15 @@
         <RouterLink class="ghost-button" :to="`/inspector/events/${selected.id}`">打开完整详情</RouterLink>
       </div>
     </aside>
+  <AgentCopilotDock
+    section="纠察中心"
+    :entity="{ type: 'event', id: selected?.id ?? filteredEvents?.[0]?.id }"
+  />
   </div>
 </template>
 
 <script setup>
+import AgentCopilotDock from '../../components/agent/AgentCopilotDock.vue'
 /**
  * 纠察中心 · P0 重构
  *
@@ -113,6 +120,7 @@ import { getInspectorEvents, getInspectorSummary } from '../../api/inspector'
 import { buildDemoData } from '../../components/inspector/desk/deskModel'
 import { dimensionKeyOf, summaryFromEvents } from '../../components/inspector/dimensions'
 import InspectorSeverityTag from '../../components/inspector/InspectorSeverityTag.vue'
+import InspectorAiDiagnosis from '../../components/inspector/InspectorAiDiagnosis.vue'
 import InspectorDimensionGrid from '../../components/inspector/InspectorDimensionGrid.vue'
 import InspectorEventField from '../../components/inspector/InspectorEventField.vue'
 import InspectorHeroStream from '../../components/inspector/InspectorHeroStream.vue'

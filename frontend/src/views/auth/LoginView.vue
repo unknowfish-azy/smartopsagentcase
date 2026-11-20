@@ -232,18 +232,18 @@
         <div>
           <p class="editorial-label">你的工作空间 / SECURE ENTRY</p>
           <h2 id="login-title">{{ pendingMfa ? '二次认证' : registering ? '注册普通账号' : '欢迎回来' }}</h2>
-          <p>{{ registering ? '注册账号固定为运维用户，管理员不开放注册。' : form.portal === 'admin' ? '仅限已授权管理员进入管理工作台。' : '继续你的知识与运维工作。' }}</p>
+          <p>{{ registering ? '注册账号固定为运维用户，管理员不开放注册。' : form.portal === 'user' ? '继续你的知识与运维工作。' : `仅限已授权${portalLabel(form.portal)}账号登录。` }}</p>
         </div>
         <span class="login-form__status"><span aria-hidden="true"></span>LOCAL</span>
       </header>
 
       <MfaChallenge v-if="pendingMfa" :challenge="pendingMfa" @verified="finishLogin" @cancel="pendingMfa = null; error = ''" />
       <template v-else>
-      <div v-if="!registering" class="role-switcher" role="tablist" aria-label="登录入口">
+      <div v-if="!registering && showPortalSwitcher" class="role-switcher" role="tablist" aria-label="登录入口">
         <button v-for="entry in portals" :id="`portal-${entry.id}`" :key="entry.id" type="button" role="tab" aria-controls="portal-fields" :aria-selected="form.portal === entry.id" :tabindex="form.portal === entry.id ? 0 : -1" :class="{ 'is-active': form.portal === entry.id }" :disabled="loading" @click="switchPortal(entry.id)" @keydown.left.prevent="selectPortal" @keydown.right.prevent="selectPortal"><span class="role-switcher__dot" aria-hidden="true"></span>{{ entry.label }}</button>
       </div>
       <!-- 两个入口各由独立服务提供，切换会改变地址；提前说明，避免被当成"页面乱跳"。 -->
-      <p v-if="!registering && otherPortal" class="role-switcher__hint">
+      <p v-if="!registering && showPortalSwitcher && otherPortal" class="role-switcher__hint">
         切换{{ otherPortal.label }}：<code>{{ otherPortal.address }}</code>（独立服务，需重新登录）
       </p>
       <p v-if="route.query.reason === 'password-changed'" role="status">密码已更新，旧会话已退出，请重新登录。</p>
@@ -281,7 +281,7 @@
         <span class="login-form__policy">最小权限 · 全程留痕</span>
       </div>
 
-      <HumanVerification ref="humanCheck" :action="registering ? 'register' : form.portal === 'admin' ? 'admin_login' : 'login'" :disabled="loading" @change="updateHumanState" />
+      <HumanVerification ref="humanCheck" :action="registering ? 'register' : isSensitivePortal(form.portal) ? 'admin_login' : 'login'" :disabled="loading" @change="updateHumanState" />
       <p v-if="error" id="login-error" class="login-form__error" role="alert">{{ error }}</p>
       <button class="login-submit" type="submit" :disabled="loading || !humanState.ready || (registering && !policy?.enabled)">
         <span>{{ registering ? (loading ? '正在创建账号' : '创建普通账号') : (loading ? '正在建立安全会话' : '进入智维Agent') }}</span>
@@ -317,7 +317,8 @@ import BrandMark from '../../components/common/BrandMark.vue'
 import MeteorShower from '../../components/common/MeteorShower.vue'
 import { loginSession, registrationPolicy, registerAccount } from '../../security/session.js'
 import { sessionLanding } from '../../security/portalPolicy.js'
-import { resolvePortalSwitch } from '../../security/portalSwitch.js'
+import { resolvePortalSwitch, currentPortal } from '../../security/portalSwitch.js'
+import { portalLabel, PUBLIC_PORTALS, portalSpec, isSensitivePortal } from '../../security/portalCatalog.js'
 import { registrationError } from '../../security/passwordPolicy.js'
 import { themeMode, resolvedTheme, setThemeMode } from '../../theme.js'
 import { visualMode, setVisualMode } from '../../visual/visualMode.js'
@@ -352,8 +353,14 @@ const bubbles = [
 
 const router = useRouter()
 const route = useRoute()
-const form = reactive({ username: '', password: '', confirmPassword: '', portal: route.query.portal === 'admin' ? 'admin' : 'user' })
-const portals = [{ id: 'user', label: '用户层' }, { id: 'admin', label: '管理员层' }]
+// 门户取自 URL 上已注册的门户，否则取当前服务标识（每个门户是独立前端服务）。
+// 不能退化成 admin/user 两值：否则审计、决策等门户会以 user 身份提交登录而被服务端拒绝。
+const form = reactive({ username: '', password: '', confirmPassword: '', portal: portalSpec(route.query.portal) ? route.query.portal : currentPortal() })
+// 登录页只渲染公开门户（PUBLIC_PORTALS）。管理层及其余受限门户不在此处广告，
+// 降低被普通用户知晓与恶意扫描的风险；受限门户只能通过其专属端口/网址直接访问。
+const portals = PUBLIC_PORTALS.map(id => ({ id, label: portalLabel(id) }))
+// 仅当存在多个公开入口时才显示切换器；当前只有用户层公开，切换器不渲染。
+const showPortalSwitcher = computed(() => portals.length > 1)
 const registering = ref(false)
 const pendingMfa = ref(null)
 const policy = ref(null)
@@ -377,10 +384,11 @@ function updateHumanState(state) { Object.assign(humanState, state) }
  * 因此这里显示的是 resolvePortalSwitch 实际算出来的地址，而不是写死的字符串。
  */
 const otherPortal = computed(() => {
+  if (!showPortalSwitcher.value) return null
   const target = form.portal === 'admin' ? 'user' : 'admin'
   const decision = resolvePortalSwitch(target, { query: { ...route.query } })
   if (!decision) return null
-  return { id: target, label: target === 'admin' ? '管理员层' : '用户层', address: decision.url.replace(/^https?:\/\//, '').split('?')[0] }
+  return { id: target, label: portalLabel(target), address: decision.url.replace(/^https?:\/\//, '').split('?')[0] }
 })
 let glassFrame = 0
 let glassMotionQuery
@@ -478,12 +486,24 @@ function selectPortal(event) {
   }
 }
 
-watch(() => route.query.portal, (portal) => {
-  const next = portal === 'admin' ? 'admin' : 'user'
-  if (form.portal !== next) form.portal = next
-})
+/**
+ * 受限门户深链防护：若 URL 上的 ?portal= 指向另一个已注册门户，
+ * 直接整页跳转到该门户自己的登录服务（换网址），不在当前用户层登录页暴露其表单。
+ * 未知 portal 忽略，按用户层处理。
+ */
+function redirectIfForeignPortal() {
+  const requested = route.query.portal
+  if (requested && portalSpec(requested) && requested !== currentPortal()) {
+    const decision = resolvePortalSwitch(requested, { query: { ...route.query } })
+    if (decision?.crossOrigin) {
+      window.location.assign(decision.url)
+    }
+  }
+}
+watch(() => route.query.portal, () => redirectIfForeignPortal())
 
 onMounted(() => {
+  redirectIfForeignPortal()
   glassMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
   glassMotionQuery.addEventListener('change', resetGlassLight)
   loadPolicy()

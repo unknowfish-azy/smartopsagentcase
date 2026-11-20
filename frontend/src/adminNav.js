@@ -8,7 +8,7 @@ export const adminNavigation = [
   { label: '安全与审计', items: [{ path: '/admin/sessions', label: '活动会话' }, { path: '/admin/system/loginlog', label: '登录日志' }, { path: '/admin/audit', label: '审计记录' }, { path: '/admin/security', label: '二次认证' }] },
   // Agent 治理扩展：仅在真实契约就绪后才提供入口（知识质量因缺少评测版本契约暂不挂载）。
   { label: 'Agent 治理', items: [{ path: '/admin/approvals', label: '审批监督' }, { path: '/admin/models', label: '模型治理' }] },
-  { label: '服务与部署', items: [{ path: '/admin/readiness', label: '服务接入检查' }] }
+  { label: '服务与部署', items: [{ path: '/admin/readiness', label: '服务接入检查' }, { path: '/admin/architecture', label: '架构总览' }] }
 ]
 
 // 路径 → 标题 的扁平映射，供标签页/面包屑使用。

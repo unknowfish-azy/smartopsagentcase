@@ -13,6 +13,18 @@ test('management requires both the server role and current portal', () => {
   }
 })
 
+test('per-portal surfaces render their own login page instead of bouncing', () => {
+  for (const id of ['enterprise', 'audit', 'command', 'open']) {
+    // 未登录访问登录页：必须放行，否则守卫会自我重定向成空白页。
+    assert.equal(policy.sessionRouteDecision(null, { path: '/login', query: {} }, id), true)
+    // 未登录访问门户内页：退回本门户登录页，并带上门户标记。
+    const denied = policy.sessionRouteDecision(null, { path: `/${id}`, query: {}, fullPath: `/${id}` }, id)
+    assert.equal(denied.path, '/login')
+    assert.equal(denied.query.portal, id)
+    assert.equal(denied.query.redirect, `/${id}`)
+  }
+})
+
 test('forced password change gates all pages except account security', () => {
   assert.equal(typeof policy.sessionRouteDecision, 'function')
   const forced = { ...admin, mustChangePassword: true }
@@ -56,8 +68,12 @@ test('login sends portal and password changes invalidate the local session', asy
 
 test('management routes are independent and readiness reuses the existing component', async () => {
   const source = await readFile(new URL('../src/router/index.js', import.meta.url), 'utf8')
+  // 用户层服务不得注册任何管理路由/布局：管理页面只存在于独立的 5174 服务。
   assert.equal(source.includes("import AdminLayout from '../layouts/AdminLayout.vue'"), false)
-  assert.equal(source.includes("component: () => import('../layouts/AdminLayout.vue')"), true)
+  assert.equal(source.includes("component: () => import('../layouts/AdminLayout.vue')"), false)
+  assert.equal(source.includes("'../views/admin/"), false)
+  const adminSource = await readFile(new URL('../src/router/admin.js', import.meta.url), 'utf8')
+  assert.equal(adminSource.includes("component: () => import('../layouts/AdminLayout.vue')"), true)
   assert.match(source, /sessionRouteDecision/)
   assert.match(source, /account\/security/)
   const readiness = await readFile(new URL('../src/views/admin/AdminReadinessView.vue', import.meta.url), 'utf8')

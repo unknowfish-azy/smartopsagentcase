@@ -26,6 +26,27 @@ test('login form retains portal security and account convenience controls', () =
   assert.doesNotMatch(source, /JSON\.stringify\(\{ username: form\.username, role: form\.role/)
 })
 
+test('login form resolves its portal from the registry, not a two-value literal', () => {
+  // 门户必须取自 URL 上的已注册门户或当前服务标识；两值硬编码会让新门户退化成 user 登录。
+  assert.doesNotMatch(source, /route\.query\.portal === 'admin' \? 'admin' : 'user'/)
+  assert.match(source, /portalSpec\(route\.query\.portal\)/)
+  assert.match(source, /currentPortal\(\)/)
+  // 非用户层登录页不得出现普通账号注册入口。
+  assert.match(source, /v-if="form\.portal === 'user'" class="login-registration"/)
+})
+
+test('login page only advertises public portals and redirects foreign portal deep-links', () => {
+  // 可见入口由 PUBLIC_PORTALS 驱动：管理层及其余受限门户不在用户层登录页广告，
+  // 降低被普通用户知晓与恶意扫描的风险。
+  assert.match(source, /PUBLIC_PORTALS\.map\(/)
+  assert.match(source, /showPortalSwitcher/)
+  // 受限门户的深链（?portal=admin 等）跨源跳转到其专属服务（换网址），
+  // 不在当前用户层登录页暴露其表单。
+  assert.match(source, /redirectIfForeignPortal/)
+  assert.match(source, /portalSpec\(requested\)/)
+  assert.match(source, /window\.location\.assign\(decision\.url\)/)
+})
+
 test('login portal switching routes to the owning service and preserves redirect context', () => {
   // 两个入口是两个独立前端服务：跨端口必须整页跳转，而不是只改一个变量。
   assert.match(source, /switchPortal\(entry\.id\)/)

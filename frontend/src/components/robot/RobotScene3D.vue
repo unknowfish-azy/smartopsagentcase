@@ -2,10 +2,21 @@
   <section class="rs3-wrap" aria-labelledby="rs3-title">
     <header class="rs3-head">
       <div>
-        <p class="rs3-eyebrow">SCENE 3D · 宇树形态建模 · 真实遥测驱动</p>
+        <p class="rs3-eyebrow">SCENE 3D · 宇树官方模型 · 真实遥测驱动</p>
         <h2 id="rs3-title">3D 态势</h2>
       </div>
       <div class="rs3-head-right">
+        <div v-if="renderReady && !staticMode" class="rs3-views" role="group" aria-label="3D 镜头视角">
+          <button
+            v-for="item in VIEWS"
+            :key="item.key"
+            type="button"
+            class="rs3-view-btn"
+            :class="{ active: viewMode === item.key }"
+            :aria-pressed="viewMode === item.key"
+            @click="viewMode = item.key"
+          >{{ item.label }}</button>
+        </div>
         <div class="rs3-legend" aria-hidden="true">
           <span class="rs3-key"><i class="dot dot-route"></i>路点</span>
           <span class="rs3-key"><i class="dot dot-detour"></i>绕行点</span>
@@ -18,7 +29,17 @@
     </header>
 
     <!-- 3D 场：容器常驻用 v-show；WebGL 优先，缺失时用 SVGRenderer 软件渲染，两者皆不可用才降级静态 SVG -->
-    <div v-show="renderReady && !staticMode" ref="host" class="rs3-stage" role="img" :aria-label="ariaLabel"></div>
+    <div v-show="renderReady && !staticMode" ref="host" class="rs3-stage" :class="hudAlarmClass" role="img" :aria-label="ariaLabel">
+      <!-- 悬浮 HUD：跟随本体投影，展示真实遥测；aria-hidden 避免与右侧遥测面板重复播报 -->
+      <div ref="hudEl" class="rs3-hud" :class="{ 'is-hidden': !hudVisible }" aria-hidden="true">
+        <span class="rs3-hud-name">
+          <i class="rs3-hud-dot" :class="hudClass"></i>{{ deviceKey || '未选择设备' }}
+        </span>
+        <span class="rs3-hud-mode">{{ hudModeLabel }}</span>
+        <span class="rs3-hud-meta">{{ hudMeta }}</span>
+      </div>
+      <div class="rs3-vignette" aria-hidden="true"></div>
+    </div>
 
     <div v-if="!renderReady || staticMode" class="rs3-stage rs3-stage--static" role="img" :aria-label="ariaLabel">
       <svg viewBox="0 0 560 200" class="rs3-static-svg" aria-hidden="true">
@@ -88,19 +109,24 @@
 
 <script setup>
 /**
- * 机器人 3D 态势面（仿宇树形态程序化建模）。
+ * 机器人 3D 态势面（宇树官方模型优先，程序化建模兜底）。
  *
  * 数据全部来自真实链路，不伪造：
  * - 位姿：父级 WebSocket 遥测 telemetry.pose（x/y/theta，theta 为角度制）；
+ * - 关节：telemetry.joints（{官方关节名: 弧度}）存在时按真机绝对角直驱（宇树 SDK 电机命名）；
  * - 路线：getRobotTasks 取该设备最新任务的 route，label 含「绕行」的点 = M7 重规划绕行点（橙色高亮）；
  * - 已走过路点按 task.progress 变暗；障碍过近时机头箭头变红（真实 obstacleDistance 驱动）；
- * - 步态：四足/人形关节角由「位姿插值后的真实位移速度」驱动（心跳超时 → 速度归零站立，不做假动作）。
+ * - 步态：真机关节未接入的关节由「位姿插值后的真实位移速度」推算（心跳超时 → 速度归零站立，不做假动作）。
  *
- * 本体形态：
- * - DOG   → rigs/quadrupedRig.js（仿 Go2 四足：机身 + LiDAR 旋转 + 4 腿 3 段）
- * - ROBOT → rigs/humanoidRig.js（仿 G1 人形：躯干 + 双臂 + 双腿）
- * - CAR / SPIDER → 优先 GLB（patrol-car / spider-bot），并在模型顶部挂 rigs/effectLayer.js
- *   （状态灯 + LiDAR 扇面 + 地面扫描环）；GLB 缺失或解析失败回退占位几何
+ * 本体形态（四种形态统一由 rig 驱动，尺寸归一与动效层一致）：
+ * - DOG / ROBOT → 优先宇树官方 GLB（go2.glb / g1.glb，unitree_mujoco 经
+ *   scripts/import-unitree-model.py 离线转换，BSD-3-Clause），rigs/unitreeGlbRig.js
+ *   按官方关节名驱动，步态增量叠加官方 home 站立姿态；GLB/元数据缺失回退程序化 rig
+ *   （rigs/quadrupedRig.js / rigs/humanoidRig.js）；
+ * - CAR → rigs/patrolCarRig.js：轮速 = 真实线速度 / 轮半径，静止与心跳超时即停转；
+ * - SPIDER → rigs/spiderRig.js：8 足 16 关节按 spiderPose 步态驱动，同样随速度起停；
+ * - CAR / SPIDER 的 GLB 由 scripts/generate-*-model.mjs 从 models/ 下的构建器产出，
+ *   GLB 缺失时直接用同一构建器现场生成，视觉与动效层（状态灯 + LiDAR + 扫描环）一致。
  *
  * 交互：拖拽环视（>6px 位移）、滚轮缩放；位移 <6px 视为点击 → 射线拾取打开设备详情。
  *
@@ -109,7 +135,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
-  AmbientLight, AnimationMixer, BufferGeometry, BoxGeometry, CircleGeometry, Color, ConeGeometry,
+  AdditiveBlending, AmbientLight, BufferAttribute, BufferGeometry, BoxGeometry, CircleGeometry, Color, ConeGeometry,
   CylinderGeometry, DirectionalLight, GridHelper, Group, HemisphereLight, Line, LineBasicMaterial, Mesh,
   MeshBasicMaterial, PerspectiveCamera, PMREMGenerator, Raycaster, Scene, Vector2, Vector3, WebGLRenderer
 } from 'three'
@@ -122,9 +148,12 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { buildQuadrupedRig } from './rigs/quadrupedRig'
 import { buildHumanoidRig } from './rigs/humanoidRig'
-import { buildEffectLayer, measureRobotBounds } from './rigs/effectLayer'
-import { humanoidPose, quadrupedPose } from './rigs/gait'
-import { resolveEffectConfig } from './rigs/effects'
+import { createUnitreeGlbRig } from './rigs/unitreeGlbRig'
+import { createPatrolCarRig } from './rigs/patrolCarRig'
+import { createSpiderRig } from './rigs/spiderRig'
+import { humanoidPose, quadrupedPose, spiderPose } from './rigs/gait'
+import { resolveBeaconStatus, resolveEffectConfig } from './rigs/effects'
+import { buildCinematicLayer } from './rigs/cinematicLayer'
 import { isDegraded, subscribe } from '../../visual/motionScheduler.js'
 import { isLightweightVisualMode, isReducedMotionMode } from '../../visual/visualMode.js'
 import { getRobotTasks } from '../../api/robot'
@@ -137,7 +166,9 @@ const props = defineProps({
   formFactor: { type: String, default: 'CAR' },
   mode: { type: String, default: 'OFFLINE' },
   /* 状态灯 / LiDAR 扫描动画的可选覆盖项，缺省走 rigs/effects.js 的 DEFAULT_EFFECT_CONFIG */
-  effects: { type: Object, default: null }
+  effects: { type: Object, default: null },
+  /* 真实历史轨迹（useRobotFleet.trails[key]）：[{x, y}]，用于绘制渐隐拖尾 */
+  trail: { type: Array, default: () => [] }
 })
 
 const host = ref(null)
@@ -146,6 +177,16 @@ const renderBackend = ref('static')
 const renderReady = computed(() => renderBackend.value !== 'static')
 const reduced = ref(false)
 const detailsOpen = ref(false)
+/* 3D 镜头视角：全景（路线总览）/ 跟随（贴近本体）/ 俯瞰（全局态势） */
+const viewMode = ref('orbit')
+const VIEWS = [
+  { key: 'orbit', label: '全景' },
+  { key: 'follow', label: '跟随' },
+  { key: 'top', label: '俯瞰' }
+]
+/* 悬浮 HUD：仅 WebGL 后端显示，内容全部来自真实遥测 */
+const hudEl = ref(null)
+const hudVisible = ref(false)
 const staticMode = computed(() => isLightweightVisualMode.value || isReducedMotionMode.value || isDegraded() || reduced.value)
 const staticReason = computed(() => {
   if (reduced.value || isReducedMotionMode.value) return '减少动态'
@@ -162,6 +203,11 @@ const ROUTE_COLOR = 0x5b8cff
 // ------------------------------------------------------------------
 
 const waypoints = ref([]) // [{x,y,theta,label,done,detour}]
+/* 本体来源与关节数据源（如实标注，不伪造真机关节）：由挂载/渲染循环更新 */
+const modelKind = ref('placeholder') // 'unitree-glb' | 'glb' | 'procedural' | 'placeholder'
+const jointSource = ref('gait') // 'telemetry'（真机绝对关节角） | 'gait'（步态推算）
+/* 当前 rig 实际驱动到的关节数：0 = 无关节形态（巡检车），用于如实标注数据源 */
+const jointCount = ref(0)
 
 async function loadRoute() {
   if (!props.deviceKey) { waypoints.value = []; return }
@@ -211,10 +257,61 @@ const ariaLabel = computed(() => {
 })
 
 const caption = computed(() => {
-  if (!waypoints.value.length) return '暂无巡检路线。提交自主巡检任务后，路点与重规划绕行点会实时绘制在场景中。'
-  const detour = waypoints.value.filter(p => p.detour).length
-  const done = waypoints.value.filter(p => p.done).length
-  return `路线 ${done}/${waypoints.value.length} 已执行${detour ? `，${detour} 个绕行点来自连续异常重规划` : ''}；机器人位姿由真实遥测驱动。`
+  const route = !waypoints.value.length
+    ? '暂无巡检路线，提交自主巡检任务后路点与绕行点实时绘制。'
+    : `路线 ${waypoints.value.filter(p => p.done).length}/${waypoints.value.length} 已执行` +
+      `${waypoints.value.some(p => p.detour) ? `，${waypoints.value.filter(p => p.detour).length} 个绕行点来自连续异常重规划` : ''}。`
+  const model = {
+    'unitree-glb': '宇树官方模型',
+    glb: 'GLB 模型',
+    procedural: '程序化模型（GLB 未加载，已回退）',
+    placeholder: '占位几何'
+  }[modelKind.value]
+  /* 关节来源标注：无关节形态（巡检车）不显示 */
+  const joint = jointCount.value > 0
+    ? (jointSource.value === 'telemetry' ? '关节由真机遥测直驱' : '关节为步态推算（真机关节遥测未接入）')
+    : ''
+  return `${route} ${model}，位姿由真实遥测驱动${joint ? `；${joint}` : ''}。`
+})
+
+/* ---------- 悬浮 HUD / 告警等级（复用状态灯的业务判定） ---------- */
+const MODE_LABELS = {
+  HUMAN_CONTROL: '人工态',
+  AUTONOMOUS: '自主态',
+  IDLE: '待机',
+  E_STOP: '急停',
+  FAULT: '故障',
+  OFFLINE: '离线'
+}
+const hudStatus = computed(() => resolveBeaconStatus({
+  mode: props.mode,
+  battery: props.telemetry?.battery,
+  stale: props.stale,
+  obstacleDistance: props.telemetry?.obstacleDistance
+}))
+const hudClass = computed(() => `is-${hudStatus.value.key}`)
+/* 告警时的场景边缘脉冲（CSS 覆盖层，不参与 WebGL 渲染） */
+const hudAlarmClass = computed(() => {
+  const key = hudStatus.value.key
+  if (key === 'fault') return 'is-alarm-fault'
+  if (key === 'warn') return 'is-alarm-warn'
+  return ''
+})
+const hudModeLabel = computed(() => MODE_LABELS[String(props.mode || '').toUpperCase()] || props.mode || '未知')
+function batteryPercent(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return null
+  return Math.round(n > 1 ? n : n * 100)
+}
+const hudMeta = computed(() => {
+  const battery = batteryPercent(props.telemetry?.battery)
+  const obstacle = Number(props.telemetry?.obstacleDistance)
+  const theta = Number(props.telemetry?.pose?.theta)
+  return [
+    battery === null ? '电量 —' : `电量 ${battery}%`,
+    Number.isFinite(obstacle) ? `障碍 ${obstacle.toFixed(2)}m` : '障碍 —',
+    Number.isFinite(theta) ? `朝向 ${Math.round(theta)}°` : '朝向 —'
+  ].join(' · ')
 })
 
 // ------------------------------------------------------------------
@@ -249,7 +346,10 @@ const poseTarget = { x: 0, y: 0, theta: 0, valid: false }
 let disposeScene = () => {}
 let replaceRobotRef = null
 let syncRouteRef = null
+let syncTrailRef = null
 let applyEffectsRef = null
+let applyViewRef = null
+let burstRef = null
 
 function resolveColor(cssVar, fallback) {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim()
@@ -392,6 +492,8 @@ onMounted(() => {
   scene.background = bgColor
   /* SVG 后端按「本体位姿 + 材质状态」签名跳帧：静止时不做任何重绘 */
   let lastSvgSignature = ''
+  /* 电影感氛围层（仅 WebGL 构建，SVG 后端保持轻量） */
+  let cinematic = null
   let themeObserver = null
   if (typeof MutationObserver !== 'undefined') {
     themeObserver = new MutationObserver(() => {
@@ -399,26 +501,58 @@ onMounted(() => {
       lastSvgSignature = ''
       /* 主题切换 → 光晕/点光衰减同步（深色背景下加色 + Bloom 易过曝） */
       rig?.setTheme?.(readTheme())
-      fxLayer?.setTheme?.(readTheme())
+      cinematic?.setTheme(readTheme())
     })
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
   }
   const accent = resolveColor('--ds-color-primary', ROUTE_COLOR)
   const camera = new PerspectiveCamera(42, 1, 0.1, 100)
-  /* 环视：目标点固定在地图中部，拖拽只改球坐标角度，构图基准不漂移 */
-  const camTarget = new Vector3(2.5, 0.42, -0.6)
+  /* 镜头：orbit 全景 / follow 跟随本体 / top 俯瞰；拖拽只改球坐标角度，构图基准由 camTarget 平滑过渡 */
+  const BASE_TARGET = new Vector3(2.5, 0.42, -0.6)
+  const camTarget = BASE_TARGET.clone()
+  const focusTarget = BASE_TARGET.clone()
   const orbit = { radius: 5.6, polar: 0.74, azimuth: 0 }
+  /* 跟随模式的轻微手持感：极小幅度的呼吸摆动，避免镜头完全死板 */
+  let cameraSway = 0
+  let swayClock = 0
+  /* 开场推镜：第一帧从更远/更高的机位缓缓推到工作机位（仅 WebGL，SVG 跳帧重绘不做） */
+  const INTRO_FROM = { radius: 9.6, polar: 1.04 }
+  let introT = isSvg ? 1 : 0
+  let lastInteractionAt = 0
   function applyCamera() {
     const sinPolar = Math.sin(orbit.polar)
+    const swayX = cameraSway ? Math.sin(swayClock * 0.9) * cameraSway : 0
+    const swayY = cameraSway ? Math.cos(swayClock * 1.3) * cameraSway * 0.5 : 0
     camera.position.set(
-      camTarget.x + orbit.radius * sinPolar * Math.sin(orbit.azimuth),
-      camTarget.y + orbit.radius * Math.cos(orbit.polar),
-      camTarget.z + orbit.radius * sinPolar * Math.cos(orbit.azimuth)
+      camTarget.x + orbit.radius * sinPolar * Math.sin(orbit.azimuth) + swayX,
+      camTarget.y + orbit.radius * Math.cos(orbit.polar) + swayY,
+      camTarget.z + orbit.radius * sinPolar * Math.cos(orbit.azimuth) + swayX
     )
     camera.lookAt(camTarget)
     lastSvgSignature = '' /* 机位变化必须重绘（SVG 后端） */
   }
   applyCamera()
+
+  /* 视角预设：切入时结束开场推镜，并直接套用对应的机位参数 */
+  function applyViewMode(mode) {
+    introT = 1
+    lastInteractionAt = performance.now()
+    if (mode === 'follow') {
+      orbit.radius = 4.8
+      orbit.polar = 0.92
+      cameraSway = 0.02
+    } else if (mode === 'top') {
+      orbit.radius = 8.2
+      orbit.polar = 0.2
+      cameraSway = 0
+    } else {
+      orbit.radius = 5.6
+      orbit.polar = 0.74
+      cameraSway = 0
+    }
+    applyCamera()
+  }
+  applyViewRef = applyViewMode
 
   /* PBR 环境贴图：金属材质没有环境反射会发黑，用 RoomEnvironment 生成一次即可
      （只影响 PBR 材质，占位几何用的 MeshBasicMaterial 不受影响；SVG 后端无 PBR 材质，跳过） */
@@ -459,9 +593,22 @@ onMounted(() => {
   }
   scene.add(grid)
 
+  /* 电影感氛围层：地面光晕盘、雷达扫描、浮尘、路线流光、告警浮标。
+     全部为真实数据驱动的装饰：路线来自任务接口，告警等级来自遥测/模式判定。 */
+  if (!isSvg) {
+    cinematic = buildCinematicLayer({ accentHex: accent, theme: readTheme(), lowDetail: false })
+    scene.add(cinematic.group)
+    cinematic.setRoute(waypoints.value)
+  }
+
   /* 路线折线 + 路点标记（route 变化时重建） */
   const routeGroup = new Group()
   scene.add(routeGroup)
+
+  /* 真实历史轨迹：渐隐拖尾线（越新的点越亮） */
+  const trailGroup = new Group()
+  scene.add(trailGroup)
+  let trailLine = null
 
   /* 机器人本体（formFactor 变化时替换）：DOG → 仿宇树四足 rig；ROBOT → 仿宇树人形 rig；
      CAR / SPIDER 优先加载真实 GLB，失败回退占位几何；SVG 后端统一用低面数占位几何 */
@@ -469,6 +616,16 @@ onMounted(() => {
   /* 软件渲染下放大本体：与 DOG / ROBOT rig 的图标比例一致，同时保证点击拾取面积 */
   if (isSvg) robot.scale.setScalar(2)
   scene.add(robot)
+
+  /* 交互脉冲：点击本体打开详情时，从设备脚下扩散一圈能量环（仅 WebGL 氛围层） */
+  burstRef = () => {
+    if (!robot) return
+    cinematic?.burstAt(
+      robot.position.x,
+      robot.position.z,
+      props.mode === 'AUTONOMOUS' ? accent : 0x9fc2ff
+    )
+  }
 
   /* PBR 材质需要灯光：半球光铺天光/地面反射，主平行光造高光与体积感，补光压暗部
      （占位模型是 MeshBasicMaterial，不受灯光影响，行为不变） */
@@ -481,25 +638,37 @@ onMounted(() => {
   rimLight.position.set(-6, 3.2, -5)
   scene.add(rimLight)
 
-  /* 真模型状态：动画 mixer + 材质清单（stale 半透明 / 障碍红警用） */
-  let mixer = null
-  let glbMaterials = []
-  let lampMats = []
-  /* 程序化 rig（DOG / ROBOT 形态）：独立材质 + 关节阻尼由 rig 自己维护 */
+  /* 本体 rig：四种形态统一接口（update / setStale / setBeaconStatus / setEffects），
+     动效层、材质状态与尺寸归一都由 rig 自己维护 */
   let rig = null
-  /* 通用动效层（CAR / SPIDER 的 GLB 形态）：灯效与扫描挂在模型包围盒顶部，随本体位姿移动 */
-  let fxLayer = null
   let gaitClock = 0
+  /* 场景累计时间：路点呼吸、路线流光、雷达旋转共用的动画时钟 */
+  let sceneElapsed = 0
   let speedEma = 0
-  /* 材质状态机：只在切换帧写材质 */
+  /* 占位几何的材质状态机：只在切换帧写材质 */
   let staleApplied = false
   let alarmApplied = false
   const MODEL_URLS = {
     CAR: '/models/robot/patrol-car.glb',
     SPIDER: '/models/robot/spider-bot.glb',
+    /* 宇树官方模型（unitree_mujoco，BSD-3-Clause）：MJCF 离线转 GLB，关节节点按官方电机命名 */
+    DOG: '/models/robot/go2.glb',
+    ROBOT: '/models/robot/g1.glb',
   }
+  const UNITREE_FORMS = new Set(['DOG', 'ROBOT'])
   /* 按 URL 缓存：同一模型只加载一次（不同形态各自缓存） */
   const glbCache = new Map()
+  const rigMetaCache = new Map()
+
+  function loadRigMeta(url) {
+    if (!rigMetaCache.has(url)) {
+      rigMetaCache.set(url, fetch(url).then((r) => {
+        if (!r.ok) throw new Error(`rig meta ${r.status}`)
+        return r.json()
+      }))
+    }
+    return rigMetaCache.get(url)
+  }
 
   /* 接触阴影：一块跟随本体的半透明圆片，让立体件与地面有落地感 */
   const shadowMat = new MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2, depthWrite: false })
@@ -525,7 +694,7 @@ onMounted(() => {
     })
   }
 
-  /** 卸载当前机器人本体（GLB / rig / 占位几何都走这里），并复位渲染状态。 */
+  /** 卸载当前机器人本体（rig / 占位几何都走这里），并复位渲染状态。 */
   function teardownRobot() {
     if (!robot) return
     scene.remove(robot)
@@ -535,47 +704,10 @@ onMounted(() => {
     } else {
       disposeRobotMesh(robot)
     }
-    /* 动效层挂在场景根节点，需单独卸载 */
-    if (fxLayer) {
-      scene.remove(fxLayer.group)
-      fxLayer.dispose()
-      fxLayer = null
-    }
-    mixer?.stopAllAction()
-    mixer = null
-    glbMaterials = []
-    lampMats = []
     staleApplied = false
     alarmApplied = false
+    jointCount.value = 0
     robot = null
-  }
-
-  /** 在 GLB 模型上挂通用动效层：按包围盒顶部定位 LiDAR 与状态灯，地面铺扫描环。 */
-  function attachEffectLayer() {
-    if (!robot || isSvg) return
-    /* 先量取模型自身包围盒，再把动效层挂到场景根：避免 GLB 的 scale 缩掉效果尺寸 */
-    const bounds = measureRobotBounds(robot)
-    fxLayer = buildEffectLayer({ accentHex: accent, effects: props.effects, bounds, theme: readTheme() })
-    fxLayer.sync(robot)
-    scene.add(fxLayer.group)
-  }
-
-  /** 挂载 GLB 场景并接管渲染状态（调用方保证先移除旧 robot）。 */
-  function applyGltf(gltf) {
-    teardownRobot()
-    robot = gltf.scene
-    robot.traverse((node) => {
-      if (!node.material) return
-      if (!glbMaterials.includes(node.material)) glbMaterials.push(node.material)
-      if (/HeadLamp/.test(node.name || '') && !lampMats.includes(node.material)) lampMats.push(node.material)
-    })
-    if (gltf.animations?.length) {
-      mixer = new AnimationMixer(robot)
-      const clip = gltf.animations.find((c) => c.name === 'drive') || gltf.animations[0]
-      mixer.clipAction(clip).play()
-    }
-    scene.add(robot)
-    attachEffectLayer()
   }
 
   function usePlaceholder(formFactor) {
@@ -583,10 +715,11 @@ onMounted(() => {
     robot = buildPlaceholder(formFactor, accent, isSvg)
     /* 软件渲染下放大本体：与 DOG / ROBOT rig 的图标比例一致，同时保证点击拾取面积 */
     if (isSvg) robot.scale.setScalar(2)
+    modelKind.value = 'placeholder'
     scene.add(robot)
   }
 
-  /** 挂载程序化 rig：DOG → 仿宇树四足，ROBOT → 仿宇树人形。 */
+  /** 挂载程序化 rig：DOG → 仿宇树四足，ROBOT → 仿宇树人形（官方 GLB 加载失败时的兜底）。 */
   function useProceduralRig(formFactor) {
     teardownRobot()
     rig = formFactor === 'DOG'
@@ -595,6 +728,39 @@ onMounted(() => {
     robot = rig.group
     /* 可视化放大：真实机身在 15m 地图上只有几十像素，按「态势图标」比例放大才看得清结构 */
     robot.scale.setScalar(formFactor === 'DOG' ? 2.2 : 1.6)
+    modelKind.value = 'procedural'
+    jointCount.value = rig.jointCount || 0
+    gaitClock = 0
+    speedEma = 0
+    scene.add(robot)
+  }
+
+  /** 挂载宇树官方 GLB rig：关节节点按官方电机命名，支持真机绝对关节角直驱。 */
+  function useUnitreeRig(formFactor, gltf, metadata) {
+    teardownRobot()
+    rig = createUnitreeGlbRig({
+      kind: formFactor === 'DOG' ? 'quadruped' : 'humanoid',
+      gltf, metadata, accentHex: accent, effects: props.effects, theme: readTheme()
+    })
+    robot = rig.group
+    robot.scale.setScalar(formFactor === 'DOG' ? 2.2 : 1.6)
+    modelKind.value = 'unitree-glb'
+    jointCount.value = rig.jointCount || 0
+    gaitClock = 0
+    speedEma = 0
+    scene.add(robot)
+  }
+
+  /** 挂载巡检车 / 蜘蛛 rig：轮速或 8 足步态由真实位移速度驱动，尺寸与动效层在 rig 内归一。 */
+  function useSurfaceRig(formFactor, { gltf, metadata } = {}) {
+    teardownRobot()
+    const options = { gltf, metadata, accentHex: accent, effects: props.effects, theme: readTheme() }
+    rig = formFactor === 'SPIDER' ? createSpiderRig(options) : createPatrolCarRig(options)
+    robot = rig.group
+    robot.name = `robot-${formFactor.toLowerCase()}`
+    modelKind.value = gltf ? 'glb' : 'procedural'
+    jointCount.value = rig.jointCount || 0
+    jointSource.value = rig.getJointSource?.() || 'gait'
     gaitClock = 0
     speedEma = 0
     scene.add(robot)
@@ -603,16 +769,21 @@ onMounted(() => {
   function mountRobotFor(formFactor) {
     /* SVG 软件渲染：rig 与 GLB 的面片量过大（每帧都会重建成 SVG path），统一走低面数占位几何 */
     if (isSvg) { usePlaceholder(formFactor); return }
-    if (formFactor === 'DOG' || formFactor === 'ROBOT') { useProceduralRig(formFactor); return }
     const url = MODEL_URLS[formFactor]
     if (!url) { usePlaceholder(formFactor); return }
-    loadGltf(url)
-      .then((gltf) => {
-        /* 异步加载期间的 formFactor 竞态守卫：只挂载当前形态对应的模型 */
-        if (MODEL_URLS[props.formFactor] === url) applyGltf(gltf)
+    /* GLB + rig 元数据优先；缺失/解析失败时用各形态自己的兜底（四足/人形程序化 rig、
+       车/蜘蛛同源构建器），保证任何情况下都不是方块占位 */
+    Promise.all([loadGltf(url), loadRigMeta(url.replace(/\.glb$/, '.rig.json'))])
+      .then(([gltf, metadata]) => {
+        /* 异步加载期间的 formFactor 竞态守卫：只挂载当前形态 */
+        if (props.formFactor !== formFactor) return
+        if (UNITREE_FORMS.has(formFactor)) useUnitreeRig(formFactor, gltf, metadata)
+        else useSurfaceRig(formFactor, { gltf, metadata })
       })
       .catch(() => {
-        if (MODEL_URLS[props.formFactor] === url) usePlaceholder(formFactor) /* 模型缺失/解析失败 → 占位兜底 */
+        if (props.formFactor !== formFactor) return
+        if (UNITREE_FORMS.has(formFactor)) useProceduralRig(formFactor)
+        else useSurfaceRig(formFactor)
       })
   }
 
@@ -622,7 +793,6 @@ onMounted(() => {
   /* 动效参数热更新：rig 内部持可变配置，Bloom 直接改 pass 属性，均无需重建几何 */
   applyEffectsRef = (effects) => {
     rig?.setEffects(effects)
-    fxLayer?.setEffects(effects)
     if (bloomPass) {
       const cfg = resolveEffectConfig(effects)
       bloomPass.strength = cfg.bloomStrength
@@ -641,10 +811,45 @@ onMounted(() => {
     }
   }
 
+  /* 真实历史轨迹拖尾：越新的点颜色越亮（加色混合下旧点自动隐入背景） */
+  function syncTrail() {
+    if (trailLine) {
+      trailGroup.remove(trailLine)
+      trailLine.geometry.dispose()
+      trailLine.material.dispose()
+      trailLine = null
+    }
+    const points = Array.isArray(props.trail) ? props.trail : []
+    if (points.length < 2) return
+    const positions = new Float32Array(points.length * 3)
+    const colors = new Float32Array(points.length * 3)
+    const tint = new Color(accent)
+    for (let i = 0; i < points.length; i += 1) {
+      const k = (i + 1) / points.length
+      positions[i * 3] = Number(points[i].x) || 0
+      positions[i * 3 + 1] = 0.035
+      positions[i * 3 + 2] = -(Number(points[i].y) || 0)
+      colors[i * 3] = tint.r * k
+      colors[i * 3 + 1] = tint.g * k
+      colors[i * 3 + 2] = tint.b * k
+    }
+    const geo = new BufferGeometry()
+    geo.setAttribute('position', new BufferAttribute(positions, 3))
+    geo.setAttribute('color', new BufferAttribute(colors, 3))
+    trailLine = new Line(geo, new LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false
+    }))
+    trailGroup.add(trailLine)
+  }
+
+  /* 未完成路点引用：渲染循环里做脉冲呼吸（已完成路点不再闪烁） */
+  let routeMarkers = []
   function syncRoute() {
     lastSvgSignature = '' /* 路线变化必须重绘（SVG 后端） */
     disposeGroupChildren(routeGroup)
+    routeMarkers = []
     const pts = waypoints.value
+    cinematic?.setRoute(pts)
     if (!pts.length) return
 
     const positions = pts.map(p => new Vector3(p.x, 0.02, -p.y))
@@ -661,6 +866,8 @@ onMounted(() => {
       })
       const mark = new Mesh(markGeo, mat)
       mark.position.set(p.x, 0.02, -p.y)
+      mark.userData.done = p.done
+      routeMarkers.push(mark)
       routeGroup.add(mark)
     }
   }
@@ -679,6 +886,28 @@ onMounted(() => {
   resize()
   syncRoute()
   syncRouteRef = syncRoute
+  syncTrail()
+  syncTrailRef = syncTrail
+
+  /* 悬浮 HUD：把本体上方一点投影到屏幕，节流 15fps 写 transform（避免每帧触发布局） */
+  const hudWorld = new Vector3()
+  let hudAppliedAt = 0
+  function updateHud(now) {
+    if (isSvg || !hudEl.value) return
+    if (now - hudAppliedAt < 66) return
+    hudAppliedAt = now
+    if (!robot) { hudVisible.value = false; return }
+    hudWorld.set(robot.position.x, 1.72, robot.position.z)
+    hudWorld.project(camera)
+    const onScreen = hudWorld.z > -1 && hudWorld.z < 1 &&
+      Math.abs(hudWorld.x) < 1.04 && Math.abs(hudWorld.y) < 1.04
+    hudVisible.value = onScreen
+    if (!onScreen) return
+    const w = element.clientWidth
+    const h = element.clientHeight
+    hudEl.value.style.transform =
+      `translate(-50%, -100%) translate(${(hudWorld.x * 0.5 + 0.5) * w}px, ${(-hudWorld.y * 0.5 + 0.5) * h}px)`
+  }
 
   /* 模型点击拾取 + 拖拽环视：
      - 拖拽位移 < 6px 视为点击 → 射线命中本体打开设备详情（保持既有交互）
@@ -705,6 +934,8 @@ onMounted(() => {
 
   function onStagePointerDown(event) {
     if (event.button !== 0) return
+    introT = 1
+    lastInteractionAt = performance.now()
     dragging = true
     dragDistance = 0
     dragSuppressClick = false
@@ -728,6 +959,7 @@ onMounted(() => {
       dragDistance += Math.abs(dx) + Math.abs(dy)
       if (dragDistance >= DRAG_THRESHOLD) {
         dragSuppressClick = true
+        lastInteractionAt = performance.now()
         orbit.azimuth = Math.min(1.05, Math.max(-1.05, orbit.azimuth - dx * 0.006))
         orbit.polar = Math.min(1.2, Math.max(0.3, orbit.polar - dy * 0.005))
         applyCamera()
@@ -748,6 +980,8 @@ onMounted(() => {
   }
   function onStageWheel(event) {
     event.preventDefault()
+    introT = 1
+    lastInteractionAt = performance.now()
     orbit.radius = Math.min(12, Math.max(4, orbit.radius + Math.sign(event.deltaY) * 0.45))
     applyCamera()
   }
@@ -776,6 +1010,7 @@ onMounted(() => {
     updateStageVisible(now)
     if (!stageVisible || staticMode.value) return
     const dtSec = Math.min(dt / 1000, 0.1)
+    sceneElapsed += dtSec
     /* 位姿插值：遥测几 Hz 推送，逐帧 12% 逼近，运动连续不跳变 */
     let moved = 0
     if (poseTarget.valid && robot) {
@@ -791,25 +1026,34 @@ onMounted(() => {
       while (delta < -Math.PI) delta += Math.PI * 2
       robot.rotation.y += delta * 0.12
     }
-    /* GLB 骨骼/关键帧动画驱动（motionScheduler 的 dt 是毫秒；钳制防 tab 切回后跳帧） */
-    if (mixer) mixer.update(dtSec)
-
     /* 心跳超时 → 本体半透明；障碍过近 → 状态灯变红（真实 obstacleDistance 驱动）
-       只在状态切换时写材质：GLB PBR 材质 transparent 默认 false，避免每帧写与常驻透明排序开销 */
+       只在状态切换时写材质：rig 内部对材质状态做切换帧判定，不做每帧写入 */
     const obstacle = Number(props.telemetry?.obstacleDistance)
     const wantAlarm = Number.isFinite(obstacle) && obstacle < 0.5 && !props.stale
     const wantStale = props.stale
 
     if (rig && robot) {
-      /* 步态振幅来自真实位移速度；心跳超时 → 速度归零并回到站立，不做假动作 */
+      /* 步态 / 轮速来自真实位移速度；心跳超时 → 速度归零并回到站立，不做假动作 */
       const instant = wantStale || !poseTarget.valid ? 0 : moved / Math.max(dtSec, 1e-3)
       speedEma += (Math.min(instant, 1) - speedEma) * 0.18
       if (!wantStale) gaitClock += dtSec
-      const pose = rig.kind === 'quadruped'
-        ? quadrupedPose({ speed: speedEma, t: gaitClock })
-        : humanoidPose({ speed: speedEma, t: gaitClock })
-      rig.update({ dt: dtSec, pose })
+      const visualSpeed = wantStale ? 0 : speedEma
+      let pose = null
+      if (rig.kind === 'quadruped') pose = quadrupedPose({ speed: visualSpeed, t: gaitClock })
+      else if (rig.kind === 'humanoid') pose = humanoidPose({ speed: visualSpeed, t: gaitClock })
+      else if (rig.kind === 'arachnid') pose = spiderPose({ speed: visualSpeed, t: gaitClock })
+      /* 巡检车（wheeled）不传 pose：只用 speed + 左右轮速遥测驱动轮子与 LiDAR */
+      rig.update({
+        dt: dtSec,
+        speed: visualSpeed,
+        pose,
+        wheels: wantStale ? null : props.telemetry?.wheels,
+        joints: wantStale ? null : props.telemetry?.joints
+      })
       rig.setStale(wantStale)
+      /* 关节数据源标注（真机绝对角 / 步态推算），仅变化时写 ref */
+      const source = rig.getJointSource?.()
+      if (source && source !== jointSource.value) jointSource.value = source
       /* 状态灯由真实业务状态驱动：心跳、急停/故障、障碍距离、电量、运行模式 */
       rig.setBeaconStatus({
         mode: props.mode,
@@ -817,30 +1061,6 @@ onMounted(() => {
         obstacleDistance: props.telemetry?.obstacleDistance,
         stale: wantStale
       })
-    } else if (glbMaterials.length) {
-      /* GLB 形态（CAR 轮式底盘 / SPIDER 六足）：动效层与 rig 同源，灯色/节奏完全一致 */
-      if (fxLayer) {
-        fxLayer.sync(robot)
-        fxLayer.update({ dt: dtSec })
-        fxLayer.setStale(wantStale)
-        fxLayer.setBeaconStatus({
-          mode: props.mode,
-          battery: props.telemetry?.battery,
-          obstacleDistance: props.telemetry?.obstacleDistance,
-          stale: wantStale
-        })
-      }
-      if (wantStale !== staleApplied) {
-        staleApplied = wantStale
-        glbMaterials.forEach((m) => {
-          m.transparent = wantStale
-          m.opacity = wantStale ? 0.3 : 1
-        })
-      }
-      if (wantAlarm !== alarmApplied && lampMats.length) {
-        alarmApplied = wantAlarm
-        lampMats.forEach((m) => m.emissive?.setHex(wantAlarm ? 0xe5484d : 0x1c5a37))
-      }
     } else if (robot) {
       const bodyOpacity = wantStale ? 0.3 : 0.92
       robot.children.forEach((child) => {
@@ -863,6 +1083,54 @@ onMounted(() => {
       shadowMat.opacity = wantStale ? 0.07 : 0.2
     }
 
+    /* 电影感镜头：开场推镜 → 空闲缓慢环绕 / 跟随平滑聚焦 / 俯瞰回中 */
+    if (!isSvg) {
+      swayClock += dtSec
+      if (viewMode.value === 'follow' && robot) focusTarget.set(robot.position.x, 0.46, robot.position.z)
+      else focusTarget.copy(BASE_TARGET)
+      camTarget.lerp(focusTarget, 1 - Math.pow(0.0025, dtSec))
+      let cameraDirty = camTarget.distanceToSquared(focusTarget) > 1e-8
+      if (introT < 1) {
+        introT = Math.min(1, introT + dtSec / 1.7)
+        const ease = 1 - Math.pow(1 - introT, 3)
+        orbit.radius = INTRO_FROM.radius + (5.6 - INTRO_FROM.radius) * ease
+        orbit.polar = INTRO_FROM.polar + (0.74 - INTRO_FROM.polar) * ease
+        cameraDirty = true
+      } else if (viewMode.value === 'follow') {
+        /* 跟随模式每帧重算：既跟住本体，也让轻微手持感持续生效 */
+        cameraDirty = true
+      } else if (viewMode.value === 'orbit' && !dragging && now - lastInteractionAt > 4200) {
+        orbit.azimuth += dtSec * 0.05
+        cameraDirty = true
+      }
+      if (cameraDirty) applyCamera()
+
+      /* 未完成路点脉冲呼吸：已完成路点保持暗态，不制造假进度 */
+      for (let i = 0; i < routeMarkers.length; i += 1) {
+        const marker = routeMarkers[i]
+        if (marker.userData.done) continue
+        const wave = 0.5 + 0.5 * Math.sin(sceneElapsed * 2.2 - i * 0.55)
+        marker.scale.setScalar(1 + wave * 0.4)
+        marker.material.opacity = 0.5 + wave * 0.4
+      }
+
+      /* 氛围层：路线流光 / 雷达扫描 / 告警浮标（告警等级复用状态灯的真实判定） */
+      const statusKey = hudStatus.value.key
+      cinematic?.update({
+        dt: dtSec,
+        elapsed: sceneElapsed,
+        robot,
+        alarmLevel: statusKey === 'fault' ? 2 : statusKey === 'warn' ? 1 : 0,
+        degraded: isDegraded(),
+        speed: Math.min(moved / Math.max(dtSec, 1e-3), 2),
+        mode: props.mode,
+        stale: wantStale,
+        battery: batteryPercent(props.telemetry?.battery),
+        obstacleDistance: props.telemetry?.obstacleDistance
+      })
+      updateHud(now)
+    }
+
     /* SVG 后端：按「位姿 + 材质状态」签名跳帧，本体静止时不产生任何重绘开销 */
     if (isSvg) {
       const signature = robot
@@ -879,8 +1147,6 @@ onMounted(() => {
 
   disposeScene = () => {
     unsubscribe()
-    mixer?.stopAllAction()
-    mixer = null
     ro?.disconnect()
     bloomPass?.dispose()
     composer?.dispose()
@@ -894,6 +1160,12 @@ onMounted(() => {
     element.removeEventListener('wheel', onStageWheel)
     element.style.cursor = ''
     disposeGroupChildren(routeGroup)
+    routeMarkers = []
+    disposeGroupChildren(trailGroup)
+    trailLine = null
+    burstRef = null
+    cinematic?.dispose()
+    cinematic = null
     if (rig) { rig.dispose(); rig = null } else if (robot) { disposeRobotMesh(robot) }
     shadowGeo.dispose()
     shadowMat.dispose()
@@ -913,29 +1185,15 @@ onMounted(() => {
       getBloom: () => (bloomPass
         ? { strength: bloomPass.strength, radius: bloomPass.radius, threshold: bloomPass.threshold }
         : null),
-      getMixer: () => ({ present: !!mixer, time: mixer?.time ?? 0, clipCount: mixer?.clipActions?.length ?? 0 }),
-      /* GLB 形态的动效层状态：用于确认灯效已挂载、尺寸按模型归一化、跟随本体位姿 */
-      getEffectLayer: () => {
-        if (!fxLayer) return null
-        let lidarSpin = 0
-        let rings = 0
-        let lights = 0
-        fxLayer.group.traverse((node) => {
-          if (node.geometry?.type === 'RingGeometry') rings += 1
-          if (node.type === 'PointLight') lights += 1
-          if (node.geometry?.type === 'TorusGeometry') lidarSpin = node.parent.rotation.y
-        })
-        return {
-          beacon: fxLayer.beaconMat.color.getHexString(),
-          intensity: Number(fxLayer.beaconMat.emissiveIntensity.toFixed(3)),
-          lidarSpin: Number(lidarSpin.toFixed(3)),
-          rings,
-          lights,
-          bounds: fxLayer.bounds,
-          position: { x: Number(fxLayer.group.position.x.toFixed(2)), z: Number(fxLayer.group.position.z.toFixed(2)) },
-          yaw: Number(fxLayer.group.rotation.y.toFixed(2))
-        }
-      },
+      /* rig 状态：用于确认形态已接管、关节数与数据源（车为 0、蜘蛛 16、四足 12、人形 23） */
+      getRig: () => (rig
+        ? {
+            kind: rig.kind,
+            jointCount: rig.jointCount || 0,
+            wheelCount: rig.wheelCount || 0,
+            jointSource: rig.getJointSource?.() ?? null
+          }
+        : null),
     }
   }
 })
@@ -949,6 +1207,22 @@ watch(() => props.telemetry?.pose, (pose) => {
 }, { deep: true })
 
 watch(() => props.formFactor, (ff) => replaceRobotRef?.(ff))
+/* 镜头视角切换：全景 / 跟随 / 俯瞰 */
+watch(viewMode, (mode) => applyViewRef?.(mode))
+/* 历史轨迹增长时重建拖尾：轨迹到上限后会「去头追加」，长度不变但末点坐标会变 */
+watch(
+  () => {
+    const list = props.trail
+    if (!Array.isArray(list) || !list.length) return '0'
+    const last = list[list.length - 1]
+    return `${list.length}|${last?.x}|${last?.y}`
+  },
+  () => syncTrailRef?.()
+)
+/* 切换设备：轨迹数组会换成另一台设备的历史，即使长度相同也要重建 */
+watch(() => props.deviceKey, () => syncTrailRef?.())
+/* 打开设备详情时从本体脚下扩散一圈能量脉冲 */
+watch(detailsOpen, (open) => { if (open) burstRef?.() })
 /* 动效参数变化 → rig 热更新（仅四足 / 人形有 rig，其余形态忽略） */
 watch(() => props.effects, (effects) => applyEffectsRef?.(effects), { deep: true })
 /* 路线数据变化 → 重建折线与路点标记（WebGL 就绪时） */
@@ -991,9 +1265,109 @@ onBeforeUnmount(() => {
 .dot-route { border: 1.5px solid var(--ds-color-primary, #5b8cff); }
 .dot-detour { background: #e3a008; }
 .dot-robot { background: var(--ds-color-text, #e8eaed); }
+.rs3-views {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ds-color-border, #3a3f4a);
+  border-radius: 999px;
+  background: rgba(120, 140, 170, 0.08);
+}
+.rs3-view-btn {
+  padding: 2px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ds-color-muted, #8a8f98);
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 150ms ease-out, color 150ms ease-out;
+}
+.rs3-view-btn.active { background: var(--ds-color-primary, #5b8cff); color: #fff; }
+.rs3-view-btn:focus-visible { outline: 2px solid var(--ds-focus-ring-color, var(--smart-primary)); outline-offset: 1px; }
 .rs3-stage { position: relative; height: 320px; margin-top: 12px; overflow: hidden; border-radius: 8px; cursor: grab; }
-.rs3-stage :deep(canvas) { display: block; width: 100%; height: 100%; }
-.rs3-stage :deep(svg) { display: block; width: 100%; height: 100%; }
+.rs3-stage :deep(canvas) { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; }
+.rs3-stage :deep(svg) { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; }
+.rs3-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 50% 46%, transparent 52%, rgba(4, 8, 16, 0.36) 100%),
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 3px);
+}
+.rs3-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+.rs3-stage.is-alarm-warn::before {
+  opacity: 1;
+  box-shadow: inset 0 0 38px rgba(227, 160, 8, 0.42);
+  animation: rs3-alert-pulse 1.8s ease-in-out infinite;
+}
+.rs3-stage.is-alarm-fault::before {
+  opacity: 1;
+  box-shadow: inset 0 0 46px rgba(229, 72, 77, 0.55);
+  animation: rs3-alert-pulse 1s ease-in-out infinite;
+}
+@keyframes rs3-alert-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs3-stage.is-alarm-warn::before,
+  .rs3-stage.is-alarm-fault::before { animation: none; opacity: 0.8; }
+}
+.rs3-hud {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 1px 10px;
+  padding: 5px 9px;
+  border: 1px solid rgba(140, 170, 220, 0.38);
+  border-radius: 7px;
+  background: rgba(10, 16, 28, 0.64);
+  color: #e8eefc;
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  transform: translate(-50%, -100%);
+  transition: opacity 180ms ease-out;
+  will-change: transform;
+}
+.rs3-hud.is-hidden { opacity: 0; }
+/* HUD 指向本体：底部短引导线，强化「标签吸附在设备上」的空间感 */
+.rs3-hud::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 1px;
+  height: 10px;
+  background: linear-gradient(to bottom, rgba(140, 170, 220, 0.7), rgba(140, 170, 220, 0));
+}
+.rs3-hud-name { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; letter-spacing: 0.04em; }
+.rs3-hud-mode { justify-self: end; color: #9fc2ff; }
+.rs3-hud-meta { grid-column: 1 / -1; color: #b9c4d6; font-variant-numeric: tabular-nums; }
+.rs3-hud-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: #5ad691; }
+.rs3-hud-dot.is-running { background: #5b8cff; box-shadow: 0 0 6px #5b8cff; }
+.rs3-hud-dot.is-manual { background: #57c8d8; box-shadow: 0 0 6px #57c8d8; }
+.rs3-hud-dot.is-warn { background: #e3a008; box-shadow: 0 0 6px #e3a008; }
+.rs3-hud-dot.is-fault { background: #e5484d; box-shadow: 0 0 6px #e5484d; }
+.rs3-hud-dot.is-offline { background: #8a8f98; }
 .rs3-stage--static { display: grid; place-items: center; cursor: default; }
 .rs3-static-svg { width: 100%; height: 100%; }
 .rs3-static-robot { cursor: pointer; }

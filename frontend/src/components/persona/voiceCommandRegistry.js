@@ -20,15 +20,8 @@
  *  - 任何要求"双重确认 / 双人操作"的 SOP 页面。
  */
 export const HAZARD_ROUTES = Object.freeze({
-  // Admin 全部——默认只有 admin 角色可达，但语音侧再兜一层。
-  '/admin': { level: 'critical', reason: '管理控制台，涉及用户、安全与审批' },
-  '/admin/users': { level: 'critical', reason: '用户管理，涉及账号变更与权限' },
-  '/admin/audit': { level: 'high', reason: '安全审计，涉及敏感操作记录' },
-  '/admin/approvals': { level: 'critical', reason: '审批流，涉及资金与授权' },
-  '/admin/models': { level: 'high', reason: '模型治理，涉及模型上线/下线' },
-  '/admin/security': { level: 'critical', reason: '安全设置，涉及 MFA 与密码策略' },
-  '/admin/readiness': { level: 'medium', reason: '就绪检查，可语音打开但需谨慎' },
-
+  // 管理端路径不在此表：用户层已物理剥离 /admin 路由与视图，不认识也就无从拦截；
+  // 保留这些字符串只会把管理面路径泄露进用户层构建产物。
   // Sentinel 脚本库——脚本执行是破坏性操作。
   '/sentinel/scripts': { level: 'critical', reason: '脚本库，涉及直接执行运维脚本' },
 
@@ -119,8 +112,7 @@ export const NAVIGATION_INTENTS = Object.freeze([
   // Robot
   { path: '/robot', label: '机器人控制台', keywords: ['机器人', 'robot', '机器人控制台'] },
 
-  // Admin
-  { path: '/admin', label: '管理控制台', keywords: ['管理控制台', 'admin', '管理后台', '控制台'] },
+  // 管理层入口不出现在用户层语音词典中：避免向普通用户暴露管理台的存在。
 ])
 
 /**

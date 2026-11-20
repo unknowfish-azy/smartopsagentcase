@@ -90,6 +90,10 @@
         <dd>{{ CHAT_PHASE_LABELS[phase] }}</dd>
       </div>
       <div class="persona-view__stat">
+        <dt>渲染模式</dt>
+        <dd>{{ stats ? (stats.mode === '2d' ? '2D 动态兜底' : '3D 实时') : '—' }}</dd>
+      </div>
+      <div class="persona-view__stat">
         <dt>Draw call</dt>
         <dd>{{ stats?.drawCalls ?? '—' }}</dd>
       </div>

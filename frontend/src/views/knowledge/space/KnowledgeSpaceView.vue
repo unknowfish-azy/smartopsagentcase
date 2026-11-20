@@ -1,4 +1,5 @@
 <script setup>
+import AgentCopilotDock from '../../../components/agent/AgentCopilotDock.vue'
 /* ===== 五视图：mosaic（照片墙，默认）/ space（3D 地图）/ field（场域）/ grid（域内行）/ list（全量平铺） ===== */
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
@@ -842,6 +843,10 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </aside>
+  <AgentCopilotDock
+    section="知识空间"
+    :entity="{ type: 'doc', id: selectedCard?.entry?.id ?? selectedCard?.id ?? cards?.[0]?.entry?.id ?? cards?.[0]?.id }"
+  />
   </article>
 </template>
 

@@ -69,7 +69,7 @@ try {
   check(await trigger.getAttribute('aria-expanded') === 'true', '点击后 aria-expanded=true')
   check(await menu.isVisible() === true, '点击后菜单可见')
   check(await menu.getByRole('link', { name: '账户安全', exact: true }).isVisible(), '账户安全入口可见')
-  check(await menu.getByRole('button', { name: '管理入口（重新登录）' }).isVisible(), '管理入口按钮可见')
+  check(await menu.getByRole('button', { name: '管理入口（重新登录）' }).count() === 0, '管理入口按钮已从用户层移除')
   check(await menu.getByRole('button', { name: '退出登录', exact: true }).isVisible(), '退出登录按钮可见')
   check(await menu.locator('.account-menu-header strong').innerText() === 'ops-user', '菜单头部显示当前用户名')
   // 防裁切：下拉按钮中心点的命中目标必须是按钮本身。lggc 包给顶栏设过 overflow:hidden，

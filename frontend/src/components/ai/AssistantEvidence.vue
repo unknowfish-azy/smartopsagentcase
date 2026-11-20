@@ -1,5 +1,6 @@
 <template>
-  <div v-if="message.providerName || message.model || message.citations?.length" class="assistant-evidence">
+  <div v-if="hasChain || message.providerName || message.model || message.citations?.length" class="assistant-evidence">
+    <AssistantRetrievalChain v-if="hasChain" :message="message" />
     <p v-if="message.providerName || message.model" class="assistant-evidence__provider">{{ message.providerName }}<span v-if="message.model"> · {{ message.model }}</span></p>
     <details v-if="message.citations?.length">
       <summary>参考来源（{{ message.citations.length }} 段 / {{ citationGroups.length }} 篇）</summary>
@@ -17,8 +18,12 @@
 
 <script setup>
 import { computed } from 'vue'
+import AssistantRetrievalChain from './AssistantRetrievalChain.vue'
 
 const props = defineProps({ message: { type: Object, required: true } })
+
+// 只有带真实重排统计的消息才渲染检索链，避免老消息出现空链路。
+const hasChain = computed(() => Number(props.message?.metadata?.attention?.candidates) > 0)
 
 // 同一篇资料的多段引用合并成一条，避免“参考来源 5”全指向同一个文件。
 const citationGroups = computed(() => {

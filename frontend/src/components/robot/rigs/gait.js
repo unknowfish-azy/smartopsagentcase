@@ -81,6 +81,37 @@ export function quadrupedPose({ gait = 'TROT', speed = 0, t = 0, strideHz } = {}
   }
 }
 
+/** 蜘蛛归一化基准（保守值，仅驱动视觉摆动，不参与限速）。 */
+export const SPIDER_MAX_LINEAR = 0.5
+/** 蜘蛛腿数：8 足交替四足步态（偶数腿一组、奇数腿一组，相位相反）。 */
+export const SPIDER_LEG_COUNT = 8
+
+/**
+ * 蜘蛛步态解算：偶数腿与奇数腿反相，抬腿只发生在摆动相（sin>0）。
+ * 返回值是相对站立姿态的增量：hip 前后摆、knee 抬腿，均以弧度计。
+ * @param {{speed?: number, t?: number, strideHz?: number}} input
+ * @returns {{amp: number, freq: number, legs: Array<{hip:number, knee:number}>}}
+ */
+export function spiderPose({ speed = 0, t = 0, strideHz = 1.3 } = {}) {
+  const signed = Number(speed) || 0
+  const abs = Math.abs(signed)
+  const amp = abs < STAND_SPEED_THRESHOLD ? 0 : clamp(abs / SPIDER_MAX_LINEAR, 0, 1)
+  const freq = strideHz
+  const time = Number.isFinite(t) ? t : 0
+  const dir = signed < 0 ? -1 : 1
+
+  const legs = []
+  for (let i = 0; i < SPIDER_LEG_COUNT; i += 1) {
+    const offset = i % 2 === 0 ? 0 : Math.PI
+    const phase = time * freq * Math.PI * 2 + offset
+    legs.push({
+      hip: 0.28 * Math.sin(phase) * amp * dir,
+      knee: 0.34 * Math.max(0, Math.sin(phase)) * amp
+    })
+  }
+  return { amp, freq, legs }
+}
+
 /**
  * 人形步态解算（仿宇树 G1）：双腿反相摆动，双臂与对侧腿同相。
  */

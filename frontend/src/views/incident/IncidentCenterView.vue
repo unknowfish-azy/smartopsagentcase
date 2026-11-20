@@ -123,10 +123,15 @@
       <p v-if="createMessage" class="sentinel-hint" role="status">{{ createMessage }}</p>
     </section>
   </section>
+  <AgentCopilotDock
+    section="安全事件"
+    :entity="{ type: 'incident', id: visible?.[0]?.id }"
+  />
   </div>
 </template>
 
 <script setup>
+import AgentCopilotDock from '../../components/agent/AgentCopilotDock.vue'
 import { computed, onMounted, onBeforeUnmount, reactive, ref, defineAsyncComponent } from 'vue'
 import SentinelNotice from '../sentinel/SentinelNotice.vue'
 import SentinelEmpty from '../sentinel/SentinelEmpty.vue'

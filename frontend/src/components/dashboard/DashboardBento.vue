@@ -114,6 +114,18 @@
             :height="200"
           />
         </article>
+
+        <!-- 快捷操作：AI 悬浮球内嵌进卡片，点击扇出常用入口（替代桌面悬浮快捷） -->
+        <article class="ops-card bento-quickops">
+          <header class="ops-card__head">
+            <div class="ops-card__titles">
+              <span class="u-overline">QUICK ACTIONS</span>
+              <h3 class="u-section">快捷操作</h3>
+            </div>
+            <span class="u-caption">{{ quickActions.length }} 个常用入口</span>
+          </header>
+          <CircleQuickMenu :items="quickActions" variant="orb" :size="200" />
+        </article>
       </div>
     </template>
   </section>
@@ -128,7 +140,20 @@ import { loadSentinel, sentinelState } from '../../views/sentinel/sentinelStore.
 import { ALERT_STATUSES } from '../../views/sentinel/sentinelModel.js'
 import OpsChart from './OpsChart.vue'
 import KpiNumber from './KpiNumber.vue'
+import CircleQuickMenu from '../navigation/CircleQuickMenu.vue'
+import { Bell, ChatDotRound, Collection, Connection, Cpu, DataAnalysis, Monitor } from '@element-plus/icons-vue'
 const XiaoyuDashboardCard = defineAsyncComponent(() => import('./XiaoyuDashboardCard.vue'))
+
+/** 快捷入口只指向已存在的路由，图标沿用侧栏同一套 Element Plus 图标。 */
+const quickActions = [
+  { cn: '纠察中心', en: 'INSPECTOR', to: '/inspector', icon: DataAnalysis },
+  { cn: '告警中心', en: 'ALERTS', to: '/sentinel/alerts', icon: Bell },
+  { cn: '机器人控制台', en: 'ROBOT', to: '/robot', icon: Monitor },
+  { cn: '设备台账', en: 'DEVICES', to: '/devices', icon: Cpu },
+  { cn: '知识空间', en: 'KNOWLEDGE', to: '/knowledge/space', icon: Collection },
+  { cn: '模型接入', en: 'MODELS', to: '/model-settings', icon: Connection },
+  { cn: 'AI 对话', en: 'CHAT', to: '/chat', icon: ChatDotRound }
+]
 
 /* 全部数据来自真实接口；任一来源失败即标记失败并显示「—」，绝不回填看起来像真的假数据。 */
 const ACTIVE_ALERT_STATUSES = new Set(['OPEN', 'PENDING_APPROVAL', 'REMEDIATING'])
@@ -314,8 +339,11 @@ onMounted(load)
 
 .bento-alerts { grid-column: span 6; }
 .bento-xiaoyu { grid-column: span 6; }
-.bento-distribution { grid-column: span 7; }
-.bento-trend { grid-column: span 5; }
+.bento-distribution { grid-column: span 5; }
+.bento-trend { grid-column: span 4; }
+.bento-quickops { grid-column: span 3; }
+.bento-quickops .ops-card__head { margin-bottom: 4px; }
+.bento-quickops .circle-menu { margin: auto; }
 
 .bento-more { margin-left: auto; padding: 4px 0; color: var(--ds-color-primary); font-size: var(--ds-type-caption-size); white-space: nowrap; }
 .bento-more:hover { color: var(--ds-color-primary-strong); }
@@ -342,9 +370,14 @@ onMounted(load)
 .quick-link strong { color: var(--ds-color-text); font-size: var(--ds-type-body-size); font-weight: 500; }
 .quick-link:hover { border-color: var(--ds-color-border); background: color-mix(in srgb, var(--ds-color-primary) 6%, transparent); }
 
+@media (max-width: 1280px) {
+  .bento-distribution { grid-column: span 6; }
+  .bento-trend { grid-column: span 6; }
+  .bento-quickops { grid-column: span 12; }
+}
 @media (max-width: 1024px) {
   .kpi-card { grid-column: span 6; }
-  .bento-alerts, .bento-actions, .bento-distribution, .bento-trend { grid-column: span 12; }
+  .bento-alerts, .bento-actions, .bento-distribution, .bento-trend, .bento-quickops { grid-column: span 12; }
 }
 @media (max-width: 640px) {
   .bento-dashboard { padding: var(--ds-space-4); gap: var(--ds-space-4); }

@@ -56,7 +56,13 @@
 import { computed, ref, watch } from 'vue'
 import { useCompanionStore } from '../../stores/companion.js'
 import { normalizeAnswer } from '../../domain/investigation/inquiry.ts'
-import { knowledgeReadApi } from '../../views/knowledge/knowledgeLibrary.js'
+
+// #perf: 动态导入知识目录，避免首页预加载整套 Linux/云原生知识模块（~214KB+@fs 链）
+let knowledgeApiPromise = null
+function loadKnowledgeApi() {
+  if (!knowledgeApiPromise) knowledgeApiPromise = import('../../views/knowledge/knowledgeLibrary.js').then(mod => mod.knowledgeReadApi)
+  return knowledgeApiPromise
+}
 
 const store = useCompanionStore()
 const selectedValue = ref('')
@@ -65,13 +71,17 @@ const context = computed(() => store.contextSnapshot)
 const fault = computed(() => context.value?.faultEvent || {})
 const currentQuestion = computed(() => context.value?.questions?.find(question => !context.value.answers.some(answer => answer.questionId === question.id)) || null)
 const query = computed(() => [fault.value.title, ...(fault.value.evidence || []).map(item => item.content), ...(context.value?.answers || []).map(item => item.normalized?.value || item.original)].filter(Boolean).join(' '))
-const knowledgeResults = computed(() => {
-  if (!context.value.faultEvent || store.capabilities.knowledge.status === 'offline') return []
-  const terms = query.value.split(/\s+/).filter(term => term.length > 2)
-  const matches = terms.flatMap(term => knowledgeReadApi.search({ query: term }))
-  const unique = new Map(matches.map(entry => [entry.id, entry]))
-  return [...unique.values()].slice(0, 4)
-})
+const knowledgeResults = ref([])
+watch(query, async () => {
+  if (!context.value.faultEvent || store.capabilities.knowledge.status === 'offline') { knowledgeResults.value = []; return }
+  try {
+    const api = await loadKnowledgeApi()
+    const terms = query.value.split(/\s+/).filter(term => term.length > 2)
+    const matches = terms.flatMap(term => api.search({ query: term }))
+    const unique = new Map(matches.map(entry => [entry.id, entry]))
+    knowledgeResults.value = [...unique.values()].slice(0, 4)
+  } catch { knowledgeResults.value = [] }
+}, { immediate: true })
 
 watch(() => [context.value.id, currentQuestion.value?.id], () => { selectedValue.value = ''; freeText.value = '' })
 

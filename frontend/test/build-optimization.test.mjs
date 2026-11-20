@@ -81,7 +81,10 @@ test('route bootstrap keeps infrequent layouts out of the application entry', as
   assert.equal(router.includes("import LoginView from '../views/auth/LoginView.vue'"), false)
   assert.equal(router.includes("import WorkInProgressView from '../views/portfolio/WorkInProgressView.vue'"), false)
   assert.equal(router.includes("component: () => import('../layouts/MainLayout.vue')"), true)
-  assert.equal(router.includes("component: () => import('../layouts/AdminLayout.vue')"), true)
+  // 管理端布局完全不在用户层入口中：它只由 src/router/admin.js 懒加载。
+  assert.equal(router.includes("component: () => import('../layouts/AdminLayout.vue')"), false)
+  const adminRouter = await source('src/router/admin.js')
+  assert.equal(adminRouter.includes("component: () => import('../layouts/AdminLayout.vue')"), true)
   assert.equal(router.includes("component: () => import('../views/auth/LoginView.vue')"), true)
 })
 

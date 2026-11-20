@@ -13,7 +13,7 @@
         <label>确认新密码<input v-model="form.confirmPassword" type="password" autocomplete="new-password" required></label>
         <p v-if="error" class="admin-error" role="alert">{{ error }}</p>
         <button class="admin-primary" type="submit" :disabled="busy">{{ busy ? '处理中…' : '更新密码并退出' }}</button>
-        <RouterLink v-if="!currentSession?.mustChangePassword" :to="isAdminSession(currentSession) ? '/admin' : '/'">返回工作台</RouterLink>
+        <RouterLink v-if="!currentSession?.mustChangePassword" :to="portalHome(currentSession?.portal)">返回工作台</RouterLink>
       </form>
     </section>
     <section class="account-panel" aria-labelledby="profile-title">
@@ -36,7 +36,7 @@ import { useRouter } from 'vue-router'
 import { currentSession, changePassword, logoutSession } from '../../security/session.js'
 import request from '../../utils/request.ts'
 import { passwordError } from '../../security/passwordPolicy.js'
-import { isAdminSession } from '../../security/portalPolicy.js'
+import { portalHome } from '../../security/portalCatalog.js'
 import { themeMode, setThemeMode } from '../../theme.js'
 import '../../assets/styles/admin.css'
 const router = useRouter()

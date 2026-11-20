@@ -1,8 +1,8 @@
 <template>
   <div class="app-layout" :data-visual-mode="visualMode" :class="{ 'app-layout--tools': isToolsPage, 'app-layout--liquid': !isToolsPage, 'app-layout--sidebar-collapsed': appStore.sidebarCollapsed, 'app-layout--chat': route.path === '/chat', 'app-layout--lightweight': isLightweightVisualMode, 'app-layout--team': isTeamSpace, 'app-layout--admin-entry': currentRole === 'admin' }">
-      <OpsSpiderPet v-if="!isTeamSpace && !isKnowledgeSpace" :state="opsSpiderState" :agent-state="whaleState" :compact="route.name === 'Connections'" @navigate="openOpsSpiderAction" />
+      <OpsSpiderPet v-if="!isTeamSpace && !isKnowledgeSpace && !isDashboard" :state="opsSpiderState" :agent-state="whaleState" :compact="route.name === 'Connections'" @navigate="openOpsSpiderAction" />
       <PersonaPet v-if="personaPetStore.enabled && route.name !== 'AgentPersona'" />
-      <button v-if="opsSpider.hidden && !isTeamSpace && !isKnowledgeSpace" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
+      <button v-if="opsSpider.hidden && !isTeamSpace && !isKnowledgeSpace && !isDashboard" class="spider-restore-control" type="button" aria-label="重新显示桌宠" title="重新显示桌宠" @click="opsSpider.show()">AI</button>
       <SmartInquiryDrawer v-if="!isTeamSpace" />
 
       <aside ref="navigationPanel" class="sidebar" :class="{ collapsed: appStore.sidebarCollapsed, 'sidebar--expanded': !appStore.sidebarCollapsed, 'sidebar--mobile-open': appStore.mobileNavigationOpen, lggc: !isToolsPage }">
@@ -33,7 +33,7 @@
           <button class="menu-button" type="button" aria-label="切换导航" :aria-expanded="appStore.mobileNavigationOpen" @click="toggleNavigation">目录</button>
           <p class="route-context">{{ routeContext }}</p>
           <div class="account-menu" ref="accountMenuRoot">
-            <button type="button" class="account-menu-trigger" :aria-expanded="accountMenuOpen" aria-haspopup="menu" aria-label="个人账户菜单" @click="accountMenuOpen = !accountMenuOpen">
+            <button type="button" class="account-menu-trigger" :aria-expanded="accountMenuOpen" aria-haspopup="menu" aria-label="个人账户菜单" @click="accountMenuOpen = !accountMenuOpen; toolsOpen = false">
               <span class="account-menu-avatar" aria-hidden="true">{{ avatarChar }}</span>
               <span class="account-menu-name">个人账户</span>
               <span class="account-menu-caret" aria-hidden="true">▾</span>
@@ -41,7 +41,6 @@
             <div v-show="accountMenuOpen" class="account-menu-dropdown">
               <div class="account-menu-header"><strong>{{ currentSession?.username || '未登录' }}</strong><small>{{ ROLE_LABELS[currentRole] }}</small></div>
               <RouterLink to="/account/security" @click="accountMenuOpen = false">账户安全</RouterLink>
-              <button v-if="currentRole !== 'admin'" type="button" :disabled="leaving" @click="enterAdmin">管理入口（重新登录）</button>
               <button type="button" :disabled="leaving" @click="logout">退出登录</button>
             </div>
           </div>
@@ -49,7 +48,74 @@
             <span class="persona-pet-toggle__dot" aria-hidden="true"></span>
             <span>{{ personaPetStore.enabled ? '小鱼·开' : '小鱼·关' }}</span>
           </button>
-          <div v-if="!isTeamSpace" class="tools-menu"><button type="button" class="tools-trigger" @click="toggleToolsMenu">TOOLS / 工具</button><div v-if="toolsOpen" class="tools-dropdown"><section v-for="group in toolGroups" :key="group.label"><strong>{{ group.label }}</strong><RouterLink v-for="tool in group.items" :key="tool.id" :to="`/tools/${tool.id}`" @click="toolsOpen = false">{{ tool.label }}</RouterLink></section></div></div>
+          <div v-if="!isTeamSpace" ref="toolsRoot" class="tools-menu">
+            <button
+              ref="toolsTrigger"
+              type="button"
+              class="tools-trigger"
+              :class="{ 'is-open': toolsOpen }"
+              :aria-expanded="toolsOpen"
+              aria-haspopup="dialog"
+              @click="toggleToolsMenu"
+            >
+              <Grid class="tools-trigger__icon" aria-hidden="true" />
+              <span>TOOLS / 工具</span>
+              <span class="tools-trigger__caret" aria-hidden="true">▾</span>
+            </button>
+            <Transition name="tools-panel">
+              <div
+                v-if="toolsOpen"
+                ref="toolsPanel"
+                class="tools-dock"
+                role="dialog"
+                aria-label="运维工具坞"
+                :style="{ top: toolsPos.top + 'px', left: toolsPos.left + 'px', maxHeight: toolsPos.maxHeight + 'px' }"
+                @pointermove="onToolsPointerMove"
+              >
+                <header class="tools-dock__head">
+                  <div class="tools-dock__titles">
+                    <span class="u-overline">OPERATIONS TOOLKIT</span>
+                    <strong>工具坞</strong>
+                  </div>
+                  <button type="button" class="tools-dock__close" aria-label="关闭工具坞" @click="closeToolsMenu">ESC</button>
+                </header>
+                <div class="tools-dock__scroll">
+                  <section
+                    v-for="(group, groupIndex) in toolGroups"
+                    :key="group.id"
+                    class="tools-dock__group"
+                    :style="{ '--group-index': groupIndex }"
+                  >
+                    <header class="tools-dock__group-head">
+                      <b>{{ group.shortLabel }}</b>
+                      <small>{{ groupCn(group) }} · {{ group.items.length }}</small>
+                    </header>
+                    <div class="tools-dock__row">
+                      <RouterLink
+                        v-for="(item, tileIndex) in group.items"
+                        :key="item.id"
+                        class="tool-tile"
+                        :to="`/tools/${item.id}`"
+                        :title="`${item.label} · ${item.title || ''}`"
+                        :style="{ '--tile-index': tileIndex }"
+                        @click="closeToolsMenu"
+                      >
+                        <span class="tool-tile__plate" :data-risk="item.riskLevel" data-tool-plate>
+                          <component :is="toolIcon(item.id)" class="tool-tile__icon" aria-hidden="true" />
+                        </span>
+                        <span class="tool-tile__label">{{ item.label }}</span>
+                      </RouterLink>
+                    </div>
+                  </section>
+                  <p v-if="!toolGroups.length" class="tools-dock__empty">工具目录加载中…</p>
+                </div>
+                <footer class="tools-dock__foot">
+                  <span>只读优先 · 高危操作需二次确认</span>
+                  <span>{{ toolTotal }} 项工具</span>
+                </footer>
+              </div>
+            </Transition>
+          </div>
           <div class="topbar-right">
             <div v-if="!isTeamSpace" class="ops-statusbar" aria-label="全局运行状态">
               <span class="ops-statusbar__item" title="当前运维空间">
@@ -78,6 +144,11 @@
 
 <script setup>
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import {
+  Bell, Box, Coin, Collection, Connection, Cpu, DataBoard, DataLine, Document, Files, FolderOpened,
+  Grid, Histogram, Key, Link, Lock, Monitor, MuteNotification, Notebook, Odometer, Operation,
+  Platform, Refresh, Search, SetUp, Share, Ship, Timer, Tools, View
+} from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import OpsSpiderPet from '../components/common/OpsSpiderPet.vue'
 import CompanionStatus from '../components/companion/CompanionStatus.vue'
@@ -100,6 +171,7 @@ import { navHealthBadgeMap } from '../navigation/navigationHealth.js'
 import { getVisibleNavigationGroups, ROLE_LABELS } from '../security/accessModel.js'
 import { availableWorkspaces, useAppStore } from '../stores/app'
 import { startGlobalOpsPolling, useGlobalOpsStatus } from '../composables/useGlobalOpsStatus'
+import { useDockMagnification } from '../composables/useDockMagnification.js'
 
 const SmartInquiryDrawer = defineAsyncComponent(() => import('../components/investigation/SmartInquiryDrawer.vue'))
 const PersonaPet = defineAsyncComponent(() => import('../components/persona/PersonaPet.vue'))
@@ -115,10 +187,18 @@ const route = useRoute()
 const isTeamSpace = computed(() => route.meta.space === 'team')
 /* 知识库为长文阅读页，桌宠漫游会遮挡检索结果，因此该区不显示桌宠。 */
 const isKnowledgeSpace = computed(() => route.path.startsWith('/knowledge'))
+/* 首页「快捷操作」卡片已内嵌 AI 悬浮球，桌面悬浮球不再重复出现。 */
+const isDashboard = computed(() => route.name === 'Dashboard')
 const router = useRouter()
 const isToolsPage = computed(() => route.name === 'Tools')
 const currentTime = ref('')
 const toolsOpen = ref(false)
+const toolsRoot = ref(null)
+const toolsPanel = ref(null)
+const toolsTrigger = ref(null)
+/* 顶栏中部触发器的右侧还有账户菜单等元素，absolute + right:0 会把 760px 面板顶出视口；
+   改为 fixed：左缘对齐触发器，再按视口裁剪到安全区内，任何宽度都不会出界。 */
+const toolsPos = ref({ top: 68, left: 24 })
 const accountMenuOpen = ref(false)
 const accountMenuRoot = ref(null)
 const leaving = ref(false)
@@ -156,24 +236,30 @@ function updateTime() { currentTime.value = new Intl.DateTimeFormat('en-GB', { h
 // accountMenuOpen 单一数据源驱动，鼠标怎么移动都不闪；外点关闭（capture 阶段
 // pointerdown + contains 判定）、Escape 关闭且焦点归位、路由切换关闭。
 function onDocumentPointerdown(event) {
-  if (!accountMenuOpen.value) return
-  if (accountMenuRoot.value && !accountMenuRoot.value.contains(event.target)) accountMenuOpen.value = false
+  if (accountMenuOpen.value && accountMenuRoot.value && !accountMenuRoot.value.contains(event.target)) {
+    accountMenuOpen.value = false
+  }
+  if (toolsOpen.value && toolsRoot.value && !toolsRoot.value.contains(event.target)) {
+    toolsOpen.value = false
+  }
 }
 function onDocumentKeydown(event) {
-  if (event.key !== 'Escape' || !accountMenuOpen.value) return
-  accountMenuOpen.value = false
-  accountMenuRoot.value?.querySelector('.account-menu-trigger')?.focus()
+  if (event.key !== 'Escape') return
+  if (accountMenuOpen.value) {
+    accountMenuOpen.value = false
+    accountMenuRoot.value?.querySelector('.account-menu-trigger')?.focus()
+    return
+  }
+  if (toolsOpen.value) {
+    toolsOpen.value = false
+    nextTick(() => toolsTrigger.value?.focus())
+  }
 }
-watch(() => route.fullPath, () => { accountMenuOpen.value = false })
+watch(() => route.fullPath, () => {
+  accountMenuOpen.value = false
+  toolsOpen.value = false
+})
 
-async function enterAdmin() {
-  if (leaving.value) return
-  leaving.value = true
-  accountMenuOpen.value = false
-  try { await logoutSession() } catch (error) { leaving.value = false; window.alert(error.message || '退出失败，请重试'); return }
-  aiChat.syncAccount()
-  await router.replace({ path: '/login', query: { portal: 'admin' } })
-}
 function updateViewportMode() { isNarrowViewport.value = window.matchMedia('(max-width: 767px)').matches; if (!isNarrowViewport.value) appStore.closeMobileNavigation() }
 async function logout() {
   if (leaving.value) return
@@ -194,8 +280,105 @@ async function loadToolGroups() {
 
 function toggleToolsMenu() {
   toolsOpen.value = !toolsOpen.value
-  if (toolsOpen.value) loadToolGroups()
+  if (toolsOpen.value) {
+    accountMenuOpen.value = false
+    placeToolsPanel()
+    loadToolGroups()
+  }
 }
+function closeToolsMenu() { toolsOpen.value = false }
+function placeToolsPanel() {
+  const rect = toolsTrigger.value?.getBoundingClientRect()
+  if (!rect) return
+  const margin = 12
+  const width = Math.min(window.innerWidth <= 767 ? 560 : 760, window.innerWidth - margin * 2)
+  const maxLeft = Math.max(margin, window.innerWidth - margin - width)
+  const top = Math.round(rect.bottom + 10)
+  toolsPos.value = {
+    top,
+    left: Math.round(Math.min(Math.max(rect.left, margin), maxLeft)),
+    maxHeight: Math.max(240, Math.min(640, window.innerHeight - top - 12))
+  }
+}
+
+/* 工具坞图标：按工具 id 精确匹配，未知工具回落到通用图标；不只靠分组区分。 */
+const TOOL_ICONS = {
+  'service-http-check': Connection,
+  'service-certificate-check': Lock,
+  'config-diff': Document,
+  'docker-compose-status': Box,
+  'harbor-browser': FolderOpened,
+  'harbor-endpoint-check': Odometer,
+  'containerd-registry-inspect': Files,
+  'containerd-config-check': SetUp,
+  'helm-releases': Ship,
+  'k8s-storage': Coin,
+  'k8s-rbac-check': Key,
+  'mesh-status': Share,
+  'terraform-environment': Platform,
+  processes: Operation,
+  hardware: Cpu,
+  terminal: Monitor,
+  commands: Document,
+  packages: Box,
+  'k8s-resources': Grid,
+  'k8s-logs': Notebook,
+  'k8s-events': Timer,
+  'docker-containers': Box,
+  'docker-logs': Document,
+  'docker-images': Files,
+  'host-health': Odometer,
+  'system-logs': Notebook,
+  'http-probe': Link,
+  'dns-probe': Connection,
+  'service-restart': Refresh,
+  tunnels: Connection,
+  ports: DataLine,
+  'network-scan': Search,
+  capture: View,
+  'log-search': Search,
+  'network-diagnostics': Connection,
+  'alerts-query': Bell,
+  'alerts-suppress': MuteNotification,
+  'knowledge-retrieval': Collection,
+  'database-readonly': Coin,
+  'prometheus-query': Histogram,
+  'grafana-dashboard': DataBoard,
+  'loki-log-query': Document,
+  'mysql-slow-query': Coin,
+  'k8s-diagnose': Grid
+}
+function toolIcon(id) { return TOOL_ICONS[id] || Tools }
+function groupCn(group) { return String(group.label).split('/').pop().trim() }
+const toolTotal = computed(() => toolGroups.value.reduce((sum, group) => sum + group.items.length, 0))
+
+/* 指针追光：面板表面跟随光斑，1 帧合并一次写入，减少高频 pointermove 的样式抖动。 */
+let dockSpotlightEvent = null
+let dockSpotlightFrame = 0
+function onToolsPointerMove(event) {
+  if (visualMode.value === 'reduced-motion') return
+  dockSpotlightEvent = event
+  if (dockSpotlightFrame) return
+  dockSpotlightFrame = requestAnimationFrame(() => {
+    dockSpotlightFrame = 0
+    const panel = toolsPanel.value
+    if (!panel || !dockSpotlightEvent) return
+    const rect = panel.getBoundingClientRect()
+    panel.style.setProperty('--dock-x', `${Math.round(dockSpotlightEvent.clientX - rect.left)}px`)
+    panel.style.setProperty('--dock-y', `${Math.round(dockSpotlightEvent.clientY - rect.top)}px`)
+    dockSpotlightEvent = null
+  })
+}
+
+/* 工具坞磁吸放大：整个面板共用一套距离场，行内与跨行都会自然衰减。 */
+const { refresh: refreshToolsDock } = useDockMagnification(toolsPanel, {
+  radius: 92,
+  peak: 1.3,
+  easing: 0.26,
+  selector: '[data-tool-plate]',
+  enabled: () => toolsOpen.value && visualMode.value === 'balanced'
+})
+watch(() => [toolsOpen.value, toolGroups.value.length], () => nextTick(() => refreshToolsDock()))
 
 function openOpsSpiderAction(destination) { router.push(destination) }
 function closeMobileNavigation() { appStore.closeMobileNavigation() }
@@ -224,8 +407,13 @@ function onZoomGuardWheel(event) {
 }
 function onGestureStart(event) { event.preventDefault() }
 
-onMounted(() => { disconnectCompanion = companion.connectLegacyEvents(window); updateViewportMode(); updateTime(); startGlobalOpsPolling(); window.addEventListener('resize', updateViewportMode); timer = window.setInterval(updateTime, 30000); document.addEventListener('pointerdown', onDocumentPointerdown, true); document.addEventListener('keydown', onDocumentKeydown); window.addEventListener('wheel', onZoomGuardWheel, { passive: false }); window.addEventListener('gesturestart', onGestureStart) })
-onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('resize', updateViewportMode); window.clearInterval(timer); document.removeEventListener('pointerdown', onDocumentPointerdown, true); document.removeEventListener('keydown', onDocumentKeydown); window.removeEventListener('wheel', onZoomGuardWheel); window.removeEventListener('gesturestart', onGestureStart) })
+function onWindowResize() {
+  updateViewportMode()
+  if (toolsOpen.value) placeToolsPanel()
+}
+
+onMounted(() => { disconnectCompanion = companion.connectLegacyEvents(window); updateViewportMode(); updateTime(); startGlobalOpsPolling(); window.addEventListener('resize', onWindowResize); timer = window.setInterval(updateTime, 30000); document.addEventListener('pointerdown', onDocumentPointerdown, true); document.addEventListener('keydown', onDocumentKeydown); window.addEventListener('wheel', onZoomGuardWheel, { passive: false }); window.addEventListener('gesturestart', onGestureStart) })
+onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('resize', onWindowResize); window.clearInterval(timer); if (dockSpotlightFrame) cancelAnimationFrame(dockSpotlightFrame); document.removeEventListener('pointerdown', onDocumentPointerdown, true); document.removeEventListener('keydown', onDocumentKeydown); window.removeEventListener('wheel', onZoomGuardWheel); window.removeEventListener('gesturestart', onGestureStart) })
 </script>
 
 <style scoped>
@@ -267,8 +455,254 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
 @media (max-width: 767px) { .sidebar-toggle { display: none; } }
 .topbar-right { flex-wrap: wrap; }
 .app-layout[data-visual-mode='reduced-motion'] :deep(*) { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+/* 工具坞动效降级：轻量视觉关闭入场/呼吸/扫光，减少动效连追光一起停掉 */
+.app-layout[data-visual-mode='lightweight'] .tool-tile,
+.app-layout[data-visual-mode='lightweight'] .tools-dock__group-head,
+.app-layout[data-visual-mode='lightweight'] .tool-tile__plate[data-risk='HIGH']::after { animation: none; }
+.app-layout[data-visual-mode='lightweight'] .tool-tile__plate::before,
+.app-layout[data-visual-mode='reduced-motion'] .tools-dock::before { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .tool-tile,
+  .tools-dock__group-head,
+  .tool-tile__plate[data-risk='HIGH']::after { animation: none; }
+  .tools-dock::before { display: none; }
+}
 .workspace-context { display: flex; align-items: center; gap: 8px; padding: 8px 18px 0; color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .1em; }.workspace-context select { min-height: 26px; max-width: 220px; padding: 3px 20px 3px 7px; border: 1px solid var(--smart-border); border-radius: 4px; background: var(--smart-surface); color: var(--smart-text); font: 11px var(--font-cn); }.workspace-context small { color: var(--smart-primary-strong); font: 9px var(--font-mono); }
-.tools-menu { position: relative; margin-left: auto; }.tools-trigger { border: 0; background: transparent; color: var(--smart-primary-strong); font: 10px var(--font-mono); letter-spacing: .1em; cursor: pointer; }.tools-dropdown { position: absolute; z-index: 30; top: 28px; right: 0; display: grid; grid-template-columns: repeat(3, 170px); gap: 18px; padding: 18px; border: 1px solid var(--smart-border-strong); background: var(--smart-surface); box-shadow: 0 18px 45px rgba(0,0,0,.38); }.tools-dropdown section { display: grid; align-content: start; gap: 8px; }.tools-dropdown strong { color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .1em; }.tools-dropdown a { color: var(--smart-text); font: 12px var(--font-cn); text-decoration: none; }.tools-dropdown a:hover { color: var(--smart-primary-strong); }
+/* 全局 .lggc > * 给顶栏每个子项都设了 z-index:1，同级同值按 DOM 顺序绘制，
+   工具坞会被后面的状态区压住；这里抬高一级，让打开的面板稳定浮在最上。 */
+.tools-menu { position: relative; z-index: 5; margin-left: auto; }
+.tools-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--smart-primary-strong);
+  font: 10px var(--font-mono);
+  letter-spacing: .1em;
+  cursor: pointer;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease,
+    transform .16s var(--ds-ease-out, ease), box-shadow .22s ease;
+}
+.tools-trigger:hover,
+.tools-trigger.is-open {
+  border-color: color-mix(in srgb, var(--smart-primary-strong) 40%, transparent);
+  background: color-mix(in srgb, var(--smart-primary-strong) 10%, transparent);
+}
+.tools-trigger.is-open {
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--smart-primary-strong) 18%, transparent);
+}
+.tools-trigger:active { transform: scale(.96); }
+.tools-trigger:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
+.tools-trigger__icon { width: 13px; height: 13px; }
+.tools-trigger__caret { font-size: 8px; opacity: .7; transition: transform .2s ease; }
+.tools-trigger.is-open .tools-trigger__caret { transform: rotate(180deg); }
+
+/* 工具坞：分组 Dock 浮层，行内图标随指针距离磁吸放大 */
+.tools-dock {
+  --dock-x: 50%;
+  --dock-y: -40px;
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: min(760px, calc(100vw - 40px));
+  max-height: min(70vh, 640px);
+  border: 1px solid var(--smart-border-strong);
+  border-radius: 14px;
+  background:
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--smart-text) 5%, var(--smart-surface)),
+      var(--smart-surface) 72px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .42),
+    inset 0 1px 0 color-mix(in srgb, var(--smart-text) 9%, transparent);
+  overflow: hidden;
+}
+/* 指针追光：光斑贴在面板表面，权重很低，只做“光标经过”的空间反馈 */
+.tools-dock::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(240px circle at var(--dock-x) var(--dock-y),
+    color-mix(in srgb, var(--smart-primary-strong) 13%, transparent),
+    transparent 68%);
+  opacity: 0;
+  transition: opacity .28s ease;
+  pointer-events: none;
+}
+.tools-dock:hover::before { opacity: 1; }
+.tools-dock > * { position: relative; z-index: 1; }
+.tools-dock__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--smart-border);
+}
+.tools-dock__titles { display: grid; gap: 3px; }
+.tools-dock__titles strong { color: var(--smart-text); font: 15px var(--font-cn); }
+.tools-dock__close {
+  padding: 3px 7px;
+  border: 1px solid var(--smart-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--smart-muted);
+  font: 9px var(--font-mono);
+  letter-spacing: .1em;
+  cursor: pointer;
+  transition: color .18s ease, border-color .18s ease;
+}
+.tools-dock__close:hover { color: var(--smart-text); border-color: var(--smart-border-strong); }
+.tools-dock__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 12px; }
+.tools-dock__group { padding: 10px 0 4px; }
+.tools-dock__group + .tools-dock__group { border-top: 1px solid color-mix(in srgb, var(--smart-border) 60%, transparent); }
+.tools-dock__group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+  animation: tool-group-in .26s ease backwards;
+  animation-delay: calc(min(var(--group-index, 0) * 32ms, 96ms));
+}
+@keyframes tool-group-in {
+  from { opacity: 0; transform: translateX(-5px); }
+  to { opacity: 1; transform: none; }
+}
+.tools-dock__group-head b { color: var(--smart-muted); font: 400 9px var(--font-mono); letter-spacing: .13em; }
+.tools-dock__group-head small { color: var(--smart-muted); font: 9px var(--font-mono); }
+.tools-dock__row {
+  display: flex;
+  gap: 4px;
+  padding: 10px 2px 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.tools-dock__row::-webkit-scrollbar { height: 4px; }
+.tools-dock__row::-webkit-scrollbar-thumb { border-radius: 2px; background: var(--smart-border); }
+.tools-dock__empty { padding: 22px 0; color: var(--smart-muted); font: 11px var(--font-cn); text-align: center; }
+.tools-dock__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 16px;
+  border-top: 1px solid var(--smart-border);
+  color: var(--smart-muted);
+  font: 9px var(--font-mono);
+  letter-spacing: .06em;
+}
+
+.tool-tile {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  flex: 0 0 68px;
+  width: 68px;
+  padding: 0 2px;
+  color: var(--smart-muted);
+  text-decoration: none;
+  transition: transform .18s var(--ds-ease-out, ease);
+  animation: tool-tile-in .3s cubic-bezier(.22, 1, .36, 1) backwards;
+  /* 错峰入场：组与组、瓦片与瓦片依次出现，尾部延迟封顶，避免第 44 个等太久 */
+  animation-delay: calc(min(var(--group-index, 0) * 32ms, 96ms) + min(var(--tile-index, 0) * 14ms, 84ms));
+}
+.tool-tile:hover { transform: translateY(-2px); }
+.tool-tile:active { transform: translateY(0) scale(.97); transition-duration: .08s; }
+@keyframes tool-tile-in {
+  from { opacity: 0; transform: translateY(9px) scale(.94); }
+  to { opacity: 1; transform: none; }
+}
+.tool-tile__plate {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--smart-border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--smart-text) 5%, transparent);
+  color: var(--smart-text);
+  overflow: hidden;
+  transform: scale(var(--dock-scale, 1));
+  transform-origin: center bottom;
+  transition: border-color .18s ease, background-color .18s ease, color .18s ease, box-shadow .18s ease;
+  will-change: transform;
+}
+/* 悬停扫光：一条低对比高光沿底板对角掠过，只在 hover 时运行一次 */
+.tool-tile__plate::before {
+  content: '';
+  position: absolute;
+  inset: -30% -55%;
+  background: linear-gradient(105deg,
+    transparent 42%,
+    color-mix(in srgb, var(--smart-text) 26%, transparent) 50%,
+    transparent 58%);
+  opacity: 0;
+  transform: translateX(-55%);
+  transition: transform .55s cubic-bezier(.22, 1, .36, 1), opacity .3s ease;
+  pointer-events: none;
+}
+.tool-tile:hover .tool-tile__plate::before { opacity: 1; transform: translateX(55%); }
+.tool-tile__plate[data-risk='HIGH']::after,
+.tool-tile__plate[data-risk='MEDIUM']::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+.tool-tile__plate[data-risk='HIGH']::after {
+  background: var(--smart-danger, #e06c75);
+  box-shadow: 0 0 5px var(--smart-danger, #e06c75);
+  animation: tool-risk-pulse 2.4s ease-in-out infinite;
+}
+.tool-tile__plate[data-risk='MEDIUM']::after { background: var(--smart-warning, #d9a441); }
+/* 高危呼吸：只作用于 4px 风险点，缓慢、低幅度，提示“需二次确认” */
+@keyframes tool-risk-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--smart-danger, #e06c75); }
+  50% { opacity: .42; box-shadow: none; }
+}
+.tool-tile:hover .tool-tile__plate {
+  border-color: var(--smart-primary-strong);
+  background: color-mix(in srgb, var(--smart-primary-strong) 13%, transparent);
+  color: var(--smart-primary-strong);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--smart-primary-strong) 18%, transparent);
+}
+.tool-tile:focus-visible { outline: none; }
+.tool-tile:focus-visible .tool-tile__plate { outline: 2px solid var(--smart-primary-strong); outline-offset: 2px; }
+.tool-tile__icon {
+  width: 17px;
+  height: 17px;
+  transition: transform .22s var(--ds-ease-out, ease);
+}
+.tool-tile:hover .tool-tile__icon { transform: translateY(-1px) scale(1.06); }
+.tool-tile__label {
+  display: -webkit-box;
+  width: 100%;
+  overflow: hidden;
+  color: var(--smart-muted);
+  font: 10px var(--font-cn);
+  line-height: 1.25;
+  text-align: center;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  transition: color .18s ease, transform .18s var(--ds-ease-out, ease);
+}
+.tool-tile:hover .tool-tile__label { color: var(--smart-text); transform: translateY(-1px); }
+
+.tools-panel-enter-active,
+.tools-panel-leave-active {
+  transform-origin: top left;
+  transition: opacity .18s ease, transform .22s cubic-bezier(.22, 1, .36, 1);
+}
+.tools-panel-enter-from,
+.tools-panel-leave-to { opacity: 0; transform: translateY(-6px) scale(.985); }
 .theme-control { display: inline-flex; align-items: center; gap: 7px; color: var(--smart-muted); font: 9px var(--font-mono); letter-spacing: .08em; }.theme-control select { min-height: 28px; padding: 3px 22px 3px 7px; border: 1px solid var(--smart-border); border-radius: 4px; background: var(--smart-surface); color: var(--smart-text); font: 10px var(--font-cn); cursor: pointer; }.theme-control select:hover { border-color: var(--smart-primary-strong); }
 .theme-control.visual-mode-control select { min-width: 96px; min-height: 44px; font-size: 12px; }
 .visual-mode-control select:focus-visible { outline: 2px solid var(--smart-primary-strong); outline-offset: 3px; }
@@ -362,6 +796,15 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
   }
   .app-layout:not(.app-layout--tools) > .sidebar:not(.sidebar--expanded) :deep(.navigation-group__children),
   .app-layout:not(.app-layout--tools) > .sidebar:not(.sidebar--expanded) .system-status { display: none; }
+  /* Dock 图标轨：整行让位于 40px 磁吸瓦片，去掉左缘高亮条（选中态由瓦片自身表达） */
+  .app-layout:not(.app-layout--tools) > .sidebar:not(.sidebar--expanded) :deep(.navigation-group__row),
+  .app-layout:not(.app-layout--tools) > .sidebar:not(.sidebar--expanded) :deep(.navigation-group__link) {
+    min-height: 50px;
+  }
+  .app-layout:not(.app-layout--tools) > .sidebar:not(.sidebar--expanded) :deep(.navigation-group__link.active) {
+    box-shadow: none;
+    background: transparent;
+  }
   .app-layout:not(.app-layout--tools) > .sidebar.sidebar--expanded .system-status {
     display: grid; opacity: 1; pointer-events: auto;
   }
@@ -375,7 +818,9 @@ onBeforeUnmount(() => { disconnectCompanion?.(); window.removeEventListener('res
   .tools-menu { flex: 0 0 auto; }
   .topbar-right { flex-basis: 100%; min-width: 0; gap: 10px; justify-content: space-between; }
   .topbar-right > time { font-size: 9px; }
-  .tools-dropdown { width: min(330px, calc(100vw - 36px)); grid-template-columns: 1fr; max-height: 65dvh; overflow-y: auto; }
+  .tools-dock { width: min(560px, calc(100vw - 24px)); max-height: 68dvh; }
+  .tools-dock__scroll { padding-inline: 10px; }
+  .tools-dock__row { gap: 4px; }
 }
 .team-scope-note{padding:12px;color:var(--smart-muted);font-size:12px;line-height:1.7}
 .workspace-context{flex-wrap:wrap}

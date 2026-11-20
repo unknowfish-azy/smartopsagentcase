@@ -1,18 +1,22 @@
 <template>
-  <div class="xiaoyu-chat-avatar" aria-label="小鱼头像">
+  <div class="xiaoyu-chat-avatar" :class="{ 'xiaoyu-chat-avatar--agent': chatMode === 'agent' }" aria-label="小鱼头像">
     <!-- 64px 圆形头像按钮 -->
     <button
       class="xiaoyu-chat-avatar__btn"
       type="button"
-      :title="`小鱼 · ${stateLabel}`"
+      :title="`小鱼 · ${stateLabel}${chatMode === 'agent' ? ' · 智能体模式 · 接管后台' : ''}`"
       @click="drawerOpen = true"
     >
       <svg viewBox="0 0 64 64" class="xiaoyu-chat-avatar__ring" aria-hidden="true">
-        <circle cx="32" cy="32" r="30" fill="none" stroke="url(#ringGrad)" stroke-width="1.5" />
+        <circle cx="32" cy="32" r="30" fill="none" :stroke="chatMode === 'agent' ? 'url(#ringAgentGrad)' : 'url(#ringGrad)'" stroke-width="1.5" />
         <defs>
           <linearGradient id="ringGrad" x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%" stop-color="#2496ed" />
             <stop offset="100%" stop-color="#7ad7f5" />
+          </linearGradient>
+          <linearGradient id="ringAgentGrad" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stop-color="#10b981" />
+            <stop offset="100%" stop-color="#5eead4" />
           </linearGradient>
         </defs>
       </svg>
@@ -20,7 +24,8 @@
       <span class="xiaoyu-chat-avatar__orb" aria-hidden="true">
         <span class="orb-core"></span>
       </span>
-      <span class="xiaoyu-chat-avatar__pulse" :data-active="companionStates.whale !== 'IDLE'"></span>
+      <!-- Agent 模式下脉冲常驻，Chat 模式下跟随 companion 状态 -->
+      <span class="xiaoyu-chat-avatar__pulse" :data-active="chatMode === 'agent' || companionStates.whale !== 'IDLE'"></span>
     </button>
 
     <el-drawer
@@ -51,7 +56,14 @@
           />
         </button>
 
-        <p class="xiaoyu-chat-drawer__bubble">{{ bubbleText }}</p>
+        <p class="xiaoyu-chat-drawer__bubble">
+          <template v-if="chatMode === 'agent'">
+            已接管后台，待命中。加锁资源不会被修改。
+          </template>
+          <template v-else-if="personaState === 'warning'">有活跃告警，我来帮你看看</template>
+          <template v-else-if="personaState === 'error'">故障排查中，需要你关注</template>
+          <template v-else>我在，说吧</template>
+        </p>
 
         <!-- 快捷对话输入（发完跳到 Chat 主区，让小鱼接话） -->
         <form class="xiaoyu-chat-drawer__input" @submit.prevent="onSend">
@@ -95,6 +107,9 @@ import { ElDrawer } from 'element-plus'
 import { useCompanionStore } from '../../stores/companion.js'
 import { useAiChatStore } from '../../stores/aiChat.js'
 import AgentPersona from '../persona/AgentPersona.vue'
+
+const props = defineProps({ mode: { type: String, default: 'chat', validator: value => ['chat', 'agent'].includes(value) } })
+const chatMode = computed(() => props.mode)
 
 const companion = useCompanionStore()
 const aiChat = useAiChatStore()
@@ -209,6 +224,25 @@ onBeforeUnmount(disposePersona)
   content: '🐟';
   font-size: 22px;
   opacity: .7;
+}
+
+/* Agent 模式：orb 主色切到绿青色，表示"已接管后台" */
+.xiaoyu-chat-avatar--agent .xiaoyu-chat-avatar__orb {
+  background: radial-gradient(circle at 35% 30%,
+    rgba(94, 234, 212, .55),
+    rgba(16, 185, 129, .28) 55%,
+    rgba(16, 185, 129, .06) 80%);
+}
+.xiaoyu-chat-avatar--agent .xiaoyu-chat-avatar__orb::after {
+  content: '🤖';
+}
+.xiaoyu-chat-avatar--agent .xiaoyu-chat-avatar__pulse[data-active='true'] {
+  border-color: color-mix(in srgb, #10b981 65%, transparent);
+  animation: agent-pulse 1.4s ease-in-out infinite;
+}
+@keyframes agent-pulse {
+  0%, 100% { transform: scale(1); opacity: .55; }
+  50% { transform: scale(1.12); opacity: 1; }
 }
 
 .xiaoyu-chat-avatar__pulse {

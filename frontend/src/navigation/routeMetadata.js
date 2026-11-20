@@ -34,6 +34,11 @@ const routeMetadata = Object.freeze({
   ExecutionTrace: Object.freeze({ personalGroup: 'agent', pageFlow: 'agent' }),
   AgentPersona: Object.freeze({ personalGroup: 'agent', pageFlow: null }),
   AgentModule: Object.freeze({ personalGroup: 'agent', pageFlow: 'agent' }),
+  GuardOverview: Object.freeze({ personalGroup: 'guard', pageFlow: null }),
+  GuardCases: Object.freeze({ personalGroup: 'guard', pageFlow: null }),
+  GuardRuns: Object.freeze({ personalGroup: 'guard', pageFlow: null }),
+  GuardRunDetail: Object.freeze({ personalGroup: 'guard', pageFlow: null }),
+  GuardRegression: Object.freeze({ personalGroup: 'guard', pageFlow: null }),
   InspectorDesk: Object.freeze({ personalGroup: 'memory', pageFlow: null }),
   InspectorCenter: Object.freeze({ personalGroup: 'memory', pageFlow: 'memory' }),
   InspectorStatistics: Object.freeze({ personalGroup: 'memory', pageFlow: 'memory' }),
@@ -45,6 +50,7 @@ const routeMetadata = Object.freeze({
   SectionAnalysis: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
   EngineObservability: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
   DataCenterTwin: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
+  VirtualOpsScene: Object.freeze({ personalGroup: 'sentinel', pageFlow: null }),
   AdminControlCenter: Object.freeze({ personalGroup: 'admin', pageFlow: null, roles: ['admin'] }),
   ArchitectureMap: Object.freeze({ personalGroup: 'architecture', pageFlow: null, roles: ['admin'] })
 })

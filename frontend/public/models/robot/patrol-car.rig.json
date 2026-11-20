@@ -1,0 +1,54 @@
+{
+  "name": "patrol-car",
+  "kind": "wheeled",
+  "wheels": [
+    {
+      "node": "Wheel_FL",
+      "radius": 0.075,
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "direction": -1
+    },
+    {
+      "node": "Wheel_FR",
+      "radius": 0.075,
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "direction": -1
+    },
+    {
+      "node": "Wheel_RL",
+      "radius": 0.075,
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "direction": -1
+    },
+    {
+      "node": "Wheel_RR",
+      "radius": 0.075,
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "direction": -1
+    }
+  ],
+  "lidar": {
+    "node": "LidarHead",
+    "axis": [
+      0,
+      1,
+      0
+    ]
+  }
+}

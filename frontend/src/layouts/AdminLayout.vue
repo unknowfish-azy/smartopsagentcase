@@ -37,7 +37,7 @@
             <button type="button" class="admin-user-trigger" :aria-expanded="userMenuOpen" aria-haspopup="menu" aria-label="账户菜单" @click="userMenuOpen = !userMenuOpen">
               <span class="admin-user-avatar">{{ avatarChar }}</span>
               <span class="admin-user-name">{{ currentSession?.username }}</span>
-              <span class="admin-badge admin-user-badge">管理层</span>
+              <span class="admin-badge admin-user-badge">{{ portalLabel('admin') }}</span>
               <span class="admin-user-caret" aria-hidden="true">▾</span>
             </button>
             <div v-show="userMenuOpen" class="admin-user-menu">
@@ -68,6 +68,7 @@ import AdminTabs from '../components/admin/AdminTabs.vue'
 import { adminNavigation, adminBreadcrumb } from '../adminNav.js'
 import { currentSession, logoutSession } from '../security/session.js'
 import { resolvePortalSwitch } from '../security/portalSwitch.js'
+import { portalLabel } from '../security/portalCatalog.js'
 import { isDarkTheme, setThemeMode } from '../theme.js'
 import '../assets/styles/admin.css'
 const router = useRouter()

@@ -1,0 +1,223 @@
+{
+  "name": "spider-bot",
+  "kind": "arachnid",
+  "legs": 8,
+  "joints": {
+    "Leg0_hip": {
+      "node": "Leg0_hip",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "home": 0,
+      "range": [
+        -0.45,
+        0.45
+      ]
+    },
+    "Leg0_knee": {
+      "node": "Leg0_knee",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "home": -0.66,
+      "range": [
+        -1.35,
+        -0.05
+      ]
+    },
+    "Leg1_hip": {
+      "node": "Leg1_hip",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "home": 0,
+      "range": [
+        -0.45,
+        0.45
+      ]
+    },
+    "Leg1_knee": {
+      "node": "Leg1_knee",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "home": -0.66,
+      "range": [
+        -1.35,
+        -0.05
+      ]
+    },
+    "Leg2_hip": {
+      "node": "Leg2_hip",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "home": 0,
+      "range": [
+        -0.45,
+        0.45
+      ]
+    },
+    "Leg2_knee": {
+      "node": "Leg2_knee",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "home": -0.66,
+      "range": [
+        -1.35,
+        -0.05
+      ]
+    },
+    "Leg3_hip": {
+      "node": "Leg3_hip",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "home": 0,
+      "range": [
+        -0.45,
+        0.45
+      ]
+    },
+    "Leg3_knee": {
+      "node": "Leg3_knee",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "home": -0.66,
+      "range": [
+        -1.35,
+        -0.05
+      ]
+    },
+    "Leg4_hip": {
+      "node": "Leg4_hip",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "home": 0,
+      "range": [
+        -0.45,
+        0.45
+      ]
+    },
+    "Leg4_knee": {
+      "node": "Leg4_knee",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "home": -0.66,
+      "range": [
+        -1.35,
+        -0.05
+      ]
+    },
+    "Leg5_hip": {
+      "node": "Leg5_hip",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "home": 0,
+      "range": [
+        -0.45,
+        0.45
+      ]
+    },
+    "Leg5_knee": {
+      "node": "Leg5_knee",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "home": -0.66,
+      "range": [
+        -1.35,
+        -0.05
+      ]
+    },
+    "Leg6_hip": {
+      "node": "Leg6_hip",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "home": 0,
+      "range": [
+        -0.45,
+        0.45
+      ]
+    },
+    "Leg6_knee": {
+      "node": "Leg6_knee",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "home": -0.66,
+      "range": [
+        -1.35,
+        -0.05
+      ]
+    },
+    "Leg7_hip": {
+      "node": "Leg7_hip",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "home": 0,
+      "range": [
+        -0.45,
+        0.45
+      ]
+    },
+    "Leg7_knee": {
+      "node": "Leg7_knee",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "home": -0.66,
+      "range": [
+        -1.35,
+        -0.05
+      ]
+    }
+  },
+  "sensor": {
+    "node": "SensorHead",
+    "axis": [
+      0,
+      1,
+      0
+    ]
+  }
+}

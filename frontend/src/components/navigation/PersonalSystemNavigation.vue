@@ -1,5 +1,6 @@
 <template>
   <nav
+    ref="navRoot"
     v-show="!mobile || mobileOpen"
     class="personal-system-navigation"
     :class="{ 'personal-system-navigation--mobile': mobile, 'is-collapsed': collapsed }"
@@ -15,9 +16,18 @@
           :to="group.to"
           :aria-label="groupAriaLabel(group)"
           :title="groupTitle(group)"
+          @mouseenter="showDockTip(group, $event)"
+          @mouseleave="hideDockTip"
+          @focus="showDockTip(group, $event)"
+          @blur="hideDockTip"
           @click="navigate"
         >
-          <component :is="iconFor(group.icon)" class="nav-icon" aria-hidden="true" />
+          <span class="nav-dock-tile" :data-dock-item="collapsed && !mobile ? '' : null" aria-hidden="true">
+            <span class="nav-dock-tile__halo" />
+            <component :is="iconFor(group.icon)" class="nav-icon" />
+            <span class="nav-dock-tile__floor"><component :is="iconFor(group.icon)" class="nav-icon" /></span>
+          </span>
+          <span v-if="collapsed && !mobile" class="nav-dock-dot" :class="{ 'is-active': groupContainsRoute(group, currentRouteName) }" aria-hidden="true" />
           <span class="nav-copy"><span class="nav-coordinate" aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span><b>{{ group.label }}</b><small>{{ group.cn }}</small></span>
           <Lock v-if="isGroupHazard(group)" class="nav-hazard-lock" aria-hidden="true" title="高危操作，语音不可直达" />
           <NavHealthBadge v-if="healthBadges[group.id]" class="nav-health-badge-slot" :level="healthBadges[group.id]" :label="`${group.cn} / ${group.label}`" />
@@ -78,6 +88,18 @@
         </Transition>
       </Teleport>
     </div>
+    <Teleport to="body">
+      <Transition name="nav-dock-tip">
+        <span
+          v-if="dockTip"
+          class="nav-dock-tip"
+          role="presentation"
+          :style="{ top: `${dockTip.top}px`, left: `${dockTip.left}px` }"
+        >
+          <b>{{ dockTip.label }}</b><small>{{ dockTip.cn }}</small>
+        </span>
+      </Transition>
+    </Teleport>
   </nav>
 </template>
 
@@ -85,6 +107,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { ArrowDown, Box, ChatDotRound, CircleCheck, Collection, Connection, Cpu, DataAnalysis, Grid, HomeFilled, Link, Lock, Memo, Monitor, Reading, Setting, Trophy } from '@element-plus/icons-vue'
 import NavHealthBadge from './NavHealthBadge.vue'
+import { useDockMagnification } from '../../composables/useDockMagnification.js'
 import { navigationGroupView } from '../../navigation/personalSystemNavigation.js'
 import { visualMode } from '../../visual/visualMode.js'
 import { isHazardRoute, HAZARD_ROUTES } from '../persona/voiceCommandRegistry.js'
@@ -252,8 +275,44 @@ watch(flyoutGroupId, async value => {
   }
 }, { flush: 'post' })
 watch(() => props.currentRouteName, () => closeFlyout())
+
+/* ── 收起态 Dock 图标轨：磁吸放大 + 叶级浮签 ── */
+const navRoot = ref(null)
+const dockTip = ref(null)
+let dockTipTimer = 0
+
+const { refresh: refreshDock } = useDockMagnification(navRoot, {
+  radius: 92,
+  peak: 1.28,
+  enabled: () => props.collapsed && !props.mobile && visualMode.value === 'balanced'
+})
+
+function showDockTip(group, event) {
+  if (!props.collapsed || props.mobile) return
+  // 可展开组悬停即出浮出层，已有完整标题，不再叠一枚浮签
+  if (group.children.length) return
+  window.clearTimeout(dockTipTimer)
+  const rect = event.currentTarget.getBoundingClientRect()
+  dockTip.value = {
+    top: Math.round(rect.top + rect.height / 2),
+    left: Math.round(rect.right + 10),
+    label: group.label,
+    cn: group.cn
+  }
+}
+function hideDockTip() {
+  window.clearTimeout(dockTipTimer)
+  dockTipTimer = window.setTimeout(() => { dockTip.value = null }, 70)
+}
+
+watch(() => [props.collapsed, props.mobile, visualMode.value], () => {
+  hideDockTip()
+  nextTick(() => refreshDock())
+})
+
 onBeforeUnmount(() => {
   window.clearTimeout(flyoutTimer)
+  window.clearTimeout(dockTipTimer)
   window.removeEventListener('scroll', syncFlyoutPosition, true)
   window.removeEventListener('resize', handleFlyoutResize)
   window.removeEventListener('keydown', onFlyoutKeydown)
@@ -345,4 +404,128 @@ onBeforeUnmount(() => {
 .navigation-flyout a.is-hazard { color: var(--smart-danger, #e06c75) !important; opacity: 0.78; }
 .navigation-group__children a.is-hazard .nav-hazard-lock,
 .navigation-flyout a.is-hazard .nav-hazard-lock { margin-left: auto; }
+
+/* ── 收起态 Dock 图标轨：磁吸放大 + 悬停浮签 + 地面倒影 + 运行光点 ── */
+.nav-dock-tile {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+.nav-dock-tile__halo,
+.nav-dock-tile__floor { position: absolute; pointer-events: none; opacity: 0; }
+.nav-dock-tile__halo {
+  inset: -6px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--smart-primary-strong) 38%, transparent), transparent 72%);
+  transition: opacity 220ms ease;
+}
+.nav-dock-tile__floor {
+  left: 50%;
+  top: 100%;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 12px;
+  overflow: hidden;
+  transform: translateX(-50%) scaleY(-1);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, .5), transparent 78%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, .5), transparent 78%);
+  transition: opacity 220ms ease;
+}
+.nav-dock-tile__floor .nav-icon { width: 17px; height: 17px; color: var(--smart-primary-strong); }
+
+.personal-system-navigation.is-collapsed .nav-dock-tile {
+  width: 40px;
+  height: 40px;
+  justify-self: center;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--smart-text) 5%, transparent);
+  transform: scale(var(--dock-scale, 1));
+  transform-origin: center;
+  transition: border-color 200ms ease, background-color 200ms ease, box-shadow 220ms ease;
+  will-change: transform;
+}
+.personal-system-navigation.is-collapsed .navigation-group__link:hover .nav-dock-tile,
+.personal-system-navigation.is-collapsed .navigation-group__link.active .nav-dock-tile {
+  border-color: color-mix(in srgb, var(--smart-primary-strong) 45%, transparent);
+  background: color-mix(in srgb, var(--smart-primary-strong) 13%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--smart-primary-strong) 20%, transparent);
+}
+.personal-system-navigation.is-collapsed .nav-dock-tile .nav-icon { width: 18px; height: 18px; }
+.personal-system-navigation.is-collapsed .navigation-group__link:hover .nav-icon,
+.personal-system-navigation.is-collapsed .navigation-group__link.active .nav-icon { color: var(--smart-primary-strong); }
+.personal-system-navigation.is-collapsed .nav-dock-tile:hover .nav-dock-tile__halo,
+.personal-system-navigation.is-collapsed .navigation-group__link.active .nav-dock-tile__halo { opacity: .9; }
+.personal-system-navigation.is-collapsed .navigation-group__link:hover .nav-dock-tile__floor { opacity: .3; }
+.personal-system-navigation.is-collapsed .navigation-group__link { overflow: visible; }
+.personal-system-navigation.is-collapsed .navigation-group__link:hover,
+.personal-system-navigation.is-collapsed .navigation-group__link.active {
+  padding-left: 0;
+  border-left-color: transparent;
+  background: transparent;
+}
+.personal-system-navigation.is-collapsed .navigation-group__link:hover { z-index: 3; }
+.personal-system-navigation.is-collapsed .navigation-group__link.is-hazard::after { display: none; }
+
+.nav-dock-dot {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--smart-text);
+  opacity: 0;
+  transform: translateX(-50%) scale(.6);
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+.nav-dock-dot.is-active { opacity: .9; transform: translateX(-50%) scale(1); }
+.personal-system-navigation.is-collapsed .navigation-group__link:hover .nav-dock-dot { opacity: .55; transform: translateX(-50%) scale(1); }
+
+/* 浮签：叶级菜单（无可展开子项）悬停/聚焦时贴图标右侧 */
+.nav-dock-tip {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--smart-border-strong);
+  border-radius: 8px;
+  background: var(--smart-surface);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .38);
+  transform: translateY(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.nav-dock-tip b { color: var(--smart-primary-strong); font: 400 10px var(--font-mono); letter-spacing: .1em; }
+.nav-dock-tip small { color: var(--smart-muted); font: 11px var(--font-cn); }
+.nav-dock-tip::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-left: 1px solid var(--smart-border-strong);
+  border-bottom: 1px solid var(--smart-border-strong);
+  background: var(--smart-surface);
+  transform: translateY(-50%) rotate(45deg);
+}
+.nav-dock-tip-enter-active,
+.nav-dock-tip-leave-active { transition: opacity 120ms ease-out, transform 140ms cubic-bezier(.22, 1, .36, 1); }
+.nav-dock-tip-enter-from,
+.nav-dock-tip-leave-to { opacity: 0; transform: translateY(-50%) translateX(-4px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-dock-tile { transition: none !important; }
+  .nav-dock-tip-enter-active,
+  .nav-dock-tip-leave-active { transition: none; }
+}
+.app-layout[data-visual-mode='lightweight'] .personal-system-navigation.is-collapsed .nav-dock-tile { transition: none; }
 </style>

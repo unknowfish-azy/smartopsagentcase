@@ -42,7 +42,7 @@ test('harbor and cloud-native workbenches fold into the smart repository 3D spac
 
 test('contains only groups with existing direct routes', () => {
   assert.deepEqual(visiblePersonalSystemGroups(personalSystemGroups).map(group => group.id), [
-    'home', 'ai-chat', 'repository', 'knowledge', 'research', 'extensions', 'operations', 'models', 'agent', 'memory', 'sentinel'
+    'home', 'ai-chat', 'repository', 'knowledge', 'research', 'extensions', 'operations', 'models', 'agent', 'guard', 'memory', 'sentinel'
   ])
 })
 
@@ -88,14 +88,26 @@ test('sentinel groups dashboard, scripts, alerts and Guardian under one menu', (
   assert.equal(group.id, 'sentinel')
   assert.equal(group.to, '/sentinel')
   assert.equal(group.cn, '哨兵与自动化')
-  assert.deepEqual(group.children.map(item => item.routeName), ['SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'IncidentCenter', 'SentinelGuardian', 'ForecastPlane', 'SectionAnalysis', 'EngineObservability', 'DataCenterTwin'])
-  assert.deepEqual(group.children.map(item => item.to), ['/sentinel', '/sentinel/scripts', '/sentinel/alerts', '/incidents', '/sentinel/guardian', '/sentinel/forecast', '/sentinel/sections', '/sentinel/observability', '/sentinel/twin'])
+  assert.deepEqual(group.children.map(item => item.routeName), ['SentinelDashboard', 'ScriptLibrary', 'AlertCenter', 'IncidentCenter', 'SentinelGuardian', 'ForecastPlane', 'SectionAnalysis', 'EngineObservability', 'DataCenterTwin', 'VirtualOpsScene'])
+  assert.deepEqual(group.children.map(item => item.to), ['/sentinel', '/sentinel/scripts', '/sentinel/alerts', '/incidents', '/sentinel/guardian', '/sentinel/forecast', '/sentinel/sections', '/sentinel/observability', '/sentinel/twin', '/sentinel/virtual-scene'])
   assert.equal(findPersonalSystemGroup('SentinelGuardian'), group)
   assert.equal(findPersonalSystemGroup('ForecastPlane'), group)
   assert.equal(findPersonalSystemGroup('SectionAnalysis'), group)
   assert.equal(findPersonalSystemGroup('EngineObservability'), group)
   assert.equal(findPersonalSystemGroup('DataCenterTwin'), group)
+  assert.equal(findPersonalSystemGroup('VirtualOpsScene'), group)
   // 普通运维用户也要能用（不是管理员专属）。
+  assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
+})
+
+test('agentguard groups overview, cases, runs and regression under one menu', () => {
+  const group = findPersonalSystemGroup('GuardOverview')
+
+  assert.equal(group.id, 'guard')
+  assert.equal(group.cn, '智测盾')
+  assert.equal(group.to, '/guard')
+  assert.deepEqual(group.children.map(item => item.routeName), ['GuardOverview', 'GuardCases', 'GuardRuns', 'GuardRegression'])
+  assert.deepEqual(group.children.map(item => item.to), ['/guard', '/guard/cases', '/guard/runs', '/guard/regression'])
   assert.ok(visiblePersonalSystemGroups(personalSystemGroups, 'operator').includes(group))
 })
 

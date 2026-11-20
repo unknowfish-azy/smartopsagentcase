@@ -306,14 +306,44 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     }
   }
 
-  // 页面上下文白名单化：只保留 path/section 两个字符串字段（各限长 200），
+  // 页面上下文白名单化：保留 path/section（各限长 200）与 W5 的 entity/snapshot，
   // 防止调用方误传大对象进请求体；无有效栏目时返回 null（不发送，行为与旧版一致）。
+  // 注：内联白名单逻辑而非 import，避免测试将 store 转为 data: 模块后相对导入失效。
+  const CONTEXT_ENTITY_TYPES = new Set(['alert', 'event', 'finding', 'device', 'doc', 'incident', 'server', 'connection', 'diagnostic'])
+  function cleanContextField(value) {
+    return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim()
+  }
   function normalizePageContext(context) {
     if (!context || typeof context !== 'object') return null
-    const path = String(context.path ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200)
-    const section = String(context.section ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200)
+    const path = cleanContextField(context.path).slice(0, 200)
+    const section = cleanContextField(context.section).slice(0, 200)
     if (!section) return null
-    return { path, section }
+    const normalized = { path, section }
+    const entity = context.entity
+    if (entity && typeof entity === 'object') {
+      const type = cleanContextField(entity.type).toLowerCase()
+      const id = cleanContextField(entity.id).slice(0, 200)
+      if (type && id && CONTEXT_ENTITY_TYPES.has(type)) normalized.entity = { type, id }
+    }
+    const snapshot = context.snapshot
+    if (snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot)) {
+      const cleaned = {}
+      let count = 0
+      for (const [rawKey, rawValue] of Object.entries(snapshot)) {
+        if (count >= 20) break
+        const key = cleanContextField(rawKey)
+        if (!key || rawValue == null) continue
+        let value
+        if (typeof rawValue === 'string') value = cleanContextField(rawValue).slice(0, 300)
+        else if (typeof rawValue === 'number' || typeof rawValue === 'boolean') value = rawValue
+        else continue
+        if (value === '') continue
+        cleaned[key] = value
+        count += 1
+      }
+      if (Object.keys(cleaned).length) normalized.snapshot = cleaned
+    }
+    return normalized
   }
 
   async function sendMessageStreaming(prompt, { images, imageData, rag, context = null } = {}) {

@@ -10,21 +10,8 @@ import { clearSession, loadSession } from '../security/session.js'
 const routes = [
     { path: '/login', name: 'Login', component: () => import('../views/auth/LoginView.vue'), meta: { public: true } },
     { path: '/account/security', name: 'AccountSecurity', component: () => import('../views/account/AccountSecurityView.vue') },
-    {
-        path: '/admin', component: () => import('../layouts/AdminLayout.vue'), meta: { roles: ['admin'] },
-        children: [
-            { path: '', name: 'AdminControlCenter', component: () => import('../views/admin/AdminOverviewView.vue') },
-            { path: 'users', name: 'AdminUsers', component: () => import('../views/admin/AdminUsersView.vue') },
-            { path: 'governance', name: 'AdminGovernance', component: () => import('../views/admin/AdminGovernanceView.vue') },
-            { path: 'teams', name: 'AdminTeams', component: () => import('../views/admin/AdminTeamsView.vue') },
-            { path: 'sessions', name: 'AdminSessions', component: () => import('../views/admin/AdminSessionsView.vue') },
-            { path: 'audit', name: 'AdminAudit', component: () => import('../views/admin/AdminAuditView.vue') },
-            { path: 'approvals', name: 'AdminApprovals', component: () => import('../views/admin/AdminApprovalsView.vue') },
-            { path: 'models', name: 'AdminModels', component: () => import('../views/admin/AdminModelGovernanceView.vue') },
-            { path: 'security', name: 'AdminMfa', component: () => import('../views/admin/AdminMfaView.vue') },
-            { path: 'readiness', name: 'AdminReadiness', component: () => import('../views/admin/AdminReadinessView.vue') }
-        ]
-    },
+    // 管理层入口已物理迁移到独立服务（vite.config.admin.mjs / src/router/admin.js），
+    // 用户层服务不再注册任何 /admin 路由与视图，避免管理页面进入用户层构建产物。
     { path: '/portfolio', name: 'PortfolioPreview', component: () => import('../views/portfolio/WorkInProgressView.vue') },
     {
         path: '/',
@@ -86,6 +73,11 @@ const routes = [
             { path: 'agent/trace', name: 'ExecutionTrace', component: () => import('../views/agent/ExecutionTraceView.vue'), meta: routeMetaFor('ExecutionTrace') },
             { path: 'agent/module', name: 'AgentModule', component: () => import('../views/agent/AgentModuleView.vue'), meta: { ...routeMetaFor('AgentModule'), section: 'AGENT MODULE / 智能体模块' } },
             { path: 'agent/persona', name: 'AgentPersona', component: () => import('../views/agent/AgentPersonaView.vue'), meta: { ...routeMetaFor('AgentPersona'), section: 'AGENT PERSONA / 人格化身' } },
+            { path: 'guard', name: 'GuardOverview', component: () => import('../views/guard/GuardOverviewView.vue'), meta: { ...routeMetaFor('GuardOverview'), section: 'AGENTGUARD / 智测盾总览' } },
+            { path: 'guard/cases', name: 'GuardCases', component: () => import('../views/guard/GuardCaseLibraryView.vue'), meta: { ...routeMetaFor('GuardCases'), section: 'CASE LIBRARY / 测评用例库' } },
+            { path: 'guard/runs', name: 'GuardRuns', component: () => import('../views/guard/GuardRunsView.vue'), meta: { ...routeMetaFor('GuardRuns'), section: 'GUARD RUNS / 测评任务' } },
+            { path: 'guard/runs/:id', name: 'GuardRunDetail', component: () => import('../views/guard/GuardRunDetailView.vue'), meta: { ...routeMetaFor('GuardRunDetail'), section: 'GUARD REPORT / 测评报告' } },
+            { path: 'guard/regression', name: 'GuardRegression', component: () => import('../views/guard/GuardRegressionView.vue'), meta: { ...routeMetaFor('GuardRegression'), section: 'REGRESSION / 回归验证' } },
             { path: 'knowledge', redirect: '/knowledge/space' },
             { path: 'web-research', name: 'WebResearch', component: () => import('../views/research/WebResearchView.vue'), meta: { ...routeMetaFor('WebResearch'), section: 'NEURAL RESEARCH / 联网检索' } },
             { path: 'radar', name: 'Radar', component: () => import('../views/research/RadarView.vue'), meta: { ...routeMetaFor('Radar'), section: 'FRESHNESS RADAR / 时效雷达' } },
@@ -113,6 +105,7 @@ const routes = [
             { path: 'sentinel/sections', name: 'SectionAnalysis', component: () => import('../views/sentinel/SectionAnalysisView.vue'), meta: { ...routeMetaFor('SectionAnalysis'), section: 'SECTION ANALYSIS / 断面对比' } },
             { path: 'sentinel/observability', name: 'EngineObservability', component: () => import('../views/sentinel/EngineObservabilityView.vue'), meta: { ...routeMetaFor('EngineObservability'), section: 'ENGINE OBSERVABILITY / 引擎可观测' } },
             { path: 'sentinel/twin', name: 'DataCenterTwin', component: () => import('../views/sentinel/DataCenterTwinView.vue'), meta: { ...routeMetaFor('DataCenterTwin'), section: 'DATACENTER TWIN / 机房孪生' } },
+            { path: 'sentinel/virtual-scene', name: 'VirtualOpsScene', component: () => import('../views/sentinel/VirtualOpsSceneView.vue'), meta: { ...routeMetaFor('VirtualOpsScene'), section: 'VIRTUAL OPS SANDBOX / 虚拟运维场景' } },
             { path: 'incidents', name: 'IncidentCenter', component: () => import('../views/incident/IncidentCenterView.vue'), meta: { section: 'INCIDENT CENTER / 工单中心' } },
             { path: 'incidents/:id', name: 'IncidentDetail', component: () => import('../views/incident/IncidentDetailView.vue'), meta: { section: 'INCIDENT CENTER / 工单详情' } },
             { path: 'connections', name: 'Connections', component: () => import('../views/operations/ConnectionsView.vue'), meta: { ...routeMetaFor('Connections'), section: '连接中心 / 远程运维' } },
@@ -124,7 +117,6 @@ const routes = [
             { path: 'model-health', name: 'ModelHealth', redirect: '/model-strength' },
             { path: 'model-strength', name: 'ModelStrength', component: () => import('../views/model/ModelAnalyticsView.vue'), props: { mode: 'strength' }, meta: { ...routeMetaFor('ModelStrength'), section: 'MODEL STRENGTH / 模型强度' } },
             { path: 'token-usage', name: 'TokenUsage', component: () => import('../views/model/ModelAnalyticsView.vue'), props: { mode: 'tokens' }, meta: { ...routeMetaFor('TokenUsage'), section: 'TOKEN USAGE / 用量与额度' } },
-            { path: 'architecture', name: 'ArchitectureMap', component: () => import('../views/architecture/ArchitectureMapView.vue'), meta: { ...routeMetaFor('ArchitectureMap'), section: 'ARCHITECTURE / 架构总览', roles: ['admin'] } },
 
             { path: 'model-gateway', name: 'ModelGateway', component: () => import('../views/model/ModelGatewayView.vue'), meta: { section: 'MODEL GATEWAY / 统一模型网关' } },
             {

@@ -1,11 +1,19 @@
 export const ROLES = Object.freeze({
   OPERATOR: 'operator',
-  ADMIN: 'admin'
+  ADMIN: 'admin',
+  ENTERPRISE: 'enterprise',
+  AUDITOR: 'auditor',
+  COMMANDER: 'commander',
+  PARTNER: 'partner'
 })
 
 export const ROLE_LABELS = Object.freeze({
   operator: '运维用户',
-  admin: '系统管理员'
+  admin: '系统管理员',
+  enterprise: '企业管理',
+  auditor: '审计合规',
+  commander: '决策指挥',
+  partner: '生态伙伴'
 })
 
 export const PLATFORM_ADMIN_LEVELS = Object.freeze({
@@ -28,6 +36,19 @@ export const ROLE_CAPABILITIES = Object.freeze({
     'operations.read', 'operations.diagnose', 'knowledge.read', 'agent.run',
     'agent.approve', 'models.read', 'connections.read', 'admin.users',
     'admin.config', 'admin.audit', 'admin.security', 'architecture.read'
+  ]),
+  enterprise: Object.freeze([
+    'enterprise.dashboard.read', 'enterprise.cost.read', 'enterprise.sla.read',
+    'enterprise.capacity.read', 'enterprise.report.export', 'architecture.read'
+  ]),
+  auditor: Object.freeze([
+    'audit.evidence.read', 'audit.compliance.read', 'audit.report.export', 'audit.session.read'
+  ]),
+  commander: Object.freeze([
+    'command.situation.read', 'command.incident.approve', 'command.decision.execute', 'command.broadcast.send'
+  ]),
+  partner: Object.freeze([
+    'open.api.read', 'open.key.manage', 'open.webhook.manage', 'open.quota.read', 'open.docs.read'
   ])
 })
 
@@ -55,7 +76,7 @@ export const TRAINING_WAVES = Object.freeze([
 export function getSessionRole(sessionValue) {
   try {
     const session = typeof sessionValue === 'string' ? JSON.parse(sessionValue) : sessionValue
-    return session?.role === ROLES.ADMIN ? ROLES.ADMIN : ROLES.OPERATOR
+    return ROLE_CAPABILITIES[session?.role] ? session.role : ROLES.OPERATOR
   } catch {
     return ROLES.OPERATOR
   }

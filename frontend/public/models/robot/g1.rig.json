@@ -1,0 +1,312 @@
+{
+  "name": "g1",
+  "dof": 23,
+  "joints": {
+    "left_hip_pitch_joint": {
+      "node": "left_hip_pitch_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.5307,
+        2.8798
+      ]
+    },
+    "left_hip_roll_joint": {
+      "node": "left_hip_roll_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -0.5236,
+        2.9671
+      ]
+    },
+    "left_hip_yaw_joint": {
+      "node": "left_hip_yaw_joint",
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.7576,
+        2.7576
+      ]
+    },
+    "left_knee_joint": {
+      "node": "left_knee_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -0.087267,
+        2.8798
+      ]
+    },
+    "left_ankle_pitch_joint": {
+      "node": "left_ankle_pitch_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -0.87267,
+        0.5236
+      ]
+    },
+    "left_ankle_roll_joint": {
+      "node": "left_ankle_roll_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -0.2618,
+        0.2618
+      ]
+    },
+    "right_hip_pitch_joint": {
+      "node": "right_hip_pitch_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.5307,
+        2.8798
+      ]
+    },
+    "right_hip_roll_joint": {
+      "node": "right_hip_roll_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.9671,
+        0.5236
+      ]
+    },
+    "right_hip_yaw_joint": {
+      "node": "right_hip_yaw_joint",
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.7576,
+        2.7576
+      ]
+    },
+    "right_knee_joint": {
+      "node": "right_knee_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -0.087267,
+        2.8798
+      ]
+    },
+    "right_ankle_pitch_joint": {
+      "node": "right_ankle_pitch_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -0.87267,
+        0.5236
+      ]
+    },
+    "right_ankle_roll_joint": {
+      "node": "right_ankle_roll_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -0.2618,
+        0.2618
+      ]
+    },
+    "waist_yaw_joint": {
+      "node": "waist_yaw_joint",
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.618,
+        2.618
+      ]
+    },
+    "left_shoulder_pitch_joint": {
+      "node": "left_shoulder_pitch_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -3.0892,
+        2.6704
+      ]
+    },
+    "left_shoulder_roll_joint": {
+      "node": "left_shoulder_roll_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -1.5882,
+        2.2515
+      ]
+    },
+    "left_shoulder_yaw_joint": {
+      "node": "left_shoulder_yaw_joint",
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.618,
+        2.618
+      ]
+    },
+    "left_elbow_joint": {
+      "node": "left_elbow_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 1.4,
+      "range": [
+        -1.0472,
+        2.0944
+      ]
+    },
+    "left_wrist_roll_joint": {
+      "node": "left_wrist_roll_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -1.97222,
+        1.97222
+      ]
+    },
+    "right_shoulder_pitch_joint": {
+      "node": "right_shoulder_pitch_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -3.0892,
+        2.6704
+      ]
+    },
+    "right_shoulder_roll_joint": {
+      "node": "right_shoulder_roll_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.2515,
+        1.5882
+      ]
+    },
+    "right_shoulder_yaw_joint": {
+      "node": "right_shoulder_yaw_joint",
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "home": 0.0,
+      "range": [
+        -2.618,
+        2.618
+      ]
+    },
+    "right_elbow_joint": {
+      "node": "right_elbow_joint",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "home": 1.4,
+      "range": [
+        -1.0472,
+        2.0944
+      ]
+    },
+    "right_wrist_roll_joint": {
+      "node": "right_wrist_roll_joint",
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "home": 0.0,
+      "range": [
+        -1.97222,
+        1.97222
+      ]
+    }
+  },
+  "groundOffset": 0.7922728974793763,
+  "source": {
+    "repo": "https://github.com/unitreerobotics/unitree_mujoco",
+    "path": "unitree_robots/g1/g1_23dof.xml",
+    "commit": "1eb6642e3f3fdfb7fb13a9794fd6a2dd93ea0e7d",
+    "license": "BSD-3-Clause"
+  }
+}

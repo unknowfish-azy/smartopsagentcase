@@ -272,10 +272,15 @@
       </div>
     </details>
   </section>
+  <AgentCopilotDock
+    section="哨兵监控"
+    :entity="{ type: 'alert', id: hoveredTaskId || state.tasks?.[0]?.id }"
+  />
   </div>
 </template>
 
 <script setup>
+import AgentCopilotDock from '../../components/agent/AgentCopilotDock.vue'
 import { computed, onMounted, onUnmounted, reactive, ref, defineAsyncComponent } from 'vue'
 import SentinelNotice from './SentinelNotice.vue'
 import SentinelEmpty from './SentinelEmpty.vue'

@@ -1,0 +1,220 @@
+/**
+ * L2 2D 动态替身的样式。
+ *
+ * 约束：
+ *  - 空闲态只用 CSS 动画（呼吸、眨眼、光晕），不跑 requestAnimationFrame，移动端省电；
+ *  - 只有播报时才由 usePersona2D 逐帧写口型变量，说完即停；
+ *  - 尊重 prefers-reduced-motion：系统要求减少动态时全部动画关闭（此时上层通常走 L3 静态）。
+ */
+.p2d {
+  --accent: #3fb9c9;
+  --head-tilt: 0deg;
+  --head-nod: 0px;
+  --head-turn: 0px;
+  --body-shift: 0px;
+  --gaze-x: 0px;
+  --gaze-y: 0px;
+  --brow-y: 0px;
+  --brow-angle: 0deg;
+  --eye-scale: 1;
+  --blush-op: .15;
+  --breath-dur: 3.1s;
+  --breath-amp: 4px;
+  --mouth-open: .05;
+  --mouth-wide: 1;
+
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 420px;
+  margin-inline: auto;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: var(--ds-radius-md, 8px);
+}
+
+.p2d__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 状态光晕：颜色随七状态变化，作为第三通道，姿态仍是主通道 */
+.p2d__aura {
+  fill: var(--accent);
+  opacity: .12;
+  transition: fill .45s ease;
+}
+
+.p2d__shadow {
+  fill: rgba(15, 45, 55, .10);
+}
+
+/* 躯干：状态位移 + 呼吸。呼吸放在内层，避免两个 transform 互相覆盖 */
+.p2d__body {
+  transform: translateY(var(--body-shift));
+  transition: transform .45s cubic-bezier(.2, .8, .2, 1);
+}
+
+.p2d__breath {
+  animation: p2d-breathe var(--breath-dur) ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+/* 头颈：状态倾角/点头/转头 */
+.p2d__head {
+  transform: translate(var(--head-turn), var(--head-nod)) rotate(var(--head-tilt));
+  transform-box: fill-box;
+  transform-origin: 50% 92%;
+  transition: transform .45s cubic-bezier(.2, .8, .2, 1);
+}
+
+/* 手势层：单独一层，避免动画覆盖状态 transform */
+.p2d__head-motion {
+  transform-box: fill-box;
+  transform-origin: 50% 92%;
+}
+
+.p2d__blink {
+  animation: p2d-blink 5.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.p2d__pupils {
+  transform: translate(var(--gaze-x), var(--gaze-y));
+  transition: transform .35s ease;
+}
+
+.p2d__brows {
+  transform: translateY(var(--brow-y)) rotate(var(--brow-angle));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform .35s ease;
+}
+
+.p2d__eye-open {
+  transform: scaleY(var(--eye-scale));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform .35s ease;
+}
+
+.p2d__blush {
+  fill: #f88f8f;
+  opacity: var(--blush-op);
+  transition: opacity .45s ease;
+}
+
+.p2d__mouth {
+  transform: scale(var(--mouth-wide), var(--mouth-open));
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* 说话时眼睛略睁、眉毛轻抬，弥补 2D 没有面部骨骼 */
+.p2d[data-speaking='true'] .p2d__eye-open {
+  transform: scaleY(calc(var(--eye-scale) * 1.06));
+}
+
+.p2d[data-speaking='true'] .p2d__brows {
+  transform: translateY(calc(var(--brow-y) - 1px)) rotate(var(--brow-angle));
+}
+
+/* 故障态的轻微抖动：幅度小、频率低，不做夸张特效 */
+.p2d[data-state='error'] .p2d__figure {
+  animation: p2d-jitter .22s linear infinite;
+}
+
+/* —— 手势动画 —— */
+.p2d[data-gesture='wave'] .p2d__arm--right {
+  animation: p2d-wave .9s ease-in-out;
+  transform-box: fill-box;
+  transform-origin: 30% 8%;
+}
+
+.p2d[data-gesture='point'] .p2d__arm--right {
+  animation: p2d-point .9s ease-in-out;
+  transform-box: fill-box;
+  transform-origin: 30% 8%;
+}
+
+.p2d[data-gesture='bow'] .p2d__figure {
+  animation: p2d-bow .9s ease-in-out;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.p2d[data-gesture='nod'] .p2d__head-motion {
+  animation: p2d-nod .7s ease-in-out;
+}
+
+.p2d[data-gesture='think'] .p2d__head-motion {
+  animation: p2d-think .9s ease-in-out;
+}
+
+.p2d[data-gesture='shy'] .p2d__head-motion {
+  animation: p2d-shy .9s ease-in-out;
+}
+
+.p2d[data-gesture='ack'] .p2d__head-motion {
+  animation: p2d-nod .55s ease-in-out;
+}
+
+@keyframes p2d-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(calc(-1 * var(--breath-amp))); }
+}
+
+@keyframes p2d-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95%, 96% { transform: scaleY(.08); }
+}
+
+@keyframes p2d-jitter {
+  0%, 100% { transform: translateX(0); }
+  35% { transform: translateX(-1.5px); }
+  70% { transform: translateX(1.5px); }
+}
+
+@keyframes p2d-wave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-58deg); }
+  50% { transform: rotate(-102deg); }
+  75% { transform: rotate(-70deg); }
+}
+
+@keyframes p2d-point {
+  0%, 100% { transform: rotate(0deg); }
+  40%, 70% { transform: rotate(-74deg); }
+}
+
+@keyframes p2d-bow {
+  0%, 100% { transform: rotate(0); }
+  45% { transform: rotate(4.5deg); }
+}
+
+@keyframes p2d-nod {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(5px); }
+}
+
+@keyframes p2d-think {
+  0%, 100% { transform: rotate(0); }
+  45% { transform: rotate(5deg); }
+}
+
+@keyframes p2d-shy {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  45% { transform: translateY(3px) rotate(-4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p2d *,
+  .p2d *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

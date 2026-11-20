@@ -54,6 +54,25 @@ export function measureRobotBounds(object) {
   }
 }
 
+/** 所有形态统一到的视觉体长（米），与四足 rig 放大 2.2 倍后的观感对齐。 */
+export const ROBOT_DISPLAY_FOOTPRINT = REFERENCE_FOOTPRINT
+
+/**
+ * 把模型缩放到统一视觉体长：同为 15m 地图，形态之间不再出现「狗很大、车很小」。
+ * 直接改模型根节点的 scale（不影响 rig 容器位姿与效果层尺寸计算）。
+ * @param {import('three').Object3D} object
+ * @param {number} [target] 目标包围盒最长边（米）
+ * @returns {number} 实际应用的缩放系数
+ */
+export function normalizeRobotFootprint(object, target = ROBOT_DISPLAY_FOOTPRINT) {
+  const { footprint } = measureRobotBounds(object)
+  if (!Number.isFinite(footprint) || footprint <= 1e-6) return 1
+  const scale = target / footprint
+  object.scale.multiplyScalar(scale)
+  object.updateMatrixWorld(true)
+  return scale
+}
+
 function fallbackBounds() {
   return { centerX: 0, centerZ: 0, minY: 0, topY: 0.5, footprint: REFERENCE_FOOTPRINT, scale: 1 }
 }

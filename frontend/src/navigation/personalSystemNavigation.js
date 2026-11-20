@@ -92,6 +92,20 @@ export const personalSystemGroups = Object.freeze([
     ]
   }),
   expandableGroup({
+    id: 'guard',
+    label: 'AGENTGUARD',
+    cn: '智测盾',
+    icon: 'CircleCheck',
+    routeName: 'GuardOverview',
+    to: '/guard',
+    children: [
+      { label: 'OVERVIEW', cn: '测评总览', routeName: 'GuardOverview', to: '/guard' },
+      { label: 'CASE LIBRARY', cn: '测评用例库', routeName: 'GuardCases', to: '/guard/cases' },
+      { label: 'RUNS', cn: '测评任务', routeName: 'GuardRuns', to: '/guard/runs' },
+      { label: 'REGRESSION', cn: '回归验证', routeName: 'GuardRegression', to: '/guard/regression' }
+    ]
+  }),
+  expandableGroup({
     id: 'memory',
     label: 'MEMORY',
     cn: '运维记忆',
@@ -123,11 +137,11 @@ export const personalSystemGroups = Object.freeze([
       { label: 'FORECAST', cn: '预测面', routeName: 'ForecastPlane', to: '/sentinel/forecast' },
       { label: 'SECTION ANALYSIS', cn: '断面对比', routeName: 'SectionAnalysis', to: '/sentinel/sections' },
       { label: 'OBSERVABILITY', cn: '引擎可观测', routeName: 'EngineObservability', to: '/sentinel/observability' },
-      { label: 'DATACENTER TWIN', cn: '机房孪生', routeName: 'DataCenterTwin', to: '/sentinel/twin' }
+      { label: 'DATACENTER TWIN', cn: '机房孪生', routeName: 'DataCenterTwin', to: '/sentinel/twin' },
+      { label: 'VIRTUAL OPS SANDBOX', cn: '虚拟运维场景', routeName: 'VirtualOpsScene', to: '/sentinel/virtual-scene' }
     ]
   })
-  ,directGroup({ id: 'admin', label: 'ADMIN', cn: '管理控制台', icon: 'Setting', routeName: 'AdminControlCenter', to: '/admin', roles: ['admin'] })
-  ,directGroup({ id: 'architecture', label: 'ARCHITECTURE', cn: '架构总览', icon: 'DataAnalysis', routeName: 'ArchitectureMap', to: '/architecture', roles: ['admin'] })
+  // 管理控制台与架构总览已迁移至管理端服务（5174），用户层侧栏不再保留任何管理入口。
 ])
 
 export function visiblePersonalSystemGroups(groups = personalSystemGroups, role = 'operator') {

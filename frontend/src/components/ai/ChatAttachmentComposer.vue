@@ -1,6 +1,9 @@
 <template>
   <div class="attachment-composer">
-    <div class="visual-actions" aria-label="视觉证据工具"><button type="button" :disabled="busy || store.sending || visualBusy" @click="capture('SCREENSHOT')">截取屏幕</button><button type="button" :disabled="busy || store.sending || visualBusy" @click="capture('CAMERA')">拍照</button></div>
+    <div class="visual-actions" aria-label="视觉证据工具">
+      <button type="button" class="visual-actions__btn" :disabled="busy || store.sending || visualBusy" title="截取屏幕作为图像证据" aria-label="截取屏幕" @click="capture('SCREENSHOT')"><Picture :size="15" /></button>
+      <button type="button" class="visual-actions__btn" :disabled="busy || store.sending || visualBusy" title="拍照作为图像证据" aria-label="拍照" @click="capture('CAMERA')"><Camera :size="15" /></button>
+    </div>
     <input ref="input" class="attachment-input" type="file" multiple accept=".png,.jpg,.jpeg,.txt,.log,.md" aria-label="选择聊天附件" @change="choose" />
     <div v-if="queue.items.length" class="attachment-tray" aria-label="待发送附件">
       <article v-for="item in queue.items" :key="item.id" class="attachment-draft">
@@ -24,6 +27,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
+import { Picture, Camera } from '@element-plus/icons-vue'
 import { useAiChatStore } from '../../stores/aiChat.js'
 import { createAttachmentQueue, attachmentFiles } from '../../domain/chat/attachments.ts'
 import { captureCamera, captureScreen } from '../../domain/chat/visualCapture.ts'
@@ -155,7 +159,7 @@ defineExpose({ pick, paste, drop, submit, capture, count, busy, stagedImageNames
 
 <style scoped>
 .attachment-input { display: none; }
-.visual-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px 0; }.visual-actions button { min-height: 32px; padding: 6px 10px; border: 1px solid var(--smart-border-strong); border-radius: 6px; background: var(--smart-surface); color: var(--smart-text); cursor: pointer; }.visual-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.visual-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px 0; }.visual-actions__btn { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid var(--smart-border-strong); border-radius: 6px; background: var(--smart-surface); color: var(--smart-text); cursor: pointer; transition: color var(--duration-fast), border-color var(--duration-fast); }.visual-actions__btn:hover:not(:disabled) { color: var(--smart-primary-strong); border-color: var(--smart-primary-strong); }.visual-actions__btn:disabled { opacity: .5; cursor: not-allowed; }
 .attachment-tray { display: grid; gap: 8px; padding: 12px 12px 0; max-height: 220px; overflow: auto; }
 .attachment-draft { display: flex; gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--smart-border-strong); border-radius: 8px; background: var(--smart-surface); color: var(--smart-text); }
 .attachment-draft button, .attachment-cancel { border: 1px solid var(--smart-border-strong); border-radius: 6px; min-height: 32px; color: var(--smart-text); background: var(--smart-surface); cursor: pointer; }

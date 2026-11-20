@@ -10,8 +10,11 @@
  *  - createVoiceInput：封装一次性听写。SpeechRecognition 的实现差异
  *    （webkit 前缀、无 finalResult、onerror 后自动重启）都收在这里；
  *  - askAssistant：签发 run 令牌 → streamChat → 聚合 delta 为完整回复文本。
- *    回复要完整拿一次再播报：口型时间线需要整段文字才能排布。
+ *    传入 onSentence 时边收边分句回调，供调用方逐句合成播报（首句更快出声）；
+ *    不传则维持"整段拿完再播"的旧行为。
  */
+
+import { createSentenceSplitter } from './sentenceStream.js'
 
 const LISTEN_TIMEOUT_MS = 8000
 
@@ -100,8 +103,9 @@ export function createVoiceInput(options = {}) {
 /**
  * 向 ai-service 发一段话并聚合完整回复。
  * @param {string} message 用户消息
- * @param {{ streamChat?: typeof import('../../api/stream.ts').default, fetchToken?, signal? }} [deps]
- *   streamChat / fetchToken 可注入 mock 供测试。
+ * @param {{ streamChat?: typeof import('../../api/stream.ts').default, fetchToken?, signal?: AbortSignal,
+ *   onSentence?: (sentence: string) => void }} [deps]
+ *   streamChat / fetchToken 可注入 mock 供测试；onSentence 收到已切好的完整句子。
  * @returns {Promise<{ ok: boolean, text: string }>}
  */
 export async function askAssistant(message, deps = {}) {
@@ -115,14 +119,24 @@ export async function askAssistant(message, deps = {}) {
   if (!streamChatFn) {
     // 运行时才 import，避免测试环境解析 .ts 与业务依赖
     const mod = await import('../../api/stream.ts')
-    return askAssistantCore(mod.default, message, fetchToken, unwrap, deps.signal)
+    return askAssistantCore(mod.default, message, fetchToken, unwrap, deps)
   }
-  return askAssistantCore(streamChatFn, message, fetchToken, unwrap, deps.signal)
+  return askAssistantCore(streamChatFn, message, fetchToken, unwrap, deps)
 }
 
-async function askAssistantCore(streamChatFn, message, fetchToken, unwrap, signal) {
+async function askAssistantCore(streamChatFn, message, fetchToken, unwrap, deps) {
+  const { signal, onSentence } = deps
   const prompt = String(message ?? '').trim()
   if (!prompt) return { ok: false, text: '' }
+  const splitter = createSentenceSplitter()
+  const emit = (sentence) => {
+    if (!onSentence) return
+    try {
+      onSentence(sentence)
+    } catch {
+      // 播报回调异常不影响回复聚合（文字仍要完整返回）
+    }
+  }
   try {
     const issued = unwrap(await fetchToken())
     if (typeof issued?.runToken !== 'string' || !issued.runToken) {
@@ -133,6 +147,8 @@ async function askAssistantCore(streamChatFn, message, fetchToken, unwrap, signa
       signal,
       onToken: (delta) => {
         reply += delta || ''
+        // 边收边分句：完整句子一到就交给调用方合成，首句不必等整段回答
+        for (const sentence of splitter.push(delta)) emit(sentence)
       },
       onDone: (payload) => {
         // done 里可能带一次性完整答案（部分后端不逐 token），二者取长
@@ -140,6 +156,8 @@ async function askAssistantCore(streamChatFn, message, fetchToken, unwrap, signa
         if (finalText.length > reply.length) reply = finalText
       }
     }, { runToken: issued.runToken, correlation: { request_id: crypto.randomUUID(), task_id: crypto.randomUUID() } })
+    // 收尾：最后一句没有句末标点时也要播出来
+    for (const sentence of splitter.flush()) emit(sentence)
     const text = reply.trim()
     return { ok: Boolean(text), text: text || 'AI 没有返回内容，请稍后再试。' }
   } catch (error) {

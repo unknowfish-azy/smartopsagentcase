@@ -44,6 +44,29 @@
         <div><dt>障碍距离</dt><dd>{{ obstacleText }}</dd></div>
       </dl>
 
+      <!-- 形态专属遥测：与操控台同源组件，读数格式与视觉完全一致 -->
+      <template v-if="isCarForm">
+        <h3>轮速仪表</h3>
+        <div class="rdd-gauges">
+          <WheelSpeedDial label="左轮" :speed="carWheels.leftSpeed" :angular="carWheels.leftAngular" />
+          <WheelSpeedDial label="右轮" :speed="carWheels.rightSpeed" :angular="carWheels.rightAngular" />
+        </div>
+        <dl class="rdd-facts">
+          <div><dt>轮径 / 轮距</dt><dd>{{ wheelGeometryText }}</dd></div>
+          <div><dt>里程</dt><dd>{{ odometerText }}</dd></div>
+          <div><dt>LiDAR 转速</dt><dd>{{ lidarRpmText }}</dd></div>
+        </dl>
+      </template>
+
+      <template v-else-if="isSpiderForm">
+        <h3>8 足触地</h3>
+        <p class="rdd-note">{{ spiderContactText }}</p>
+        <FootContactGrid :contacts="spiderContacts" />
+        <p class="rdd-note">
+          步频 {{ spiderStrideText }} · 机身高度 {{ spiderBodyHeightText }} · 相位 {{ spiderPhaseText }}
+        </p>
+      </template>
+
       <!-- 任务路线：RobotScene3D 内部已加载的最新任务 route 汇总 -->
       <h3>任务路线</h3>
       <p v-if="!waypoints.length" class="rdd-note">暂无巡检路线。提交自主巡检任务后此处会显示路线汇总。</p>
@@ -104,6 +127,8 @@
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { getRobotDevices, getRobotFrame, getRobotLive, getRobotTasks } from '../../api/robot'
+import WheelSpeedDial from './WheelSpeedDial.vue'
+import FootContactGrid from './FootContactGrid.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -296,6 +321,73 @@ const obstacleText = computed(() => {
   return `${value.toFixed(2)} m`
 })
 
+/* ---- 形态专属遥测：轮速表盘 / 8 足触地（与操控台共用组件与字段口径） ---- */
+
+const isCarForm = computed(() => (props.formFactor || 'CAR') === 'CAR')
+const isSpiderForm = computed(() => props.formFactor === 'SPIDER')
+
+function numberOrNull(value) {
+  if (value === undefined || value === null) return null
+  const num = Number(value)
+  return Number.isFinite(num) ? num : null
+}
+
+const carWheels = computed(() => {
+  const wheels = effectiveTelemetry.value?.wheels || null
+  return {
+    leftSpeed: numberOrNull(wheels?.leftSpeed),
+    rightSpeed: numberOrNull(wheels?.rightSpeed),
+    leftAngular: numberOrNull(wheels?.leftAngular),
+    rightAngular: numberOrNull(wheels?.rightAngular),
+    radius: numberOrNull(wheels?.radius),
+    trackWidth: numberOrNull(wheels?.trackWidth),
+    lidarRpm: numberOrNull(wheels?.lidarRpm)
+  }
+})
+
+const wheelGeometryText = computed(() => {
+  const { radius, trackWidth } = carWheels.value
+  const radiusText = radius > 0 ? `${(radius * 100).toFixed(1)} cm` : '—'
+  const trackText = trackWidth > 0 ? `${(trackWidth * 100).toFixed(1)} cm` : '—'
+  return `${radiusText} / ${trackText}`
+})
+
+const odometerText = computed(() => {
+  const odometer = numberOrNull(effectiveTelemetry.value?.odometer)
+  return odometer === null ? '—' : `${odometer.toFixed(2)} m`
+})
+
+const lidarRpmText = computed(() => {
+  const rpm = carWheels.value.lidarRpm
+  return rpm !== null && rpm > 0 ? `${Math.round(rpm)} rpm` : '—'
+})
+
+const spiderContacts = computed(() => {
+  const contacts = effectiveTelemetry.value?.gait?.footContacts
+  return Array.isArray(contacts) ? contacts.map((contact) => Boolean(contact)) : []
+})
+
+const spiderContactText = computed(() => {
+  const feet = spiderContacts.value
+  if (!feet.length) return '等待步态遥测'
+  return `支撑 ${feet.filter(Boolean).length} / ${feet.length}`
+})
+
+const spiderStrideText = computed(() => {
+  const stride = numberOrNull(effectiveTelemetry.value?.gait?.strideHz)
+  return stride === null ? '—' : `${stride.toFixed(2)} Hz`
+})
+
+const spiderBodyHeightText = computed(() => {
+  const height = numberOrNull(effectiveTelemetry.value?.gait?.bodyHeight)
+  return height === null ? '—' : `${height.toFixed(3)} m`
+})
+
+const spiderPhaseText = computed(() => {
+  const phase = numberOrNull(effectiveTelemetry.value?.gait?.phase)
+  return phase === null ? '—' : `${phase.toFixed(2)} rad`
+})
+
 const doneCount = computed(() => props.waypoints.filter((p) => p?.done).length)
 const detourCount = computed(() => props.waypoints.filter((p) => p?.detour).length)
 
@@ -363,6 +455,7 @@ function routeCount(task) {
 .rdd-body { padding: 14px 16px; overflow: auto; display: grid; gap: 10px; color: var(--smart-text, var(--ds-color-text)); overflow-wrap: anywhere; }
 .rdd-body h3 { margin: 6px 0 0; font-size: 14px; font-weight: 600; }
 .rdd-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; }
+.rdd-gauges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .rdd-facts dt { color: var(--smart-muted, var(--ds-color-muted)); font-size: 12px; }
 .rdd-facts dd { margin: 6px 0 0; font-size: 13px; }
 .rdd-note { margin: 0; color: var(--smart-muted, var(--ds-color-muted)); font-size: 12px; line-height: 1.7; }

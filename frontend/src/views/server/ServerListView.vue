@@ -452,11 +452,16 @@
 
     </el-dialog>
 
+  <AgentCopilotDock
+    section="服务器运维"
+    :entity="{ type: 'server', id: selectedDemo?.id || displayServers?.[0]?.id }"
+  />
   </div>
 </template>
 
 
 <script setup>
+import AgentCopilotDock from '../../components/agent/AgentCopilotDock.vue'
 
 import {
   computed,

@@ -5,12 +5,24 @@
 //   2. 管理员层有独立 HTML 入口与独立路由表；
 //   3. 用户层入口仍然是 5173 且仍声明 /ws 与 /api 代理（安全不变量）；
 //   4. 管理员层路由表不注册任何用户层路由（物理隔离两个门户）。
+//   5. 用户层共享策略不写死 /admin：落地路由由门户注册中心运行时推导。
 
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const read = name => readFile(new URL(`../${name}`, import.meta.url), 'utf8')
+
+test('shared user-layer policy derives the management home from the portal registry', async () => {
+    // 用户层构建会打包 portalPolicy 与账户安全页；若它们写死 /admin，
+    // 管理端路径就会泄露进用户层产物。落地路由必须由门户 ID 运行时推导。
+    for (const file of ['src/security/portalPolicy.js', 'src/views/account/AccountSecurityView.vue']) {
+        const source = await read(file)
+        assert.doesNotMatch(source, /['"`]\/admin(?:['"`/])/, `${file} 不应写死 /admin`)
+    }
+    const policy = await read('src/security/portalPolicy.js')
+    assert.match(policy, /portalHome\(/)
+})
 
 test('administrator service is pinned to its own port with strictPort', async () => {
     const config = await read('vite.config.admin.mjs')

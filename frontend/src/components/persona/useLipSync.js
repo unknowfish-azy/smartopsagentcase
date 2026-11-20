@@ -15,6 +15,8 @@
  * 元音映射参考 pixiv/ChatVRM（MIT）的做法，阈值与系数按本地模型重新标定。
  */
 
+import { visemeFromPinyin } from './chineseViseme.js'
+
 export const VISEMES = Object.freeze(['aa', 'ih', 'ou', 'ee', 'oh'])
 
 const DEFAULT_SMOOTH_MS = 90
@@ -66,15 +68,19 @@ export function hasCoarseRun(timing) {
 /**
  * 把后端 TTS 的边界时间戳转成口型时间线（纯逻辑，可单测）。
  *
- * timing 形如 `[{ text, offset_ms, duration_ms, viseme? }]`：Edge 来自 WordBoundary，
- * piper-plus 则是逐字的音节时间戳。每个词/字的真实时长按「可发音字符数」均分，
- * 标点/空格不占口型时间。条目带合法 `viseme` 时优先采用服务端算出的真实韵母，
- * 否则按字符近似映射。没有任何可用条目时返回 null —— 调用方据此降级到匀速推演，
- * 绝不伪造时间戳。
+ * timing 形如 `[{ text, offset_ms, duration_ms, viseme?, pinyin? }]`：Edge 来自
+ * WordBoundary，piper-plus 则是逐字的音节时间戳。每个词/字的真实时长按「可发音
+ * 字符数」均分，标点/空格不占口型时间。
+ *
+ * 口型精度分三档，并如实写进返回值：
+ *  - phoneme：服务端给了真实韵母（piper-plus 音素级）；
+ *  - pinyin：服务端给了拼音（Edge 词边界 + pypinyin），前端查中文韵母表；
+ *  - char：两者都没有，按码位近似，只求有起伏。
+ * 没有任何可用条目时返回 null —— 调用方据此降级到匀速推演，绝不伪造时间戳。
  *
  * @param {string} text 原始播报文本（用于把词映射回 UTF-16 字符索引）
- * @param {Array<{ text: string, offset_ms: number, duration_ms: number, viseme?: string }>} timing
- * @returns {{ entries: Array<object>, duration: number } | null}
+ * @param {Array<{ text: string, offset_ms: number, duration_ms: number, viseme?: string, pinyin?: string | string[] }>} timing
+ * @returns {{ entries: Array<object>, duration: number, precision: 'phoneme' | 'pinyin' | 'char' } | null}
  */
 export function visemeTimeline(text, timing) {
   const words = Array.isArray(timing) ? timing : []
@@ -82,6 +88,8 @@ export function visemeTimeline(text, timing) {
   const entries = []
   let duration = 0
   let cursor = 0
+  let sawChar = false
+  let sawPinyin = false
 
   for (const word of words) {
     const label = String(word?.text ?? '')
@@ -94,8 +102,12 @@ export function visemeTimeline(text, timing) {
     )
     if (!spoken.length) continue
 
-    // 服务端给了真实韵母（piper-plus 音素级）就用它，缺省才退回字符近似
+    // 服务端给了真实韵母（piper-plus 音素级）就用它，其次查拼音表，最后才字符近似
     const hinted = VISEMES.includes(word?.viseme) ? word.viseme : ''
+    const syllables = Array.isArray(word?.pinyin)
+      ? word.pinyin.map((item) => String(item))
+      : String(word?.pinyin ?? '').trim().split(/\s+/).filter(Boolean)
+    const perCharPinyin = syllables.length === spoken.length
 
     // 词在原文中的起点：找不到（如服务端改写了文本）就顺延到游标，索引仅用于调试
     const found = source.indexOf(label, cursor)
@@ -108,13 +120,21 @@ export function visemeTimeline(text, timing) {
       const charIndex = baseIndex + localIndex
       localIndex += char.length
       if (SPACE_PATTERN.test(char) || PAUSE_PATTERN.test(char)) continue
-      const primary = hinted || visemeForChar(char)
+
+      const mapped = !hinted && perCharPinyin ? visemeFromPinyin(syllables[step]) : null
+      const primary = hinted || mapped?.viseme || visemeForChar(char)
+      const precision = hinted ? 'phoneme' : mapped?.viseme ? 'pinyin' : 'char'
+      if (precision === 'pinyin') sawPinyin = true
+      else if (precision === 'char') sawChar = true
+
       entries.push({
         start: offset + step * charMs,
         end: offset + (step + 1) * charMs,
         primary,
         secondary: neighbourViseme(primary),
-        charIndex
+        charIndex,
+        precision,
+        nasal: Boolean(mapped?.nasal)
       })
       step += 1
     }
@@ -123,7 +143,23 @@ export function visemeTimeline(text, timing) {
     duration = Math.max(duration, offset + span)
   }
 
-  return entries.length ? { entries, duration } : null
+  if (!entries.length) return null
+  return {
+    entries,
+    duration,
+    precision: sawChar ? 'char' : sawPinyin ? 'pinyin' : 'phoneme'
+  }
+}
+
+/** 按毫秒取时间线当前音段的口型权重；无命中表示停顿/越界，调用方应让嘴闭合 */
+export function timelineWeightsAt(planned, ms) {
+  const entries = planned?.entries
+  const at = Number(ms)
+  if (!Array.isArray(entries) || !Number.isFinite(at)) return null
+  const entry = entries.find((item) => at >= item.start && at < item.end)
+  return entry
+    ? { primary: entry.primary, secondary: entry.secondary, precision: entry.precision, nasal: Boolean(entry.nasal) }
+    : null
 }
 
 /**
@@ -165,30 +201,57 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
 
   /**
    * 把一个 <audio> 接进分析链。同一个元素只接一次：Chrome 不允许对同一元素
-   * 二次 createMediaElementSource，所以只在换元素或 dispose 时断开重建。
+   * 二次 createMediaElementSource，所以只在换元素或 dispose 时重建 source。
+   * 流式分句每句都是新的 <audio>，这里复用同一个 AudioContext，避免逐句开关上下文。
+   *
+   * 分析链失败（无 AudioContext / 已被别的节点占用）时仍保留 audioElement：
+   * 音频主时钟只依赖 currentTime，照样能对齐口型，只是少了振幅门限。
    */
   function attachAudio(element) {
     if (disposed || !element) return false
-    if (element === audioElement) return Boolean(analyser)
-    detachAudio()
+    if (element === audioElement && analyser) return true
     const AudioContextCtor = globalThis.AudioContext || globalThis.webkitAudioContext
-    if (!AudioContextCtor) return false
+    if (!AudioContextCtor) {
+      audioElement = element
+      return false
+    }
     try {
-      context = new AudioContextCtor()
-      analyser = context.createAnalyser()
-      analyser.fftSize = FFT_SIZE
-      analyser.smoothingTimeConstant = 0.55
+      if (!context || context.state === 'closed') {
+        context = new AudioContextCtor()
+      }
+      if (!analyser) {
+        analyser = context.createAnalyser()
+        analyser.fftSize = FFT_SIZE
+        analyser.smoothingTimeConstant = 0.55
+        // 必须接回扬声器：MediaElementSource 会把元素原声从默认输出摘走
+        analyser.connect(context.destination)
+        freqData = new Uint8Array(analyser.frequencyBinCount)
+        timeData = new Uint8Array(analyser.fftSize)
+      }
+      if (source) {
+        try {
+          source.disconnect()
+        } catch {
+          // 已断开时重复 disconnect 可能抛错，忽略
+        }
+        source = null
+      }
       source = context.createMediaElementSource(element)
       source.connect(analyser)
-      // 必须接回扬声器：MediaElementSource 会把元素原声从默认输出摘走
-      analyser.connect(context.destination)
-      freqData = new Uint8Array(analyser.frequencyBinCount)
-      timeData = new Uint8Array(analyser.fftSize)
       audioElement = element
       return true
     } catch (error) {
-      console.warn('[lipSync] 音频接入失败，退回文字近似口型', error)
-      detachAudio()
+      console.warn('[lipSync] 音频分析链接入失败，仅用音频时钟驱动口型', error)
+      try {
+        source?.disconnect()
+      } catch {
+        // 未接通时断开可能抛错，忽略
+      }
+      source = null
+      analyser = null
+      freqData = null
+      timeData = null
+      audioElement = element
       return false
     }
   }
@@ -232,12 +295,14 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
         end: clock + charMs,
         primary,
         secondary: neighbourViseme(primary),
-        charIndex
+        charIndex,
+        precision: 'char',
+        nasal: false
       })
       clock += charMs
       charIndex += char.length
     }
-    timeline = entries.length ? { entries, duration: clock } : null
+    timeline = entries.length ? { entries, duration: clock, precision: 'char' } : null
     timelineSource = 'text'
     timelineClock = 0
     return clock
@@ -270,6 +335,14 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     const next = timeline.entries.find((entry) => entry.charIndex >= charIndex)
     if (next) {
       timelineClock = next.start
+      // 音频主时钟模式下同步拖动音频，避免口型与声音错位
+      if (audioElement && timelineSource === 'timeline') {
+        try {
+          audioElement.currentTime = next.start / 1000
+        } catch {
+          // 元数据未就绪时 currentTime 不可写，忽略
+        }
+      }
       return
     }
     // 索引已越过最后一个音段：播报收尾，直接清时间线归零
@@ -300,9 +373,9 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     target[entry.secondary] = 0.25
   }
 
-  function fillAudioTarget(target) {
-    if (!analyser || !audioElement || audioElement.paused) return
-
+  /** 当前音频的开口幅度（0–1）；没有分析器时返回 null，表示只能按固定张度估算 */
+  function audioAmplitude() {
+    if (!analyser || !timeData) return null
     analyser.getByteTimeDomainData(timeData)
     let sum = 0
     for (let i = 0; i < timeData.length; i += 1) {
@@ -311,8 +384,32 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     }
     const rms = Math.sqrt(sum / timeData.length)
     // 开方把轻声抬起来，否则正常说话的口型只有一条缝
-    const amp = Math.sqrt(clamp((rms - NOISE_FLOOR) * AMP_GAIN, 0, 1))
-    if (amp < 0.01) return
+    return Math.sqrt(clamp((rms - NOISE_FLOOR) * AMP_GAIN, 0, 1))
+  }
+
+  /**
+   * 音频主时钟：用 audio.currentTime 定位时间线音段，振幅只当开口门限。
+   * 与频谱驱动不同，这里口型形状来自真实拼音/音素，声音只决定张得多大，
+   * 因此换音色、变速都不会让口型跑偏；音频暂停/播完时直接闭嘴。
+   */
+  function fillTimelineByAudio(target) {
+    if (!timeline || !audioElement) return
+    const ms = audioElement.currentTime * 1000
+    const hit = timelineWeightsAt(timeline, ms)
+    if (!hit) return
+    const amp = audioAmplitude()
+    const gate = amp === null ? 0.85 : clamp(amp * 1.6, 0, 1)
+    if (gate < 0.01) return
+    target[hit.primary] = 0.9 * gate
+    if (hit.nasal) target[hit.secondary] = 0.42 * gate
+    else target[hit.secondary] = 0.28 * gate
+  }
+
+  function fillAudioTarget(target) {
+    if (!analyser || !audioElement || audioElement.paused) return
+
+    const amp = audioAmplitude()
+    if (amp === null || amp < 0.01) return
 
     analyser.getByteFrequencyData(freqData)
     const binHz = (context?.sampleRate || 44100) / analyser.fftSize
@@ -349,12 +446,28 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
 
   /**
    * 逐帧推进，返回平滑后的权重（只读，不要在外部改写）。
+   *
+   * 只要有 <audio> 就以音频为唯一时钟：接得上时间线时按 currentTime 定位音段、
+   * 振幅当门限；没有时间线时退回频谱。音频暂停/播完一律闭嘴，绝不让文字时钟
+   * 继续往前跑（否则会出现"声音停了嘴还在动"的穿帮）。
+   * 只有完全没有音频（浏览器 speechSynthesis）时才用文字近似时间线。
+   *
    * @param {number} dt 秒
    */
   function update(dt) {
     const target = zeroWeights()
-    if (analyser && audioElement && !audioElement.paused) fillAudioTarget(target)
-    else fillTextTarget(target, dt)
+    if (audioElement) {
+      if (audioElement.ended && timelineSource === 'timeline') {
+        // 音频播完即收尾，让调用方（2D 循环）识趣停帧
+        timeline = null
+        timelineSource = ''
+      }
+      const playing = !audioElement.paused && !audioElement.ended
+      if (playing && timeline && timelineSource === 'timeline') fillTimelineByAudio(target)
+      else if (playing) fillAudioTarget(target)
+    } else {
+      fillTextTarget(target, dt)
+    }
 
     const tau = smoothMs / 1000
     const k = dt > 0 ? 1 - Math.exp(-dt / tau) : 1
@@ -365,13 +478,35 @@ export function createLipSync({ smoothMs = DEFAULT_SMOOTH_MS } = {}) {
     return weights
   }
 
-  /** 当前驱动来源：audio（频谱）/ timeline（词级时间戳）/ text（匀速近似）/ none */
+  /** 当前驱动来源与精度：audio-clock（音频主时钟）/ audio（频谱）/ text-clock / paused / none */
   function isActive() {
-    const audio = Boolean(analyser && audioElement && !audioElement.paused)
+    const attached = Boolean(audioElement)
+    const playing = Boolean(audioElement && !audioElement.paused && !audioElement.ended)
+    const audio = Boolean(analyser && playing)
+    // 有音频元素却没在播 = 暂停或已播完：口型停下，不能继续拿文字时钟假装在说
+    const sync = attached
+      ? playing
+        ? timelineSource === 'timeline'
+          ? 'audio-clock'
+          : 'audio'
+        : 'paused'
+      : timeline
+        ? 'text-clock'
+        : 'none'
+    const mode =
+      sync === 'audio-clock'
+        ? 'timeline'
+        : sync === 'audio'
+          ? 'audio'
+          : sync === 'text-clock'
+            ? timelineSource
+            : 'none'
     return {
       audio,
       text: Boolean(timeline),
-      mode: audio ? 'audio' : timeline ? timelineSource : 'none'
+      mode,
+      sync,
+      precision: timeline?.precision ?? null
     }
   }
 

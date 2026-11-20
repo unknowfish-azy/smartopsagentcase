@@ -4,8 +4,15 @@ import test from 'node:test'
 import ts from 'typescript'
 
 // Execute the production TS after the same type erasure used by the build.
-const source = await readFile(new URL('../src/api/stream.ts', import.meta.url), 'utf8')
-const compiled = ts.transpileModule(source.replaceAll('import.meta.env', '({})'), {
+// stream.ts 依赖 ./runtime 的纯错误码翻译；这里用等价 stub 隔离，
+// 既保留流式行为测试，又避免在 data: 模块中解析带 axios 依赖的相对导入。
+const runtimeStub = 'data:text/javascript;base64,' + Buffer.from(
+  'export function describeAiError(code) { return code }'
+).toString('base64')
+const source = (await readFile(new URL('../src/api/stream.ts', import.meta.url), 'utf8'))
+  .replaceAll('import.meta.env', '({})')
+  .replaceAll("from './runtime'", `from '${runtimeStub}'`)
+const compiled = ts.transpileModule(source, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }
 }).outputText
 const { streamChat } = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'))

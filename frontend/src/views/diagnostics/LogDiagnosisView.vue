@@ -158,10 +158,15 @@
         完成审核后才会发布。
       </p>
     </template>
+  <AgentCopilotDock
+    section="日志诊断"
+    :entity="{ type: 'diagnostic', id: diagnosisRunId }"
+  />
   </section>
 </template>
 
 <script setup>
+import AgentCopilotDock from '../../components/agent/AgentCopilotDock.vue'
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { analyzeLog, toMarkdown } from '../../utils/logDiagnosisEngine.js'
@@ -177,6 +182,8 @@ const logText = ref('')
 const fileError = ref('')
 const fileInput = ref(null)
 const result = ref(null)
+/* 本次本地诊断运行标识：用于侧翼把提问绑定到"这一次诊断结果"，非服务端指标。 */
+const diagnosisRunId = ref('')
 
 const inputMeta = computed(() => {
   const chars = logText.value.length
@@ -226,6 +233,7 @@ function clearInput() {
 function runDiagnosis() {
   actionMessage.value = ''
   savedCandidate.value = null
+  diagnosisRunId.value = `diag-${Date.now().toString(36)}`
   result.value = analyzeLog(logText.value)
   /* 回灌侧：诊断完成即检索经验库（失败静默，不阻断主流程） */
   fetchExperience()

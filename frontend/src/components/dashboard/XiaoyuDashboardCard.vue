@@ -12,11 +12,16 @@
       <!-- 3D 半身舞台：点击小鱼开口说话；情境气泡浮动在场景内（蒸馏 PetLive「角色住在空间里」） -->
       <button type="button" class="xiaoyu-stage" aria-label="小鱼 3D 形象 · 点击让小鱼说话" @click="speakGreeting">
         <AgentPersona
+          v-if="personaLoaded"
           ref="personaRef"
           :state="personaState"
           mode="vrm"
           quality="auto"
         />
+        <!-- #perf: 3D 未就绪时先用 CSS 静态封面占位，让首屏先出再升级 -->
+        <div v-else class="xiaoyu-stage-placeholder" aria-hidden="true">
+          <div class="xiaoyu-placeholder-silhouette"></div>
+        </div>
         <p class="xiaoyu-bubble">{{ bubbleText }}</p>
       </button>
 
@@ -91,9 +96,10 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
-import AgentPersona from '../persona/AgentPersona.vue'
+// #perf: 异步加载 3D 化身——避免 15MB VRM 模型在首屏同步阻塞主线程
+const AgentPersona = defineAsyncComponent(() => import('../persona/AgentPersona.vue'))
 import { useCompanionStore } from '../../stores/companion.js'
 import { useAiChatStore } from '../../stores/aiChat.js'
 import { renderMarkdown } from '../ai/markdown.js'
@@ -104,6 +110,7 @@ const companion = useCompanionStore()
 const aiChat = useAiChatStore()
 
 const personaRef = ref(null)
+const personaLoaded = ref(false) // #perf: 空闲后才真正渲染 3D，避免首屏 VRM 解析长任务
 const fileInput = ref(null)
 const threadRef = ref(null)
 const input = ref('')
@@ -273,6 +280,17 @@ watch(personaState, (state) => {
 
 onMounted(() => {
   loadRag()
+  // #perf: 首屏出完再加载 3D 化身——用 requestIdleCallback 趁主线程空闲时懒加载，
+  // 同时保证静态封面至少显示 500ms，确保它真的出现在 FCP/LCP 之前
+  const MIN_PLACEHOLDER_MS = 500
+  const mountedAt = performance.now()
+  const trigger = () => {
+    const remaining = MIN_PLACEHOLDER_MS - (performance.now() - mountedAt)
+    if (remaining > 0) setTimeout(() => { personaLoaded.value = true }, remaining)
+    else personaLoaded.value = true
+  }
+  if ('requestIdleCallback' in window) window.requestIdleCallback(trigger, { timeout: 3000 })
+  else setTimeout(trigger, 1000)
 })
 onBeforeUnmount(() => {
   clearStaged()
@@ -320,6 +338,27 @@ onBeforeUnmount(() => {
   transform: translateY(-6%);
 }
 .xiaoyu-stage :deep(.webgl-host) { max-width: none; }
+
+/* #perf: 3D 加载前的 CSS 静态封面占位——避免首屏阻塞但不丢视觉存在感 */
+.xiaoyu-stage-placeholder {
+  width: 100%; height: 100%;
+  display: grid; place-content: center;
+  background:
+    radial-gradient(120% 90% at 50% 85%, rgba(36, 150, 237, .22), transparent 64%),
+    linear-gradient(180deg, rgba(36, 150, 237, .08), transparent 40%),
+    var(--ds-color-surface-base);
+}
+.xiaoyu-placeholder-silhouette {
+  width: 72%; aspect-ratio: 3 / 4;
+  border-radius: 50% 50% 45% 45% / 55% 55% 45% 45%;
+  background: linear-gradient(180deg, rgba(36, 150, 237, .38), rgba(36, 150, 237, .12));
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .35), inset 0 -20px 40px rgba(36, 150, 237, .22);
+  animation: xiaoyu-pulse 2.8s ease-in-out infinite;
+}
+@keyframes xiaoyu-pulse {
+  0%, 100% { transform: scale(1); opacity: .92; }
+  50%      { transform: scale(1.04); opacity: 1; }
+}
 
 /* 状态气泡：浮动在 3D 场景内（脚下光环上方），玻璃质感 */
 .xiaoyu-bubble {

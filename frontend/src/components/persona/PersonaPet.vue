@@ -132,6 +132,7 @@ import { createPetNeuralTts } from './petNeuralTts.js'
 import { hasCoarseRun } from './useLipSync.js'
 import { fetchTtsStatus, synthesizeSpeech, synthesizeSpeechWithTiming } from '../../api/tts.ts'
 import { askAssistant, createVoiceInput, isVoiceInputAvailable } from './personaVoice.js'
+import { splitSentences } from './sentenceStream.js'
 import { resolveNavigationIntent, hazardBubble } from './voiceCommandRegistry.js'
 import {
   HAZARD_LEVELS,
@@ -162,6 +163,8 @@ const host = ref(null)
 const personaRef = ref(null)
 const dragging = ref(false)
 const speaking = ref(false)
+/* 是否真的有神经音频在响（手势/氛围台词不走 speaking，但提示条必须如实） */
+const voiceActive = ref(false)
 const ready = ref(false)
 const speechSupported = isSpeechSynthesisAvailable()
 const voiceSupported = isVoiceInputAvailable()
@@ -174,8 +177,9 @@ const voiceMode = ref('idle')
 const heard = ref('')
 const boundarySeen = ref(false)
 
-/* 当前口型驱动来源，如实标注三档：
-   phoneme=音素级（服务端给了真实韵母）/ timeline=词/字级时间戳 / text=按字数匀速近似 */
+/* 当前口型驱动来源，如实标注：
+   phoneme=音素级（服务端给了真实韵母）/ pinyin=词边界+中文韵母表 /
+   timeline=词/字级时间戳无韵母 / audio=实时频谱 / text=按字数匀速近似 */
 const lipAlign = ref('text')
 
 const LISTEN_ERRORS = {
@@ -213,7 +217,9 @@ const voiceButtonLabel = computed(() => {
 const noteLabel = computed(() => {
   if (voiceMode.value === 'listening') return '聆听中，请说出你的问题…'
   if (voiceMode.value === 'thinking') return `已收到「${heard.value}」，正在询问平台助手…`
-  if (voiceMode.value === 'speaking' || speaking.value) {
+  // voiceActive：手势/氛围台词不置 speaking（避免锁交互），但确实在出声，
+  // 不能显示"静默"，否则用户会以为没播
+  if (voiceMode.value === 'speaking' || speaking.value || voiceActive.value) {
     return ttsEngine.value ? `语音播报中（${ttsEngine.value}）` : '语音播报中'
   }
   if (!speechSupported) return '当前浏览器不支持语音播报，仅文字近似口型'
@@ -222,7 +228,7 @@ const noteLabel = computed(() => {
 
 const noteHint = computed(() => {
   // 播报中给一句"可以打断"的提示：这是新交互的发现性入口
-  if (speaking.value || voiceMode.value === 'speaking') {
+  if (speaking.value || voiceMode.value === 'speaking' || voiceActive.value) {
     if (ttsEngine.value) {
       if (lipAlign.value === 'phoneme') {
         // 字母数字串在 piper-plus 里只能整串对齐：如实说明，不把它说成逐字音素
@@ -232,6 +238,12 @@ const noteHint = computed(() => {
       }
       if (lipAlign.value === 'timeline') {
         return '神经语音 · 按「听」或点我即可打断（口型按词级时间戳对齐）'
+      }
+      if (lipAlign.value === 'pinyin') {
+        return '神经语音 · 按「听」或点我即可打断（口型按词边界 + 中文韵母表对齐）'
+      }
+      if (lipAlign.value === 'audio') {
+        return '神经语音 · 按「听」或点我即可打断（口型按实时音频频谱驱动）'
       }
       return '神经语音 · 按「听」或点我即可打断（口型为近似同步）'
     }
@@ -634,24 +646,43 @@ const neuralTts = createPetNeuralTts({
   synthesize: synthesizeSpeech,
   // 优先取后端词级时间戳：Edge 有 WordBoundary，本地模型没有会回空数组
   synthesizeWithTiming: synthesizeSpeechWithTiming,
-  onEnd: () => stopSpeech(),
+  // 流式分句播放的收尾由播报队列统一处理（逐句等播完再上下句），这里不再整体 stop
+  onEnd: () => {},
   // 播放中途出错：如实收尾，不假装仍在播报
   onError: () => stopSpeech()
 })
 
 /**
  * 神经音频已响起时驱动口型：有真实时间戳走 timeline，否则按音频时长反推 cps。
- * 来源写进 lipAlign（phoneme/timeline/text），供 noteHint 如实展示。
+ * 先把 <audio> 接进口型分析链，让 currentTime 成为主时钟（振幅只当开口门限）。
+ * 来源写进 lipAlign（phoneme/pinyin/timeline/text），供 noteHint 如实展示。
  */
 function driveLipSync(text) {
+  // 音频主时钟：接入后口型按 audio.currentTime 对齐，暂停/结束即闭嘴
+  const element = neuralTts.audioElement
+  const attached = Boolean(element && personaRef.value?.attachAudio?.(element))
+  if (attached) personaRef.value?.resumeAudio?.()
+  if (element) {
+    // 确有音频在响：手势/氛围台词不置 speaking，提示条据此显示真实对齐方式
+    voiceActive.value = true
+    const settle = () => { voiceActive.value = false }
+    element.addEventListener('ended', settle, { once: true })
+    element.addEventListener('error', settle, { once: true })
+  }
   const timing = neuralTts.lastTiming
   if (timing.length && personaRef.value?.speakTimeline?.(text, timing)) {
     // 带 viseme 说明服务端算出了真实韵母（piper-plus 音素级）；
-    // 只有边界时间戳（Edge WordBoundary）就如实降一档标注为词级
-    lipAlign.value = timing.some((item) => item.viseme) ? 'phoneme' : 'timeline'
+    // 带 pinyin 说明是词边界 + 前端中文韵母表；两者都没有就如实标为词级
+    const hasPinyin = timing.some((item) => item.pinyin)
+    lipAlign.value = timing.some((item) => item.viseme)
+      ? 'phoneme'
+      : hasPinyin
+        ? 'pinyin'
+        : 'timeline'
     return
   }
-  lipAlign.value = 'text'
+  // 没有词边界事件：接入成功时由实时频谱驱动；接入失败才退回按字数推演
+  lipAlign.value = attached ? 'audio' : 'text'
   // 神经音频没有词边界事件时，用真实时长反推 cps，口型与音频同起同止
   const seconds = neuralTts.lastDurationMs / 1000
   const cps = seconds > 0.3 ? Math.max(2, Math.min(12, text.length / seconds)) : 5
@@ -740,8 +771,134 @@ function onReady() {
   ready.value = true
 }
 
+/* ── 流式分句播报队列 ──
+   LLM 每吐出一句就进队列，神经语音合成并播完一句再上下句；
+   队列未封口时不会提前收尾，避免"句子还没来完就退出发言态"。 */
+const speechQueue = []
+let speechQueueSealed = true
+let speechQueueRunning = false
+
+/** 等当前这句真正播完（音频 ended/error/被暂停），队列才推进下一句 */
+function waitPlaybackEnd() {
+  const element = neuralTts.audioElement
+  if (!element || element.ended || element.paused) return Promise.resolve()
+  return new Promise((resolve) => {
+    const done = () => {
+      element.removeEventListener('ended', done)
+      element.removeEventListener('error', done)
+      element.removeEventListener('pause', done)
+      resolve()
+    }
+    element.addEventListener('ended', done)
+    element.addEventListener('error', done)
+    // 被新一句合成/打断暂停时也要放行，否则队列会卡死在上一句
+    element.addEventListener('pause', done)
+  })
+}
+
+/** 神经语音整段不可用时，把剩余句子合并走一次兜底（浏览器语音 / 纯文字口型） */
+function speakFallback(text) {
+  if (!text) return
+  voiceActive.value = false
+  if (store.speechFallback && speechSupported && petSpeech.speak(normalizeSpeechText(text))) {
+    lipAlign.value = 'text'
+    personaRef.value?.detachAudio?.()
+    personaRef.value?.speakText(text, { cps: 5 })
+    return
+  }
+  // 兜底开关关闭（默认）或浏览器语音不可用：退化为纯文字时间线，UI 已如实标注
+  lipAlign.value = 'text'
+  personaRef.value?.detachAudio?.()
+  personaRef.value?.speakText(text, { cps: 5 })
+  speaking.value = false
+  if (voiceMode.value === 'speaking') voiceMode.value = 'idle'
+}
+
+async function runSpeechQueue() {
+  if (speechQueueRunning) return
+  speechQueueRunning = true
+  const token = speechToken
+  let pending = null
+  try {
+    while (speechQueue.length || pending) {
+      if (token !== speechToken) return
+      let current = pending
+      pending = null
+      if (!current) {
+        const text = speechQueue.shift()
+        if (!text) break
+        // 第一句：合成 + 播放
+        current = { text, prepared: await neuralTts.prepare(text) }
+        if (token !== speechToken) return
+      }
+      if (!current.prepared) {
+        // 这一句神经语音合成失败：剩余合并整段兜底，不再逐句换引擎
+        const rest = [current.text, ...speechQueue].join('')
+        speechQueue.length = 0
+        speechQueueSealed = true
+        speakFallback(rest)
+        return
+      }
+      const started = await neuralTts.playPrepared(current.prepared)
+      if (token !== speechToken) return
+      if (!started) {
+        const rest = [current.text, ...speechQueue].join('')
+        speechQueue.length = 0
+        speechQueueSealed = true
+        speakFallback(rest)
+        return
+      }
+      driveLipSync(current.text)
+      // 边播边合成下一句：先挂结束监听再合成，避免短音频播完漏掉 ended
+      const ended = waitPlaybackEnd()
+      if (speechQueue.length) {
+        const nextText = speechQueue.shift()
+        const nextPrepared = await neuralTts.prepare(nextText)
+        pending = { text: nextText, prepared: nextPrepared }
+        if (token !== speechToken) return
+      }
+      await ended
+    }
+  } finally {
+    speechQueueRunning = false
+  }
+  if (token === speechToken && speechQueueSealed && !speechQueue.length && !pending) finishSpeech()
+}
+
+function beginSpeechStream() {
+  speechQueue.length = 0
+  speechQueueSealed = false
+  speaking.value = true
+}
+
+/** 追加一句并确保队列在跑；队列已封口说明是新一段播报，自动开新流 */
+function enqueueSentence(sentence) {
+  const text = String(sentence ?? '').trim()
+  if (!text) return
+  if (speechQueueSealed) beginSpeechStream()
+  speechQueue.push(text)
+  void runSpeechQueue()
+}
+
+/** 文本已全部吐完：封口，队列空了就收尾 */
+function sealSpeechQueue() {
+  speechQueueSealed = true
+  if (speechQueueRunning) return
+  if (speechQueue.length) void runSpeechQueue()
+  else finishSpeech()
+}
+
+/** 正常播完的收尾（不递增令牌，避免误伤还没送进来的下一句） */
+function finishSpeech() {
+  speaking.value = false
+  voiceActive.value = false
+  lipAlign.value = 'text'
+  personaRef.value?.stopSpeaking()
+  if (voiceMode.value === 'speaking') voiceMode.value = 'idle'
+}
+
 /**
- * 播报一段话：优先神经语音（口型按文本时间线近似推进），失败回落浏览器语音，
+ * 播报一段话：按句拆分后交给播报队列，逐句神经语音；失败回落浏览器语音，
  * 两者都不可用时退化为纯文字口型；UI 的 noteHint 会如实标注当前引擎。
  */
 function speakReply(text, gesture) {
@@ -749,33 +906,15 @@ function speakReply(text, gesture) {
   boundarySeen.value = false
   if (gesture) personaRef.value.playGesture?.(gesture)
   if (audioMuted.value) {
-    // 静音态：只走口型时间线，不触碰任何语音引擎
+    // 静音态：只走口型时间线，不触碰任何语音引擎（先摘掉上一句残留的音频时钟）
+    personaRef.value.detachAudio?.()
     personaRef.value.speakText(text, { cps: 5 })
     if (voiceMode.value === 'speaking') voiceMode.value = 'idle'
     return
   }
-  const token = ++speechToken
-  speaking.value = true
-  neuralTts.speak(text).then((started) => {
-    if (token !== speechToken || !speaking.value) return
-    if (started) {
-      // 有后端词级时间戳就走 timeline；没有则按真实音频时长反推 cps，
-      // 口型与音频同起同止（固定 5 字/秒在长句上会越播越不同步）
-      driveLipSync(text)
-      return
-    }
-    // 兜底开关关闭（默认）时不回落浏览器语音：直接退化为纯文字口型（无声）
-    if (store.speechFallback && speechSupported && petSpeech.speak(normalizeSpeechText(text))) {
-      lipAlign.value = 'text'
-      personaRef.value?.speakText(text, { cps: 5 })
-      return
-    }
-    // 没有任何可用语音：退化为纯文字时间线，UI 已如实标注
-    lipAlign.value = 'text'
-    personaRef.value?.speakText(text, { cps: 5 })
-    speaking.value = false
-    if (voiceMode.value === 'speaking') voiceMode.value = 'idle'
-  })
+  beginSpeechStream()
+  for (const sentence of splitSentences(text)) speechQueue.push(sentence)
+  sealSpeechQueue()
 }
 
 /**
@@ -792,13 +931,29 @@ async function speakGreeting() {
   playGestureWithVoice('think', '让我想一想…')
   const controller = new AbortController()
   askController = controller
+  let spoken = 0
   try {
     const { ok, text: reply } = await askAssistant(
       '请用一句话向用户问好，并简要说明你能帮助处理的事项，不超过 40 个字。',
-      { signal: controller.signal }
+      {
+        signal: controller.signal,
+        onSentence: (sentence) => {
+          if (controller.signal.aborted) return
+          spoken += 1
+          if (spoken === 1) {
+            voiceMode.value = 'speaking'
+            personaRef.value?.playGesture?.('greet')
+          }
+          enqueueSentence(sentence)
+        }
+      }
     )
     if (controller.signal.aborted) return
     if (askController === controller) askController = null
+    if (spoken > 0) {
+      sealSpeechQueue()
+      return
+    }
     voiceMode.value = 'idle'
     if (ok && reply) {
       speakReply(reply, 'greet')
@@ -809,6 +964,10 @@ async function speakGreeting() {
   } catch {
     if (controller.signal.aborted) return
     if (askController === controller) askController = null
+    if (spoken > 0) {
+      sealSpeechQueue()
+      return
+    }
     voiceMode.value = 'idle'
     showReaction('助手暂时离线，先来句固定问候～')
     speakReply(GREETING, 'shrug')
@@ -943,10 +1102,29 @@ async function onVoiceCommand() {
   playGestureWithVoice('radioCall')
   const controller = new AbortController()
   askController = controller
-  const { ok, text: reply } = await askAssistant(text, { signal: controller.signal })
+  // 流式分句：AI 每吐出一句就入队合成播放，首句不必等整段回答
+  let spoken = 0
+  const { ok, text: reply } = await askAssistant(text, {
+    signal: controller.signal,
+    onSentence: (sentence) => {
+      if (controller.signal.aborted) return
+      spoken += 1
+      if (spoken === 1) {
+        voiceMode.value = 'speaking'
+        personaRef.value?.playGesture?.('nod')
+      }
+      enqueueSentence(sentence)
+    }
+  })
   // 被新一轮插话打断：丢弃这次回答，不覆盖用户刚说的话
   if (controller.signal.aborted) return
   if (askController === controller) askController = null
+  if (spoken > 0) {
+    // 已边收边播：封口即可，剩余句子会按队列继续播完
+    sealSpeechQueue()
+    if (!ok) showReaction(reply, 3200)
+    return
+  }
   if (voiceMode.value !== 'thinking') return
   voiceMode.value = ok ? 'speaking' : 'idle'
   speakReply(reply, ok ? 'nod' : 'shrug')
@@ -965,7 +1143,10 @@ function _pendingStillFresh(pending) {
 
 function stopSpeech() {
   speechToken += 1
+  speechQueue.length = 0
+  speechQueueSealed = true
   speaking.value = false
+  voiceActive.value = false
   lipAlign.value = 'text'
   neuralTts.stop()
   petSpeech.stop?.()

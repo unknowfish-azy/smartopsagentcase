@@ -23,15 +23,14 @@ describe('voiceCommandRegistry', () => {
 
   describe('isHazardRoute', () => {
     test('精确命中 HAZARD_ROUTES 的 key', () => {
-      assert.ok(isHazardRoute('/admin'))
-      assert.ok(isHazardRoute('/admin/users'))
       assert.ok(isHazardRoute('/sentinel/scripts'))
       assert.ok(isHazardRoute('/robot'))
+      assert.ok(isHazardRoute('/incidents'))
     })
 
     test('归一化路径也能命中', () => {
-      assert.ok(isHazardRoute('/admin/users/'))
-      assert.ok(isHazardRoute('/admin/users?role=admin'))
+      assert.ok(isHazardRoute('/sentinel/scripts/'))
+      assert.ok(isHazardRoute('/sentinel/scripts?confirm=1'))
     })
 
     test('普通路由返回 false', () => {
@@ -56,13 +55,12 @@ describe('voiceCommandRegistry', () => {
       assert.equal(hit.hazard, undefined)
     })
 
-    test('导航前缀 + 高危关键词命中 → blocked=true 且带 hazard', () => {
-      const blocked = resolveNavigationIntent('打开管理控制台')
-      assert.equal(blocked.matched, true)
-      assert.equal(blocked.blocked, true)
-      assert.equal(blocked.path, '/admin')
-      assert.ok(blocked.hazard)
-      assert.ok(blocked.hazard.reason.length > 0)
+    test('管理台入口不再出现在用户层语音词典（已迁移至独立管理服务）', () => {
+      const concealed = resolveNavigationIntent('打开管理控制台')
+      assert.equal(concealed.matched, false)
+      // 管理路径不得作为字符串残留进用户层产物：既不识别，也不在高危表中出现。
+      assert.equal(isHazardRoute('/admin'), false)
+      assert.equal(Object.keys(HAZARD_ROUTES).some(path => path.startsWith('/admin')), false)
     })
 
     test('只有关键词、没有导航前缀 → 不命中（避免业务查询误判）', () => {

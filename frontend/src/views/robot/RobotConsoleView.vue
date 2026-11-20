@@ -19,6 +19,11 @@
         <span class="pill" :class="wsState === 'open' ? 'pill-ok' : 'pill-warn'">
           {{ wsState === 'open' ? '控制通道已连接' : '控制通道未连接' }}
         </span>
+        <button type="button" class="head-action" @click="activeTab = 'alerts'">
+          预警
+          <span v-if="fleetKpis.activeAlerts" class="head-badge">{{ fleetKpis.activeAlerts }}</span>
+        </button>
+        <button type="button" class="head-action primary" @click="assistantOpen = true">AI 助手</button>
         <button type="button" class="btn btn-ghost" @click="reload">刷新</button>
       </div>
     </header>
@@ -32,7 +37,71 @@
       登记设备并启用（需 admin.config 能力）。
     </div>
 
-    <div v-else class="console-grid">
+    <template v-else>
+      <nav class="console-tabs" role="tablist" aria-label="机器人控制台分区">
+        <button
+          v-for="tab in TABS"
+          :key="tab.key"
+          type="button"
+          class="tab-btn"
+          :class="{ active: activeTab === tab.key }"
+          role="tab"
+          :aria-selected="activeTab === tab.key"
+          @click="activeTab = tab.key"
+        >
+          {{ tab.label }}
+          <span v-if="tab.key === 'alerts' && fleetKpis.activeAlerts" class="tab-badge">{{ fleetKpis.activeAlerts }}</span>
+        </button>
+      </nav>
+
+      <!-- 总览：多设备孪生 + 态势卡 + 预警摘要 + 指标 -->
+      <div v-if="activeTab === 'overview'" class="tab-panel overview-grid">
+        <RobotTwinMap
+          :devices="devices"
+          :states="fleetStates"
+          :selected-key="selectedKey"
+          :trails="trails"
+          :alerts="alerts"
+          :route="activeRoute"
+          :route-progress="activeRouteProgress"
+          :draft="draftRoute"
+          :running-tasks="fleetKpis.runningTasks"
+          :active-alert-count="fleetKpis.activeAlerts"
+          @select="selectDevice"
+        />
+        <div class="overview-side">
+          <RobotFleetCards
+            :devices="devices"
+            :states="fleetStates"
+            :selected-key="selectedKey"
+            @select="selectDevice"
+            @estop="quickEstop"
+          />
+          <RobotAlertCenter
+            compact
+            :alerts="alerts"
+            :limit="6"
+            @acknowledge="acknowledgeAlert"
+            @restore="restoreAlert"
+            @refresh="refreshAlerts"
+            @select-device="selectDevice"
+          />
+        </div>
+        <RobotMetricsPanel
+          class="overview-metrics"
+          :devices="devices"
+          :states="fleetStates"
+          :history="history"
+          :alerts="alerts"
+          :task-summary="taskSummary"
+          :tasks="fleetTasks"
+          :selected-key="selectedKey"
+          @select="selectDevice"
+        />
+      </div>
+
+      <!-- 操控：视觉 + 遥测 + 3D + 双态 + 遥控 -->
+      <div v-else-if="activeTab === 'control'" class="console-grid">
       <!-- 左：视觉回传 + 遥测 -->
       <div class="panel-stack">
         <RobotVideoPanel
@@ -70,6 +139,39 @@
               <dd>{{ obstacleText }}</dd>
             </div>
           </dl>
+
+          <!-- 形态专属遥测：巡检车轮速仪表 / 蜘蛛 8 足触地（字段来自模拟器或真机桥，缺失如实显示“—”） -->
+          <section v-if="isCarForm" class="hud-extra" aria-label="巡检车轮速仪表">
+            <div class="hud-extra-head">
+              <h3>轮速仪表</h3>
+              <span class="hud-extra-meta">
+                轮径 {{ carWheelRadiusText }} · 轮距 {{ carTrackWidthText }}
+              </span>
+            </div>
+            <div class="wheel-gauges">
+              <WheelSpeedDial
+                v-for="gauge in wheelGauges"
+                :key="gauge.side"
+                :label="gauge.label"
+                :speed="gauge.speed"
+                :angular="gauge.angular"
+              />
+            </div>
+            <p class="hud-extra-meta">
+              里程 {{ odometerText }} · LiDAR {{ lidarRpmText }}
+            </p>
+          </section>
+
+          <section v-else-if="isSpiderForm" class="hud-extra" aria-label="蜘蛛 8 足触地状态">
+            <div class="hud-extra-head">
+              <h3>8 足触地</h3>
+              <span class="hud-extra-meta">{{ spiderContactText }}</span>
+            </div>
+            <FootContactGrid :contacts="spiderFeet" />
+            <p class="hud-extra-meta">
+              步频 {{ spiderStrideText }} · 机身高度 {{ spiderBodyHeightText }} · 相位 {{ spiderPhaseText }}
+            </p>
+          </section>
         </section>
 
         <RobotScene3D
@@ -79,6 +181,7 @@
           :form-factor="selectedDevice?.formFactor || 'CAR'"
           :mode="mode"
           :effects="effectConfig"
+          :trail="trails[selectedKey] || []"
         />
 
         <RobotEffectTuner v-model="effectConfig" />
@@ -161,7 +264,7 @@
           :device-key="selectedKey"
           :mode="mode"
           :bridge-connected="bridgeConnected"
-          @task-started="loadLive"
+          @task-started="onTaskStarted"
         />
 
         <RobotVoiceBar v-if="selectedKey" :device-key="selectedKey" />
@@ -169,6 +272,107 @@
         <RobotFleetPanel v-if="devices.length" />
       </div>
     </div>
+
+      <!-- 协同：多子智能体分工（巡检调度 / 设备诊断 / 合规审计） -->
+      <div v-else-if="activeTab === 'orchestration'" class="tab-panel">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>多智能体协同</h2>
+            <span class="pill">主管拆解 · 专家并行 · 汇总审计</span>
+          </div>
+          <AgentOrchestrationPanel
+            :device-key="selectedKey"
+            :device-keys="devices.map(device => device.deviceKey)"
+          />
+        </div>
+      </div>
+
+      <!-- 巡检：地图点选规划 + 任务跟踪 -->
+      <div v-else-if="activeTab === 'patrol'" class="tab-panel">
+        <div class="patrol-grid">
+          <RobotTwinMap
+            editable
+            :devices="devices"
+            :states="fleetStates"
+            :selected-key="selectedKey"
+            :trails="trails"
+            :alerts="alerts"
+            :route="activeRoute"
+            :route-progress="activeRouteProgress"
+            :draft="draftRoute"
+            :running-tasks="fleetKpis.runningTasks"
+            :active-alert-count="fleetKpis.activeAlerts"
+            @select="selectDevice"
+            @pick="addWaypoint"
+            @remove-draft="removeWaypoint"
+          />
+          <RobotRoutePlanner
+            :device-key="selectedKey"
+            :mode="mode"
+            :bridge-connected="bridgeConnected"
+            :points="draftRoute"
+            :editable="plannerEditable"
+            @update:points="draftRoute = $event"
+            @update:editable="plannerEditable = $event"
+            @submitted="onRouteSubmitted"
+          />
+        </div>
+        <div class="patrol-lower">
+          <RobotTaskPanel
+            v-if="selectedKey"
+            :device-key="selectedKey"
+            :mode="mode"
+            :bridge-connected="bridgeConnected"
+            @task-started="onTaskStarted"
+          />
+          <RobotFleetPanel v-if="devices.length" />
+        </div>
+      </div>
+
+      <!-- 预警：统一预警流 -->
+      <div v-else-if="activeTab === 'alerts'" class="tab-panel">
+        <RobotAlertCenter
+          :alerts="alerts"
+          @acknowledge="acknowledgeAlert"
+          @restore="restoreAlert"
+          @refresh="refreshAlerts"
+          @select-device="selectDevice"
+        />
+      </div>
+
+      <!-- 分析：真实遥测指标 + 助手入口 -->
+      <div v-else class="tab-panel analysis-grid">
+        <RobotMetricsPanel
+          :devices="devices"
+          :states="fleetStates"
+          :history="history"
+          :alerts="alerts"
+          :task-summary="taskSummary"
+          :tasks="fleetTasks"
+          :selected-key="selectedKey"
+          @select="selectDevice"
+        />
+        <section class="panel assistant-cta" aria-labelledby="assistant-cta-title">
+          <div class="panel-head">
+            <h2 id="assistant-cta-title">平台助手</h2>
+            <span class="pill pill-neutral">只读建议</span>
+          </div>
+          <p class="hint-text">
+            把当前设备遥测、任务进度与未确认预警交给平台助手，快速获得排查路径与操作引导；不会直接下发控制指令。
+          </p>
+          <dl class="assistant-facts">
+            <div><dt>当前设备</dt><dd>{{ selectedDevice?.name || '未选择' }}</dd></div>
+            <div><dt>运行态</dt><dd>{{ modeLabel }}</dd></div>
+            <div><dt>控制桥</dt><dd>{{ bridgeConnected ? '已连接' : '未连接' }}</dd></div>
+            <div><dt>未确认预警</dt><dd>{{ fleetKpis.activeAlerts }}</dd></div>
+          </dl>
+          <div class="assistant-cta-actions">
+            <button type="button" class="btn btn-active" @click="assistantOpen = true">打开平台助手</button>
+            <RouterLink to="/log-diagnosis" class="btn btn-ghost link-btn">日志诊断</RouterLink>
+          </div>
+        </section>
+      </div>
+    </template>
 
     <!-- 底部：事件流 -->
     <section v-if="devices.length" class="panel" aria-labelledby="robot-events-title">
@@ -185,20 +389,43 @@
       </ul>
       <p v-else class="hint-text">暂无事件。桥连接、模式切换、命令拒绝与设备上报都会记录在此。</p>
     </section>
+
+    <RobotAssistantPanel
+      :open="assistantOpen"
+      :context-summary="assistantSummary"
+      :context-payload="assistantContextPayload"
+      :device-name="selectedDevice?.name || ''"
+      @close="assistantOpen = false"
+    />
+  <AgentCopilotDock
+    section="机器人控制台"
+    :entity="{ type: 'device', id: selectedKey || devices?.[0]?.deviceKey }"
+  />
   </section>
 </template>
 
 <script setup>
+import AgentCopilotDock from '../../components/agent/AgentCopilotDock.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import DeviceTeleopPanel from '../../components/robot/DeviceTeleopPanel.vue'
 import RobotVideoPanel from '../../components/robot/RobotVideoPanel.vue'
 import RobotScene3D from '../../components/robot/RobotScene3D.vue'
 import RobotEffectTuner from '../../components/robot/RobotEffectTuner.vue'
+import WheelSpeedDial from '../../components/robot/WheelSpeedDial.vue'
+import FootContactGrid from '../../components/robot/FootContactGrid.vue'
 import { DEFAULT_EFFECT_CONFIG, resolveEffectConfig } from '../../components/robot/rigs/effects.js'
 import RobotTaskPanel from '../../components/robot/RobotTaskPanel.vue'
 import RobotVoiceBar from '../../components/robot/RobotVoiceBar.vue'
 import RobotFleetPanel from '../../components/robot/RobotFleetPanel.vue'
+import RobotTwinMap from '../../components/robot/RobotTwinMap.vue'
+import RobotFleetCards from '../../components/robot/RobotFleetCards.vue'
+import RobotRoutePlanner from '../../components/robot/RobotRoutePlanner.vue'
+import RobotAlertCenter from '../../components/robot/RobotAlertCenter.vue'
+import RobotMetricsPanel from '../../components/robot/RobotMetricsPanel.vue'
+import RobotAssistantPanel from '../../components/robot/RobotAssistantPanel.vue'
+import AgentOrchestrationPanel from '../../components/robot/AgentOrchestrationPanel.vue'
+import { useRobotFleet } from '../../composables/useRobotFleet'
 import { getVisionStatus } from '../../api/inspector'
 import {
   getRobotDevices,
@@ -249,6 +476,159 @@ const events = ref([])
 const errorMessage = ref('')
 const noticeMessage = ref('')
 const wsState = ref('closed')
+
+/* ---- 控制台分区：总览 / 操控 / 协同 / 巡检 / 预警 / 分析 ---- */
+const TAB_STORAGE_KEY = 'smartops_robot_console_tab'
+const TABS = [
+  { key: 'overview', label: '总览' },
+  { key: 'control', label: '操控' },
+  { key: 'orchestration', label: '协同' },
+  { key: 'patrol', label: '巡检' },
+  { key: 'alerts', label: '预警' },
+  { key: 'analysis', label: '分析' }
+]
+
+function loadTab() {
+  try {
+    const saved = window.localStorage.getItem(TAB_STORAGE_KEY)
+    return TABS.some(tab => tab.key === saved) ? saved : 'overview'
+  } catch {
+    return 'overview'
+  }
+}
+
+const activeTab = ref(loadTab())
+watch(activeTab, (value) => {
+  try {
+    window.localStorage.setItem(TAB_STORAGE_KEY, value)
+  } catch {
+    /* 隐私模式：仅当次生效 */
+  }
+})
+
+/* ---- 机队数据层：真实遥测 / 任务 / 预警聚合 ---- */
+const {
+  states: fleetStates,
+  trails,
+  history,
+  tasks: fleetTasks,
+  taskSummary,
+  alerts,
+  activeAlerts,
+  fleetKpis,
+  ingest: ingestFleet,
+  pollFleet,
+  loadTasks: loadFleetTasks,
+  loadTaskSummary,
+  loadInspectorEvents,
+  acknowledge: acknowledgeAlert,
+  restore: restoreAlert
+} = useRobotFleet(devices)
+
+/* ---- 点选式路线草稿（按设备分别持久化） ---- */
+const DRAFT_KEY_PREFIX = 'smartops_robot_route_draft:'
+const plannerEditable = ref(false)
+const draftRoute = ref([])
+
+function draftKey(deviceKey) {
+  return `${DRAFT_KEY_PREFIX}${deviceKey || ''}`
+}
+
+function loadDraft(deviceKey) {
+  if (!deviceKey) return []
+  try {
+    const raw = window.localStorage.getItem(draftKey(deviceKey))
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveDraft() {
+  if (!selectedKey.value) return
+  try {
+    window.localStorage.setItem(draftKey(selectedKey.value), JSON.stringify(draftRoute.value))
+  } catch {
+    /* 存储不可用：草稿仅保留在内存 */
+  }
+}
+
+watch(selectedKey, (key) => {
+  draftRoute.value = loadDraft(key)
+  plannerEditable.value = false
+  if (key) loadFleetTasks(key)
+})
+
+watch(draftRoute, saveDraft, { deep: true })
+
+function addWaypoint(point) {
+  if (draftRoute.value.length >= 50) {
+    setNotice('单个任务最多 50 个路点')
+    return
+  }
+  draftRoute.value = [
+    ...draftRoute.value,
+    {
+      label: `路点 ${draftRoute.value.length + 1}`,
+      x: 0,
+      y: 0,
+      theta: 0,
+      targetX: Number(point.x),
+      targetY: Number(point.y),
+      actions: ['CAPTURE'],
+      speech: ''
+    }
+  ]
+  plannerEditable.value = true
+}
+
+function removeWaypoint(index) {
+  draftRoute.value = draftRoute.value.filter((_, itemIndex) => itemIndex !== index)
+}
+
+/* ---- 最新任务路线（兼容字符串/对象两种 route 存储） ---- */
+function parseRoute(raw) {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const latestTask = computed(() => fleetTasks.value[0] || null)
+const activeRoute = computed(() => parseRoute(latestTask.value?.route))
+const activeRouteProgress = computed(() => Number(latestTask.value?.progress) || 0)
+
+/* ---- 平台助手上下文：只读、真实状态 ---- */
+const assistantOpen = ref(false)
+
+const assistantSummary = computed(() => {
+  if (!selectedDevice.value) return '尚未选择设备'
+  return `${selectedDevice.value.name}（${selectedDevice.value.deviceKey}）· ${modeLabel.value} · 电量 ${batteryText.value} · 位姿 ${poseText.value}`
+})
+
+const assistantContextPayload = computed(() => {
+  const device = selectedDevice.value
+  const lines = []
+  lines.push(`设备：${device ? `${device.name}（${device.deviceKey}，${formFactorLabel(device.formFactor)}）` : '未选择'}`)
+  lines.push(`运行态：${modeLabel.value}；控制通道：${wsState.value === 'open' ? '已连接' : '未连接'}；控制桥：${bridgeConnected.value ? '已连接' : '未连接'}`)
+  lines.push(`遥测：电量 ${batteryText.value}，位姿 (${poseText.value})，朝向 ${headingText.value}，障碍距离 ${obstacleText.value}${telemetryStale.value ? '（心跳超时）' : ''}`)
+  if (latestTask.value) {
+    const status = latestTask.value.status || 'UNKNOWN'
+    const total = activeRoute.value.length
+    lines.push(`最新巡检任务：#${latestTask.value.id ?? '—'} 状态 ${status}，进度 ${activeRouteProgress.value}/${total}`)
+  } else {
+    lines.push('最新巡检任务：无记录')
+  }
+  const pending = activeAlerts.value.slice(0, 4).map(item => `${item.severity} ${item.title}`)
+  lines.push(`未确认预警 ${activeAlerts.value.length} 条${pending.length ? `：${pending.join('；')}` : ''}`)
+  lines.push(`机队：在线 ${fleetKpis.value.online}/${fleetKpis.value.total}，执行中 ${fleetKpis.value.runningTasks}，失败 ${fleetKpis.value.failedTasks}`)
+  return lines.join('\n')
+})
 
 /** 3D 动效参数：本地持久化，刷新后保持上次调节结果。 */
 const EFFECT_STORAGE_KEY = 'smartops_robot_effect_config'
@@ -343,6 +723,68 @@ const obstacleText = computed(() => {
   return Number.isFinite(value) ? `${value.toFixed(2)} m` : '—'
 })
 
+/* ---- 形态专属遥测展示：巡检车轮速仪表 / 蜘蛛 8 足触地 ----
+   数据取自遥测 wheels / gait（模拟器与真机桥同字段）；缺失时如实显示“—”。 */
+
+const isCarForm = computed(() => (selectedDevice.value?.formFactor || 'CAR') === 'CAR')
+const isSpiderForm = computed(() => selectedDevice.value?.formFactor === 'SPIDER')
+
+/* 左右轮原始遥测值交给 WheelSpeedDial 统一格式化与绘制 */
+const wheelGauges = computed(() => {
+  const wheels = telemetry.value?.wheels
+  return [
+    { side: 'left', label: '左轮', speed: Number(wheels?.leftSpeed), angular: Number(wheels?.leftAngular) },
+    { side: 'right', label: '右轮', speed: Number(wheels?.rightSpeed), angular: Number(wheels?.rightAngular) }
+  ]
+})
+
+const carWheelRadiusText = computed(() => {
+  const radius = Number(telemetry.value?.wheels?.radius)
+  return Number.isFinite(radius) && radius > 0 ? `${(radius * 100).toFixed(1)} cm` : '—'
+})
+
+const carTrackWidthText = computed(() => {
+  const track = Number(telemetry.value?.wheels?.trackWidth)
+  return Number.isFinite(track) && track > 0 ? `${(track * 100).toFixed(1)} cm` : '—'
+})
+
+const odometerText = computed(() => {
+  const odometer = Number(telemetry.value?.odometer)
+  return Number.isFinite(odometer) ? `${odometer.toFixed(2)} m` : '—'
+})
+
+const lidarRpmText = computed(() => {
+  const rpm = Number(telemetry.value?.wheels?.lidarRpm)
+  return Number.isFinite(rpm) && rpm > 0 ? `${Math.round(rpm)} rpm` : '—'
+})
+
+const spiderFeet = computed(() => {
+  const contacts = telemetry.value?.gait?.footContacts
+  return Array.isArray(contacts) ? contacts.map((contact) => Boolean(contact)) : []
+})
+
+const spiderContactText = computed(() => {
+  const feet = spiderFeet.value
+  if (!feet.length) return '等待步态遥测'
+  const grounded = feet.filter(Boolean).length
+  return `支撑 ${grounded} / ${feet.length}`
+})
+
+const spiderStrideText = computed(() => {
+  const stride = Number(telemetry.value?.gait?.strideHz)
+  return Number.isFinite(stride) ? `${stride.toFixed(2)} Hz` : '—'
+})
+
+const spiderBodyHeightText = computed(() => {
+  const height = Number(telemetry.value?.gait?.bodyHeight)
+  return Number.isFinite(height) ? `${height.toFixed(3)} m` : '—'
+})
+
+const spiderPhaseText = computed(() => {
+  const phase = Number(telemetry.value?.gait?.phase)
+  return Number.isFinite(phase) ? `${phase.toFixed(2)} rad` : '—'
+})
+
 function formFactorLabel(formFactor) {
   return FORM_FACTOR_LABELS[formFactor] || formFactor || '未知形态'
 }
@@ -384,8 +826,10 @@ async function reload() {
       selectedKey.value = preferred.deviceKey
     }
     await loadLive()
+    loadFleetTasks(selectedKey.value)
     loadFrame()
     connect()
+    pollFleet()
   } catch (error) {
     errorMessage.value = error?.message || '加载设备台账失败'
   }
@@ -402,6 +846,11 @@ async function loadLive() {
       telemetry.value = data.telemetry
       telemetryAt.value = Date.now()
     }
+    ingestFleet(selectedKey.value, {
+      mode: mode.value,
+      bridgeConnected: bridgeConnected.value,
+      telemetry: data.telemetry || null
+    })
   } catch (error) {
     errorMessage.value = error?.message || '加载实时状态失败'
   }
@@ -440,10 +889,50 @@ function onDeviceChange() {
   lastFrameAt.value = ''
   frameSimulated.value = false
   visionResult.value = null
+  loadFleetTasks(selectedKey.value)
   loadLive().then(() => {
     loadFrame()
     sendSubscribe()
   })
+}
+
+/** 跨面板选中设备：同步下拉框、重启订阅并刷新该设备任务。 */
+function selectDevice(deviceKey) {
+  if (!deviceKey || deviceKey === selectedKey.value) return
+  selectedKey.value = deviceKey
+  onDeviceChange()
+}
+
+/** 态势卡快捷急停：直接走安全优先的 REST 通道，不依赖当前选中项。 */
+async function quickEstop(deviceKey) {
+  if (!deviceKey) return
+  try {
+    await robotEmergencyStop(deviceKey)
+    ingestFleet(deviceKey, { mode: 'E_STOP' })
+    if (deviceKey === selectedKey.value) mode.value = 'E_STOP'
+    pushEvent('急停', `${deviceKey} 已通过态势卡下发急停`, 'error')
+  } catch (error) {
+    errorMessage.value = error?.message || '急停下发失败'
+  }
+}
+
+function refreshAlerts() {
+  loadInspectorEvents()
+  loadTaskSummary()
+}
+
+function onTaskStarted() {
+  loadLive()
+  loadFleetTasks(selectedKey.value)
+  loadTaskSummary()
+}
+
+function onRouteSubmitted() {
+  loadLive()
+  loadFleetTasks(selectedKey.value)
+  loadTaskSummary()
+  plannerEditable.value = false
+  setNotice('巡检任务已下发，进度可在任务面板与孪生地图查看')
 }
 
 function connect() {
@@ -518,6 +1007,11 @@ function handleMessage(raw) {
       if (payload.deviceKey && payload.deviceKey !== selectedKey.value) return
       telemetry.value = payload
       telemetryAt.value = Date.now()
+      ingestFleet(payload.deviceKey || selectedKey.value, {
+        telemetry: payload,
+        mode: mode.value,
+        bridgeConnected: bridgeConnected.value
+      })
       break
     case 'frame':
       if (payload.deviceKey && payload.deviceKey !== selectedKey.value) return
@@ -541,6 +1035,7 @@ function handleMessage(raw) {
     case 'mode':
       if (payload.deviceKey && payload.deviceKey !== selectedKey.value) return
       mode.value = payload.mode || mode.value
+      ingestFleet(selectedKey.value, { mode: mode.value })
       pushEvent('模式', `运行态 → ${MODE_LABELS[payload.mode] || payload.mode}（${payload.reason || '未知原因'}）`)
       break
     case 'device_event':
@@ -556,13 +1051,16 @@ function handleMessage(raw) {
       break
     case 'estop_result':
       mode.value = 'E_STOP'
+      ingestFleet(selectedKey.value, { mode: 'E_STOP' })
       pushEvent('急停', `已下发停止指令（${payload.deliveredToBridge ? '已送达桥' : '桥未连接'}）`, 'error')
       break
     case 'mode_result':
       if (payload.mode) mode.value = payload.mode
+      ingestFleet(selectedKey.value, { mode: mode.value })
       break
     case 'reset_result':
       if (payload.mode) mode.value = payload.mode
+      ingestFleet(selectedKey.value, { mode: mode.value })
       setNotice('已复位')
       break
     default:
@@ -658,9 +1156,22 @@ function centerPtz() {
   sendCommand('PTZ', { pan: 0, tilt: 0 })
 }
 
+let fleetTimer = null
+let alertTimer = null
+let summaryTimer = null
+let taskTimer = null
+
 onMounted(() => {
   reload()
   loadVisionStatus()
+  loadInspectorEvents()
+  loadTaskSummary()
+  fleetTimer = window.setInterval(pollFleet, 3000)
+  alertTimer = window.setInterval(loadInspectorEvents, 15000)
+  summaryTimer = window.setInterval(loadTaskSummary, 12000)
+  taskTimer = window.setInterval(() => {
+    if (selectedKey.value) loadFleetTasks(selectedKey.value)
+  }, 5000)
   clockTimer = window.setInterval(() => {
     nowTick.value = Date.now()
     // 续传：保持按住时按 ttl 周期重发运动指令，实现 dead-man switch
@@ -677,6 +1188,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   disposed = true
   if (clockTimer) window.clearInterval(clockTimer)
+  if (fleetTimer) window.clearInterval(fleetTimer)
+  if (alertTimer) window.clearInterval(alertTimer)
+  if (summaryTimer) window.clearInterval(summaryTimer)
+  if (taskTimer) window.clearInterval(taskTimer)
   holding.value = false
   closeSocket()
 })
@@ -745,6 +1260,177 @@ select {
   gap: var(--ds-space-4);
 }
 
+.console-tabs {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--ds-color-border);
+  overflow-x: auto;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--ds-radius-md) var(--ds-radius-md) 0 0;
+  background: transparent;
+  color: var(--ds-color-muted);
+  font-size: var(--ds-font-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--ds-duration-fast) ease, border-color var(--ds-duration-fast) ease;
+}
+
+.tab-btn:hover {
+  color: var(--ds-color-text);
+}
+
+.tab-btn.active {
+  border-bottom-color: var(--ds-color-primary);
+  color: var(--ds-color-text);
+  background: rgba(36, 150, 237, 0.08);
+}
+
+.tab-badge {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: var(--ds-radius-pill);
+  background: rgba(227, 160, 8, 0.2);
+  color: #f0c260;
+  font-size: 9px;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+  min-width: 0;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+
+.overview-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+  min-width: 0;
+}
+
+.overview-metrics {
+  grid-column: 1 / -1;
+}
+
+.patrol-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+
+.patrol-lower {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+
+.assistant-cta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.assistant-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-space-2);
+  margin: 0;
+}
+
+.assistant-facts div {
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-raised);
+}
+
+.assistant-facts dt {
+  color: var(--ds-color-muted);
+  font-size: 10px;
+}
+
+.assistant-facts dd {
+  margin: 2px 0 0;
+  font-size: var(--ds-font-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.assistant-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+}
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.head-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: var(--ds-control-height, 36px);
+  padding: 0 var(--ds-space-3);
+  border: 1px solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: transparent;
+  color: var(--ds-color-muted);
+  font-size: var(--ds-font-sm);
+  cursor: pointer;
+}
+
+.head-action:hover {
+  border-color: var(--ds-color-primary);
+  color: var(--ds-color-text);
+}
+
+.head-action.primary {
+  border-color: rgba(36, 150, 237, 0.5);
+  background: rgba(36, 150, 237, 0.14);
+  color: var(--ds-color-text);
+}
+
+.head-badge {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: var(--ds-radius-pill);
+  background: rgba(227, 160, 8, 0.22);
+  color: #f0c260;
+  font-size: 9px;
+  line-height: 16px;
+  text-align: center;
+}
+
 .panel-stack {
   display: flex;
   flex-direction: column;
@@ -803,6 +1489,43 @@ select {
 
 .hud-danger {
   color: var(--ds-color-danger);
+}
+
+/* 形态专属遥测：轮速仪表 / 8 足触地 */
+.hud-extra {
+  margin-top: var(--ds-space-3);
+  padding: var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-raised);
+}
+
+.hud-extra-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-space-1) var(--ds-space-3);
+  margin-bottom: var(--ds-space-2);
+}
+
+.hud-extra-head h3 {
+  margin: 0;
+  font-size: var(--ds-font-sm);
+  font-weight: 600;
+}
+
+.hud-extra-meta {
+  margin: 0;
+  color: var(--ds-color-muted);
+  font-size: var(--ds-font-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.wheel-gauges {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-space-3);
 }
 
 .mode-actions {
@@ -988,8 +1711,15 @@ select {
 }
 
 @media (max-width: 1024px) {
-  .console-grid {
+  .console-grid,
+  .overview-grid,
+  .patrol-grid,
+  .analysis-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overview-metrics {
+    grid-column: auto;
   }
 }
 

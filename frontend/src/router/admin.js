@@ -30,6 +30,9 @@ const routes = [
             { path: 'models', name: 'AdminModels', component: () => import('../views/admin/AdminModelGovernanceView.vue') },
             { path: 'security', name: 'AdminMfa', component: () => import('../views/admin/AdminMfaView.vue') },
             { path: 'readiness', name: 'AdminReadiness', component: () => import('../views/admin/AdminReadinessView.vue') },
+            // 架构总览原为用户层路由，但只对管理员可见且管理员无法在用户层建立会话，
+            // 迁移到管理端服务后既保持可达，也不再进入用户层构建产物。
+            { path: 'architecture', name: 'ArchitectureMap', component: () => import('../views/architecture/ArchitectureMapView.vue'), meta: { section: 'ARCHITECTURE / 架构总览' } },
             { path: 'system/dept', name: 'AdminDept', component: () => import('../views/admin/system/DeptView.vue') },
             { path: 'system/post', name: 'AdminPost', component: () => import('../views/admin/system/PostView.vue') },
             { path: 'system/role', name: 'AdminRole', component: () => import('../views/admin/system/RoleView.vue') },

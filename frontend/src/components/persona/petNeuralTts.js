@@ -97,17 +97,15 @@ export function createPetNeuralTts(options = {}) {
   }
 
   /**
-   * 合成并播放一段文本。
-   * @returns {Promise<boolean>} true = 神经音频已开始播放；false = 调用方应回落浏览器语音
+   * 只合成不播放：流式分句时在当前句播报期间预合成下一句，播完即可无缝接上。
+   * @returns {Promise<{ blob: Blob, timing: Array<object>, text: string } | null>}
    */
-  async function speak(text, { voice, speed } = {}) {
+  async function prepare(text, { voice, speed } = {}) {
     const content = String(text ?? '').trim()
-    if (disposed || !content) return false
+    if (disposed || !content) return null
     const current = await probe()
-    if (disposed || !current?.available) return false
-    stop()
+    if (disposed || !current?.available) return null
     const mine = generation
-    lastTiming = []
     try {
       let blob
       let timing = []
@@ -118,10 +116,26 @@ export function createPetNeuralTts(options = {}) {
       } else {
         blob = await synthesize(content, { voice, speed })
       }
-      if (disposed || mine !== generation) return false
+      if (disposed || mine !== generation) return null
       if (!blob || (typeof blob.size === 'number' && blob.size === 0)) {
         throw new Error('后端返回空音频')
       }
+      return { blob, timing, text: content }
+    } catch (error) {
+      // 合成失败不当作播放成功：交给调用方统一回落，避免逐句换引擎
+      lastError = String(error?.message ?? error)
+      return null
+    }
+  }
+
+  /** 播放 prepare() 产出的音频；返回 false 表示调用方应回落浏览器语音 */
+  async function playPrepared(prepared) {
+    if (disposed || !prepared?.blob) return false
+    stop()
+    const mine = generation
+    const { blob, timing = [] } = prepared
+    lastTiming = []
+    try {
       objectUrl = createObjectUrl(blob)
       const element = createAudio(objectUrl)
       audio = element
@@ -164,6 +178,18 @@ export function createPetNeuralTts(options = {}) {
     }
   }
 
+  /**
+   * 合成并播放一段文本。
+   * @returns {Promise<boolean>} true = 神经音频已开始播放；false = 调用方应回落浏览器语音
+   */
+  async function speak(text, options = {}) {
+    // 先停旧音频再合成：单次播报语义下，新语音应立即接管，不等合成完成
+    stop()
+    const prepared = await prepare(text, options)
+    if (!prepared) return false
+    return playPrepared(prepared)
+  }
+
   function stop() {
     generation += 1
     cleanup()
@@ -178,6 +204,8 @@ export function createPetNeuralTts(options = {}) {
   return {
     probe,
     speak,
+    prepare,
+    playPrepared,
     stop,
     dispose,
     get status() {
@@ -193,6 +221,10 @@ export function createPetNeuralTts(options = {}) {
     /** 最近一次合成的词级时间戳（毫秒）；空数组表示没有边界事件，只能近似驱动口型 */
     get lastTiming() {
       return lastTiming
+    },
+    /** 当前正在播放的 <audio> 元素；调用方用它把音频接进口型分析链（音频主时钟） */
+    get audioElement() {
+      return audio
     }
   }
 }

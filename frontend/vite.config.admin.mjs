@@ -15,6 +15,8 @@ import { backendOrigin, devProxy, manualChunks } from './vite.shared.mjs'
 import { adminHtmlFallback } from './vite.admin-fallback.mjs'
 
 export default defineConfig({
+    // 独立依赖缓存：与用户层及其他门户并行运行时互不争抢 .vite/deps。
+    cacheDir: 'node_modules/.vite/admin',
     plugins: [
         vue(),
         Components({
