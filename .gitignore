@@ -817,3 +817,6 @@ SmartOps-Dataset/asr/
 # Electron 依赖与构建产物（源码入库，依赖由 npm install 重建）
 /desktop/node_modules/
 /desktop/dist/
+
+# 第三方 llama.cpp 克隆（本地 GGUF 转换工具），不入库
+gguf-converter/
