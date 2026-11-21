@@ -1,8 +1,6 @@
 <template>
-  <div ref="agentShellRef" class="agent-shell" :data-theme="resolvedTheme">
-    <CanvasAmbientField v-if="!isMobile" class="agent-ambient" :palette-root="agentShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
+  <div class="agent-shell" :data-theme="resolvedTheme">
     <div v-if="!isMobile" class="agent-aurora" aria-hidden="true"></div>
-    <MeteorShower v-if="!isMobile" class="agent-meteors" />
     <div class="agent-mask" aria-hidden="true"></div>
 
   <AgentSkillGuidance />
@@ -173,7 +171,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, reactive, ref, defineAsyncComponent } from 'vue'
+import { computed, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import AgentSkillGuidance from '../../components/agent/AgentSkillGuidance.vue'
 import AgentCoreOrbit from '../../components/agent/AgentCoreOrbit.vue'
 import AppEmpty from '../../components/common/AppEmpty.vue'
@@ -188,10 +186,6 @@ import {
   reviewDecisionLoop
 } from '../../api/decisionLoop'
 
-const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
-const MeteorShower = defineAsyncComponent(() => import('../../components/common/MeteorShower.vue'))
-
-const agentShellRef = ref(null)
 const resolvedTheme = computed(() => _resolvedTheme.value)
 const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
 function updateMobile() { isMobile.value = window.innerWidth < 1024 }
@@ -429,8 +423,6 @@ button:disabled{cursor:wait;opacity:.65}
 /* === 启佑风格背景层 === */
 .agent-shell{position:relative;min-height:calc(100vh - 64px);overflow:hidden;background:radial-gradient(ellipse at 80% 10%,color-mix(in srgb,var(--smart-primary-strong) 10%,transparent) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,color-mix(in srgb,var(--ds-semantic-success) 7%,transparent) 0%,transparent 50%),var(--smart-bg)}
 .agent-shell[data-theme='light']{background:radial-gradient(ellipse at 80% 10%,color-mix(in srgb,var(--smart-primary) 7%,transparent) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,color-mix(in srgb,var(--ds-semantic-success) 4%,transparent) 0%,transparent 50%),var(--smart-bg)}
-.agent-ambient{position:absolute;inset:0;z-index:0;opacity:.48;pointer-events:none}
-.agent-meteors{position:absolute;inset:0;z-index:0;opacity:.35;pointer-events:none}
 .agent-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 75% 15%,color-mix(in srgb,var(--smart-primary-strong) 22%,transparent) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,color-mix(in srgb,var(--ds-semantic-success) 16%,transparent) 0%,transparent 45%);filter:blur(24px);background-size:240% 240%;animation:agent-drift 22s ease-in-out infinite alternate}
 .agent-aurora::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 30% 20% at 15% 50%,color-mix(in srgb,var(--smart-primary-strong) 35%,transparent),transparent 70%);filter:blur(18px);animation:agent-sweep 32s ease-in-out infinite}
 .agent-shell[data-theme='light'] .agent-aurora{background:radial-gradient(ellipse at 75% 15%,color-mix(in srgb,var(--smart-primary) 14%,transparent) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,color-mix(in srgb,var(--ds-semantic-success) 10%,transparent) 0%,transparent 45%)}

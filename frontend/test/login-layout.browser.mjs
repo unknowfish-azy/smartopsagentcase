@@ -7,8 +7,9 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true })
 await mkdir('test-artifacts/login-layout', { recursive: true })
 const overlaps = (first, second) => first.x < second.x + second.width && first.x + first.width > second.x && first.y < second.y + second.height && first.y + first.height > second.y
 
-// dd67b45 起登录页由「果冻水母」重构为「启佑星空」：LivingJellyfish 被移除，
-// 装饰主体改为 .login-organisms 舞台 + .login-stars-* 星尘层 + CanvasAmbientField。
+// dd67b45 起登录页由「果冻水母」重构为「启佑星空」：LivingJellyfish 被移除；
+// 2026-11-21 起 CanvasAmbientField/MeteorShower 粒子层也一并下线，装饰主体为
+// .login-organisms 舞台 + .login-stars-* 星尘层（纯 CSS/SVG，零 JS 动画）。
 // 本函数保留原有「装饰可见 / 不遮挡表单与标题 / 留在预留舞台内 / 无横向溢出」
 // 四项语义，仅把被删元素迁移到当前等价元素，不放宽任何断言。
 async function geometry(page) {

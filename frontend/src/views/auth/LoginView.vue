@@ -2,19 +2,15 @@
   <main ref="loginShellRef" class="login-shell" :data-visual-mode="visualMode" :data-theme="resolvedTheme" @pointermove="moveBubbleLight" @pointerleave="resetBubbleLight">
     <!-- 静态背景图：深空星海（public/assets/login-cover.jpg，静态资源，各视觉档位通用；动效层叠加其上） -->
     <div class="login-cover-image" aria-hidden="true"></div>
-    <!-- §8 Gate-1 CanvasAmbientField: 桌面端才挂载 + 移动端轻量降级（70 颗 + 无连线） -->
-    <CanvasAmbientField v-if="!isMobile" class="login-ambient" :palette-root="loginShellRef" :star-multiplier="visualMode === 'lightweight' ? 1 : 1.8" :connect-particles="visualMode !== 'lightweight'" :connect-max-dist="130" />
     <!-- §8 Gate-2 封面视频槽：balanced 档 + 桌面端 + 仅当 public/assets/login-cover.mp4 存在时才挂载 -->
     <video v-if="!isMobile && visualMode === 'balanced'" class="login-cover-video" :poster="loginCoverPoster" autoplay muted loop playsinline preload="metadata"></video>
     <!-- §8 Gate-3 暗遮罩：视频层叠用（40% 暗，按最亮帧验对比度） -->
-    <div v-if="!isMobile" class="login-cover-mask" aria-hidden="true"></div>
-    <!-- 极光光带：中景层大尺度缓慢漂移（零 KB，CSS 渐变 + transform） -->
+    <div v-if="!isMobile" class="login-cover-mask" aria-hidden="true"></div>    <!-- 极光光带：中景层大尺度缓慢漂移（零 KB，CSS 渐变 + transform） -->
     <div v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-aurora" aria-hidden="true"></div>
     <!-- 上浮气泡层：零 KB 纯 CSS（radial-gradient 泡壁 + translate3d 上浮），lightweight 档减量、reduced-motion 不挂载 -->
     <div v-if="!isMobile && visualMode !== 'reduced-motion'" class="login-bubbles" aria-hidden="true">
       <span v-for="b in bubbles" :key="b.id" :style="b.style"></span>
     </div>
-    <MeteorShower v-if="!isMobile && visualMode === 'balanced'" class="login-meteors" />
     <!-- 边缘荧光链路：左右神经走线 + 底部服务拓扑。零依赖 SVG（CSS 流光 + SMIL 脉冲），
          呼应"维系上下文"主题；桌面端挂载，reduced-motion 档不渲染，lightweight 档转静态。 -->
     <!-- 渐变定义：走线两端淡出、光点径向柔光。颜色走令牌，明暗主题自动切换。 -->
@@ -308,13 +304,12 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, Hide, Lock, User, View } from '@element-plus/icons-vue'
 import HumanVerification from '../../components/auth/HumanVerification.vue'
 import MfaChallenge from '../../components/auth/MfaChallenge.vue'
 import BrandMark from '../../components/common/BrandMark.vue'
-import MeteorShower from '../../components/common/MeteorShower.vue'
 import { loginSession, registrationPolicy, registerAccount } from '../../security/session.js'
 import { sessionLanding } from '../../security/portalPolicy.js'
 import { resolvePortalSwitch, currentPortal } from '../../security/portalSwitch.js'
@@ -322,8 +317,6 @@ import { portalLabel, PUBLIC_PORTALS, portalSpec, isSensitivePortal } from '../.
 import { registrationError } from '../../security/passwordPolicy.js'
 import { themeMode, resolvedTheme, setThemeMode } from '../../theme.js'
 import { visualMode, setVisualMode } from '../../visual/visualMode.js'
-
-const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
 
 // §8 Gate-2: 移动端 <1024 不加载任何背景动效（T11 性能基线）
 const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
@@ -601,10 +594,9 @@ async function finishLogin(user) {
 /* ============================================================
    启佑 (Spark You) · 智慧星空 风格覆盖
    只在 .login-shell 局部生效，不影响控制台。
-   CanvasAmbientField 通过 palette-root 读这些局部令牌色偏。
    ============================================================ */
 .login-shell {
-  /* —— 启佑星空局部令牌（CanvasAmbientField 通过 paletteRoot 读这些）—— */
+  /* —— 启佑星空局部令牌 —— */
   --smart-bg: #040B16;
   --smart-surface: #081422;
   --smart-primary: #2BA8C8;
@@ -697,8 +689,6 @@ async function finishLogin(user) {
 /* §8 Gate-3: 暗遮罩（40% 深暗，视频层叠用；极光/粒子独立时也提供统一暗度基线） */
 .login-cover-mask { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 30%, rgba(4, 11, 22, .40) 100%); }
 :global([data-theme='light']) .login-cover-mask { background: radial-gradient(ellipse at center, transparent 30%, rgba(234, 243, 250, .40) 100%); }
-.login-shell > .login-ambient { opacity: .42; pointer-events: none; }
-.login-shell > .login-meteors { opacity: .3; pointer-events: none; }
 /* 启佑极光光带：大尺度缓慢漂移的中景层（方案 §6.2 推荐，零 KB 替代视频层） */
 .login-aurora {
   position: absolute; inset: -10%; z-index: 0;

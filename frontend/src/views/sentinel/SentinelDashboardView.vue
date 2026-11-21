@@ -1,8 +1,6 @@
 <template>
-  <div ref="dashboardShellRef" class="sentinel-shell" :data-theme="resolvedTheme">
-    <CanvasAmbientField v-if="!isMobile" class="sentinel-ambient" :palette-root="dashboardShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
+  <div class="sentinel-shell" :data-theme="resolvedTheme">
     <div v-if="!isMobile" class="sentinel-aurora" aria-hidden="true"></div>
-    <MeteorShower v-if="!isMobile" class="sentinel-meteors" />
     <div class="sentinel-mask" aria-hidden="true"></div>
 
   <section class="sentinel-surface" aria-labelledby="sentinel-title">
@@ -281,7 +279,7 @@
 
 <script setup>
 import AgentCopilotDock from '../../components/agent/AgentCopilotDock.vue'
-import { computed, onMounted, onUnmounted, reactive, ref, defineAsyncComponent } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import SentinelNotice from './SentinelNotice.vue'
 import SentinelEmpty from './SentinelEmpty.vue'
 import SpiderCrawler from '../../components/effects/SpiderCrawler.vue'
@@ -291,10 +289,6 @@ import { getOperationSessions } from '../../api/operations.ts'
 import { ALERT_SEVERITIES, BUSINESS_METRICS, COLLECT_INTERVALS, SENTINEL_KINDS, SYSTEM_METRICS, LOG_KEYWORDS, THRESHOLD_OPERATORS, describeRules } from './sentinelModel.js'
 import './sentinel.css'
 
-const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
-const MeteorShower = defineAsyncComponent(() => import('../../components/common/MeteorShower.vue'))
-
-const dashboardShellRef = ref(null)
 const resolvedTheme = computed(() => _resolvedTheme.value)
 const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
 function updateMobile() { isMobile.value = window.innerWidth < 1024 }
@@ -511,8 +505,6 @@ onUnmounted(() => {
 /* === 启佑风格背景层 === */
 .sentinel-shell{position:relative;min-height:calc(100vh - 64px);overflow:hidden;background:radial-gradient(ellipse at 80% 10%,rgba(122,215,245,.10) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,rgba(63,185,80,.07) 0%,transparent 50%),#040B16}
 .sentinel-shell[data-theme='light']{background:radial-gradient(ellipse at 80% 10%,rgba(26,110,154,.07) 0%,transparent 50%),radial-gradient(ellipse at 20% 90%,rgba(26,127,55,.04) 0%,transparent 50%),#EAF3FA}
-.sentinel-ambient{position:absolute;inset:0;z-index:0;opacity:.48;pointer-events:none}
-.sentinel-meteors{position:absolute;inset:0;z-index:0;opacity:.35;pointer-events:none}
 .sentinel-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 75% 15%,rgba(122,215,245,.22) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(63,185,80,.16) 0%,transparent 45%);filter:blur(24px);background-size:240% 240%;animation:sentinel-drift 22s ease-in-out infinite alternate}
 .sentinel-aurora::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 30% 20% at 15% 50%,rgba(122,215,245,.35),transparent 70%);filter:blur(18px);animation:sentinel-sweep 32s ease-in-out infinite}
 .sentinel-shell[data-theme='light'] .sentinel-aurora{background:radial-gradient(ellipse at 75% 15%,rgba(26,110,154,.14) 0%,transparent 45%),radial-gradient(ellipse at 30% 85%,rgba(26,127,55,.10) 0%,transparent 45%)}

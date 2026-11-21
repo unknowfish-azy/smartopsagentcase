@@ -1,11 +1,5 @@
 <template>
   <div ref="shellRef" class="eo-shell" :data-theme="resolvedTheme" :data-state="obs.state.value">
-    <CanvasAmbientField
-      v-if="!isLightweight"
-      class="eo-ambient"
-      :palette-root="shellRef"
-      :star-multiplier="0.9"
-    />
     <div class="eo-mask" aria-hidden="true"></div>
 
     <section class="eo-surface" aria-labelledby="eo-title">
@@ -179,12 +173,9 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import CanvasAmbientField from '../../components/common/CanvasAmbientField.vue'
 import EngineField3D from '../../components/sentinel/EngineField3D.vue'
 import { useEngineObservability } from '../../composables/useEngineObservability.js'
 import { resolvedTheme } from '../../theme.js'
-import { isLightweightVisualMode, isReducedMotionMode } from '../../visual/visualMode.js'
-import { isDegraded } from '../../visual/motionScheduler.js'
 
 const shellRef = ref(null)
 const timelineCanvas = ref(null)
@@ -192,10 +183,6 @@ const obs = useEngineObservability()
 const reducedMotion = ref(false)
 const isNarrow = ref(false)
 let resizeObserver = null
-
-const isLightweight = computed(() =>
-  isLightweightVisualMode.value || isReducedMotionMode.value || reducedMotion.value || isDegraded()
-)
 
 const summaryItems = computed(() => {
   const counts = { running: 0, stalled: 0, error: 0, nodata: 0, notrun: 0 }
@@ -365,7 +352,6 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   overflow: hidden;
 }
-.eo-ambient { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .5; pointer-events: none; }
 .eo-mask { position: absolute; inset: 0; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--eo-bg) 72%, transparent)); pointer-events: none; }
 .eo-surface { position: relative; z-index: 1; }
 

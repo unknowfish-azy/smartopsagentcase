@@ -1,24 +1,10 @@
 ﻿﻿import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { parse, compileStyle } from '@vue/compiler-sfc'
 
 const variables = await readFile(new URL('../src/assets/styles/variables.css', import.meta.url), 'utf8')
 const globalStyles = await readFile(new URL('../src/assets/styles/global.css', import.meta.url), 'utf8')
 const orbitCarousel = await readFile(new URL('../src/components/ui/home-orbit-carousel.vue', import.meta.url), 'utf8')
-
-test('effect theme selectors never dim the document root', async () => {
-  for (const name of ['AtcShaderBackground']) {
-    const filename = `${name}.vue`
-    const source = await readFile(new URL(`../src/components/common/${filename}`, import.meta.url), 'utf8')
-    const { descriptor } = parse(source, { filename })
-    for (const style of descriptor.styles) {
-      const result = compileStyle({ source: style.content, filename, id: 'data-v-theme-test', scoped: style.scoped })
-      assert.deepEqual(result.errors, [])
-      assert.doesNotMatch(result.code, /\[data-theme=['"]light['"]\]\s*\{/, filename)
-    }
-  }
-})
 
 test('light theme uses opaque, high-contrast semantic tokens', () => {
   assert.match(variables, /\[data-theme='light'\][\s\S]*--smart-text:\s*#1f2329;/)

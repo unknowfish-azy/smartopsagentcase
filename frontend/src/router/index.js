@@ -12,7 +12,6 @@ const routes = [
     { path: '/account/security', name: 'AccountSecurity', component: () => import('../views/account/AccountSecurityView.vue') },
     // 管理层入口已物理迁移到独立服务（vite.config.admin.mjs / src/router/admin.js），
     // 用户层服务不再注册任何 /admin 路由与视图，避免管理页面进入用户层构建产物。
-    { path: '/portfolio', name: 'PortfolioPreview', component: () => import('../views/portfolio/WorkInProgressView.vue') },
     {
         path: '/',
         component: () => import('../layouts/MainLayout.vue'),

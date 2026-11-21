@@ -1,9 +1,7 @@
 <template>
-  <div ref="traceShellRef" class="trace-shell" :data-theme="resolvedTheme">
-    <!-- 启佑风格背景层：粒子网络（拉满强度） + 双层极光 + 流星 -->
-    <CanvasAmbientField v-if="!isMobile" class="trace-ambient" :palette-root="traceShellRef" :star-multiplier="1.8" connect-particles :connect-max-dist="130" />
+  <div class="trace-shell" :data-theme="resolvedTheme">
+    <!-- 启佑风格背景层：双层极光 -->
     <div v-if="!isMobile" class="trace-aurora" aria-hidden="true"></div>
-    <MeteorShower v-if="!isMobile" class="trace-meteors" />
     <div class="trace-mask" aria-hidden="true"></div>
 
     <div class="page">
@@ -63,7 +61,7 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, computed, defineAsyncComponent } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getInspectorEvent, getInspectorEvents } from '../../api/inspector'
 import AppEmpty from '../../components/common/AppEmpty.vue'
@@ -72,14 +70,10 @@ import InspectorEvidence from '../../components/inspector/InspectorEvidence.vue'
 import InspectorIssueList from '../../components/inspector/InspectorIssueList.vue'
 import { resolvedTheme as _resolvedTheme } from '../../theme.js'
 
-const CanvasAmbientField = defineAsyncComponent(() => import('../../components/common/CanvasAmbientField.vue'))
-const MeteorShower = defineAsyncComponent(() => import('../../components/common/MeteorShower.vue'))
-
 const route = useRoute()
 const event = ref({})
 const loading = ref(true)
 const error = ref('')
-const traceShellRef = ref(null)
 
 const resolvedTheme = computed(() => _resolvedTheme.value)
 const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 1024)
@@ -131,12 +125,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateMobile))
     radial-gradient(ellipse at 80% 10%, rgba(26, 110, 154, .08) 0%, transparent 50%),
     radial-gradient(ellipse at 20% 90%, rgba(26, 127, 55, .05) 0%, transparent 50%),
     #EAF3FA;
-}
-.trace-ambient {
-  position: absolute; inset: 0; z-index: 0; opacity: .48; pointer-events: none;
-}
-.trace-meteors {
-  position: absolute; inset: 0; z-index: 0; opacity: .35; pointer-events: none;
 }
 .trace-aurora {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;

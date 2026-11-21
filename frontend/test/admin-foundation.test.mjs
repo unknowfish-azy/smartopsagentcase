@@ -28,7 +28,7 @@ test('per-portal surfaces render their own login page instead of bouncing', () =
 test('forced password change gates all pages except account security', () => {
   assert.equal(typeof policy.sessionRouteDecision, 'function')
   const forced = { ...admin, mustChangePassword: true }
-  for (const path of ['/', '/admin', '/admin/users', '/chat', '/login', '/portfolio']) {
+  for (const path of ['/', '/admin', '/admin/users', '/chat', '/login']) {
     assert.deepEqual(policy.sessionRouteDecision(forced, { path }), { path: '/account/security' })
   }
   assert.equal(policy.sessionRouteDecision(forced, { path: '/account/security' }), true)

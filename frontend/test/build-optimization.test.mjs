@@ -31,15 +31,17 @@ test('dashboard metric chart imports only the ECharts modules it renders', async
   assert.equal(chart.includes("from 'echarts/renderers'"), true)
 })
 
-test('decorative Three.js components are loaded asynchronously from entry layouts', async () => {
+test('decorative species stay out of entry layouts', async () => {
   const mainLayout = await source('src/layouts/MainLayout.vue')
   const login = await source('src/views/auth/LoginView.vue')
 
   for (const content of [mainLayout, login]) {
     assert.equal(content.includes('import ParticleWhale from'), false)
     assert.equal(content.includes('import MilkyWay from'), false)
-    assert.match(content, /defineAsyncComponent/)
+    assert.equal(content.includes('CanvasAmbientField'), false)
+    assert.equal(content.includes('MeteorShower'), false)
   }
+  assert.match(mainLayout, /defineAsyncComponent/)
 })
 
 test('Element Plus is resolved on demand instead of registered globally', async () => {
@@ -79,7 +81,6 @@ test('route bootstrap keeps infrequent layouts out of the application entry', as
   assert.equal(router.includes("import MainLayout from '../layouts/MainLayout.vue'"), false)
   assert.equal(router.includes("import AdminLayout from '../layouts/AdminLayout.vue'"), false)
   assert.equal(router.includes("import LoginView from '../views/auth/LoginView.vue'"), false)
-  assert.equal(router.includes("import WorkInProgressView from '../views/portfolio/WorkInProgressView.vue'"), false)
   assert.equal(router.includes("component: () => import('../layouts/MainLayout.vue')"), true)
   // 管理端布局完全不在用户层入口中：它只由 src/router/admin.js 懒加载。
   assert.equal(router.includes("component: () => import('../layouts/AdminLayout.vue')"), false)
@@ -122,25 +123,24 @@ test('ECharts and the knowledge catalog stay behind lazy route boundaries', asyn
 })
 
 
-test('ambient WebGL species stay deleted and login keeps the lightweight starfield', async () => {
+test('ambient particle species stay deleted across layouts and views', async () => {
   const mainLayout = await source('src/layouts/MainLayout.vue')
   const login = await source('src/views/auth/LoginView.vue')
-  const ambientField = await source('src/components/common/CanvasAmbientField.vue')
-  const theme = await source('src/components/common/canvasTheme.js')
 
   assert.equal(mainLayout.includes('ParticleWhale'), false)
   assert.equal(mainLayout.includes('MilkyWay'), false)
   assert.equal(mainLayout.includes('LivingJellyfish'), false)
   assert.equal(mainLayout.includes('StellarOceanProvider'), false)
+  assert.equal(mainLayout.includes('CanvasAmbientField'), false)
+  assert.equal(mainLayout.includes('MeteorShower'), false)
   assert.ok(mainLayout.includes('\u9009\u62e9\u89c6\u89c9\u6a21\u5f0f'))
   assert.match(mainLayout, /isLightweightVisualMode/)
+  for (const view of ['src/views/auth/LoginView.vue', 'src/views/agent/AgentCommandCenterView.vue', 'src/views/agent/ExecutionTraceView.vue', 'src/views/incident/IncidentCenterView.vue', 'src/views/sentinel/AlertCenterView.vue', 'src/views/sentinel/SentinelDashboardView.vue', 'src/views/sentinel/SentinelGuardianView.vue', 'src/views/sentinel/EngineObservabilityView.vue']) {
+    const content = await source(view)
+    assert.equal(content.includes('CanvasAmbientField'), false, `${view} must not mount CanvasAmbientField`)
+    assert.equal(content.includes('MeteorShower'), false, `${view} must not mount MeteorShower`)
+  }
   assert.equal(login.includes("import('../../components/common/ParticleWhale.vue')"), false)
   assert.equal(login.includes("import('../../components/ui/milky-way.vue')"), false)
   assert.equal(login.includes("CanvasParticleWhale"), false)
-  assert.match(login, /CanvasAmbientField/)
-  assert.match(login, /palette-root/)
-  assert.equal(ambientField.includes("from 'three'"), false)
-  assert.match(ambientField, /readCanvasPalette/)
-  assert.match(theme, /MutationObserver/)
-  assert.match(theme, /data-theme/)
 })

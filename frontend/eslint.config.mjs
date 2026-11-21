@@ -12,6 +12,9 @@ export default [
       "dist-admin/**",
       "**/dist-*/**",
       "**/.vite-*/**",
+      // 临时构建校验产物目录（并行任务生成），不参与 lint。
+      ".build-check/**",
+      "**/.build-check/**",
       // Vite 预构建缓存是生成物，不参与 lint（此前导致 263 个与源码无关的 error）。
       ".vite/**",
       "**/.vite/**",

@@ -61,7 +61,7 @@ test('login appearance reuses the application preferences without loading Three'
   assert.match(source, /setThemeMode/)
   assert.match(source, /setVisualMode/)
   assert.match(source, /:data-visual-mode="visualMode"/)
-  assert.match(source, /palette-root="loginShellRef"/)
+  assert.doesNotMatch(source, /CanvasAmbientField|MeteorShower/)
   assert.doesNotMatch(source, /from ['"]three|import\(['"].*milky-way/)
 })
 
