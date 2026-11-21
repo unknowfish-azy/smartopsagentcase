@@ -69,7 +69,7 @@
 | **LLM 训练器（LoRA/SFT 执行）** | `scripts/` 与 `ai-service/scripts/` 各 9 个 `train_*` 全是神经网络；`build_sft_dataset.py` 只造数据不训练 | **P0**，这是"蒸馏换底座"的唯一真通道 |
 | **任务化样本（证据包 → 判定）** | 732 条 SFT 全是知识型 QA；40 条 candidates 有 `evidence[]` 但 `expected_behavior` 未铺开；`smartops-training-sample.schema.json` 已定义 `EVIDENCE_VERIFICATION` 却无一条数据 | **P0**，DS-03 的全部实活 |
 | **可机判的判定评测用例 + 基线分数** | 用例已有 32 条（四类各 8），基线已跑：`EXP-LLM-BASELINE-2026-11-21`（qwen3:1.7b，n=32）6 项有值、8 项 null。**仍缺** root_cause/tool/risk/approval/verification 的真值字段与 token 采集 | **P0→已部分闭环**，剩余缺口见 `docs/experiments/baseline-report-closure.md` §5 |
-| **结构化输出约束** | `app/services/llm.py` 只有 mock/ollama/openai-compatible 三个 provider，无 grammar/JSON schema 约束（本次复核仍成立） | **P0**，1.7B 能用的前提 |
+| **结构化输出约束** | 已落地：`app/services/decision_schema.py` + `LLMService._payload` 注入 Ollama `format` / OpenAI `response_format`；`RATIONALE_CITES_UNKNOWN_REF` 护栏已接入评测链。实测（`EXP-DS04-2026-11-21`，n=32）：json_valid 1.0000、hallucination 0.0000、safety_violation 0.0000。⚠️ 遗留：`required` 缺 `label`/`confidence`，与训练形状不同形，见 §3.2 与 `.trae/documents/DS-04-结构化输出约束验收记录-2026-11-21.md` | **P0→已闭环**（遗留偏差单独立项） |
 | **统一证据封套** | `app/schemas/*.py` 是 17 个各自独立的 domain schema；`training` 侧另有一套 `evidence` 定义，两套不互通 | **P1**，封套要与 `training` 侧字段**映射**，不能另造一套 |
 | 因果 GNN / 反事实 | 未找到 | P2，A@1 增益需消融证明 |
 | 知识图谱 + 神经符号推理机 | `knowledge/` 有 catalog，无图谱/推理机 | P2 |
@@ -193,6 +193,18 @@ class EvidenceEnvelope(BaseModel):
 | `confidence`（0–1） | `confidence` | 训练侧必有，线上不得丢失 |
 | 无 | `gaps_acknowledged[]` | 新增 |
 | 无 | `next_probe{decision,probe_id,reason}` | 新增 |
+
+**实测落地状态（2026-11-21）**：上表映射已实现且被守卫测试钉住
+（`ai-service/app/tests/test_decision_contract.py`，15 条）。真实评测 `EXP-DS04-2026-11-21`
+（qwen3:1.7b，n=32）：`json_valid_rate=1.0000`、`hallucination_rate=0.0000`、
+`safety_violation_rate=0.0000`；带 schema 的 `pass_rate=0.5000` vs 无 schema `0.4375`（n=32 单次运行，不声明显著性）。
+
+⚠️ **遗留偏差**：「训练侧必有，线上不得丢失」这条**未完全满足**——
+`DECISION_SCHEMA.required` 只含 `verdict / used_refs / gaps_acknowledged / next_probe / rationale`，
+缺 `label` 与 `confidence`，故带 schema 时模型 32/32 条省略这两个字段。
+训练数据仍恒产出它们（`build_distill_dataset.py:258-266`），两侧形状因此不完全同形。
+本次未改（改 required 会变更输出分布、使既有对照失效），改为登记 + 加断言锁定现状。
+详见 `.trae/documents/DS-04-结构化输出约束验收记录-2026-11-21.md` §1/§6。
 
 ```json
 { "verdict": "SUPPORTED|PARTIALLY_SUPPORTED|UNSUPPORTED|CONTRADICTED|INSUFFICIENT",
