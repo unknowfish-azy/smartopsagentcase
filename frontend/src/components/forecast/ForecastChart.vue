@@ -15,6 +15,16 @@
 </template>
 
 <script setup>
+/**
+ * 预测面主图。
+ *
+ * 两种数据形态，由 `live` 区分：
+ *   - demo（合成）：曲线由 syntheticSeries 的 valueAt/forecastAt 生成，逐点连续；
+ *   - live （真实）：曲线由后端返回的 series / forecast 离散点连线，采样间隔 30~60s。
+ *
+ * 两者的坐标语义保持一致：t 为相对「现在」的秒偏移（历史为负、预测为正），
+ * 因此工具栏的视野切换、阈值线、越界标记对两态通用。
+ */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { forecastAt, valueAt, bandAt } from '../../domain/forecast/syntheticSeries.js'
 
@@ -22,11 +32,13 @@ const props = defineProps({
   sensor: { type: Object, required: true },
   horizon: { type: Number, default: 30 },
   shadowEnabled: { type: Boolean, default: false },
-  now: { type: Number, default: 0 },  // 绝对回放时间
-  generatedAt: { type: Number, default: 0 },  // 基准时刻（秒）
+  now: { type: Number, default: 0 },       // 绝对回放时间（仅 demo 用）
+  generatedAt: { type: Number, default: 0 }, // 基准时刻（秒）
   history: { type: Array, default: () => [] },
   forecast: { type: Array, default: () => [] },
-  crossings: { type: Array, default: () => [] }
+  crossings: { type: Array, default: () => [] },
+  // live 态：后端已给出按 horizon 换算好的秒偏移序列。
+  live: { type: Boolean, default: false }
 })
 
 defineEmits(['cursor-change', 'crossing-click'])
@@ -55,7 +67,11 @@ const tooltipStyle = computed(() => {
   return { left: `${left}px`, top: `${top}px` }
 })
 
-const ariaLabel = computed(() => `历史与预测区间示意图 · ${props.sensor.cn} ${props.sensor.en}`)
+const ariaLabel = computed(() => {
+  const s = props.sensor
+  const name = props.live && s.metric ? s.metric : `${s.cn} ${s.en}`
+  return `历史与预测区间示意图 · ${name}`
+})
 
 // ---------- 工具 ----------
 function niceStep(raw) {
@@ -69,12 +85,83 @@ function format(v, digits) {
   return v.toLocaleString('zh-CN', { minimumFractionDigits: digits, maximumFractionDigits: digits })
 }
 
-function computeBounds(sensor, t0, horizon) {
+/** demo 态：连续曲线取值。 */
+function demoValueAt(sensor, offsetSec) {
+  return valueAt(sensor, props.generatedAt + props.now + offsetSec)
+}
+function demoForecastAt(sensor, offsetSec) {
+  return forecastAt(sensor, props.generatedAt + props.now, Math.max(0, offsetSec))
+}
+function demoBandAt(sensor, offsetSec) {
+  return bandAt(sensor, props.generatedAt + props.now, Math.max(0, offsetSec))
+}
+
+/**
+ * live 态：把相对「现在」的秒偏移映射到真实采样值。
+ * 采样点稀疏（30~60s），这里做线性插值——不伪造更密的数据，只让折线可读。
+ */
+function liveSample(points, offsetSec) {
+  if (!points?.length) return null
+  let prev = points[0]
+  for (let i = 1; i < points.length; i += 1) {
+    const next = points[i]
+    if (offsetSec <= next.t) {
+      const span = next.t - prev.t
+      if (span <= 0) return next.v
+      const ratio = (offsetSec - prev.t) / span
+      return prev.v + (next.v - prev.v) * ratio
+    }
+    prev = next
+  }
+  return prev.v
+}
+
+function sampleValue(offsetSec) {
+  if (props.live) return liveSample(props.history, offsetSec)
+  return demoValueAt(props.sensor, offsetSec)
+}
+function medianValue(offsetSec) {
+  if (props.live) return liveSample(props.forecast, offsetSec)
+  return demoForecastAt(props.sensor, offsetSec)
+}
+function bandValue(offsetSec) {
+  if (props.live) return liveBand(offsetSec)
+  return demoBandAt(props.sensor, offsetSec)
+}
+/** live 态 p10/p90 用后端字段直接取；缺失时退化为中位数的 ±4% 视觉带宽。 */
+function liveBand(offsetSec) {
+  const points = props.forecast || []
+  if (!points.length) return 0
+  let nearest = points[0]
+  for (const point of points) {
+    if (Math.abs(point.t - offsetSec) < Math.abs(nearest.t - offsetSec)) nearest = point
+  }
+  const half = nearest.p90 != null && nearest.median != null
+    ? Math.abs(nearest.p90 - nearest.median)
+    : Math.abs(nearest.median || 0) * 0.04
+  return Math.max(half, 0)
+}
+
+/** 视野内的横轴范围（秒）。live 态历史只有 120s 窗口，与 demo 一致。 */
+const windowSec = computed(() => ({
+  from: -HISTORY,
+  to: props.horizon
+}))
+
+function computeBounds() {
   const values = []
-  for (let t = t0 - HISTORY; t <= t0; t += 2) values.push(valueAt(sensor, t))
-  for (let h = 0; h <= horizon; h += 1) {
-    values.push(forecastAt(sensor, t0, h) + bandAt(sensor, t0, h))
-    values.push(forecastAt(sensor, t0, h) - bandAt(sensor, t0, h))
+  for (let t = windowSec.value.from; t <= 0; t += 2) {
+    const v = sampleValue(t)
+    if (v != null && Number.isFinite(v)) values.push(v)
+  }
+  for (const point of props.forecast || []) {
+    if (point.median != null) values.push(point.median)
+    if (point.p90 != null) values.push(point.p90)
+    if (point.p10 != null) values.push(point.p10)
+  }
+  if (!values.length) {
+    const base = props.sensor.base || 1
+    values.push(base, base + 1)
   }
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
@@ -86,9 +173,9 @@ function computeBounds(sensor, t0, horizon) {
   }
 }
 
-function scaleX(width, t0, horizon) {
-  const total = HISTORY + horizon
-  return v => MARGIN.l + ((v - (t0 - HISTORY)) / total) * (width - MARGIN.l - MARGIN.r)
+function scaleX(width) {
+  const total = HISTORY + props.horizon
+  return v => MARGIN.l + ((v - windowSec.value.from) / total) * (width - MARGIN.l - MARGIN.r)
 }
 
 function scaleY(height, range) {
@@ -120,10 +207,8 @@ function draw() {
   ctx.clearRect(0, 0, rect.width, rect.height)
 
   const sensor = props.sensor
-  const t0 = props.generatedAt + props.now  // 绝对时刻
-  const horizon = props.horizon
-  const range = computeBounds(sensor, t0, horizon)
-  const sx = scaleX(rect.width, t0, horizon)
+  const range = computeBounds()
+  const sx = scaleX(rect.width)
   const sy = scaleY(rect.height, range)
 
   // 颜色（从 CSS 变量读，避免硬编码）
@@ -157,8 +242,8 @@ function draw() {
   }
 
   /* 时间刻度（30s 一格） */
-  for (let offset = -HISTORY; offset <= horizon; offset += 30) {
-    const x = sx(t0 + offset)
+  for (let offset = -HISTORY; offset <= props.horizon; offset += 30) {
+    const x = sx(offset)
     if (x < MARGIN.l - 1) continue
     ctx.strokeStyle = c_grid2
     ctx.beginPath()
@@ -173,6 +258,7 @@ function draw() {
 
   /* === 阈值线 === */
   const drawThreshold = (value, color, label) => {
+    if (!Number.isFinite(value) || value === 0) return
     if (value < range.min) {
       ctx.fillStyle = color
       ctx.textAlign = 'right'
@@ -205,56 +291,71 @@ function draw() {
 
   /* === 不确定带 === */
   ctx.beginPath()
-  for (let h = 0; h <= horizon; h += 1) {
-    const v = forecastAt(sensor, t0, h) + bandAt(sensor, t0, h)
-    const x = sx(t0 + h), y = sy(v)
-    h === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+  let bandStarted = false
+  for (let h = 0; h <= props.horizon; h += 1) {
+    const v = medianValue(h) + bandValue(h)
+    if (v == null || !Number.isFinite(v)) continue
+    const x = sx(h), y = sy(v)
+    if (!bandStarted) { ctx.moveTo(x, y); bandStarted = true } else ctx.lineTo(x, y)
   }
-  for (let h = horizon; h >= 0; h -= 1) {
-    const v = forecastAt(sensor, t0, h) - bandAt(sensor, t0, h)
-    ctx.lineTo(sx(t0 + h), sy(v))
+  for (let h = props.horizon; h >= 0; h -= 1) {
+    const v = medianValue(h) - bandValue(h)
+    if (v == null || !Number.isFinite(v)) continue
+    ctx.lineTo(sx(h), sy(v))
   }
-  ctx.closePath()
-  ctx.fillStyle = 'rgba(122,215,245,.12)'
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(122,215,245,.28)'
-  ctx.lineWidth = 1
-  ctx.stroke()
+  if (bandStarted) {
+    ctx.closePath()
+    ctx.fillStyle = 'rgba(122,215,245,.12)'
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(122,215,245,.28)'
+    ctx.lineWidth = 1
+    ctx.stroke()
+  }
 
   /* === 历史序列 === */
   ctx.beginPath()
-  for (let t = t0 - HISTORY; t <= t0; t += 2) {
-    const x = sx(t), y = sy(valueAt(sensor, t))
-    t === t0 - HISTORY ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+  let historyStarted = false
+  for (let t = windowSec.value.from; t <= 0; t += 2) {
+    const v = sampleValue(t)
+    if (v == null || !Number.isFinite(v)) continue
+    const x = sx(t), y = sy(v)
+    if (!historyStarted) { ctx.moveTo(x, y); historyStarted = true } else ctx.lineTo(x, y)
   }
-  ctx.strokeStyle = c_accent
-  ctx.lineWidth = 1.6
-  ctx.stroke()
-  // 下方淡填充
-  ctx.lineTo(sx(t0), rect.height - MARGIN.b)
-  ctx.lineTo(sx(t0 - HISTORY), rect.height - MARGIN.b)
-  ctx.closePath()
-  ctx.fillStyle = 'rgba(36,150,237,.08)'
-  ctx.fill()
+  if (historyStarted) {
+    ctx.strokeStyle = c_accent
+    ctx.lineWidth = 1.6
+    ctx.stroke()
+    // 下方淡填充
+    ctx.lineTo(sx(0), rect.height - MARGIN.b)
+    ctx.lineTo(sx(windowSec.value.from), rect.height - MARGIN.b)
+    ctx.closePath()
+    ctx.fillStyle = 'rgba(36,150,237,.08)'
+    ctx.fill()
+  }
 
   /* === 预测中位数 === */
   ctx.beginPath()
-  for (let h = 0; h <= horizon; h += 1) {
-    const x = sx(t0 + h), y = sy(forecastAt(sensor, t0, h))
-    h === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+  let medianStarted = false
+  for (let h = 0; h <= props.horizon; h += 1) {
+    const v = medianValue(h)
+    if (v == null || !Number.isFinite(v)) continue
+    const x = sx(h), y = sy(v)
+    if (!medianStarted) { ctx.moveTo(x, y); medianStarted = true } else ctx.lineTo(x, y)
   }
-  ctx.setLineDash([6, 4])
-  ctx.strokeStyle = c_cyan
-  ctx.lineWidth = 1.7
-  ctx.stroke()
-  ctx.setLineDash([])
+  if (medianStarted) {
+    ctx.setLineDash([6, 4])
+    ctx.strokeStyle = c_cyan
+    ctx.lineWidth = 1.7
+    ctx.stroke()
+    ctx.setLineDash([])
+  }
 
-  /* === 影子模型 === */
-  if (props.shadowEnabled) {
+  /* === 影子模型（仅 demo 有意义：真实实现只有一个在跑的模型） === */
+  if (props.shadowEnabled && !props.live) {
     ctx.beginPath()
-    for (let h = 0; h <= horizon; h += 1) {
-      const x = sx(t0 + h)
-      const y = sy(forecastAt(sensor, t0, h, sensor.amp * 0.05) - bandAt(sensor, t0, h) * 0.18)
+    for (let h = 0; h <= props.horizon; h += 1) {
+      const x = sx(h)
+      const y = sy(demoForecastAt(sensor, h, sensor.amp * 0.05) - demoBandAt(sensor, h) * 0.18)
       h === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
     }
     ctx.setLineDash([2, 3])
@@ -265,7 +366,7 @@ function draw() {
   }
 
   /* === 现在线 === */
-  const nowX = sx(t0)
+  const nowX = sx(0)
   ctx.strokeStyle = 'rgba(232,242,247,.45)'
   ctx.setLineDash([3, 5])
   ctx.beginPath()
@@ -276,35 +377,38 @@ function draw() {
 
   /* 当前读数角标 */
   {
-    const v0 = valueAt(sensor, t0)
-    const y0 = sy(v0)
-    ctx.beginPath()
-    ctx.arc(nowX, y0, 3, 0, Math.PI * 2)
-    ctx.fillStyle = c_cyan
-    ctx.fill()
-    const label = `${format(v0, sensor.digits)} ${sensor.unit}`
-    ctx.font = '10px Consolas, "Cascadia Mono", monospace'
-    const width = ctx.measureText(label).width + 14
-    const bx = Math.min(rect.width - MARGIN.r - width - 2, nowX + 10)
-    const by = Math.max(MARGIN.t + 2, y0 - 28)
-    if (typeof ctx.roundRect === 'function') {
+    const v0 = sampleValue(0)
+    if (v0 != null && Number.isFinite(v0)) {
+      const y0 = sy(v0)
       ctx.beginPath()
-      ctx.roundRect(bx, by, width, 20, 4)
-      ctx.fillStyle = 'rgba(122,215,245,.14)'
+      ctx.arc(nowX, y0, 3, 0, Math.PI * 2)
+      ctx.fillStyle = c_cyan
       ctx.fill()
-      ctx.strokeStyle = 'rgba(122,215,245,.45)'
-      ctx.stroke()
-      ctx.fillStyle = c_text
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(label, bx + 7, by + 10)
+      const label = `${format(v0, sensor.digits)} ${sensor.unit}`
+      ctx.font = '10px Consolas, "Cascadia Mono", monospace'
+      const width = ctx.measureText(label).width + 14
+      const bx = Math.min(rect.width - MARGIN.r - width - 2, nowX + 10)
+      const by = Math.max(MARGIN.t + 2, y0 - 28)
+      if (typeof ctx.roundRect === 'function') {
+        ctx.beginPath()
+        ctx.roundRect(bx, by, width, 20, 4)
+        ctx.fillStyle = 'rgba(122,215,245,.14)'
+        ctx.fill()
+        ctx.strokeStyle = 'rgba(122,215,245,.45)'
+        ctx.stroke()
+        ctx.fillStyle = c_text
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(label, bx + 7, by + 10)
+      }
     }
   }
 
   /* === 越界标记 === */
   props.crossings.forEach(crossing => {
-    const x = sx(t0 + crossing.h)
+    const x = sx(crossing.h)
     const y = sy(crossing.value)
+    if (!Number.isFinite(y)) return
     const color = crossing.kind === 'crit' ? c_bad : c_warn
     ctx.beginPath()
     ctx.arc(x, y, 4.5, 0, Math.PI * 2)
@@ -319,36 +423,39 @@ function draw() {
   /* === 悬停/固定十字线 === */
   const cursor = pinned || hover
   if (cursor) {
-    const total = HISTORY + horizon
-    const t = t0 - HISTORY + ((cursor.x - MARGIN.l) / (rect.width - MARGIN.l - MARGIN.r)) * total
-    const clamped = Math.max(t0 - HISTORY, Math.min(t0 + horizon, t))
+    const total = HISTORY + props.horizon
+    const t = windowSec.value.from + ((cursor.x - MARGIN.l) / (rect.width - MARGIN.l - MARGIN.r)) * total
+    const clamped = Math.max(windowSec.value.from, Math.min(props.horizon, t))
     const x = sx(clamped)
-    const isFuture = clamped > t0
-    const clampedOffset = isFuture ? clamped - t0 : 0
-    const y = sy(isFuture ? forecastAt(sensor, t0, clampedOffset) : valueAt(sensor, clamped))
-    ctx.strokeStyle = c_crosshair
-    ctx.setLineDash([2, 3])
-    ctx.beginPath()
-    ctx.moveTo(x, MARGIN.t)
-    ctx.lineTo(x, rect.height - MARGIN.b)
-    ctx.stroke()
-    ctx.setLineDash([])
-    ctx.beginPath()
-    ctx.arc(x, y, 3.5, 0, Math.PI * 2)
-    ctx.fillStyle = c_text
-    ctx.fill()
+    const isFuture = clamped > 0
+    const offset = isFuture ? clamped : clamped
+    const v = isFuture ? medianValue(offset) : sampleValue(clamped)
+    if (v != null && Number.isFinite(v)) {
+      const y = sy(v)
+      ctx.strokeStyle = c_crosshair
+      ctx.setLineDash([2, 3])
+      ctx.beginPath()
+      ctx.moveTo(x, MARGIN.t)
+      ctx.lineTo(x, rect.height - MARGIN.b)
+      ctx.stroke()
+      ctx.setLineDash([])
+      ctx.beginPath()
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2)
+      ctx.fillStyle = c_text
+      ctx.fill()
 
-    // tooltip
-    const v = isFuture ? forecastAt(sensor, t0, clampedOffset) : valueAt(sensor, clamped)
-    const deltaSec = clamped - t0
-    const bandWidth = isFuture ? bandAt(sensor, t0, clampedOffset) : 0
-    tooltip.value.value = format(v, sensor.digits)
-    tooltip.value.delta = Math.round(deltaSec)
-    tooltip.value.deltaLabel = deltaSec === 0 ? '现在' : `${deltaSec > 0 ? '+' : ''}${Math.round(deltaSec)}s`
-    tooltip.value.band = isFuture
-      ? `${format(v - bandWidth, sensor.digits)} – ${format(v + bandWidth, sensor.digits)}`
-      : '采样'
-    tooltipVisible.value = true
+      const deltaSec = clamped
+      const bandWidth = isFuture ? bandValue(offset) : 0
+      tooltip.value.value = format(v, sensor.digits)
+      tooltip.value.delta = Math.round(deltaSec)
+      tooltip.value.deltaLabel = deltaSec === 0 ? '现在' : `${deltaSec > 0 ? '+' : ''}${Math.round(deltaSec)}s`
+      tooltip.value.band = isFuture
+        ? `${format(v - bandWidth, sensor.digits)} – ${format(v + bandWidth, sensor.digits)}`
+        : '采样'
+      tooltipVisible.value = true
+    } else {
+      tooltipVisible.value = false
+    }
   } else {
     tooltipVisible.value = false
   }
@@ -397,7 +504,10 @@ onBeforeUnmount(() => {
 
 // props 变化重绘
 watch(
-  () => [props.sensor.key, props.horizon, props.shadowEnabled, props.now, props.generatedAt, props.crossings],
+  () => [
+    props.sensor.key, props.horizon, props.shadowEnabled, props.now,
+    props.generatedAt, props.crossings, props.live, props.history, props.forecast
+  ],
   () => draw(),
   { deep: true }
 )

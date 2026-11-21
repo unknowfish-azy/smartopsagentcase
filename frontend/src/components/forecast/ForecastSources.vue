@@ -2,7 +2,7 @@
   <table class="fc-sources">
     <thead>
       <tr>
-        <th scope="col">传感器</th>
+        <th scope="col">{{ labelHeader }}</th>
         <th scope="col">采样</th>
         <th scope="col">缺失</th>
         <th scope="col">延迟</th>
@@ -11,9 +11,9 @@
     <tbody>
       <tr v-for="item in rows" :key="item.sensor.key">
         <td><b>{{ item.sensor.cn }} {{ item.sensor.en }}</b></td>
-        <td class="fc-sources__num">{{ item.sampleRate }}s</td>
-        <td class="fc-sources__num" :class="{ 'fc-sources__warn': item.missing > 0.3 }">{{ item.missing.toFixed(2) }}%</td>
-        <td class="fc-sources__num">{{ item.latency.toFixed(1) }} s</td>
+        <td class="fc-sources__num">{{ numText(item.sampleRate, 's') }}</td>
+        <td class="fc-sources__num" :class="{ 'fc-sources__warn': item.missing > 0.3 }">{{ pctText(item.missing) }}</td>
+        <td class="fc-sources__num">{{ numText(item.latency, ' s') }}</td>
       </tr>
     </tbody>
   </table>
@@ -34,18 +34,38 @@ const DEMO_QUALITY = Object.freeze({
 })
 
 const props = defineProps({
-  sourceData: { type: Array, default: () => [] }  // 后端返回格式 TBD
+  // 后端返回的真实槽位：{ key, label, metric, unit, sampleRate, missing, latency }
+  sourceData: { type: Array, default: () => [] },
+  /** live 态列头写「指标」，demo 态仍写「传感器」。 */
+  labelHeader: { type: String, default: '传感器' }
 })
 
+function numText(value, suffix) {
+  if (value == null || !Number.isFinite(Number(value))) return '—'
+  return `${Number(value)}${suffix}`
+}
+function pctText(value) {
+  if (value == null || !Number.isFinite(Number(value))) return '—'
+  return `${Number(value).toFixed(2)}%`
+}
+
 const rows = computed(() => {
-  // 优先用后端 sourceData；否则用演示口径
+  // 优先用后端真实槽位；否则用演示口径
   if (props.sourceData?.length) {
-    return props.sourceData.map(s => ({
-      sensor: SENSORS.find(x => x.key === s.key) || SENSORS[0],
-      sampleRate: s.sampleRate,
-      missing: s.missing,
-      latency: s.latency
-    }))
+    return props.sourceData.map(s => {
+      const demo = SENSORS.find(x => x.key === s.key)
+      return {
+        sensor: {
+          key: s.key,
+          // live 的真实指标名（cn 已含中文语义，en 用于别名提示）
+          cn: s.label || demo?.cn || s.key,
+          en: demo?.en || ''
+        },
+        sampleRate: s.sampleRate,
+        missing: s.missing,
+        latency: s.latency
+      }
+    })
   }
   return SENSORS.map(s => ({
     sensor: s,

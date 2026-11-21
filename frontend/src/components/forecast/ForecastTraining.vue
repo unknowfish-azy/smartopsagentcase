@@ -2,23 +2,33 @@
   <div class="fc-train-strip">
     <div class="fc-train-copy">
       <h2>训练与评估</h2>
-      <p>
+      <p v-if="statFallback">
+        本次预测走统计降级（{{ modeLabel }}），没有训练过程、验证集损失与门控权重可展示；
+        采样 {{ sampleCountText }} · 推理 {{ inferenceText }}。
+      </p>
+      <p v-else>
         验证集损失随 epoch 下降，第 {{ bestEpoch }} 轮后不再改善即早停；
         门禁只看验证集，不看训练集。
       </p>
     </div>
     <div class="fc-train-chart">
-      <canvas ref="canvasRef"></canvas>
+      <canvas v-if="!statFallback" ref="canvasRef"></canvas>
+      <p v-else class="fc-train__fallback">
+        无训练产物：{{ modelStatusDetail || '模型权重未加载，预测由统计基线产出' }}
+      </p>
     </div>
     <div class="fc-train-state">
-      <span>
+      <span v-if="!statFallback">
         门禁 <b :class="{ 'fc-train__warn': gate !== 'PASS' }">{{ gateLabel }}</b>
       </span>
-      <span>
+      <span v-if="!statFallback && bestEpoch">
         最佳 epoch <b>{{ bestEpoch }}</b>
       </span>
-      <span>
+      <span v-if="!statFallback">
         下次重训 <b>{{ retrainLabel }}</b>
+      </span>
+      <span v-if="statFallback">
+        模型状态 <b class="fc-train__warn">{{ gateLabel }}</b>
       </span>
     </div>
   </div>
@@ -28,17 +38,38 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
-  gate: { type: String, default: 'PASS' },        // PASS | FAIL | PENDING
+  gate: { type: String, default: 'PASS' },        // PASS | FAIL | PENDING | FALLBACK
   bestEpoch: { type: Number, default: 38 },
-  retrainAt: { type: String, default: '' }
+  retrainAt: { type: String, default: '' },
+  /** live 态：真实链路，无训练产物时如实说明。 */
+  live: { type: Boolean, default: false },
+  kind: { type: String, default: '' },
+  mode: { type: String, default: '' },
+  modelStatusDetail: { type: String, default: '' },
+  sampleCount: { type: Number, default: null },
+  inferenceMs: { type: Number, default: null },
+  /** demo 态仍画合成训练曲线。 */
+  demo: { type: Boolean, default: false }
 })
 
 const canvasRef = ref(null)
 let ro = null
 
+/** 统计降级（无 PatchTST 权重）时不存在训练曲线，改用文字说明。 */
+const statFallback = computed(() => props.live && props.kind !== 'neural')
+const modeLabel = computed(() => {
+  const mode = props.mode || 'unknown'
+  if (mode === 'linear') return '线性基线'
+  if (mode === 'seasonal_naive') return '季节朴素基线'
+  return mode
+})
+const sampleCountText = computed(() => (props.sampleCount == null ? '—' : `${props.sampleCount} 点`))
+const inferenceText = computed(() => (props.inferenceMs == null ? '—' : `${Number(props.inferenceMs).toFixed(0)}ms`))
+
 const gateLabel = computed(() => {
   if (props.gate === 'PASS') return '通过'
   if (props.gate === 'FAIL') return '未通过'
+  if (props.gate === 'FALLBACK') return '降级'
   return '等待中'
 })
 
@@ -135,6 +166,18 @@ watch(() => [props.gate, props.bestEpoch], () => draw())
   display: block;
   width: 100%;
   height: 56px;
+}
+
+.fc-train__fallback {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  margin: 0;
+  padding: 0 12px;
+  color: var(--forecast-muted, #92A6B5);
+  font: 10px var(--forecast-font-mono);
+  letter-spacing: .04em;
+  line-height: 1.6;
 }
 
 .fc-train-state {

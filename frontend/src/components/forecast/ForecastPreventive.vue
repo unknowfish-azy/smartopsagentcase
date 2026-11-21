@@ -56,19 +56,39 @@ const props = defineProps({
   generatedAt: { type: Number, default: 0 },
   now: { type: Number, default: 0 },
   horizon: { type: Number, default: 30 },
-  crossings: { type: Array, default: () => [] }
+  crossings: { type: Array, default: () => [] },
+  /** live 态：名称取真实指标，越界事件来自后端。 */
+  live: { type: Boolean, default: false },
+  sensorCn: { type: String, default: '' },
+  sensorEn: { type: String, default: '' },
+  /** live 态：后端 crossings 不带 metric，需由调用方补齐。 */
+  metricName: { type: String, default: '' }
 })
 
 /** warn 级只有置信度达到该阈值才进入建议；crit 全收 */
 const WARN_CONFIDENCE_MIN = 0.62
 
-/** 传感器语义 → 预防动作文案（占位：接入真实资产后按资产类型替换） */
+/**
+ * 演示传感器语义 → 预防动作文案。
+ * 注意：这些是**设计稿的引擎语义**，只在 demo 态使用；live 态走下面的真实指标映射。
+ */
 const PREVENTIVE_ACTIONS = {
   ect: '检查散热回路与冷却液余量，提前降载错峰。',
   rpm: '下调负载曲线，错峰高转速任务窗口。',
   egt: '排查排温上升来源，预备限流与散热冗余。',
   oilp: '检查润滑供压链路，预备低载荷停机窗口。'
 }
+
+/** 真实哨兵指标的预防动作（按指标语义，不套引擎话术）。 */
+const LIVE_PREVENTIVE_ACTIONS = {
+  cpu: 'CPU 预计继续走高：先核对高占用进程，准备限流或扩容窗口。',
+  memory: '内存预计继续走高：先核对驻留进程与缓存水位，准备重启/扩容评估。',
+  disk: '磁盘占用预计继续走高：先核对增长来源，准备清理或扩容窗口。',
+  tcp: 'TCP 连接数预计继续走高：先核对连接来源与泄漏，准备扩容或回收策略。',
+  port: '端口连通率预计下降：先核对该端口对应服务状态，准备重启或切流窗口。',
+  log_hits: '日志命中数预计异常放大：先核对错误来源，准备限流或告警收敛。'
+}
+const DEFAULT_LIVE_ACTION = '按该指标的真实含义制定预防动作；当前以服务健康观察契约兜底。'
 const DEFAULT_ACTION = '按该传感器语义制定预防动作；当前以服务健康观察契约兜底。'
 
 const draft = ref(null)
@@ -77,14 +97,29 @@ const busy = ref(false)
 const error = ref('')
 const copyHint = ref('')
 
-function actionFor(sensorKey) {
+function actionFor(sensorKey, metricName) {
+  if (props.live) {
+    return LIVE_PREVENTIVE_ACTIONS[String(metricName || '').toLowerCase()] || DEFAULT_LIVE_ACTION
+  }
   return PREVENTIVE_ACTIONS[sensorKey] || DEFAULT_ACTION
 }
 
 const candidates = computed(() => {
   const nowSec = props.generatedAt + props.now
   const list = []
-  if (props.crossings?.length) {
+  if (props.live) {
+    props.crossings.forEach((c) => {
+      list.push({
+        ...c,
+        sensor: {
+          key: props.primaryKey,
+          cn: props.sensorCn || props.primaryKey,
+          en: props.sensorEn || '',
+          metric: c.metric || props.metricName || ''
+        }
+      })
+    })
+  } else if (props.crossings?.length) {
     const primary = SENSORS.find((s) => s.key === props.primaryKey) || SENSORS[0]
     props.crossings.forEach((c) => {
       list.push({ sensor: primary, ...c, confidence: Number(c.confidence) || 0 })
@@ -97,7 +132,7 @@ const candidates = computed(() => {
     }
   }
   return list
-    .filter((c) => c.kind === 'crit' || (c.confidence || 0) >= WARN_CONFIDENCE_MIN)
+    .filter((c) => c.kind === 'crit' || (Number(c.confidence) || 0) >= WARN_CONFIDENCE_MIN)
     .sort((a, b) => {
       if (a.kind !== b.kind) return a.kind === 'crit' ? -1 : 1
       return a.h - b.h
@@ -111,10 +146,11 @@ const items = computed(() =>
     sensorKey: c.sensor.key,
     sensorCn: c.sensor.cn,
     sensorEn: c.sensor.en,
+    metric: c.sensor.metric || '',
     kind: c.kind,
     h: c.h,
-    confidence: c.confidence,
-    action: actionFor(c.sensor.key)
+    confidence: Number(c.confidence) || 0,
+    action: actionFor(c.sensor.key, c.sensor.metric)
   }))
 )
 

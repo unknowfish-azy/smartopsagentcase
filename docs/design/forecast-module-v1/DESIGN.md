@@ -119,29 +119,53 @@
 
 **键盘可达**：工具栏按钮全部原生 `<button>`；`aria-pressed` 表示选中；图表用 `role="img"` + 文字替代描述（"历史与预测区间示意图"），具体数值在浮层与列表中可读。
 
-## 7. 数据契约（建议）
+## 7. 数据契约（已实现，2026-11-22 落地真链路）
+
+> **口径落点**：真实数据源只有 `sentinel_metric_sample`（cpu / memory / disk / tcp / port / log_hits，采样间隔 30~60s），
+> **不存在**设计稿里的 ECT/RPM/EGT/OILP/IAT/VBAT 引擎传感器。六槽位是 **UI 语义别名**，
+> live 态的名称、单位、阈值一律取真实指标口径；demo 态仍用合成六传感器，双重声明 DEMO。
+>
+> **模型口径**：`ai-service/models/patchtst.pt` 当前不存在，ai-service 会显式降级到
+> `linear` / `seasonal_naive`。响应必须带回 `mode` / `modelStatus` / `modelStatusDetail`，
+> 前端据 `kind` 如实区分「神经模型 / 统计降级 / 不可用」，**不得**把统计降级呈现为 MLP+GRU。
 
 ```http
-GET /api/sentinel/forecast?metric=ect&horizon=30
+GET /api/sentinel/forecast/catalog
+200 { "slots": [ { "key": "ect", "cn": "冷却液温度", "en": "ECT", "metric": "cpu",
+                   "unit": "%", "sampleCount": 117, "sampleIntervalSec": 30,
+                   "warnAbove": 85, "critAbove": 95, "low": false } ],
+      "horizons": [15, 30, 60, 120],
+      "note": "无采样的槽位不出现在列表里，也不补默认值。" }
+
+GET /api/sentinel/forecast?metric=ect&horizon=60
 200 {
-  "generatedAt": "2026-11-19T15:20:31Z",
-  "model": { "version": "v3.2", "arch": "MLP+GRU", "params": 28417,
-             "metrics": { "mae": 1.84, "rmse": 2.61, "mape": 2.3 },
-             "trainedAt": "2026-11-18T21:40:00Z", "epochs": 42, "gate": "PASS" },
-  "points": [ { "t": 0, "median": 93.1, "p10": 92.4, "p90": 93.8 } ],
-  "crossings": [ { "kind": "warn", "h": 20, "value": 96.0, "confidence": 0.73 } ]
+  "status": "ok", "kind": "statistical", "mode": "linear",
+  "modelStatus": "fallback", "modelStatusDetail": "未找到 patchtst.pt，本次走统计降级",
+  "metric": "cpu", "sensor": "ect", "cn": "冷却液温度", "en": "ECT", "unit": "%",
+  "horizonSec": 60, "steps": 2, "sampleIntervalSec": 30, "sampleCount": 117,
+  "inferenceMs": 12,
+  "series": [ { "t": -3510, "v": 41.0 } ],
+  "forecast": [ { "t": 30, "h": 1, "median": 120.0, "p10": 110.0, "p90": 130.0 } ],
+  "crossings": [ { "kind": "warn", "h": 30, "step": 1, "value": 96.0, "threshold": 85, "confidence": 0.83 } ],
+  "thresholds": { "warnAbove": 85, "critAbove": 95, "warnBelow": 0, "critBelow": 0, "low": false },
+  "model": { "version": "statistical-baseline", "arch": "linear", "gate": "FALLBACK",
+             "metrics": { "mae": null, "rmse": null, "mape": null } },
+  "note": "权重缺失……这不是神经网络效果，也不代表 PatchTST 精度。"
 }
 
-GET /api/sentinel/series?metric=ect&window=120
-200 { "points": [ { "t": -120, "v": 84.2 } ] }
-
-GET /api/sentinel/forecast/models
-200 { "models": [ { "version": "v3.2", "gate": "PASS" }, { "version": "v3.3", "gate": "PENDING" } ] }
+# 无采样 / 采样不足 / 上游不可达：status=unavailable，forecast 与 series 为空数组
+200 { "status": "unavailable", "kind": "unavailable", "mode": "none",
+      "modelStatusDetail": "该指标当前没有可用采样（cpu），无法预测",
+      "note": "……页面应显示 offline，而不是补一条合成曲线。" }
 ```
 
-- 单位随 metric 返回，前端不做换算。
-- 缺字段即视为不可用，不补默认值。
+- `horizonSec`（秒）按实测 `sampleIntervalSec` 换算成步数 `steps`，回传 `sampleIntervalSec` 供前端标注。
+- 越界 `h` 为**秒**（step × 采样间隔），与 demo 口径一致；同一档只记最早一次。
+- `confidence` 是「越早越可信」的单调启发式（0.5–0.9），**不是校准概率**。
+- 取数按 `sentinel_task.user_id` 过滤，杜绝跨租户读数。
+- 单位随 metric 返回，前端不做换算；缺字段即视为不可用，不补默认值。
 - 三态：`loading`（骨架，不闪烁）/ `live`（LIVE 角标）/ `demo`（DEMO 角标，虚构数据）/ `offline`（—，说明为什么）。
+- **fail-soft**：ai-service 超时/不可达 → `unavailable` → 前端 offline，不回落演示数据冒充实时。
 
 **演示数据**：前端用确定性合成序列（正弦 + 慢漂移 + 平滑噪声），保证同一时刻刷新画面一致；页脚与角标双重声明"虚构示例"。
 

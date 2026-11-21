@@ -32,13 +32,16 @@ public class SentinelController {
     private final SentinelScriptRunner runner;
     private final AlertLifecycleService lifecycle;
     private final JdbcTemplate jdbc;
+    private final SentinelForecastService forecast;
 
     public SentinelController(SentinelService sentinel, SentinelScriptRunner runner,
-                              AlertLifecycleService lifecycle, JdbcTemplate jdbc) {
+                              AlertLifecycleService lifecycle, JdbcTemplate jdbc,
+                              SentinelForecastService forecast) {
         this.sentinel = sentinel;
         this.runner = runner;
         this.lifecycle = lifecycle;
         this.jdbc = jdbc;
+        this.forecast = forecast;
     }
 
     /* ── 哨兵任务 ─────────────────────────────────────────────────────── */
@@ -534,6 +537,44 @@ public class SentinelController {
                 rs.getTimestamp("updated_at").toInstant().toString()),
                 args.toArray());
         return ApiResponse.success(rows);
+    }
+
+    /* ── 预测面 · 真实取数与模型状态 ─────────────────────────────── */
+
+    /**
+     * 可用指标槽位（UI 六槽位 → 真实哨兵指标）。
+     *
+     * <p>只返回**确实有采样**的槽位：没采到的指标不占位、不补默认值。
+     * 前端据此渲染传感器切换器，live 态的名称/单位/阈值全部取真实口径。</p>
+     */
+    @GetMapping("/forecast/catalog")
+    public ApiResponse<Map<String, Object>> forecastCatalog(@AuthenticationPrincipal SessionUser actor) {
+        return ApiResponse.success(forecast.catalog(forecastUserId(actor)));
+    }
+
+    /**
+     * 单指标多步预测（真实数据 + ai-service 推理）。
+     *
+     * <p>响应自带 {@code kind}（neural / statistical / unavailable）与
+     * {@code modelStatusDetail}：权重缺失时如实标注统计降级，绝不冒充神经模型。
+     * 无数据或上游不可达时 {@code status=unavailable}，由前端走 offline。</p>
+     */
+    @GetMapping("/forecast")
+    public ApiResponse<Map<String, Object>> forecast(@AuthenticationPrincipal SessionUser actor,
+                                                     @RequestParam(defaultValue = "ect") String metric,
+                                                     @RequestParam(required = false) Integer horizon) {
+        return ApiResponse.success(forecast.forecast(actor, metric, horizon));
+    }
+
+    /** 预测模型状态：ai-service 可达性与 PatchTST 权重是否加载。 */
+    @GetMapping("/forecast/model-info")
+    public ApiResponse<Map<String, Object>> forecastModelInfo(@AuthenticationPrincipal SessionUser actor) {
+        return ApiResponse.success(forecast.modelInfo(actor));
+    }
+
+    private long forecastUserId(SessionUser actor) {
+        if (actor == null || actor.id() == null) throw new com.smartops.exception.BusinessException(401, "需要登录后使用预测面");
+        return actor.id();
     }
 
     /* ── 预测面 · 预防性恢复契约草案 ──────────────────────────────── */

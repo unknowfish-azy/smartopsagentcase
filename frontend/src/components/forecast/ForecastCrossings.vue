@@ -11,8 +11,8 @@
       type="button"
       class="fc-crossing"
       :class="{ 'fc-crossing--crit': item.kind === 'crit' }"
-      :title="`切到 ${item.sensor.cn}`"
-      @click="$emit('switch-sensor', item.sensor.key)"
+      :title="live ? `${item.sensor.cn} ${item.metric || ''}` : `切到 ${item.sensor.cn}`"
+      @click="!live && $emit('switch-sensor', item.sensor.key)"
     >
       <span class="fc-crossing__row">
         <b>{{ item.sensor.cn }} {{ item.sensor.en }}</b>
@@ -22,8 +22,8 @@
       </span>
       <small>
         {{ item.kind === 'crit' ? '越界' : '预警' }}
-        {{ fmt(item.threshold, item.sensor.digits) }} {{ item.sensor.unit }}
-        · 置信 {{ (0.9 - item.h / (horizon * 4)).toFixed(2) }}
+        {{ fmt(item.threshold, item.sensor.digits ?? 1) }} {{ item.unit || '' }}
+        · 置信 {{ confidenceText(item) }}
       </small>
     </button>
   </div>
@@ -38,7 +38,15 @@ const props = defineProps({
   generatedAt: { type: Number, default: 0 },
   now: { type: Number, default: 0 },
   horizon: { type: Number, default: 30 },
-  crossings: { type: Array, default: () => [] }
+  crossings: { type: Array, default: () => [] },
+  /** live 态：后端已算好越界，名称/单位取真实指标。 */
+  live: { type: Boolean, default: false },
+  sensorCn: { type: String, default: '' },
+  sensorEn: { type: String, default: '' },
+  /** live 态：后端 crossings 不带 metric，需由调用方补齐才能选对文案。 */
+  metricName: { type: String, default: '' },
+  sensorDigits: { type: Number, default: 1 },
+  unit: { type: String, default: '' }
 })
 
 defineEmits(['switch-sensor'])
@@ -47,11 +55,28 @@ function fmt(v, d) {
   return Number(v).toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d })
 }
 
-// 聚合所有传感器的越界事件，按时间排，最多 4 条
+/** live 态置信度由后端给（启发式、未校准），缺省时不编造数字。 */
+function confidenceText(item) {
+  const value = Number(item.confidence)
+  return Number.isFinite(value) ? value.toFixed(2) : '—'
+}
+
+// 聚合越界事件，按时间排，最多 4 条
 const allCrossings = computed(() => {
   const nowSec = props.generatedAt + props.now
   const list = []
-  // 如果主传感器有 crossings prop 数据，用它；否则实时算
+  if (props.live) {
+    // 真实链路只有当前选中的一个指标，后端已给出它的越界事件。
+    const digits = Number.isFinite(Number(props.sensorDigits)) ? Number(props.sensorDigits) : 1
+    const metric = props.metricName || ''
+    props.crossings.forEach((c) => {
+      list.push({
+        ...c,
+        sensor: { key: props.primaryKey, cn: props.sensorCn, en: props.sensorEn, digits, metric }
+      })
+    })
+    return list.sort((a, b) => a.h - b.h).slice(0, 4)
+  }
   if (props.crossings?.length) {
     const primary = SENSORS.find(s => s.key === props.primaryKey) || SENSORS[0]
     props.crossings.forEach(c => {
@@ -79,6 +104,10 @@ const items = computed(() => {
 })
 
 const primaryEmptyHint = computed(() => {
+  if (props.live) {
+    return `${props.sensorCn || props.primaryKey}在 ${props.horizon}s 视野内没有达到阈值；` +
+      '可把视野拉长到 120s 再看，或保持现况。'
+  }
   const sensor = SENSORS.find(s => s.key === props.primaryKey) || SENSORS[0]
   return `${sensor.cn}在 ${props.horizon}s 视野内不会越过阈值；可把视野拉长到 120s 再看。`
 })

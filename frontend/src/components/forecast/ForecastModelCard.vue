@@ -1,7 +1,14 @@
 <template>
   <div class="fc-model">
-    <!-- 结构图 -->
-    <div class="fc-model__arch">
+    <!-- live 态：只画真实在跑的那一个模型（统计降级就没有"结构图"可画） -->
+    <p v-if="live" class="fc-model__notice">
+      本次预测方式 <b>{{ modeLabel }}</b> · {{ kindLabel }}<br />
+      <span v-if="modelStatusDetail">{{ modelStatusDetail }}</span>
+      <span v-else-if="modelNote">{{ modelNote }}</span>
+    </p>
+
+    <!-- 结构图（demo 口径：MLP+GRU） -->
+    <div v-if="!live" class="fc-model__arch">
       <div class="fc-layer fc-layer--io">
         <small>输入</small>
         <span>12×6</span>
@@ -44,9 +51,16 @@
 
     <!-- 页脚元数据 -->
     <div class="fc-model__foot">
-      <span>参数 <b>{{ formatNum(params) }}</b></span>
-      <span>{{ trainedAtText }}</span>
-      <span>{{ epochs }} epochs</span>
+      <template v-if="live">
+        <span>采样 <b>{{ sampleCount ?? '—' }}</b> 点</span>
+        <span>间隔 <b>{{ sampleIntervalSec ?? '—' }}s</b></span>
+        <span>推理 <b>{{ inferenceText }}</b></span>
+      </template>
+      <template v-else>
+        <span>参数 <b>{{ formatNum(params) }}</b></span>
+        <span>{{ trainedAtText }}</span>
+        <span>{{ epochsText }}</span>
+      </template>
     </div>
   </div>
 </template>
@@ -59,7 +73,16 @@ const props = defineProps({
   unit: { type: String, default: '' },
   params: { type: Number, default: null },
   trainedAt: { type: String, default: '' },
-  epochs: { type: Number, default: null }
+  epochs: { type: Number, default: null },
+  /** live 态：真实链路，指标口径与模型状态以后端为准。 */
+  live: { type: Boolean, default: false },
+  kind: { type: String, default: '' },
+  mode: { type: String, default: '' },
+  modelStatusDetail: { type: String, default: '' },
+  modelNote: { type: String, default: '' },
+  sampleCount: { type: Number, default: null },
+  sampleIntervalSec: { type: Number, default: null },
+  inferenceMs: { type: Number, default: null }
 })
 
 function fmt(v) {
@@ -70,6 +93,24 @@ function formatNum(n) {
   if (n == null) return '—'
   return n.toLocaleString('en-US')
 }
+
+/** live 态模型状态标签：如实区分神经模型与统计降级，绝不统一叫"已启用"。 */
+const modeLabel = computed(() => {
+  const mode = props.mode || 'unknown'
+  if (props.kind === 'neural') return mode === 'patchtst' ? 'PatchTST' : mode
+  if (props.kind === 'statistical') return mode === 'linear' ? '线性基线' : (mode || '统计基线')
+  return mode || '不可用'
+})
+const kindLabel = computed(() => {
+  if (props.kind === 'neural') return '神经模型'
+  if (props.kind === 'statistical') return '统计降级（非神经模型）'
+  if (props.kind === 'unavailable') return '不可用'
+  return '未知'
+})
+const inferenceText = computed(() =>
+  props.inferenceMs == null ? '—' : `${Number(props.inferenceMs).toFixed(0)}ms`
+)
+const epochsText = computed(() => (props.epochs == null ? 'epochs —' : `${props.epochs} epochs`))
 const trainedAtText = computed(() => {
   if (!props.trainedAt) return '训练时间 —'
   try {
@@ -85,8 +126,25 @@ const trainedAtText = computed(() => {
   gap: 1px;
 }
 
-.fc-model__arch {
-  display: flex;
+.fc-model__notice {
+  margin: 0;
+  padding: 12px 15px 2px;
+  color: var(--forecast-muted, var(--smart-muted));
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.fc-model__notice b {
+  color: var(--forecast-text, var(--smart-text));
+  font-weight: 500;
+}
+
+.fc-model__notice span {
+  font: 9.5px var(--forecast-font-mono);
+  letter-spacing: .04em;
+}
+
+.fc-model__arch {  display: flex;
   align-items: center;
   gap: 6px;
   padding: 14px 15px 4px;

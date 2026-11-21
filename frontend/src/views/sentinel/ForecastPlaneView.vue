@@ -3,7 +3,7 @@
     <!-- 页头 -->
     <header class="forecast-page-head">
       <div>
-        <p class="forecast-eyebrow">PREDICTIVE SENTINEL · MLP + GRU · 引擎传感器</p>
+        <p class="forecast-eyebrow">PREDICTIVE SENTINEL · {{ eyebrowModel }} · {{ eyebrowSensor }}</p>
         <h1>预测面</h1>
         <p class="forecast-lede">
           用 12 步传感器窗口预测未来 15–120 秒的读数与越界概率。图上同时给出历史、中位数预测与 p10–p90 区间；右侧说明模型、门控权重与"还有多久会越线"。预测只是证据，越界仍需人工确认后才进入告警与工单链路。
@@ -11,17 +11,20 @@
       </div>
       <div class="forecast-state-chips">
         <span class="forecast-chip">
-          <i class="forecast-chip__dot forecast-chip__dot--live"></i>
-          数据流 <b>{{ dataState === 'live' ? '正常' : dataState === 'demo' ? '演示' : '离线' }}</b>
+          <i class="forecast-chip__dot" :class="stateDotClass"></i>
+          数据流 <b>{{ stateLabel }}</b>
         </span>
-        <span class="forecast-chip">
-          模型 <b>{{ payload?.model?.version || '—' }}</b> · 影子 v3.3
+        <span class="forecast-chip" :title="payload?.note || ''">
+          模型 <b>{{ modelLabel }}</b>
         </span>
         <span v-if="dataState === 'demo'" class="forecast-chip forecast-chip--demo">
           DEMO · 虚构示例，非真实读数
         </span>
-        <span v-else class="forecast-chip">
-          FRESH 3s · MODE {{ dataState.toUpperCase() }}
+        <span v-else-if="dataState === 'offline'" class="forecast-chip forecast-chip--warn">
+          离线 · {{ errorReason || '接口不可用' }}
+        </span>
+        <span v-else class="forecast-chip" :title="`${payload?.sampleCount ?? 0} 点 / 间隔 ${payload?.sampleIntervalSec ?? '—'}s`">
+          LIVE · {{ payload?.mode || payload?.modelStatus || '—' }} · {{ payload?.sampleIntervalSec ?? '—' }}s/点
         </span>
       </div>
     </header>
@@ -46,7 +49,7 @@
         </div>
       </div>
       <div class="forecast-tool" role="group" aria-label="传感器">
-        <span>传感器</span>
+        <span>指标</span>
         <div class="forecast-sensors">
           <button
             v-for="s in sensors"
@@ -54,8 +57,9 @@
             type="button"
             class="forecast-sensor"
             :aria-pressed="primarySensor === s.key"
+            :title="dataState === 'demo' ? `${s.cn}（演示）` : liveTitle(s)"
             @click="primarySensor = s.key"
-          >{{ s.en }}</button>
+          >{{ dataState === 'demo' ? s.en : sensorButtonLabel(s) }}</button>
         </div>
       </div>
       <div class="forecast-tool" role="group" aria-label="对比模型">
@@ -65,6 +69,8 @@
           class="forecast-btn"
           :class="{ 'forecast-btn--on': shadowEnabled }"
           :aria-pressed="shadowEnabled"
+          :disabled="dataState === 'live'"
+          :title="dataState === 'live' ? '真实链路只有一个在跑的模型，无影子模型可对比' : '叠加演示影子序列'"
           @click="shadowEnabled = !shadowEnabled"
         >影子 v3.3</button>
       </div>
@@ -74,6 +80,8 @@
           class="forecast-btn"
           :class="{ 'forecast-btn--on': playing }"
           :aria-pressed="playing"
+          :disabled="dataState === 'live'"
+          :title="dataState === 'live' ? '真实数据没有可回放的过去，回放会把读数推成虚构未来' : '按虚拟时间推进'"
           @click="togglePlayback"
         >{{ playing ? '暂停' : '回放' }}</button>
       </div>
@@ -86,8 +94,10 @@
         <section class="forecast-card forecast-chart-card" aria-labelledby="forecast-chart-title">
           <header class="forecast-card-head">
             <div>
-              <h2 id="forecast-chart-title">预测面 · {{ currentSensor.cn }} {{ currentSensor.en }}</h2>
-              <span class="forecast-card-en">FORECAST PLANE · HISTORY / MEDIAN / p10–p90</span>
+              <h2 id="forecast-chart-title">预测面 · {{ sensorTitle }}</h2>
+              <span class="forecast-card-en">
+                FORECAST PLANE · {{ dataState === 'live' ? payload?.metricName || 'REAL SERIES' : 'SYNTHETIC DEMO' }}
+              </span>
             </div>
             <span class="forecast-card-aside">窗口 −120s → +{{ horizon }}s</span>
           </header>
@@ -100,10 +110,14 @@
               :generated-at="generatedAt"
               :now="playOffset"
               :crossings="crossings"
+              :history="payload?.series || []"
+              :forecast="payload?.forecast || []"
+              :live="dataState === 'live'"
             />
             <div v-else class="forecast-chart-placeholder">无传感器</div>
             <div v-if="dataState === 'offline'" class="forecast-chart-empty">
-              <p>后端接口未就绪，无法获取实时数据。</p>
+              <p>{{ errorReason || '后端接口未就绪，无法获取实时数据。' }}</p>
+              <button type="button" class="forecast-btn" @click="retry">重试</button>
               <button type="button" class="forecast-btn" @click="useDemo">
                 查看演示数据集
               </button>
@@ -113,12 +127,14 @@
 
         <!-- 残差 -->
         <section class="forecast-card forecast-residual-card" aria-label="残差条">
-          <ForecastResidual
-            :sensor="currentSensor"
-            :generated-at="generatedAt"
-            :now="playOffset"
-            :demo="dataState === 'demo'"
-          />
+            <ForecastResidual
+              :sensor="currentSensor"
+              :generated-at="generatedAt"
+              :now="playOffset"
+              :demo="dataState === 'demo'"
+              :series="payload?.series || []"
+              :live="dataState === 'live'"
+            />
         </section>
       </div>
 
@@ -129,7 +145,7 @@
           <header class="forecast-card-head">
             <div>
               <h2 id="forecast-model-title">模型</h2>
-              <span class="forecast-card-en">MODEL · MLP + GRU</span>
+              <span class="forecast-card-en">{{ modelCardEn }}</span>
             </div>
             <span v-if="dataState === 'demo'" class="forecast-tag forecast-tag--demo">DEMO</span>
           </header>
@@ -140,6 +156,11 @@
             :params="payload?.model?.params"
             :trained-at="payload?.model?.trainedAt"
             :epochs="payload?.model?.epochs"
+            :live="dataState === 'live'"
+            :kind="payload?.kind || ''"
+            :mode="payload?.mode || ''"
+            :model-status-detail="payload?.modelStatusDetail || ''"
+            :model-note="payload?.model?.note || payload?.note || ''"
           />
         </section>
 
@@ -148,11 +169,11 @@
           <header class="forecast-card-head">
             <div>
               <h2 id="forecast-gates-title">门控权重</h2>
-              <span class="forecast-card-en">GRU UPDATE GATE</span>
+              <span class="forecast-card-en">{{ gatesCardEn }}</span>
             </div>
-            <span class="forecast-tag">STRUCTURAL</span>
+            <span class="forecast-tag">{{ gatesTag }}</span>
           </header>
-          <ForecastGates :primary-key="primarySensor" />
+          <ForecastGates :primary-key="primarySensor" :live="dataState === 'live'" :mode="payload?.mode || ''" />
         </section>
 
         <!-- 越界预测 -->
@@ -170,6 +191,12 @@
             :now="playOffset"
             :horizon="horizon"
             :crossings="payload?.crossings"
+            :live="dataState === 'live'"
+            :sensor-cn="payload?.sensorCn || currentSensor.cn"
+            :sensor-en="payload?.sensorEn || currentSensor.en"
+            :sensor-digits="currentSensor.digits ?? 1"
+            :metric-name="payload?.metricName || currentSensor.metric || ''"
+            :unit="payload?.unit || currentSensor.unit"
             @switch-sensor="primarySensor = $event"
           />
         </section>
@@ -189,6 +216,10 @@
             :now="playOffset"
             :horizon="horizon"
             :crossings="payload?.crossings"
+            :live="dataState === 'live'"
+            :sensor-cn="payload?.sensorCn || currentSensor.cn"
+            :sensor-en="payload?.sensorEn || currentSensor.en"
+            :metric-name="payload?.metricName || currentSensor.metric || ''"
           />
         </section>
       </div>
@@ -206,9 +237,16 @@
         </header>
         <!-- ForecastTraining 全宽嵌入 -->
         <ForecastTraining
-          :gate="payload?.model?.gate || 'PASS'"
-          :best-epoch="payload?.model?.epochs ? Math.max(1, payload.model.epochs - 4) : 38"
-          :retrain-at="payload?.model?.trainedAt"
+          :gate="payload?.model?.gate || (dataState === 'demo' ? 'PASS' : 'FALLBACK')"
+          :best-epoch="trainingBestEpoch"
+          :retrain-at="payload?.model?.trainedAt || ''"
+          :live="dataState === 'live'"
+          :kind="payload?.kind || ''"
+          :mode="payload?.mode || ''"
+          :model-status-detail="payload?.modelStatusDetail || ''"
+          :sample-count="payload?.sampleCount ?? null"
+          :inference-ms="payload?.inferenceMs ?? null"
+          :demo="dataState === 'demo'"
         />
       </section>
 
@@ -221,14 +259,14 @@
           </div>
           <span v-if="dataState === 'demo'" class="forecast-tag forecast-tag--demo">DEMO</span>
         </header>
-        <ForecastSources />
+        <ForecastSources :source-data="sourceRows" :label-header="dataState === 'live' ? '指标' : '传感器'" />
       </section>
     </div>
 
     <!-- 页脚 -->
     <footer class="forecast-page-foot">
       <span>FORECAST · SENTINEL</span>
-      <span>{{ dataState === 'demo' ? '演示数据：曲线为确定性合成序列，属虚构示例，不代表任何真实发动机' : '数据来自接口' }}</span>
+      <span>{{ sourceFootnote }}</span>
       <span>预测 · 事实：越界人工确认后才进入告警</span>
       <span>REDUCED MOTION · <b>{{ reducedMotion ? '关闭自动回放' : '自动回放可用' }}</b></span>
     </footer>
@@ -240,6 +278,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { subscribe, isDegraded } from '../../visual/motionScheduler.js'
 import { isReducedMotionMode, isLightweightVisualMode } from '../../visual/visualMode.js'
 import { SENSORS, crossingEvents } from '../../domain/forecast/syntheticSeries.js'
+import { normalizeCatalogEntry } from '../../domain/forecast/liveSensors.js'
 import { useForecastSeries } from '../../composables/useForecastSeries.js'
 import ForecastChart from '../../components/forecast/ForecastChart.vue'
 import ForecastResidual from '../../components/forecast/ForecastResidual.vue'
@@ -250,18 +289,63 @@ import ForecastPreventive from '../../components/forecast/ForecastPreventive.vue
 import ForecastTraining from '../../components/forecast/ForecastTraining.vue'
 import ForecastSources from '../../components/forecast/ForecastSources.vue'
 
-const sensors = SENSORS
-
 // ---------- 三态取数 ----------
-const { state: dataState, payload, metric, horizon, useDemo: composableUseDemo, boot } = useForecastSeries({
-  metric: 'ect',
-  horizon: 30
+const {
+  state: dataState,
+  payload,
+  catalog,
+  metric,
+  horizon,
+  errorReason,
+  useDemo: composableUseDemo,
+  retry,
+  boot
+} = useForecastSeries({ metric: 'ect', horizon: 30 })
+
+// demo 态仍用设计稿的六传感器；live 态用后端返回的真实槽位（可能少于六个）。
+const sensors = computed(() => {
+  if (dataState.value === 'demo') return SENSORS
+  const slots = Array.isArray(catalog.value) ? catalog.value : []
+  const normalized = new Map(slots.map(normalizeCatalogEntry).map(slot => [slot.key, slot]))
+  // 按六槽位顺序过滤：保持 UI 位置稳定，未采样的槽位剔除而不是错位填充。
+  return SENSORS.map(demo => normalized.get(demo.key) || null).filter(Boolean)
 })
 
-// 本地 primarySensor 与 composable metric 同步
+function liveTitle(slot) {
+  const count = slot.sampleCount ?? 0
+  const interval = slot.sampleIntervalSec ?? '—'
+  return `${slot.metric} · ${count} 点 · 间隔 ${interval}s`
+}
+
+/**
+ * 槽位按钮文案：live 态显示真实指标名（cpu/memory/…），不显示引擎别名。
+ * 别名保留在 title 里，避免"ECT"被误读成发动机冷却液温度。
+ */
+function sensorButtonLabel(slot) {
+  return slot.metric || slot.en || slot.key
+}
+
+/** 主图标题：live 用真实指标名，并把 UI 槽位别名作为括注。 */
+const sensorTitle = computed(() => {
+  const slot = currentSensor.value
+  if (dataState.value === 'demo') return `${slot.cn} ${slot.en}`
+  const metric = slot.metric || slot.en || slot.key
+  const alias = slot.en && String(slot.en).toLowerCase() !== String(metric).toLowerCase()
+    ? `（UI 别名 ${slot.en}）`
+    : ''
+  return `${metric}${alias}`
+})
+
 const primarySensor = computed({
   get: () => metric.value,
   set: v => { metric.value = v }
+})
+
+// 目录到达后，若当前选中的槽位不在可用列表里，自动切到第一个可用槽位。
+watch(sensors, list => {
+  if (dataState.value === 'live' && list.length && !list.some(s => s.key === metric.value)) {
+    metric.value = list[0].key
+  }
 })
 
 // ---------- 本地 UI 状态 ----------
@@ -272,9 +356,80 @@ const reducedMotion = ref(false)
 let stopLoop = null
 const playSpeed = 3
 
-const currentSensor = computed(() => SENSORS.find(s => s.key === primarySensor.value) || SENSORS[0])
+const currentSensor = computed(
+  () => sensors.value.find(s => s.key === primarySensor.value) || sensors.value[0] || SENSORS[0]
+)
 const generatedAt = computed(() => payload.value?.generatedAtSec || Math.floor(Date.now() / 1000))
 const nowSec = computed(() => generatedAt.value + playOffset.value)
+
+// ---------- 页头状态文案（如实反映 kind，不把统计降级写成神经模型） ----------
+const stateLabel = computed(() => {
+  if (dataState.value === 'live') return '正常'
+  if (dataState.value === 'demo') return '演示'
+  if (dataState.value === 'loading') return '加载中'
+  return '离线'
+})
+const stateDotClass = computed(() => ({
+  'forecast-chip__dot--live': dataState.value === 'live',
+  'forecast-chip__dot--warn': dataState.value === 'offline' || dataState.value === 'demo'
+}))
+const modelLabel = computed(() => {
+  const p = payload.value
+  if (!p) return '—'
+  if (p.kind === 'neural') return `${p.model?.arch || 'PatchTST'} · 已启用`
+  if (p.kind === 'statistical') return `${p.mode || 'statistical'} · 权重未加载`
+  return '不可用'
+})
+/** 模型卡的英文副标：live 如实写统计降级，不沿用设计稿的 MLP+GRU。 */
+const modelCardEn = computed(() => {
+  if (dataState.value === 'live') {
+    return payload.value?.kind === 'neural' ? 'MODEL · PatchTST' : 'MODEL · STATISTICAL FALLBACK'
+  }
+  return 'MODEL · MLP + GRU'
+})
+/** 门控卡副标：统计降级没有 GRU 门控权重可导出。 */
+const gatesCardEn = computed(() => {
+  if (dataState.value === 'live') return payload.value?.kind === 'neural' ? 'GRU UPDATE GATE' : 'GATE · NOT EXPORTABLE'
+  return 'GRU UPDATE GATE'
+})
+/** 页眉 eyebrow：live 如实写统计降级与哨兵指标，不沿用设计稿的 MLP+GRU/引擎传感器。 */
+const eyebrowModel = computed(() => {
+  if (dataState.value === 'live') {
+    return payload.value?.kind === 'neural' ? 'PatchTST' : '统计降级 · STATISTICAL'
+  }
+  return 'MLP + GRU'
+})
+const eyebrowSensor = computed(() => (dataState.value === 'live' ? '哨兵指标' : '引擎传感器'))
+const gatesTag = computed(() => {
+  if (dataState.value === 'live') return payload.value?.kind === 'neural' ? 'STRUCTURAL' : 'FALLBACK'
+  return 'STRUCTURAL'
+})
+const sourceFootnote = computed(() => {
+  if (dataState.value === 'demo') {
+    return '演示数据：曲线为确定性合成序列，属虚构示例，不代表任何真实资产或发动机'
+  }
+  if (dataState.value === 'live') {
+    const p = payload.value
+    return `数据来自 sentinel_metric_sample（${p?.metricName || '—'}，${p?.sampleCount ?? 0} 点 / ${p?.sampleIntervalSec ?? '—'}s）；` +
+      `${p?.mode || 'statistical'} 预测，区间为残差近似、未经覆盖率校准`
+  }
+  return errorReason.value ? `离线：${errorReason.value}` : '数据来自接口'
+})
+
+/** 数据源表：live 态用后端 catalog 的真实采样口径；demo 态回退合成口径。 */
+const sourceRows = computed(() => {
+  if (dataState.value === 'demo') return []
+  const slots = Array.isArray(catalog.value) ? catalog.value : []
+  return slots.map(slot => ({
+    key: slot.key,
+    // 真实指标名（cpu/memory/…），不显示引擎别名
+    label: slot.metric || slot.cn || slot.key,
+    sampleRate: slot.sampleIntervalSec ?? null,
+    // 缺失率/延迟后端没有采集，留空显示 —，不编造 0
+    missing: null,
+    latency: null
+  }))
+})
 
 // G5 四重降级：任一命中 = 禁回放
 const g5BlockPlayback = computed(() => {
@@ -287,7 +442,16 @@ const g5BlockPlayback = computed(() => {
   return false
 })
 
+/** 训练卡的最佳 epoch：live 非神经模型没有训练产物，不能拿占位数字冒充。 */
+const trainingBestEpoch = computed(() => {
+  const epochs = payload.value?.model?.epochs
+  if (epochs != null && Number.isFinite(Number(epochs))) return Math.max(1, Number(epochs) - 4)
+  return dataState.value === 'demo' ? 38 : null
+})
+
 const crossings = computed(() => {
+  // live 态：以后端真实越界为准；为空时说明"视野内没有越界"，不回落合成事件。
+  if (dataState.value === 'live') return payload.value?.crossings || []
   if (payload.value?.crossings && payload.value.crossings.length > 0) return payload.value.crossings
   return crossingEvents(currentSensor.value, nowSec.value, horizon.value, 2)
 })
@@ -327,6 +491,8 @@ watch(playing, (next) => {
 
 function togglePlayback() {
   if (g5BlockPlayback.value) return
+  // live 态只有一个"现在"时刻，回放会把真实读数推成虚构未来：禁用。
+  if (dataState.value === 'live') return
   playing.value = !playing.value
 }
 
@@ -442,6 +608,11 @@ if (typeof window !== 'undefined') {
   color: var(--forecast-warn);
 }
 
+.forecast-chip--warn {
+  border-color: color-mix(in srgb, var(--ds-semantic-danger) 45%, transparent);
+  color: var(--forecast-bad);
+}
+
 .forecast-chip__dot {
   width: 6px;
   height: 6px;
@@ -452,6 +623,10 @@ if (typeof window !== 'undefined') {
 .forecast-chip__dot--live {
   background: var(--forecast-ok);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-semantic-success) 16%, transparent);
+}
+
+.forecast-chip__dot--warn {
+  background: var(--forecast-warn);
 }
 
 /* ---------- 工具栏 ---------- */

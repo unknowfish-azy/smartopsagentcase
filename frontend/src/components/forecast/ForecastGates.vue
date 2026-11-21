@@ -1,11 +1,17 @@
 <template>
   <div class="fc-gates">
+    <!-- live 态没有 GRU 门控：权重不可得，如实说明而不是画假条 -->
+    <p v-if="live" class="fc-gates__empty">
+      当前预测走统计降级（{{ mode || 'linear / seasonal_naive' }}），没有可导出的门控权重。
+      PatchTST 权重加载后这里才会显示真实注意力/门控结构。
+    </p>
     <div
       v-for="sensor in sensors"
+      v-else
       :key="sensor.key"
       class="fc-gate"
       :class="{ 'fc-gate--on': sensor.key === primaryKey }"
-      :title="`门控权重 ${sensor.en}`"
+      :title="`门控权重 ${sensor.en}（演示口径）`"
     >
       <span class="fc-gate__label">{{ sensor.en }}</span>
       <span class="fc-gate__track">
@@ -23,12 +29,15 @@
 import { SENSORS } from '../../domain/forecast/syntheticSeries.js'
 
 const props = defineProps({
-  primaryKey: { type: String, default: 'ect' }
+  primaryKey: { type: String, default: 'ect' },
+  /** live 态不显示合成门控权重。 */
+  live: { type: Boolean, default: false },
+  mode: { type: String, default: '' }
 })
 
 const sensors = SENSORS
 
-// 演示口径：确定性伪随机，主传感器额外高亮 +0.14
+// 演示口径：确定性伪随机，主传感器额外高亮 +0.14；仅 demo 态渲染。
 function weightFor(sensor) {
   const base = 0.12 + Math.abs(Math.sin(sensor.base)) * 0.32
   const boost = sensor.key === props.primaryKey ? 0.14 : 0
@@ -41,6 +50,13 @@ function weightFor(sensor) {
   display: grid;
   gap: 9px;
   padding: 13px 15px 15px;
+}
+
+.fc-gates__empty {
+  margin: 0;
+  color: var(--forecast-muted, #92A6B5);
+  font-size: 11.5px;
+  line-height: 1.7;
 }
 
 .fc-gate {
