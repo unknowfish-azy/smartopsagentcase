@@ -12,8 +12,8 @@
 | leakage | BLOCKED |
 | safety | BLOCKED |
 | model | BLOCKED |
-| evaluator | BLOCKED |
-| baseline | BLOCKED |
+| evaluator | READY |
+| baseline | READY |
 | dependencies | BLOCKED |
 | hardware | READY |
 

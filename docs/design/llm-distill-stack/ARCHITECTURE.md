@@ -58,7 +58,7 @@
 | 训练样本 schema | `training/schemas/smartops-training-sample.schema.json`：`task_type` 含 `EVIDENCE_VERIFICATION` / `OPS_REASONING` / `RISK_DECISION` / `TOOL_SELECTION` 等，`expected_behavior.evidenceOutput` 定义 `{label, reason, supporting_evidence, confidence}` | ✅ 已定义，**但没有数据** |
 | 数据集治理 | `training/{dataset_governance,dataset_validator,leakage_checker,dataset_splitter,manifest}.py` | ✅ |
 | 评测骨架 | `training/{evaluation_runner,evaluator,baseline_runner,independent_benchmark,layered_gate}.py` | ✅ 有骨架，无用例 |
-| 评测指标口径 | `data/training/eval/baseline-report.json`：14 项指标（`task_success` / `root_cause_accuracy` / `evidence_accuracy` / `tool_accuracy` / `risk_accuracy` / `approval_accuracy` / `verification_success` / `inspector_precision` / `inspector_recall` / `hallucination_rate` / `false_success_rate` / `safety_violation_rate` / `latency` / `token_cost`） | ⚠️ 全部 `null`，`status: NOT RUN` |
+| 评测指标口径 | `data/training/eval/baseline-report.json`：14 项指标（`task_success` / `root_cause_accuracy` / `evidence_accuracy` / `tool_accuracy` / `risk_accuracy` / `approval_accuracy` / `verification_success` / `inspector_precision` / `inspector_recall` / `hallucination_rate` / `false_success_rate` / `safety_violation_rate` / `latency` / `token_cost`） | ⚠️ **`status: RUN`**（`EXP-LLM-BASELINE-2026-11-21`，qwen3:1.7b，n=32）：**6 项有实测值**（task_success 0.4688 / evidence_accuracy 0.8125 / hallucination_rate 0.0 / false_success_rate 0.2083 / safety_violation_rate 0.0 / latency 5454.8ms），**其余 8 项仍 null**（无用例真值或未采集）。逐项口径见 `docs/experiments/baseline-report-closure.md` |
 | canonical JSON / digest | `agent/recovery_contracts/models.py::canonical_json` / `digest_of` / `object_digest` | ✅ 已实现，已被 `receipts.py` 使用 |
 | 合成事件样本 | `data/training/candidates/` 40 条，含 `evidence[{evidence_id, source, timestamp, relevance, support_relation, evidence_status, confidence}]` | ⚠️ 证据字段已成形，`expected_behavior` 未铺开 |
 
@@ -68,7 +68,7 @@
 |---|---|---|
 | **LLM 训练器（LoRA/SFT 执行）** | `scripts/` 与 `ai-service/scripts/` 各 9 个 `train_*` 全是神经网络；`build_sft_dataset.py` 只造数据不训练 | **P0**，这是"蒸馏换底座"的唯一真通道 |
 | **任务化样本（证据包 → 判定）** | 732 条 SFT 全是知识型 QA；40 条 candidates 有 `evidence[]` 但 `expected_behavior` 未铺开；`smartops-training-sample.schema.json` 已定义 `EVIDENCE_VERIFICATION` 却无一条数据 | **P0**，DS-03 的全部实活 |
-| **可机判的判定评测用例 + 基线分数** | `data/training/eval/baseline-report.json` 14 项指标已定义但 `status: NOT RUN`；`evaluation_runner.py` 有骨架无用例 | **P0**，没有它无法证明换底座后不退化 |
+| **可机判的判定评测用例 + 基线分数** | 用例已有 32 条（四类各 8），基线已跑：`EXP-LLM-BASELINE-2026-11-21`（qwen3:1.7b，n=32）6 项有值、8 项 null。**仍缺** root_cause/tool/risk/approval/verification 的真值字段与 token 采集 | **P0→已部分闭环**，剩余缺口见 `docs/experiments/baseline-report-closure.md` §5 |
 | **结构化输出约束** | `app/services/llm.py` 只有 mock/ollama/openai-compatible 三个 provider，无 grammar/JSON schema 约束（本次复核仍成立） | **P0**，1.7B 能用的前提 |
 | **统一证据封套** | `app/schemas/*.py` 是 17 个各自独立的 domain schema；`training` 侧另有一套 `evidence` 定义，两套不互通 | **P1**，封套要与 `training` 侧字段**映射**，不能另造一套 |
 | 因果 GNN / 反事实 | 未找到 | P2，A@1 增益需消融证明 |

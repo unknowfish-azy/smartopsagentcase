@@ -27,6 +27,10 @@ def build_gate_report(root: str | Path = ".") -> dict[str, Any]:
         text = str(value if value is not None else default).upper().replace(" ", "_")
         return text or default
 
+    # DS-02 实施计划（.trae/documents/LLM蒸馏与换底座-DS-01至DS-08实施计划.md）规定
+    # 真实评测回填 baseline-report.json 时 status 写 RUN；这里据此判定，避免门禁恒 BLOCKED。
+    # 未跑过的基线仍保持 NOT_RUN → BLOCKED，不因放宽口径而把「未执行」写成达标。
+    baseline_done = canonical_status(baseline.get("status")) in {"RUN", "COMPLETED"}
     gates = {
         "dataset": "READY" if approved > 0 else "BLOCKED",
         "approved_samples": "READY" if approved > 0 else "BLOCKED",
@@ -34,8 +38,8 @@ def build_gate_report(root: str | Path = ".") -> dict[str, Any]:
         "leakage": "PASS" if split_ready and any(item.get("leakage_status") == "PASS" for item in dataset_check["datasets"].values()) else "BLOCKED",
         "safety": "PASS" if quality.get("safety_status") == "PASS" else "BLOCKED",
         "model": "READY" if readiness["checks"]["model"]["status"] == "READY" else "BLOCKED",
-        "evaluator": "READY" if baseline.get("status") == "COMPLETED" else "BLOCKED",
-        "baseline": "READY" if baseline.get("status") == "COMPLETED" else "BLOCKED",
+        "evaluator": "READY" if baseline_done else "BLOCKED",
+        "baseline": "READY" if baseline_done else "BLOCKED",
         "dependencies": "READY" if readiness["checks"]["requirements"]["status"] == "READY" else "BLOCKED",
         "hardware": readiness["checks"]["hardware"]["status"],
     }
