@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smartops.local/schemas/controlled-v1.json",
+  "title": "SmartOps Controlled Dataset v1",
+  "description": "受控样本统一契约。对齐 docs/experiments/dataset-specification.md 的通用 envelope，并满足 training/leakage_checker.py 的分组键需求（sample_id / metadata.scenario_id / metadata.root_cause_group / environment.environment_id / environment.version / evidence[].evidence_id）。每条受控样本必须带 ground_truth 与 state_assertions；无状态断言的领域 DRAFT 样本用 dataset_type=domain_draft 显式区分。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sample_id",
+    "dataset_id",
+    "dataset_version",
+    "schema_version",
+    "dataset_type",
+    "task_type",
+    "claim",
+    "instruction",
+    "ground_truth",
+    "state_assertions",
+    "evidence",
+    "environment",
+    "knowledge",
+    "source",
+    "quality",
+    "metadata"
+  ],
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "pattern": "^(CV|DD)-[0-9]{4}$",
+      "description": "全局唯一。CV=controlled verification，DD=domain draft。"
+    },
+    "dataset_id": { "type": "string", "const": "smartops-controlled" },
+    "dataset_version": { "type": "string", "const": "v1" },
+    "schema_version": { "type": "integer", "const": 1 },
+
+    "dataset_type": {
+      "type": "string",
+      "enum": ["verification", "domain_draft"],
+      "description": "verification：带 ground truth 与状态断言的受控样本；domain_draft：领域 DRAFT，无状态断言。"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": ["state_verification", "diagnosis", "retrieval"],
+      "description": "state_verification 时 claim 为待验证断言；diagnosis/retrieval 时 claim 为期望结论的自然语言描述。"
+    },
+
+    "claim": {
+      "type": "string",
+      "minLength": 1,
+      "description": "待验证/待回答的断言或问题。"
+    },
+    "instruction": {
+      "type": "string",
+      "minLength": 1,
+      "description": "给 Agent 的完整指令（含环境与约束）。"
+    },
+
+    "ground_truth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "root_cause_group", "scenario_id", "reason", "oracle_health", "proof_sufficient"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "enum": ["SUCCESS", "FALSE_SUCCESS", "FAILED", "UNKNOWN"],
+          "description": "UNKNOWN 仅用于证据不足以判定的样本，必须写 reason。"
+        },
+        "root_cause_group": {
+          "type": "string",
+          "minLength": 1,
+          "description": "分组根因键（leakage_checker 的 root_cause_leakage 键）。"
+        },
+        "scenario_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "场景键（leakage_checker 的 scenario_duplicate 键）。"
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "oracle_health": {
+          "type": "string",
+          "enum": ["complete", "degraded", "insufficient", "unknown"],
+          "description": "Oracle 契约（P0-DATA-01-Golden §5.1）：synthetic fixture 一律 degraded；无 probe 证据为 insufficient。"
+        },
+        "proof_sufficient": {
+          "type": "string",
+          "enum": ["yes", "partial", "no"],
+          "description": "证据契约（P0-DATA-01-Golden §5.2）。"
+        }
+      }
+    },
+
+    "state_assertions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/probe" },
+      "description": "状态断言（probe）列表。verification 样本必非空；domain_draft 允许为空数组。"
+    },
+
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence" },
+      "description": "支撑材料。evidence_id 是 leakage_checker 的 evidence_duplicate 键，必须组内唯一。"
+    },
+
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["environment_id", "version"],
+      "properties": {
+        "environment_id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "host": { "type": "string" },
+        "service": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "knowledge": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "agent_context": { "type": "object", "default": {} },
+    "policy": { "type": "object", "default": {} },
+    "output": { "type": "object", "default": {} },
+    "inspector": { "type": "object", "default": {} },
+
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["NOT_RUN", "MEASURED", "BLOCKED"],
+          "default": "NOT_RUN"
+        },
+        "observed_label": { "type": "string", "enum": ["SUCCESS", "FALSE_SUCCESS", "FAILED", "UNKNOWN"] },
+        "evaluated_at": { "type": "string" },
+        "evaluator": { "type": "string" }
+      }
+    },
+
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_type", "source_ref", "created_at", "data_class", "license", "pii"],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": ["synthetic_dev", "user_provided_course_summary", "human_golden", "live_observation", "ai_authored"]
+        },
+        "source_ref": { "type": "string" },
+        "created_at": { "type": "string" },
+        "data_class": {
+          "type": "string",
+          "enum": ["REAL", "SYNTHETIC", "DEMO"],
+          "description": "绝不从文本推断：真实线上事件=REAL，合成=SYNTHETIC，教学演示=DEMO。"
+        },
+        "license": { "type": "string", "minLength": 1 },
+        "pii": { "type": "boolean" }
+      }
+    },
+
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_status"],
+      "properties": {
+        "review_status": {
+          "type": "string",
+          "enum": ["unreviewed", "single_reviewed", "dual_reviewed", "adjudicated", "rejected"]
+        },
+        "human_review": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "scenario_id", "root_cause_group", "version", "generator"],
+      "properties": {
+        "family": { "type": "string", "enum": ["F-NET", "F-HTTP", "F-L4", "F-DB", "F-SSH", "F-CONF", "F-DOMAIN"] },
+        "scenario_id": { "type": "string", "minLength": 1 },
+        "root_cause_group": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "generator": { "type": "string" },
+        "seed": { "type": "integer" },
+        "variant_of": { "type": "string" },
+        "split": { "type": "string", "enum": ["train", "validation", "test"] },
+        "license": { "type": "string" },
+        "pii": { "type": "boolean" }
+      }
+    }
+  },
+
+  "$defs": {
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target", "expected"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["port", "process", "http_status", "http_body", "metric_threshold", "log_line",
+                   "db_replication_lag", "db_query", "cache_ping", "ssh_auth", "disk_usage",
+                   "inode_usage", "config_value", "icmp", "tcp_connect", "dns_lookup",
+                   "systemd_state", "memory", "oom_kills", "fd_count", "latency", "tls_cert",
+                   "known_hosts", "bastion_reachable", "connection_pool", "slow_query"]
+        },
+        "target": { "type": "string", "minLength": 1 },
+        "expected": {},
+        "unit": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "kind"],
+      "properties": {
+        "evidence_id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["probe", "log", "metric", "config", "knowledge", "command_output", "human_note"] },
+        "summary": { "type": "string" },
+        "ref": { "type": "string" }
+      }
+    }
+  },
+
+  "$comment": "切分约束：split_controlled.py 以 metadata.root_cause_group 为原子分组键；同一 group 的样本不得跨 train/validation/test。environment_id 与 version 按 group 分配，因此 environment/version 级泄漏由构造保证。负对照（随机切分）应触发 scenario_duplicate 与 root_cause_leakage。"
+}

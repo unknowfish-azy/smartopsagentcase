@@ -1,0 +1,28 @@
+{
+  "batch_id": "controlled-v1-20261120",
+  "kind": "blind_review_pack",
+  "protocol": "P0-DATA-01-Golden §7",
+  "case_count": 144,
+  "label_set": [
+    "SUCCESS",
+    "FALSE_SUCCESS",
+    "FAILED",
+    "UNKNOWN"
+  ],
+  "family_set": [
+    "F-NET",
+    "F-HTTP",
+    "F-L4",
+    "F-DB",
+    "F-SSH",
+    "F-CONF"
+  ],
+  "pack_file": "SmartOps-Dataset/Controlled/v1/review/pack.jsonl",
+  "pack_sha256": "ae9161dff8cd577c6b35da4d5d1c881ae3371c5fb39078f2c1f0bc1fc091b4ea",
+  "sheets": [
+    "review/ratings_A.csv",
+    "review/ratings_B.csv"
+  ],
+  "contains_ground_truth": false,
+  "note": "由脚本生成；标注者独立填写 label 与 family，禁止交流、禁止改动 pack。"
+}

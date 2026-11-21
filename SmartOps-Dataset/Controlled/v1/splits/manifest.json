@@ -1,0 +1,113 @@
+{
+  "dataset_id": "smartops-controlled",
+  "dataset_version": "v1",
+  "source": "SmartOps-Dataset/Controlled/v1/samples.jsonl",
+  "split_protocol": {
+    "atomic_group_key": "metadata.root_cause_group",
+    "stratify_by": [
+      "metadata.family",
+      "ground_truth.label"
+    ],
+    "search_iterations": 200000,
+    "seed": 20261120,
+    "deterministic": true,
+    "note": "environment_id 与 version 按 group 分配；scenario_id 限定在 group 内；族×标签双向分层由固定种子随机搜索求得，重复运行结果一致"
+  },
+  "splits": {
+    "train": {
+      "n_samples": 62,
+      "n_controlled": 48,
+      "n_domain_draft": 14,
+      "n_groups": 9,
+      "groups": [
+        "conf-ulimit",
+        "db-redis",
+        "db-slow-query",
+        "domain-draft",
+        "http-503",
+        "l4-process",
+        "net-502",
+        "ssh-bastion",
+        "ssh-key"
+      ],
+      "families": [
+        "F-CONF",
+        "F-DB",
+        "F-DOMAIN",
+        "F-HTTP",
+        "F-L4",
+        "F-NET",
+        "F-SSH"
+      ],
+      "label_distribution": {
+        "SUCCESS": 12,
+        "FALSE_SUCCESS": 18,
+        "UNKNOWN": 12,
+        "FAILED": 6
+      },
+      "file": "SmartOps-Dataset/Controlled/v1/splits/train.jsonl"
+    },
+    "validation": {
+      "n_samples": 48,
+      "n_controlled": 48,
+      "n_domain_draft": 0,
+      "n_groups": 8,
+      "groups": [
+        "conf-port",
+        "db-conn-pool",
+        "http-404",
+        "l4-fd",
+        "l4-oom",
+        "net-dns",
+        "net-partition",
+        "ssh-password"
+      ],
+      "families": [
+        "F-CONF",
+        "F-DB",
+        "F-HTTP",
+        "F-L4",
+        "F-NET",
+        "F-SSH"
+      ],
+      "label_distribution": {
+        "FALSE_SUCCESS": 18,
+        "UNKNOWN": 6,
+        "SUCCESS": 12,
+        "FAILED": 12
+      },
+      "file": "SmartOps-Dataset/Controlled/v1/splits/validation.jsonl"
+    },
+    "test": {
+      "n_samples": 48,
+      "n_controlled": 48,
+      "n_domain_draft": 0,
+      "n_groups": 8,
+      "groups": [
+        "conf-disk",
+        "conf-drift",
+        "db-repl-lag",
+        "http-latency",
+        "http-tls",
+        "l4-systemd",
+        "net-timeout",
+        "ssh-knownhosts"
+      ],
+      "families": [
+        "F-CONF",
+        "F-DB",
+        "F-HTTP",
+        "F-L4",
+        "F-NET",
+        "F-SSH"
+      ],
+      "label_distribution": {
+        "FALSE_SUCCESS": 12,
+        "FAILED": 12,
+        "UNKNOWN": 12,
+        "SUCCESS": 12
+      },
+      "file": "SmartOps-Dataset/Controlled/v1/splits/test.jsonl"
+    }
+  }
+}

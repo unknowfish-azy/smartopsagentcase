@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-11-21T08:37:02.784400+00:00",
+  "figures": {
+    "fig1": {
+      "title": "Fig.1  Label x probe health is perfectly diagonal",
+      "path": "docs/evaluation/paper/figures/fig1.png",
+      "format": "png"
+    },
+    "fig2": {
+      "title": "Fig.2  Trivial rule reproduces every split; reversed polarity does not",
+      "path": "docs/evaluation/paper/figures/fig2.png",
+      "format": "png"
+    },
+    "fig3": {
+      "title": "Fig.3  Accuracy is flat across re-splits while effective n varies",
+      "path": "docs/evaluation/paper/figures/fig3.png",
+      "format": "png"
+    },
+    "fig4": {
+      "title": "Fig.4  Precision-cost curves and Wilson lower bound when all correct",
+      "path": "docs/evaluation/paper/figures/fig4.png",
+      "format": "png"
+    }
+  }
+}

@@ -1,0 +1,370 @@
+{
+  "experiment_id": "EXP-WORDING-001",
+  "source": "SmartOps-Dataset\\Controlled\\v1\\samples.jsonl",
+  "source_sha256_16": "2c87fb6e5164b2d6",
+  "rule": "每组按 sample_id 升序取前 3 条进 held",
+  "deterministic": true,
+  "groups": {
+    "conf-disk": {
+      "n_total": 6,
+      "held": [
+        "CV-0127",
+        "CV-0128",
+        "CV-0129"
+      ],
+      "dev": [
+        "CV-0130",
+        "CV-0131",
+        "CV-0132"
+      ],
+      "label": "FAILED",
+      "family": "F-CONF"
+    },
+    "conf-drift": {
+      "n_total": 6,
+      "held": [
+        "CV-0133",
+        "CV-0134",
+        "CV-0135"
+      ],
+      "dev": [
+        "CV-0136",
+        "CV-0137",
+        "CV-0138"
+      ],
+      "label": "SUCCESS",
+      "family": "F-CONF"
+    },
+    "conf-port": {
+      "n_total": 6,
+      "held": [
+        "CV-0121",
+        "CV-0122",
+        "CV-0123"
+      ],
+      "dev": [
+        "CV-0124",
+        "CV-0125",
+        "CV-0126"
+      ],
+      "label": "FALSE_SUCCESS",
+      "family": "F-CONF"
+    },
+    "conf-ulimit": {
+      "n_total": 6,
+      "held": [
+        "CV-0139",
+        "CV-0140",
+        "CV-0141"
+      ],
+      "dev": [
+        "CV-0142",
+        "CV-0143",
+        "CV-0144"
+      ],
+      "label": "UNKNOWN",
+      "family": "F-CONF"
+    },
+    "db-conn-pool": {
+      "n_total": 6,
+      "held": [
+        "CV-0085",
+        "CV-0086",
+        "CV-0087"
+      ],
+      "dev": [
+        "CV-0088",
+        "CV-0089",
+        "CV-0090"
+      ],
+      "label": "FAILED",
+      "family": "F-DB"
+    },
+    "db-redis": {
+      "n_total": 6,
+      "held": [
+        "CV-0079",
+        "CV-0080",
+        "CV-0081"
+      ],
+      "dev": [
+        "CV-0082",
+        "CV-0083",
+        "CV-0084"
+      ],
+      "label": "SUCCESS",
+      "family": "F-DB"
+    },
+    "db-repl-lag": {
+      "n_total": 6,
+      "held": [
+        "CV-0073",
+        "CV-0074",
+        "CV-0075"
+      ],
+      "dev": [
+        "CV-0076",
+        "CV-0077",
+        "CV-0078"
+      ],
+      "label": "FALSE_SUCCESS",
+      "family": "F-DB"
+    },
+    "db-slow-query": {
+      "n_total": 6,
+      "held": [
+        "CV-0091",
+        "CV-0092",
+        "CV-0093"
+      ],
+      "dev": [
+        "CV-0094",
+        "CV-0095",
+        "CV-0096"
+      ],
+      "label": "UNKNOWN",
+      "family": "F-DB"
+    },
+    "http-404": {
+      "n_total": 6,
+      "held": [
+        "CV-0031",
+        "CV-0032",
+        "CV-0033"
+      ],
+      "dev": [
+        "CV-0034",
+        "CV-0035",
+        "CV-0036"
+      ],
+      "label": "SUCCESS",
+      "family": "F-HTTP"
+    },
+    "http-503": {
+      "n_total": 6,
+      "held": [
+        "CV-0025",
+        "CV-0026",
+        "CV-0027"
+      ],
+      "dev": [
+        "CV-0028",
+        "CV-0029",
+        "CV-0030"
+      ],
+      "label": "FALSE_SUCCESS",
+      "family": "F-HTTP"
+    },
+    "http-latency": {
+      "n_total": 6,
+      "held": [
+        "CV-0037",
+        "CV-0038",
+        "CV-0039"
+      ],
+      "dev": [
+        "CV-0040",
+        "CV-0041",
+        "CV-0042"
+      ],
+      "label": "FAILED",
+      "family": "F-HTTP"
+    },
+    "http-tls": {
+      "n_total": 6,
+      "held": [
+        "CV-0043",
+        "CV-0044",
+        "CV-0045"
+      ],
+      "dev": [
+        "CV-0046",
+        "CV-0047",
+        "CV-0048"
+      ],
+      "label": "UNKNOWN",
+      "family": "F-HTTP"
+    },
+    "l4-fd": {
+      "n_total": 6,
+      "held": [
+        "CV-0067",
+        "CV-0068",
+        "CV-0069"
+      ],
+      "dev": [
+        "CV-0070",
+        "CV-0071",
+        "CV-0072"
+      ],
+      "label": "FALSE_SUCCESS",
+      "family": "F-L4"
+    },
+    "l4-oom": {
+      "n_total": 6,
+      "held": [
+        "CV-0061",
+        "CV-0062",
+        "CV-0063"
+      ],
+      "dev": [
+        "CV-0064",
+        "CV-0065",
+        "CV-0066"
+      ],
+      "label": "FAILED",
+      "family": "F-L4"
+    },
+    "l4-process": {
+      "n_total": 6,
+      "held": [
+        "CV-0049",
+        "CV-0050",
+        "CV-0051"
+      ],
+      "dev": [
+        "CV-0052",
+        "CV-0053",
+        "CV-0054"
+      ],
+      "label": "FALSE_SUCCESS",
+      "family": "F-L4"
+    },
+    "l4-systemd": {
+      "n_total": 6,
+      "held": [
+        "CV-0055",
+        "CV-0056",
+        "CV-0057"
+      ],
+      "dev": [
+        "CV-0058",
+        "CV-0059",
+        "CV-0060"
+      ],
+      "label": "SUCCESS",
+      "family": "F-L4"
+    },
+    "net-502": {
+      "n_total": 6,
+      "held": [
+        "CV-0013",
+        "CV-0014",
+        "CV-0015"
+      ],
+      "dev": [
+        "CV-0016",
+        "CV-0017",
+        "CV-0018"
+      ],
+      "label": "SUCCESS",
+      "family": "F-NET"
+    },
+    "net-dns": {
+      "n_total": 6,
+      "held": [
+        "CV-0007",
+        "CV-0008",
+        "CV-0009"
+      ],
+      "dev": [
+        "CV-0010",
+        "CV-0011",
+        "CV-0012"
+      ],
+      "label": "FALSE_SUCCESS",
+      "family": "F-NET"
+    },
+    "net-partition": {
+      "n_total": 6,
+      "held": [
+        "CV-0019",
+        "CV-0020",
+        "CV-0021"
+      ],
+      "dev": [
+        "CV-0022",
+        "CV-0023",
+        "CV-0024"
+      ],
+      "label": "UNKNOWN",
+      "family": "F-NET"
+    },
+    "net-timeout": {
+      "n_total": 6,
+      "held": [
+        "CV-0001",
+        "CV-0002",
+        "CV-0003"
+      ],
+      "dev": [
+        "CV-0004",
+        "CV-0005",
+        "CV-0006"
+      ],
+      "label": "FALSE_SUCCESS",
+      "family": "F-NET"
+    },
+    "ssh-bastion": {
+      "n_total": 6,
+      "held": [
+        "CV-0109",
+        "CV-0110",
+        "CV-0111"
+      ],
+      "dev": [
+        "CV-0112",
+        "CV-0113",
+        "CV-0114"
+      ],
+      "label": "FAILED",
+      "family": "F-SSH"
+    },
+    "ssh-key": {
+      "n_total": 6,
+      "held": [
+        "CV-0097",
+        "CV-0098",
+        "CV-0099"
+      ],
+      "dev": [
+        "CV-0100",
+        "CV-0101",
+        "CV-0102"
+      ],
+      "label": "FALSE_SUCCESS",
+      "family": "F-SSH"
+    },
+    "ssh-knownhosts": {
+      "n_total": 6,
+      "held": [
+        "CV-0115",
+        "CV-0116",
+        "CV-0117"
+      ],
+      "dev": [
+        "CV-0118",
+        "CV-0119",
+        "CV-0120"
+      ],
+      "label": "UNKNOWN",
+      "family": "F-SSH"
+    },
+    "ssh-password": {
+      "n_total": 6,
+      "held": [
+        "CV-0103",
+        "CV-0104",
+        "CV-0105"
+      ],
+      "dev": [
+        "CV-0106",
+        "CV-0107",
+        "CV-0108"
+      ],
+      "label": "SUCCESS",
+      "family": "F-SSH"
+    }
+  },
+  "n_groups": 24
+}
