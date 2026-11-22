@@ -195,11 +195,19 @@ def test_dtw_scoring_uses_label_match(monkeypatch, tmp_path):
     assert result["avg_distance"] == 1.0
 
 
-def test_output_path_separates_backends(tmp_path):
+def test_output_path_separates_backends_and_models(tmp_path):
     assert eval_asr._output_path(tmp_path, "dtw") == tmp_path / "eval_summary.json"
     assert (
         eval_asr._output_path(tmp_path, "faster-whisper")
         == tmp_path / "eval_summary-faster-whisper.json"
+    )
+    assert (
+        eval_asr._output_path(tmp_path, "faster-whisper", "medium")
+        == tmp_path / "eval_summary-faster-whisper-medium.json"
+    )
+    assert (
+        eval_asr._output_path(tmp_path, "faster-whisper", "base")
+        != eval_asr._output_path(tmp_path, "faster-whisper", "medium")
     )
 
 

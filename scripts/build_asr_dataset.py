@@ -118,15 +118,35 @@ def _sapi_samples(text, rate):
     return tmp_wav
 
 
-def _zipvoice_synth(texts):
-    """复用项目演示视频的离线 ZipVoice TTS，批量合成真实中文语音。
+DEFAULT_REF_WAV = REPO / "output" / "video-kit" / "v2" / "voice" / "refLong.wav"
+DEFAULT_REF_TXT = REPO / "output" / "video-kit" / "v2" / "voice" / "refLong.txt"
 
-    返回 [(text, samples@24k), ...]；失败抛 RuntimeError（不伪造）。
+
+def _zipvoice_synth(texts, ref_wav=None, ref_txt=None):
+    """复用项目离线 ZipVoice TTS，批量合成中文语音。
+
+    返回 [(text, samples, sample_rate), ...]；失败抛 RuntimeError（不伪造）。
+
+    `ref_wav`/`ref_txt` 必须成对给出：参考音质量直接决定克隆语音能否被 ASR 解码
+    （实测 refB 完全不可用、news-female/refA 可用）。默认指向历史 refLong 路径，
+    该文件已缺失，重建时必须显式传入可用参考音。
     """
     import os as _os  # noqa: PLC0415
 
     import numpy as np  # noqa: PLC0415
     import sherpa_onnx as so  # noqa: PLC0415
+
+    # 先做参考音校验：模型加载耗时，缺资源应尽早失败（也便于测试）。
+    ref_path = Path(ref_wav) if ref_wav else DEFAULT_REF_WAV
+    if not ref_path.exists():
+        raise RuntimeError(
+            f"参考音不存在: {ref_path}；请用 --ref-wav/--ref-txt 指定可用参考音"
+            "（历史 refLong 已缺失，可用 D:/EVvideo/out/voice/refA.wav 等）"
+        )
+    if ref_txt is not None:
+        ref_text = Path(ref_txt).read_text(encoding="utf-8").strip()
+    else:
+        ref_text = DEFAULT_REF_TXT.read_text(encoding="utf-8").strip()
 
     old = Path("D:/EVvideo/out")
     if not old.exists():
@@ -151,10 +171,6 @@ def _zipvoice_synth(texts):
             max_num_sentences=1,
         )
     )
-    ref_path = REPO / "output" / "video-kit" / "v2" / "voice" / "refLong.wav"
-    ref_txt = (
-        REPO / "output" / "video-kit" / "v2" / "voice" / "refLong.txt"
-    ).read_text(encoding="utf-8").strip()
     with wave.open(str(ref_path), "rb") as reader:
         prompt = np.frombuffer(reader.readframes(reader.getnframes()), dtype="<i2").astype(
             np.float32
@@ -162,14 +178,15 @@ def _zipvoice_synth(texts):
         ref_sr = reader.getframerate()
     results = []
     for text in texts:
-        # speed 轻微变化模拟说话差异；num_steps=8 与视频同款质量档
+        # speed 固定 1.0；num_steps=8 与既有质量档一致
         speed = 1.0
-        r = tts.generate(text, ref_txt, prompt, ref_sr, speed=speed, num_steps=8)
+        r = tts.generate(text, ref_text, prompt, ref_sr, speed=speed, num_steps=8)
         results.append((text, np.asarray(r.samples, dtype=np.float32), int(r.sample_rate)))
     return results
 
 
-def build(mode, dev_variants=DEV_VARIANTS, holdout_variants=HOLDOUT_VARIANTS):
+def build(mode, dev_variants=DEV_VARIANTS, holdout_variants=HOLDOUT_VARIANTS,
+          ref_wav=None, ref_txt=None):
     if DATASET_DIR.exists():
         import shutil  # noqa: PLC0415
 
@@ -198,7 +215,7 @@ def build(mode, dev_variants=DEV_VARIANTS, holdout_variants=HOLDOUT_VARIANTS):
         if not zipvoice_batch:
             return
         texts = [item[1] for item in zipvoice_batch]
-        results = _zipvoice_synth(texts)
+        results = _zipvoice_synth(texts, ref_wav, ref_txt)
         for (index, text, split, variant), (_t, samples, sample_rate) in zip(zipvoice_batch, results):
             rel_path = Path(split) / f"{text}__{split}_{variant:02d}.wav"
             _write_wav(DATASET_DIR / rel_path, samples, sample_rate)
@@ -274,9 +291,17 @@ def main():
     )
     parser.add_argument("--dev-variants", type=int, default=DEV_VARIANTS)
     parser.add_argument("--holdout-variants", type=int, default=HOLDOUT_VARIANTS)
+    parser.add_argument(
+        "--ref-wav",
+        default=None,
+        help="zipvoice 参考音 WAV（须与 --ref-txt 成对）；默认历史 refLong 路径，已缺失",
+    )
+    parser.add_argument("--ref-txt", default=None, help="zipvoice 参考音文本")
     args = parser.parse_args()
     mode = "synthetic" if args.synthetic else args.mode
-    build(mode, args.dev_variants, args.holdout_variants)
+    if args.ref_wav and not args.ref_txt:
+        raise SystemExit("--ref-wav 必须与 --ref-txt 成对给出")
+    build(mode, args.dev_variants, args.holdout_variants, args.ref_wav, args.ref_txt)
     return 0
 
 

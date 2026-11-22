@@ -55,9 +55,15 @@ def _normalize(text):
     )
 
 
-def _output_path(out_dir, backend):
-    """两个 backend 的产物文件名不同，避免互相覆盖（DTW 与自由听写结论不可混用）。"""
-    suffix = "" if backend == "dtw" else f"-{backend}"
+def _output_path(out_dir, backend, model=None):
+    """产物文件名按 backend（与 model 规格）区分，避免不同规格互相覆盖。
+
+    DTW 与自由听写的结论不可混用；同一 backend 换模型规格（base/medium/...）
+    结论也不同，必须各自留文件。
+    """
+    if backend == "dtw":
+        return Path(out_dir) / "eval_summary.json"
+    suffix = f"-{backend}" + (f"-{model}" if model else "")
     return Path(out_dir) / f"eval_summary{suffix}.json"
 
 
@@ -230,7 +236,7 @@ def main():
     }
     out_dir = Path(args.output_dir) if args.output_dir else REPO / "reports" / f"t-asr-{date.today()}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = _output_path(out_dir, args.backend)
+    out_path = _output_path(out_dir, args.backend, args.model if args.backend != "dtw" else None)
     out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(f"=== ASR 评测（backend={args.backend}, model={model_name}）===")

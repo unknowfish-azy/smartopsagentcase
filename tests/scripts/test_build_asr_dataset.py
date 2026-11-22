@@ -64,12 +64,22 @@ def test_build_synthetic_writes_complete_manifest(monkeypatch, tmp_path):
     assert all(_read_rate(ds / row["path"]) == 8000 for row in manifest)
 
 
+def test_zipvoice_synth_rejects_missing_reference(tmp_path):
+    """参考音缺失必须显式失败，不得静默用默认值或伪造语音。"""
+    with pytest.raises(RuntimeError, match="参考音不存在"):
+        bld._zipvoice_synth(
+            ["打开知识库"],
+            ref_wav=tmp_path / "nope.wav",
+            ref_txt=tmp_path / "nope.txt",
+        )
+
+
 def test_build_zipvoice_records_manifest_and_keeps_24k(monkeypatch, tmp_path):
     ds = tmp_path / "ds"
     monkeypatch.setattr(bld, "DATASET_DIR", ds)
     synthesized = []
 
-    def fake_synth(texts):
+    def fake_synth(texts, ref_wav=None, ref_txt=None):
         out = []
         for text in texts:
             synthesized.append(text)
