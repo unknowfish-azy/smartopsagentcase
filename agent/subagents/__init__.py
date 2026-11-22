@@ -5,6 +5,27 @@
 """
 
 from .base import SubAgent, SubAgentPlanner, SubAgentRegistry, SubAgentSpec
+from .debate import (
+    DEBATE_ROLES,
+    DEBATE_ROLE_NAMES,
+    Conclusion,
+    DebateRecord,
+    DebateRunner,
+    Rebuttal,
+    RoleAgent,
+    Verdict,
+)
+from .evidence_channels import (
+    CHANNEL_PROBE_TYPES,
+    CHANNEL_ROLES,
+    CHANNEL_TOOL_NAMES,
+    ChannelView,
+    EvidenceItem,
+    IsolationReport,
+    partition_items,
+    shared_pool_views,
+    validate_isolation,
+)
 from .log_diagnosis import LogDiagnosisAgent
 from .patrol import PatrolAgent
 
@@ -23,4 +44,21 @@ __all__ = [
     "LogDiagnosisAgent",
     "PatrolAgent",
     "default_registry",
+    "DEBATE_ROLES",
+    "DEBATE_ROLE_NAMES",
+    "Conclusion",
+    "Rebuttal",
+    "Verdict",
+    "DebateRecord",
+    "RoleAgent",
+    "DebateRunner",
+    "CHANNEL_ROLES",
+    "CHANNEL_PROBE_TYPES",
+    "CHANNEL_TOOL_NAMES",
+    "EvidenceItem",
+    "ChannelView",
+    "IsolationReport",
+    "partition_items",
+    "shared_pool_views",
+    "validate_isolation",
 ]

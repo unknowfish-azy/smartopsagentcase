@@ -121,6 +121,25 @@ round 1（反驳）：每角色看到「他人 top1 集合 + 各自 evidence id�
 2. **LLM 成本/延迟**：真实模型（qwen3:1.7b 实测约 5.4s/次）下 4 角色 × 2 轮 × 32 题 ≈ 128 次调用；需先小 n 试跑估时，超时则降级为「离线脚本 + 缓存结论」。
 3. **未收敛被美化**：缓解：A-G3 强制单列 `escalated`。
 
+### 2.7 落地记录（2026-11-22，用户点名「A继续」）
+
+| 包 | 状态 | 产出 |
+|---|---|---|
+| A1 | ✅ | `agent/subagents/debate.py`（角色声明复用 `SubAgentSpec`、round0/round1/仲裁协议、纯函数 `detect_changes` / `judge_verdict`、`DebateRunner`；推理由可注入 `RoleAgent` 提供） |
+| A2 | ✅ | `agent/subagents/evidence_channels.py`（封闭探针类型→四通道**不相交**分区、每通道独立工具视图、独立 evidence_id 空间、`validate_isolation`） |
+| A3 | ✅ | `scripts/eval_debate.py`（EXP-DEBATE-001），`RuleRoleAgent` 见 `debate_rules.py`；报告 `reports/debate-eval-controlled-{test,train,validation}.{json,md}` |
+| A4 | ✅ | Wilson + 配对 McNemar + Holm（5 个比较）+ ICC/DEFF 有效 n，全部复用 `scripts/stats_inference.py` |
+| A5 | ✅ | `docs/competition/fact-sheet.md` F27 / M38 / 口径⑯ |
+| 离线确定性角色 | ✅ | `agent/subagents/debate_rules.py`（`RuleRoleAgent`）；真实 LLM 角色**未接入**，`RoleAgent` 已留注入点 |
+
+**门禁结果**：A-G1 ✅（`tests/agent/test_debate.py` 22 passed）、A-G2 ✅（共享证据池负对照判 `valid=False`）、
+A-G3 ✅（`n` 与有效 n 同时给，`escalated` 单独计数）、A-G4 ✅（McNemar + Wilson + Holm 齐全）、A-G5 ✅（fact-sheet 口径⑯）。
+
+**核心结论（诚实交底，详见 M38）**：
+辩论协议与隔离**已可运行**，但**未证明协议本身带来增益**——
+相对单角色的增益**全部来自四通道证据覆盖**（test 上辩论与「全证据单角色」覆盖对照逐样本 **0/48** 不同；
+train/validation 上辩论因未收敛**反而更低**）。因此**禁止**写「多 Agent 辩论提升准确率 X%」。
+
 ---
 
 ## 3. 子项 B：知识图谱 + 神经符号推理机
