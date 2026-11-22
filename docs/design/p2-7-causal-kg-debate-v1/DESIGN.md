@@ -220,6 +220,43 @@ train/validation 上辩论因未收敛**反而更低**）。因此**禁止**写�
 
 ---
 
+### 3.7 落地记录（2026-11-22，用户点名「继续」推进 B）
+
+| 包 | 状态 | 产出 |
+|---|---|---|
+| B1 | ✅ | `knowledge/graph/schema.py`：5 类实体 × 5 种关系**封闭词表** + 受控关键词词表（component 20 / metric 11 / run 11）+ `Entity`/`Edge` 校验（边必带 `source_entry_id`、confidence ∈ [0,1]） |
+| B2 | ✅ | `knowledge/graph/extract.py`：声明式 `emits`（条目 `service`）/ `cites`（内层 JSON `relatedIds`）conf **1.0**；规则抽取按**命中位置**分档——症状字段 0.8 / 处置字段 0.4（默认拒收）/ `mitigated_by` 0.6 / `depends_on` 0.6，阈值 `DEFAULT_MIN_CONFIDENCE=0.5` |
+| B3 | ✅ | `knowledge/graph/store.py`：进程内邻接表 + 反向索引 + JSON 落盘/加载（**不引第三方图库**） |
+| B4 | ✅ | `knowledge/graph/reason.py`：`SymbolicReasoner`，沿 `caused_by` + `depends_on`(反向) + `emits` 扩展 ≤2 跳；**硬约束**：无 `caused_by` 边 → `neural_only`（禁写「符号推理得出」）；每步 `DerivationStep` 带 `source_entry_id` |
+| B5 | ✅ | `scripts/eval_kg.py`（EXP-KG-001）+ `tests/scripts/test_eval_kg.py`；报告 `reports/kg-eval-20261122.{json,md}` |
+| 单测 | ✅ | `tests/knowledge/test_graph.py` **39 passed**（B-G1/G2/G3 + 图 + 推理硬约束） |
+
+**门禁结果**：B-G1 ✅（词表封闭，单测钉住）、B-G2 ✅（边必带 `source_entry_id`，抽样 24 条核对 1.0000）、
+B-G3 ✅（`rejected` 217 条落盘，被拒边不计入命中；**并修复真缺陷**：症状边被高阈值拒收时此前静默丢弃，现也落 `rejected`）、
+B-G4 ✅（三路 recall@5 + Wilson + 互补性，n=319）、B-G5 ✅（全程本机，HashEmbedding 离线，条目不出本机）、
+B-G6 ✅（双口径覆盖率，fact-sheet 口径⑰）。
+
+**全量事实**：737 条 catalog → 节点 **834** / 边 **1984** / 被拒 **217**；
+关系分布 `emits` 737 / `cites` 384 / `caused_by` 416 / `depends_on` 354 / `mitigated_by` 93；
+有 `caused_by` 边的条目 **319/737 = 0.4328**（这才是符号推理真实可用面）；
+符号推理结果 `derived` 319 / `neural_only` 418。
+
+**核心结论（诚实交底，详见 M39）**：
+图谱与符号推理**已可运行**，但**未证明符号侧带来独立的召回增益**——
+评测金标由 `caused_by` 图派生，与 KG 候选**同源**，因此 KG 的 hit@5 = 1.0000 与
+hybrid+KG 的 +0.0408 增量**都是循环的**，**禁止**写成「混合检索优于 hybrid」。
+可确认的只有：符号侧与 hybrid 召回**部分互补**（top-5 平均重叠 0.464 条，仅 KG 命中 66 条），
+但无独立真值时**无法量化该互补的价值**。
+
+**关键坑（新踩）**：
+1. catalog 条目 `content` 的内层 JSON **仅 244/737 可解析**（另 9 条解析失败、484 条无 JSON 标记）
+   → 抽取器靠**顶层 `title`** 兜底，评测脚本若只读内层 JSON 会得到大片空文本（本次踩中并修复）。
+2. 「有任意入图边占比」因声明式 `emits` 恒为 **1.0000**，**无信息量**；必须同时给 `caused_by` 覆盖。
+3. `KnowledgeService._entry_to_text` 会 `import` 整个 service（重依赖），评测脚本改为自带等价文本组装。
+4. `RetrievalResult.document_id` 才是条目 id，`chunk_id` 是 uuid，不含 entry_id。
+
+---
+
 ## 4. 子项 C：因果图 / 反事实（最后做）
 
 ### 4.1 目标
