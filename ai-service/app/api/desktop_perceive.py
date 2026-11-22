@@ -22,6 +22,10 @@ class PerceiveElement(BaseModel):
     name: str = Field(description="可读名；视觉感知阶段用检测类别名占位，由 UIA/OCR 补齐")
     bbox: tuple[int, int, int, int] = Field(description="像素坐标 (x0, y0, x1, y1)")
     enabled: bool = Field(default=True, description="视觉无法判断灰化，默认 true，由 driver 复核")
+    ocr_text: str | None = Field(
+        default=None,
+        description="OCR 识别到的控件文字；仅在 ocr_enabled=true 时可能非空，不参与 element_id",
+    )
 
 
 class DesktopPerceiveRequest(BaseModel):
@@ -39,6 +43,25 @@ class DesktopPerceiveRequest(BaseModel):
         le=desktop_perceive_svc.MAX_ELEMENTS_LIMIT,
         description="返回元素上限，超出部分丢弃并置 truncated=true",
     )
+    ocr_enabled: bool = Field(
+        default=False,
+        description=(
+            "是否启用 OCR 增强（默认关）：开启时整图识别一次并按框匹配回元素，"
+            "写入 ocr_text；name 与 element_id 保持稳定"
+        ),
+    )
+    ocr_min_confidence: float = Field(
+        default=desktop_perceive_svc.DEFAULT_OCR_MIN_CONFIDENCE,
+        ge=0.0,
+        le=1.0,
+        description="元素文字只接受置信度不低于该值的识别块",
+    )
+    ocr_max_text: int = Field(
+        default=desktop_perceive_svc.DEFAULT_OCR_MAX_TEXT,
+        ge=0,
+        le=200,
+        description="元素 ocr_text 的最大长度，0 表示不截断",
+    )
 
 
 class DesktopPerceiveResponse(BaseModel):
@@ -49,6 +72,10 @@ class DesktopPerceiveResponse(BaseModel):
     elements: list[PerceiveElement] = Field(default_factory=list)
     rejected: list[str] = Field(default_factory=list, description="检测器拒绝原因，用于排查漏检")
     truncated: bool = False
+    ocr: dict | None = Field(
+        default=None,
+        description="OCR 增强摘要（未启用时为 null）：available/engine/blocks/confidence",
+    )
     elapsed_ms: int = Field(description="本次感知耗时（毫秒），DH-08 性能回填用")
 
 
@@ -78,6 +105,9 @@ async def desktop_perceive(request: DesktopPerceiveRequest) -> DesktopPerceiveRe
             request.image_b64,
             window_id=request.window_id,
             max_elements=request.max_elements,
+            ocr_enabled=request.ocr_enabled,
+            ocr_min_confidence=request.ocr_min_confidence,
+            ocr_max_text=request.ocr_max_text,
         )
     except desktop_perceive_svc.DesktopPerceiveError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

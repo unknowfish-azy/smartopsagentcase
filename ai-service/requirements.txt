@@ -56,3 +56,9 @@ pytest-asyncio>=0.24,<2
 #   espeak 音素类型，piper-plus 2.x 不支持。配置 TTS_PIPER_MODEL 后可用
 #   TTS_PROVIDER=piperplus 启用；未配置时该 Provider 如实判定不可用。
 # ------------------------------------------------------------
+# 可选：视觉 OCR（截图 / 报表 → 文字，见 app/vision/ocr.py 与 /api/nn/ocr）
+# 默认不安装：未安装时 /api/nn/ocr 返回 available=false + 原因，
+# desktop-perceive 的 ocr_enabled 增强自动跳过（不影响元素检测主链路）。
+#   pip install rapidocr-onnxruntime
+# CPU 即可，权重随包自带（首次加载约 2.5s，单页 0.3~0.7s）；中文 + 英文。
+# ------------------------------------------------------------

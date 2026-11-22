@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Callable, Sequence
 
 from ..vision.grounding import DEFAULT_MODEL, GroundingDetector
+from ..vision import ocr as ocr_mod
 
 # 视觉感知的类别表：写死 UI 语义，不引用 vision/classes.py 的巡检预设
 # （那三套是机房目标，拿来认按钮只会得到一堆误检）。
@@ -68,6 +69,28 @@ _ROLE_BY_CLASS: dict[str, str] = {
 
 DEFAULT_MAX_ELEMENTS = 200
 MAX_ELEMENTS_LIMIT = 1000
+
+# OCR 增强（可选，默认关）：开启时整图识别一次，再把文字按框匹配回元素。
+# 默认关闭的理由：element_id = hash(window_id+role+name+bbox)，name 若被 OCR 改写，
+# 同一控件的 id 会随识别结果漂移、破坏既有契约；开启后 name 仍保持类别名，
+# 文字只进 ocr_text（不参与 element_id）。
+OCR_TEXT_CLASSES = frozenset(
+    {
+        "button",
+        "text field",
+        "text box",
+        "checkbox",
+        "radio button",
+        "menu item",
+        "tab",
+        "link",
+        "list item",
+        "dialog",
+        "toolbar",
+    }
+)
+DEFAULT_OCR_MIN_CONFIDENCE = 0.5
+DEFAULT_OCR_MAX_TEXT = 60
 
 _REQUIRED_MODULES = ("torch", "transformers", "PIL")
 _DATA_URI_RE = re.compile(r"^data:image/[A-Za-z0-9.+-]+;base64,")
@@ -165,6 +188,7 @@ def _unavailable(reason: str, window_id: str, started: float) -> dict[str, Any]:
         "elements": [],
         "rejected": [],
         "truncated": False,
+        "ocr": None,
         "elapsed_ms": _elapsed_ms(started),
     }
 
@@ -179,12 +203,19 @@ def perceive(
     window_id: str,
     max_elements: int = DEFAULT_MAX_ELEMENTS,
     class_names: Sequence[str] = GUI_CLASSES,
+    ocr_enabled: bool = False,
+    ocr_min_confidence: float = DEFAULT_OCR_MIN_CONFIDENCE,
+    ocr_max_text: int = DEFAULT_OCR_MAX_TEXT,
 ) -> dict[str, Any]:
     """对一张截图做元素感知。
 
     @param image_b64 driver 截图（PNG/JPEG）的 base64，可带 data-URI 前缀。
     @param window_id driver 的窗口 id；element_id = hash(window_id+role+name+bbox)。
     @param max_elements 元素上限，超出部分丢弃并把 truncated 置 True。
+    @param ocr_enabled 是否启用 OCR 增强（默认关）：开启时整图识别一次，
+        把文字按框匹配回元素并写入 `ocr_text`；`name` 与 `element_id` 不变。
+    @param ocr_min_confidence 元素文字只接受置信度不低于该值的块。
+    @param ocr_max_text 元素 `ocr_text` 的最大长度，0 表示不截断。
     @return 响应字典（含 elapsed_ms）。图片字节绝不回传。
     """
     started = time.perf_counter()
@@ -205,13 +236,28 @@ def perceive(
     except Exception as exc:  # noqa: BLE001 - 权重下载失败/显存不足都要降级，不能 500
         return _unavailable(f"感知模型不可用：{exc}", window_id, started)
 
+    # OCR 增强：整图只识别一次（逐元素裁剪会慢一个数量级，且丢上下文）。
+    # 引擎不可用 / 失败时结果是 UNAVAILABLE，直接跳过，绝不编造文字。
+    ocr_result = ocr_mod.recognize(image) if ocr_enabled else None
+
     elements = []
     for box in boxes:
         bbox = _bbox_from_normalized(box, width, height)
         role = _ROLE_BY_CLASS.get(box.label, box.label)
         # 检测器只给类别不给文字，name 先用类别名占位；
-        # 真实控件文字由 UIA 或后续 OCR 补齐，这里不编造。
+        # 开启 OCR 时把识别到的控件文字放进 ocr_text（name/element_id 保持稳定）。
         name = box.label
+        ocr_text = None
+        if (
+            ocr_result is not None
+            and ocr_result.status == "SUCCEEDED"
+            and box.label in OCR_TEXT_CLASSES
+        ):
+            matched = ocr_mod.select_text_for_bbox(
+                bbox, ocr_result.blocks, min_confidence=ocr_min_confidence
+            )
+            if matched:
+                ocr_text = ocr_mod.truncate_text(matched, ocr_max_text)
         elements.append(
             {
                 "element_id": make_element_id(window_id, role, name, bbox),
@@ -219,6 +265,7 @@ def perceive(
                 "name": name,
                 "bbox": bbox,
                 "enabled": True,  # 视觉无法判断灰化状态，交由 driver/UIA 复核
+                "ocr_text": ocr_text,
             }
         )
 
@@ -238,6 +285,16 @@ def perceive(
         "elements": elements,
         "rejected": list(rejected),
         "truncated": truncated,
+        "ocr": (
+            None
+            if ocr_result is None
+            else {
+                "available": ocr_result.status != "UNAVAILABLE",
+                "engine": ocr_result.engine,
+                "blocks": len(ocr_result.blocks),
+                "confidence": ocr_result.confidence,
+            }
+        ),
         "elapsed_ms": _elapsed_ms(started),
     }
 
@@ -255,4 +312,6 @@ def get_model_info() -> dict[str, Any]:
         "classes": list(GUI_CLASSES),
         "max_elements_default": DEFAULT_MAX_ELEMENTS,
         "max_elements_limit": MAX_ELEMENTS_LIMIT,
+        "ocr": ocr_mod.get_ocr_info(),
+        "ocr_text_classes": sorted(OCR_TEXT_CLASSES),
     }

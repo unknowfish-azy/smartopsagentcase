@@ -6,6 +6,7 @@ from .chat import router as chat_router
 from .desktop_perceive import router as desktop_perceive_router
 from .health import router as health_router
 from .nn import router as nn_router
+from .ocr import router as ocr_router
 from .orchestrate import router as orchestrate_router
 from .tts import router as tts_router
 
@@ -61,6 +62,13 @@ api_router.include_router(
 # DH-04：桌面手感知（截图 → 元素列表），与 NN 共用 /nn 前缀
 api_router.include_router(
     desktop_perceive_router,
+    prefix="/nn",
+    tags=["NN"],
+)
+
+# NN-05：视觉 OCR（截图 / 报表 → 文字），与 NN 共用 /nn 前缀
+api_router.include_router(
+    ocr_router,
     prefix="/nn",
     tags=["NN"],
 )
