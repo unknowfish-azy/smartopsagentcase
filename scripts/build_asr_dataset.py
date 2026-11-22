@@ -46,14 +46,21 @@ HOLDOUT_VARIANTS = 3  # 留出集变体数（每命令）
 SR = 8000
 
 
-def _write_wav(path, samples):
+def _write_wav(path, samples, sample_rate=SR):
+    """落盘 16bit 单声道 PCM。
+
+    采样率必须按来源传入：ZipVoice 输出 **24kHz**（vocos_24khz.onnx），
+    早期版本写死 SR=8000 会把 24k 样本按 8k 头落盘，导致音频被 3 倍慢放+
+    降调（实测「打开知识库」由 0.97s 变成 2.91s），任何 ASR 都无法解码。
+    synthetic/sapi 两条路径本就工作在 8k，保持默认值不变。
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     peak = max(1e-9, max(abs(s) for s in samples))
     pcm = [max(-32767, min(32767, int(s / peak * 28000))) for s in samples]
     with wave.open(str(path), "wb") as writer:
         writer.setnchannels(1)
         writer.setsampwidth(2)
-        writer.setframerate(SR)
+        writer.setframerate(sample_rate)
         writer.writeframes(struct.pack(f"<{len(pcm)}h", *pcm))
 
 
@@ -158,7 +165,7 @@ def _zipvoice_synth(texts):
         # speed 轻微变化模拟说话差异；num_steps=8 与视频同款质量档
         speed = 1.0
         r = tts.generate(text, ref_txt, prompt, ref_sr, speed=speed, num_steps=8)
-        results.append((text, np.asarray(r.samples, dtype=np.float32)))
+        results.append((text, np.asarray(r.samples, dtype=np.float32), int(r.sample_rate)))
     return results
 
 
@@ -184,12 +191,7 @@ def build(mode, dev_variants=DEV_VARIANTS, holdout_variants=HOLDOUT_VARIANTS):
             flush=True,
         )
 
-    zipvoice_iter = iter(zipvoice_pending) if mode == "zipvoice" else None
     zipvoice_batch = []
-
-    def _zipvoice_one(index, text, split, variant):
-        """每次调用合成一条；模型只加载一次（由 _zipvoice_batch_flush 复用）。"""
-        return _zipvoice_synth([text])[0][1]
 
     def _zipvoice_batch_flush():
         """批量合成一组 (index,text,split,variant) 并落盘，模型加载一次。"""
@@ -197,9 +199,9 @@ def build(mode, dev_variants=DEV_VARIANTS, holdout_variants=HOLDOUT_VARIANTS):
             return
         texts = [item[1] for item in zipvoice_batch]
         results = _zipvoice_synth(texts)
-        for (index, text, split, variant), (_t, samples) in zip(zipvoice_batch, results):
+        for (index, text, split, variant), (_t, samples, sample_rate) in zip(zipvoice_batch, results):
             rel_path = Path(split) / f"{text}__{split}_{variant:02d}.wav"
-            _write_wav(DATASET_DIR / rel_path, samples)
+            _write_wav(DATASET_DIR / rel_path, samples, sample_rate)
             print(f"  [{index+1}/{len(COMMANDS)}] {text} {split}_{variant:02d}", flush=True)
         zipvoice_batch.clear()
 
@@ -227,6 +229,8 @@ def build(mode, dev_variants=DEV_VARIANTS, holdout_variants=HOLDOUT_VARIANTS):
                     from agent.asr import load_wav_mono  # noqa: PLC0415
 
                     _write_wav(out_path, load_wav_mono(tmp_wav))
+                # 三种模式都产出同一条清单记录：早期版本只在 sapi 分支 append，
+                # 导致 zipvoice/synthetic 重建后 manifest.jsonl 为空、评测脚本读到 0 条。
                 manifest.append(
                     {
                         "split": split,
