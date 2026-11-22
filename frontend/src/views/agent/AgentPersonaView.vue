@@ -14,6 +14,7 @@
       <AgentPersona
         ref="personaRef"
         :state="personaState"
+        :emotion="emotion"
         @ready="onReady"
         @error="onError"
         @context-lost="onLost"
@@ -129,7 +130,16 @@
         <dt>状态通道</dt>
         <dd>文本 + 色彩（非仅 3D）</dd>
       </div>
+      <div class="persona-view__stat">
+        <dt>情绪来源</dt>
+        <dd>{{ emotionSummary }}</dd>
+      </div>
     </dl>
+
+    <p class="persona-view__note">
+      情绪识别只作用于<strong>文本输入</strong>（本框输入或 ASR 转写），来源档位如实标注；
+      引擎不可用时不叠加表情，不伪造结果。告警 / 故障状态下情绪不改变状态语义。
+    </p>
 
     <p class="persona-view__note">
       占位模型：Sendagaya Shino（CC0，VRoid 官方示例）。许可与出处见
@@ -151,6 +161,8 @@ import {
 } from '../../components/persona/personaChat.js'
 import { fetchChatRunToken } from '../../api/chatRunToken.ts'
 import { streamChat } from '../../api/stream.ts'
+import { recognizeEmotion } from '../../api/emotion.ts'
+import { emotionLabelText, emotionSourceLabel } from '../../components/persona/emotionInput.js'
 
 // phase: idle | connecting | streaming | error（错误保持到下一次发送，便于看清失败）
 const phase = ref('idle')
@@ -161,6 +173,8 @@ const status = ref('loading')
 const stats = ref(null)
 const errorMessage = ref('')
 const personaRef = ref(null)
+/** 最近一次提问的情绪识别结果（P2-8）；null 表示未识别 / 不可用 */
+const emotion = ref(null)
 
 let statsTimer = 0
 let controller = null
@@ -172,6 +186,14 @@ const chatTone = computed(() => {
   if (phase.value === 'connecting') return 'warning'
   if (phase.value === 'streaming') return 'success'
   return 'neutral'
+})
+
+/** 如实标注来源档位；未识别时不写「未知情绪」以外的推断 */
+const emotionSummary = computed(() => {
+  if (!emotion.value) return '未识别（引擎不可用或无输入）'
+  const source = emotionSourceLabel(emotion.value)
+  if (source.tone === 'none') return `未识别（${emotion.value.reason || '引擎不可用'}）`
+  return `${emotionLabelText(emotion.value.label)} · ${source.text}`
 })
 
 const statusText = computed(() => {
@@ -245,6 +267,12 @@ async function sendMessage() {
     reply
   )
   draft.value = ''
+  // 先清空上一条情绪，避免「上次开心」残留到新问题上
+  emotion.value = null
+  // 情绪识别与对话链路解耦：失败静默降级为 null，不阻塞提问
+  recognizeEmotion(checked.text).then((result) => {
+    emotion.value = result
+  })
   phase.value = 'connecting'
   controller = new AbortController()
   let text = ''

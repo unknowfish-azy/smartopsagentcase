@@ -74,7 +74,7 @@
         @pointercancel="onStagePointerUp"
         @pointerleave="onStagePointerLeave"
       >
-        <AgentPersona ref="personaRef" mode="vrm" :state="agentState" @ready="onReady" />
+        <AgentPersona ref="personaRef" mode="vrm" :state="agentState" :emotion="emotion" @ready="onReady" />
         <transition name="pet-bubble">
           <span v-if="reaction && !faultAlert" class="persona-pet__bubble" :key="reactionKey">{{ reaction }}</span>
         </transition>
@@ -132,6 +132,7 @@ import { createPetNeuralTts } from './petNeuralTts.js'
 import { hasCoarseRun } from './useLipSync.js'
 import { fetchTtsStatus, synthesizeSpeech, synthesizeSpeechWithTiming } from '../../api/tts.ts'
 import { askAssistant, createVoiceInput, isVoiceInputAvailable } from './personaVoice.js'
+import { recognizeEmotion } from '../../api/emotion.ts'
 import { splitSentences } from './sentenceStream.js'
 import { resolveNavigationIntent, hazardBubble } from './voiceCommandRegistry.js'
 import {
@@ -175,6 +176,8 @@ const ttsEngine = ref('')
 /* 语音闭环：listening（听）→ thinking（问 AI）→ speaking（答+播报）→ idle */
 const voiceMode = ref('idle')
 const heard = ref('')
+/* 情绪识别输入（P2-8）：ASR 转写 → 情绪标签，只做表情加成；失败为 null 不伪造 */
+const emotion = ref(null)
 const boundarySeen = ref(false)
 
 /* 当前口型驱动来源，如实标注：
@@ -1010,6 +1013,11 @@ async function onVoiceCommand() {
     return
   }
   heard.value = text
+  // 语音转写也是「用户文本」：识别情绪，失败静默降级（不阻塞提问）
+  emotion.value = null
+  recognizeEmotion(text).then((result) => {
+    emotion.value = result
+  })
   // 语音控屏：先检查导航意图——命中就直接路由或拦截，不调 AI。
   // 这能同时覆盖"高危拦截"和"快速跳转"两个场景，且避免 LLM 跑偏。
   const navIntent = resolveNavigationIntent(text)
@@ -1158,6 +1166,18 @@ function openFullPage() {
   stopSpeech()
   router.push('/agent/persona')
 }
+
+/**
+ * 命令式情绪入口（P2-8）：宿主页面把用户文本（输入框 / ASR 转写）递进来，
+ * 由浮窗自己识别并叠加表情。识别失败返回 false，调用方据此如实提示「未识别」。
+ */
+async function applyEmotion(text) {
+  const result = await recognizeEmotion(text)
+  emotion.value = result
+  return result?.available === true
+}
+
+defineExpose({ applyEmotion })
 
 function updateViewport() {
   viewport.width = window.innerWidth

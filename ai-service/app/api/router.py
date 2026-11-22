@@ -4,6 +4,7 @@ from .agent import router as agent_router
 from .agent_trigger import router as agent_trigger_router
 from .chat import router as chat_router
 from .desktop_perceive import router as desktop_perceive_router
+from .emotion import router as emotion_router
 from .health import router as health_router
 from .nn import router as nn_router
 from .ocr import router as ocr_router
@@ -69,6 +70,13 @@ api_router.include_router(
 # NN-05：视觉 OCR（截图 / 报表 → 文字），与 NN 共用 /nn 前缀
 api_router.include_router(
     ocr_router,
+    prefix="/nn",
+    tags=["NN"],
+)
+
+# P2-8：情绪识别输入（用户文本 → 情绪标签），与 NN 共用 /nn 前缀
+api_router.include_router(
+    emotion_router,
     prefix="/nn",
     tags=["NN"],
 )

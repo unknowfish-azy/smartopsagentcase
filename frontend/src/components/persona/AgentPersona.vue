@@ -10,6 +10,9 @@
     <p class="persona__status">
       当前状态：{{ stateLabel }}
       <span class="persona__hint">{{ stateHint }}</span>
+      <span v-if="emotionSource" class="persona__emotion" :data-tone="emotionSource.tone">
+        · 情绪：{{ emotionText }}（{{ emotionSource.text }}）
+      </span>
       <span class="persona__mode">· {{ modeLabel }}</span>
     </p>
   </div>
@@ -25,6 +28,7 @@ import {
   personaProfile,
   personaTransitionMs
 } from './personaStates.js'
+import { emotionLabelText, emotionSourceLabel, withEmotion } from './emotionInput.js'
 import { isLightweightVisualMode } from '../../visual/visualMode.js'
 
 const props = defineProps({
@@ -46,6 +50,14 @@ const props = defineProps({
     type: String,
     default: 'vrm',
     validator: (value) => ['vrm', 'programmatic'].includes(value)
+  },
+  /**
+   * 情绪识别输入（P2-8）：`/api/nn/emotion` 的返回，或调用方自备的同形对象。
+   * 只做 expressions 的 max 加成；告警 / 故障态不叠加（状态主导）。
+   */
+  emotion: {
+    type: Object,
+    default: null
   }
 })
 
@@ -86,6 +98,17 @@ function resolveRenderMode() {
 
 const stateLabel = computed(() => PERSONA_STATE_LABELS[props.state] ?? props.state)
 const stateHint = computed(() => personaProfile(props.state).hint)
+/** 状态 profile（未叠加情绪）；stageProfile 由它派生，保持渲染层入参形状不变 */
+const baseProfile = computed(() => personaProfile(props.state))
+const stageProfile = computed(() =>
+  withEmotion(baseProfile.value, props.emotion, { state: props.state })
+)
+/** 情绪是否真的生效（被状态拦下 / 引擎不可用 / 低置信 → false） */
+const emotionActive = computed(() => stageProfile.value !== baseProfile.value)
+const emotionSource = computed(() => (emotionActive.value ? emotionSourceLabel(props.emotion) : null))
+const emotionText = computed(() =>
+  emotionActive.value ? emotionLabelText(props.emotion?.label) : ''
+)
 const initialMode = resolveRenderMode()
 const renderMode = ref(initialMode)
 const staticReason = ref(initialMode === 'static' ? staticReasonFor() : '')
@@ -126,7 +149,7 @@ function mount2D() {
     emit('error', error)
     return
   }
-  stage.setState(personaProfile(props.state), { fade: 0, state: props.state })
+  stage.setState(stageProfile.value, { fade: 0, state: props.state })
   stage.ready
     .then(() => {
       if (!stage) return
@@ -174,7 +197,7 @@ async function onHostMount({ canvas, container }) {
   }
 
   // 首个状态直接上屏，不做淡入，避免「先站直再变成目标姿态」的抖动
-  stage.setState(personaProfile(props.state), { fade: 0, state: props.state })
+  stage.setState(stageProfile.value, { fade: 0, state: props.state })
 
   stage.ready
     .then(() => {
@@ -190,7 +213,23 @@ async function onHostMount({ canvas, container }) {
 watch(
   () => props.state,
   (next, previous) => {
-    stage?.setState(personaProfile(next), { fade: personaTransitionMs(previous, next), state: next })
+    // 情绪与状态一起参与合成：告警 / 故障态由 withEmotion 拦下，不改变状态语义
+    const nextProfile = withEmotion(personaProfile(next), props.emotion, { state: next })
+    stage?.setState(nextProfile, { fade: personaTransitionMs(previous, next), state: next })
+  }
+)
+
+// 情绪输入变化（用户这句话识别结果回来）时，只刷 expressions，不重启渲染
+watch(
+  () => props.emotion,
+  (next) => {
+    const nextProfile = withEmotion(baseProfile.value, next, { state: props.state })
+    if (nextProfile !== baseProfile.value) {
+      stage?.setState(nextProfile, {
+        fade: personaTransitionMs(props.state, props.state),
+        state: props.state
+      })
+    }
   }
 )
 
@@ -286,6 +325,19 @@ onBeforeUnmount(teardown)
   margin-left: var(--ds-space-2);
   color: var(--ds-color-muted);
   opacity: .8;
+}
+
+.persona__emotion {
+  margin-left: var(--ds-space-2);
+  color: var(--ds-color-muted);
+}
+
+.persona__emotion[data-tone='model'] {
+  color: var(--ds-color-primary-strong);
+}
+
+.persona__emotion[data-tone='lexicon'] {
+  color: var(--ds-color-warning);
 }
 
 /* 状态色只做第三通道：灰度下靠姿态/节奏区分，颜色仅用于强化 */
