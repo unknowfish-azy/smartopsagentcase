@@ -15,6 +15,7 @@ from .debate import (
     RoleAgent,
     Verdict,
 )
+from .debate_llm import LLMRoleAgent, OllamaClient
 from .evidence_channels import (
     CHANNEL_PROBE_TYPES,
     CHANNEL_ROLES,
@@ -52,6 +53,8 @@ __all__ = [
     "DebateRecord",
     "RoleAgent",
     "DebateRunner",
+    "LLMRoleAgent",
+    "OllamaClient",
     "CHANNEL_ROLES",
     "CHANNEL_PROBE_TYPES",
     "CHANNEL_TOOL_NAMES",

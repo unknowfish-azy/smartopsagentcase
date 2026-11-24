@@ -121,7 +121,7 @@ round 1（反驳）：每角色看到「他人 top1 集合 + 各自 evidence id�
 2. **LLM 成本/延迟**：真实模型（qwen3:1.7b 实测约 5.4s/次）下 4 角色 × 2 轮 × 32 题 ≈ 128 次调用；需先小 n 试跑估时，超时则降级为「离线脚本 + 缓存结论」。
 3. **未收敛被美化**：缓解：A-G3 强制单列 `escalated`。
 
-### 2.7 落地记录（2026-11-22，用户点名「A继续」）
+### 2.7 落地记录（2026-11-22 协议与隔离；**2026-11-24 补真实 LLM 角色**）
 
 | 包 | 状态 | 产出 |
 |---|---|---|
@@ -130,15 +130,23 @@ round 1（反驳）：每角色看到「他人 top1 集合 + 各自 evidence id�
 | A3 | ✅ | `scripts/eval_debate.py`（EXP-DEBATE-001），`RuleRoleAgent` 见 `debate_rules.py`；报告 `reports/debate-eval-controlled-{test,train,validation}.{json,md}` |
 | A4 | ✅ | Wilson + 配对 McNemar + Holm（5 个比较）+ ICC/DEFF 有效 n，全部复用 `scripts/stats_inference.py` |
 | A5 | ✅ | `docs/competition/fact-sheet.md` F27 / M38 / 口径⑯ |
-| 离线确定性角色 | ✅ | `agent/subagents/debate_rules.py`（`RuleRoleAgent`）；真实 LLM 角色**未接入**，`RoleAgent` 已留注入点 |
+| 离线确定性角色 | ✅ | `agent/subagents/debate_rules.py`（`RuleRoleAgent`） |
+| **真实 LLM 角色** | ✅ **2026-11-24** | `agent/subagents/debate_llm.py`：`OllamaClient`（同步 `/api/generate` 最小封装 + 延迟/失败统计）与 `LLMRoleAgent`（实现同一 `RoleAgent`）；`tests/agent/test_debate_llm.py` **25 passed**；评测 EXP-DEBATE-002 见 M40 |
 
 **门禁结果**：A-G1 ✅（`tests/agent/test_debate.py` 22 passed）、A-G2 ✅（共享证据池负对照判 `valid=False`）、
 A-G3 ✅（`n` 与有效 n 同时给，`escalated` 单独计数）、A-G4 ✅（McNemar + Wilson + Holm 齐全）、A-G5 ✅（fact-sheet 口径⑯）。
+补测：`tests/agent/test_debate.py` + `tests/agent/test_debate_llm.py` 合计 **47 passed**。
 
-**核心结论（诚实交底，详见 M38）**：
+**核心结论（诚实交底，详见 M38 / M40）**：
 辩论协议与隔离**已可运行**，但**未证明协议本身带来增益**——
 相对单角色的增益**全部来自四通道证据覆盖**（test 上辩论与「全证据单角色」覆盖对照逐样本 **0/48** 不同；
 train/validation 上辩论因未收敛**反而更低**）。因此**禁止**写「多 Agent 辩论提升准确率 X%」。
+
+**2026-11-24 补真实 LLM 角色（M40）**：接入本身**已可用**（解析失败 **0/632**），但结论**与规则角色一致**——
+test n=48 辩论 **0.9167** vs 覆盖对照 **0.9375**，McNemar `b=2, c=3`、Holm p=**1.0000** → **不显著（未证明增益）**。
+过程中修掉一个**必须记录的缺陷**：`qwen3:1.7b` 默认开启 thinking，思考 token 会耗尽 `num_predict` 导致
+`response` 为空 → 表现为「解析失败」（实测 **104/104 次空响应**、n=8 耗时 1327.8s）。现客户端默认下发
+`think=False`（`--think` 可显式开启），修复后平均延迟 **1325.3ms/次**、单样本约 18.5s。
 
 ---
 

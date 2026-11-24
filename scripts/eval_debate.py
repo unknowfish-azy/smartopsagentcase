@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import time
 import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -52,7 +53,7 @@ from typing import Any, Sequence
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
-from agent.subagents.debate import DEBATE_ROLE_NAMES, DebateRunner
+from agent.subagents.debate import DEBATE_ROLE_NAMES, DebateRunner, RoleAgent
 from agent.subagents.debate_rules import PROBE_TYPE_CANDIDATES, RuleRoleAgent
 from agent.subagents.evidence_channels import (
     CHANNEL_PROBE_TYPES,
@@ -113,6 +114,37 @@ def build_items(sample: dict[str, Any]) -> list[EvidenceItem]:
     return items
 
 
+def _select_samples(
+    samples: list[dict[str, Any]],
+    limit: int,
+    *,
+    stratify: bool,
+) -> list[dict[str, Any]]:
+    """限量取样：``stratify`` 时按 ``root_cause_group`` 轮转，保证组覆盖最大。"""
+
+    if not stratify or len(samples) <= limit:
+        return samples[:limit]
+    by_group: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for sample in samples:
+        by_group[sample["ground_truth"]["root_cause_group"]].append(sample)
+    picked: list[dict[str, Any]] = []
+    groups = sorted(by_group)
+    index = 0
+    while len(picked) < limit:
+        progressed = False
+        for group in groups:
+            bucket = by_group[group]
+            if index < len(bucket):
+                picked.append(bucket[index])
+                progressed = True
+                if len(picked) >= limit:
+                    break
+        if not progressed:
+            break
+        index += 1
+    return picked
+
+
 def _ratio(num: int | None, den: int | None) -> dict[str, Any]:
     if num is None or den in (None, 0):
         return {"num": num, "den": den, "value": None, "status": "NOT_RUN"}
@@ -130,9 +162,14 @@ def _ratio(num: int | None, den: int | None) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def run_experiment(samples: list[dict[str, Any]]) -> dict[str, Any]:
-    agent = RuleRoleAgent()
-    runner = DebateRunner(agent, max_rebuttal_rounds=MAX_REBUTTAL_ROUNDS)
+def run_experiment(
+    samples: list[dict[str, Any]],
+    agent: RoleAgent | None = None,
+    *,
+    max_rebuttal_rounds: int = MAX_REBUTTAL_ROUNDS,
+) -> dict[str, Any]:
+    agent = agent or RuleRoleAgent()
+    runner = DebateRunner(agent, max_rebuttal_rounds=max_rebuttal_rounds)
 
     rows: list[dict[str, Any]] = []
     for sample in samples:
@@ -348,14 +385,57 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--split-dir", default=str(SPLIT_DIR))
     parser.add_argument("--report-dir", default=str(DEFAULT_REPORT_DIR))
     parser.add_argument("--tag", default="controlled-test")
+    parser.add_argument(
+        "--role-agent", choices=["rules", "llm"], default="rules",
+        help="rules=离线确定性规则（默认，秒级）；llm=真实 Ollama 模型（分钟级，需本机服务）",
+    )
+    parser.add_argument("--model", default="qwen3:1.7b")
+    parser.add_argument("--base-url", default="http://127.0.0.1:11434")
+    parser.add_argument("--max-rounds", type=int, default=MAX_REBUTTAL_ROUNDS)
+    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--num-predict", type=int, default=160,
+                        help="限制模型输出 token 数（小模型话痨会显著拖慢）")
+    parser.add_argument("--think", dest="think", action="store_true",
+                        help="开启思考模式（默认关闭：qwen3 等模型会把预算耗在思考上，"
+                             "导致正文为空、表现为解析失败）")
+    parser.add_argument("--no-think", dest="think", action="store_false",
+                        help="关闭思考模式（默认）")
+    parser.set_defaults(think=False)
+    parser.add_argument("--limit", type=int, default=0,
+                        help="只跑前 N 条（冒烟用；0=全量）")
+    parser.add_argument("--stratify", action="store_true",
+                        help="配合 --limit：按 root_cause_group 轮转取样，最大化组覆盖")
     args = parser.parse_args(argv)
 
     samples = load_samples(args.split, Path(args.split_dir))
+    if args.limit:
+        samples = _select_samples(samples, args.limit, stratify=args.stratify)
     if not samples:
         print(f"[warn] split={args.split} 没有 verification 样本")
         return 1
 
-    block = run_experiment(samples)
+    if args.role_agent == "llm":
+        from agent.subagents.debate_llm import LLMRoleAgent, OllamaClient
+
+        client = OllamaClient(
+            base_url=args.base_url,
+            model=args.model,
+            temperature=args.temperature,
+            seed=SEED,
+            num_predict=args.num_predict,
+            think=args.think,
+        )
+        agent: RoleAgent = LLMRoleAgent(client)
+        agent_label = (f"LLMRoleAgent(model={args.model}, base_url={args.base_url}, "
+                       f"think={args.think})")
+    else:
+        agent = RuleRoleAgent()
+        agent_label = "RuleRoleAgent（离线确定性规则，非 LLM）"
+
+    started = time.perf_counter()
+    block = run_experiment(samples, agent, max_rebuttal_rounds=args.max_rounds)
+    elapsed_s = time.perf_counter() - started
+
     isolation = validate_isolation(
         partition_items([item for sample in samples for item in build_items(sample)])
     )
@@ -370,10 +450,21 @@ def main(argv: list[str] | None = None) -> int:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "protocol": {
             "roles": list(DEBATE_ROLE_NAMES),
-            "max_rebuttal_rounds": MAX_REBUTTAL_ROUNDS,
-            "agent": "RuleRoleAgent（离线确定性规则，非 LLM）",
+            "max_rebuttal_rounds": args.max_rounds,
+            "agent": agent_label,
             "candidate_table": "agent/subagents/debate_rules.py::PROBE_TYPE_CANDIDATES",
         },
+        "run": {
+            "role_agent": args.role_agent,
+            "model": args.model if args.role_agent == "llm" else None,
+            "temperature": args.temperature if args.role_agent == "llm" else None,
+            "think": args.think if args.role_agent == "llm" else None,
+            "limit": args.limit or None,
+            "stratify": (args.stratify and bool(args.limit)) or None,
+            "elapsed_s": round(elapsed_s, 1),
+            "started_at_local": datetime.now().isoformat(timespec="seconds"),
+        },
+        "agent_stats": agent.stats() if hasattr(agent, "stats") else None,
         "stats": {
             "module": "scripts/stats_inference.py",
             "seed": SEED,
@@ -406,7 +497,16 @@ def main(argv: list[str] | None = None) -> int:
           f"平均轮数={proto['mean_rounds']}")
     print(f"  辩论准确率={_f(payload['accuracy']['debate']['value'])} "
           f"有效 n={payload['effective_n']['effective_n']}")
-    print(f"  负对照通过={payload['negative_control']['passed']}")
+    oracle = payload["accuracy"]["coverage_oracle"]
+    print(f"  ⚠️ 覆盖对照={_f(oracle['value'])} "
+          f"(辩论与对照逐样本不同 {payload['accuracy']['n_debate_differs_from_oracle']} 条)"
+          " ← 必须同时引用")
+    print(f"  负对照通过={payload['negative_control']['passed']}  "
+          f"耗时={payload['run']['elapsed_s']}s")
+    stats = payload.get("agent_stats")
+    if stats:
+        print(f"  LLM 调用={stats.get('n_calls')} 失败={stats.get('n_failures')} "
+              f"弃权={stats.get('n_abstain')} 平均延迟={stats.get('mean_latency_ms')}ms")
     print(f"[ok] {md_path}")
     return 0
 
@@ -449,7 +549,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
       f"（见第 3 节）——若两者准确率相同，则本实验证明的是**通道覆盖**，不是辩论协议。")
     a(f"- 负对照（共享证据池必须判无效）：**{'通过' if payload['negative_control']['passed'] else '未通过'}**。")
     a("")
-    a("> ⚠️ **口径**：候选词表为**人工按探针语义拟定**、角色为**离线确定性规则**，"
+    a("> ⚠️ **口径**：候选词表为**人工按探针语义拟定**"
+      f"（`PROBE_TYPE_CANDIDATES`），角色实现为 **{payload['protocol']['agent']}**，"
       "受控集为**合成 fixture**且存在已知的「标签—探针循环」（M31）。"
       "因此准确率反映**命名/语义一致性**，不是推理能力；"
       "**禁止**写成「多 Agent 辩论提升准确率 X%」。")
@@ -465,7 +566,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
     a(f"| 反驳改判率（changed） | {_f(proto['changed_rate']['value'])} | "
       f"{proto['changed_rate']['den']} | {_ci(proto['changed_rate'])} |")
     a("")
-    a(f"- 平均反驳轮数：{proto['mean_rounds']}（上限 {MAX_REBUTTAL_ROUNDS}）")
+    a(f"- 平均反驳轮数：{proto['mean_rounds']}（上限 {payload['protocol']['max_rebuttal_rounds']}）")
     a(f"- 轮数分布：{proto['rounds_distribution']}")
     a(f"- 覆盖 ≥2 条通道的样本：{proto['n_multi_channel']}/{payload['n_samples']}"
       f"（其余样本只有一条通道有证据，辩论退化为单角色）")
@@ -525,21 +626,62 @@ def render_markdown(payload: dict[str, Any]) -> str:
     a(f"- 负对照：{nc['description']}，n_items={nc['n_items']}，"
       f"判 invalid={not nc['report']['valid']} → **{'通过' if nc['passed'] else '未通过'}**")
     a("")
-    a("## 6. 局限与禁止口径")
+    stats = payload.get("agent_stats")
+    if stats:
+        a("## 6. LLM 调用统计（仅 --role-agent llm）")
+        a("")
+        a(f"- 模型 `{stats.get('model')}`：调用 {stats.get('n_calls')} 次、"
+          f"失败 {stats.get('n_failures')} 次（失败率 {_f(stats.get('failure_rate'))}）、"
+          f"弃权 {stats.get('n_abstain')} 次")
+        a(f"- 平均延迟 {stats.get('mean_latency_ms')} ms；"
+          f"temperature={stats.get('temperature')} seed={stats.get('seed')} "
+          f"think={stats.get('think')}")
+        a(f"- 空响应/解析失败 {stats.get('n_parse_or_call_failures')}/"
+          f"{stats.get('n_calls')} 次（另有越界弃权 {stats.get('n_abstain')} 次）"
+          "—— 失败一律弃权，不伪造结论")
+        if stats.get("n_calls") and stats.get("n_parse_or_call_failures") == stats.get("n_calls"):
+            a("- ⚠️ **全部调用均未产出可用结论**：先检查 `think` 是否为 False"
+              "（qwen3 等思考型模型会把 num_predict 耗在思考上、正文为空），"
+              "再排查服务连通性；此时准确率不可解释。")
+        a("")
+    a("## 7. 局限与禁止口径")
     a("")
     a("1. **合成受控集**：`source.data_class=SYNTHETIC`，非真实分布性能。")
     a("2. **标签—探针循环**：M31 已判定主指标存在生成器侧循环；准确率只作描述。")
-    a("3. **无 LLM 成分**：`RuleRoleAgent` 为确定性规则，真实模型路径需另行注入。")
+    if payload.get("run", {}).get("role_agent") == "llm":
+        a("3. **小模型 + 封闭候选集**：`LLMRoleAgent` 使用本机小模型，且只能在人工拟定的"
+            "候选并集内选择（越界答案一律弃权），故不得与规则角色的数字直接比高低，"
+            "也不得写成「AI 根因识别准确率」。")
+    else:
+        a("3. **无 LLM 成分**：`RuleRoleAgent` 为确定性规则，真实模型路径需另行注入。")
     a("4. **未收敛 ≠ 错误**：`escalated` 记为无结论，单独计数，未从分母剔除。")
     a("5. **单通道样本**：多数样本只有一条通道有证据，辩论在这些样本上退化为单角色；"
       "多通道子集见第 1 节计数。")
     a("6. **禁止**：把本结果写成「多 Agent 辩论提升准确率 X%」或「AI 根因识别准确率」。")
     a("")
-    a("## 7. 复现")
+    a("## 8. 复现")
     a("")
     a("```bash")
-    a("python scripts/eval_debate.py --split test")
-    a("python -m pytest tests/agent/test_debate.py")
+    a("# 离线确定性角色（秒级）")
+    a(f"python scripts/eval_debate.py --split {payload['split']}")
+    run = payload.get("run", {})
+    if run.get("role_agent") == "llm":
+        limit = run.get("limit")
+        cmd = (f"python scripts/eval_debate.py --split {payload['split']} --role-agent llm "
+               f"--model {run.get('model')} --max-rounds "
+               f"{payload['protocol']['max_rebuttal_rounds']}"
+               + (" --think" if run.get("think") else "")
+               + (f" --limit {limit} --stratify" if limit else "")
+               + f" --tag {payload['tag']}")
+        a("# 真实 LLM 角色（分钟级，需本机 Ollama；默认 think=False，"
+          "否则思考 token 会耗尽 num_predict、正文为空）")
+        a(cmd)
+    else:
+        a("# 真实 LLM 角色（分钟级，需本机 Ollama）")
+        a("python scripts/eval_debate.py --split test --role-agent llm \\")
+        a(f"  --model qwen3:1.7b --max-rounds "
+          f"{payload['protocol']['max_rebuttal_rounds']} --tag llm-test")
+    a("python -m pytest tests/agent/test_debate.py tests/agent/test_debate_llm.py")
     a("```")
     a("")
     return "\n".join(lines) + "\n"
