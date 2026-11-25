@@ -28,7 +28,7 @@
 | AI 服务 | FastAPI（LLM 网关、对话、RAG 编排） |
 | Agent 框架 | Python（planner / executor / inspector / memory / policies） |
 | 检索 | 混合检索（Hybrid Retrieval：关键词 + 向量）知识库 |
-| 工具集成 | MCP 适配器、Function Calling、Docker 工具 |
+| 工具集成 | MCP 协议层（legacy stdio，自研零 SDK）、Function Calling、Docker 工具 |
 | 多模态 | 3D 可视化（Three.js）+ 图表（ECharts）+ 语音输入（Web Speech API）+ 截屏/拍照证据附件 |
 | 模型接入 | OpenAI 兼容网关（mock / Ollama / OpenAI 兼容均可，默认 mock 零密钥跑通） |
 
@@ -204,7 +204,7 @@ cd frontend && npm test && npm run typecheck && npm run build
 - **RAG（6%）**：混合检索 + 证据验证，检索策略可解释，显著降低错误版本知识干扰。
 - **多模态（5%）**：Three.js 3D + ECharts 图表可视化；对话支持语音输入（Web Speech API，Chrome/Edge 可用）与截屏/拍照图像证据（文件名随消息参与 AI 模拟解析，图片内容保留在本地不上传）。
 - **AI 安全与可控（4%）**：policies 权限/风险引擎 + 人工审批 + 审计留痕，体现"可信 AI"。
-- **MCP / 工具集成（4%）**：`agent/tools/adapters/mcp.py` 已实现 MCP 适配，支持外部工具/数据源接入。
+- **MCP / 工具集成（4%）**：自研 MCP 协议层 `agent/mcp/`（JSON-RPC 2.0 编解码 + stdio server/client，零 SDK 依赖、可逐字节审计），实现 **Legacy 版（协议 `2025-03-26` / `2024-11-05`）stdio 传输与 tools 面**（`initialize` 版本协商、`tools/list`、`tools/call`）；外部工具经 `agent/tools/adapters/mcp.py` 适配接入，调用统一走 executor 的权限、风险、人工审批与审计链，暴露面默认只读 + 显式 allowlist。边界：未实现 `server/discover`、Streamable HTTP、resources/prompts/sampling；能力口径以 `docs/competition/fact-sheet.md` F09 为唯一来源。
 
 ---
 
