@@ -321,6 +321,29 @@ hybrid+KG 的 +0.0408 增量**都是循环的**，**禁止**写成「混合检�
 2. **反事实指标可被平凡规则刷满**：例如「干预后总是改判」也能拿高 `flip_rate` → 必须同时报告**误伤率**（对非根因节点干预时的改判率），两者一起看。
 3. **训练成本**：现有链路 192 runs 已不便宜，因果变体需限 seeds（≥5）与 epochs。
 
+### 4.7 落地记录（2026-11-25，用户点名「C 先按方案 §4 搭个骨架，反事实先不写」）
+
+| 包 | 状态 | 产出 |
+|---|---|---|
+| C0 数据契约 | ✅ | `ai-service/app/causal/schema.py`：`Plan`（生成参数，含 `seed`/`n_events`/`n_pairs`/`mask_value`/`alpha`/`n_boot`，`from_dict` 拒未知字段）、`CounterfactualPair`（两端根因必须不同）、`FlipRecord`（前后缺失 → `flipped=None`，**不计入分母**）、`PairVerdict`、`MetricResult` |
+| C0 指标 | ✅ | `ai-service/app/causal/metrics.py`：`flip_rate` + `collateral_flip_rate`（成对）、`pair_accuracy`、`compare_models`（A@1 增益 + McNemar + Holm + bootstrap CI）、`effective_n`（ICC/DEFF），全部复用 `scripts/stats_inference.py` |
+| C0 训练配置 | ✅ | `ai-service/app/causal/training.py`：`REG_WEIGHTS = (0.0, 0.5, 1.0)`、`DEFAULT_REG_WEIGHT = 0.0`（C-G5 默认不变）；正则项与反事实增强入口显式抛错 |
+| C1 生成器 | ⛔ **未实现** | `ai-service/scripts/build_counterfactual.py`：只做 `Plan` 校验 + 数据卡落盘 + 生成器入口抛 `GeneratorNotImplemented`；**不产出任何样本** |
+| C2 评测 | ✅ 骨架可运行 | `ai-service/scripts/eval_counterfactual.py`：读 records/pairs/hits/groups → 出报告；无输入一律 `NOT_RUN`；指定路径不存在则**报错退出**（不得静默当结论） |
+| C3 因果训练变体 | ⛔ **未实现** | 见 `training.py`，仅固定超参档位与口径 |
+| C4 / C5 | ✅ 部分 | 统计收口复用既有层；fact-sheet 登记 **F29 / 口径⑲** |
+
+**门禁**：`py -3.14 -m pytest tests/causal/test_causal_skeleton.py` **19 passed**。
+端到端冒烟：`build_counterfactual` 产出 `status=NOT_IMPLEMENTED` 数据卡；`eval_counterfactual` 全指标 `NOT_RUN`——**这是骨架预期，不是失败**。
+
+**骨架期修掉的 4 处「会让诚实机制静默失效」缺陷**（都已加测试钉住）：
+1. `holm_bonferroni(...)` 返回 **dict**（含 `items`），原骨架按 list 取 `[0]` → 直接 KeyError；
+2. bootstrap 区间键名是 `ci_low` / `ci_high`，原骨架读 `low` / `high` → 恒 `None`，显著性判据永远为假；
+3. `icc_one_way` **不返回** `m`，原骨架 `icc.get("m") or 1.0` → DEFF 恒为 1 → **有效 n 恒等于名义 n**，C-G4 形同虚设（现改用平均组大小 `n_total/k_groups`）；
+4. `b=c=0` 时 McNemar 的 `p_value` 为 `None`，原骨架仍喂给 Holm → TypeError（现先判无可检验差异再决定是否校正）。
+
+**下一步（未开工）**：C1 干预与 C2 配对生成器（`generate_c1_interventions` / `generate_c2_pairs`）、C3 因果训练变体。用户已明确本轮**不写反事实逻辑**。
+
 ---
 
 ## 5. 统一禁止事项（三件共用）
