@@ -488,7 +488,8 @@ public class UserAccountService {
         log.info("BOOTSTRAP: username=[{}] passwordBlank=[{}] existingUsers=[{}]",
                 username, password == null || password.isBlank(), existing);
         if (password == null || password.isBlank() || existing != 0) return;
-        AccountView created = createAccount(username, password, "admin", false, null);
+        // SEC-13/首启改密：首个管理员首次登录即强制改密，禁止长期使用引导口令。
+        AccountView created = createAccount(username, password, "admin", true, null);
         // SEC-07：首个管理员显式建档为 root 并授予全部能力；
         // 后续管理员一律走能力目录显式任命，不再有“缺档案=ROOT”。
         jdbc.update("UPDATE platform_admin_profile SET level='root' WHERE user_id=?", created.id());

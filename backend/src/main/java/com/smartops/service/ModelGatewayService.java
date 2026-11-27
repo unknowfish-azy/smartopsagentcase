@@ -4,7 +4,7 @@ import com.smartops.dto.model.ModelInvocationRequest;
 import com.smartops.dto.model.ModelInvocationResponse;
 import com.smartops.exception.BusinessException;
 import com.smartops.service.modelconfig.ModelConfigRegistry;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,14 +18,33 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class ModelGatewayService {
+    // 拒绝类状态不计入配额/用量统计，但保留在 invocation 表里作为审计痕迹（批次一 #28）
+    private static final String STATUS_REJECTED_QUOTA = "REJECTED_QUOTA";
+    private static final String STATUS_REJECTED_RATE_LIMITED = "REJECTED_RATE_LIMITED";
+    private static final String CONSUMED_STATUS_FILTER =
+            "status NOT IN ('CACHE_HIT','" + STATUS_REJECTED_QUOTA + "','" + STATUS_REJECTED_RATE_LIMITED + "')";
+    private static final String CONSUMED_STATUS_FILTER_ALIAS = CONSUMED_STATUS_FILTER.replace("status", "i.status");
+
     private final JdbcTemplate jdbc;
     private final ModelConnectionService connections;
     private final ModelSemanticCacheService semanticCache;
     private final ModelRouterService router;
     private final ModelConfigRegistry configRegistry;
+    private final long rateLimitPerMinute;
     private final SecureRandom random = new SecureRandom();
+
+    public ModelGatewayService(JdbcTemplate jdbc, ModelConnectionService connections, ModelSemanticCacheService semanticCache,
+                               ModelRouterService router, ModelConfigRegistry configRegistry,
+                               @Value("${smartops.gateway.rate-limit-rpm:60}") long rateLimitPerMinute) {
+        this.jdbc = jdbc;
+        this.connections = connections;
+        this.semanticCache = semanticCache;
+        this.router = router;
+        this.configRegistry = configRegistry;
+        if (rateLimitPerMinute < 0) throw new IllegalArgumentException("smartops.gateway.rate-limit-rpm must be >= 0");
+        this.rateLimitPerMinute = rateLimitPerMinute;
+    }
 
     public record IssuedKey(Long id, String name, String key, String prefix, String scope, Instant expiresAt) {}
     public record GatewayPrincipal(Long id, Long ownerUserId, String scope) {}
@@ -58,10 +77,10 @@ public class ModelGatewayService {
     public ModelInvocationResponse invoke(GatewayPrincipal principal, String group, ModelInvocationRequest request) {
         if (group == null || !group.matches("[a-zA-Z0-9._-]{1,120}")) throw new BusinessException(400, "Invalid model group");
         if (!"PERSONAL".equals(principal.scope())) throw new BusinessException(403, "Key scope not supported");
-        enforceQuota(principal.id(), principal.ownerUserId(), group);
         // 审计归因：灰度期同一用户可能由 canary 版本服务，不能统一记 stable 版本号
         Integer configVersion = configRegistry.resolveVersion(principal.ownerUserId(), group);
         long started = System.nanoTime();
+        enforceQuota(principal.id(), principal.ownerUserId(), group, configVersion, started);
 
         // 语义缓存（LLM 推理加速）：精确/语义命中直接返回，省下一次完整的模型调用
         ModelInvocationResponse cached = semanticCache.lookup(principal.id(), group, request).orElse(null);
@@ -106,26 +125,49 @@ public class ModelGatewayService {
         return jdbc.query("SELECT slug,name FROM model_gateway_group WHERE enabled=TRUE AND scope='PERSONAL' AND owner_user_id=? ORDER BY slug", (rs, n) -> Map.of("id", rs.getString("slug"), "object", "model", "owned_by", "smartops"), principal.ownerUserId());
     }
 
-    private void enforceQuota(Long keyId, Long ownerUserId, String group) {
+    private void enforceQuota(Long keyId, Long ownerUserId, String group, Integer configVersion, long started) {
         List<Map<String, Long>> limits = jdbc.query("SELECT request_limit_24h,token_limit_24h FROM model_gateway_key WHERE id=?", (rs, n) -> Map.of("requests", rs.getObject("request_limit_24h") == null ? -1L : rs.getLong("request_limit_24h"), "tokens", rs.getObject("token_limit_24h") == null ? -1L : rs.getLong("token_limit_24h")), keyId);
         if (limits.isEmpty()) throw new BusinessException(401, "Invalid gateway key");
         long requestLimit = limits.get(0).get("requests"), tokenLimit = limits.get(0).get("tokens");
-        // key 两项额度都未配置时只是跳过 key 维度计量，仍必须继续校验模型组额度。
-        if (requestLimit >= 0 || tokenLimit >= 0) {
-            // CACHE_HIT 不占请求/token 配额：缓存命中没有真实消耗模型资源
-            Map<String, Long> usage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(total_tokens),0) tokens FROM model_gateway_invocation WHERE key_id=? AND status<>'CACHE_HIT' AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), keyId).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
-            if (requestLimit >= 0 && usage.get("calls") >= requestLimit) throw new BusinessException(429, "Gateway request quota exceeded");
-            if (tokenLimit >= 0 && usage.get("tokens") >= tokenLimit) throw new BusinessException(429, "Gateway token quota exceeded");
+        // key 两项额度都未配置时只是跳过 key 维度计量，但仍需执行分钟级限流与模型组额度校验。
+        if (requestLimit >= 0 || tokenLimit >= 0 || rateLimitPerMinute > 0) {
+            // CACHE_HIT 不占请求/token 配额：缓存命中没有真实消耗模型资源；拒绝类也不计入消耗
+            Map<String, Long> usage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(total_tokens),0) tokens, "
+                    + "COALESCE(SUM(created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 60 SECOND)),0) recent_calls "
+                    + "FROM model_gateway_invocation WHERE key_id=? AND " + CONSUMED_STATUS_FILTER
+                    + " AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)",
+                    (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens"), "recent", rs.getLong("recent_calls")),
+                    keyId).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L, "recent", 0L));
+            if (requestLimit >= 0 && usage.get("calls") >= requestLimit) {
+                reject(keyId, group, configVersion, started, STATUS_REJECTED_QUOTA, "Gateway request quota exceeded");
+            }
+            if (tokenLimit >= 0 && usage.get("tokens") >= tokenLimit) {
+                reject(keyId, group, configVersion, started, STATUS_REJECTED_QUOTA, "Gateway token quota exceeded");
+            }
+            if (rateLimitPerMinute > 0 && usage.get("recent") >= rateLimitPerMinute) {
+                reject(keyId, group, configVersion, started, STATUS_REJECTED_RATE_LIMITED, "Gateway rate limit exceeded");
+            }
         }
         List<Map<String, Long>> groupLimits = jdbc.query("SELECT request_limit_24h,token_limit_24h FROM model_gateway_group WHERE slug=? AND owner_user_id=?", (rs, n) -> Map.of("requests", rs.getObject("request_limit_24h") == null ? -1L : rs.getLong("request_limit_24h"), "tokens", rs.getObject("token_limit_24h") == null ? -1L : rs.getLong("token_limit_24h")), group, ownerUserId);
         if (!groupLimits.isEmpty()) {
             long groupRequestLimit = groupLimits.get(0).get("requests"), groupTokenLimit = groupLimits.get(0).get("tokens");
             if (groupRequestLimit >= 0 || groupTokenLimit >= 0) {
-                Map<String, Long> groupUsage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(i.total_tokens),0) tokens FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? AND i.group_slug=? AND i.status<>'CACHE_HIT' AND i.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), ownerUserId, group).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
-                if (groupRequestLimit >= 0 && groupUsage.get("calls") >= groupRequestLimit) throw new BusinessException(429, "Model group request quota exceeded");
-                if (groupTokenLimit >= 0 && groupUsage.get("tokens") >= groupTokenLimit) throw new BusinessException(429, "Model group token quota exceeded");
+                Map<String, Long> groupUsage = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(i.total_tokens),0) tokens FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? AND i.group_slug=? AND " + CONSUMED_STATUS_FILTER_ALIAS
+                        + " AND i.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.of("calls", rs.getLong("calls"), "tokens", rs.getLong("tokens")), ownerUserId, group).stream().findFirst().orElse(Map.of("calls", 0L, "tokens", 0L));
+                if (groupRequestLimit >= 0 && groupUsage.get("calls") >= groupRequestLimit) {
+                    reject(keyId, group, configVersion, started, STATUS_REJECTED_QUOTA, "Model group request quota exceeded");
+                }
+                if (groupTokenLimit >= 0 && groupUsage.get("tokens") >= groupTokenLimit) {
+                    reject(keyId, group, configVersion, started, STATUS_REJECTED_QUOTA, "Model group token quota exceeded");
+                }
             }
         }
+    }
+
+    /** 拒绝也留痕：先写一条审计 invocation（status=REJECTED_*），再抛 429。 */
+    private void reject(Long keyId, String group, Integer configVersion, long started, String status, String message) {
+        recordSafely(keyId, group, configVersion, null, status, elapsed(started), Map.of());
+        throw new BusinessException(429, message);
     }
 
     public List<Map<String, Object>> keys(Long ownerUserId) {
@@ -224,7 +266,7 @@ public class ModelGatewayService {
 
     public Map<String, Object> analytics(Long ownerUserId) {
         if (ownerUserId == null) throw new BusinessException(401, "User required");
-        Map<String, Object> summary = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(status='SUCCESS'),0) successes, COALESCE(AVG(duration_ms),0) latency, COALESCE(SUM(total_tokens),0) tokens FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? AND i.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.<String,Object>of("calls", rs.getLong("calls"), "successes", rs.getLong("successes"), "latencyMs", Math.round(rs.getDouble("latency")), "tokens", rs.getLong("tokens")), ownerUserId).stream().findFirst().orElse(Map.of("calls", 0L, "successes", 0L, "latencyMs", 0L, "tokens", 0L));
+        Map<String, Object> summary = jdbc.query("SELECT COUNT(*) calls, COALESCE(SUM(status='SUCCESS'),0) successes, COALESCE(AVG(duration_ms),0) latency, COALESCE(SUM(total_tokens),0) tokens FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? AND " + CONSUMED_STATUS_FILTER_ALIAS + " AND i.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)", (rs, n) -> Map.<String,Object>of("calls", rs.getLong("calls"), "successes", rs.getLong("successes"), "latencyMs", Math.round(rs.getDouble("latency")), "tokens", rs.getLong("tokens")), ownerUserId).stream().findFirst().orElse(Map.of("calls", 0L, "successes", 0L, "latencyMs", 0L, "tokens", 0L));
         List<Map<String, Object>> recent = jdbc.query("SELECT i.group_slug,i.status,i.duration_ms,i.total_tokens,i.config_version,i.created_at FROM model_gateway_invocation i JOIN model_gateway_key k ON k.id=i.key_id WHERE k.owner_user_id=? ORDER BY i.created_at DESC LIMIT 20", (rs, n) -> Map.of("group", rs.getString("group_slug"), "status", rs.getString("status"), "durationMs", rs.getLong("duration_ms"), "tokens", rs.getObject("total_tokens") == null ? 0L : rs.getLong("total_tokens"), "configVersion", rs.getObject("config_version") == null ? 0 : rs.getInt("config_version"), "createdAt", rs.getTimestamp("created_at").toInstant().toString()), ownerUserId);
         return Map.of("summary", summary, "recent", recent);
     }

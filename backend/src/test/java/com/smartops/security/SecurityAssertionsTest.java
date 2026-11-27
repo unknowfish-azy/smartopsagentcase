@@ -73,32 +73,50 @@ class SecurityAssertionsTest {
     @Test
     void productionRejectsMissingDeploymentPasswords() {
         IllegalStateException failure = assertThrows(IllegalStateException.class,
-                () -> SecurityAssertions.verifyDeploymentSecrets(true, "", "", ""));
+                () -> SecurityAssertions.verifyDeploymentSecrets(true, "", "", "", ""));
 
         assertTrue(failure.getMessage().contains("MYSQL_PASSWORD 未配置"));
         assertTrue(failure.getMessage().contains("REDIS_PASSWORD 未配置"));
         assertTrue(failure.getMessage().contains("SMARTOPS_API_KEY_ENCRYPTION_KEY 未配置"));
+        assertTrue(failure.getMessage().contains("SMARTOPS_BOOTSTRAP_PASSWORD 未配置"));
     }
 
     @Test
     void productionRejectsKnownDefaultPasswords() {
         IllegalStateException mysqlDefault = assertThrows(IllegalStateException.class,
-                () -> SecurityAssertions.verifyDeploymentSecrets(true, "change-me-password", "strong-pass", "key"));
+                () -> SecurityAssertions.verifyDeploymentSecrets(
+                        true, "change-me-password", "strong-pass", "key", "bootstrap-strong-pass-0123"));
         assertTrue(mysqlDefault.getMessage().contains("已知默认口令"));
 
         IllegalStateException redisDefault = assertThrows(IllegalStateException.class,
-                () -> SecurityAssertions.verifyDeploymentSecrets(true, "strong-pass", "change-me-root-password", "key"));
+                () -> SecurityAssertions.verifyDeploymentSecrets(
+                        true, "strong-pass", "change-me-root-password", "key", "bootstrap-strong-pass-0123"));
         assertTrue(redisDefault.getMessage().contains("已知默认口令"));
+
+        // SEC-13/批次一：引导管理员口令不得沿用内建示例值
+        IllegalStateException bootstrapDefault = assertThrows(IllegalStateException.class,
+                () -> SecurityAssertions.verifyDeploymentSecrets(
+                        true, "strong-pass", "strong-pass", "key", "Admin@2026 Secure!"));
+        assertTrue(bootstrapDefault.getMessage().contains("SMARTOPS_BOOTSTRAP_PASSWORD 是已知默认口令"));
+    }
+
+    @Test
+    void productionRejectsShortBootstrapPassword() {
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                () -> SecurityAssertions.verifyDeploymentSecrets(
+                        true, "strong-mysql-pass", "strong-redis-pass", "key", "short"));
+        assertTrue(failure.getMessage().contains("SMARTOPS_BOOTSTRAP_PASSWORD 长度不足"));
     }
 
     @Test
     void productionAcceptsInjectedDeploymentSecrets() {
         assertDoesNotThrow(() -> SecurityAssertions.verifyDeploymentSecrets(
-                true, "injected-strong-mysql-pass", "injected-strong-redis-pass", "base64key"));
+                true, "injected-strong-mysql-pass", "injected-strong-redis-pass", "base64key",
+                "bootstrap-strong-pass-0123"));
     }
 
     @Test
     void nonProductionAllowsEmptyDeploymentPasswordsForLocalDev() {
-        assertDoesNotThrow(() -> SecurityAssertions.verifyDeploymentSecrets(false, "", "", ""));
+        assertDoesNotThrow(() -> SecurityAssertions.verifyDeploymentSecrets(false, "", "", "", ""));
     }
 }

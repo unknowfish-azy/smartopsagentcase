@@ -12,6 +12,11 @@ scrape_configs:
 
   - job_name: smartops-backend
     metrics_path: /actuator/prometheus
+    # 批次一 #27：指标端点不再匿名，需携带内部令牌抓取
+    # （凭据文件由部署侧挂载，内容等于后端 SMARTOPS_INTERNAL_TOKEN）。
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/smartops_internal_token
     static_configs:
       - targets: ['backend:8080']
 

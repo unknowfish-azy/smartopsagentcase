@@ -46,36 +46,52 @@ public final class SecurityAssertions {
         }
     }
 
-    /** SEC-13：已知默认/弱口令黑名单（compose 示例值与常见弱口令）。 */
+    /** SEC-13：已知默认/弱口令黑名单（compose 示例值、内建 bootstrap 兜底值与常见弱口令）。 */
     private static final List<String> KNOWN_DEFAULT_PASSWORDS = List.of(
-            "change-me-password", "change-me-root-password", "root", "password", "123456", "admin");
+            "change-me-password", "change-me-root-password", "root", "password", "123456", "admin",
+            "Admin@2026 Secure!");
 
     /**
-     * SEC-13：生产环境部署凭据断言——数据源/Redis 密码与附件加密 key 缺失或等于
-     * 已知默认值时拒绝启动。只读配置做判断，不改运行时行为。
+     * SEC-13：生产环境部署凭据断言——数据源/Redis 密码、附件加密 key 与初始管理员
+     * 引导口令缺失、过短或等于已知默认值时拒绝启动。只读配置做判断，不改运行时行为。
      */
     public static void verifyDeploymentSecrets(boolean production,
                                                String datasourcePassword,
                                                String redisPassword,
-                                               String apiKeyEncryptionKey) {
+                                               String apiKeyEncryptionKey,
+                                               String bootstrapPassword) {
         if (!production) return;
         List<String> failures = new ArrayList<>();
         if (isBlank(datasourcePassword)) {
             failures.add("MYSQL_PASSWORD 未配置（生产数据源不允许空密码）");
-        } else if (KNOWN_DEFAULT_PASSWORDS.contains(datasourcePassword.trim())) {
+        } else if (isKnownDefault(datasourcePassword)) {
             failures.add("MYSQL_PASSWORD 是已知默认口令（change-me/常见弱口令），必须替换");
         }
         if (isBlank(redisPassword)) {
             failures.add("REDIS_PASSWORD 未配置（生产 Redis 必须启用 requirepass）");
-        } else if (KNOWN_DEFAULT_PASSWORDS.contains(redisPassword.trim())) {
+        } else if (isKnownDefault(redisPassword)) {
             failures.add("REDIS_PASSWORD 是已知默认口令（change-me/常见弱口令），必须替换");
         }
         if (isBlank(apiKeyEncryptionKey)) {
             failures.add("SMARTOPS_API_KEY_ENCRYPTION_KEY 未配置（附件/凭据加密 key 不允许为空）");
         }
+        if (isBlank(bootstrapPassword)) {
+            failures.add("SMARTOPS_BOOTSTRAP_PASSWORD 未配置（首个管理员必须显式注入，且首次登录强制改密）");
+        } else if (bootstrapPassword.trim().length() < MIN_SECRET_LENGTH) {
+            failures.add("SMARTOPS_BOOTSTRAP_PASSWORD 长度不足 " + MIN_SECRET_LENGTH + " 字符");
+        } else if (isKnownDefault(bootstrapPassword)) {
+            failures.add("SMARTOPS_BOOTSTRAP_PASSWORD 是已知默认口令（Admin@2026 Secure! 等），必须替换");
+        }
         if (!failures.isEmpty()) {
             throw new IllegalStateException("SECURITY_ASSERTION_FAILED: " + String.join("; ", failures));
         }
+    }
+
+    private static boolean isKnownDefault(String value) {
+        String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        return KNOWN_DEFAULT_PASSWORDS.stream()
+                .map(defaultValue -> defaultValue.toLowerCase(Locale.ROOT))
+                .anyMatch(normalized::equals);
     }
 
     /**

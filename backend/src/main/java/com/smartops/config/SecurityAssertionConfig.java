@@ -30,7 +30,8 @@ public class SecurityAssertionConfig {
             @Value("${spring.data.redis.password:}") String redisPassword,
             // 属性实际定义在 application.yml 的 smartops.security 下（AesGcmCryptoService 读取同一路径）；
             // 写成 smartops.attachments.* 时该属性永远为空，生产启动会被误判为"密钥未配置"而拒绝。
-            @Value("${smartops.security.api-key-encryption-key:}") String apiKeyEncryptionKey) {
+            @Value("${smartops.security.api-key-encryption-key:}") String apiKeyEncryptionKey,
+            @Value("${smartops.bootstrap.password:}") String bootstrapPassword) {
         return arguments -> {
             List<String> profiles = activeProfiles == null || activeProfiles.isBlank()
                     ? List.of()
@@ -38,7 +39,7 @@ public class SecurityAssertionConfig {
             boolean production = SecurityAssertions.isProduction(profiles, explicitProduction);
             SecurityAssertions.verify(production, internalBypass, internalToken, chatRunTokenSecret);
             SecurityAssertions.verifyDeploymentSecrets(
-                    production, datasourcePassword, redisPassword, apiKeyEncryptionKey);
+                    production, datasourcePassword, redisPassword, apiKeyEncryptionKey, bootstrapPassword);
             if (!production && internalBypass) {
                 log.warn("SECURITY: internal-bypass=true 仅允许本地调试；生产环境会拒绝启动");
             }

@@ -67,11 +67,11 @@ logging:
     root: INFO
     com.smartops: DEBUG
 
-# 本地开发专用 AES-GCM 加密密钥（32 字节 Base64，勿用于生产）
+# 加密密钥与内部令牌均无内建默认值，统一走环境变量注入（批次一 #10）
 smartops:
   security:
-    api-key-encryption-key: ${SMARTOPS_API_KEY_ENCRYPTION_KEY:U21hcnRPcHNBZ2VudFRlc3RLZXkhMjAyNiFhYmNkZWY=}
-    internal-token: ${SMARTOPS_INTERNAL_TOKEN:h2-local-internal-token}
+    api-key-encryption-key: ${SMARTOPS_API_KEY_ENCRYPTION_KEY:}
+    internal-token: ${SMARTOPS_INTERNAL_TOKEN:}
     internal-bypass: false
     human-verification:
       enabled: false

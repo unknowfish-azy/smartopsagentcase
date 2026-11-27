@@ -71,6 +71,9 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 smartops:
+  # 模型网关（批次一 #28）：每把 key 每分钟调用上限（含被拒请求），0=关闭（不推荐）
+  gateway:
+    rate-limit-rpm: ${SMARTOPS_GATEWAY_RATE_LIMIT_RPM:60}
   knowledge:
     storage-root: ${SMARTOPS_KNOWLEDGE_STORAGE_ROOT:data/knowledge}
     radar:
@@ -228,7 +231,8 @@ smartops:
         timeout-ms: ${SMARTOPS_ROBOT_REPLAN_OLLAMA_TIMEOUT_MS:5000}
   bootstrap:
     username: ${SMARTOPS_BOOTSTRAP_USERNAME:admin}
-    password: ${SMARTOPS_BOOTSTRAP_PASSWORD:Admin@2026Secure!}
+    # 不再内建默认值：生产由 SecurityAssertions 拒绝空/弱/已知默认；留空则不创建首个管理员
+    password: ${SMARTOPS_BOOTSTRAP_PASSWORD:}
   harbor:
     url: ${SMARTOPS_HARBOR_URL:}
     username: ${SMARTOPS_HARBOR_USERNAME:}
@@ -259,6 +263,11 @@ smartops:
       sweep-interval-ms: ${SMARTOPS_SSH_SWEEP_INTERVAL_MS:60000}
       sweep-initial-delay-ms: ${SMARTOPS_SSH_SWEEP_DELAY_MS:30000}
       output-limit-bytes: ${SMARTOPS_SSH_OUTPUT_LIMIT_BYTES:1048576}
+      # 目标白名单：逗号分隔的主机或 CIDR，可带端口（如 192.168.44.145:22,10.0.0.0/8）。
+      # 生产必填，未配置即拒绝所有 SSH/SFTP 出站连接（批次一 #3）。
+      allowed-targets: ${SMARTOPS_SSH_ALLOWED_TARGETS:}
+      # 私钥受控目录：identityPath 只能指向该目录内的文件；留空时生产拒绝使用私钥。
+      identity-root: ${SMARTOPS_SSH_IDENTITY_ROOT:}
     # 多机批量：并发上限与整单超时（复用 Runbook 目标子任务）
     multi-exec:
       max-parallel: ${SMARTOPS_MULTI_EXEC_MAX_PARALLEL:10}

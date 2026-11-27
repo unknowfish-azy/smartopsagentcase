@@ -165,7 +165,7 @@ class ModelSemanticCacheServiceTest {
         var cache = mock(ModelSemanticCacheService.class);
         var router = mock(ModelRouterService.class);
         var gateway = new ModelGatewayService(jdbc, connections, cache, router,
-                mock(com.smartops.service.modelconfig.ModelConfigRegistry.class));
+                mock(com.smartops.service.modelconfig.ModelConfigRegistry.class), 60L);
         var principal = new ModelGatewayService.GatewayPrincipal(4L, 9L, "PERSONAL");
         var request = new ModelInvocationRequest();
         request.setPrompt("same question");

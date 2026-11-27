@@ -11,7 +11,8 @@ public class UserAccountConfig {
     @Bean
     ApplicationRunner bootstrapAdministrator(UserAccountService accounts,
             @Value("${smartops.bootstrap.username:admin}") String username,
-            @Value("${smartops.bootstrap.password:Admin@2026Secure!}") String password) {
+            // 不设代码内默认值：未注入引导口令时 UserAccountService.bootstrap 直接跳过建号（fail-closed）
+            @Value("${smartops.bootstrap.password:}") String password) {
         return arguments -> accounts.bootstrap(username, password);
     }
 }

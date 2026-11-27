@@ -28,7 +28,7 @@ import java.io.IOException;
 
 @Configuration
 public class SecurityConfig {
-    private static final String[] INTERNAL = { "/api/model-connections/*/runtime", "/api/model-connections/*/invoke", "/api/inspector/check", "/api/inspector/verify", "/api/inspector/replan", "/api/internal/recovery/**", "/api/internal/memory/**", "/api/internal/agent-ledger/**", "/api/internal/agent/trigger", "/api/sentinel/alerts" };
+    private static final String[] INTERNAL = { "/api/model-connections/*/runtime", "/api/model-connections/*/invoke", "/api/inspector/check", "/api/inspector/verify", "/api/inspector/replan", "/api/internal/recovery/**", "/api/internal/memory/**", "/api/internal/agent-ledger/**", "/api/internal/agent/trigger", "/api/sentinel/alerts", "/actuator/prometheus" };
     private final InternalTokenAuthenticationFilter internal;
     public SecurityConfig(InternalTokenAuthenticationFilter internal) { this.internal = internal; }
 
@@ -51,9 +51,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/favicon.ico", "/actuator/health", "/error", "/api/auth/session", "/api/auth/login", "/api/auth/register", "/api/auth/registration",
                                 "/api/auth/human-verification", "/api/auth/human-verification/verify").permitAll()
-                        // PERF-08：抓取与探针端点只放行 GET，且仅这三条白名单。
-                        // /actuator/prometheus 建议由部署侧网络策略限制为内网可访问。
-                        .requestMatchers(HttpMethod.GET, "/actuator/prometheus",
+                        // 探针只放行 GET；prometheus 已移入 INTERNAL，必须携带
+                        // SMARTOPS_INTERNAL_TOKEN（Bearer）才能抓取（批次一 #27）。
+                        .requestMatchers(HttpMethod.GET,
                                 "/actuator/health/liveness", "/actuator/health/readiness").permitAll()
                         .requestMatchers(INTERNAL).permitAll()
                         // 巡检机器人蓝牙桥是无头进程，没有用户会话；鉴权由 handler 内的

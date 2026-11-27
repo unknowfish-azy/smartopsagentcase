@@ -18,6 +18,7 @@ public class OperationConnectionService {
     private final AesGcmCryptoService cryptoService;
     private final SshConnectionAdapter adapter;
     private final OperationConnectionCoordinator coordinator;
+    private final SshTargetPolicy targetPolicy;
 
     public ConnectionResult connect(Long userId, Long sessionId, HostKeyDecision decision) {
         HostKeyDecision effective = decision == null ? HostKeyDecision.NONE : decision;
@@ -35,6 +36,9 @@ public class OperationConnectionService {
         }
         OperationSession jumpSession = session.getJumpSessionId() == null ? null : sessionMapper.findById(session.getJumpSessionId(), userId);
         if (session.getJumpSessionId() != null && jumpSession == null) throw new BusinessException(404, "JUMP_SESSION_NOT_FOUND");
+        // 连接期二次收口：会话可能是策略生效前创建的，或库中被直接改写
+        targetPolicy.requireAllowedTarget(session.getHost(), session.getPort());
+        targetPolicy.requireAllowedIdentity(session.getIdentityPath());
         return adapter.connect(userId, session, secret, decision, jumpSession);
     }
 

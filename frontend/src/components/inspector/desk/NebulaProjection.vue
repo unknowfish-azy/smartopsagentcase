@@ -20,7 +20,10 @@
       <div v-if="emptyState" class="nebula-empty">{{ emptyState }}</div>
       <div v-else-if="errorState" class="nebula-error"><span>{{ errorState }}</span><button @click="$emit('retry')">重试</button></div>
       <div v-else-if="loadingState" class="nebula-empty">加载中…</div>
-      <div v-show="tip.visible" class="tip" :style="tip.style" v-html="tip.html"></div>
+      <div v-show="tip.visible" class="tip" :style="tip.style">
+        <b>{{ tip.title }}</b>
+        <span v-for="(row, i) in tip.rows" :key="i"><i>{{ row[0] }}</i><i>{{ row[1] }}</i></span>
+      </div>
     </div>
     <div class="nebula-foot">
       <span v-for="s in severities" :key="s.key"><i :style="{ background: s.color }"></i>{{ s.cn }}</span>
@@ -68,7 +71,7 @@ const emit = defineEmits(['select'])
 
 const canvasRef = ref(null)
 const wrapRef = ref(null)
-const tip = ref({ visible: false, html: '', style: {} })
+const tip = ref({ visible: false, title: '', rows: [], style: {} })
 const cap = ref(NEBULA_CAP)
 const downsampled = ref(false)
 
@@ -246,19 +249,22 @@ function onPointerMove(e) {
   const rect = canvasRef.value.getBoundingClientRect()
   const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top)
   hoverId = hit ? hit.p.id : null
-  if (!hit) { tip.value = { visible: false, html: '', style: {} }; requestFrame(); return }
+  if (!hit) { tip.value = { visible: false, title: '', rows: [], style: {} }; requestFrame(); return }
   const p = hit.p
   const source = props.events.find(ev => ev.id === p.id)
   const linked = source?.traceId ? runsByTrace.value.has(source.traceId) : false
-  const html = `<b>${p.id}</b>` +
-    `<span><i>时间</i><i>${fmtDateTime(p.at)}</i></span>` +
-    `<span><i>等级</i><i>${severityMeta(p.severity).cn}</i></span>` +
-    `<span><i>任务</i><i>${p.taskId}</i></span>` +
-    `<span><i>维度</i><i>${p.dimKey || '—'}</i></span>` +
-    `<span><i>关联</i><i>${linked ? '已关联 trace' : '未关联'}</i></span>`
+  // SEC/XSS：tooltip 一律走文本插值，禁止用 v-html 拼接接口字段（id/taskId/dimKey 可被污染）
+  const rows = [
+    ['时间', fmtDateTime(p.at)],
+    ['等级', severityMeta(p.severity).cn],
+    ['任务', p.taskId],
+    ['维度', p.dimKey || '—'],
+    ['关联', linked ? '已关联 trace' : '未关联'],
+  ]
   tip.value = {
     visible: true,
-    html,
+    title: p.id,
+    rows,
     style: { left: `${Math.min(rect.width - 110, Math.max(110, hit.x))}px`, top: `${Math.max(84, hit.y - 10)}px` }
   }
   requestFrame()
@@ -266,7 +272,7 @@ function onPointerMove(e) {
 
 function onPointerLeave() {
   hoverId = null
-  tip.value = { visible: false, html: '', style: {} }
+  tip.value = { visible: false, title: '', rows: [], style: {} }
   requestFrame()
 }
 
@@ -308,7 +314,7 @@ function stop() {
 
 watch([() => props.events, () => props.range, () => props.runs], () => {
   hoverId = null
-  tip.value = { visible: false, html: '', style: {} }
+  tip.value = { visible: false, title: '', rows: [], style: {} }
   requestFrame()
 })
 watch(() => props.selected, requestFrame)

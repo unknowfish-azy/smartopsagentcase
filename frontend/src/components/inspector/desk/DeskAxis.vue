@@ -9,7 +9,10 @@
       <div v-if="emptyState" class="axis-empty">{{ emptyState }}</div>
       <div v-else-if="errorState" class="axis-error"><span>{{ errorState }}</span><button @click="$emit('retry')">重试</button></div>
       <div v-else-if="loadingState" class="axis-empty">加载中…</div>
-      <div v-show="tip.visible" class="tip" :style="tip.style" v-html="tip.html"></div>
+      <div v-show="tip.visible" class="tip" :style="tip.style">
+        <b>{{ tip.title }}</b>
+        <span v-for="(row, i) in tip.rows" :key="i"><i>{{ row[0] }}</i><i>{{ row[1] }}</i></span>
+      </div>
     </div>
     <div class="axis-foot">
       <template v-if="view === 'events'">
@@ -65,7 +68,7 @@ const emit = defineEmits(['select', 'hover', 'retry'])
 
 const canvasRef = ref(null)
 const wrapRef = ref(null)
-const tip = ref({ visible: false, html: '', style: {} })
+const tip = ref({ visible: false, title: '', rows: [], style: {} })
 
 const severities = SEVERITIES
 const viewLabel = { events: '纠察', stats: '统计', runs: '运行' }[props.view]
@@ -359,9 +362,9 @@ function drawRuns(rect) {
 
 let hoverPos = null
 function drawHover(rect) {
-  if (!hoverPos) { tip.value = { visible: false, html: '', style: {} }; return }
+  if (!hoverPos) { tip.value = { visible: false, title: '', rows: [], style: {} }; return }
   const item = hitTest(hoverPos.x, hoverPos.y)
-  if (!item) { tip.value = { visible: false, html: '', style: {} }; return }
+  if (!item) { tip.value = { visible: false, title: '', rows: [], style: {} }; return }
 
   const x = xOf(item.at, rect)
   ctx.strokeStyle = 'rgba(232,242,247,.3)'
@@ -373,15 +376,22 @@ function drawHover(rect) {
   ctx.setLineDash([])
 
   const isRun = item.__type === 'run'
-  const html = `<b>${item.id}</b>` +
-    `<span><i>时间</i><i>${fmtDateTime(item.at)}</i></span>` +
-    (isRun
-      ? `<span><i>工具</i><i>${toolMeta(item.tool).cn}</i></span><span><i>结果</i><i>${item.status}${item.exitCode == null ? '' : ` · exit ${item.exitCode}`}</i></span><span><i>时长</i><i>${Number(item.duration).toFixed(1)}s</i></span>`
-      : `<span><i>等级</i><i>${severityMeta(item.severity).cn}</i></span><span><i>任务</i><i>${item.taskId}</i></span><span><i>目标</i><i>${item.target || '—'}</i></span>`) +
-    `<span><i>关联</i><i>${item.traceId ? '已关联 trace' : '未关联'}</i></span>`
+  // SEC/XSS：仅使用文本插值渲染 tooltip，禁止拼接 HTML。
+  const rows = [['时间', fmtDateTime(item.at)]]
+  if (isRun) {
+    rows.push(['工具', toolMeta(item.tool).cn])
+    rows.push(['结果', item.status + (item.exitCode == null ? '' : ` · exit ${item.exitCode}`)])
+    rows.push(['时长', `${Number(item.duration).toFixed(1)}s`])
+  } else {
+    rows.push(['等级', severityMeta(item.severity).cn])
+    rows.push(['任务', item.taskId])
+    rows.push(['目标', item.target || '—'])
+  }
+  rows.push(['关联', item.traceId ? '已关联 trace' : '未关联'])
   tip.value = {
     visible: true,
-    html,
+    title: item.id,
+    rows,
     style: { left: `${Math.min(rect.width - 110, Math.max(110, x))}px`, top: `${Math.max(84, hoverPos.y - 10)}px` }
   }
 }
