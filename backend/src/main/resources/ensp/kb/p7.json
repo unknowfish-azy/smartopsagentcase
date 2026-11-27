@@ -1,0 +1,79 @@
+{
+  "id": "m7",
+  "order": 7,
+  "code": "项目七",
+  "title": "无线网络技术的配置",
+  "objectives": [
+    "掌握 WLAN 基本概念、频段与安全机制",
+    "掌握 AC + Fit AP 架构与 CAPWAP 隧道",
+    "掌握 VAP/SSID/安全模板的配置方法",
+    "能够完成 AP 上线与射频调优"
+  ],
+  "knowledgePoints": [
+    {
+      "id": "kp7-01", "title": "WLAN 标准与频段", "category": "concept",
+      "summary": "WLAN 遵循 IEEE 802.11 系列，常用 2.4GHz(1-13 信道) 与 5GHz 频段。",
+      "detail": "2.4G 干扰多但穿墙好；5G 速率高、信道宽但覆盖小。AP 双射频(radio 0=2.4G, radio 1=5G)可分别规划信道与功率。国家码(country-code)决定可用信道与发射功率上限。",
+      "keyCommands": ["country-code cn", "channel 20mhz", "eirp"],
+      "experiments": ["e7-01"], "acceptance": "能规划不干扰信道并说明双频差异。"
+    },
+    {
+      "id": "kp7-02", "title": "Fat AP 与 Fit AP（AC+AP）", "category": "technology",
+      "summary": "Fit AP 仅保留转发与射频，管理由 AC 集中完成，需建立 CAPWAP 隧道。",
+      "detail": "AP 通过 DHCP Option 43 / 广播发现 AC，建立 CAPWAP 控制隧道与数据隧道；AC 下发配置、认证与漫游策略。适合中小规模集中组网；Fat AP 独立管理，适合家庭/极小规模。",
+      "keyCommands": ["capwap source interface", "ap auth-mode mac-auth", "display ap all"],
+      "experiments": ["e7-01", "e7-02"], "acceptance": "能描述 AP 上线的完整流程。"
+    },
+    {
+      "id": "kp7-03", "title": "WLAN 安全机制", "category": "security",
+      "summary": "安全从 WEP→WPA→WPA2 演进，企业级可用 802.1X，中小用 PSK。",
+      "detail": "WPA/WPA2-PSK 使用预共享密钥 + AES/TKIP 加密；pass-phrase 长度至少 8 位；生产推荐 WPA2-AES。开放认证(open)仅用于访客，需配合 Portal/强制门户。",
+      "keyCommands": ["security-profile name", "security wpa-wpa2 psk pass-phrase", "ssid-profile name"],
+      "experiments": ["e7-01"], "acceptance": "能对比 PSK 与 802.1X 的部署成本与安全性。"
+    },
+    {
+      "id": "kp7-04", "title": "VAP 模板与业务下发", "category": "command",
+      "summary": "VAP（Virtual Access Point）将 SSID 模板与安全模板绑定到指定 VLAN，并下发到 AP 射频。",
+      "detail": "vap-profile 中 forward-mode 可选 direct-forward(直接转发) 或 tunnel-forward(隧道转发)；service-vlan vlan-id 决定终端业务 VLAN；通过 ap-group 下 vap-profile ... radio 0/1 在对应射频生效。",
+      "keyCommands": ["vap-profile name", "forward-mode direct-forward", "service-vlan vlan-id", "vap-profile wlan-net wlan 1 radio 0", "display vap ssid"],
+      "experiments": ["e7-01", "e7-02"], "acceptance": "能通过 display vap/station 验证业务下发结果。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e7-01", "moduleId": "m7", "code": "7.1", "title": "AC + Fit AP 基本配置（WLAN 基本业务）",
+      "difficulty": "进阶", "durationMin": 70, "topologyId": "p7-t1--1a6c",
+      "goals": ["配置 AC 互通与 DHCP", "创建 AP 组并离线导入 AP", "下发 SSID 与安全模板", "验证终端接入"],
+      "devices": [{ "name": "AC", "model": "AC6605", "role": "无线控制器" }, { "name": "SW1", "model": "S5700", "role": "接入交换机" }, { "name": "AP1", "model": "AP6050DN", "role": "Fit AP" }, { "name": "PC1", "model": "PC", "role": "无线终端" }],
+      "steps": [
+        { "seq": 1, "title": "AC 接口与 Trunk", "device": "AC", "mode": "system", "hint": "", "commands": ["sysname AC", "vlan batch 10 99", "interface GigabitEthernet 0/0/1", "port link-type trunk", "port trunk allow-pass vlan 10 99", "quit"], "expect": "" },
+        { "seq": 2, "title": "DHCP 地址池", "device": "AC", "mode": "system", "hint": "AP 管理 99，终端 10。", "commands": ["dhcp enable", "interface Vlanif 99", "ip address 10.0.99.1 24", "dhcp select interface", "quit", "interface Vlanif 10", "ip address 10.0.10.1 24", "dhcp select interface", "dhcp server excluded-ip-address 10.0.10.2", "dhcp server dns-list 10.10.10.10", "quit"], "expect": "" },
+        { "seq": 3, "title": "AP 上线准备", "device": "AC", "mode": "system", "hint": "设置源接口后进入 wlan 视图。", "commands": ["capwap source interface Vlanif 99", "wlan", "regulatory-domain-profile name default", "country-code cn", "quit", "ap-group name ap-group1", "regulatory-domain-profile default", "quit", "ap auth-mode mac-auth", "ap-id 0 ap-mac 00e0-fc97-3090", "ap-name office_1", "ap-group ap-group1", "quit"], "expect": "" },
+        { "seq": 4, "title": "安全与 SSID 模板", "device": "AC", "mode": "system", "hint": "", "commands": ["security-profile name wlan-net", "security wpa-wpa2 psk pass-phrase a1234567 aes", "quit", "ssid-profile name wlan-net", "ssid wlan-net", "quit"], "expect": "" },
+        { "seq": 5, "title": "VAP 模板并下发", "device": "AC", "mode": "system", "hint": "", "commands": ["vap-profile name wlan-net", "forward-mode direct-forward", "service-vlan vlan-id 10", "security-profile wlan-net", "ssid-profile wlan-net", "quit", "ap-group name ap-group1", "vap-profile wlan-net wlan 1 radio 0", "vap-profile wlan-net wlan 1 radio 1", "quit"], "expect": "" },
+        { "seq": 6, "title": "AP 射频调优", "device": "AC", "mode": "system", "hint": "2.4G 选 1/6/11 互不干扰。", "commands": ["ap-id 0", "radio 0", "channel 20mhz 6", "eirp 127", "quit", "radio 1", "channel 20mhz 149", "eirp 127", "quit", "quit"], "expect": "" },
+        { "seq": 7, "title": "验证 AP 与用户", "device": "AC", "mode": "user", "hint": "", "commands": ["display ap all", "display vap ssid wlan-net", "display station ssid wlan-net"], "expect": "AP state=nor，STA 获取 10.0.10.x。" }
+      ],
+      "verification": [{ "command": "display ap all", "expect": "State nor" }, { "command": "display station ssid wlan-net", "expect": "存在已关联 STA" }],
+      "commonErrors": ["未配 capwap source interface", "AP 国家码不匹配导致无法上线", "Trunk 未放行管理 VLAN", "pass-phrase 少于 8 位"],
+      "references": ["教材项目七 任务1", "referenceAnswers:p7-t1-ac-3098"]
+    },
+    {
+      "id": "e7-02", "moduleId": "m7", "code": "7.2", "title": "多业务 WLAN 与三层网关互联",
+      "difficulty": "进阶", "durationMin": 65, "topologyId": "p7-t2--3187",
+      "goals": ["多个 SSID 对应不同 VLAN", "单臂路由实现业务互访", "验证终端移动性/接入"],
+      "devices": [{ "name": "AC", "model": "AC6605", "role": "无线控制器" }, { "name": "SW1", "model": "S5700", "role": "接入交换机" }, { "name": "R1", "model": "AR2220", "role": "三层网关" }, { "name": "AP1", "model": "AP6050DN", "role": "Fit AP" }],
+      "steps": [
+        { "seq": 1, "title": "规划与 VLAN", "device": "SW1", "mode": "system", "hint": "101 办公、102 访客、99 管理。", "commands": ["vlan batch 99 101 102", "interface GigabitEthernet 0/0/1", "port link-type trunk", "port trunk allow-pass vlan 99 101 102", "quit"], "expect": "" },
+        { "seq": 2, "title": "AC 与 AP 上线", "device": "AC", "mode": "system", "hint": "", "commands": ["vlan batch 99 101 102", "capwap source interface Vlanif 99", "wlan", "ap auth-mode mac-auth", "ap-id 0 ap-mac 00e0-fc97-3090", "ap-name office_1", "ap-group ap-group1", "quit"], "expect": "" },
+        { "seq": 3, "title": "双 SSID 模板", "device": "AC", "mode": "system", "hint": "办公走 101、访客走 102。", "commands": ["security-profile name office", "security wpa-wpa2 psk pass-phrase office@123 aes", "quit", "ssid-profile name office", "ssid office", "quit", "vap-profile name office", "service-vlan vlan-id 101", "security-profile office", "ssid-profile office", "quit", "security-profile name guest", "security open", "quit", "ssid-profile name guest", "ssid guest", "quit", "vap-profile name guest", "service-vlan vlan-id 102", "security-profile guest", "ssid-profile guest", "quit"], "expect": "" },
+        { "seq": 4, "title": "下发 VAP", "device": "AC", "mode": "system", "hint": "", "commands": ["ap-group name ap-group1", "vap-profile office wlan 1 radio 0", "vap-profile guest wlan 2 radio 0", "quit"], "expect": "" },
+        { "seq": 5, "title": "单臂路由网关", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/0.101", "dot1q termination vid 101", "ip address 10.0.101.2 24", "arp broadcast enable", "undo shutdown", "quit", "interface GigabitEthernet 0/0/0.102", "dot1q termination vid 102", "ip address 10.0.102.2 24", "arp broadcast enable", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 6, "title": "验证接入", "device": "PC1", "mode": "user", "hint": "", "commands": ["display vap ssid office", "ping 10.0.101.2"], "expect": "STA 关联并获得地址。" }
+      ],
+      "verification": [{ "command": "display vap ssid office", "expect": "状态 ON" }, { "command": "display station all", "expect": "STA 在线" }],
+      "commonErrors": ["VLAN 未透传导致 AP 拿不到地址", "两个 VAP 绑错 service-vlan", "访客 SSID 误开 WPA"],
+      "references": ["教材项目七 任务2", "referenceAnswers:p7-t2-ac-e00c,p7-t2-r1-bd1b"]
+    }
+  ]
+}

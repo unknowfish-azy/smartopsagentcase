@@ -1,0 +1,20 @@
+<Huawei>un ter mo
+Info: Current terminal monitor is off.
+<Huawei>system-view 
+Enter system view, return user view with Ctrl+Z.
+[Huawei]sysname SW1
+[SW1]vl ba 10 99
+Info: This operation may take a few seconds. Please wait for a moment...done.
+[SW1]interface g0/0/1
+[SW1-GigabitEthernet0/0/1]port link-type trunk
+[SW1-GigabitEthernet0/0/1]port trunk pvid vlan 99
+[SW1-GigabitEthernet0/0/1]port trunk allow-pass vlan 10 99
+[SW1-GigabitEthernet0/0/1]quit
+[SW1]interface g0/0/2
+[SW1-GigabitEthernet0/0/2]port link-type trunk
+[SW1-GigabitEthernet0/0/2]port trunk pvid vlan 99
+[SW1-GigabitEthernet0/0/2]port trunk allow-pass vlan 10 99
+[SW1-GigabitEthernet0/0/2]quit
+[SW1]interface g0/0/3
+[SW1-GigabitEthernet0/0/3]port link-type trunk
+[SW1-GigabitEthernet0/0/3]port trunk allow-pass vlan 10 99

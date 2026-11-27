@@ -1,0 +1,26 @@
+{
+  "schema": "smartops.ensp.kb/v1",
+  "textbook": {
+    "title": "网络设备安装与调试（华为 eNSP 模拟器）（第二版）",
+    "course": "HCNA 网络技术",
+    "devicePlatform": "Huawei VRP / eNSP V100R003C00SPC100",
+    "audience": "职业院校网络技术专业学生 / HCNA 备考人员"
+  },
+  "categories": [
+    { "id": "concept", "label": "概念与原理" },
+    { "id": "command", "label": "命令与语法" },
+    { "id": "technology", "label": "技术机制" },
+    { "id": "security", "label": "安全与防护" },
+    { "id": "troubleshooting", "label": "排障与维护" }
+  ],
+  "modules": [
+    { "id": "m1", "order": 1, "code": "项目一", "title": "模拟器的使用与网络拓扑构建", "source": "kb/p1.json", "topologyIds": [] },
+    { "id": "m2", "order": 2, "code": "项目二", "title": "交换技术的配置", "source": "kb/p2.json", "topologyIds": ["p2-t1-2.1.1-9b7e", "p2-t1-2.1.2-2fc5", "p2-t1-2.1.4-telnet-51bd", "p2-t1-2.1.4-telnet-0249", "p2-t2-2.2.1-92d5", "p2-t2-2.2.2-e8c3", "p2-t2-2.3.3-abb1", "p2-t3-2.3.1-4c2a", "p2-t3-stp-5e17", "p2-t3-rstp-8494", "p2-t3-2.3.4-5516", "p2-t3-2.3.5-4b94"] },
+    { "id": "m3", "order": 3, "code": "项目三", "title": "路由技术的配置", "source": "kb/p3.json", "topologyIds": ["p3-t1-3.1-f1b8", "p3-t2-3.2-f6d7", "p3-t3-3.3-7e6c", "p3-t3-3.3-f9e9", "p3-t3-3.3-c2b3", "p3-t4-3.4-8082", "p3-t4-3.4-c801", "p3-t5-3.5-733e"] },
+    { "id": "m4", "order": 4, "code": "项目四", "title": "路由协议的配置", "source": "kb/p4.json", "topologyIds": ["p4-t1-4.1-2e28", "p4-t2-4.2-eb38", "p4-t3-4.3-a51e", "p4-t4-4.4-8014"] },
+    { "id": "m5", "order": 5, "code": "项目五", "title": "网络安全技术的配置", "source": "kb/p5.json", "topologyIds": ["p5-t1-5.1-ca62", "p5-t2-5.2.1-614a", "p5-t2-5.2.2-6ace", "p5-t3-5.3.1-9712", "p5-t3-5.3.2-0d19"] },
+    { "id": "m6", "order": 6, "code": "项目六", "title": "广域网技术的配置", "source": "kb/p6.json", "topologyIds": ["p6-t1-hdlc-616f", "p6-t1-ppp-bba8", "p6-t2-ppp-d606", "p6-t2-ppp-6a53"] },
+    { "id": "m7", "order": 7, "code": "项目七", "title": "无线网络技术的配置", "source": "kb/p7.json", "topologyIds": ["p7-t1--1a6c", "p7-t2--3187"] },
+    { "id": "m8", "order": 8, "code": "项目八", "title": "综合实训", "source": "kb/p8.json", "topologyIds": ["p8-t1-8.1-8489", "p8-t2-8.2-1cae", "p8-t3-8.3-7896"] }
+  ]
+}

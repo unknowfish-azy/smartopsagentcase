@@ -1,0 +1,57 @@
+<Huawei>un ter mo
+Info: Current terminal monitor is off.
+<Huawei>sy
+Enter system view, return user view with Ctrl+Z.
+[Huawei]sy SW1
+[SW1]vl ba 10 101 102 99
+Info: This operation may take a few seconds. Please wait for a moment...done.
+[SW1]int e0/0/1
+[SW1-Ethernet0/0/1]po link-tu tr
+                   ^
+Error:Ambiguous command found at '^' position.
+[SW1-Ethernet0/0/1]po link-ty tr
+[SW1-Ethernet0/0/1]po tr allow-pa vl 10 101 102
+[SW1-Ethernet0/0/1]int g0/0/1
+[SW1-GigabitEthernet0/0/1]po link-ty tr
+[SW1-GigabitEthernet0/0/1]po tr allow-pa vl 99 101 102
+[SW1-GigabitEthernet0/0/1]int g0/0/2
+[SW1-GigabitEthernet0/0/2]po link-ty tr
+[SW1-GigabitEthernet0/0/2]po tr allow-pa 101 102
+                          ^
+Error:Ambiguous command found at '^' position.
+[SW1-GigabitEthernet0/0/2]po tr allow-pa vl 101 102
+[SW1-GigabitEthernet0/0/2]qu
+[SW1]int vl 10
+[SW1-Vlanif10]ip add 10.0.10.1 24
+[SW1-Vlanif10]int vl 101
+[SW1-Vlanif101]ipa dd 10.0.101.1 24
+               ^
+Error: Unrecognized command found at '^' position.
+[SW1-Vlanif101]int vl 101
+[SW1-Vlanif101]ip add 10.0.101.1 24
+[SW1-Vlanif101]int vl 102
+[SW1-Vlanif102]ip add 10.0.102.2 24
+[SW1-Vlanif102]int vl 00
+                   ^
+Error: Unrecognized command found at '^' position.
+[SW1-Vlanif102]int vl 99
+[SW1-Vlanif99]ip add 10.0.99.1 24
+[SW1-Vlanif99]qu
+[SW1]qu
+[SW1]interface Vlanif 10
+[SW1-Vlanif10]dhcp sel	
+[SW1-Vlanif10]dhcp select re	
+[SW1-Vlanif10]dhcp select relay 
+[SW1-Vlanif10]dhcp re	
+[SW1-Vlanif10]dhcp relay sr	
+[SW1-Vlanif10]dhcp relay ser	
+[SW1-Vlanif10]dhcp relay server-i	
+[SW1-Vlanif10]dhcp relay server-ip 10.0.99.2
+[SW1-Vlanif10]qu
+[SW1]interface Vlanif 101
+[SW1-Vlanif101]dhcp select relay
+[SW1-Vlanif101]dhcp relay server-ip 10.0.99.2
+[SW1-Vlanif101]interface Vlanif 102
+[SW1-Vlanif102]dhcp select relay
+[SW1-Vlanif102]dhcp relay server-ip 10.0.99.2
+[SW1-Vlanif102]quit

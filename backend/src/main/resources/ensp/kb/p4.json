@@ -1,0 +1,115 @@
+{
+  "id": "m4",
+  "order": 4,
+  "code": "项目四",
+  "title": "路由协议的配置",
+  "objectives": [
+    "掌握静态路由、缺省路由与浮动静态路由",
+    "掌握 RIPv2 的配置、版本与汇总控制",
+    "掌握 OSPF 单区域/多区域配置与 Router ID",
+    "能够对比距离矢量与链路状态协议差异"
+  ],
+  "knowledgePoints": [
+    {
+      "id": "kp4-01", "title": "静态路由与最长匹配", "category": "command",
+      "summary": "静态路由手工指定下一跳或出接口，preference 默认 60，用于出口与边界网络。",
+      "detail": "ip route-static 目的 掩码 {下一跳 | 出接口}；广播型出接口需指定下一跳而非仅出接口。display ip routing-table 中 Proto Static。静态路由不会随拓扑变化自动收敛，需人工维护。",
+      "keyCommands": ["ip route-static", "display ip routing-table"],
+      "experiments": ["e4-01"], "acceptance": "能为三台路由器两两互联配置完整静态路由。"
+    },
+    {
+      "id": "kp4-02", "title": "缺省路由与浮动静态路由", "category": "technology",
+      "summary": "缺省路由 0.0.0.0/0 作为兜底；浮动静态通过调高 preference 形成备份路径。",
+      "detail": "主链路 preference 60，备份 preference 80（越大越不优先）；仅当主路由失效时备份才进入路由表。适用于双出口/双链路的场景，比动态协议更简单可控。",
+      "keyCommands": ["ip route-static 0.0.0.0 0.0.0.0", "preference"],
+      "experiments": ["e4-02"], "acceptance": "能设计主备链路并验证切换时延与条件。"
+    },
+    {
+      "id": "kp4-03", "title": "RIP 原理与 RIPv2 改进", "category": "technology",
+      "summary": "RIP 是距离矢量协议，以跳数为度量，最大 15 跳；RIPv2 支持 VLSM 与组播更新。",
+      "detail": "RIPv1 广播 255.255.255.255 且不支持 VLSM；RIPv2 组播 224.0.0.9 并携带掩码。version 2 + undo summary 才能精确发布子网；network 宣告主类网段；peer 用于 NBMA 单播。收敛慢（180s 超时），适合小型网络。",
+      "keyCommands": ["rip 1", "version 2", "undo summary", "network", "peer", "display rip 1 route"],
+      "experiments": ["e4-03"], "acceptance": "能解释 RIPv2 相对 v1 的四点改进。"
+    },
+    {
+      "id": "kp4-04", "title": "OSPF 邻接关系与区域设计", "category": "technology",
+      "summary": "OSPF 为链路状态协议，通过 LSA 同步 LSDB，SPF 算法计算最短路径树。",
+      "detail": "Router ID 选取规则：手动 > Loopback 最大 > 物理口最大；区域 0 为骨干，非骨干须与骨干相连。邻接经历 Down/Init/2-Way/Exstart/Exchange/Loading/Full。cost=参考带宽/接口带宽。Hello 间隔与 Dead 间隔必须一致方可建邻。",
+      "keyCommands": ["ospf 1 router-id", "area 0", "network", "display ospf peer brief", "display ip routing-table protocol ospf"],
+      "experiments": ["e4-04"], "acceptance": "能分析邻居无法 Full 的常见原因。"
+    },
+    {
+      "id": "kp4-05", "title": "路由引入与协议选型", "category": "troubleshooting",
+      "summary": "多协议共存时需 import-route 引入；选型考虑收敛速度、规模与运维复杂度。",
+      "detail": "静态适合边界/出口；RIP 适合小型扁平网络；OSPF 适合中大型分层网络。引入外部路由可能产生次优路径与环路，应配合 filter-policy / route-policy。",
+      "keyCommands": ["import-route direct", "filter-policy", "display ip routing-table protocol"],
+      "experiments": ["e4-03", "e4-04"], "acceptance": "能依据拓扑规模给出协议选型建议。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e4-01", "moduleId": "m4", "code": "4.1", "title": "静态路由配置",
+      "difficulty": "基础", "durationMin": 55, "topologyId": "p4-t1-4.1-2e28",
+      "goals": ["为三台路由器配置互联地址", "配置到达各网段的静态路由", "验证端到端连通"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "路由器" }, { "name": "R2", "model": "AR2220", "role": "路由器" }, { "name": "R3", "model": "AR2220", "role": "路由器" }, { "name": "PC1", "model": "PC", "role": "终端" }, { "name": "PC2", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "R1/R2 互联", "device": "R1", "mode": "system", "hint": "R1 GE0/0/1=10.0.0.1/30", "commands": ["interface GigabitEthernet 0/0/1", "ip address 10.0.0.1 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "R2 两端地址", "device": "R2", "mode": "system", "hint": "GE0/0/1=10.0.0.2/30, GE0/0/2=20.0.0.1/30", "commands": ["interface GigabitEthernet 0/0/1", "ip address 10.0.0.2 30", "undo shutdown", "quit", "interface GigabitEthernet 0/0/2", "ip address 20.0.0.1 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2-R3 互联", "device": "R3", "mode": "system", "hint": "R3 GE0/0/1=20.0.0.2/30", "commands": ["interface GigabitEthernet 0/0/1", "ip address 20.0.0.2 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "配置 R1 静态路由", "device": "R1", "mode": "system", "hint": "目的 192.168.2.0/24 经 R2", "commands": ["ip route-static 192.168.2.0 24 10.0.0.2"], "expect": "" },
+        { "seq": 5, "title": "配置 R3 静态路由", "device": "R3", "mode": "system", "hint": "回程路由不可漏", "commands": ["ip route-static 192.168.1.0 24 20.0.0.1"], "expect": "" },
+        { "seq": 6, "title": "端到端验证", "device": "PC1", "mode": "user", "hint": "PC1=192.168.1.2/24 gw .1; PC2=192.168.2.2/24 gw .1", "commands": ["ping 192.168.2.2"], "expect": "通。" }
+      ],
+      "verification": [{ "command": "display ip routing-table", "expect": "存在两条静态路由" }],
+      "commonErrors": ["缺少回程路由", "下一跳写成本端接口地址", "掩码写成 255.255.255.0 之外的错误值"],
+      "references": ["教材项目四 任务1"]
+    },
+    {
+      "id": "e4-02", "moduleId": "m4", "code": "4.2", "title": "默认路由与浮动静态路由",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p4-t2-4.2-eb38",
+      "goals": ["配置缺省路由上网", "配置浮动静态实现备份", "验证主备切换"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "出口路由器" }, { "name": "R2", "model": "AR2220", "role": "备用出口" }, { "name": "ISP", "model": "PC", "role": "外网" }, { "name": "PC1", "model": "PC", "role": "内网终端" }],
+      "steps": [
+        { "seq": 1, "title": "基础连通", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.1.1 24", "undo shutdown", "quit", "interface GigabitEthernet 0/0/2", "ip address 10.0.0.1 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "R1 主用缺省路由", "device": "R1", "mode": "system", "hint": "", "commands": ["ip route-static 0.0.0.0 0.0.0.0 10.0.0.2"], "expect": "" },
+        { "seq": 3, "title": "R1 备用浮动路由", "device": "R1", "mode": "system", "hint": "preference 越大越优先级别低。", "commands": ["ip route-static 0.0.0.0 0.0.0.0 20.0.0.2 preference 80"], "expect": "备份不出现在路由表。" },
+        { "seq": 4, "title": "R2 出口配置", "device": "R2", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 20.0.0.2 30", "undo shutdown", "quit", "ip route-static 192.168.1.0 24 20.0.0.1"], "expect": "" },
+        { "seq": 5, "title": "切换验证", "device": "PC1", "mode": "user", "hint": "shutdown 主用接口后观察路由表。", "commands": ["ping 8.8.8.8"], "expect": "主断后备启用。" }
+      ],
+      "verification": [{ "command": "display ip routing-table 0.0.0.0", "expect": "主备路由优先级不同" }],
+      "commonErrors": ["preference 方向写反", "备用下一跳不可达", "未配置内网回程路由"],
+      "references": ["教材项目四 任务2"]
+    },
+    {
+      "id": "e4-03", "moduleId": "m4", "code": "4.3", "title": "动态路由 RIPv2 配置",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p4-t3-4.3-a51e",
+      "goals": ["创建 RIP 进程并宣告网段", "切换版本 v2 关闭自动汇总", "验证路由学习"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "路由器" }, { "name": "R2", "model": "AR2220", "role": "路由器" }, { "name": "PC1", "model": "PC", "role": "终端" }, { "name": "PC2", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "基础地址", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.1.1 24", "undo shutdown", "quit", "interface GigabitEthernet 0/0/2", "ip address 10.0.0.1 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "R1 启用 RIPv2", "device": "R1", "mode": "system", "hint": "version 2 与 undo summary 常成对出现。", "commands": ["rip 1", "version 2", "undo summary", "network 192.168.1.0", "network 10.0.0.0", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2 对称配置", "device": "R2", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.2.1 24", "undo shutdown", "quit", "interface GigabitEthernet 0/0/2", "ip address 10.0.0.2 30", "undo shutdown", "quit", "rip 1", "version 2", "undo summary", "network 192.168.2.0", "network 10.0.0.0", "quit"], "expect": "" },
+        { "seq": 4, "title": "验证学路", "device": "R1", "mode": "user", "hint": "", "commands": ["display ip routing-table protocol rip"], "expect": "学到 192.168.2.0/24。" }
+      ],
+      "verification": [{ "command": "display rip 1 route", "expect": "RIP 路由存在" }],
+      "commonErrors": ["未关自动汇总导致学到主类路由", "network 宣告了错误的网段", "两端版本不一致"],
+      "references": ["教材项目四 任务3"]
+    },
+    {
+      "id": "e4-04", "moduleId": "m4", "code": "4.4", "title": "动态路由 OSPF 配置",
+      "difficulty": "进阶", "durationMin": 65, "topologyId": "p4-t4-4.4-8014",
+      "goals": ["创建 OSPF 进程并设置 Router ID", "区域 0 网段宣告", "验证邻居与路由下发"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "ABR/核心" }, { "name": "R2", "model": "AR2220", "role": "区域0" }, { "name": "PC1", "model": "PC", "role": "终端" }, { "name": "PC2", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "R1 接口地址", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.1.1 24", "undo shutdown", "quit", "interface GigabitEthernet 0/0/2", "ip address 10.0.0.1 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "R1 OSPF 进程", "device": "R1", "mode": "system", "hint": "network 使用反掩码。", "commands": ["ospf 1 router-id 1.1.1.1", "area 0", "network 10.0.0.0 0.0.0.3", "network 192.168.1.0 0.0.0.255", "quit", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2 OSPF 进程", "device": "R2", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.2.1 24", "undo shutdown", "quit", "interface GigabitEthernet 0/0/2", "ip address 10.0.0.2 30", "undo shutdown", "quit", "ospf 1 router-id 2.2.2.2", "area 0", "network 10.0.0.0 0.0.0.3", "network 192.168.2.0 0.0.0.255", "quit", "quit"], "expect": "" },
+        { "seq": 4, "title": "验证邻居", "device": "R1", "mode": "user", "hint": "", "commands": ["display ospf peer brief"], "expect": "状态 Full。" },
+        { "seq": 5, "title": "验证 OSPF 路由", "device": "R1", "mode": "user", "hint": "", "commands": ["display ip routing-table protocol ospf"], "expect": "学到 192.168.2.0/24。" }
+      ],
+      "verification": [{ "command": "display ospf peer brief", "expect": "Full" }],
+      "commonErrors": ["反掩码写成子网掩码", "两端 Hello/Dead 不一致", "区域号不统一"],
+      "references": ["教材项目四 任务4"]
+    }
+  ]
+}

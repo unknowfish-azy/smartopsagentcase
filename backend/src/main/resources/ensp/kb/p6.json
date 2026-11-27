@@ -1,0 +1,101 @@
+{
+  "id": "m6",
+  "order": 6,
+  "code": "项目六",
+  "title": "广域网技术的配置",
+  "objectives": [
+    "掌握串行接口与 HDLC/PPP 封装配置",
+    "理解 DTE/DCE 与时钟频率的作用",
+    "掌握 PPP PAP/CHAP 认证的配置差异",
+    "能够排查广域链路常见故障"
+  ],
+  "knowledgePoints": [
+    {
+      "id": "kp6-01", "title": "HDLC 高级数据链路控制", "category": "technology",
+      "summary": "HDLC 是面向比特的同步链路层协议，华为串口默认封装，仅支持点对点。",
+      "detail": "两端 link-protocol 必须一致；HDLC 无认证、无网络层协商，配置简单但安全性弱，常用于厂商设备背靠背互联。DCE 端需 clock rate 提供时钟。display interface Serial 查看封装类型与状态。",
+      "keyCommands": ["link-protocol hdlc", "clock rate", "display interface Serial"],
+      "experiments": ["e6-01"], "acceptance": "能说明 HDLC 默认封装及无法互通时的排查点。"
+    },
+    {
+      "id": "kp6-02", "title": "PPP 协议栈与 LCP/NCP", "category": "technology",
+      "summary": "PPP 由 LCP（链路建立）、认证阶段、NCP（网络层参数协商，如 IPCP）组成。",
+      "detail": "LCP 负责建立/测试链路；通过 MRU、魔术字检测环路；NCP 中 IPCP 可为对端分配 IP（ppp ipcp ...）。PPP 支持 PAP 与 CHAP 认证，链路上可承载多种网络层协议，适合拨号与专线。",
+      "keyCommands": ["link-protocol ppp", "ppp negotiation", "display interface Serial", "display ppp all"],
+      "experiments": ["e6-02"], "acceptance": "能描述 PPP 三次握手到 NCP 完成的阶段。"
+    },
+    {
+      "id": "kp6-03", "title": "PAP 与 CHAP 认证对比", "category": "security",
+      "summary": "PAP 明文两次握手；CHAP 密文三次握手并周期性挑战，安全性更高。",
+      "detail": "PAP：被认证方发送 user/password，认证方校验；密码在链路上可见（仅 base64）。CHAP：认证方发 Challenge，被认证方回 Hash(Challenge+Password)，认证方比对；密码不上线。配置时认证方需建本地用户，被认证方在接口下 ppp chap user/password。",
+      "keyCommands": ["ppp authentication-mode pap", "ppp authentication-mode chap", "ppp chap user", "ppp chap password cipher", "ppp pap local-user"],
+      "experiments": ["e6-03", "e6-04"], "acceptance": "能说明生产环境为何优先选择 CHAP。"
+    },
+    {
+      "id": "kp6-04", "title": "广域链路排障思路", "category": "troubleshooting",
+      "summary": "先物理后协议：检查接口状态、封装一致性、时钟、IP 网段与认证。",
+      "detail": "display interface Serial：物理 up + 协议 up 才可用；封装不一致会导致协议 down；DCE 未配 clock rate 物理层不稳；CHAP 失败多因用户名/口令不一致或认证方缺 local-user。",
+      "keyCommands": ["display interface Serial 2/0/0", "display ppp all", "debugging ppp chap"],
+      "experiments": ["e6-01", "e6-02", "e6-03", "e6-04"], "acceptance": "能按分层顺序完成一条 PPP 链路故障定位。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e6-01", "moduleId": "m6", "code": "6.1.1", "title": "串口链路 HDLC 封装配置",
+      "difficulty": "基础", "durationMin": 50, "topologyId": "p6-t1-hdlc-616f",
+      "goals": ["识别 Serial 接口与 V35 线缆", "配置 HDLC 封装与地址", "验证链路状态"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "DCE 端" }, { "name": "R2", "model": "AR2220", "role": "DTE 端" }],
+      "steps": [
+        { "seq": 1, "title": "R1 串口地址", "device": "R1", "mode": "system", "hint": "", "commands": ["interface Serial 2/0/0", "ip address 10.0.0.1 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "DCE 配置时钟", "device": "R1", "mode": "system", "hint": "", "commands": ["interface Serial 2/0/0", "clock rate 64000", "link-protocol hdlc", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2 对称配置", "device": "R2", "mode": "system", "hint": "", "commands": ["interface Serial 2/0/0", "ip address 10.0.0.2 30", "link-protocol hdlc", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "链路验证", "device": "R1", "mode": "user", "hint": "", "commands": ["display interface Serial 2/0/0", "ping 10.0.0.2"], "expect": "物理 UP、协议 UP。" }
+      ],
+      "verification": [{ "command": "display interface Serial 2/0/0", "expect": "Line protocol current state : UP" }],
+      "commonErrors": ["两端均当 DTE 未配时钟", "封装不一致", "IP 不在同一网段"],
+      "references": ["教材项目六 任务1"]
+    },
+    {
+      "id": "e6-02", "moduleId": "m6", "code": "6.1.2", "title": "PPP 封装基本配置",
+      "difficulty": "基础", "durationMin": 50, "topologyId": "p6-t1-ppp-bba8",
+      "goals": ["串口切换 PPP 封装", "验证协议 UP 与连通", "查看 PPP 接口信息"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "DCE 端" }, { "name": "R2", "model": "AR2220", "role": "DTE 端" }],
+      "steps": [
+        { "seq": 1, "title": "R1 配置 PPP", "device": "R1", "mode": "system", "hint": "", "commands": ["interface Serial 2/0/0", "link-protocol ppp", "ip address 10.0.0.1 30", "clock rate 64000", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "R2 配置 PPP", "device": "R2", "mode": "system", "hint": "", "commands": ["interface Serial 2/0/0", "link-protocol ppp", "ip address 10.0.0.2 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 3, "title": "验证", "device": "R1", "mode": "user", "hint": "", "commands": ["display interface Serial 2/0/0", "ping 10.0.0.2"], "expect": "UP 且通。" }
+      ],
+      "verification": [{ "command": "display ppp all", "expect": "LCP opened" }],
+      "commonErrors": ["封装未切换仍为 HDLC", "掩码不一致"], "references": ["教材项目六 任务1"]
+    },
+    {
+      "id": "e6-03", "moduleId": "m6", "code": "6.2.1", "title": "PPP PAP 认证配置",
+      "difficulty": "进阶", "durationMin": 55, "topologyId": "p6-t2-ppp-d606",
+      "goals": ["配置 PAP 认证方与被认证方", "验证本地用户校验", "理解明文风险"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "认证方" }, { "name": "R2", "model": "AR2220", "role": "被认证方" }],
+      "steps": [
+        { "seq": 1, "title": "R1 创建本地用户", "device": "R1", "mode": "system", "hint": "", "commands": ["aaa", "local-user r2 password cipher huawei@123", "local-user r2 service-type ppp", "quit"], "expect": "" },
+        { "seq": 2, "title": "R1 启用 PAP", "device": "R1", "mode": "system", "hint": "", "commands": ["interface Serial 2/0/0", "link-protocol ppp", "ppp authentication-mode pap", "ip address 10.0.0.1 30", "clock rate 64000", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2 提交 PAP 凭据", "device": "R2", "mode": "system", "hint": "", "commands": ["interface Serial 2/0/0", "link-protocol ppp", "ppp pap local-user r2 password cipher huawei@123", "ip address 10.0.0.2 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "验证", "device": "R1", "mode": "user", "hint": "", "commands": ["display ppp all", "ping 10.0.0.2"], "expect": "认证成功并通。" }
+      ],
+      "verification": [{ "command": "display ppp all", "expect": "Authentication phase PAP" }],
+      "commonErrors": ["认证方缺 local-user", "口令加密方式不一致"], "references": ["教材项目六 任务2 活动1"]
+    },
+    {
+      "id": "e6-04", "moduleId": "m6", "code": "6.2.2", "title": "PPP CHAP 认证配置",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p6-t2-ppp-6a53",
+      "goals": ["配置双向 CHAP 认证", "对比 PAP 交互差异", "排查认证失败"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "路由器A" }, { "name": "R2", "model": "AR2220", "role": "路由器B" }],
+      "steps": [
+        { "seq": 1, "title": "AAA 双方用户", "device": "R1", "mode": "system", "hint": "R1 建 r2，R2 建 r1。", "commands": ["aaa", "local-user r2 password cipher huawei@123", "local-user r2 service-type ppp", "quit"], "expect": "" },
+        { "seq": 2, "title": "R1 CHAP", "device": "R1", "mode": "system", "hint": "", "commands": ["interface Serial 2/0/0", "link-protocol ppp", "ppp authentication-mode chap", "ppp chap user r1", "ppp chap password cipher huawei@123", "ip address 10.0.0.1 30", "clock rate 64000", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2 对称 CHAP", "device": "R2", "mode": "system", "hint": "", "commands": ["aaa", "local-user r1 password cipher huawei@123", "local-user r1 service-type ppp", "quit", "interface Serial 2/0/0", "link-protocol ppp", "ppp authentication-mode chap", "ppp chap user r2", "ppp chap password cipher huawei@123", "ip address 10.0.0.2 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "验证", "device": "R1", "mode": "user", "hint": "", "commands": ["display ppp all", "ping 10.0.0.2"], "expect": "CHAP Success。" }
+      ],
+      "verification": [{ "command": "display ppp all", "expect": "CHAP Success" }],
+      "commonErrors": ["本端 chap user 写成对端名字", "双方均未建对方 local-user", "时钟缺失"],
+      "references": ["教材项目六 任务2 活动2"]
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "id": "m1",
+  "order": 1,
+  "code": "项目一",
+  "title": "模拟器的使用与网络拓扑构建",
+  "objectives": [
+    "掌握 eNSP 的安装、授权与基本操作界面",
+    "能够根据拓扑需求选型设备并完成物理/逻辑连线",
+    "掌握 PC 终端 IP 配置与设备 Console 登录",
+    "完成设备基本配置并正确保存、查看配置"
+  ],
+  "knowledgePoints": [
+    {
+      "id": "kp1-01", "title": "eNSP 的组成与安装环境", "category": "concept",
+      "summary": "eNSP 由客户端主程序、虚拟化平台（VirtualBox）与设备模拟器组成，需关闭占用端口的软件并以管理员身份运行。",
+      "detail": "eNSP V100R003C00SPC100 依赖 Oracle VM VirtualBox 提供设备运行环境；安装后需在「新建拓扑」窗口拖入路由器、交换机、PC、AP、AC 等设备。设备型号决定了可用接口形态（如 S3700 为 Ethernet+GE，AR 系列含 Serial 串口）。",
+      "keyCommands": ["display version", "display device"],
+      "experiments": ["e1-01"], "acceptance": "能独立说明 eNSP 三大组件并完成软件启动、新建空白拓扑。"
+    },
+    {
+      "id": "kp1-02", "title": "设备连线规则与接口选择", "category": "command",
+      "summary": "设备间连线需选择正确的接口类型：同类设备交叉线、异类设备直通线，eNSP 会自动识别线缆类型。",
+      "detail": "交换机-PC、交换机-路由器、路由器-PC 属于异类设备，使用直通线；交换机-交换机、路由器-路由器 属于同类设备，需使用交叉线（通过自动线缆识别）。串口（Serial）用于广域网互联，需一端配时钟频率（DCE 端 clock-rate）。连线成功后接口指示灯变绿色，红色表示链路未通或接口 shutdown。",
+      "keyCommands": ["undo shutdown", "display interface brief", "clock rate"],
+      "experiments": ["e1-01", "e1-02"], "acceptance": "能依据设备类型正确选择接口并完成物理连通。"
+    },
+    {
+      "id": "kp1-03", "title": "设备的启动与视图体系", "category": "technology",
+      "summary": "VRP 采用分级视图：用户视图 < >、系统视图 [ ]、接口视图 [huawei-GigabitEthernet0/0/1] 等，不同视图下可执行命令范围不同。",
+      "detail": "用户视图仅可执行查看、ping、保存等命令；system-view 进入系统视图后可进行全局配置；interface / vlan / acl / ospf / aaa 等进入对应子视图。quit 返回上一级，return 直接回用户视图。命令支持缩写（如 sy 代表 system-view，dis 代表 display），Tab 键自动补全。",
+      "keyCommands": ["system-view", "quit", "return", "display this", "display current-configuration"],
+      "experiments": ["e1-02", "e1-03"], "acceptance": "能准确说明三种视图的职责边界并熟练切换。"
+    },
+    {
+      "id": "kp1-04", "title": "设备基本配置命令", "category": "command",
+      "summary": "设备初次配置包含修改主机名、设置时间、配置登录提示与横幅、设置超时时间等基础信息。",
+      "detail": "sysname 用于标识设备；clock datetime 设置系统时间；header login/shell 配置登录前/后提示语，用于安全警示；idle-timeout 控制会话空闲超时，降低未授权访问风险。这些配置保存在配置文件中，必须 save 后重启才生效保留。",
+      "keyCommands": ["sysname", "clock datetime", "header login", "header shell", "idle-timeout", "save"],
+      "experiments": ["e1-02", "e1-03"], "acceptance": "能独立完成设备基础信息配置并通过 save 固化。"
+    },
+    {
+      "id": "kp1-05", "title": "配置的保存、查看与恢复", "category": "troubleshooting",
+      "summary": "running-config 为当前运行配置，saved-config 为已保存配置；save 写入 flash，reset saved-configuration 清空。",
+      "detail": "display current-configuration 查看运行配置，display saved-configuration 查看已保存配置；设备重启后从 saved-config 加载。工程交付中应先 save 再 reboot 验证配置持久化；配置丢失时优先确认是否未保存或执行过 reset。",
+      "keyCommands": ["save", "display current-configuration", "display saved-configuration", "reboot", "reset saved-configuration"],
+      "experiments": ["e1-02"], "acceptance": "能通过对比 running 与 saved 配置定位配置未生效问题。"
+    },
+    {
+      "id": "kp1-06", "title": "Console 本地管理与 Telnet 远程管理", "category": "security",
+      "summary": "Console 口是带外管理通道；Telnet 是明文远程管理，需配置 vty 认证，生产推荐 STelnet(SSH)。",
+      "detail": "Console 通过配置线连接 PC 串口/USB，使用终端软件（波特率 9600）登录；Telnet 需在系统视图 telnet server enable，并在 user-interface vty 0 4 下配置 authentication-mode password 与 set authentication password，同时协议允许 telnet。远程管理依赖管理 VLAN/VLANIF 地址互通。",
+      "keyCommands": ["telnet server enable", "user-interface vty 0 4", "authentication-mode password", "set authentication password simple", "protocol inbound telnet"],
+      "experiments": ["e1-03", "e1-04"], "acceptance": "能分别用 Console 与 Telnet 登录设备并说明两者安全差异。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e1-01", "moduleId": "m1", "code": "1.1", "title": "搭建 eNSP 第一个拓扑并实现设备互通",
+      "difficulty": "入门", "durationMin": 40, "topologyId": null,
+      "goals": ["认识 eNSP 工作区与设备库", "完成两台 PC 与一台交换机的连线", "配置 IP 地址并 ping 通"],
+      "devices": [
+        { "name": "SW1", "model": "S3700", "role": "接入交换机" },
+        { "name": "PC1", "model": "PC", "role": "终端" },
+        { "name": "PC2", "model": "PC", "role": "终端" }
+      ],
+      "steps": [
+        { "seq": 1, "title": "新建拓扑并添加设备", "device": "SW1", "mode": "user", "hint": "在左侧设备区拖入 1 台 S3700 与 2 台 PC。", "commands": [], "expect": "画布出现 SW1、PC1、PC2。" },
+        { "seq": 2, "title": "物理连线", "device": "SW1", "mode": "user", "hint": "PC1/PC2 使用 Ethernet0/0/1 连到 SW1 的 Ethernet0/0/1、Ethernet0/0/2。", "commands": [], "expect": "接口指示灯变绿。" },
+        { "seq": 3, "title": "配置 PC 地址", "device": "PC1", "mode": "user", "hint": "PC 命令行 ipconfig / 图形界面配置静态 IP。", "commands": [], "expect": "PC1=192.168.1.1/24，PC2=192.168.1.2/24。" },
+        { "seq": 4, "title": "验证连通", "device": "PC1", "mode": "user", "hint": "同网段直连，无需配置交换机即可通信。", "commands": ["ping 192.168.1.2"], "expect": "收到来自 192.168.1.2 的回包。" }
+      ],
+      "verification": [
+        { "command": "ping 192.168.1.2", "expect": "Success / 丢包率 0%" },
+        { "command": "ipconfig", "expect": "IP 192.168.1.1 掩码 255.255.255.0" }
+      ],
+      "commonErrors": ["未开启设备电源导致接口不亮", "误用串口线连接以太网口", "IP 掩码不一致导致无法通信"],
+      "references": ["教材项目一 任务1", "HCNA网络技术实验指南"]
+    },
+    {
+      "id": "e1-02", "moduleId": "m1", "code": "1.2", "title": "设备基本配置与配置保存",
+      "difficulty": "入门", "durationMin": 45, "topologyId": null,
+      "goals": ["通过 Console 登录设备", "配置主机名/时间/登录提示", "保存并重启验证持久化"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "二层交换机" }],
+      "steps": [
+        { "seq": 1, "title": "进入系统视图", "device": "SWA", "mode": "user", "hint": "Console 登录后默认在用户视图。", "commands": ["system-view"], "expect": "提示符变为 [SWA]（初始为 huawei）。" },
+        { "seq": 2, "title": "配置主机名", "device": "SWA", "mode": "system", "hint": "sysname 仅在系统视图有效。", "commands": ["sysname SWA"], "expect": "提示符立即刷新为 [SWA]。" },
+        { "seq": 3, "title": "配置系统时间与登录提示", "device": "SWA", "mode": "system", "hint": "时间格式 HH:MM:SS YYYY-MM-DD。", "commands": ["clock datetime 09:00:00 2026-11-27", "header login information \"Authorized only\""], "expect": "下次登录显示提示语。" },
+        { "seq": 4, "title": "保存配置", "device": "SWA", "mode": "system", "hint": "save 需要确认文件名时直接回车。", "commands": ["return", "save"], "expect": "提示 Configuration file was saved successfully。" },
+        { "seq": 5, "title": "验证持久化", "device": "SWA", "mode": "user", "hint": "重启后查看 sysname 是否仍为 SWA。", "commands": ["display current-configuration | include sysname", "reboot"], "expect": "重启后主机名仍为 SWA。" }
+      ],
+      "verification": [
+        { "command": "display current-configuration", "expect": "包含 sysname SWA 与 header login" },
+        { "command": "display saved-configuration", "expect": "与运行配置一致" }
+      ],
+      "commonErrors": ["忘记 save 导致重启后配置丢失", "clock datetime 格式错误", "在用户视图执行 sysname 报错"],
+      "references": ["教材项目一 任务2"]
+    },
+    {
+      "id": "e1-03", "moduleId": "m1", "code": "1.3", "title": "交换机 Telnet 远程管理（Password 认证）",
+      "difficulty": "基础", "durationMin": 50, "topologyId": null,
+      "goals": ["配置管理 IP", "使能 Telnet 服务", "配置 VTY Password 认证并远程登录"],
+      "devices": [
+        { "name": "SWA", "model": "S3700", "role": "被管理交换机" },
+        { "name": "PC1", "model": "PC", "role": "管理终端" }
+      ],
+      "steps": [
+        { "seq": 1, "title": "进入系统视图并命名", "device": "SWA", "mode": "user", "hint": "", "commands": ["system-view", "sysname SWA"], "expect": "[SWA]" },
+        { "seq": 2, "title": "配置管理 VLAN 与地址", "device": "SWA", "mode": "system", "hint": "VLANIF 地址即管理地址。", "commands": ["vlan batch 10", "interface Vlanif 10", "ip address 192.168.10.1 24", "quit"], "expect": "Vlanif10 状态 UP。" },
+        { "seq": 3, "title": "使能 Telnet 并配置 VTY", "device": "SWA", "mode": "system", "hint": "必须在 vty 视图配置认证。", "commands": ["telnet server enable", "user-interface vty 0 4", "authentication-mode password", "set authentication password simple huawei@123", "protocol inbound telnet"], "expect": "VTY 认证方式变为 password。" },
+        { "seq": 4, "title": "远程登录验证", "device": "PC1", "mode": "user", "hint": "PC1 IP 设为 192.168.10.2/24。", "commands": ["telnet 192.168.10.1"], "expect": "输入口令后进入 [SWA]。" },
+        { "seq": 5, "title": "保存配置", "device": "SWA", "mode": "system", "hint": "", "commands": ["return", "save"], "expect": "保存成功。" }
+      ],
+      "verification": [
+        { "command": "display ip interface brief", "expect": "Vlanif10 192.168.10.1/24 UP" },
+        { "command": "display telnet server status", "expect": "Telnet server enable" }
+      ],
+      "commonErrors": ["未创建 VLANIF 或接口未 undo shutdown", "VTY 未放行 telnet 协议", "认证方式未切到 password"],
+      "references": ["教材项目一 任务3"]
+    },
+    {
+      "id": "e1-04", "moduleId": "m1", "code": "1.4", "title": "STelnet（SSH）安全远程管理",
+      "difficulty": "进阶", "durationMin": 55, "topologyId": null,
+      "goals": ["生成本地 RSA 密钥", "创建 SSH 用户并绑定 AAA 本地用户", "从 PC 使用 SSH 客户端登录"],
+      "devices": [
+        { "name": "SWA", "model": "S3700", "role": "被管理设备" },
+        { "name": "PC1", "model": "PC", "role": "SSH 客户端" }
+      ],
+      "steps": [
+        { "seq": 1, "title": "配置管理地址", "device": "SWA", "mode": "system", "hint": "复用 192.168.10.0/24。", "commands": ["vlan batch 10", "interface Vlanif 10", "ip address 192.168.10.1 24", "quit"], "expect": "UP" },
+        { "seq": 2, "title": "使能 STelnet 并生成密钥", "device": "SWA", "mode": "user", "hint": "rsa 生成需在用户视图执行并确认。", "commands": ["rsa local-key-pair create", "stelnet server enable"], "expect": "密钥对生成成功。" },
+        { "seq": 3, "title": "创建 SSH 用户", "device": "SWA", "mode": "system", "hint": "username 与 local-user 需一致。", "commands": ["ssh user admin", "ssh user admin authentication-type password", "ssh user admin service-type stelnet"], "expect": "SSH 用户 admin 就绪。" },
+        { "seq": 4, "title": "AAA 本地用户与 VTY 放行", "device": "SWA", "mode": "system", "hint": "VTY 认证方式改为 aaa。", "commands": ["aaa", "local-user admin password cipher huawei@123", "local-user admin service-type ssh", "local-user admin privilege level 15", "quit", "user-interface vty 0 4", "authentication-mode aaa", "protocol inbound ssh"], "expect": "VTY 协议 ssh。" },
+        { "seq": 5, "title": "SSH 登录验证", "device": "PC1", "mode": "user", "hint": "使用 PuTTY/SecureCRT 选择 SSH 协议。", "commands": ["ssh -l admin 192.168.10.1"], "expect": "登录成功进入 [SWA]。" }
+      ],
+      "verification": [
+        { "command": "display ssh server status", "expect": "SSH server enable" },
+        { "command": "display ssh user-information", "expect": "admin 存在且 service-type stelnet" }
+      ],
+      "commonErrors": ["未生成 RSA 密钥导致 SSH 不可用", "VTY protocol 未放行 ssh", "service-type 缺少 ssh/stelnet"],
+      "references": ["教材项目三 任务3", "HCNA 网络安全"]
+    }
+  ]
+}

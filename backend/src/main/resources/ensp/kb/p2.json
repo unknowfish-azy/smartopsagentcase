@@ -1,0 +1,252 @@
+{
+  "id": "m2",
+  "order": 2,
+  "code": "项目二",
+  "title": "交换技术的配置",
+  "objectives": [
+    "掌握交换机基本配置、远程管理与接口基础",
+    "掌握 VLAN 划分与跨交换机同 VLAN 通信（Trunk）",
+    "掌握三层交换机 VLANIF 实现 VLAN 间路由",
+    "掌握链路聚合、生成树 STP/RSTP、DHCP、VRRP 原理与配置"
+  ],
+  "knowledgePoints": [
+    {
+      "id": "kp2-01", "title": "交换机的转发原理与 MAC 地址表", "category": "technology",
+      "summary": "交换机基于目的 MAC 转发帧，通过源 MAC 学习建立 MAC 地址表，未知单播/广播/组播泛洪。",
+      "detail": "MAC 表项由源 MAC 学习生成并带有老化时间（默认 300s）；display mac-address 查看。二层转发不涉及 IP，同一 VLAN 内可通信，跨 VLAN 必须借助三层设备或三层交换机的 VLANIF。",
+      "keyCommands": ["display mac-address", "mac-address aging-time"],
+      "experiments": ["e2-05"], "acceptance": "能解释帧转发/泛洪行为并会用 display mac-address 验证。"
+    },
+    {
+      "id": "kp2-02", "title": "VLAN 的概念与划分方法", "category": "concept",
+      "summary": "VLAN 在二层隔离广播域，划分方式有基于端口、MAC、协议、子网等，工程以基于端口为主。",
+      "detail": "Access 口用于连接终端，只属于一个 VLAN；Trunk 口用于交换机互联，允许多个 VLAN 通过并携带 Tag；Hybrid 口可同时收发带/不带 Tag 的帧。VLAN 1 为默认 VLAN，不可删除，建议业务使用 VLAN 10 起。",
+      "keyCommands": ["vlan batch", "port link-type access", "port default vlan"],
+      "experiments": ["e2-05"], "acceptance": "能区分 Access/Trunk/Hybrid 的应用场景。"
+    },
+    {
+      "id": "kp2-03", "title": "Trunk 链路负载与 PVID", "category": "command",
+      "summary": "Trunk 口需放行相应 VLAN，默认 PVID 为 VLAN 1，收无 Tag 帧归入 PVID。",
+      "detail": "port trunk allow-pass vlan 控制允许的 VLAN；port trunk pvid vlan 修改默认 VLAN。不同厂商 Trunk 封装不同（华为 802.1Q，思科 ISL），互联需一致。",
+      "keyCommands": ["port link-type trunk", "port trunk allow-pass vlan", "port trunk pvid vlan"],
+      "experiments": ["e2-06"], "acceptance": "能配置跨交换机同 VLAN 通信并说明 Tag 处理过程。"
+    },
+    {
+      "id": "kp2-04", "title": "三层交换机与 VLAN 间路由", "category": "technology",
+      "summary": "三层交换机通过 SVI（VLANIF）实现 VLAN 间路由，转发性能高于单臂路由。",
+      "detail": "每个 VLAN 对应一个 VLANIF 逻辑接口，配置 IP 作为该 VLAN 网关；启用 ip routing 后（部分型号默认）即可进行三层转发。单臂路由则是在路由器物理口下创建子接口 dot1q termination vid，适合小型网络。",
+      "keyCommands": ["interface Vlanif 10", "ip address", "display ip interface brief"],
+      "experiments": ["e2-07", "e3-07"], "acceptance": "能对比三层交换与单臂路由两种跨 VLAN 方案。"
+    },
+    {
+      "id": "kp2-05", "title": "链路聚合 Eth-Trunk", "category": "technology",
+      "summary": "将多条物理链路捆绑为一条逻辑链路，提升带宽与可靠性，分为静态 LACP 与手工模式。",
+      "detail": "LACP（802.3ad）通过 LACPDU 协商活动成员口；手工模式需两端手动一致。活动链路数上限 max active-linknumber 控制参与转发的端口数量，其余备份。负载分担模式按源/目 MAC/IP 哈希。",
+      "keyCommands": ["interface Eth-Trunk 1", "eth-trunk 1", "mode lacp-static", "least active-linknumber", "load-balance"],
+      "experiments": ["e2-08"], "acceptance": "能配置 LACP 聚合并通过 display eth-trunk 判断成员状态。"
+    },
+    {
+      "id": "kp2-06", "title": "生成树 STP/RSTP 原理", "category": "technology",
+      "summary": "生成树通过选举根桥、计算最短路径、阻塞冗余端口来消除二层环路并提供链路备份。",
+      "detail": "BPDU 携带 Bridge ID（优先级+MAC）；根桥选优先级最小者；非根桥选根端口（到根路径开销最小）；每条链路选指定端口，其余阻塞。RSTP 引入替代/备份端口与边缘端口，收敛时间从 30s 级降至秒级。stp root primary 自动将优先级置 0。",
+      "keyCommands": ["stp mode rstp", "stp root primary", "stp priority", "stp edged-port enable", "display stp brief"],
+      "experiments": ["e2-09", "e2-10"], "acceptance": "能分析 BPDU 选举结果并用 display stp 定位根桥/阻塞口。"
+    },
+    {
+      "id": "kp2-07", "title": "交换机 DHCP 服务与中继", "category": "technology",
+      "summary": "DHCP 全局使能后可采用全局地址池或接口地址池方式分配地址，跨网段用中继。",
+      "detail": "dhcp select global 在接口引用 ip pool；dhcp select relay + dhcp relay server-ip 指向服务器。地址池要素：network、gateway-list、dns-list、expired。中继依赖 GIADDR 字段回传客户端网段。",
+      "keyCommands": ["dhcp enable", "ip pool", "network", "gateway-list", "dns-list", "expired", "dhcp select global", "dhcp relay server-ip"],
+      "experiments": ["e2-11", "e3-06"], "acceptance": "能为多 VLAN 配置 DHCP 并说明报文交互四步。"
+    },
+    {
+      "id": "kp2-08", "title": "VRRP 网关冗余", "category": "security",
+      "summary": "VRRP 将多个设备虚拟为一个网关，Master 转发、Backup 热备，避免单点故障。",
+      "detail": "备份组由 vrid 标识，virtual-ip 作为网关；优先级默认 100，Master 需大于 Backup；支持抢占与上行链路跟踪（track 上行口 down 时降低优先级触发切换）。VRRP 报文组播 224.0.0.18。",
+      "keyCommands": ["vrrp vrid 1 virtual-ip", "vrrp vrid 1 priority", "vrrp vrid 1 preempt-mode timer delay", "vrrp vrid 1 track interface", "display vrrp brief"],
+      "experiments": ["e2-12"], "acceptance": "能配置主备网关并模拟 Master 故障观察倒换。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e2-01", "moduleId": "m2", "code": "2.1.1", "title": "交换机的管理方式与 Console 登录",
+      "difficulty": "入门", "durationMin": 40, "topologyId": "p2-t1-2.1.1-9b7e",
+      "goals": ["识别 Console 口与配置线", "使用终端软件登录并查看版本"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "二层交换机" }, { "name": "PC1", "model": "PC", "role": "管理终端" }],
+      "steps": [
+        { "seq": 1, "title": "连接 Console", "device": "PC1", "mode": "user", "hint": "使用配置线连接 PC COM 与 SWA Console。", "commands": [], "expect": "终端软件识别串口。" },
+        { "seq": 2, "title": "登录并查看版本", "device": "SWA", "mode": "user", "hint": "波特率 9600。", "commands": ["display version"], "expect": "显示 VRP 版本信息。" },
+        { "seq": 3, "title": "查看接口概要", "device": "SWA", "mode": "user", "hint": "", "commands": ["display interface brief"], "expect": "列出 Ethernet/GE 接口状态。" }
+      ],
+      "verification": [{ "command": "display version", "expect": "Huawei Versatile Routing Platform / VRP V100R003" }],
+      "commonErrors": ["终端参数（波特率/流控）设置错误", "未安装 USB 转串口驱动"],
+      "references": ["教材项目二 任务1 活动1"]
+    },
+    {
+      "id": "e2-02", "moduleId": "m2", "code": "2.1.2", "title": "交换机常用配置（命名/时间/提示/超时）",
+      "difficulty": "入门", "durationMin": 45, "topologyId": "p2-t1-2.1.2-2fc5",
+      "goals": ["配置主机名、系统时间、登录横幅", "设置 Console/VTY 超时", "保存并核验"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "二层交换机" }],
+      "steps": [
+        { "seq": 1, "title": "进入系统视图并命名", "device": "SWA", "mode": "user", "hint": "", "commands": ["system-view", "sysname SWA"], "expect": "[SWA]" },
+        { "seq": 2, "title": "配置时间与横幅", "device": "SWA", "mode": "system", "hint": "", "commands": ["clock datetime 10:00:00 2026-11-27", "header login information \"Switch SWA, authorized only\"", "header shell information \"session started\""], "expect": "横幅生效。" },
+        { "seq": 3, "title": "Console 空闲超时", "device": "SWA", "mode": "system", "hint": "单位分钟与秒。", "commands": ["user-interface console 0", "idle-timeout 10 0", "quit"], "expect": "10 分钟无操作自动断开。" },
+        { "seq": 4, "title": "保存配置", "device": "SWA", "mode": "system", "hint": "", "commands": ["return", "save"], "expect": "Configuration file saved。" }
+      ],
+      "verification": [{ "command": "display current-configuration", "expect": "包含 sysname/header/idle-timeout" }],
+      "commonErrors": ["横幅字符串含中文引号导致解析失败", "在用户视图执行 idle-timeout"],
+      "references": ["教材项目二 任务1 活动2"]
+    },
+    {
+      "id": "e2-03", "moduleId": "m2", "code": "2.1.4a", "title": "交换机 Telnet 远程配置（AAA 认证）",
+      "difficulty": "基础", "durationMin": 50, "topologyId": "p2-t1-2.1.4-telnet-51bd",
+      "goals": ["配置管理地址", "AAA 本地用户认证", "Telnet 远程登录"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "被管理交换机" }, { "name": "PC1", "model": "PC", "role": "管理终端" }],
+      "steps": [
+        { "seq": 1, "title": "管理地址", "device": "SWA", "mode": "system", "hint": "", "commands": ["vlan batch 10", "interface Vlanif 10", "ip address 192.168.10.1 24", "quit"], "expect": "Vlanif10 UP" },
+        { "seq": 2, "title": "AAA 用户", "device": "SWA", "mode": "system", "hint": "用户名 admin 权限 15。", "commands": ["aaa", "local-user admin password cipher huawei@123", "local-user admin service-type telnet", "local-user admin privilege level 15", "quit"], "expect": "本地用户创建成功。" },
+        { "seq": 3, "title": "VTY 认证", "device": "SWA", "mode": "system", "hint": "", "commands": ["telnet server enable", "user-interface vty 0 4", "authentication-mode aaa", "protocol inbound telnet"], "expect": "VTY 使用 AAA。" },
+        { "seq": 4, "title": "Telnet 验证", "device": "PC1", "mode": "user", "hint": "PC1 配置 192.168.10.2/24。", "commands": ["telnet 192.168.10.1"], "expect": "输入 admin/huawei@123 登录。" }
+      ],
+      "verification": [{ "command": "display local-user username admin", "expect": "service-type telnet, level 15" }],
+      "commonErrors": ["忘记 telnet server enable", "AAA 用户 service-type 不含 telnet", "PC 与管理地址不在同网段且无网关"],
+      "references": ["教材项目二 任务1 活动3"]
+    },
+    {
+      "id": "e2-04", "moduleId": "m2", "code": "2.1.4b", "title": "交换机 Telnet 远程配置（Password 认证）",
+      "difficulty": "基础", "durationMin": 45, "topologyId": "p2-t1-2.1.4-telnet-0249",
+      "goals": ["使用 Password 认证方式配置 VTY", "对比 AAA 与 Password 差异"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "被管理交换机" }, { "name": "PC1", "model": "PC", "role": "管理终端" }],
+      "steps": [
+        { "seq": 1, "title": "管理地址", "device": "SWA", "mode": "system", "hint": "", "commands": ["vlan batch 10", "interface Vlanif 10", "ip address 192.168.10.1 24", "quit"], "expect": "UP" },
+        { "seq": 2, "title": "VTY Password 认证", "device": "SWA", "mode": "system", "hint": "", "commands": ["telnet server enable", "user-interface vty 0 4", "authentication-mode password", "set authentication password simple huawei@123", "protocol inbound telnet"], "expect": "认证方式为 password。" },
+        { "seq": 3, "title": "Telnet 验证", "device": "PC1", "mode": "user", "hint": "", "commands": ["telnet 192.168.10.1"], "expect": "登录成功。" }
+      ],
+      "verification": [{ "cmd": "display telnet server status", "expect": "enable" }],
+      "commonErrors": ["未设置 protocol inbound telnet"], "references": ["教材项目二 任务1 活动3"]
+    },
+    {
+      "id": "e2-05", "moduleId": "m2", "code": "2.2.1", "title": "交换机 VLAN 划分",
+      "difficulty": "基础", "durationMin": 50, "topologyId": "p2-t2-2.2.1-92d5",
+      "goals": ["批量创建 VLAN", "Access 口加入 VLAN", "验证同 VLAN 互通、异 VLAN 隔离"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "接入交换机" }, { "name": "PC1", "model": "PC", "role": "终端" }, { "name": "PC2", "model": "PC", "role": "终端" }, { "name": "PC3", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "创建 VLAN", "device": "SWA", "mode": "system", "hint": "", "commands": ["vlan batch 10 20", "quit"], "expect": "display vlan 显示 10/20。" },
+        { "seq": 2, "title": "PC1/PC2 加入 VLAN10", "device": "SWA", "mode": "system", "hint": "接入口用 access。", "commands": ["interface Ethernet 0/0/1", "port link-type access", "port default vlan 10", "quit", "interface Ethernet 0/0/2", "port link-type access", "port default vlan 10", "quit"], "expect": "两口属 VLAN10。" },
+        { "seq": 3, "title": "PC3 加入 VLAN20", "device": "SWA", "mode": "system", "hint": "", "commands": ["interface Ethernet 0/0/3", "port link-type access", "port default vlan 20", "quit"], "expect": "属 VLAN20。" },
+        { "seq": 4, "title": "验证隔离", "device": "PC1", "mode": "user", "hint": "PC1=10.1.1.1/24, PC2=.2, PC3=20.1.1.1/24", "commands": ["ping 10.1.1.2", "ping 20.1.1.1"], "expect": "同 VLAN 通，跨 VLAN 不通。" }
+      ],
+      "verification": [{ "command": "display vlan", "expect": "VLAN10 含 E0/0/1-2，VLAN20 含 E0/0/3" }],
+      "commonErrors": ["接口默认是 hybrid/access 但未显式指定 link-type", "VLAN 未创建就引用", "PC 掩码错误"],
+      "references": ["教材项目二 任务2 活动1"]
+    },
+    {
+      "id": "e2-06", "moduleId": "m2", "code": "2.2.2", "title": "跨交换机相同 VLAN 的通信（Trunk）",
+      "difficulty": "基础", "durationMin": 55, "topologyId": "p2-t2-2.2.2-e8c3",
+      "goals": ["配置 Trunk 放行 VLAN", "验证跨设备同 VLAN 通信", "理解 Tag 转发"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "接入交换机A" }, { "name": "SWB", "model": "S3700", "role": "接入交换机B" }, { "name": "PC1", "model": "PC", "role": "终端" }, { "name": "PC2", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "两台设备创建 VLAN", "device": "SWA", "mode": "system", "hint": "SWB 同样创建。", "commands": ["vlan batch 10 20", "quit"], "expect": "VLAN 就绪。" },
+        { "seq": 2, "title": "SWA 接入口划分", "device": "SWA", "mode": "system", "hint": "", "commands": ["interface Ethernet 0/0/1", "port link-type access", "port default vlan 10", "quit"], "expect": "PC1 属 VLAN10。" },
+        { "seq": 3, "title": "互联口配置 Trunk", "device": "SWA", "mode": "system", "hint": "两端都要放行 10 20。", "commands": ["interface GigabitEthernet 0/0/1", "port link-type trunk", "port trunk allow-pass vlan 10 20", "quit"], "expect": "Trunk 允许列表含 10/20。" },
+        { "seq": 4, "title": "SWB 对称配置", "device": "SWB", "mode": "system", "hint": "E0/0/1 → VLAN10，GE0/0/1 → Trunk。", "commands": ["vlan batch 10 20", "interface Ethernet 0/0/1", "port link-type access", "port default vlan 10", "quit", "interface GigabitEthernet 0/0/1", "port link-type trunk", "port trunk allow-pass vlan 10 20", "quit"], "expect": "Trunk UP。" },
+        { "seq": 5, "title": "验证跨设备通信", "device": "PC1", "mode": "user", "hint": "", "commands": ["ping 10.1.1.2"], "expect": "通信成功。" }
+      ],
+      "verification": [{ "command": "display port vlan", "expect": "GE0/0/1 允许 VLAN10/20" }],
+      "commonErrors": ["Trunk 未放行目标 VLAN 导致不通", "两端 PVID 不一致引发业务异常", "误把互联口配成 access"],
+      "references": ["教材项目二 任务2 活动2"]
+    },
+    {
+      "id": "e2-07", "moduleId": "m2", "code": "2.3.3", "title": "三层交换机实现 VLAN 间通信",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p2-t2-2.3.3-abb1",
+      "goals": ["配置 VLANIF 网关", "开启三层转发", "实现跨 VLAN 互通"],
+      "devices": [{ "name": "SWA", "model": "S5700", "role": "三层交换机" }, { "name": "PC1", "model": "PC", "role": "VLAN10终端" }, { "name": "PC2", "model": "PC", "role": "VLAN20终端" }],
+      "steps": [
+        { "seq": 1, "title": "创建 VLAN 并划口", "device": "SWA", "mode": "system", "hint": "", "commands": ["vlan batch 10 20", "interface Ethernet 0/0/1", "port link-type access", "port default vlan 10", "quit", "interface Ethernet 0/0/2", "port link-type access", "port default vlan 20", "quit"], "expect": "接入口划分完成。" },
+        { "seq": 2, "title": "配置 VLANIF10 网关", "device": "SWA", "mode": "system", "hint": "网关即 VLAN 主机的默认网关。", "commands": ["interface Vlanif 10", "ip address 192.168.10.1 24", "undo shutdown", "quit"], "expect": "VLANIF10 UP。" },
+        { "seq": 3, "title": "配置 VLANIF20 网关", "device": "SWA", "mode": "system", "hint": "", "commands": ["interface Vlanif 20", "ip address 192.168.20.1 24", "undo shutdown", "quit"], "expect": "VLANIF20 UP。" },
+        { "seq": 4, "title": "终端网关与验证", "device": "PC1", "mode": "user", "hint": "PC1: 192.168.10.2/24 gw .1；PC2: 192.168.20.2/24 gw .1", "commands": ["ping 192.168.20.2"], "expect": "跨 VLAN ping 通。" },
+        { "seq": 5, "title": "保存配置", "device": "SWA", "mode": "system", "hint": "", "commands": ["return", "save"], "expect": "保存成功。" }
+      ],
+      "verification": [{ "command": "display ip interface brief", "expect": "Vlanif10/20 均为 UP" }],
+      "commonErrors": ["VLANIF 未 undo shutdown 导致 DOWN", "终端网关填写错误", "未创建对应 VLAN"],
+      "references": ["教材项目二 任务2 活动3"]
+    },
+    {
+      "id": "e2-08", "moduleId": "m2", "code": "2.3.1", "title": "链路聚合（LACP）配置",
+      "difficulty": "进阶", "durationMin": 55, "topologyId": "p2-t3-2.3.1-4c2a",
+      "goals": ["创建 Eth-Trunk", "物理口加入聚合组", "验证链路带宽叠加与备份"],
+      "devices": [{ "name": "SWA", "model": "S5700", "role": "核心交换机A" }, { "name": "SWB", "model": "S5700", "role": "核心交换机B" }],
+      "steps": [
+        { "seq": 1, "title": "创建 Eth-Trunk1", "device": "SWA", "mode": "system", "hint": "", "commands": ["interface Eth-Trunk 1", "mode lacp-static", "load-balance src-dst-mac", "quit"], "expect": "Eth-Trunk1 存在。" },
+        { "seq": 2, "title": "加入成员口", "device": "SWA", "mode": "system", "hint": "选中连续接口 range 批量加入。", "commands": ["interface range GigabitEthernet 0/0/1 to GigabitEthernet 0/0/2", "eth-trunk 1", "quit"], "expect": "两接口加入 Eth-Trunk1。" },
+        { "seq": 3, "title": "SWB 对称配置", "device": "SWB", "mode": "system", "hint": "", "commands": ["interface Eth-Trunk 1", "mode lacp-static", "quit", "interface range GigabitEthernet 0/0/1 to GigabitEthernet 0/0/2", "eth-trunk 1", "quit"], "expect": "对端就绪。" },
+        { "seq": 4, "title": "验证聚合状态", "device": "SWA", "mode": "user", "hint": "", "commands": ["display eth-trunk 1", "display interface Eth-Trunk 1"], "expect": "Member 为 Selected，带宽叠加。" }
+      ],
+      "verification": [{ "command": "display eth-trunk 1", "expect": "两个成员均为 Selected/Forwarding" }],
+      "commonErrors": ["两端聚合模式不一致（一端 lacp 一端手工）", "成员口 VLAN/速率/双工不一致", "先加成员后配模式导致异常"],
+      "references": ["教材项目二 任务3 活动1"]
+    },
+    {
+      "id": "e2-09", "moduleId": "m2", "code": "2.3.2", "title": "生成树 STP 配置与根桥规划",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p2-t3-stp-5e17",
+      "goals": ["使能 STP 并指定根桥", "观察阻塞端口", "验证冗余链路备份"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "核心A" }, { "name": "SWB", "model": "S3700", "role": "核心B" }, { "name": "SWC", "model": "S3700", "role": "接入" }],
+      "steps": [
+        { "seq": 1, "title": "全局使能 STP", "device": "SWA", "mode": "system", "hint": "三台均需使能。", "commands": ["stp mode stp", "stp enable"], "expect": "STP 运行。" },
+        { "seq": 2, "title": "指定根桥与备份根", "device": "SWA", "mode": "system", "hint": "primary 自动优先级 0。", "commands": ["stp root primary"], "expect": "成为根桥。" },
+        { "seq": 3, "title": "SWB 设为备份根", "device": "SWB", "mode": "system", "hint": "", "commands": ["stp mode stp", "stp root secondary"], "expect": "备份根桥。" },
+        { "seq": 4, "title": "SWC 使能并观察阻塞口", "device": "SWC", "mode": "system", "hint": "", "commands": ["stp mode stp", "stp enable"], "expect": "生成树收敛。" },
+        { "seq": 5, "title": "验证拓扑", "device": "SWA", "mode": "user", "hint": "", "commands": ["display stp brief", "display stp interface GigabitEthernet 0/0/1"], "expect": "可见 Alternate/Discarding 端口。" }
+      ],
+      "verification": [{ "command": "display stp", "expect": "Root ID 为 SWA 桥 ID" }],
+      "commonErrors": ["只在一台设备使能 STP", "优先级未生效（需重启/复位）", "误将接入端口未配边缘导致延迟"],
+      "references": ["教材项目二 任务3 活动2"]
+    },
+    {
+      "id": "e2-10", "moduleId": "m2", "code": "2.3.3rstp", "title": "RSTP 快速生成树与边缘端口",
+      "difficulty": "进阶", "durationMin": 55, "topologyId": "p2-t3-rstp-8494",
+      "goals": ["切换 RSTP 模式", "配置边缘端口加速收敛", "对比 STP 收敛差异"],
+      "devices": [{ "name": "SWA", "model": "S3700", "role": "核心A" }, { "name": "SWB", "model": "S3700", "role": "核心B" }, { "name": "PC1", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "切换 RSTP", "device": "SWA", "mode": "system", "hint": "", "commands": ["stp mode rstp", "stp enable"], "expect": "RSTP 运行。" },
+        { "seq": 2, "title": "SWB 同步模式", "device": "SWB", "mode": "system", "hint": "两端模式必须一致。", "commands": ["stp mode rstp", "stp enable"], "expect": "" },
+        { "seq": 3, "title": "配置根与边缘端口", "device": "SWA", "mode": "system", "hint": "接终端的口配边缘，防伪造 BPDU。", "commands": ["stp root primary", "interface Ethernet 0/0/1", "stp edged-port enable"], "expect": "边缘端口立即转发。" },
+        { "seq": 4, "title": "验证角色", "device": "SWA", "mode": "user", "hint": "", "commands": ["display stp brief"], "expect": "出现 Root/Designated/Edge 角色。" }
+      ],
+      "verification": [{ "command": "display stp", "expect": "Protocol RSTP" }],
+      "commonErrors": ["两端模式不一致回退兼容异常", "边缘端口误接交换机导致环路"],
+      "references": ["教材项目二 任务3 活动3"]
+    },
+    {
+      "id": "e2-11", "moduleId": "m2", "code": "2.3.4", "title": "交换机 DHCP 服务配置",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p2-t3-2.3.4-5516",
+      "goals": ["全局使能 DHCP", "建立地址池并下发网关/DNS", "接口引用地址池"],
+      "devices": [{ "name": "SWA", "model": "S5700", "role": "三层交换机（DHCP Server）" }, { "name": "PC1", "model": "PC", "role": "DHCP 客户端" }],
+      "steps": [
+        { "seq": 1, "title": "全局使能 DHCP", "device": "SWA", "mode": "system", "hint": "", "commands": ["dhcp enable"], "expect": "DHCP 已开启。" },
+        { "seq": 2, "title": "创建地址池", "device": "SWA", "mode": "system", "hint": "", "commands": ["ip pool vlan10", "network 192.168.10.0 mask 255.255.255.0", "gateway-list 192.168.10.1", "dns-list 114.114.114.114", "expired day 7", "quit"], "expect": "地址池就绪。" },
+        { "seq": 3, "title": "接口引用地址池", "device": "SWA", "mode": "system", "hint": "VLANIF 上应用 global。", "commands": ["interface Vlanif 10", "ip address 192.168.10.1 24", "dhcp select global", "undo shutdown", "quit"], "expect": "接口引用成功。" },
+        { "seq": 4, "title": "客户端获取地址", "device": "PC1", "mode": "user", "hint": "ipconfig /renew", "commands": ["ipconfig /renew", "ipconfig /all"], "expect": "获得 192.168.10.x，网关/DNS 正确。" }
+      ],
+      "verification": [{ "command": "display ip pool name vlan10 used", "expect": "存在已分配租约" }],
+      "commonErrors": ["未 dhcp enable", "地址池网段与接口不在同一网段", "gateway-list 拼写错误"],
+      "references": ["教材项目二 任务3 活动4"]
+    },
+    {
+      "id": "e2-12", "moduleId": "m2", "code": "2.3.5", "title": "VRRP 网关冗余配置",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p2-t3-2.3.5-4b94",
+      "goals": ["创建 VRRP 备份组", "配置主备优先级与抢占", "验证链路跟踪与倒换"],
+      "devices": [{ "name": "SWA", "model": "S5700", "role": "主网关" }, { "name": "SWB", "model": "S5700", "role": "备网关" }, { "name": "PC1", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "SWA 配置 VRRP 主用", "device": "SWA", "mode": "system", "hint": "虚拟 IP 必须与接口同网段。", "commands": ["interface Vlanif 10", "ip address 192.168.10.1 24", "vrrp vrid 1 virtual-ip 192.168.10.254", "vrrp vrid 1 priority 120", "vrrp vrid 1 preempt-mode timer delay 5", "undo shutdown", "quit"], "expect": "SWA 成为 Master。" },
+        { "seq": 2, "title": "SWB 配置 VRRP 备用", "device": "SWB", "mode": "system", "hint": "优先级保持默认 100。", "commands": ["interface Vlanif 10", "ip address 192.168.10.2 24", "vrrp vrid 1 virtual-ip 192.168.10.254", "vrrp vrid 1 preempt-mode timer delay 5", "undo shutdown", "quit"], "expect": "SWB 为 Backup。" },
+        { "seq": 3, "title": "上行链路跟踪", "device": "SWA", "mode": "system", "hint": "上行 down 时降优先级触发切换。", "commands": ["interface Vlanif 10", "vrrp vrid 1 track interface GigabitEthernet 0/0/1 reduced 30", "quit"], "expect": "跟踪生效。" },
+        { "seq": 4, "title": "验证主备状态", "device": "PC1", "mode": "user", "hint": "网关填 192.168.10.254。", "commands": ["display vrrp brief"], "expect": "一 Master 一 Backup。" }
+      ],
+      "verification": [{ "command": "display vrrp brief", "expect": "vrid1 状态 Master/Backup" }],
+      "commonErrors": ["virtual-ip 与物理口不同网段", "两端优先级相同导致震荡", "未放行 VRRP 组播（VLAN 内应可）"],
+      "references": ["教材项目二 任务3 活动5"]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+<Huawei>un ter mo
+Info: Current terminal monitor is off.
+<Huawei>sy
+Enter system view, return user view with Ctrl+Z.
+[Huawei]sy R1
+[R1]int g0/0/0.101
+[R1-GigabitEthernet0/0/0.101]dot1q termination vid 101
+[R1-GigabitEthernet0/0/0.101]ip address 10.0.101.2 24
+[R1-GigabitEthernet0/0/0.101]arp broadcast enable 
+[R1-GigabitEthernet0/0/0.101]quit
+[R1]int g0/0/0.102
+[R1-GigabitEthernet0/0/0.102]dot1q termination vid 102
+[R1-GigabitEthernet0/0/0.102]ip address 10.0.102.2 24
+[R1-GigabitEthernet0/0/0.102]arp broadcast enable 
+[R1-GigabitEthernet0/0/0.102]quit
+[R1]ip route-static 0.0.0.0 0.0.0.0 10.0.101.1
+[R1]quit
+<R1>sa
+  The current configuration will be written to the device. 
+  Are you sure to continue? (y/n)[n]:y
+  It will take several minutes to save configuration file, please wait........
+  Configuration file had been saved successfully
+  Note: The configuration file will take effect after being activated
+<R1>

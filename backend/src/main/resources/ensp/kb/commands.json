@@ -1,0 +1,1403 @@
+{
+  "schema": "smartops.ensp.rules/v1",
+  "contexts": [
+    "user",
+    "system",
+    "interface",
+    "vlan",
+    "acl",
+    "ospf",
+    "rip",
+    "aaa",
+    "dhcp",
+    "wlan"
+  ],
+  "rules": [
+    {
+      "cmd": "system-view",
+      "match": "^(system-view|sys)$",
+      "contexts": [
+        "user"
+      ],
+      "enter": "system",
+      "desc": "从用户视图进入系统视图",
+      "example": "system-view"
+    },
+    {
+      "cmd": "return",
+      "match": "^return$",
+      "contexts": [
+        "system",
+        "interface",
+        "vlan",
+        "acl",
+        "ospf",
+        "rip",
+        "aaa",
+        "dhcp",
+        "wlan"
+      ],
+      "enter": "user",
+      "desc": "直接返回用户视图",
+      "example": "return"
+    },
+    {
+      "cmd": "quit",
+      "match": "^quit$",
+      "contexts": [
+        "system",
+        "interface",
+        "vlan",
+        "acl",
+        "ospf",
+        "rip",
+        "aaa",
+        "dhcp",
+        "wlan"
+      ],
+      "enter": "parent",
+      "desc": "返回上一级视图",
+      "example": "quit"
+    },
+    {
+      "cmd": "sysname",
+      "match": "^sysname\\s+[A-Za-z0-9_-]{1,31}$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "配置设备名称",
+      "example": "sysname SWA"
+    },
+    {
+      "cmd": "display sysname",
+      "match": "^display\\s+sysname$",
+      "contexts": [],
+      "desc": "查看设备名称",
+      "example": "display sysname"
+    },
+    {
+      "cmd": "clock datetime",
+      "match": "^clock\\s+datetime\\s+\\d{2}:\\d{2}:\\d{2}\\s+\\d{4}-\\d{2}-\\d{2}$",
+      "contexts": [
+        "user"
+      ],
+      "desc": "设置系统时间",
+      "example": "clock datetime 09:00:00 2026-11-27"
+    },
+    {
+      "cmd": "header login",
+      "match": "^header\\s+(login|shell)\\s+.*$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "配置登录标题信息",
+      "example": "header login information \"Unauthorized access prohibited\""
+    },
+    {
+      "cmd": "user-interface console 0",
+      "match": "^user-interface\\s+console\\s+0$",
+      "contexts": [
+        "system"
+      ],
+      "enter": "user-interface",
+      "desc": "进入 Console 用户界面",
+      "example": "user-interface console 0"
+    },
+    {
+      "cmd": "user-interface vty",
+      "match": "^user-interface\\s+vty\\s+\\d+\\s+\\d+$",
+      "contexts": [
+        "system"
+      ],
+      "enter": "user-interface",
+      "desc": "进入 VTY 用户界面",
+      "example": "user-interface vty 0 4"
+    },
+    {
+      "cmd": "authentication-mode",
+      "match": "^authentication-mode\\s+(password|aaa|none)$",
+      "contexts": [
+        "user-interface"
+      ],
+      "desc": "设置登录认证方式",
+      "example": "authentication-mode password"
+    },
+    {
+      "cmd": "set authentication password",
+      "match": "^set\\s+authentication\\s+password\\s+(simple|cipher)\\s+\\S+$",
+      "contexts": [
+        "user-interface"
+      ],
+      "desc": "设置 Password 认证口令",
+      "example": "set authentication password simple huawei@123"
+    },
+    {
+      "cmd": "idle-timeout",
+      "match": "^idle-timeout\\s+\\d+(\\s+\\d+)?$",
+      "contexts": [
+        "user-interface"
+      ],
+      "desc": "配置空闲超时时间",
+      "example": "idle-timeout 10 0"
+    },
+    {
+      "cmd": "telnet server enable",
+      "match": "^(telnet|stelnet)\\s+server\\s+enable$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "使能 Telnet/STelnet 服务器",
+      "example": "telnet server enable"
+    },
+    {
+      "cmd": "protocol inbound",
+      "match": "^protocol\\s+inbound\\s+(telnet|ssh|all)$",
+      "contexts": [
+        "user-interface"
+      ],
+      "desc": "指定 VTY 接入协议",
+      "example": "protocol inbound telnet"
+    },
+    {
+      "cmd": "ssh server enable",
+      "match": "^stelnet\\s+server\\s+enable$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "使能 STelnet 服务器（SSH）",
+      "example": "stelnet server enable"
+    },
+    {
+      "cmd": "rsa local-key-pair create",
+      "match": "^rsa\\s+local-key-pair\\s+create$",
+      "contexts": [
+        "user"
+      ],
+      "desc": "生成本地 RSA 密钥对（STelnet 前置）",
+      "example": "rsa local-key-pair create"
+    },
+    {
+      "cmd": "ssh user",
+      "match": "^ssh\\s+user\\s+\\S+$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "创建 SSH 用户",
+      "example": "ssh user admin"
+    },
+    {
+      "cmd": "ssh user authentication-type",
+      "match": "^ssh\\s+user\\s+\\S+\\s+authentication-type\\s+(password|rsa|all)$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "设置 SSH 用户认证类型",
+      "example": "ssh user admin authentication-type password"
+    },
+    {
+      "cmd": "ssh user service-type",
+      "match": "^ssh\\s+user\\s+\\S+\\s+service-type\\s+(stelnet|ssh|sftp)$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "设置 SSH 用户服务类型",
+      "example": "ssh user admin service-type stelnet"
+    },
+    {
+      "cmd": "vlan batch",
+      "match": "^vlan\\s+batch\\s+[\\d,\\s-]+$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "批量创建 VLAN",
+      "example": "vlan batch 10 20 30"
+    },
+    {
+      "cmd": "vlan",
+      "match": "^vlan\\s+\\d{1,4}$",
+      "contexts": [
+        "system"
+      ],
+      "enter": "vlan",
+      "desc": "创建并进入 VLAN 视图",
+      "example": "vlan 10"
+    },
+    {
+      "cmd": "description(vlan)",
+      "match": "^description\\s+\\S",
+      "contexts": [
+        "vlan"
+      ],
+      "desc": "配置 VLAN 描述",
+      "example": "description sales-vlan"
+    },
+    {
+      "cmd": "display vlan",
+      "match": "^display\\s+vlan(\\s+\\d{1,4})?$",
+      "contexts": [],
+      "desc": "查看 VLAN 信息",
+      "example": "display vlan"
+    },
+    {
+      "cmd": "display interface brief",
+      "match": "^display\\s+interface\\s+brief$",
+      "contexts": [],
+      "desc": "查看接口概要",
+      "example": "display interface brief"
+    },
+    {
+      "cmd": "interface ethernet",
+      "match": "^interface\\s+[A-Za-z][A-Za-z0-9-]*(\\s+.*)?$",
+      "contexts": [
+        "system"
+      ],
+      "enter": "interface",
+      "desc": "进入接口视图",
+      "example": "interface GigabitEthernet 0/0/1"
+    },
+    {
+      "cmd": "description(if)",
+      "match": "^description\\s+\\S",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "接口描述",
+      "example": "description uplink-to-core"
+    },
+    {
+      "cmd": "shutdown",
+      "match": "^shutdown$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "关闭接口",
+      "example": "shutdown"
+    },
+    {
+      "cmd": "undo shutdown",
+      "match": "^undo\\s+shutdown$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "打开接口",
+      "example": "undo shutdown"
+    },
+    {
+      "cmd": "port link-type",
+      "match": "^port\\s+link-type\\s+(access|trunk|hybrid)$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置接口类型（access/trunk/hybrid）",
+      "example": "port link-type trunk"
+    },
+    {
+      "cmd": "port default vlan",
+      "match": "^port\\s+default\\s+vlan\\s+\\d{1,4}$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "Access 口加入默认 VLAN",
+      "example": "port default vlan 10"
+    },
+    {
+      "cmd": "port trunk allow-pass",
+      "match": "^port\\s+trunk\\s+allow-pass\\s+vlan\\s+[\\d,\\s-]+(all)?$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "Trunk 口允许 VLAN 通过",
+      "example": "port trunk allow-pass vlan 10 20"
+    },
+    {
+      "cmd": "port hybrid untagged",
+      "match": "^port\\s+hybrid\\s+(untagged|tagged)\\s+vlan\\s+",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "Hybrid 口 VLAN 标签处理",
+      "example": "port hybrid untagged vlan 10"
+    },
+    {
+      "cmd": "port trunk pvid vlan",
+      "match": "^port\\s+trunk\\s+pvid\\s+vlan\\s+\\d{1,4}$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置 Trunk 默认 VLAN(PVID)",
+      "example": "port trunk pvid vlan 10"
+    },
+    {
+      "cmd": "ip address",
+      "match": "^ip\\s+address\\s+(\\d{1,3}\\.){3}\\d{1,3}(\\s+(\\d{1,3}\\.){3}\\d{1,3}|\\s+\\d{1,2})$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置接口 IP 地址",
+      "example": "ip address 192.168.1.1 24"
+    },
+    {
+      "cmd": "undo ip address",
+      "match": "^undo\\s+ip\\s+address",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "删除接口 IP 地址",
+      "example": "undo ip address"
+    },
+    {
+      "cmd": "display ip interface brief",
+      "match": "^display\\s+ip\\s+interface\\s+brief$",
+      "contexts": [],
+      "desc": "查看接口 IP 概要",
+      "example": "display ip interface brief"
+    },
+    {
+      "cmd": "display interface",
+      "match": "^display\\s+interface\\s+.*$",
+      "contexts": [],
+      "desc": "查看接口详细信息",
+      "example": "display interface GigabitEthernet 0/0/1"
+    },
+    {
+      "cmd": "link-protocol",
+      "match": "^link-protocol\\s+(ppp|hdlc)$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置串口链路层协议封装",
+      "example": "link-protocol ppp"
+    },
+    {
+      "cmd": "ppp authentication-mode pap",
+      "match": "^ppp\\s+authentication-mode\\s+pap(\\s+domain\\s+\\S+)?$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "PPP 配置 PAP 认证",
+      "example": "ppp authentication-mode pap"
+    },
+    {
+      "cmd": "ppp authentication-mode chap",
+      "match": "^ppp\\s+authentication-mode\\s+chap$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "PPP 配置 CHAP 认证",
+      "example": "ppp authentication-mode chap"
+    },
+    {
+      "cmd": "ppp chap user",
+      "match": "^ppp\\s+chap\\s+user\\s+\\S+",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "CHAP 认证用户名",
+      "example": "ppp chap user r1"
+    },
+    {
+      "cmd": "ppp chap password",
+      "match": "^ppp\\s+chap\\s+password\\s+(simple|cipher)\\s+\\S+$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "CHAP 认证密码",
+      "example": "ppp chap password cipher huawei@123"
+    },
+    {
+      "cmd": "ppp pap local-user",
+      "match": "^ppp\\s+pap\\s+local-user\\s+\\S+\\s+password\\s+(simple|cipher)\\s+\\S+$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "PAP 认证本地用户密码",
+      "example": "ppp pap local-user r1 password cipher huawei@123"
+    },
+    {
+      "cmd": "dhcp enable",
+      "match": "^dhcp\\s+enable$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "全局使能 DHCP",
+      "example": "dhcp enable"
+    },
+    {
+      "cmd": "ip pool",
+      "match": "^ip\\s+pool\\s+\\S+",
+      "contexts": [
+        "system"
+      ],
+      "enter": "dhcp",
+      "desc": "创建 DHCP 地址池",
+      "example": "ip pool vlan10"
+    },
+    {
+      "cmd": "network",
+      "match": "^network\\s+(\\d{1,3}\\.){3}\\d{1,3}(\\s+mask\\s+((\\d{1,3}\\.){3}\\d{1,3}|\\d{1,2}))?$",
+      "contexts": [
+        "dhcp"
+      ],
+      "desc": "地址池网段",
+      "example": "network 192.168.10.0 mask 255.255.255.0"
+    },
+    {
+      "cmd": "gateway-list",
+      "match": "^gateway-list\\s+(\\d{1,3}\\.){3}\\d{1,3}(\\s+(\\d{1,3}\\.){3}\\d{1,3})*$",
+      "contexts": [
+        "dhcp"
+      ],
+      "desc": "地址池网关",
+      "example": "gateway-list 192.168.10.1"
+    },
+    {
+      "cmd": "dns-list",
+      "match": "^dns-list\\s+(\\d{1,3}\\.){3}\\d{1,3}(\\s+(\\d{1,3}\\.){3}\\d{1,3})*$",
+      "contexts": [
+        "dhcp"
+      ],
+      "desc": "地址池 DNS",
+      "example": "dns-list 8.8.8.8"
+    },
+    {
+      "cmd": "expired",
+      "match": "^expired\\s+(day|hour|minute|unlimited)(\\s+\\d+)?$",
+      "contexts": [
+        "dhcp"
+      ],
+      "desc": "地址租期",
+      "example": "expired day 7"
+    },
+    {
+      "cmd": "dhcp select global",
+      "match": "^dhcp\\s+select\\s+(global|interface|relay)$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "接口应用 DHCP 方式",
+      "example": "dhcp select global"
+    },
+    {
+      "cmd": "dhcp select relay",
+      "match": "^dhcp\\s+select\\s+relay$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "启用 DHCP 中继",
+      "example": "dhcp select relay"
+    },
+    {
+      "cmd": "dhcp relay server-ip",
+      "match": "^dhcp\\s+relay\\s+server-ip\\s+(\\d{1,3}\\.){3}\\d{1,3}$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "DHCP 中继服务器地址",
+      "example": "dhcp relay server-ip 192.168.1.100"
+    },
+    {
+      "cmd": "display ip pool",
+      "match": "^display\\s+ip\\s+pool(\\s+.*)?$",
+      "contexts": [],
+      "desc": "查看 DHCP 地址池",
+      "example": "display ip pool"
+    },
+    {
+      "cmd": "ip route-static",
+      "match": "^ip\\s+route-static\\s+(\\d{1,3}\\.){3}\\d{1,3}\\s+((\\d{1,3}\\.){3}\\d{1,3}|\\d{1,2})(\\s+(\\d{1,3}\\.){3}\\d{1,3})?(\\s+preference\\s+\\d+)?$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "配置静态路由/缺省路由/浮动静态路由",
+      "example": "ip route-static 0.0.0.0 0.0.0.0 192.168.1.2 preference 80"
+    },
+    {
+      "cmd": "display ip routing-table",
+      "match": "^display\\s+ip\\s+routing-table(\\s+\\S+)*$",
+      "contexts": [],
+      "desc": "查看路由表",
+      "example": "display ip routing-table"
+    },
+    {
+      "cmd": "rip",
+      "match": "^rip(\\s+\\d{1,5})?$",
+      "contexts": [
+        "system"
+      ],
+      "enter": "rip",
+      "desc": "创建并进入 RIP 进程",
+      "example": "rip 1"
+    },
+    {
+      "cmd": "version 2",
+      "match": "^version\\s+[12]$",
+      "contexts": [
+        "rip"
+      ],
+      "desc": "RIP 版本切换为 v2",
+      "example": "version 2"
+    },
+    {
+      "cmd": "network(rip)",
+      "match": "^network\\s+(\\d{1,3}\\.){3}\\d{1,3}$",
+      "contexts": [
+        "rip"
+      ],
+      "desc": "RIP 宣告直连网段",
+      "example": "network 192.168.1.0"
+    },
+    {
+      "cmd": "undo summary",
+      "match": "^undo\\s+summary$",
+      "contexts": [
+        "rip"
+      ],
+      "desc": "RIPv2 关闭自动汇总",
+      "example": "undo summary"
+    },
+    {
+      "cmd": "peer",
+      "match": "^peer\\s+(\\d{1,3}\\.){3}\\d{1,3}$",
+      "contexts": [
+        "rip"
+      ],
+      "desc": "RIP 单播邻居",
+      "example": "peer 192.168.1.2"
+    },
+    {
+      "cmd": "ospf",
+      "match": "^ospf(\\s+\\d{1,5})?(\\s+router-id\\s+(\\d{1,3}\\.){3}\\d{1,3})?$",
+      "contexts": [
+        "system"
+      ],
+      "enter": "ospf",
+      "desc": "创建并进入 OSPF 进程",
+      "example": "ospf 1 router-id 1.1.1.1"
+    },
+    {
+      "cmd": "area",
+      "match": "^area\\s+\\d{1,5}$",
+      "contexts": [
+        "ospf"
+      ],
+      "enter": "ospf-area",
+      "desc": "进入 OSPF 区域",
+      "example": "area 0"
+    },
+    {
+      "cmd": "network(ospf)",
+      "match": "^network\\s+(\\d{1,3}\\.){3}\\d{1,3}\\s+(\\d{1,3}\\.){3}\\d{1,3}$",
+      "contexts": [
+        "ospf-area"
+      ],
+      "desc": "OSPF 区域宣告网段",
+      "example": "network 192.168.1.0 0.0.0.255"
+    },
+    {
+      "cmd": "authentication-mode",
+      "match": "^authentication-mode\\s+(simple|md5|keychain|hmac-md5)(\\s+\\d+)?(\\s+(simple|cipher)\\s+\\S+)?$",
+      "contexts": [
+        "ospf-area"
+      ],
+      "desc": "OSPF 区域认证",
+      "example": "authentication-mode simple cipher huawei@123"
+    },
+    {
+      "cmd": "acl number",
+      "match": "^acl\\s+(number\\s+)?(2000|3000|4000)\\b",
+      "contexts": [
+        "system"
+      ],
+      "enter": "acl",
+      "desc": "创建基本/高级/二层 ACL（2000/3000/4000）",
+      "example": "acl number 2000"
+    },
+    {
+      "cmd": "rule permit source",
+      "match": "^rule\\s+\\d*\\s*(permit|deny)\\s+.*$",
+      "contexts": [
+        "acl"
+      ],
+      "desc": "ACL 规则：匹配源/目的与协议",
+      "example": "rule permit source 192.168.10.0 0.0.0.255"
+    },
+    {
+      "cmd": "step",
+      "match": "^step\\s+\\d+$",
+      "contexts": [
+        "acl"
+      ],
+      "desc": "ACL 规则步长",
+      "example": "step 5"
+    },
+    {
+      "cmd": "description(acl)",
+      "match": "^description\\s+\\S",
+      "contexts": [
+        "acl"
+      ],
+      "desc": "ACL 描述",
+      "example": "description deny-guest"
+    },
+    {
+      "cmd": "traffic-filter",
+      "match": "^traffic-filter\\s+(inbound|outbound)\\s+acl\\s+(2000|3000|4000|\\S+)$",
+      "contexts": [
+        "interface",
+        "vlan"
+      ],
+      "desc": "接口/VLAN 调用 ACL 过滤",
+      "example": "traffic-filter outbound acl 3000"
+    },
+    {
+      "cmd": "traffic-policy",
+      "match": "^traffic-policy\\s+\\S+\\s+(inbound|outbound)$",
+      "contexts": [
+        "interface",
+        "vlan"
+      ],
+      "desc": "调用流策略",
+      "example": "traffic-policy p1 inbound"
+    },
+    {
+      "cmd": "display acl",
+      "match": "^display\\s+acl\\s*\\S*",
+      "contexts": [],
+      "desc": "查看 ACL",
+      "example": "display acl 2000"
+    },
+    {
+      "cmd": "nat static",
+      "match": "^nat\\s+static\\s+.*$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置静态 NAT 映射方向",
+      "example": "nat static global 202.100.1.10 inside 192.168.1.10"
+    },
+    {
+      "cmd": "nat outbound",
+      "match": "^nat\\s+outbound\\s+\\d{4}(\\s+(no-pat|group))?\\s*$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置 NAPT 出接口转换",
+      "example": "nat outbound 2000"
+    },
+    {
+      "cmd": "nat server",
+      "match": "^nat\\s+server\\s+protocol\\s+(tcp|udp)\\s+global\\s+\\S+\\s+\\S+\\s+inside\\s+\\S+\\s+\\S+",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "NAT 服务器映射（静态端口映射）",
+      "example": "nat server protocol tcp global 202.100.1.10 www inside 192.168.1.10 8080"
+    },
+    {
+      "cmd": "display nat",
+      "match": "^display\\s+nat.*$",
+      "contexts": [],
+      "desc": "查看 NAT 会话/统计",
+      "example": "display nat session all"
+    },
+    {
+      "cmd": "stp enable",
+      "match": "^stp\\s+enable$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "使能 STP",
+      "example": "stp enable"
+    },
+    {
+      "cmd": "stp disable",
+      "match": "^stp\\s+disable$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "去使能 STP",
+      "example": "stp disable"
+    },
+    {
+      "cmd": "stp root primary",
+      "match": "^stp\\s+root\\s+(primary|secondary)$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "配置根桥/备份根桥",
+      "example": "stp root primary"
+    },
+    {
+      "cmd": "stp priority",
+      "match": "^stp\\s+priority\\s+\\d+$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "配置桥优先级",
+      "example": "stp priority 4096"
+    },
+    {
+      "cmd": "stp mode",
+      "match": "^stp\\s+mode\\s+(stp|rstp|mstp)$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "配置生成树模式",
+      "example": "stp mode rstp"
+    },
+    {
+      "cmd": "stp edged-port",
+      "match": "^stp\\s+edged-port\\s+enable$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置边缘端口（RSTP/MSTP）",
+      "example": "stp edged-port enable"
+    },
+    {
+      "cmd": "display stp",
+      "match": "^display\\s+stp(\\s+\\S+)*$",
+      "contexts": [],
+      "desc": "查看生成树状态",
+      "example": "display stp brief"
+    },
+    {
+      "cmd": "eth-trunk",
+      "match": "^eth-trunk\\s+\\d{1,4}$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "物理接口加入 Eth-Trunk",
+      "example": "eth-trunk 1"
+    },
+    {
+      "cmd": "mode lacp-static",
+      "match": "^mode\\s+(lacp-static|lacp-dynamic|manual|static-lacp)$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "链路聚合模式",
+      "example": "mode lacp-static"
+    },
+    {
+      "cmd": "least active-linknumber",
+      "match": "^least\\s+active-linknumber\\s+\\d+$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "LACP 最小活动链路数",
+      "example": "least active-linknumber 1"
+    },
+    {
+      "cmd": "load-balance",
+      "match": "^load-balance\\s+(src-mac|dst-mac|src-ip|dst-ip|src-dst-mac)",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "Eth-Trunk 负载分担模式",
+      "example": "load-balance src-dst-ip"
+    },
+    {
+      "cmd": "display eth-trunk",
+      "match": "^display\\s+eth-trunk(\\s+\\S+)*$",
+      "contexts": [],
+      "desc": "查看链路聚合状态",
+      "example": "display eth-trunk 1"
+    },
+    {
+      "cmd": "vrrp vrid virtual-ip",
+      "match": "^vrrp\\s+vrid\\s+\\d+\\s+virtual-ip\\s+(\\d{1,3}\\.){3}\\d{1,3}$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "创建 VRRP 备份组并设置虚拟 IP",
+      "example": "vrrp vrid 1 virtual-ip 192.168.1.254"
+    },
+    {
+      "cmd": "vrrp vrid priority",
+      "match": "^vrrp\\s+vrid\\s+\\d+\\s+priority\\s+\\d+$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置 VRRP 优先级",
+      "example": "vrrp vrid 1 priority 120"
+    },
+    {
+      "cmd": "vrrp vrid preempt-mode",
+      "match": "^vrrp\\s+vrid\\s+\\d+\\s+preempt-mode(\\s+timer\\s+delay\\s+\\d+)?$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "配置 VRRP 抢占模式",
+      "example": "vrrp vrid 1 preempt-mode timer delay 5"
+    },
+    {
+      "cmd": "vrrp vrid track",
+      "match": "^vrrp\\s+vrid\\s+\\d+\\s+track\\s+.*$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "VRRP 上行链路跟踪",
+      "example": "vrrp vrid 1 track interface GigabitEthernet 0/0/1 reduced 30"
+    },
+    {
+      "cmd": "display vrrp",
+      "match": "^display\\s+vrrp(\\s+\\S+)*$",
+      "contexts": [],
+      "desc": "查看 VRRP 状态",
+      "example": "display vrrp brief"
+    },
+    {
+      "cmd": "aaa",
+      "match": "^aaa$",
+      "contexts": [
+        "system"
+      ],
+      "enter": "aaa",
+      "desc": "进入 AAA 视图",
+      "example": "aaa"
+    },
+    {
+      "cmd": "local-user",
+      "match": "^local-user\\s+\\S+\\s+password\\s+(simple|cipher|irreversible-cipher)\\s+\\S+",
+      "contexts": [
+        "aaa"
+      ],
+      "desc": "创建本地用户并设置密码",
+      "example": "local-user admin password cipher huawei@123"
+    },
+    {
+      "cmd": "local-user service-type",
+      "match": "^local-user\\s+\\S+\\s+service-type\\s+(telnet|ssh|terminal|ftp|http|ppp|access)$",
+      "contexts": [
+        "aaa"
+      ],
+      "desc": "设置本地用户接入类型",
+      "example": "local-user admin service-type telnet"
+    },
+    {
+      "cmd": "local-user privilege level",
+      "match": "^local-user\\s+\\S+\\s+privilege\\s+level\\s+\\d{1,2}$",
+      "contexts": [
+        "aaa"
+      ],
+      "desc": "设置本地用户权限等级",
+      "example": "local-user admin privilege level 15"
+    },
+    {
+      "cmd": "local-user idle-timeout",
+      "match": "^local-user\\s+\\S+\\s+idle-timeout\\s+\\d+\\s+\\d+$",
+      "contexts": [
+        "aaa"
+      ],
+      "desc": "本地用户在线超时",
+      "example": "local-user admin idle-timeout 10 0"
+    },
+    {
+      "cmd": "display local-user",
+      "match": "^display\\s+local-user(\\s+\\S+)*$",
+      "contexts": [],
+      "desc": "查看本地用户",
+      "example": "display local-user username admin"
+    },
+    {
+      "cmd": "port-security enable",
+      "match": "^port-security\\s+enable$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "使能端口安全",
+      "example": "port-security enable"
+    },
+    {
+      "cmd": "port-security max-mac-num",
+      "match": "^port-security\\s+max-mac-num\\s+\\d+$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "端口安全最大 MAC 数",
+      "example": "port-security max-mac-num 1"
+    },
+    {
+      "cmd": "port-security protect-action",
+      "match": "^port-security\\s+protect-action\\s+(protect|restrict|shutdown)$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "违例处理动作",
+      "example": "port-security protect-action restrict"
+    },
+    {
+      "cmd": "port-security mac-address sticky",
+      "match": "^port-security\\s+mac-address\\s+sticky$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "启用粘滞 MAC 学习",
+      "example": "port-security mac-address sticky"
+    },
+    {
+      "cmd": "port-security mac-address",
+      "match": "^port-security\\s+mac-address\\s+([0-9a-f]{4}-){2}[0-9a-f]{4}$",
+      "contexts": [
+        "interface"
+      ],
+      "desc": "绑定静态 MAC",
+      "example": "port-security mac-address 5489-9800-1111"
+    },
+    {
+      "cmd": "ping",
+      "match": "^ping(\\s+(-a|-c|-s|-t|-i)\\s*\\S*)*\\s*(\\d{1,3}\\.){3}\\d{1,3}$",
+      "contexts": [],
+      "desc": "ICMP 连通性测试",
+      "example": "ping -c 4 192.168.1.2"
+    },
+    {
+      "cmd": "tracert",
+      "match": "^tracert\\s+(\\d{1,3}\\.){3}\\d{1,3}$",
+      "contexts": [],
+      "desc": "路径跟踪",
+      "example": "tracert 202.100.1.1"
+    },
+    {
+      "cmd": "save",
+      "match": "^save$",
+      "contexts": [
+        "system"
+      ],
+      "desc": "保存配置",
+      "example": "save"
+    },
+    {
+      "cmd": "reboot",
+      "match": "^reboot$",
+      "contexts": [
+        "user"
+      ],
+      "desc": "重启设备",
+      "example": "reboot"
+    },
+    {
+      "cmd": "display version",
+      "match": "^display\\s+version$",
+      "contexts": [],
+      "desc": "查看设备版本",
+      "example": "display version"
+    },
+    {
+      "cmd": "display current-configuration",
+      "match": "^display\\s+current-configuration(\\s+.*)?$",
+      "contexts": [],
+      "desc": "查看当前配置",
+      "example": "display current-configuration"
+    },
+    {
+      "cmd": "display saved-configuration",
+      "match": "^display\\s+saved-configuration$",
+      "contexts": [],
+      "desc": "查看已保存配置",
+      "example": "display saved-configuration"
+    },
+    {
+      "cmd": "display this",
+      "match": "^display\\s+this$",
+      "contexts": [],
+      "desc": "查看当前视图配置",
+      "example": "display this"
+    },
+    {
+      "cmd": "reset saved-configuration",
+      "match": "^reset\\s+saved-configuration$",
+      "contexts": [
+        "user"
+      ],
+      "desc": "清除已保存配置",
+      "example": "reset saved-configuration"
+    },
+    {
+      "cmd": "clock rate",
+      "match": "^clock\\s+rate\\s+\\d+$",
+      "contexts": [
+        "interface"
+      ],
+      "enter": null,
+      "desc": "配置 DCE 时钟频率",
+      "example": "clock rate 64000"
+    },
+    {
+      "cmd": "telnet client",
+      "match": "^telnet\\s+\\S+",
+      "contexts": [
+        "user"
+      ],
+      "enter": null,
+      "desc": "Telnet 客户端登录",
+      "example": "telnet 192.168.10.1"
+    },
+    {
+      "cmd": "ssh client",
+      "match": "^ssh\\s+-l\\s+\\S+\\s+\\S+$",
+      "contexts": [
+        "user"
+      ],
+      "enter": null,
+      "desc": "SSH 客户端登录",
+      "example": "ssh -l admin 192.168.10.1"
+    },
+    {
+      "cmd": "ipconfig",
+      "match": "^ipconfig(\\s+/\\w+)?$",
+      "contexts": [],
+      "enter": null,
+      "desc": "PC 客户端 IP 配置查看 / 续租",
+      "example": "ipconfig /renew"
+    },
+    {
+      "cmd": "arp broadcast enable",
+      "match": "^arp\\s+broadcast\\s+enable$",
+      "contexts": [
+        "interface"
+      ],
+      "enter": null,
+      "desc": "使能子接口 ARP 广播（单臂路由）",
+      "example": "arp broadcast enable"
+    },
+    {
+      "cmd": "dot1q termination vid",
+      "match": "^dot1q\\s+termination\\s+vid\\s+\\d{1,4}$",
+      "contexts": [
+        "interface"
+      ],
+      "enter": null,
+      "desc": "子接口终结 VLAN（dot1q termination）",
+      "example": "dot1q termination vid 101"
+    },
+    {
+      "cmd": "display ppp",
+      "match": "^display\\s+ppp.*$",
+      "contexts": [],
+      "enter": null,
+      "desc": "查看 PPP / MP 链路状态",
+      "example": "display ppp all"
+    },
+    {
+      "cmd": "wlan",
+      "match": "^wlan$",
+      "contexts": [
+        "system"
+      ],
+      "enter": "wlan",
+      "desc": "进入 WLAN 视图",
+      "example": "wlan"
+    },
+    {
+      "cmd": "ap-group name",
+      "match": "^ap-group\\s+name\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "创建 AP 组",
+      "example": "ap-group name ap-group1"
+    },
+    {
+      "cmd": "ap-group join",
+      "match": "^ap-group\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "AP 加入 AP 组",
+      "example": "ap-group ap-group1"
+    },
+    {
+      "cmd": "ap auth-mode",
+      "match": "^ap\\s+auth-mode\\s+\\S+$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "AP 认证模式",
+      "example": "ap auth-mode mac-auth"
+    },
+    {
+      "cmd": "ap-id",
+      "match": "^ap-id\\s+\\d+(\\s+ap-mac\\s+\\S+)?$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "按 MAC 创建 AP",
+      "example": "ap-id 0 ap-mac 00e0-fc97-3090"
+    },
+    {
+      "cmd": "ap-name",
+      "match": "^ap-name\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "配置 AP 名称",
+      "example": "ap-name office_1"
+    },
+    {
+      "cmd": "forward-mode",
+      "match": "^forward-mode\\s+\\S+$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "转发模式",
+      "example": "forward-mode direct-forward"
+    },
+    {
+      "cmd": "eirp",
+      "match": "^eirp\\s+\\d+$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "AP 发射功率",
+      "example": "eirp 127"
+    },
+    {
+      "cmd": "capwap source interface",
+      "match": "^capwap\\s+source\\s+interface\\s+.*$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "CAPWAP 源接口",
+      "example": "capwap source interface vlanif 99"
+    },
+    {
+      "cmd": "service-vlan vlan-id",
+      "match": "^service-vlan\\s+vlan-id\\s+\\d{1,4}$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "业务 VLAN",
+      "example": "service-vlan vlan-id 101"
+    },
+    {
+      "cmd": "security-profile name",
+      "match": "^security-profile\\s+name\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "创建安全策略模板",
+      "example": "security-profile name office"
+    },
+    {
+      "cmd": "security-profile ref",
+      "match": "^security-profile\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "引用安全策略模板",
+      "example": "security-profile office"
+    },
+    {
+      "cmd": "ssid-profile name",
+      "match": "^ssid-profile\\s+name\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "创建 SSID 模板",
+      "example": "ssid-profile name office"
+    },
+    {
+      "cmd": "ssid-profile ref",
+      "match": "^ssid-profile\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "引用 SSID 模板",
+      "example": "ssid-profile office"
+    },
+    {
+      "cmd": "vap-profile name",
+      "match": "^vap-profile\\s+name\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "创建 VAP 模板",
+      "example": "vap-profile name office"
+    },
+    {
+      "cmd": "vap-profile ref",
+      "match": "^vap-profile\\s+\\S+.*$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "引用 VAP 模板",
+      "example": "vap-profile office wlan 1 radio 0"
+    },
+    {
+      "cmd": "ssid",
+      "match": "^ssid\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "配置 SSID 名称",
+      "example": "ssid office"
+    },
+    {
+      "cmd": "security wpa-wpa2",
+      "match": "^security\\s+wpa-wpa2\\s+psk\\s+pass-phrase\\s+\\S+\\s+\\S+$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "WPA/WPA2 预共享密钥",
+      "example": "security wpa-wpa2 psk pass-phrase office@123 aes"
+    },
+    {
+      "cmd": "display ap",
+      "match": "^display\\s+ap.*$",
+      "contexts": [],
+      "enter": null,
+      "desc": "查看 AP 信息",
+      "example": "display ap all"
+    },
+    {
+      "cmd": "display vap",
+      "match": "^display\\s+vap.*$",
+      "contexts": [],
+      "enter": null,
+      "desc": "查看 VAP 信息",
+      "example": "display vap ssid office"
+    },
+    {
+      "cmd": "display telnet",
+      "match": "^display\\s+telnet.*$",
+      "contexts": [],
+      "enter": null,
+      "desc": "查看 Telnet 服务状态",
+      "example": "display telnet server status"
+    },
+    {
+      "cmd": "display ospf peer",
+      "match": "^display\\s+ospf\\s+peer.*$",
+      "contexts": [],
+      "enter": null,
+      "desc": "查看 OSPF 邻居",
+      "example": "display ospf peer brief"
+    },
+    {
+      "cmd": "dhcp server excluded-ip-address",
+      "match": "^dhcp\\s+server\\s+excluded-ip-address\\s+.*$",
+      "contexts": [
+        "dhcp"
+      ],
+      "enter": null,
+      "desc": "地址池排除地址",
+      "example": "dhcp server excluded-ip-address 10.0.10.2"
+    },
+    {
+      "cmd": "dhcp server dns-list",
+      "match": "^dhcp\\s+server\\s+dns-list\\s+.*$",
+      "contexts": [
+        "dhcp"
+      ],
+      "enter": null,
+      "desc": "地址池 DNS（接口视图写法）",
+      "example": "dhcp server dns-list 10.10.10.10"
+    },
+    {
+      "cmd": "regulatory-domain-profile name",
+      "match": "^regulatory-domain-profile\\s+name\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "创建监管域模板",
+      "example": "regulatory-domain-profile name default"
+    },
+    {
+      "cmd": "regulatory-domain-profile ref",
+      "match": "^regulatory-domain-profile\\s+\\S+",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "引用监管域模板",
+      "example": "regulatory-domain-profile default"
+    },
+    {
+      "cmd": "country-code",
+      "match": "^country-code\\s+\\S+$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "配置国家码",
+      "example": "country-code cn"
+    },
+    {
+      "cmd": "radio",
+      "match": "^radio\\s+\\d$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "进入射频视图",
+      "example": "radio 0"
+    },
+    {
+      "cmd": "channel",
+      "match": "^channel\\s+.*$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "配置信道带宽",
+      "example": "channel 20mhz 6"
+    },
+    {
+      "cmd": "security open",
+      "match": "^security\\s+open$",
+      "contexts": [
+        "wlan"
+      ],
+      "enter": null,
+      "desc": "开放认证（不加密）",
+      "example": "security open"
+    },
+    {
+      "cmd": "display station",
+      "match": "^display\\s+station.*$",
+      "contexts": [],
+      "enter": null,
+      "desc": "查看无线接入用户",
+      "example": "display station ssid office"
+    }
+  ],
+  "interfacePatterns": {
+    "switch": [
+      "Ethernet",
+      "GigabitEthernet",
+      "GE",
+      "Eth-Trunk",
+      "Vlanif"
+    ],
+    "router": [
+      "GigabitEthernet",
+      "Serial",
+      "LoopBack",
+      "Vlanif"
+    ],
+    "ap_ac": [
+      "GigabitEthernet",
+      "Vlanif"
+    ]
+  }
+}

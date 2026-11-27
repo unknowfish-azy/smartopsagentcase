@@ -1,0 +1,184 @@
+{
+  "id": "m3",
+  "order": 3,
+  "code": "项目三",
+  "title": "路由技术的配置",
+  "objectives": [
+    "掌握路由器接口、命名与基础参数配置",
+    "掌握路由器远程管理（Telnet/STelnet）与 AAA 认证",
+    "掌握路由器 DHCP 服务与中继配置",
+    "掌握单臂路由实现 VLAN 间通信"
+  ],
+  "knowledgePoints": [
+    {
+      "id": "kp3-01", "title": "路由器工作原理与路由表", "category": "technology",
+      "summary": "路由器依据目的网络查路由表转发，路由来源含直连、静态与动态。",
+      "detail": "最长匹配原则选路；路由表项包含目的网段、掩码、出接口、下一跳、优先级(preference)与度量值(cost)。display ip routing-table 查看；display ip interface brief 查看接口地址状态。缺省路由 0.0.0.0/0 用于出口兜底。",
+      "keyCommands": ["display ip interface brief", "display ip routing-table", "ip route-static"],
+      "experiments": ["e3-01", "e3-08"], "acceptance": "能解释最长匹配并读懂路由表关键列。"
+    },
+    {
+      "id": "kp3-02", "title": "路由器接口与子接口", "category": "command",
+      "summary": "物理口可配置主 IP 与从 IP，子接口用于单臂路由终结 VLAN Tag。",
+      "detail": "interface GigabitEthernet 0/0/1 配置 ip address A.B.C.D mask secondary；子接口 GigabitEthernet0/0/1.10 需 dot1q termination vid 10 后配置 IP，作为该 VLAN 网关。Serial 口需 link-protocol ppp/hdlc，DCE 端配 clock rate。",
+      "keyCommands": ["interface GigabitEthernet 0/0/1", "ip address", "dot1q termination vid", "link-protocol", "clock rate"],
+      "experiments": ["e3-01", "e3-08"], "acceptance": "能正确区分物理口、子接口、串口的配置差异。"
+    },
+    {
+      "id": "kp3-03", "title": "路由器远程管理的 AAA 体系", "category": "security",
+      "summary": "AAA 提供认证(Accounting/Authorization/Authentication)、授权与计费，本地认证依赖 local-user。",
+      "detail": "authentication-mode aaa 时，VTY 登录校验 local-user；service-type 控制可用协议（telnet/ssh/terminal）。level 0-15 对应权限等级，15 为最高。AAA 也用于 PPP CHAP/PAP 认证场景。",
+      "keyCommands": ["aaa", "local-user admin password cipher", "local-user admin service-type telnet", "authentication-mode aaa", "protocol inbound ssh"],
+      "experiments": ["e3-03", "e3-04", "e3-05"], "acceptance": "能按三种认证方式完成远程登录并说明安全差异。"
+    },
+    {
+      "id": "kp3-04", "title": "STelnet（SSH）部署要点", "category": "security",
+      "summary": "SSH 基于非对称密钥协商加密通道，需生成本地密钥对、创建 SSH 用户并放行 VTY。",
+      "detail": "顺序：rsa local-key-pair create → stelnet server enable → ssh user X authentication-type password → ssh user X service-type stelnet → aaa local-user → vty authentication-mode aaa + protocol inbound ssh。缺少任一步都会导致客户端连接失败。",
+      "keyCommands": ["rsa local-key-pair create", "stelnet server enable", "ssh user", "ssh user authentication-type password", "protocol inbound ssh"],
+      "experiments": ["e3-05"], "acceptance": "能独立排查 SSH 登录失败的常见原因。"
+    },
+    {
+      "id": "kp3-05", "title": "路由器 DHCP 全局地址池", "category": "technology",
+      "summary": "与交换机一致，路由器可在全局地址池中定义网段并供同网段或跨网段终端使用。",
+      "detail": "dhcp select global 仅支持与接口同网段；跨网段须使用中继。地址池可绑定接口 dhcp select interface 使用接口地址池（gateway 自动为接口 IP）。",
+      "keyCommands": ["dhcp enable", "ip pool", "network", "gateway-list", "dns-list", "expired", "dhcp select global"],
+      "experiments": ["e3-06"], "acceptance": "能对比 global / interface / relay 三种模式适用场景。"
+    },
+    {
+      "id": "kp3-06", "title": "DHCP 中继原理与配置", "category": "technology",
+      "summary": "中继将客户端广播 Discover 转为单播转发给服务器，并通过 GIADDR 回传客户端网段。",
+      "detail": "在靠近客户端的接口下 dhcp select relay + dhcp relay server-ip；服务器地址池按 GIADDR 所在网段分配。适用于多网段集中部署 DHCP Server 的场景。",
+      "keyCommands": ["dhcp select relay", "dhcp relay server-ip", "display ip pool"],
+      "experiments": ["e3-07"], "acceptance": "能通过报文字段解释中继为何能跨网段分配地址。"
+    },
+    {
+      "id": "kp3-07", "title": "单臂路由（Router-on-a-Stick）", "category": "technology",
+      "summary": "在路由器一个物理口下创建多个子接口，各自终结不同 VLAN，实现 VLAN 间路由。",
+      "detail": "每个子接口 dot1q termination vid N 终结 Tag，配置 IP 作为网关；交换机侧互联口必须为 Trunk 并放行相关 VLAN。缺点是所有 VLAN 间流量共享物理带宽，易成瓶颈。",
+      "keyCommands": ["interface GigabitEthernet 0/0/1.10", "dot1q termination vid 10", "arp broadcast enable", "ip address"],
+      "experiments": ["e3-08"], "acceptance": "能绘制单臂路由数据流路径并指出性能瓶颈。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e3-01", "moduleId": "m3", "code": "3.1", "title": "模拟器中路由器的基本配置",
+      "difficulty": "入门", "durationMin": 45, "topologyId": "p3-t1-3.1-f1b8",
+      "goals": ["熟悉 AR 路由器面板与接口", "配置主机名与接口 IP", "验证直连通信"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "路由器" }, { "name": "PC1", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "进入系统视图命名", "device": "R1", "mode": "user", "hint": "", "commands": ["system-view", "sysname R1"], "expect": "[R1]" },
+        { "seq": 2, "title": "配置 GE0/0/1 地址", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.1.1 24", "undo shutdown", "quit"], "expect": "接口 UP。" },
+        { "seq": 3, "title": "查看接口状态", "device": "R1", "mode": "user", "hint": "", "commands": ["display ip interface brief"], "expect": "GE0/0/1 192.168.1.1/24 UP" },
+        { "seq": 4, "title": "PC 连通性测试", "device": "PC1", "mode": "user", "hint": "PC1=192.168.1.2/24 网关 .1", "commands": ["ping 192.168.1.1"], "expect": "通。" }
+      ],
+      "verification": [{ "command": "display ip interface brief", "expect": "接口 UP" }],
+      "commonErrors": ["接口默认 shutdown 未打开", "IP 掩码位数写错"], "references": ["教材项目三 任务1"]
+    },
+    {
+      "id": "e3-02", "moduleId": "m3", "code": "3.2", "title": "路由器常用配置与路由表观察",
+      "difficulty": "基础", "durationMin": 50, "topologyId": "p3-t2-3.2-f6d7",
+      "goals": ["配置时间/横幅/超时", "查看直连路由生成", "保存配置"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "路由器" }, { "name": "R2", "model": "AR2220", "role": "路由器" }],
+      "steps": [
+        { "seq": 1, "title": "基础信息配置", "device": "R1", "mode": "system", "hint": "", "commands": ["sysname R1", "clock datetime 09:30:00 2026-11-27", "header login information \"Router R1\""], "expect": "" },
+        { "seq": 2, "title": "配置两端地址", "device": "R1", "mode": "system", "hint": "R1 GE0/0/1 = 10.0.0.1/30", "commands": ["interface GigabitEthernet 0/0/1", "ip address 10.0.0.1 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2 对称配置", "device": "R2", "mode": "system", "hint": "R2 GE0/0/1 = 10.0.0.2/30", "commands": ["sysname R2", "interface GigabitEthernet 0/0/1", "ip address 10.0.0.2 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "观察直连路由", "device": "R1", "mode": "user", "hint": "", "commands": ["display ip routing-table"], "expect": "出现 10.0.0.0/30 直连路由。" },
+        { "seq": 5, "title": "保存", "device": "R1", "mode": "system", "hint": "", "commands": ["return", "save"], "expect": "" }
+      ],
+      "verification": [{ "command": "display ip routing-table", "expect": "直连 C 路由存在" }],
+      "commonErrors": ["保存前未 return 到用户/系统视图", "两端掩码不一致"], "references": ["教材项目三 任务2"]
+    },
+    {
+      "id": "e3-03", "moduleId": "m3", "code": "3.3a", "title": "路由器 Telnet（Password 认证）",
+      "difficulty": "基础", "durationMin": 50, "topologyId": "p3-t3-3.3-f9e9",
+      "goals": ["配置管理地址", "VTY Password 认证", "远程登录"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "被管理路由器" }, { "name": "PC1", "model": "PC", "role": "管理终端" }],
+      "steps": [
+        { "seq": 1, "title": "管理地址", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.10.1 24", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "VTY Password", "device": "R1", "mode": "system", "hint": "", "commands": ["telnet server enable", "user-interface vty 0 4", "authentication-mode password", "set authentication password simple huawei@123", "protocol inbound telnet"], "expect": "" },
+        { "seq": 3, "title": "远程登录", "device": "PC1", "mode": "user", "hint": "", "commands": ["telnet 192.168.10.1"], "expect": "登录成功。" },
+        { "seq": 4, "title": "保存", "device": "R1", "mode": "system", "hint": "", "commands": ["return", "save"], "expect": "" }
+      ],
+      "verification": [{ "command": "display telnet server status", "expect": "enable" }],
+      "commonErrors": ["忘记 telnet server enable", "协议未放行"], "references": ["教材项目三 任务3"]
+    },
+    {
+      "id": "e3-04", "moduleId": "m3", "code": "3.3b", "title": "路由器 Telnet（AAA 认证）",
+      "difficulty": "基础", "durationMin": 55, "topologyId": "p3-t3-3.3-7e6c",
+      "goals": ["AAA 本地用户", "多用户分级权限", "远程登录"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "被管理路由器" }, { "name": "PC1", "model": "PC", "role": "管理终端" }],
+      "steps": [
+        { "seq": 1, "title": "管理地址", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.10.1 24", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "AAA 用户", "device": "R1", "mode": "system", "hint": "", "commands": ["aaa", "local-user admin password cipher huawei@123", "local-user admin privilege level 15", "local-user admin service-type telnet", "quit"], "expect": "" },
+        { "seq": 3, "title": "VTY 认证与协议", "device": "R1", "mode": "system", "hint": "", "commands": ["telnet server enable", "user-interface vty 0 4", "authentication-mode aaa", "protocol inbound telnet"], "expect": "" },
+        { "seq": 4, "title": "远程登录", "device": "PC1", "mode": "user", "hint": "", "commands": ["telnet 192.168.10.1"], "expect": "" }
+      ],
+      "verification": [{ "command": "display local-user username admin", "expect": "level 15" }],
+      "commonErrors": ["service-type 遗漏 telnet", "认证模式仍为 password"],
+      "references": ["教材项目三 任务3"]
+    },
+    {
+      "id": "e3-05", "moduleId": "m3", "code": "3.3c", "title": "路由器 STelnet（SSH）配置",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p3-t3-3.3-c2b3",
+      "goals": ["生成 RSA 密钥", "SSH 用户与 AAA 联动", "VTY 放行 ssh"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "被管理路由器" }, { "name": "PC1", "model": "PC", "role": "SSH 客户端" }],
+      "steps": [
+        { "seq": 1, "title": "管理地址", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.10.1 24", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "RSA 与使能", "device": "R1", "mode": "user", "hint": "", "commands": ["rsa local-key-pair create", "system-view", "stelnet server enable"], "expect": "" },
+        { "seq": 3, "title": "SSH 用户", "device": "R1", "mode": "system", "hint": "", "commands": ["ssh user admin", "ssh user admin authentication-type password", "ssh user admin service-type stelnet"], "expect": "" },
+        { "seq": 4, "title": "AAA 与 VTY", "device": "R1", "mode": "system", "hint": "", "commands": ["aaa", "local-user admin password cipher huawei@123", "local-user admin service-type ssh", "local-user admin privilege level 15", "quit", "user-interface vty 0 4", "authentication-mode aaa", "protocol inbound ssh"], "expect": "" },
+        { "seq": 5, "title": "SSH 登录", "device": "PC1", "mode": "user", "hint": "", "commands": ["ssh -l admin 192.168.10.1"], "expect": "" }
+      ],
+      "verification": [{ "command": "display ssh user-information", "expect": "admin stelnet" }],
+      "commonErrors": ["未生成密钥", "protocol inbound 未改 ssh"], "references": ["教材项目三 任务3"]
+    },
+    {
+      "id": "e3-06", "moduleId": "m3", "code": "3.4a", "title": "路由器 DHCP 服务配置",
+      "difficulty": "进阶", "durationMin": 55, "topologyId": "p3-t4-3.4-8082",
+      "goals": ["全局地址池下发", "客户端获取地址", "租期与网关核验"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "DHCP Server" }, { "name": "PC1", "model": "PC", "role": "客户端" }],
+      "steps": [
+        { "seq": 1, "title": "使能 DHCP", "device": "R1", "mode": "system", "hint": "", "commands": ["dhcp enable"], "expect": "" },
+        { "seq": 2, "title": "地址池", "device": "R1", "mode": "system", "hint": "", "commands": ["ip pool lan", "network 192.168.1.0 mask 255.255.255.0", "gateway-list 192.168.1.1", "dns-list 8.8.8.8", "expired day 3", "quit"], "expect": "" },
+        { "seq": 3, "title": "接口引用", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.1.1 24", "dhcp select global", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "获取地址", "device": "PC1", "mode": "user", "hint": "", "commands": ["ipconfig /renew", "ipconfig /all"], "expect": "192.168.1.x/24 网关 .1" }
+      ],
+      "verification": [{ "command": "display ip pool name lan used", "expect": "有租约" }],
+      "commonErrors": ["接口未 undo shutdown", "地址池网段错误"], "references": ["教材项目三 任务4"]
+    },
+    {
+      "id": "e3-07", "moduleId": "m3", "code": "3.4b", "title": "路由器 DHCP 中继配置",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p3-t4-3.4-c801",
+      "goals": ["跨网段部署 DHCP", "配置 relay", "验证 GIADDR 机制"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "中继路由器" }, { "name": "R2", "model": "AR2220", "role": "DHCP Server" }, { "name": "PC1", "model": "PC", "role": "客户端" }],
+      "steps": [
+        { "seq": 1, "title": "规划地址", "device": "R1", "mode": "system", "hint": "PC 网段 192.168.10.0/24，服务器 192.168.100.10。", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.10.1 24", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "R1 上联与静态路由", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/0", "ip address 10.0.0.1 30", "undo shutdown", "quit", "ip route-static 192.168.100.0 24 10.0.0.2"], "expect": "" },
+        { "seq": 3, "title": "启用中继", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "dhcp select relay", "dhcp relay server-ip 192.168.100.10", "quit"], "expect": "" },
+        { "seq": 4, "title": "R2 地址池", "device": "R2", "mode": "system", "hint": "服务器需回程路由。", "commands": ["dhcp enable", "ip pool sales", "network 192.168.10.0 mask 255.255.255.0", "gateway-list 192.168.10.1", "dns-list 114.114.114.114", "quit", "interface GigabitEthernet 0/0/0", "ip address 192.168.100.10 24", "undo shutdown", "quit", "ip route-static 0.0.0.0 0 10.0.0.1"], "expect": "" },
+        { "seq": 5, "title": "客户端验证", "device": "PC1", "mode": "user", "hint": "", "commands": ["ipconfig /renew"], "expect": "获得 192.168.10.x" }
+      ],
+      "verification": [{ "command": "display ip pool name sales used", "expect": "分配记录" }],
+      "commonErrors": ["中继地址写错", "服务器无回程路由", "relay 配置在错误接口"],
+      "references": ["教材项目三 任务4"]
+    },
+    {
+      "id": "e3-08", "moduleId": "m3", "code": "3.5", "title": "单臂路由实现 VLAN 间通信",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p3-t5-3.5-733e",
+      "goals": ["创建子接口", "终结 802.1Q", "跨 VLAN 互通"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "网关路由器" }, { "name": "SW1", "model": "S3700", "role": "接入交换机" }, { "name": "PC1", "model": "PC", "role": "VLAN10" }, { "name": "PC2", "model": "PC", "role": "VLAN20" }],
+      "steps": [
+        { "seq": 1, "title": "交换机 VLAN 划分", "device": "SW1", "mode": "system", "hint": "", "commands": ["vlan batch 10 20", "interface Ethernet 0/0/1", "port link-type access", "port default vlan 10", "quit", "interface Ethernet 0/0/2", "port link-type access", "port default vlan 20", "quit", "interface GigabitEthernet 0/0/1", "port link-type trunk", "port trunk allow-pass vlan 10 20", "quit"], "expect": "" },
+        { "seq": 2, "title": "R1 子接口 10", "device": "R1", "mode": "system", "hint": "子接口号可与 VLAN 号一致便于维护。", "commands": ["interface GigabitEthernet 0/0/1.10", "dot1q termination vid 10", "ip address 192.168.10.1 24", "arp broadcast enable", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 3, "title": "R1 子接口 20", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1.20", "dot1q termination vid 20", "ip address 192.168.20.1 24", "arp broadcast enable", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "PC 配置与验证", "device": "PC1", "mode": "user", "hint": "PC1 gw 192.168.10.1; PC2 gw 192.168.20.1", "commands": ["ping 192.168.20.2"], "expect": "通。" },
+        { "seq": 5, "title": "保存", "device": "R1", "mode": "system", "hint": "", "commands": ["return", "save"], "expect": "" }
+      ],
+      "verification": [{ "command": "display ip interface brief", "expect": "两个子接口均 UP" }],
+      "commonErrors": ["子接口未 dot1q termination", "Trunk 未放行 VLAN", "缺 arp broadcast enable 导致不通"],
+      "references": ["教材项目三 任务5"]
+    }
+  ]
+}

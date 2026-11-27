@@ -1,0 +1,80 @@
+{
+  "id": "m8",
+  "order": 8,
+  "code": "项目八",
+  "title": "综合实训",
+  "objectives": [
+    "整合交换、路由、安全、无线与广域网技术完成完整园区网",
+    "具备独立规划与调试中小型企业网络的能力",
+    "形成标准化配置、验证与排障流程"
+  ],
+  "knowledgePoints": [
+    {
+      "id": "kp8-01", "title": "园区网分层设计（接入/汇聚/核心）", "category": "concept",
+      "summary": "采用三层架构：接入层负责终端接入与 VLAN，汇聚层做策略与网关，核心层负责高速转发。",
+      "detail": "接入-汇聚 Trunk 透传业务 VLAN；汇聚使用三层接口或 SVI 提供网关冗余(VRRP)；核心与出口运行动态路由或静态；出口部署 NAT/ACL。分层便于故障隔离与横向扩展。",
+      "keyCommands": ["vlan batch", "port trunk allow-pass vlan", "interface Vlanif", "ip route-static"],
+      "experiments": ["e8-01", "e8-03"], "acceptance": "能绘制分层拓扑并说明各层职责。"
+    },
+    {
+      "id": "kp8-02", "title": "端到端连通性验证方法", "category": "troubleshooting",
+      "summary": "自底向上：物理→链路→VLAN/Trunk→IP→路由→策略(NAT/ACL)→应用。",
+      "detail": "逐段 ping/tracert 定位断点；display interface brief 看状态；display mac-address 确认学习；display ip routing-table 核对路由；display acl/nat session 排查策略误伤。",
+      "keyCommands": ["ping", "tracert", "display interface brief", "display ip routing-table", "display acl all"],
+      "experiments": ["e8-01", "e8-02", "e8-03"], "acceptance": "能按标准流程在 5 步内定位常见故障。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e8-01", "moduleId": "m8", "code": "8.1", "title": "综合实训一：NAT + 出口安全园区网",
+      "difficulty": "综合", "durationMin": 90, "topologyId": "p8-t1-8.1-8489",
+      "goals": ["交换接入与 VLAN 规划", "出口 NAPT 与 ACL 防护", "全网连通性验证"],
+      "devices": [{ "name": "SW1", "model": "S5700", "role": "接入交换机" }, { "name": "R1", "model": "AR2220", "role": "出口路由器" }, { "name": "PC1", "model": "PC", "role": "办公终端" }, { "name": "Server", "model": "Server", "role": "内网服务器" }],
+      "steps": [
+        { "seq": 1, "title": "VLAN 与接入", "device": "SW1", "mode": "system", "hint": "", "commands": ["vlan batch 10 20", "interface Ethernet 0/0/1", "port link-type access", "port default vlan 10", "quit", "interface Ethernet 0/0/2", "port link-type access", "port default vlan 20", "quit", "interface GigabitEthernet 0/0/1", "port link-type trunk", "port trunk allow-pass vlan 10 20", "quit"], "expect": "" },
+        { "seq": 2, "title": "网关与 DHCP", "device": "SW1", "mode": "system", "hint": "", "commands": ["interface Vlanif 10", "ip address 192.168.10.1 24", "dhcp select global", "undo shutdown", "quit", "interface Vlanif 20", "ip address 192.168.20.1 24", "undo shutdown", "quit", "dhcp enable", "ip pool v10", "network 192.168.10.0 mask 255.255.255.0", "gateway-list 192.168.10.1", "dns-list 114.114.114.114", "expired day 7", "quit"], "expect": "" },
+        { "seq": 3, "title": "出口地址与缺省路由", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.20.2 24", "undo shutdown", "quit", "interface GigabitEthernet 0/0/2", "ip address 202.100.1.1 24", "undo shutdown", "quit", "ip route-static 192.168.10.0 24 192.168.20.1", "ip route-static 0.0.0.0 0.0.0.0 202.100.1.2"], "expect": "" },
+        { "seq": 4, "title": "NAPT 转换", "device": "R1", "mode": "system", "hint": "", "commands": ["acl number 2000", "rule permit source 192.168.10.0 0.0.0.255", "rule permit source 192.168.20.0 0.0.0.255", "quit", "interface GigabitEthernet 0/0/2", "nat outbound 2000", "quit"], "expect": "" },
+        { "seq": 5, "title": "服务器静态映射与访问控制", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/2", "nat server protocol tcp global 202.100.1.10 www inside 192.168.20.10 80", "quit"], "expect": "" },
+        { "seq": 6, "title": "端到端验证", "device": "PC1", "mode": "user", "hint": "", "commands": ["ping 192.168.10.1", "ping 202.100.1.1", "ping 8.8.8.8"], "expect": "逐步打通。" },
+        { "seq": 7, "title": "保存", "device": "R1", "mode": "system", "hint": "", "commands": ["return", "save"], "expect": "" }
+      ],
+      "verification": [{ "command": "display nat session all", "expect": "NAPT 会话存在" }, { "command": "display ip routing-table", "expect": "缺省+回程路由" }],
+      "commonErrors": ["内网无回程路由", "NAT ACL 未放行内网网段", "Trunk 未放行业务 VLAN"],
+      "references": ["教材项目八 任务1", "referenceAnswers:p8-t1-r1-back-d64d"]
+    },
+    {
+      "id": "e8-02", "moduleId": "m8", "code": "8.2", "title": "综合实训二：无线园区网（AC+AP+三层互联）",
+      "difficulty": "综合", "durationMin": 90, "topologyId": "p8-t2-8.2-1cae",
+      "goals": ["无线业务与有线 VLAN 统一规划", "AC+AP 上线与 SSID 下发", "单臂路由实现业务互通"],
+      "devices": [{ "name": "AC", "model": "AC6605", "role": "无线控制器" }, { "name": "SW1", "model": "S5700", "role": "接入交换机" }, { "name": "R1", "model": "AR2220", "role": "三层网关" }, { "name": "AP1", "model": "AP6050DN", "role": "Fit AP" }, { "name": "PC1", "model": "PC", "role": "无线终端" }],
+      "steps": [
+        { "seq": 1, "title": "VLAN 与 Trunk", "device": "SW1", "mode": "system", "hint": "", "commands": ["vlan batch 10 99 101", "interface GigabitEthernet 0/0/1", "port link-type trunk", "port trunk allow-pass vlan 10 99 101", "quit"], "expect": "" },
+        { "seq": 2, "title": "AC 管理与 AP 上线", "device": "AC", "mode": "system", "hint": "", "commands": ["vlan batch 10 99 101", "capwap source interface Vlanif 99", "wlan", "ap auth-mode mac-auth", "ap-id 0 ap-mac 00e0-fc97-3090", "ap-name office_1", "ap-group ap-group1", "quit"], "expect": "" },
+        { "seq": 3, "title": "WLAN 业务下发", "device": "AC", "mode": "system", "hint": "", "commands": ["security-profile name office", "security wpa-wpa2 psk pass-phrase office@123 aes", "quit", "ssid-profile name office", "ssid office", "quit", "vap-profile name office", "forward-mode direct-forward", "service-vlan vlan-id 101", "security-profile office", "ssid-profile office", "quit", "ap-group name ap-group1", "vap-profile office wlan 1 radio 0", "vap-profile office wlan 1 radio 1", "quit"], "expect": "" },
+        { "seq": 4, "title": "三层网关子接口", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/0.101", "dot1q termination vid 101", "ip address 10.0.101.2 24", "arp broadcast enable", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 5, "title": "验证", "device": "AC", "mode": "user", "hint": "", "commands": ["display ap all", "display vap ssid office", "display station ssid office"], "expect": "AP nor，STA 在线。" }
+      ],
+      "verification": [{ "command": "display station ssid office", "expect": "STA 已关联" }],
+      "commonErrors": ["管理 VLAN 未透传", "VAP 未引用安全模板导致无法关联", "子接口未 arp broadcast enable"],
+      "references": ["教材项目八 任务2"]
+    },
+    {
+      "id": "e8-03", "moduleId": "m8", "code": "8.3", "title": "综合实训三：广域网 PPP + 路由综合",
+      "difficulty": "综合", "durationMin": 85, "topologyId": "p8-t3-8.3-7896",
+      "goals": ["PPP CHAP 建链", "OSPF/RIP 混合环境路由", "端到端业务验证"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "总部路由器" }, { "name": "R2", "model": "AR2220", "role": "分支路由器" }, { "name": "SW1", "model": "S3700", "role": "接入交换机" }, { "name": "PC1", "model": "PC", "role": "终端" }],
+      "steps": [
+        { "seq": 1, "title": "内网接入", "device": "SW1", "mode": "system", "hint": "", "commands": ["vlan batch 10", "interface Ethernet 0/0/1", "port link-type access", "port default vlan 10", "quit", "interface Vlanif 10", "ip address 192.168.1.1 24", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "R1 串口与 CHAP", "device": "R1", "mode": "system", "hint": "", "commands": ["aaa", "local-user r2 password cipher huawei@123", "local-user r2 service-type ppp", "quit", "interface Serial 2/0/0", "link-protocol ppp", "ppp authentication-mode chap", "ppp chap user r1", "ppp chap password cipher huawei@123", "ip address 10.0.0.1 30", "clock rate 64000", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2 对称配置", "device": "R2", "mode": "system", "hint": "", "commands": ["aaa", "local-user r1 password cipher huawei@123", "local-user r1 service-type ppp", "quit", "interface Serial 2/0/0", "link-protocol ppp", "ppp authentication-mode chap", "ppp chap user r2", "ppp chap password cipher huawei@123", "ip address 10.0.0.2 30", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "动态路由", "device": "R1", "mode": "system", "hint": "", "commands": ["rip 1", "version 2", "undo summary", "network 10.0.0.0", "network 192.168.1.0", "quit"], "expect": "" },
+        { "seq": 5, "title": "R2 宣告", "device": "R2", "mode": "system", "hint": "", "commands": ["rip 1", "version 2", "undo summary", "network 10.0.0.0", "network 192.168.2.0", "quit"], "expect": "" },
+        { "seq": 6, "title": "验证", "device": "PC1", "mode": "user", "hint": "", "commands": ["ping 10.0.0.2", "tracert 192.168.2.1"], "expect": "PPP 通且路由可达。" }
+      ],
+      "verification": [{ "command": "display ppp all", "expect": "CHAP Success / LCP Opened" }, { "command": "display ip routing-table protocol rip", "expect": "学到对端网段" }],
+      "commonErrors": ["CHAP 凭据不一致", "DCE 时钟缺失", "RIP 自动汇总导致路由异常"],
+      "references": ["教材项目八 任务3"]
+    }
+  ]
+}

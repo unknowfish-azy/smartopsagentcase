@@ -1,0 +1,26 @@
+<Huawei>
+<Huawei>un ter mo
+Info: Current terminal monitor is off.
+<Huawei>sy
+Enter system view, return user view with Ctrl+Z.
+[Huawei]sy SW2
+[SW2]vl ba 10 101 102
+Info: This operation may take a few seconds. Please wait for a moment...done.
+[SW2]int e0/0/1
+[SW2-Ethernet0/0/1]po link-ty tr
+[SW2-Ethernet0/0/1]po tr pvid vlan 10
+[SW2-Ethernet0/0/1]po tr allow-pa vl 10 101 102
+[SW2-Ethernet0/0/1]int e0/0/2
+[SW2-Ethernet0/0/2]po link-ty tr
+[SW2-Ethernet0/0/2]po tr pvid vlan 10
+[SW2-Ethernet0/0/2]po tr allow-pa vl 10 101 102
+[SW2-Ethernet0/0/2]int e0/0/22
+[SW2-Ethernet0/0/22]int e0/0/3
+[SW2-Ethernet0/0/3]po link-ty tr
+[SW2-Ethernet0/0/3]po tr allow-pa vl 10 101 102
+[SW2-Ethernet0/0/3]qu
+[SW2]qu
+<SW2>sa
+The current configuration will be written to the device.
+Are you sure to continue?[Y/N]y
+Info: Please input the file name ( *.cfg, *.zip ) [vrpcfg.zip]:

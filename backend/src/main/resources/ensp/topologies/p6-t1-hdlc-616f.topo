@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UNICODE" ?>
+<topo version="1.3.00.100">
+    <devices>
+        <dev id="AD5B5C5A-B12A-4ae7-B133-2CF7DC351BB0" name="RB" poe="0" model="AR2220" settings="" system_mac="00-E0-FC-B7-11-CD" com_port="2001" bootmode="0" cx="601.000000" cy="147.000000" edit_left="629" edit_top="198">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="1" />
+                <interface sztype="Ethernet" interfacename="GE" count="2" />
+                <interface sztype="Serial" interfacename="Serial" count="2" />
+            </slot>
+            <slot isMainBoard="0" id="0" type="521" />
+        </dev>
+        <dev id="66248392-8045-4612-8F57-54AF2C2E5EC9" name="RA" poe="0" model="AR2220" settings="" system_mac="00-E0-FC-3D-76-49" com_port="2000" bootmode="0" cx="292.000000" cy="146.000000" edit_left="319" edit_top="200">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="1" />
+                <interface sztype="Ethernet" interfacename="GE" count="2" />
+                <interface sztype="Serial" interfacename="Serial" count="2" />
+            </slot>
+            <slot isMainBoard="0" id="0" type="521" />
+        </dev>
+    </devices>
+    <lines>
+        <line srcDeviceID="66248392-8045-4612-8F57-54AF2C2E5EC9" destDeviceID="AD5B5C5A-B12A-4ae7-B133-2CF7DC351BB0">
+            <interfacePair lineName="Serial" srcIndex="3" srcBoundRectIsMoved="1" srcBoundRect_X="362.183533" srcBoundRect_Y="173.139755" srcOffset_X="-15.000000" srcOffset_Y="3.000000" tarIndex="3" tarBoundRectIsMoved="1" tarBoundRect_X="584.816467" tarBoundRect_Y="173.860245" tarOffset_X="-44.000000" tarOffset_Y="5.000000" />
+        </line>
+    </lines>
+    <shapes />
+    <txttips>
+        <txttip left="297" top="215" right="346" bottom="232" content="AR2220" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="602" top="215" right="651" bottom="232" content="AR2220" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="343" top="189" right="445" bottom="206" content="10.10.10.1/24" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="500" top="190" right="602" bottom="207" content="10.10.10.2/24" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="427" top="150" right="522" bottom="167" content="HDLC´®ÐÐÁ´Â·" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-32768" charset="1" />
+    </txttips>
+</topo>

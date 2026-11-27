@@ -1,0 +1,118 @@
+{
+  "id": "m5",
+  "order": 5,
+  "code": "项目五",
+  "title": "网络安全技术的配置",
+  "objectives": [
+    "掌握基本/高级 ACL 的编写与接口调用",
+    "掌握静态 NAT、NAPT 与 NAT Server 配置",
+    "掌握 AAA 本地认证与分级授权",
+    "理解访问控制策略在边界与接入层的部署位置"
+  ],
+  "knowledgePoints": [
+    {
+      "id": "kp5-01", "title": "ACL 原理与匹配顺序", "category": "security",
+      "summary": "ACL 由 rule 序列组成，按 rule-id/配置顺序自上而下匹配，命中即停止（深度优先）。",
+      "detail": "基本 ACL(2000-2999) 仅匹配源 IP；高级 ACL(3000-3999) 可匹配源/目 IP、协议、源/目端口；二层 ACL(4000-4999) 匹配 MAC。通配符掩码中 0 表示必须匹配、1 表示忽略。默认步长 5，便于插入规则。traffic-filter inbound/outbound 调用时注意方向语义。",
+      "keyCommands": ["acl number 2000", "acl number 3000", "rule permit source", "step 5", "traffic-filter"],
+      "experiments": ["e5-01", "e5-04", "e5-05"], "acceptance": "能解释匹配顺序导致的规则失效问题。"
+    },
+    {
+      "id": "kp5-02", "title": "NAT 类型与适用场景", "category": "technology",
+      "summary": "NAT 分为静态一对一、动态多对多(NAPT)、EasyIP 与 NAT Server 端口映射。",
+      "detail": "静态 NAT：nat static global ... inside ...，适用于服务器对外发布；NAPT：nat outbound acl号 在出接口转换，适用于 PC 上网；NAT Server：nat server protocol tcp global 公网IP 端口 inside 私网IP 端口，实现外部访问内部服务。转换依赖 nat address-group / ACL 定义的内网网段。",
+      "keyCommands": ["nat static global", "nat outbound", "nat server protocol tcp global", "display nat session all"],
+      "experiments": ["e5-02", "e5-03"], "acceptance": "能按业务方向选择正确的 NAT 形式。"
+    },
+    {
+      "id": "kp5-03", "title": "AAA 认证与本地用户分级", "category": "security",
+      "summary": "AAA 提供 Authentication/Authorization/Accounting，设备本地用户可绑定服务类型与权限等级。",
+      "detail": "local-user 配置后需在 VTY/Console 认证方式 aaa 下生效；privilege level 决定可执行命令范围。认证失败常见于 service-type 未包含对应协议或密码加密方式不匹配。",
+      "keyCommands": ["aaa", "local-user", "authentication-mode aaa", "display local-user"],
+      "experiments": ["e5-01"], "acceptance": "能建立三权分级的本地账号体系。"
+    },
+    {
+      "id": "kp5-04", "title": "端口安全与接入防护", "category": "security",
+      "summary": "端口安全限制接口学习 MAC 数量并对违例动作保护，防 MAC 泛洪与非法接入。",
+      "detail": "port-security enable 后需 max-mac-num、protect-action；sticky MAC 将动态学习转为静态粘滞。违例动作 protect(丢包)/restrict(丢包+告警)/shutdown(端口 err-down)。常配合 voice vlan、802.1x 使用。",
+      "keyCommands": ["port-security enable", "port-security max-mac-num", "port-security protect-action", "port-security mac-address sticky"],
+      "experiments": ["e5-05"], "acceptance": "能配置违例动作为 restrict 并观察日志。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e5-01", "moduleId": "m5", "code": "5.1", "title": "访问控制列表概述与简单过滤",
+      "difficulty": "基础", "durationMin": 55, "topologyId": "p5-t1-5.1-ca62",
+      "goals": ["认识 ACL 分类与编号", "编写基本 ACL 并在接口调用", "验证过滤效果"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "边界路由器" }, { "name": "PC1", "model": "PC", "role": "内网主机" }, { "name": "PC2", "model": "PC", "role": "被拒主机" }],
+      "steps": [
+        { "seq": 1, "title": "创建基本 ACL", "device": "R1", "mode": "system", "hint": "2000 系列为基本 ACL。", "commands": ["acl number 2000", "rule 5 deny source 192.168.2.0 0.0.0.255", "rule 10 permit source any", "quit"], "expect": "" },
+        { "seq": 2, "title": "出方向调用", "device": "R1", "mode": "system", "hint": "注意 outbound 语义。", "commands": ["interface GigabitEthernet 0/0/2", "traffic-filter outbound acl 2000", "quit"], "expect": "" },
+        { "seq": 3, "title": "验证过滤", "device": "PC1", "mode": "user", "hint": "", "commands": ["ping 10.0.0.1"], "expect": "PC1 通，PC2 被拒。" }
+      ],
+      "verification": [{ "command": "display acl 2000", "expect": "rule 5 deny / rule 10 permit" }],
+      "commonErrors": ["permit any 写在被拒规则之前导致规则永不命中", "通配符写成掩码", "调用方向错误"],
+      "references": ["教材项目五 任务1"]
+    },
+    {
+      "id": "e5-02", "moduleId": "m5", "code": "5.2.1", "title": "静态地址转换（NAT Static）",
+      "difficulty": "进阶", "durationMin": 55, "topologyId": "p5-t2-5.2.1-614a",
+      "goals": ["配置内网服务器一对一映射", "验证外网访问映射地址", "查看 NAT 会话"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "出口路由器" }, { "name": "Server", "model": "Server", "role": "内网服务器" }, { "name": "PC1", "model": "PC", "role": "外网主机" }],
+      "steps": [
+        { "seq": 1, "title": "内外网接口地址", "device": "R1", "mode": "system", "hint": "", "commands": ["interface GigabitEthernet 0/0/1", "ip address 192.168.1.1 24", "undo shutdown", "quit", "interface GigabitEthernet 0/0/2", "ip address 202.100.1.1 24", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 2, "title": "配置静态映射", "device": "R1", "mode": "system", "hint": "global 为公网，inside 为私网。", "commands": ["interface GigabitEthernet 0/0/2", "nat static global 202.100.1.10 inside 192.168.1.10", "quit"], "expect": "" },
+        { "seq": 3, "title": "回程路由", "device": "R1", "mode": "system", "hint": "", "commands": ["ip route-static 0.0.0.0 0.0.0.0 202.100.1.2"], "expect": "" },
+        { "seq": 4, "title": "验证", "device": "PC1", "mode": "user", "hint": "", "commands": ["ping 202.100.1.10"], "expect": "通。" },
+        { "seq": 5, "title": "查看会话", "device": "R1", "mode": "user", "hint": "", "commands": ["display nat session all"], "expect": "存在静态映射会话。" }
+      ],
+      "verification": [{ "command": "display nat static", "expect": "global 202.100.1.10 -> inside 192.168.1.10" }],
+      "commonErrors": ["inside/global 方向写反", "缺省路由缺失", "未在公网接口下配置"],
+      "references": ["教材项目五 任务2 活动1"]
+    },
+    {
+      "id": "e5-03", "moduleId": "m5", "code": "5.2.2", "title": "动态地址转换（NAPT）及 PPP 认证",
+      "difficulty": "进阶", "durationMin": 65, "topologyId": "p5-t2-5.2.2-6ace",
+      "goals": ["配置 nat outbound 实现多对一", "配置 PPP CHAP 双向认证", "验证上网与链路认证"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "出口路由器" }, { "name": "R2", "model": "AR2220", "role": "ISP 路由器" }, { "name": "PC1", "model": "PC", "role": "内网终端" }],
+      "steps": [
+        { "seq": 1, "title": "配置内网地址池 ACL", "device": "R1", "mode": "system", "hint": "", "commands": ["acl number 2000", "rule permit source 192.168.1.0 0.0.0.255", "quit"], "expect": "" },
+        { "seq": 2, "title": "出接口 NAPT", "device": "R1", "mode": "system", "hint": "Serial 口需 link-protocol ppp。", "commands": ["interface Serial 2/0/0", "link-protocol ppp", "ip address 10.0.0.1 30", "nat outbound 2000", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 3, "title": "R2 串口与 CHAP", "device": "R2", "mode": "system", "hint": "DCE 端配置 clock rate。", "commands": ["interface Serial 2/0/0", "link-protocol ppp", "clock rate 64000", "ip address 10.0.0.2 30", "ppp authentication-mode chap", "ppp chap user r1", "ppp chap password cipher huawei@123", "undo shutdown", "quit"], "expect": "" },
+        { "seq": 4, "title": "R1 本地 CHAP 用户", "device": "R1", "mode": "system", "hint": "认证方 R2 需要校验 r1 的口令。", "commands": ["aaa", "local-user r2 password cipher huawei@123", "local-user r2 service-type ppp", "quit"], "expect": "" },
+        { "seq": 5, "title": "验证上网", "device": "PC1", "mode": "user", "hint": "", "commands": ["ping 8.8.8.8"], "expect": "通，R1 上有 NAPT 会话。" }
+      ],
+      "verification": [{ "command": "display nat session all", "expect": "多内网 IP 复用同一公网 IP" }],
+      "commonErrors": ["CHAP 双方用户名/口令不一致", "DCE 未配时钟导致链路 down", "nat outbound 未指定 ACL"],
+      "references": ["教材项目五 任务2 活动2"]
+    },
+    {
+      "id": "e5-04", "moduleId": "m5", "code": "5.3.1", "title": "ACL 基本配置",
+      "difficulty": "基础", "durationMin": 50, "topologyId": "p5-t3-5.3.1-9712",
+      "goals": ["基于源网段配置基本 ACL", "接口调用与方向选择", "验证 permit/deny"],
+      "devices": [{ "name": "R1", "model": "AR2220", "role": "路由器" }, { "name": "PC1", "model": "PC", "role": "允许主机" }, { "name": "PC2", "model": "PC", "role": "拒绝主机" }],
+      "steps": [
+        { "seq": 1, "title": "基本 ACL", "device": "R1", "mode": "system", "hint": "", "commands": ["acl number 2000", "rule 5 permit source 192.168.1.0 0.0.0.255", "rule 10 deny source 192.168.2.0 0.0.0.255", "quit"], "expect": "" },
+        { "seq": 2, "title": "接口调用", "device": "R1", "mode": "system", "hint": "在流量入方向过滤更节省资源。", "commands": ["interface GigabitEthernet 0/0/1", "traffic-filter inbound acl 2000", "quit"], "expect": "" },
+        { "seq": 3, "title": "验证", "device": "PC1", "mode": "user", "hint": "", "commands": ["ping 10.0.0.1"], "expect": "PC1 通、PC2 断。" }
+      ],
+      "verification": [{ "command": "display traffic-filter applied-record", "expect": "接口已应用 ACL" }],
+      "commonErrors": ["规则顺序颠倒", "通配符错误"], "references": ["教材项目五 任务3 活动1"]
+    },
+    {
+      "id": "e5-05", "moduleId": "m5", "code": "5.3.2", "title": "ACL 高级配置与端口安全",
+      "difficulty": "进阶", "durationMin": 60, "topologyId": "p5-t3-5.3.2-0d19",
+      "goals": ["用高级 ACL 限定协议与端口", "结合端口安全加固接入", "验证精细访问控制"],
+      "devices": [{ "name": "SW1", "model": "S5700", "role": "三层交换机" }, { "name": "PC1", "model": "PC", "role": "办公终端" }, { "name": "PC2", "model": "PC", "role": "服务器" }],
+      "steps": [
+        { "seq": 1, "title": "高级 ACL 禁止 telnet 到服务器", "device": "SW1", "mode": "system", "hint": "高级 ACL 3000 可匹配目的端口。", "commands": ["acl number 3000", "rule 5 deny tcp source 192.168.1.0 0.0.0.255 destination 192.168.10.10 0 destination-port eq telnet", "rule 10 permit ip source any destination any", "quit"], "expect": "" },
+        { "seq": 2, "title": "VLANIF 调用", "device": "SW1", "mode": "system", "hint": "可在 VLANIF 入方向过滤。", "commands": ["interface Vlanif 1", "traffic-filter inbound acl 3000", "quit"], "expect": "" },
+        { "seq": 3, "title": "端口安全加固", "device": "SW1", "mode": "system", "hint": "", "commands": ["interface Ethernet 0/0/1", "port-security enable", "port-security max-mac-num 1", "port-security protect-action restrict", "port-security mac-address sticky", "quit"], "expect": "" },
+        { "seq": 4, "title": "验证", "device": "PC1", "mode": "user", "hint": "", "commands": ["telnet 192.168.10.10", "ping 192.168.10.10"], "expect": "Telnet 被拒，Ping 通。" }
+      ],
+      "verification": [{ "command": "display port-security", "expect": "接口安全使能" }],
+      "commonErrors": ["destination-port 语法错误", "未 permit ip 导致其他业务中断", "端口安全绑定后合法终端换机导致断网"],
+      "references": ["教材项目五 任务3 活动2"]
+    }
+  ]
+}

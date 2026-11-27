@@ -1,0 +1,13 @@
+<Huawei>un ter mo
+Info: Current terminal monitor is off.
+<Huawei>sy	
+<Huawei>system-view 
+Enter system view, return user view with Ctrl+Z.
+[Huawei]sysname R1
+[R1]interface g0/0/0.10
+[R1-GigabitEthernet0/0/0.10]dot1q termination vid 10
+[R1-GigabitEthernet0/0/0.10]ip address 10.0.10.2 24
+[R1-GigabitEthernet0/0/0.10]arp broadcast enable
+[R1-GigabitEthernet0/0/0.10]quit	
+[R1]interface LoopBack 0
+[R1-LoopBack0]ip address 10.10.10.10 24

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UNICODE" ?>
+<topo version="1.3.00.100">
+    <devices>
+        <dev id="AD5B5C5A-B12A-4ae7-B133-2CF7DC351BB0" name="RB" poe="0" model="AR2220" settings="" system_mac="00-E0-FC-B7-11-CD" com_port="2001" bootmode="0" cx="601.000000" cy="146.000000" edit_left="629" edit_top="197">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="1" />
+                <interface sztype="Ethernet" interfacename="GE" count="2" />
+                <interface sztype="Serial" interfacename="Serial" count="2" />
+            </slot>
+            <slot isMainBoard="0" id="0" type="521" />
+        </dev>
+        <dev id="66248392-8045-4612-8F57-54AF2C2E5EC9" name="RA" poe="0" model="AR2220" settings="" system_mac="00-E0-FC-3D-76-49" com_port="2000" bootmode="0" cx="292.000000" cy="146.000000" edit_left="319" edit_top="200">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="1" />
+                <interface sztype="Ethernet" interfacename="GE" count="2" />
+                <interface sztype="Serial" interfacename="Serial" count="2" />
+            </slot>
+            <slot isMainBoard="0" id="0" type="521" />
+        </dev>
+    </devices>
+    <lines>
+        <line srcDeviceID="66248392-8045-4612-8F57-54AF2C2E5EC9" destDeviceID="AD5B5C5A-B12A-4ae7-B133-2CF7DC351BB0">
+            <interfacePair lineName="Serial" srcIndex="3" srcBoundRectIsMoved="1" srcBoundRect_X="362.183777" srcBoundRect_Y="173.000000" srcOffset_X="-15.000000" srcOffset_Y="-17.000000" tarIndex="3" tarBoundRectIsMoved="1" tarBoundRect_X="584.816223" tarBoundRect_Y="173.000000" tarOffset_X="-43.000000" tarOffset_Y="-16.000000" />
+        </line>
+    </lines>
+    <shapes />
+    <txttips>
+        <txttip left="297" top="215" right="346" bottom="232" content="AR2220" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="602" top="215" right="651" bottom="232" content="AR2220" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="345" top="181" right="447" bottom="198" content="10.10.10.1/24" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="500" top="182" right="602" bottom="199" content="10.10.10.2/24" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="400" top="123" right="550" bottom="143" content="PPP/CHAP串行链路" fontname="Consolas" fontstyle="0" editsize="120" txtcolor="-16777216" txtbkcolor="-32704" charset="1" />
+        <txttip left="297" top="125" right="346" bottom="142" content="总公司" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="610" top="122" right="659" bottom="139" content="分公司" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+    </txttips>
+</topo>

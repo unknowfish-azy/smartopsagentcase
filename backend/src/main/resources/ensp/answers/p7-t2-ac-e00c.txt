@@ -1,0 +1,299 @@
+
+
+
+<AC6605>un ter mo
+Info: Current terminal monitor is off.
+<AC6605>sy
+Enter system view, return user view with Ctrl+Z.
+[AC6605]sy AC
+[AC]vl ba 101 102 99
+Info: This operation may take a few seconds. Please wait for a moment...done.
+[AC]int g0/0/1
+[AC-GigabitEthernet0/0/1]po link-ty tr
+[AC-GigabitEthernet0/0/1]po tr allow-pa vl 99 101 102
+[AC-GigabitEthernet0/0/1]qu
+[AC]int	
+[AC]interface vlan 99
+[AC-Vlanif99]ip address 10.0.99.2 24
+[AC-Vlanif99]qu	
+[AC]ip route-static 0.0.0.0 0.0.0.0 10.0.99.1
+[AC]dhcp enable 
+Info: The operation may take a few seconds. Please wait for a moment.done.
+[AC]ip pool huawei
+Info: It is successful to create an IP address pool.
+[AC-ip-pool-huawei]net	
+[AC-ip-pool-huawei]netw	
+[AC-ip-pool-huawei]network 10.0.10.0 mask 24
+[AC-ip-pool-huawei]gat	
+[AC-ip-pool-huawei]gateway-list 10.0.10.1
+[AC-ip-pool-huawei]opt	
+[AC-ip-pool-huawei]option 43 sub	
+[AC-ip-pool-huawei]option 43 sub-option 3 asc	
+[AC-ip-pool-huawei]option 43 sub-option 3 ascii 10.0.99.2
+[AC-ip-pool-huawei]quit
+[AC]ip pool vlan101
+Info: It is successful to create an IP address pool.	
+[AC-ip-pool-vlan101]gateway-list 10.0.101.1	
+[AC-ip-pool-vlan101]network 10.0.101.0 mask 24
+[AC-ip-pool-vlan101]dns-list 10.10.10.10
+[AC-ip-pool-vlan101]qu
+[AC]ip pool vlan102
+Info: It is successful to create an IP address pool.
+[AC-ip-pool-vlan102]gateway-list 10.0.102.1
+[AC-ip-pool-vlan102]network 10.0.102.0 mask 24
+[AC-ip-pool-vlan102]dns-list 10.10.10.10
+[AC-ip-pool-vlan102]quit	
+[AC]interface vlanif 99	
+[AC-Vlanif99]dhcp select global 
+[AC-Vlanif99]quit
+[AC]wlan
+[AC-wlan-view]ap-group name ap-group1
+Info: This operation may take a few seconds. Please wait for a moment.done.
+[AC-wlan-ap-group-ap-
+
+
+<AC>display station ssid wlan-net1
+Rf/WLAN: Radio ID/WLAN ID                                                     
+Rx/Tx: link receive rate/link transmit rate(Mbps)                             
+--------------------------------------------------------------------------------
+----------
+STA MAC          AP ID Ap name  Rf/WLAN  Band  Type  Rx/Tx      RSSI  VLAN  IP a
+ddress                
+--------------------------------------------------------------------------------
+----------
+5489-988e-18dc   0     area_1   0/1      2.4G  -     -/-        -     101   10.0
+.101.38               
+--------------------------------------------------------------------------------
+----------
+Total: 1 2.4G: 1 5G: 0
+<AC>display station ssid wlan-net2
+Rf/WLAN: Radio ID/WLAN ID                                                     
+Rx/Tx: link receive rate/link transmit rate(Mbps)                             
+--------------------------------------------------------------------------------
+----------
+STA MAC          AP ID Ap name  Rf/WLAN  Band  Type  Rx/Tx      RSSI  VLAN  IP a
+ddress                
+--------------------------------------------------------------------------------
+----------
+5489-9808-362a   1     area_2   0/2      2.4G  -     -/-        -     102   10.0
+.102.182              
+--------------------------------------------------------------------------------
+----------
+Total: 1 2.4G: 1 5G: 0
+[AC-wlan-view]regulatory-domain-profile name default
+[AC-wlan-regulate-domain-default]country-code cn
+Info: The current country code is same with the input country code.
+[AC-wlan-regulate-domain-default]ap-group name ap-group1	
+[AC-wlan-ap-group-ap-group1]regulatory-domain-profile default
+Warning: Modifying the country code will clear channel, power and antenna gain c
+onfigurations of the radio and reset the AP. Continue?[Y/N]:y
+[AC-wlan-ap-group-ap-group1]quit
+[AC-wlan-view]quit
+	
+[AC]capwap source interface vlanif 99
+
+[AC]wlan
+
+[AC-wlan-view]ap auth-mode ?
+  mac-auth  MAC authenticated mode, default authenticated mode
+  no-auth   No authenticated mode 
+  sn-auth   SN authenticated mode 	
+[AC-wlan-view]ap auth-mode mac-auth 	
+[AC-wlan-view]ap-id 0 ap-mac 00e0-fc12-7b00
+[AC-wlan-ap-0]ap-name area_1
+[AC-wlan-ap-0]ap-group ap-group1
+Warning: This operation may cause AP reset. If the country code changes, it will
+ clear channel, power and antenna gain configurations of the radio, Whether to c
+ontinue? [Y/N]:y
+Info: This operation may take a few seconds. Please wait for a moment.. done.
+[AC-wlan-ap-0]quit
+[AC-wlan-view]ap-id 1 ap-mac 00e0-fccc-7ea0
+[AC-wlan-ap-1]ap-name area_2
+[AC-wlan-ap-1]ap-group ap-group1
+Warning: This operation may cause AP reset. If the country code changes, it will
+ clear channel, power and antenna gain configurations of the radio, Whether to c
+ontinue? [Y/N]:y
+[AC-wlan-ap-1]display ap all
+Info: This operation may take a few seconds. Please wait for a moment.done.
+Total AP information:
+idle : idle            [2]
+--------------------------------------------------------------------------------
+---
+ID   MAC            Name   Group     IP Type            State STA Uptime
+--------------------------------------------------------------------------------
+---
+0    00e0-fc12-7b00 area_1 ap-group1 -  -               idle  0   -
+1    00e0-fccc-7ea0 area_2 ap-group1 -  -               idle  0   -
+--------------------------------------------------------------------------------
+---
+Total: 2
+
+[AC-wlan-ap-1]quit	
+[AC-wlan-view]security-profile name wlan-net1	
+[AC-wlan-view]security-profile name wlan-net1
+[AC-wlan-sec-prof-wlan-net1]security wpa-wpa2 psk pass-phrase a1234567 aes
+[AC-wlan-sec-prof-wlan-net1]quit
+[AC-wlan-ssid-prof-wlan-net1]ssid wlan-net1
+Info: This operation may take a few seconds, please wait.done.
+[AC-wlan-ssid-prof-wlan-net1]quit	
+[AC-wlan-view]vap-profile name wlan-net1
+[AC-wlan-vap-prof-wlan-net1]forward-mode tunnel 
+Info: This operation may take a few seconds, please wait.done.
+[AC-wlan-vap-prof-wlan-net1]service-vlan vlan-id 101
+Info: This operation may take a few seconds, please wait.done.	
+[AC-wlan-vap-prof-wlan-net1]security-profile wlan-net1
+Info: This operation may take a few seconds, please wait.done.
+[AC-wlan-vap-prof-wlan-net1]ssid-profile wlan-net1
+Info: This operation may take a few seconds, please wait.done.
+[AC-wlan-vap-prof-wlan-net1]qu
+[AC-wlan-sec-prof-wlan]security-profile name wlan-net2
+[AC-wlan-sec-prof-wlan-net2]security wpa-wpa2 psk pass-phrase a1234567 aes	
+[AC-wlan-view]ssid-profile name wlan-net2
+[AC-wlan-ssid-prof-wlan-net2]ssid wlan-net2
+Info: This operation may take a few seconds, please wait.done.
+[AC-wlan-ssid-prof-wlan-net2]quit	
+[AC-wlan-view]vap-profile name wlan-net2	
+[AC-wlan-vap-prof-wlan-net2]forward-mode tunnel 
+Info: This operation may take a few seconds, please wait.done.	
+[AC-wlan-vap-prof-wlan-net2]service-vlan vlan-id 102
+Info: This operation may take a few seconds, please wait.done.	
+[AC-wlan-vap-prof-wlan-net2]security-profile wlan-net2
+Info: This operation may take a few seconds, please wait.done.
+[AC-wlan-vap-prof-wlan-net2]ssid-profile wlan-net2
+Info: This operation may take a few seconds, please wait.done.
+
+配置AP组引用VAP模板
+[AC-wlan-view]ap-group name ap-group1
+[AC-wlan-ap-group-ap-group1]vap-profile wlan-net1 wlan 1 radio 0
+Info: This operation may take a few seconds, please wait...done.
+[AC-wlan-ap-group-ap-group1]vap-profile wlan-net1 wlan 1 radio 1
+Info: This operation may take a few seconds, please wait...done.
+[AC-wlan-ap-group-ap-group1]vap-profile wlan-net2 wlan 2 radio 0
+Info: This operation may take a few seconds, please wait...done.
+[AC-wlan-ap-group-ap-group1]vap-profile wlan-net2 wlan 2 radio 1
+Info: This operation may take a few seconds, please wait...done.
+
+配置AP射频的信道和功率
+配置频道
+[AC-wlan-view]ap-id 0
+[AC-wlan-ap-0]radio 0
+[AC-wlan-radio-0/0]channel 20mhz 6
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-radio-0/0]eirp 127
+[AC-wlan-radio-0/0]quit
+[AC-wlan-ap-0]radio 1
+[AC-wlan-radio-0/1]channel 20mhz 149
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-radio-0/1]eirp 127
+Info: The EIRP value takes effect only when automatic transmit power selection i
+s disabled, and the value depends on the AP specifications and local laws and re
+gulations.
+[AC-wlan-radio-0/1]quit
+[AC-wlan-ap-0]quit
+[AC-wlan-view]ap-id 1
+[AC-wlan-ap-1]radio 0
+[AC-wlan-radio-1/0]channel 20mhz 11
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-radio-1/0]eirp 127
+Info: The EIRP value takes effect only when automatic transmit power selection i
+s disabled, and the value depends on the AP specifications and local laws and re
+gulations.
+[AC-wlan-radio-1/0]quit
+[AC-wlan-ap-1]radio 1
+[AC-wlan-radio-1/1]channel 20mhz 153
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-radio-1/1]eirp 127
+Info: The EIRP value takes effect only when automatic transmit power selection i
+s disabled, and the value depends on the AP specifications and local laws and re
+gulations.
+[AC-wlan-radio-1/1]quit
+[AC-wlan-ap-1]quit
+
+项目测试
+<AC>display vap ssid wlan-net1
+Info: This operation may take a few seconds, please wait.
+WID : WLAN ID            
+------------------------------------------------------------------------------
+AP ID AP name RfID WID  BSSID          Status  Auth type     STA   SSID     
+------------------------------------------------------------------------------
+0     area_1  0    1    00E0-FC12-7B00 ON      WPA/WPA2-PSK  1     wlan-net1
+0     area_1  1    1    00E0-FC12-7B10 ON      WPA/WPA2-PSK  0     wlan-net1
+1     area_2  0    1    00E0-FCCC-7EA0 ON      WPA/WPA2-PSK  0     wlan-net1
+1     area_2  1    1    00E0-FCCC-7EB0 ON      WPA/WPA2-PSK  0     wlan-net1
+------------------------------------------------------------------------------
+Total: 4
+
+<AC>display vap ssid wlan-net2
+Info: This operation may take a few seconds, please wait.
+WID : WLAN ID            
+------------------------------------------------------------------------------
+AP ID AP name RfID WID  BSSID          Status  Auth type     STA   SSID     
+------------------------------------------------------------------------------
+0     area_1  0    2    00E0-FC12-7B01 ON      WPA/WPA2-PSK  0     wlan-net2
+0     area_1  1    2    00E0-FC12-7B11 ON      WPA/WPA2-PSK  0     wlan-net2
+1     area_2  0    2    00E0-FCCC-7EA1 ON      WPA/WPA2-PSK  1     wlan-net2
+1     area_2  1    2    00E0-FCCC-7EB1 ON      WPA/WPA2-PSK  0     wlan-net2
+------------------------------------------------------------------------------
+Total: 4
+
+配置黑白名单
+方法一：基于AP方式
+[AC]wlan
+[AC-wlan-view]sta-blacklist-profile name black
+[AC-wlan-blacklist-prof-black]sta-mac 5489-98FE-6780
+[AC-wlan-blacklist-prof-black]quit	
+[AC-wlan-view]ap-system-profile name test1	
+[AC-wlan-ap-system-prof-test1]sta-access-mode ?
+  blacklist  Blacklist
+  whitelist  Whitelist 
+[AC-wlan-ap-system-prof-test1]sta-access-mode blacklist black
+[AC-wlan-ap-system-prof-test1]quit
+[AC-wlan-view]ap-group name ap-group1	
+[AC-wlan-ap-group-ap-group1]ap-system-profile test1
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-ap-group-ap-group1]quit
+
+方法二：基于VAP方式
+[AC]wlan
+[AC-wlan-view]sta-blacklist-profile name black2	
+[AC-wlan-blacklist-prof-black2]sta-mac 5489-9880-5D4D
+[AC-wlan-blacklist-prof-black2]quit
+[AC-wlan-view]vap-profile name wlan-net1
+[AC-wlan-vap-prof-wlan-net1]sta-access-mode blacklist black2
+[AC-wlan-vap-prof-wlan-net1]quit
+
+白名单
+方法一：基于AP的白名单
+[AC]wlan	
+[AC-wlan-view]sta-whitelist-profile name white1
+[AC-wlan-whitelist-prof-white1]sta-mac 5489-987B-45AD
+[AC-wlan-whitelist-prof-white1]quit
+	
+[AC-wlan-view]ap-system-profile name test2	
+[AC-wlan-ap-system-prof-test2]sta-access-mode whitelist white1
+[AC-wlan-ap-system-prof-test2]quit
+
+[AC-wlan-view]ap-group name ap-group1	
+[AC-wlan-ap-group-ap-group1]ap-system-profile test2
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-ap-group-ap-group1]quit
+
+测试，查看所有连接的设备
+<AC>display station all
+Rf/WLAN: Radio ID/WLAN ID                                                     
+Rx/Tx: link receive rate/link transmit rate(Mbps)                             
+--------------------------------------------------------------------------------
+-------------------
+STA MAC          AP ID Ap name  Rf/WLAN  Band  Type  Rx/Tx      RSSI  VLAN  IP a
+ddress   SSID                   
+--------------------------------------------------------------------------------
+-------------------
+5489-9808-362a   1     area_2   0/2      2.4G  -     -/-        -     102   10.0
+.102.126 wlan-net2              
+5489-9880-5d4d   0     area_1   0/1      2.4G  -     -/-        -     101   10.0
+.101.83  wlan-net1              
+5489-988e-18dc   0     area_1   0/1      2.4G  -     -/-        -     101   10.0
+.101.210 wlan-net1              
+--------------------------------------------------------------------------------
+-------------------
+Total: 3 2.4G: 3 5G: 0

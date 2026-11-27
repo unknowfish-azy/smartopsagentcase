@@ -1,0 +1,320 @@
+{
+  "topologies": [
+    {
+      "id": "p2-t1-2.1.1-9b7e",
+      "title": "2.1.1",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务1 交换机的基本配置/活动1 交换机的管理方式/2.1.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务1 交换机的基本配置\\活动1 交换机的管理方式\\2.1.1.topo"
+    },
+    {
+      "id": "p2-t1-2.1.2-2fc5",
+      "title": "2.1.2",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务1 交换机的基本配置/活动2 交换机的常用配置/2.1.2.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务1 交换机的基本配置\\活动2 交换机的常用配置\\2.1.2.topo"
+    },
+    {
+      "id": "p2-t1-2.1.4-telnet-51bd",
+      "title": "2.1.4 telnet",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务1 交换机的基本配置/活动3 交换机的远程配置（AAA认证）/2.1.4 telnet.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务1 交换机的基本配置\\活动3 交换机的远程配置（AAA认证）\\2.1.4 telnet.topo"
+    },
+    {
+      "id": "p2-t1-2.1.4-telnet-0249",
+      "title": "2.1.4 telnet",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务1 交换机的基本配置/活动3 交换机的远程配置（Password认证）/2.1.4 telnet.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务1 交换机的基本配置\\活动3 交换机的远程配置（Password认证）\\2.1.4 telnet.topo"
+    },
+    {
+      "id": "p2-t2-2.2.1-92d5",
+      "title": "2.2.1",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务2 交换机的VLAN配置/活动1 交换机VLAN的划分/2.2.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务2 交换机的VLAN配置\\活动1 交换机VLAN的划分\\2.2.1.topo"
+    },
+    {
+      "id": "p2-t2-2.2.2-e8c3",
+      "title": "2.2.2",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务2 交换机的VLAN配置/活动2 交换机之间相同VLAN的通信/2.2.2.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务2 交换机的VLAN配置\\活动2 交换机之间相同VLAN的通信\\2.2.2.topo"
+    },
+    {
+      "id": "p2-t2-2.3.3-abb1",
+      "title": "2.3.3",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务2 交换机的VLAN配置/活动3 三层交换机实现VLAN之间的通信/2.3.3.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务2 交换机的VLAN配置\\活动3 三层交换机实现VLAN之间的通信\\2.3.3.topo"
+    },
+    {
+      "id": "p2-t3-2.3.1-4c2a",
+      "title": "2.3.1",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务3 交换机的常用技术/活动1 交换机的链路聚合技术/2.3.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务3 交换机的常用技术\\活动1 交换机的链路聚合技术\\2.3.1.topo"
+    },
+    {
+      "id": "p2-t3-stp-5e17",
+      "title": "stp",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务3 交换机的常用技术/活动2 交换机的STP技术/stp.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务3 交换机的常用技术\\活动2 交换机的STP技术\\stp.topo"
+    },
+    {
+      "id": "p2-t3-rstp-8494",
+      "title": "rstp",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务3 交换机的常用技术/活动3 交换机的RSTP技术/rstp.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务3 交换机的常用技术\\活动3 交换机的RSTP技术\\rstp.topo"
+    },
+    {
+      "id": "p2-t3-2.3.4-5516",
+      "title": "2.3.4",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务3 交换机的常用技术/活动4 交换机的DHCP技术/2.3.4.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务3 交换机的常用技术\\活动4 交换机的DHCP技术\\2.3.4.topo"
+    },
+    {
+      "id": "p2-t3-2.3.5-4b94",
+      "title": "2.3.5",
+      "project": 2,
+      "path": "项目2交换技术的配置/任务3 交换机的常用技术/活动5 交换机的VRRP技术/2.3.5.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目2交换技术的配置\\任务3 交换机的常用技术\\活动5 交换机的VRRP技术\\2.3.5.topo"
+    },
+    {
+      "id": "p3-t1-3.1-f1b8",
+      "title": "3.1",
+      "project": 3,
+      "path": "项目3路由技术的配置/任务1 模拟器中路由器的配置/3.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目3路由技术的配置\\任务1 模拟器中路由器的配置\\3.1.topo"
+    },
+    {
+      "id": "p3-t2-3.2-f6d7",
+      "title": "3.2",
+      "project": 3,
+      "path": "项目3路由技术的配置/任务2 路由器的基本配置/3.2.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目3路由技术的配置\\任务2 路由器的基本配置\\3.2.topo"
+    },
+    {
+      "id": "p3-t3-3.3-7e6c",
+      "title": "3.3",
+      "project": 3,
+      "path": "项目3路由技术的配置/任务3 路由器的远程配置（AAA认证）/3.3.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目3路由技术的配置\\任务3 路由器的远程配置（AAA认证）\\3.3.topo"
+    },
+    {
+      "id": "p3-t3-3.3-f9e9",
+      "title": "3.3",
+      "project": 3,
+      "path": "项目3路由技术的配置/任务3 路由器的远程配置（Password认证）/3.3.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目3路由技术的配置\\任务3 路由器的远程配置（Password认证）\\3.3.topo"
+    },
+    {
+      "id": "p3-t3-3.3-c2b3",
+      "title": "3.3",
+      "project": 3,
+      "path": "项目3路由技术的配置/任务3 路由器的远程配置（STelnet）/3.3.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目3路由技术的配置\\任务3 路由器的远程配置（STelnet）\\3.3.topo"
+    },
+    {
+      "id": "p3-t4-3.4-8082",
+      "title": "3.4",
+      "project": 3,
+      "path": "项目3路由技术的配置/任务4 路由器的DHCP配置-1/3.4.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目3路由技术的配置\\任务4 路由器的DHCP配置-1\\3.4.topo"
+    },
+    {
+      "id": "p3-t4-3.4-c801",
+      "title": "3.4",
+      "project": 3,
+      "path": "项目3路由技术的配置/任务4 路由器的DHCP配置-2/3.4.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目3路由技术的配置\\任务4 路由器的DHCP配置-2\\3.4.topo"
+    },
+    {
+      "id": "p3-t5-3.5-733e",
+      "title": "3.5",
+      "project": 3,
+      "path": "项目3路由技术的配置/任务5 单臂路由的配置/3.5.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目3路由技术的配置\\任务5 单臂路由的配置\\3.5.topo"
+    },
+    {
+      "id": "p4-t1-4.1-2e28",
+      "title": "4.1",
+      "project": 4,
+      "path": "项目4路由协议的配置/任务1 静态路由的配置/4.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目4路由协议的配置\\任务1 静态路由的配置\\4.1.topo"
+    },
+    {
+      "id": "p4-t2-4.2-eb38",
+      "title": "4.2",
+      "project": 4,
+      "path": "项目4路由协议的配置/任务2 默认路由和浮动静态路由的配置/4.2.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目4路由协议的配置\\任务2 默认路由和浮动静态路由的配置\\4.2.topo"
+    },
+    {
+      "id": "p4-t3-4.3-a51e",
+      "title": "4.3",
+      "project": 4,
+      "path": "项目4路由协议的配置/任务3 动态路由RIPv2协议的配置/4.3.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目4路由协议的配置\\任务3 动态路由RIPv2协议的配置\\4.3.topo"
+    },
+    {
+      "id": "p4-t4-4.4-8014",
+      "title": "4.4",
+      "project": 4,
+      "path": "项目4路由协议的配置/任务4 动态路由OSPF协议的配置/4.4.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目4路由协议的配置\\任务4 动态路由OSPF协议的配置\\4.4.topo"
+    },
+    {
+      "id": "p5-t1-5.1-ca62",
+      "title": "5.1",
+      "project": 5,
+      "path": "项目5网络安全技术的配置/任务1 交换机接口安全的配置/5.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目5网络安全技术的配置\\任务1 交换机接口安全的配置\\5.1.topo"
+    },
+    {
+      "id": "p5-t2-5.2.1-614a",
+      "title": "5.2.1",
+      "project": 5,
+      "path": "项目5网络安全技术的配置/任务2 访问控制列表的配置/活动1 基本访问控制列表的配置/5.2.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目5网络安全技术的配置\\任务2 访问控制列表的配置\\活动1 基本访问控制列表的配置\\5.2.1.topo"
+    },
+    {
+      "id": "p5-t2-5.2.2-6ace",
+      "title": "5.2.2",
+      "project": 5,
+      "path": "项目5网络安全技术的配置/任务2 访问控制列表的配置/活动2 高级访问控制列表的配置/5.2.2.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目5网络安全技术的配置\\任务2 访问控制列表的配置\\活动2 高级访问控制列表的配置\\5.2.2.topo"
+    },
+    {
+      "id": "p5-t3-5.3.1-9712",
+      "title": "5.3.1",
+      "project": 5,
+      "path": "项目5网络安全技术的配置/任务3 网络地址转换/活动1 利用静态NAT技术实现外网主机访问内网服务器/5.3.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目5网络安全技术的配置\\任务3 网络地址转换\\活动1 利用静态NAT技术实现外网主机访问内网服务器\\5.3.1.topo"
+    },
+    {
+      "id": "p5-t3-5.3.2-0d19",
+      "title": "5.3.2",
+      "project": 5,
+      "path": "项目5网络安全技术的配置/任务3 网络地址转换/活动2 利用动态NAPT技术实现局域网访问Internet/5.3.2.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目5网络安全技术的配置\\任务3 网络地址转换\\活动2 利用动态NAPT技术实现局域网访问Internet\\5.3.2.topo"
+    },
+    {
+      "id": "p6-t1-hdlc-616f",
+      "title": "HDLC",
+      "project": 6,
+      "path": "项目6广域网技术的配置/任务1 路由器广域网协议的配置/活动1 广域网的HDLC协议封装/HDLC.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目6广域网技术的配置\\任务1 路由器广域网协议的配置\\活动1 广域网的HDLC协议封装\\HDLC.topo"
+    },
+    {
+      "id": "p6-t1-ppp-bba8",
+      "title": "ppp",
+      "project": 6,
+      "path": "项目6广域网技术的配置/任务1 路由器广域网协议的配置/活动2 广域网的PPP协议封装/ppp.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目6广域网技术的配置\\任务1 路由器广域网协议的配置\\活动2 广域网的PPP协议封装\\ppp.topo"
+    },
+    {
+      "id": "p6-t2-ppp-d606",
+      "title": "ppp",
+      "project": 6,
+      "path": "项目6广域网技术的配置/任务2 路由器广域网PPP协议的配置/活动1 广域网PPP协议封装的PAP认证/ppp.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目6广域网技术的配置\\任务2 路由器广域网PPP协议的配置\\活动1 广域网PPP协议封装的PAP认证\\ppp.topo"
+    },
+    {
+      "id": "p6-t2-ppp-6a53",
+      "title": "ppp",
+      "project": 6,
+      "path": "项目6广域网技术的配置/任务2 路由器广域网PPP协议的配置/活动2 广域网PPP协议封装的CHAP认证/ppp.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目6广域网技术的配置\\任务2 路由器广域网PPP协议的配置\\活动2 广域网PPP协议封装的CHAP认证\\ppp.topo"
+    },
+    {
+      "id": "p7-t1--1a6c",
+      "title": "直连式二层组网",
+      "project": 7,
+      "path": "项目7无线网络技术的配置/任务1 组建直连式二层无线局域网/直连式二层组网.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务1 组建直连式二层无线局域网\\直连式二层组网.topo"
+    },
+    {
+      "id": "p7-t2--3187",
+      "title": "旁挂式三层组网（含黑名单）",
+      "project": 7,
+      "path": "项目7无线网络技术的配置/任务2 组建旁挂式三层无线局域网/旁挂式三层组网（含黑名单）.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务2 组建旁挂式三层无线局域网\\旁挂式三层组网（含黑名单）.topo"
+    },
+    {
+      "id": "p8-t1-8.1-8489",
+      "title": "8.1",
+      "project": 8,
+      "path": "项目8综合实训/任务1 网络设备的维护/8.1.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目8综合实训\\任务1 网络设备的维护\\8.1.topo"
+    },
+    {
+      "id": "p8-t2-8.2-1cae",
+      "title": "8.2",
+      "project": 8,
+      "path": "项目8综合实训/任务2 企业网络综合实训/8.2.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目8综合实训\\任务2 企业网络综合实训\\8.2.topo"
+    },
+    {
+      "id": "p8-t3-8.3-7896",
+      "title": "8.3",
+      "project": 8,
+      "path": "项目8综合实训/任务3 园区网络综合实训/8.3.topo",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目8综合实训\\任务3 园区网络综合实训\\8.3.topo"
+    }
+  ],
+  "answers": [
+    {
+      "id": "p7-t1-ac-3098",
+      "deviceHint": "AC",
+      "path": "项目7无线网络技术的配置/任务1 组建直连式二层无线局域网/AC.txt",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务1 组建直连式二层无线局域网\\AC.txt"
+    },
+    {
+      "id": "p7-t1-r1-1361",
+      "deviceHint": "R1",
+      "path": "项目7无线网络技术的配置/任务1 组建直连式二层无线局域网/R1.txt",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务1 组建直连式二层无线局域网\\R1.txt"
+    },
+    {
+      "id": "p7-t1-sw1-c96b",
+      "deviceHint": "SW1",
+      "path": "项目7无线网络技术的配置/任务1 组建直连式二层无线局域网/SW1.txt",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务1 组建直连式二层无线局域网\\SW1.txt"
+    },
+    {
+      "id": "p7-t2-ac-e00c",
+      "deviceHint": "AC",
+      "path": "项目7无线网络技术的配置/任务2 组建旁挂式三层无线局域网/AC.txt",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务2 组建旁挂式三层无线局域网\\AC.txt"
+    },
+    {
+      "id": "p7-t2-r1-bd1b",
+      "deviceHint": "R1",
+      "path": "项目7无线网络技术的配置/任务2 组建旁挂式三层无线局域网/R1.txt",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务2 组建旁挂式三层无线局域网\\R1.txt"
+    },
+    {
+      "id": "p7-t2-sw1-a5fa",
+      "deviceHint": "SW1",
+      "path": "项目7无线网络技术的配置/任务2 组建旁挂式三层无线局域网/SW1.txt",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务2 组建旁挂式三层无线局域网\\SW1.txt"
+    },
+    {
+      "id": "p7-t2-sw2-e72d",
+      "deviceHint": "SW2",
+      "path": "项目7无线网络技术的配置/任务2 组建旁挂式三层无线局域网/SW2.txt",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目7无线网络技术的配置\\任务2 组建旁挂式三层无线局域网\\SW2.txt"
+    },
+    {
+      "id": "p8-t1-r1-back-d64d",
+      "deviceHint": "r1-back",
+      "path": "项目8综合实训/任务1 网络设备的维护/76D0E3D2-68A6-4701-9500-897910B12C3A/r1-back.cfg",
+      "source": "d:\\SmartOpsAgent\\data\\ensp-book\\网络设备安装与调试（华为eNSP模拟器）（第2版）拓扑图及完整答案\\项目8综合实训\\任务1 网络设备的维护\\76D0E3D2-68A6-4701-9500-897910B12C3A\\r1-back.cfg"
+    }
+  ]
+}

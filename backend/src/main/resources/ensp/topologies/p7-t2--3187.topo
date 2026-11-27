@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UNICODE" ?>
+<topo version="1.3.00.100">
+    <devices>
+        <dev id="72889C32-7F96-4755-ABE9-1CB1DAF8374C" name="SW3A" poe="0" model="S5700" settings="" system_mac="4C-1F-CC-D6-2A-5C" com_port="2005" bootmode="0" cx="476.000000" cy="276.000000" edit_left="505" edit_top="330">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="24" />
+            </slot>
+        </dev>
+        <dev id="FA26EEF4-02FE-4d59-9D90-CA9E2CCD8AB1" name="AP1" poe="0" model="AP5030" settings=" -apMac 00-E0-FC-C5-07-E0 -apSN 210235448310C677AE0C" system_mac="00-E0-FC-C5-07-E0" com_port="2002" bootmode="0" cx="272.000000" cy="109.000000" edit_left="299" edit_top="163">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="2" />
+            </slot>
+        </dev>
+        <dev id="362C5EFB-0E1F-4e6a-87BC-D3A51465DAE9" name="AP2" poe="0" model="AP5030" settings=" -apMac 00-E0-FC-03-04-90 -apSN 210235448310AF323518" system_mac="00-E0-FC-03-04-90" com_port="2003" bootmode="0" cx="273.000000" cy="423.000000" edit_left="300" edit_top="477">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="2" />
+            </slot>
+        </dev>
+        <dev id="6BF1D8F8-A31F-4621-B0EF-F743F3D3ECA0" name="STA1" poe="0" model="STA" settings=" -simsta_ip 0.0.0.0  -simsta_mask 0.0.0.0  -simsta_gateway 0.0.0.0  -simsta_mac 54-89-98-8E-18-DC  -simsta_check 0 " system_mac="54-89-98-8E-18-DC" com_port="0" bootmode="0" cx="149.000000" cy="102.000000" edit_left="176" edit_top="156">
+            <slot number="slot17" isMainBoard="1" />
+        </dev>
+        <dev id="A2D0F6CF-4C7D-4202-9506-2F670285AF03" name="STA2" poe="0" model="STA" settings=" -simsta_ip 0.0.0.0  -simsta_mask 0.0.0.0  -simsta_gateway 0.0.0.0  -simsta_mac 54-89-98-08-36-2A  -simsta_check 0 " system_mac="54-89-98-08-36-2A" com_port="0" bootmode="0" cx="154.570557" cy="424.714722" edit_left="181" edit_top="478">
+            <slot number="slot17" isMainBoard="1" />
+        </dev>
+        <dev id="46B3FF71-8AFD-46eb-8D9F-AE4033142C63" name="STA3 " poe="0" model="STA" settings=" -simsta_ip 0.0.0.0  -simsta_mask 0.0.0.0  -simsta_gateway 0.0.0.0  -simsta_mac 54-89-98-FE-67-80  -simsta_check 0 " system_mac="54-89-98-FE-67-80" com_port="0" bootmode="0" cx="144.000000" cy="256.000000" edit_left="189" edit_top="309">
+            <slot number="slot17" isMainBoard="1" />
+        </dev>
+        <dev id="9A061B2E-3AC0-4a00-9F91-AF6F9A806483" name="Phone1" poe="0" model="Cellphone" settings=" -simsta_ip 0.0.0.0  -simsta_mask 0.0.0.0  -simsta_gateway 0.0.0.0  -simsta_mac 54-89-98-80-5D-4D  -simsta_check 0 " system_mac="54-89-98-80-5D-4D" com_port="0" bootmode="0" cx="502.000000" cy="118.000000" edit_left="529" edit_top="172">
+            <slot number="slot17" isMainBoard="1" />
+        </dev>
+        <dev id="9A0A5E49-4347-404a-9485-4A2EECE76C91" name="R1" poe="0" model="AR2220" settings="" system_mac="00-E0-FC-78-70-FE" com_port="2000" bootmode="0" cx="913.000000" cy="278.000000" edit_left="940" edit_top="332">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="1" />
+                <interface sztype="Ethernet" interfacename="GE" count="2" />
+            </slot>
+        </dev>
+        <dev id="26E17F63-B014-409d-A803-2A48C5D3ACFA" name="SW3B" poe="0" model="S5700" settings="" system_mac="4C-1F-CC-B0-0A-D2" com_port="2004" bootmode="0" cx="651.000000" cy="276.000000" edit_left="649" edit_top="323">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="24" />
+            </slot>
+        </dev>
+        <dev id="26D0EA2F-C58F-4189-BC60-7661882CAA7D" name="AC" poe="0" model="AC6605" settings="" system_mac="00-E0-FC-CC-6E-C2" com_port="2001" bootmode="0" cx="650.000000" cy="454.000000" edit_left="677" edit_top="508">
+            <slot number="slot17" isMainBoard="1">
+                <interface sztype="Ethernet" interfacename="GE" count="24" />
+            </slot>
+        </dev>
+    </devices>
+    <lines>
+        <line srcDeviceID="72889C32-7F96-4755-ABE9-1CB1DAF8374C" destDeviceID="26E17F63-B014-409d-A803-2A48C5D3ACFA">
+            <interfacePair lineName="Copper" srcIndex="23" srcBoundRectIsMoved="1" srcBoundRect_X="546.183777" srcBoundRect_Y="303.000000" srcOffset_X="-20.000000" srcOffset_Y="-14.000000" tarIndex="23" tarBoundRectIsMoved="1" tarBoundRect_X="634.816223" tarBoundRect_Y="303.000000" tarOffset_X="-31.000000" tarOffset_Y="-17.000000" />
+        </line>
+        <line srcDeviceID="26D0EA2F-C58F-4189-BC60-7661882CAA7D" destDeviceID="26E17F63-B014-409d-A803-2A48C5D3ACFA">
+            <interfacePair lineName="Copper" srcIndex="0" srcBoundRectIsMoved="0" srcBoundRect_X="677.242615" srcBoundRect_Y="437.816925" srcOffset_X="0.000000" srcOffset_Y="0.000000" tarIndex="0" tarBoundRectIsMoved="1" tarBoundRect_X="677.757385" tarBoundRect_Y="346.183075" tarOffset_X="5.000000" tarOffset_Y="0.000000" />
+        </line>
+        <line srcDeviceID="26E17F63-B014-409d-A803-2A48C5D3ACFA" destDeviceID="9A0A5E49-4347-404a-9485-4A2EECE76C91">
+            <interfacePair lineName="Copper" srcIndex="1" srcBoundRectIsMoved="1" srcBoundRect_X="721.182495" srcBoundRect_Y="303.329651" srcOffset_X="-21.000000" srcOffset_Y="-12.000000" tarIndex="0" tarBoundRectIsMoved="1" tarBoundRect_X="896.817505" tarBoundRect_Y="304.670349" tarOffset_X="-31.000000" tarOffset_Y="-13.000000" />
+        </line>
+        <line srcDeviceID="FA26EEF4-02FE-4d59-9D90-CA9E2CCD8AB1" destDeviceID="72889C32-7F96-4755-ABE9-1CB1DAF8374C">
+            <interfacePair lineName="Copper" srcIndex="0" srcBoundRectIsMoved="1" srcBoundRect_X="332.415100" srcBoundRect_Y="163.354507" srcOffset_X="9.000000" srcOffset_Y="-2.000000" tarIndex="0" tarBoundRectIsMoved="1" tarBoundRect_X="469.584900" tarBoundRect_Y="275.645477" tarOffset_X="-47.000000" tarOffset_Y="1.000000" />
+        </line>
+        <line srcDeviceID="72889C32-7F96-4755-ABE9-1CB1DAF8374C" destDeviceID="362C5EFB-0E1F-4e6a-87BC-D3A51465DAE9">
+            <interfacePair lineName="Copper" srcIndex="1" srcBoundRectIsMoved="1" srcBoundRect_X="468.023651" srcBoundRect_Y="328.327698" srcOffset_X="-62.000000" srcOffset_Y="-5.000000" tarIndex="0" tarBoundRectIsMoved="0" tarBoundRect_X="334.976349" tarBoundRect_Y="424.672302" tarOffset_X="0.000000" tarOffset_Y="0.000000" />
+        </line>
+    </lines>
+    <shapes />
+    <txttips>
+        <txttip left="613" top="204" right="798" bottom="268" content="VLANIF10:10.0.10.254/24&#x0D;&#x0A;VLANIF11:10.0.11.253/24&#x0D;&#x0A;VLANIF12:10.0.12.253/24&#x0D;&#x0A;VLANIF99:10.0.99.253/24" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="713" top="460" right="891" bottom="492" content="DHCPServer&#x0D;&#x0A;VLANIF99:10.0.99.254/24" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="711" top="309" right="911" bottom="341" content="GE0/0/0.11:10.0.11.254/24&#x0D;&#x0A;GE0/0/0.12:10.0.12.254/24" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="453" top="73" right="653" bottom="121" content="Phone1&#x0D;&#x0A;MAC地址在黑名单black2中&#x0D;&#x0A;只能连接名为Finances的SSID" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="132" top="331" right="378" bottom="379" content="STA3&#x0D;&#x0A;MAC地址在基于AP的黑名单black1中&#x0D;&#x0A;不可以连接ap-group1组的任何AP" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="917" top="347" right="966" bottom="364" content="AR2220" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="460" top="347" right="555" bottom="364" content="S5700-28C-HI" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="574" top="338" right="669" bottom="355" content="S5700-28C-HI" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="273" top="178" right="322" bottom="195" content="AP5030" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="277" top="493" right="326" bottom="510" content="AP5030" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+        <txttip left="653" top="522" right="702" bottom="539" content="AC6605" fontname="Consolas" fontstyle="0" editsize="100" txtcolor="-16777216" txtbkcolor="-7278960" charset="1" />
+    </txttips>
+</topo>

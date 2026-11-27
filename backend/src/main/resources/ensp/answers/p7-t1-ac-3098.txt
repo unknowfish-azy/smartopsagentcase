@@ -1,0 +1,183 @@
+配置AC与其他网络设备互通。
+（1）配置AC接口
+<AC6605>un ter mo
+Info: Current terminal monitor is off.	
+<AC6605>system-view 
+Enter system view, return user view with Ctrl+Z.	
+[AC6605]sysname AC
+[AC]vl ba 10 99
+Info: This operation may take a few seconds. Please wait for a moment...done.	
+[AC]interface g0/0/1
+[AC-GigabitEthernet0/0/1]port link-type trunk
+[AC-GigabitEthernet0/0/1]port trunk allow-pass vlan 10 99
+[AC-GigabitEthernet0/0/1]quit
+[AC]interface g0/0/2
+[AC-GigabitEthernet0/0/2]port link-type trunk
+[AC-GigabitEthernet0/0/2]port trunk allow-pass vlan 10
+[AC-GigabitEthernet0/0/2]quit
+（2）配置DHCP服务器
+[AC]dhcp enable
+Info: The operation may take a few seconds. Please wait for a moment.done.
+[AC]interface Vlanif 99
+[AC-Vlanif99]ip address 10.0.99.1 24
+[AC-Vlanif99]dhcp select interface 
+[AC-Vlanif99]quit
+[AC]interface Vlanif 10
+[AC-Vlanif10]ip address 10.0.10.1 24
+[AC-Vlanif10]dhcp select interface 
+[AC-Vlanif10]dhcp server excluded-ip-address 10.0.10.2
+[AC-Vlanif10]dhcp server dns-list 10.10.10.10
+[AC-Vlanif10]quit
+[AC]ip route-static 0.0.0.0 0.0.0.0 10.0.10.2
+测试AC与10.10.10.10能否通信。
+[AC]ping 10.10.10.10
+  PING 10.10.10.10: 56  data bytes, press CTRL_C to break
+    Reply from 10.10.10.10: bytes=56 Sequence=1 ttl=255 time=80 ms
+    Reply from 10.10.10.10: bytes=56 Sequence=2 ttl=255 time=10 ms
+    Reply from 10.10.10.10: bytes=56 Sequence=3 ttl=255 time=20 ms
+    Reply from 10.10.10.10: bytes=56 Sequence=4 ttl=255 time=10 ms
+    Reply from 10.10.10.10: bytes=56 Sequence=5 ttl=255 time=20 ms
+
+  --- 10.10.10.10 ping statistics ---
+    5 packet(s) transmitted
+    5 packet(s) received
+    0.00% packet loss
+    round-trip min/avg/max = 10/28/80 ms
+
+（3）配置AP上线
+创建AP组，用于将相同配置的AP加入同一AP组。
+[AC]wlan
+[AC-wlan-view]ap-group name ap-group1
+Info: This operation may take a few seconds. Please wait for a moment.done.
+[AC-wlan-ap-group-ap-group1]quit
+创建域管理模板 ，配置AC国家码，并在AP组下引用域管理模板
+[AC-wlan-view]regulatory-domain-profile name default
+[AC-wlan-regulate-domain-default]country-code cn
+Info: The current country code is same with the input country code.
+[AC-wlan-regulate-domain-default]quit
+[AC-wlan-view]ap-group name ap-group1
+[AC-wlan-ap-group-ap-group1]regulatory-domain-profile default
+Warning: Modifying the country code will clear channel, power and antenna gain c
+onfigurations of the radio and reset the AP. Continue?[Y/N]:y
+[AC-wlan-ap-group-ap-group1]quit
+[AC-wlan-view]quit
+配置AC的源接口
+[AC]capwap source interface Vlanif 99
+
+在AC上离线导入AP1 、AP2
+[AC]wlan
+[AC-wlan-view]ap auth-mode mac-auth 
+[AC-wlan-view]ap-id 0 ap-mac 00e0-fc97-3090
+[AC-wlan-ap-0]ap-name office_1
+[AC-wlan-ap-0]ap-group ap-group1
+Warning: This operation may cause AP reset. If the country code changes, it will
+ clear channel, power and antenna gain configurations of the radio, Whether to c
+ontinue? [Y/N]:y
+Info: This operation may take a few seconds. Please wait for a moment.. done.
+[AC-wlan-ap-0]quit
+[AC-wlan-view]ap-id 1 ap-mac 00e0-fc7c-6a60
+[AC-wlan-ap-1]ap-name office_2
+[AC-wlan-ap-1]ap-group ap-group1
+Warning: This operation may cause AP reset. If the country code changes, it will
+ clear channel, power and antenna gain configurations of the radio, Whether to c
+ontinue? [Y/N]:y
+Info: This operation may take a few seconds. Please wait for a moment.. done.
+
+执行【display ap all】命令，查看到AP的state字段值为nor时，表示AP正常上线
+[AC-wlan-view]display ap all
+Info: This operation may take a few seconds. Please wait for a moment.done.
+Total AP information:
+nor  : normal          [2]
+--------------------------------------------------------------------------------
+--------------
+ID   MAC            Name     Group     IP          Type            State STA Upt
+ime
+--------------------------------------------------------------------------------
+--------------
+0    00e0-fc97-3090 office_1 ap-group1 10.0.99.155 AP6050DN        nor   0   2M:
+40S
+1    00e0-fc7c-6a60 office_2 ap-group1 10.0.99.192 AP6050DN        nor   0   1M:
+9S
+--------------------------------------------------------------------------------
+--------------
+Total: 2
+
+（4）配置WLAN参数
+创建名为wlan-net的安全模板和密码
+[AC-wlan-view]security-profile name wlan-net
+[AC-wlan-sec-prof-wlan-net]security wpa-wpa2 psk pass-phrase a1234567 aes
+
+创建名为wlan-net的SSID模板，并配置SSID的名称为wlan-net
+[AC-wlan-view]ssid-profile name wlan-net
+[AC-wlan-ssid-prof-wlan-net]ssid wlan-net
+
+创建名为wlan-net的VAP模板，业务vlan为vlan 10,并引用安全模板和SSID模板
+[AC-wlan-view]vap-profile name wlan-net
+[AC-wlan-vap-prof-wlan-net]forward-mode direct-forward 
+[AC-wlan-vap-prof-wlan-net]service-vlan vlan-id 10
+Info: This operation may take a few seconds, please wait.done.	
+[AC-wlan-vap-prof-wlan-net]security-profile wlan-net
+Info: This operation may take a few seconds, please wait.done.	
+[AC-wlan-vap-prof-wlan-net]ssid-profile wlan-net
+Info: This operation may take a few seconds, please wait.done.
+[AC-wlan-vap-prof-wlan-net]quit
+
+配置AP组引用VAP模板。。。。
+[AC-wlan-view]ap-group name ap-group1	
+[AC-wlan-ap-group-ap-group1]vap-profile wlan-net wlan 1 radio 0
+[AC-wlan-ap-group-ap-group1]vap-profile wlan-net wlan 1 radio 1
+（6）配置AP射频的信道和功率
+[AC]wlan
+[AC-wlan-view]ap-id 0
+[AC-wlan-ap-0]radio 0
+[AC-wlan-radio-0/0]channel 20mhz 6
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-radio-0/0]eirp 127
+[AC-wlan-ap-0]radio 1	
+[AC-wlan-radio-0/1]channel 20mhz 149
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-radio-0/1]eirp 127
+[AC-wlan-radio-0/1]quit
+[AC-wlan-ap-0]quit
+[AC-wlan-view]ap-id 1
+[AC-wlan-ap-1]radio 0	
+[AC-wlan-radio-1/0]channel 20mhz 11
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-radio-1/0]eirp 127
+[AC-wlan-radio-1/0]quit
+[AC-wlan-ap-1]radio 1
+[AC-wlan-radio-1/1]channel 20mhz 153
+Warning: This action may cause service interruption. Continue?[Y/N]y
+[AC-wlan-radio-1/1]eirp 127
+[AC-wlan-ap-1]quit
+项目测试	
+[AC-wlan-view]display vap ssid wlan-net
+Info: This operation may take a few seconds, please wait.
+WID : WLAN ID            
+------------------------------------------------------------------------------
+AP ID AP name  RfID WID  BSSID          Status  Auth type     STA   SSID    
+------------------------------------------------------------------------------
+0     office_1 0    1    00E0-FC97-3090 ON      WPA/WPA2-PSK  1     wlan-net
+0     office_1 1    1    00E0-FC97-30A0 ON      WPA/WPA2-PSK  0     wlan-net
+1     office_2 0    1    00E0-FC7C-6A60 ON      WPA/WPA2-PSK  1     wlan-net
+1     office_2 1    1    00E0-FC7C-6A70 ON      WPA/WPA2-PSK  0     wlan-net
+------------------------------------------------------------------------------
+Total: 4
+
+查看用户接入无线网络 wlan-net中
+[AC-wlan-view]display station ssid wlan-net
+Rf/WLAN: Radio ID/WLAN ID                                                     
+Rx/Tx: link receive rate/link transmit rate(Mbps)                             
+--------------------------------------------------------------------------------
+---------
+STA MAC          AP ID Ap name  Rf/WLAN  Band  Type  Rx/Tx      RSSI  VLAN  IP a
+ddress               
+--------------------------------------------------------------------------------
+---------
+5489-9825-5712   1     office_2 0/1      2.4G  -     -/-        -     10    10.0
+.10.83               
+5489-98fb-12c2   0     office_1 0/1      2.4G  -     -/-        -     10    10.0
+.10.28               
+--------------------------------------------------------------------------------
+---------
+Total: 2 2.4G: 2 5G: 0
