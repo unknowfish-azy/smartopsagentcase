@@ -41,6 +41,14 @@ export const personalSystemGroups = Object.freeze([
     ]
   }),
   expandableGroup({
+    id: 'study', label: 'STUDY CENTER', cn: '学习中心', icon: 'Reading', routeName: 'StudyCenter', to: '/study',
+    children: [
+      { label: 'COURSE LIBRARY', cn: '课程知识库', routeName: 'StudyCenter', to: '/study' },
+      { label: 'HCNA / eNSP LAB', cn: '网络实验', routeName: 'NetworkLab', to: '/network-lab' },
+      { label: 'AI PERF LAB', cn: 'AI 性能实验', routeName: 'AiPerfLab', to: '/ai-perf-lab' }
+    ]
+  }),
+  expandableGroup({
     id: 'research', label: 'NEURAL RESEARCH', cn: '联网研究', icon: 'Connection', routeName: 'WebResearch', to: '/web-research',
     children: [
       { label: 'WEB RESEARCH', cn: '联网检索', routeName: 'WebResearch', to: '/web-research' },

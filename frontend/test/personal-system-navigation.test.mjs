@@ -42,7 +42,7 @@ test('harbor and cloud-native workbenches fold into the smart repository 3D spac
 
 test('contains only groups with existing direct routes', () => {
   assert.deepEqual(visiblePersonalSystemGroups(personalSystemGroups).map(group => group.id), [
-    'home', 'ai-chat', 'repository', 'knowledge', 'research', 'extensions', 'operations', 'models', 'agent', 'guard', 'memory', 'sentinel'
+    'home', 'ai-chat', 'repository', 'knowledge', 'study', 'research', 'extensions', 'operations', 'models', 'agent', 'guard', 'memory', 'sentinel'
   ])
 })
 
